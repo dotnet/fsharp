@@ -5200,13 +5200,18 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
         ((true, true, attrs), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk, attrs) def -> 
             match ElimSynModuleDeclExpr def with
 
-              | SynModuleDecl.Types (typeDefs, _) -> 
+              | SynModuleDecl.Types (typeDefs, _) ->
+                  // Emit deprecation warning when 'and' keyword is used with --file-order-auto
+                  if cenv.fileOrderAuto && typeDefs.Length > 1 then
+                      for td in typeDefs.Tail do
+                          let (SynTypeDefn(typeInfo = SynComponentInfo(range = m))) = td
+                          warning(Error(FSComp.SR.chkAndKeywordDeprecatedWithFileOrderAuto(), m))
                   let decls = typeDefs |> List.map MutRecShape.Tycon
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) -> 
-                  let binds = 
-                      if isNamespace then 
+              | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) ->
+                  let binds =
+                      if isNamespace then
                           CheckLetOrDoInNamespace binds m; []
                       else
                           if isRecursive then [MutRecShape.Lets binds]
@@ -5795,6 +5800,7 @@ let CheckOneImplFile
                 tcSink,
                 LightweightTcValForUsingInBuildMethodCall g,
                 isInternalTestSpanStackReferring,
+                false, // fileOrderAuto — TODO: thread from TcConfig when wiring and deprecation warning
                 diagnosticOptions,
                 tcPat=TcPat,
                 tcSimplePats=TcSimplePats,
@@ -5940,6 +5946,7 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
             tcSink,
             LightweightTcValForUsingInBuildMethodCall g,
             isInternalTestSpanStackReferring,
+            false, // fileOrderAuto — TODO: thread from TcConfig
             diagnosticOptions,
             tcPat=TcPat,
             tcSimplePats=TcSimplePats,

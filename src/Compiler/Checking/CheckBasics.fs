@@ -309,6 +309,8 @@ type TcFileState =
 
       isInternalTestSpanStackReferring: bool
 
+      fileOrderAuto: bool
+
       diagnosticOptions: FSharpDiagnosticOptions
 
       argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
@@ -331,7 +333,7 @@ type TcFileState =
 
     /// Create a new compilation environment
     static member Create
-         (g, isScript, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring, diagnosticOptions,
+         (g, isScript, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring, fileOrderAuto, diagnosticOptions,
           tcPat,
           tcSimplePats,
           tcSequenceExpressionEntry,
@@ -361,6 +363,7 @@ type TcFileState =
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFSharpCore
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
+          fileOrderAuto = fileOrderAuto
           diagnosticOptions = diagnosticOptions
           argInfoCache = ConcurrentDictionary()
           TcPat = tcPat
