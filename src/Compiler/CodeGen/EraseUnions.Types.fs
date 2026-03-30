@@ -291,54 +291,6 @@ let classifyCaseStorage (layout: UnionLayout) (cuspec: IlxUnionSpec) (cidx: int)
         else
             CaseStorage.InNestedType(tyForAltIdxWith layout (baseTyOfUnionSpec cuspec) cuspec alt cidx)
 
-// ---- Context Records ----
-
-/// Bundles the IL attribute-stamping callbacks used during type definition generation.
-type ILStamping =
-    {
-        stampMethodAsGenerated: ILMethodDef -> ILMethodDef
-        stampPropertyAsGenerated: ILPropertyDef -> ILPropertyDef
-        stampPropertyAsNever: ILPropertyDef -> ILPropertyDef
-        stampFieldAsGenerated: ILFieldDef -> ILFieldDef
-        stampFieldAsNever: ILFieldDef -> ILFieldDef
-        mkDebuggerTypeProxyAttr: ILType -> ILAttribute
-    }
-
-/// Bundles the parameters threaded through type definition generation.
-/// Replaces the 6-callback tuple + scattered parameter threading in convAlternativeDef/mkClassUnionDef.
-type TypeDefContext =
-    {
-        g: TcGlobals
-        layout: UnionLayout
-        cuspec: IlxUnionSpec
-        cud: IlxUnionInfo
-        td: ILTypeDef
-        baseTy: ILType
-        stamping: ILStamping
-    }
-
-/// Information about a nullary case's singleton static field.
-type NullaryConstFieldInfo =
-    {
-        Case: IlxUnionCase
-        CaseType: ILType
-        CaseIndex: int
-        Field: ILFieldDef
-        InRootClass: bool
-    }
-
-/// Result of processing a single union alternative for type definition generation.
-/// Replaces the 6-element tuple return from convAlternativeDef.
-type AlternativeDefResult =
-    {
-        BaseMakerMethods: ILMethodDef list
-        BaseMakerProperties: ILPropertyDef list
-        ConstantAccessors: ILMethodDef list
-        NestedTypeDefs: ILTypeDef list
-        DebugProxyTypeDefs: ILTypeDef list
-        NullaryConstFields: NullaryConstFieldInfo list
-    }
-
 let mkTesterName nm = "Is" + nm
 
 let tagPropertyName = "Tag"

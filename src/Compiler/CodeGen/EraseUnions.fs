@@ -14,6 +14,89 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
 
+// ============================================================================
+// Type Definition Generation for F# Discriminated Unions
+//
+// Entry point: mkClassUnionDef (bottom of file, F# requires definitions before use)
+//
+// Pipeline:
+//   1. Classify union layout (Types.fs: classifyFromDef → UnionLayout)
+//   2. For each case: classify storage (Types.fs: classifyCaseStorage → CaseStorage)
+//   3. For each case: emit maker methods, tester properties, nested types, debug proxies
+//   4. Emit root class: fields, constructors, tag infrastructure
+//   5. Assemble everything into the final ILTypeDef
+//
+// Key context: TypeDefContext bundles all generation parameters.
+// Results per case: AlternativeDefResult collects methods/fields/types.
+//
+// Example mappings (DU → UnionLayout → CaseStorage):
+//   type Option<'T> = None | Some of 'T
+//     → SmallRefWithNullAsTrueValue
+//     → None=Null, Some=OnRoot
+//
+//   type Color = Red | Green | Blue | Yellow
+//     → TaggedRefAllNullary
+//     → all cases=Singleton
+//
+//   [<Struct>] type Result<'T,'E> = Ok of 'T | Error of 'E
+//     → TaggedStruct
+//     → Ok=OnRoot, Error=OnRoot
+//
+//   type Shape = Circle of float | Square of float | Point
+//     → SmallRef (3 cases, ref, not all-nullary)
+//     → Circle=InNestedType, Square=InNestedType, Point=Singleton
+//
+//   type Token = Ident of string | IntLit of int | Plus | Minus | Star
+//     → TaggedRef (≥4 cases, ref)
+//     → Ident=InNestedType, IntLit=InNestedType, Plus/Minus/Star=Singleton
+// ============================================================================
+
+/// Bundles the IL attribute-stamping callbacks used during type definition generation.
+type ILStamping =
+    {
+        stampMethodAsGenerated: ILMethodDef -> ILMethodDef
+        stampPropertyAsGenerated: ILPropertyDef -> ILPropertyDef
+        stampPropertyAsNever: ILPropertyDef -> ILPropertyDef
+        stampFieldAsGenerated: ILFieldDef -> ILFieldDef
+        stampFieldAsNever: ILFieldDef -> ILFieldDef
+        mkDebuggerTypeProxyAttr: ILType -> ILAttribute
+    }
+
+/// Bundles the parameters threaded through type definition generation.
+/// Replaces the 6-callback tuple + scattered parameter threading in convAlternativeDef/mkClassUnionDef.
+type TypeDefContext =
+    {
+        g: TcGlobals
+        layout: UnionLayout
+        cuspec: IlxUnionSpec
+        cud: IlxUnionInfo
+        td: ILTypeDef
+        baseTy: ILType
+        stamping: ILStamping
+    }
+
+/// Information about a nullary case's singleton static field.
+type NullaryConstFieldInfo =
+    {
+        Case: IlxUnionCase
+        CaseType: ILType
+        CaseIndex: int
+        Field: ILFieldDef
+        InRootClass: bool
+    }
+
+/// Result of processing a single union alternative for type definition generation.
+/// Replaces the 6-element tuple return from convAlternativeDef.
+type AlternativeDefResult =
+    {
+        BaseMakerMethods: ILMethodDef list
+        BaseMakerProperties: ILPropertyDef list
+        ConstantAccessors: ILMethodDef list
+        NestedTypeDefs: ILTypeDef list
+        DebugProxyTypeDefs: ILTypeDef list
+        NullaryConstFields: NullaryConstFieldInfo list
+    }
+
 /// DynamicallyAccessedMemberTypes flags for [DynamicDependency] on case ctors
 [<Literal>]
 let private DynamicDependencyPublicMembers = 0x660
@@ -590,9 +673,12 @@ let private processAlternative (ctx: TypeDefContext) (num: int) (alt: IlxUnionCa
         NullaryConstFields = nullaryFields
     }
 
+// ---- Nullable Attribute Rewriting ----
+// When struct DUs have multiple cases, all boxed fields become potentially nullable
+// because only one case's fields are valid at a time. These helpers rewrite [Nullable]
+// attributes accordingly. rootTypeNullableAttrs handles the union type itself.
+
 /// Rewrite field nullable attributes for struct flattening.
-/// When a struct DU has multiple cases, all boxed fields become potentially nullable
-/// because only one case's fields are valid at a time.
 /// When a struct DU has multiple cases, all boxed fields become potentially nullable
 /// because only one case's fields are valid at a time. This rewrites the [Nullable] attribute
 /// on a field to WithNull (2uy) if it was marked as non-nullable (1uy) within its case.
