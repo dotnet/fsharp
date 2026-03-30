@@ -191,19 +191,6 @@ module internal TupleCompilation =
     /// Make a TAST expression representing getting an item from a tuple
     val mkGetTupleItemN: TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
-    [<return: Struct>]
-    val (|Int32Expr|_|): Expr -> int32 voption
-
-    /// Matches if the given expression is an application
-    /// of the range or range-step operator on an integral type
-    /// and returns the type, start, step, and finish if so.
-    ///
-    /// start..finish
-    ///
-    /// start..step..finish
-    [<return: Struct>]
-    val (|IntegralRange|_|): g: TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
-
     [<RequireQualifiedAccess>]
     module IntegralConst =
         /// Constant 0.
@@ -274,6 +261,19 @@ module internal ConstantEvaluation =
     val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
 
     val EvaledAttribExprEquality: TcGlobals -> Expr -> Expr -> bool
+
+    [<return: Struct>]
+    val (|Int32Expr|_|): Expr -> int32 voption
+
+    /// Matches if the given expression is an application
+    /// of the range or range-step operator on an integral type
+    /// and returns the type, start, step, and finish if so.
+    ///
+    /// start..finish
+    ///
+    /// start..step..finish
+    [<return: Struct>]
+    val (|IntegralRange|_|): g: TcGlobals -> expr: Expr -> (TType * (Expr * Expr * Expr)) voption
 
 [<AutoOpen>]
 module internal ResumableCodePatterns =

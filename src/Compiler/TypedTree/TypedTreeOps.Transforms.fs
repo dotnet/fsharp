@@ -1190,13 +1190,6 @@ module internal TupleCompilation =
         else
             mkAsmExpr ([ mkNormalCall (mkILMethodSpecForTupleItem g ty n) ], [], [ expr ], [ retTy ], m)
 
-    /// Match an Int32 constant expression
-    [<return: Struct>]
-    let (|Int32Expr|_|) expr =
-        match expr with
-        | Expr.Const(Const.Int32 n, _, _) -> ValueSome n
-        | _ -> ValueNone
-
     /// Match a try-finally expression
     [<return: Struct>]
     let (|TryFinally|_|) expr =
@@ -1231,7 +1224,9 @@ module internal TupleCompilation =
             ValueSome(startExpr, 1, finishExpr)
 
         // detect (RangeInt32 startExpr N finishExpr), the inlined/compiled form of 'n .. m' and 'n .. N .. m'
-        | Expr.App(Expr.Val(vf, _, _), _, [], [ startExpr; Int32Expr n; finishExpr ], _) when valRefEq g vf g.range_int32_op_vref ->
+        | Expr.App(Expr.Val(vf, _, _), _, [], [ startExpr; Expr.Const(Const.Int32 n, _, _); finishExpr ], _) when
+            valRefEq g vf g.range_int32_op_vref
+            ->
             ValueSome(startExpr, n, finishExpr)
 
         | _ -> ValueNone
@@ -1402,10 +1397,7 @@ module internal TupleCompilation =
             | Const.SByte v -> Const.SByte(abs v)
             | _ -> c
 
-    /// start..finish
-    /// start..step..finish
-    [<return: Struct>]
-    let (|IntegralRange|_|) g expr =
+    let tryMatchIntegralRange g expr =
         match expr with
         | ValApp g g.range_int32_op_vref ([], [ start; step; finish ], _) -> ValueSome(g.int32_ty, (start, step, finish))
         | ValApp g g.range_int64_op_vref ([], [ start; step; finish ], _) -> ValueSome(g.int64_ty, (start, step, finish))
@@ -2164,16 +2156,19 @@ module internal TupleCompilation =
 
             mkFastForLoop g (spFor, spIn, mWholeExpr, elemVar, startExpr, (step = 1), finishExpr, bodyExpr)
 
-        | OptimizeAllForExpressions,
-          CompiledForEachExpr g (_enumTy, rangeExpr & IntegralRange g (rangeTy, (start, step, finish)), elemVar, bodyExpr, ranges) when
-            g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
-            ->
-            let mBody, _spFor, _spIn, mFor, mIn, spInWhile, _mWhole = ranges
-
-            mkOptimizedRangeLoop g (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (fun _count mkLoop ->
-                mkLoop (fun _idxVar loopVar -> mkInvisibleLet elemVar.Range elemVar loopVar bodyExpr))
-
         | OptimizeAllForExpressions, CompiledForEachExpr g (enumerableTy, enumerableExpr, elemVar, bodyExpr, ranges) ->
+            match
+                (if g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops then
+                     tryMatchIntegralRange g enumerableExpr
+                 else
+                     ValueNone)
+            with
+            | ValueSome(rangeTy, (start, step, finish)) ->
+                let mBody, _spFor, _spIn, mFor, mIn, spInWhile, _mWhole = ranges
+
+                mkOptimizedRangeLoop g (mBody, mFor, mIn, spInWhile) (rangeTy, enumerableExpr) (start, step, finish) (fun _count mkLoop ->
+                    mkLoop (fun _idxVar loopVar -> mkInvisibleLet elemVar.Range elemVar loopVar bodyExpr))
+            | ValueNone ->
 
             let mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr = ranges
 
@@ -2724,6 +2719,18 @@ module internal ConstantEvaluation =
             let args = args |> List.map (EvalAttribArgExpr SuppressLanguageFeatureCheck.No g)
             Expr.Op(TOp.Array, [ elemTy ], args, m)
         | _ -> EvalAttribArgExpr SuppressLanguageFeatureCheck.No g x
+
+    /// Match an Int32 constant expression
+    [<return: Struct>]
+    let (|Int32Expr|_|) expr =
+        match expr with
+        | Expr.Const(Const.Int32 n, _, _) -> ValueSome n
+        | _ -> ValueNone
+
+    /// start..finish
+    /// start..step..finish
+    [<return: Struct>]
+    let (|IntegralRange|_|) g expr = tryMatchIntegralRange g expr
 
 [<AutoOpen>]
 module internal ResumableCodePatterns =

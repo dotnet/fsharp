@@ -335,7 +335,7 @@ module internal ExprConstruction =
     val (|InnerExprPat|): Expr -> Expr
 
 [<AutoOpen>]
-module internal CollectionTypes =
+module internal TypedTreeCollections =
 
     /// Mutable data structure mapping Val's to T based on stamp keys
     [<Sealed; NoEquality; NoComparison>]

@@ -800,24 +800,6 @@ module internal Makers =
         else
             error (InternalError($"Unrecognized numeric type '{ty}'.", m))
 
-    let destInt32 =
-        function
-        | Expr.Const(Const.Int32 n, _, _) -> Some n
-        | _ -> None
-
-    let isIDelegateEventType g ty =
-        match tryTcrefOfAppTy g ty with
-        | ValueSome tcref -> tyconRefEq g g.fslib_IDelegateEvent_tcr tcref
-        | _ -> false
-
-    let destIDelegateEventType g ty =
-        if isIDelegateEventType g ty then
-            match argsOfAppTy g ty with
-            | [ ty1 ] -> ty1
-            | _ -> failwith "destIDelegateEventType: internal error"
-        else
-            failwith "destIDelegateEventType: not an IDelegateEvent type"
-
     let mkRefCellContentsRef (g: TcGlobals) =
         mkRecdFieldRef g.refcell_tcr_canon "contents"
 
@@ -1628,13 +1610,6 @@ module internal Makers =
     let mkThrow m ty e =
         mkAsmExpr ([ I_throw ], [], [ e ], [ ty ], m)
 
-    let destThrow =
-        function
-        | Expr.Op(TOp.ILAsm([ I_throw ], [ ty2 ]), [], [ e ], m) -> Some(m, ty2, e)
-        | _ -> None
-
-    let isThrow x = Option.isSome (destThrow x)
-
     // reraise - parsed as library call - internally represented as op form.
     let mkReraiseLibCall (g: TcGlobals) ty m =
         let ve, vt = typedExprForIntrinsic g m g.reraise_info
@@ -2283,6 +2258,31 @@ module internal ExprTransforms =
         tmp.SetValReprInfo(Some valData)
         tmp.SetDeclaringEntity parent
         tmp.SetIsMemberOrModuleBinding()
+
+    let destInt32 =
+        function
+        | Expr.Const(Const.Int32 n, _, _) -> Some n
+        | _ -> None
+
+    let destThrow =
+        function
+        | Expr.Op(TOp.ILAsm([ I_throw ], [ ty2 ]), [], [ e ], m) -> Some(m, ty2, e)
+        | _ -> None
+
+    let isThrow x = Option.isSome (destThrow x)
+
+    let isIDelegateEventType g ty =
+        match tryTcrefOfAppTy g ty with
+        | ValueSome tcref -> tyconRefEq g g.fslib_IDelegateEvent_tcr tcref
+        | _ -> false
+
+    let destIDelegateEventType g ty =
+        if isIDelegateEventType g ty then
+            match argsOfAppTy g ty with
+            | [ ty1 ] -> ty1
+            | _ -> failwith "destIDelegateEventType: internal error"
+        else
+            failwith "destIDelegateEventType: not an IDelegateEvent type"
 
     /// For match with only one non-failing target T0, the other targets, T1... failing (say, raise exception).
     ///   tree, T0(v0, .., vN) => rhs ; T1() => fail ; ...

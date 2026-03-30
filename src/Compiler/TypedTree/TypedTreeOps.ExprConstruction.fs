@@ -518,7 +518,7 @@ module internal ExprConstruction =
     let (|InnerExprPat|) expr = stripExpr expr
 
 [<AutoOpen>]
-module internal CollectionTypes =
+module internal TypedTreeCollections =
 
     //--------------------------------------------------------------------------
     // Maps tracking extra information for values

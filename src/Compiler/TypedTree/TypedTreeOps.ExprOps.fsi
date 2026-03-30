@@ -150,8 +150,6 @@ module internal Makers =
     /// Makes an expression holding a constant 1 value of the given numeric type.
     val mkTypedOne: g: TcGlobals -> m: range -> ty: TType -> Expr
 
-    val destInt32: Expr -> int32 option
-
     val mkRefCellContentsRef: TcGlobals -> RecdFieldRef
 
     val mkSequential: range -> Expr -> Expr -> Expr
@@ -464,17 +462,9 @@ module internal Makers =
 
     val mkThrow: range -> TType -> Expr -> Expr
 
-    val destThrow: Expr -> (range * TType * Expr) option
-
-    val isThrow: Expr -> bool
-
     val mkReraiseLibCall: TcGlobals -> TType -> range -> Expr
 
     val mkReraise: range -> TType -> Expr
-
-    val isIDelegateEventType: TcGlobals -> TType -> bool
-
-    val destIDelegateEventType: TcGlobals -> TType -> TType
 
     /// Add a label to use as the target for a goto
     val mkLabelled: range -> ILCodeLabel -> Expr -> Expr
@@ -569,3 +559,13 @@ module internal ExprTransforms =
     /// Mutate a value to indicate it should be considered a local rather than a module-bound definition
     // REVIEW: this mutation should not be needed
     val ClearValReprInfo: Val -> Val
+
+    val destInt32: Expr -> int32 option
+
+    val destThrow: Expr -> (range * TType * Expr) option
+
+    val isThrow: Expr -> bool
+
+    val isIDelegateEventType: TcGlobals -> TType -> bool
+
+    val destIDelegateEventType: TcGlobals -> TType -> TType
