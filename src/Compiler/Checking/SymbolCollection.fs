@@ -533,26 +533,28 @@ let runEnterPhase
 // Dependency graph and topological sort (Track 02)
 // ---------------------------------------------------------------
 
-/// Build an export map: for each module/namespace name, which file index defines it.
-/// A name may be defined by multiple files (e.g., namespaces spanning files).
-let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set<int>> =
+/// Build an export map: for each module/type name, which file index UNIQUELY defines it.
+/// Shared namespace prefixes (defined by multiple files) are tracked separately
+/// to avoid false dependencies between files in the same namespace.
+let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set<int>> * Set<string> =
     let mutable exportMap = Map.empty<string, Set<int>>
+    let mutable sharedPrefixes = Set.empty<string>
 
     let addExport (name: string) (fileIdx: int) =
         let existing = exportMap |> Map.tryFind name |> Option.defaultValue Set.empty
-        exportMap <- Map.add name (Set.add fileIdx existing) exportMap
+        let updated = Set.add fileIdx existing
+        // Track names defined by multiple files as shared prefixes
+        if updated.Count > 1 then
+            sharedPrefixes <- Set.add name sharedPrefixes
+        exportMap <- Map.add name updated exportMap
 
     for fd in fileDecls do
         for topMod in fd.TopLevelModules do
-            // Register the module/namespace name
+            // Register the full qualified module/namespace name
             let qualName = topMod.QualifiedName |> List.map (fun id -> id.idText) |> String.concat "."
             addExport qualName fd.FileIndex
 
-            // Also register just the last segment (the module name without namespace prefix)
-            addExport topMod.Name.idText fd.FileIndex
-
             // Register each segment prefix for namespace resolution
-            // e.g., "A.B.C" registers "A", "A.B", "A.B.C"
             let segments = topMod.QualifiedName |> List.map (fun id -> id.idText)
             let mutable prefix = ""
             for seg in segments do
@@ -568,7 +570,6 @@ let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set
             let rec registerNested (parentName: string) (m: ModuleDeclStub) =
                 let nestedName = parentName + "." + m.Name.idText
                 addExport nestedName fd.FileIndex
-                addExport m.Name.idText fd.FileIndex
                 for ty in m.Types do
                     addExport (nestedName + "." + ty.Name.idText) fd.FileIndex
                 for nested in m.NestedModules do
@@ -577,37 +578,40 @@ let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set
             for nested in topMod.NestedModules do
                 registerNested qualName nested
 
-    exportMap
+    (exportMap, sharedPrefixes)
 
 /// Resolve a file's imports (Opens) against the export map to find dependencies.
+/// Skips shared namespace prefixes to avoid false cycles between files in the same namespace.
 let private resolveFileDependencies
     (exportMap: Map<string, Set<int>>)
+    (sharedPrefixes: Set<string>)
     (fd: FileDeclarations)
     : Set<int> =
 
     let mutable deps = Set.empty<int>
 
-    for openPath in fd.Opens do
-        // Try the full open path
-        let fullPath = openPath |> List.map (fun id -> id.idText) |> String.concat "."
-        match Map.tryFind fullPath exportMap with
-        | Some fileIndices ->
-            for idx in fileIndices do
-                if idx <> fd.FileIndex then
-                    deps <- Set.add idx deps
-        | None -> ()
-
-        // Also try each prefix of the open path
-        let segments = openPath |> List.map (fun id -> id.idText)
-        let mutable prefix = ""
-        for seg in segments do
-            prefix <- if prefix = "" then seg else prefix + "." + seg
-            match Map.tryFind prefix exportMap with
+    let addDep (name: string) =
+        // Skip shared namespace prefixes — they create false cycles
+        // Only create dependencies on names uniquely owned by another file
+        if not (Set.contains name sharedPrefixes) then
+            match Map.tryFind name exportMap with
             | Some fileIndices ->
                 for idx in fileIndices do
                     if idx <> fd.FileIndex then
                         deps <- Set.add idx deps
             | None -> ()
+
+    for openPath in fd.Opens do
+        // Try the full open path (most specific — usually a unique module name)
+        let fullPath = openPath |> List.map (fun id -> id.idText) |> String.concat "."
+        addDep fullPath
+
+        // Also try each prefix, but shared prefixes will be skipped
+        let segments = openPath |> List.map (fun id -> id.idText)
+        let mutable prefix = ""
+        for seg in segments do
+            prefix <- if prefix = "" then seg else prefix + "." + seg
+            addDep prefix
 
     deps
 
@@ -656,17 +660,35 @@ let private topologicalSort (fileCount: int) (deps: Map<int, Set<int>>) : Result
     else
         Ok (result |> Seq.toList)
 
+/// Check if a file is auto-generated (from obj/ directory, AssemblyInfo, AssemblyAttributes, etc.)
+/// Auto-generated files should have no dependencies and be placed first.
+let private isAutoGeneratedFile (fd: FileDeclarations) =
+    let fn = fd.FileName
+    fn.Contains("/obj/") || fn.Contains("\\obj\\") ||
+    fn.Contains("AssemblyInfo") || fn.Contains("AssemblyAttributes") ||
+    fn.Contains("buildproperties")
+
 /// Compute the dependency-ordered file indices from FileDeclarations.
 /// Returns file indices in topological order (dependencies before dependents).
 let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
-    let exportMap = buildExportMap fileDecls
+    let exportMap, sharedPrefixes = buildExportMap fileDecls
 
     // Build dependency map: fileIndex -> set of file indices it depends on
+    // Auto-generated files get empty dependency sets to avoid false cycles
     let deps =
         fileDecls
-        |> Array.map (fun fd -> (fd.FileIndex, resolveFileDependencies exportMap fd))
+        |> Array.map (fun fd ->
+            if isAutoGeneratedFile fd then
+                (fd.FileIndex, Set.empty)
+            else
+                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes fd))
         |> Map.ofArray
 
     match topologicalSort fileDecls.Length deps with
-    | Ok order -> order |> List.toArray
+    | Ok order ->
+        // Partition: auto-generated files first, then user files in dependency order.
+        // This ensures AssemblyInfo/AssemblyAttributes don't interfere with [<EntryPoint>] ordering.
+        let autoGen, userFiles =
+            order |> List.partition (fun idx -> isAutoGeneratedFile fileDecls.[idx])
+        (autoGen @ userFiles) |> List.toArray
     | Error msg -> failwith msg

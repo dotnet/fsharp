@@ -172,6 +172,17 @@ let TypeCheck
                 let inputsArray = inputs |> List.toArray
                 let reorderedInputs = order |> Array.map (fun idx -> inputsArray.[idx]) |> Array.toList
 
+                // Fix up IsLastCompiland flags: only the last file in the reordered
+                // sequence should have isLastCompiland=true (needed for [<EntryPoint>] check)
+                let reorderedInputs =
+                    let lastIdx = reorderedInputs.Length - 1
+                    reorderedInputs |> List.mapi (fun i input ->
+                        match input with
+                        | Syntax.ParsedInput.ImplFile(Syntax.ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (_, isExe), trivia, idents)) ->
+                            let isLast = (i = lastIdx)
+                            Syntax.ParsedInput.ImplFile(Syntax.ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (isLast, isExe), trivia, idents))
+                        | sigFile -> sigFile)
+
                 let tcState = tcInitialState.NextStateAfterIncrementalFragment tcEnvPrepopulated
                 (tcState, reorderedInputs)
             else
