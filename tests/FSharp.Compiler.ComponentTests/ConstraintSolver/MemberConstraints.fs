@@ -145,8 +145,11 @@ type UnionOfUnions<'T> =
         | ParentCase1 x, ParentCase1 y -> x - y |> ParentCase1
         | ParentCase2 x, ParentCase2 y -> x - y |> ParentCase2
         | _ -> failwith "mismatch"
-        
-        
+            """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
     // https://github.com/dotnet/fsharp/issues/9382
     [<Fact>]
     let ``Issue 9382 - SRTP stress test with matrix inverse should compile`` () =
