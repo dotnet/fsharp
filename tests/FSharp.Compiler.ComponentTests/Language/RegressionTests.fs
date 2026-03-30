@@ -53,3 +53,18 @@ let f (start: DateTime) (stop: DateTime) (input: (DateTime * 'a) list) =
         |> compile
         |> shouldSucceed
         |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/14152
+    [<Fact>]
+    let ``Issue 14152 - nowarn directive before module declaration should compile`` () =
+        FSharp
+            """
+#nowarn "20"
+
+module XXX.MyModule
+
+let x = 15
+            """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
