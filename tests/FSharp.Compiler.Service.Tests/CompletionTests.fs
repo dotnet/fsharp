@@ -691,6 +691,28 @@ exception E
 try () with E{caret}
 """
 
+        // https://github.com/dotnet/fsharp/issues/13693
+        [<Fact>]
+        let ``Event - Instance 01`` () =
+            assertItem "Ev" """
+type T() =
+    [<System.Obsolete; CLIEvent>]
+    member _.Ev = Event<System.EventHandler, _>().Publish
+
+T().{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13693
+        [<Fact>]
+        let ``Event - Static 01`` () =
+            assertItem "Ev" """
+type T() =
+    [<System.Obsolete; CLIEvent>]
+    static member Ev = Event<System.EventHandler, _>().Publish
+
+T.{caret}
+"""
+
 
     module PatternNameSuggestions =
         let private suggestPatternNames = { FSharpCodeCompletionOptions.Default with SuggestPatternNames = true }
