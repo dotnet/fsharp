@@ -7803,8 +7803,7 @@ and GenDecisionTreeSwitch
         let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore c.TyconRef
         let access = computeDataAccess avoidHelpers cuspec
 
-        let tester =
-            Some(pop 1, Push [ g.ilg.typ_Bool ], Choice1Of2(access, cuspec, idx))
+        let tester = Some(pop 1, Push [ g.ilg.typ_Bool ], Choice1Of2(access, cuspec, idx))
 
         GenDecisionTreeTest
             cenv
@@ -8117,8 +8116,7 @@ and GenDecisionTreeTest
             match tester with
             | Some(pops, pushes, i) ->
                 match i with
-                | Choice1Of2(access, cuspec, idx) ->
-                    CG.EmitInstrs cgbuf pops pushes (mkIsData g.ilg (access, cuspec, idx))
+                | Choice1Of2(access, cuspec, idx) -> CG.EmitInstrs cgbuf pops pushes (mkIsData g.ilg (access, cuspec, idx))
                 | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
             | _ -> ()
 
@@ -8212,12 +8210,7 @@ and GenDecisionTreeTest
         | Some(_, _, Choice1Of2(access, cuspec, idx)) ->
             let failure = CG.GenerateDelayMark cgbuf "testFailure"
 
-            GenExpr
-                cenv
-                cgbuf
-                eenv
-                e
-                (CmpThenBrOrContinue(pop 1, mkBrIsData g.ilg false (access, cuspec, idx, failure.CodeLabel)))
+            GenExpr cenv cgbuf eenv e (CmpThenBrOrContinue(pop 1, mkBrIsData g.ilg false (access, cuspec, idx, failure.CodeLabel)))
 
             GenDecisionTreeAndTargetsInner
                 cenv
@@ -8249,8 +8242,7 @@ and GenDecisionTreeTest
             GenExpr cenv cgbuf eenv e Continue
 
             match i with
-            | Choice1Of2(access, cuspec, idx) ->
-                CG.EmitInstrs cgbuf pops pushes (mkIsData g.ilg (access, cuspec, idx))
+            | Choice1Of2(access, cuspec, idx) -> CG.EmitInstrs cgbuf pops pushes (mkIsData g.ilg (access, cuspec, idx))
             | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
 
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp(BI_brfalse, failure.CodeLabel))
