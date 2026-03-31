@@ -6066,6 +6066,16 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
             errorR(Error(FSComp.SR.tcConstructRequiresComputationExpression(), leadingKeyword.Range))
         | _ -> ()
 
+        // Warn when 'let ... in' has an explicit 'in' keyword and the body is a sequential expression
+        // spanning multiple lines. This indicates the user likely intended the 'let ... in' to scope only
+        // over the expression on the same line, but the parser greedily consumed subsequent lines as body.
+        match letOrUse with
+        | { Trivia = { InKeyword = Some inRange }; Body = SynExpr.Sequential(expr2 = expr2) }
+            when g.langVersion.SupportsFeature LanguageFeature.WarnOnLetInSequenceExpression
+                 && expr2.Range.StartLine > inRange.StartLine ->
+            warning(Error(FSComp.SR.tcLetExpressionWithInHasMultiLineBody(), inRange))
+        | _ -> ()
+
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr id
 
     | SynExpr.TryWith (synBodyExpr, synWithClauses, mTryToLast, spTry, spWith, trivia) ->
