@@ -1,38 +1,30 @@
 {
-  "last_run": "2026-03-31T05:30:00Z",
-  "processed_prs": {
-    "19478": {
-      "status": "B0_fixed",
-      "ci": "pushed_fix_awaiting_ci",
-      "action": "fixed merge conflict: restored Issue 15655 test that was dropped when resolving conflict with main",
-      "note": "Previous run fix (commit 277b190) had bad merge conflict resolution dropping Issue 15655 test. New commit 35385d1 fixes this by adding Issue 6715 at top while keeping Issue 15655."
-    },
+  "last_run": "2026-03-31T13:25:28Z",
+  "prs": {
     "19476": {
       "status": "healthy",
       "ci": "passing",
-      "reviews": "auduchinok_suggestion_no_action_required",
-      "note": "auduchinok suggested @/! identifier cases as interesting, but CI passing and it is an informational comment not a blocking review"
+      "note": "CI passing. No review threads. No shepherd action needed."
     },
     "19472": {
-      "status": "B3",
-      "ci": "failing_WindowsNoRealsig_testDesktop",
-      "action": "removed AI-thinks-issue-fixed from issue #12796, commented on issue and PR",
-      "note": "FS0192 still occurs on Desktop .NET Framework for DefaultValue([||] : A[]) on record fields. Bug confirmed not fixed."
+      "status": "b3_bug_confirmed",
+      "last_shepherd_comment": "2026-03-31T01:41:52Z",
+      "note": "Bug still exists on Desktop .NET Framework. B3 diagnosed, AI-thinks-issue-fixed removed from #12796, maintainers tagged. CI still failing on WindowsNoRealsig_testDesktop. Awaiting human action."
     },
     "19471": {
       "status": "healthy",
       "ci": "passing",
-      "reviews": "resolved"
+      "note": "CI passing. Single resolved review thread. No shepherd action needed."
     },
     "19468": {
-      "status": "healthy",
-      "ci": "passing_after_B3_partial_fix",
-      "action": "removed SynPat.IsInst test (not implemented), removed AI-thinks-issue-fixed from issue #13114, CI now green"
+      "status": "waiting_src_rename",
+      "last_shepherd_comment": "2026-03-31T13:25:00Z",
+      "note": "auduchinok (2026-03-31T10:56:46Z) wants pat->ty rename in src/Compiler/Service/ServiceParseTreeWalk.fs:804. Commented tagging T-Gro. Cannot modify src/ files. CI passing."
     },
     "19467": {
       "status": "healthy",
       "ci": "passing",
-      "reviews": "none"
+      "note": "CI passing. No review threads. No shepherd action needed."
     }
   }
 }
