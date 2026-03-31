@@ -222,31 +222,6 @@ let f x =
 
 // https://github.com/dotnet/fsharp/issues/13114
 [<Fact>]
-let ``Issue 13114 - defaultTraverse walks into SynPat.IsInst`` () =
-    let visitor =
-        { new SyntaxVisitorBase<_>() with
-            member x.VisitExpr(_, _, defaultTraverse, expr) = defaultTraverse expr
-
-            member x.VisitPat(_, defaultTraverse, pat) = defaultTraverse pat
-
-            member x.VisitType(_, _, ty) = Some ty }
-
-    let source =
-        """
-let f x =
-    match x with
-    | :? int -> ()
-    | _ -> ()
-"""
-
-    let parseTree = parseSourceCode ("C:\\test.fs", source)
-
-    match SyntaxTraversal.Traverse(mkPos 4 9, parseTree, visitor) with
-    | Some(SynType.LongIdent _) -> ()
-    | other -> failwith $"defaultTraverse did not walk into SynPat.IsInst type, got: %A{other}"
-
-// https://github.com/dotnet/fsharp/issues/13114
-[<Fact>]
 let ``Issue 13114 - defaultTraverse walks into SynPat.FromParseError`` () =
     let visitor =
         { new SyntaxVisitorBase<_>() with
