@@ -170,9 +170,105 @@ printfn "Broken type loaded and Pointer accessed: %A" p
         |> shouldSucceed
         |> ignore
 
-    // https://github.com/dotnet/fsharp/issues/14492
+    // https://github.com/dotnet/fsharp/issues/14508
     [<Fact>]
-    let ``Issue_14492_ReleaseConfigError`` () =
+    let ``Issue_14508_NativeptrInInterfaceParams`` () =
+        let source = """
+open Microsoft.FSharp.NativeInterop
+
+type IBar<'T when 'T : unmanaged> =
+    abstract member DoSomething : nativeptr<'T> -> unit
+
+type BarImpl() =
+    interface IBar<int> with
+        member _.DoSomething(_p: nativeptr<int>) = ()
+
+let b = BarImpl()
+(b :> IBar<int>).DoSomething(Unchecked.defaultof<_>)
+printfn "BarImpl loaded and DoSomething called"
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/14508
+    [<Fact>]
+    let ``Issue_14508_NativeptrInInterfaceParamsAndReturn`` () =
+        let source = """
+open Microsoft.FSharp.NativeInterop
+
+type ITransform<'T when 'T : unmanaged> =
+    abstract member Transform : nativeptr<'T> -> nativeptr<'T>
+
+type TransformImpl() =
+    interface ITransform<int> with
+        member _.Transform(p: nativeptr<int>) : nativeptr<int> = p
+
+let t = TransformImpl()
+let result = (t :> ITransform<int>).Transform(Unchecked.defaultof<_>)
+printfn "TransformImpl loaded, result: %A" result
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/14508
+    [<Fact>]
+    let ``Issue_14508_NativeptrInInterfaceParamWithOtherParams`` () =
+        let source = """
+open Microsoft.FSharp.NativeInterop
+
+type IProcess<'T when 'T : unmanaged> =
+    abstract member Process : nativeptr<'T> * int -> unit
+
+type ProcessImpl() =
+    interface IProcess<int> with
+        member _.Process((_p: nativeptr<int>), (_len: int)) = ()
+
+let p = ProcessImpl()
+(p :> IProcess<int>).Process(Unchecked.defaultof<_>, 42)
+printfn "ProcessImpl loaded and Process called"
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/14508
+    [<Fact>]
+    let ``Issue_14508_NativeptrMultipleParams`` () =
+        let source = """
+open Microsoft.FSharp.NativeInterop
+
+type ICopy<'T when 'T : unmanaged> =
+    abstract member Copy : nativeptr<'T> * nativeptr<'T> * int -> unit
+
+type CopyImpl() =
+    interface ICopy<int> with
+        member _.Copy((_src: nativeptr<int>), (_dst: nativeptr<int>), (_len: int)) = ()
+
+let c = CopyImpl()
+(c :> ICopy<int>).Copy(Unchecked.defaultof<_>, Unchecked.defaultof<_>, 10)
+printfn "CopyImpl loaded and Copy called"
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
         let source = """
 module Test
 

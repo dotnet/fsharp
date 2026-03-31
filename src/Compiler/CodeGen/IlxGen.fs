@@ -1399,7 +1399,7 @@ let IsValRefIsDllImport g (vref: ValRef) =
     ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute vref.Deref
 
 /// Check if a type contains nativeptr with a type parameter from the given set.
-/// Used to detect interface implementations that need 'native int' return type.
+/// Used to detect interface implementations that need 'native int' instead of 'T*'.
 let hasNativePtrWithTypar (g: TcGlobals) (typars: Typar list) ty =
     let rec check ty =
         let ty = stripTyEqns g ty
@@ -1419,6 +1419,19 @@ let hasNativePtrWithTypar (g: TcGlobals) (typars: Typar list) ty =
         | _ -> false
 
     check ty
+
+/// Check if a slot signature requires nativeptr rewriting: the slot has nativeptr<'T>
+/// where 'T is a class type parameter and the interface type arguments are concrete.
+/// When true, method definitions must use 'native int' instead of 'T*' for the
+/// affected params/returns to match the interface slot's IL signature.
+let slotSigRequiresNativePtrRewrite (g: TcGlobals) ty (sctps: Typars) (sParams: SlotParam list list) (sRetTy: TType option) =
+    not sctps.IsEmpty
+    && (let interfaceTypeArgs = argsOfAppTy g ty
+        (freeInTypes CollectTypars interfaceTypeArgs).FreeTypars.IsEmpty)
+    && (sParams
+        |> List.concat
+        |> List.exists (fun (TSlotParam(_, paramTy, _, _, _, _)) -> hasNativePtrWithTypar g sctps paramTy)
+        || sRetTy |> Option.exists (hasNativePtrWithTypar g sctps))
 
 /// Determine how a top level value is represented, when it is being represented
 /// as a method.
@@ -1445,42 +1458,43 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
     let ctps, mtps = List.splitAt numParentTypars tps
     let isCompiledAsInstance = ValRefIsCompiledAsInstanceMember g vref
 
+    // When implementing an interface slot with nativeptr<'T> where 'T is an interface
+    // type parameter and the interface type args are concrete, the interface method
+    // uses 'native int'. The method def must also use 'native int' to match.
+    // This applies to both return types and parameter types.
+    let nativePtrSlotRewriteInfo =
+        if
+            not (isCtor || cctor)
+            && memberInfo.MemberFlags.IsOverrideOrExplicitImpl
+        then
+            memberInfo.ImplementedSlotSigs
+            |> List.tryPick (fun (TSlotSig(_, ty, sctps, _, sParams, sRetTy)) ->
+                if slotSigRequiresNativePtrRewrite g ty sctps sParams sRetTy then
+                    let slotEnv = TypeReprEnv.Empty.ForTypars sctps
+                    let slotParamTys = sParams |> List.concat |> List.map (fun p -> p.Type)
+                    Some(slotEnv, sctps, slotParamTys, sRetTy)
+                else
+                    None)
+        else
+            None
+
     let ilActualRetTy =
         let ilRetTy = GenReturnType cenv m tyenvUnderTypars returnTy
 
         if isCtor || cctor then
             ILType.Void
-        // When implementing an interface slot with nativeptr<'T> where 'T is an interface
-        // type parameter and the interface type args are concrete, the interface method
-        // returns 'native int'. The method def must also return 'native int' to match.
-        elif memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
-            match
-                memberInfo.ImplementedSlotSigs
-                |> List.tryPick (fun (TSlotSig(_, ty, sctps, _, _, sRetTy)) ->
-                    let interfaceTypeArgs = argsOfAppTy g ty
-
-                    if
-                        not sctps.IsEmpty
-                        && (freeInTypes CollectTypars interfaceTypeArgs).FreeTypars.IsEmpty
-                        && sRetTy |> Option.exists (hasNativePtrWithTypar g sctps)
-                    then
-                        Some(sctps, sRetTy)
-                    else
-                        None)
-            with
-            | Some(sctps, sRetTy) ->
-                // Generate return type using the slot's type params so nativeptr<'T> → native int
-                let slotEnv = TypeReprEnv.Empty.ForTypars sctps
-                GenReturnType cenv m slotEnv sRetTy
-            | None -> ilRetTy
         else
-            ilRetTy
+            match nativePtrSlotRewriteInfo with
+            | Some(slotEnv, sctps, _, sRetTy) when sRetTy |> Option.exists (hasNativePtrWithTypar g sctps) ->
+                GenReturnType cenv m slotEnv sRetTy
+            | _ -> ilRetTy
 
     let ilTy =
         GenType cenv m tyenvUnderTypars (mkWoNullAppTy parentTcref (List.map mkTyparTy ctps))
 
     let nm = vref.CompiledName g.CompilerGlobalState
 
+    // Instance methods: validate 'this' type and remove it from the arg list
     if isCompiledAsInstance || isCtor then
         // Find the 'this' argument type if any
         let thisTy, flatArgInfos =
@@ -1519,53 +1533,52 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
                         )
                     ))
 
-        let methodArgTys, paramInfos = List.unzip flatArgInfos
-
-        let isSlotSig =
-            memberInfo.MemberFlags.IsDispatchSlot
-            || memberInfo.MemberFlags.IsOverrideOrExplicitImpl
-
-        let ilMethodArgTys = GenParamTypes cenv m tyenvUnderTypars isSlotSig methodArgTys
-        let ilMethodInst = GenTypeArgs cenv m tyenvUnderTypars (List.map mkTyparTy mtps)
-
-        let mspec =
-            mkILInstanceMethSpecInTy (ilTy, nm, ilMethodArgTys, ilActualRetTy, ilMethodInst)
-
-        let mspecW =
-            if not g.generateWitnesses || witnessInfos.IsEmpty then
-                mspec
-            else
-                let ilWitnessArgTys =
-                    GenTypes cenv m tyenvUnderTypars (GenWitnessTys g witnessInfos)
-
-                let nmW = ExtraWitnessMethodName nm
-                mkILInstanceMethSpecInTy (ilTy, nmW, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
-
-        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
+        flatArgInfos
     else
-        let methodArgTys, paramInfos = List.unzip flatArgInfos
+        flatArgInfos
+    // Common: generate param types, method spec, witness spec
+    |> fun flatArgInfos ->
 
-        let isSlotSig =
-            memberInfo.MemberFlags.IsDispatchSlot
-            || memberInfo.MemberFlags.IsOverrideOrExplicitImpl
+    let methodArgTys, paramInfos = List.unzip flatArgInfos
 
-        let ilMethodArgTys = GenParamTypes cenv m tyenvUnderTypars isSlotSig methodArgTys
-        let ilMethodInst = GenTypeArgs cenv m tyenvUnderTypars (List.map mkTyparTy mtps)
+    let isSlotSig =
+        memberInfo.MemberFlags.IsDispatchSlot
+        || memberInfo.MemberFlags.IsOverrideOrExplicitImpl
 
-        let mspec =
-            mkILStaticMethSpecInTy (ilTy, nm, ilMethodArgTys, ilActualRetTy, ilMethodInst)
+    let ilMethodArgTys =
+        let ilArgTys = GenParamTypes cenv m tyenvUnderTypars isSlotSig methodArgTys
 
-        let mspecW =
-            if not g.generateWitnesses || witnessInfos.IsEmpty then
-                mspec
-            else
-                let ilWitnessArgTys =
-                    GenTypes cenv m tyenvUnderTypars (GenWitnessTys g witnessInfos)
+        match nativePtrSlotRewriteInfo with
+        | Some(slotEnv, sctps, slotParamTys, _) when slotParamTys.Length = ilArgTys.Length ->
+            (ilArgTys, slotParamTys)
+            ||> List.map2 (fun ilArgTy slotParamTy ->
+                if hasNativePtrWithTypar g sctps slotParamTy then
+                    GenParamType cenv m slotEnv true slotParamTy
+                else
+                    ilArgTy)
+        | _ -> ilArgTys
 
-                let nmW = ExtraWitnessMethodName nm
-                mkILStaticMethSpecInTy (ilTy, nmW, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
+    let ilMethodInst = GenTypeArgs cenv m tyenvUnderTypars (List.map mkTyparTy mtps)
 
-        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
+    let mkMethSpec =
+        if isCompiledAsInstance || isCtor then
+            mkILInstanceMethSpecInTy
+        else
+            mkILStaticMethSpecInTy
+
+    let mspec = mkMethSpec (ilTy, nm, ilMethodArgTys, ilActualRetTy, ilMethodInst)
+
+    let mspecW =
+        if not g.generateWitnesses || witnessInfos.IsEmpty then
+            mspec
+        else
+            let ilWitnessArgTys =
+                GenTypes cenv m tyenvUnderTypars (GenWitnessTys g witnessInfos)
+
+            let nmW = ExtraWitnessMethodName nm
+            mkMethSpec (ilTy, nmW, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
+
+    mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
 
 /// Determine how a top-level value is represented, when representing as a field, by computing an ILFieldSpec
 let ComputeFieldSpecForVal
@@ -5975,8 +5988,6 @@ and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
 and instSlotParam inst (TSlotParam(nm, ty, inFlag, fl2, fl3, attrs)) =
     TSlotParam(nm, instType inst ty, inFlag, fl2, fl3, attrs)
 
-and containsNativePtrWithTypar (g: TcGlobals) (typars: Typar list) ty = hasNativePtrWithTypar g typars ty
-
 and GenActualSlotsig
     m
     cenv
@@ -5988,20 +5999,11 @@ and GenActualSlotsig
     let g = cenv.g
     let ilSlotParams = List.concat ilSlotParams
 
-    let interfaceTypeArgs = argsOfAppTy g ty
-
     let instForSlotSig =
-        mkTyparInst (ctps @ mtps) (interfaceTypeArgs @ generalizeTypars methTyparsOfOverridingMethod)
-
-    let interfaceTypeArgsAreConcrete =
-        not ctps.IsEmpty
-        && (freeInTypes CollectTypars interfaceTypeArgs).FreeTypars.IsEmpty
+        mkTyparInst (ctps @ mtps) (argsOfAppTy g ty @ generalizeTypars methTyparsOfOverridingMethod)
 
     let slotHasNativePtrWithCtps =
-        interfaceTypeArgsAreConcrete
-        && (ilSlotParams
-            |> List.exists (fun (TSlotParam(_, ty, _, _, _, _)) -> containsNativePtrWithTypar g ctps ty)
-            || ilSlotRetTy |> Option.exists (containsNativePtrWithTypar g ctps))
+        slotSigRequiresNativePtrRewrite g ty ctps [ilSlotParams] ilSlotRetTy
 
     let eenvForSlotGen =
         if slotHasNativePtrWithCtps then
