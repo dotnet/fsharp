@@ -1,49 +1,58 @@
 {
-  "last_run": "2026-03-31T17:16:44Z",
+  "last_run": "2026-03-31T21:11:35Z",
   "prs": {
+    "19535": {
+      "status": "ci_in_progress",
+      "note": "New PR. Some CI checks still in_progress (FsharpPlus_NET10). No failures, no reviews. Category C."
+    },
+    "19534": {
+      "status": "ci_passing",
+      "note": "New PR. All CI checks passing. No reviews. Category C."
+    },
+    "19533": {
+      "status": "ci_in_progress",
+      "note": "New PR. Most CI passing, FsharpPlus_NET10_Test still in_progress. No failures, no reviews. Category C."
+    },
     "19531": {
       "status": "ci_passing",
-      "note": "New PR. CI passing. No reviews. Category C."
+      "note": "No reviews. CI passing. Category C."
     },
     "19530": {
       "status": "b3_bug_confirmed",
-      "last_shepherd_comment": "2026-03-31T17:16:44Z",
-      "note": "Bug still exists on Desktop .NET Framework. VerificationException in task CE with IQueryable. Repo Assist only tested on CoreCLR. Commented on issue #16154 and PR. Label removed."
+      "last_shepherd_comment": "2026-03-31T17:25:06Z",
+      "note": "Bug still exists on Desktop .NET Framework. VerificationException in task CE with IQueryable. Commented on issue #16154 and PR. Label removed. Awaiting human action."
     },
     "19529": {
       "status": "ci_passing",
-      "note": "New PR. CI passing. No reviews. Category C."
+      "note": "No reviews. CI passing. Category C."
     },
     "19528": {
       "status": "ci_passing",
-      "note": "New PR. CI passing. No reviews. Category C."
-    },
-    "19478": {
-      "status": "ci_passing",
-      "note": "CI passing. No new feedback."
+      "note": "No reviews. CI passing. Category C."
     },
     "19476": {
       "status": "ci_passing_approved",
-      "note": "Approved by abonie. CI passing."
+      "note": "Approved by abonie. CI passing. Category C."
     },
     "19472": {
       "status": "b3_bug_confirmed",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Previous shepherd diagnosed B3, commented, removed AI-thinks-issue-fixed label from issue #12796. Awaiting human action."
+      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Commented, label removed from #12796. Awaiting human action."
     },
     "19471": {
-      "status": "ci_passing",
-      "note": "CI passing. No new feedback."
+      "status": "merge_conflict_src",
+      "last_shepherd_comment": "2026-03-31T21:11:35Z",
+      "note": "PR touches src/ files. mergeable_state=dirty. Shallow clone prevents rebase. Commented to T-Gro to rebase. CI was passing on 2026-03-26 before divergence."
     },
     "19468": {
-      "status": "review_addressed",
-      "last_shepherd_comment": "2026-03-31T17:16:44Z",
-      "last_shepherd_commit": "20c5d315c",
-      "note": "auduchinok asked to rename 'pat' to 'ty' in SynPat.IsInst case. Fixed and pushed. Commented."
+      "status": "review_addressed_awaiting_resolution",
+      "last_shepherd_comment": "2026-03-31T17:25:02Z",
+      "last_shepherd_commit": "8265f62",
+      "note": "auduchinok review (pat->ty rename) fixed and pushed. Thread is outdated+unresolved (reviewer must resolve). mergeable_state=blocked. Nothing more shepherd can do."
     },
     "19467": {
       "status": "ci_passing_approved",
-      "note": "Approved by abonie. CI passing."
+      "note": "Approved by abonie. CI passing. Category C."
     }
   }
 }
