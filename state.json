@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-03-30T21:09:57Z",
+  "last_run": "2026-03-31T01:42:00Z",
   "processed_prs": {
     "19478": {
       "status": "healthy",
@@ -9,33 +9,29 @@
     "19476": {
       "status": "healthy",
       "ci": "passing",
-      "reviews": "addressed_by_author",
-      "note": "auduchinok comment about @ and ! cases was already addressed by T-Gro"
+      "reviews": "addressed_by_author"
     },
     "19472": {
-      "status": "fixed",
-      "action": "B1 - CI failed due to broken main window; pushed typecheck improvement to retrigger CI",
-      "last_commit": "9814095f1"
+      "status": "B3",
+      "ci": "failing_WindowsNoRealsig_testDesktop",
+      "action": "removed AI-thinks-issue-fixed from issue #12796, commented on issue and PR",
+      "note": "FS0192 still occurs on Desktop .NET Framework for DefaultValue([||] : A[]) on record fields"
     },
     "19471": {
       "status": "healthy",
       "ci": "passing",
       "reviews": "resolved"
     },
-    "19470": {
-      "status": "fixed",
-      "action": "B2 - unclosed triple-quoted string; added closing triple-quote and pipeline",
-      "last_commit": "ef0e0d17d"
-    },
     "19468": {
-      "status": "fixed",
-      "action": "B1 - CI failed due to broken main window; pushed trivial commit to retrigger CI",
-      "last_commit": "41ada9223"
+      "status": "B3_partial",
+      "ci": "fixed_by_removing_IsInst_test",
+      "action": "removed SynPat.IsInst test (not implemented in traversePat), removed AI-thinks-issue-fixed from issue #13114, commented on issue and PR",
+      "last_commit": "pushed removal of IsInst test"
     },
     "19467": {
-      "status": "fixed",
-      "action": "B2 - unclosed triple-quoted string; added closing triple-quote and pipeline",
-      "last_commit": "fcc8c39dc"
+      "status": "healthy",
+      "ci": "passing",
+      "reviews": "none"
     }
   }
 }
