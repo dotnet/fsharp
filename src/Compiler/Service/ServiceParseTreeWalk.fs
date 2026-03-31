@@ -801,7 +801,7 @@ module SyntaxTraversal =
                     | None -> traverseSynType path ty
                     | x -> x
                 | SynPat.QuoteExpr(expr, _) -> traverseSynExpr path expr
-                | SynPat.IsInst(pat, _) -> traverseSynType path pat
+                | SynPat.IsInst(ty, _) -> traverseSynType path ty
                 | SynPat.FromParseError(p, _) -> traversePat path p
                 | _ -> None
 
