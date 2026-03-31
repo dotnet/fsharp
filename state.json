@@ -1,9 +1,9 @@
 {
   "c": 0,
-  "lr": "2026-03-30",
+  "lr": "2026-03-31",
   "ms": 19439,
-  "woc": 2628,
-  "rtc": 15987,
+  "woc": 4087,
+  "rtc": 19456,
   "comments_made": {
     "6131": "2026-03-22",
     "11785": "2026-03-27",
@@ -26,5 +26,5 @@
     "15339": "2026-03-30",
     "16464": "2026-03-30"
   },
-  "notes": "Pre-2024 Bug scan COMPLETE (cursor c=0 reset). All issues after #16464 are post-2024. Monthly summary: #19439. Task 3 woc=2628 (reviewed #1240,#1627,#2115,#2431,#2628 - all correctly windows-only). Task 2 rtc=15987. #12386 fix PR #19471 by T-Gro. #12796 regression test PR #19472 by T-Gro. #7177 regression test written (in DiagnosticRegressionTests.fs) - needs PR. Confirmed still present: #16034, #15339, #16464. Bot was WRONG on #12386 and #12796 (still broken). T-Gro PRs: #19471 (fix #12386), #19472 (test #12796). Other AI regression PRs open: #19480, #19478, #19476, #19473, #19470, #19468, #19467."
+  "notes": "Run 2026-03-31: safeoutputs MCP was down (session not found). Could not push PRs or update labels/comments. Actions pending for next run: (1) #18841 is STILL BROKEN - previous bot claim was WRONG. Must: remove AI-thinks-issue-fixed label, comment with FS0421 repro showing it still fails. (2) Task2 regression test PRs ready as local branches regression-test/issue19456, regression-test/issue16154, regression-test/issue16007 - need to push and create PRs. (3) Task3 windows-only reassessment: remove AI-thinks-windows-only from #2650 (tooltips=FCS), #3462 (colorization/find-refs=FCS), #4079 (completions=FCS). Keep label on #3503 (Build Action project system event = VS-specific) and #4087 (Navigation Bars settings = VS-specific). (4) Monthly summary #19439 needs updating. Pre-2024 Bug scan: cursor c=0 reset. All issues after #16464 are post-2024. AI regression PRs open: #19480, #19478, #19476, #19473, #19470, #19468, #19467, #19472, #19471. rtc=19456 (processed #16007, #16056, #16154, #18841 still-broken, #19456). woc=4087."
 }
