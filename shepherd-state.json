@@ -1,0 +1,35 @@
+{
+  "last_run": "2026-03-31T09:18:10Z",
+  "prs": {
+    "19478": {
+      "status": "ci_action_required_pending",
+      "last_shepherd_comment": "2026-03-31T05:38:48Z",
+      "last_shepherd_commit": "d753772",
+      "note": "CI action_required after last push (merge conflict fix). Needs human to approve workflow run. No new human feedback."
+    },
+    "19476": {
+      "status": "ci_passing_feedback_addressed",
+      "last_shepherd_comment": "2026-03-31T09:18:10Z",
+      "note": "auduchinok asked for @ and ! tests - already present in PR. Replied confirming. CI passing."
+    },
+    "19472": {
+      "status": "b3_bug_confirmed",
+      "last_shepherd_comment": "2026-03-31T01:41:52Z",
+      "note": "Bug still exists on Desktop .NET Framework. Previous shepherd diagnosed B3, commented, removed AI-thinks-issue-fixed label from issue #12796. CI still failing. PR open awaiting human action."
+    },
+    "19471": {
+      "status": "ci_passing",
+      "note": "CI passing. Resolved review thread (T-Gro). No shepherd comments needed."
+    },
+    "19468": {
+      "status": "ci_passing",
+      "last_shepherd_comment": "2026-03-31T01:41:54Z",
+      "note": "CI passing after previous shepherd fixed IsInst test removal. All review threads resolved."
+    },
+    "19467": {
+      "status": "ci_passing",
+      "last_shepherd_comment": "2026-03-30T21:25:24Z",
+      "note": "CI passing after previous shepherd fixed triple-quoted string compilation error."
+    }
+  }
+}
