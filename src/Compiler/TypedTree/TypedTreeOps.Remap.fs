@@ -1691,5 +1691,3 @@ module internal TypeEquivalence =
                 member _.GetHashCode(a) = hash a.MemberName
             }
         )
-
-

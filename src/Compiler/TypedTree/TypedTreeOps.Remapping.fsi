@@ -283,7 +283,6 @@ module internal ExprAnalysis =
     /// Compute the type of an expression from the expression itself
     val tyOfExpr: TcGlobals -> Expr -> TType
 
-
     ///  Accumulate the targets actually used in a decision graph (for reporting warnings)
     val accTargetsOfDecisionTree: DecisionTree -> int list -> int list
 

@@ -197,7 +197,6 @@ module internal AttributeHelpers =
     /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
     val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
 
-
     val (|AttribBitwiseOrExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
 
     [<return: Struct>]
@@ -309,7 +308,6 @@ module internal AttributeHelpers =
         moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref ->
         typeEntity: Entity ->
             Entity
-
 
 [<AutoOpen>]
 module internal ByrefAndSpanHelpers =

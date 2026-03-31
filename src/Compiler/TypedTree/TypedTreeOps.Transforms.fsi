@@ -341,4 +341,3 @@ module internal SeqExprPatterns =
     /// Detect a 'seq { ... }' expression
     [<return: Struct>]
     val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) voption
-

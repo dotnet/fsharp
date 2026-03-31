@@ -566,5 +566,3 @@ module internal TypeEquivalence =
 
     /// Create an empty immutable mapping from witnesses to some data
     val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
-
-

@@ -1360,7 +1360,6 @@ module internal TypeTesters =
         else
             CompilerGeneratedName f.rfield_id.idText
 
-
 [<AutoOpen>]
 module internal CommonContainers =
 

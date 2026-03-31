@@ -2170,91 +2170,91 @@ module internal TupleCompilation =
                     mkLoop (fun _idxVar loopVar -> mkInvisibleLet elemVar.Range elemVar loopVar bodyExpr))
             | ValueNone ->
 
-            let mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr = ranges
+                let mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr = ranges
 
-            if isStringTy g enumerableTy then
-                // type is string, optimize for expression as:
-                //  let $str = enumerable
-                //  for $idx = 0 to str.Length - 1 do
-                //      let elem = str.[idx]
-                //      body elem
+                if isStringTy g enumerableTy then
+                    // type is string, optimize for expression as:
+                    //  let $str = enumerable
+                    //  for $idx = 0 to str.Length - 1 do
+                    //      let elem = str.[idx]
+                    //      body elem
 
-                let strVar, strExpr = mkCompGenLocal mFor "str" enumerableTy
-                let idxVar, idxExpr = mkCompGenLocal elemVar.Range "idx" g.int32_ty
+                    let strVar, strExpr = mkCompGenLocal mFor "str" enumerableTy
+                    let idxVar, idxExpr = mkCompGenLocal elemVar.Range "idx" g.int32_ty
 
-                let lengthExpr = mkGetStringLength g mFor strExpr
-                let charExpr = mkGetStringChar g mFor strExpr idxExpr
+                    let lengthExpr = mkGetStringLength g mFor strExpr
+                    let charExpr = mkGetStringChar g mFor strExpr idxExpr
 
-                let startExpr = mkZero g mFor
-                let finishExpr = mkDecr g mFor lengthExpr
-                // for compat reasons, loop item over string is sometimes object, not char
-                let loopItemExpr = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr
-                let bodyExpr = mkInvisibleLet mIn elemVar loopItemExpr bodyExpr
+                    let startExpr = mkZero g mFor
+                    let finishExpr = mkDecr g mFor lengthExpr
+                    // for compat reasons, loop item over string is sometimes object, not char
+                    let loopItemExpr = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr
+                    let bodyExpr = mkInvisibleLet mIn elemVar loopItemExpr bodyExpr
 
-                let forExpr =
-                    mkFastForLoop g (DebugPointAtFor.No, spIn, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
+                    let forExpr =
+                        mkFastForLoop g (DebugPointAtFor.No, spIn, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
 
-                let expr = mkLet spFor mFor strVar enumerableExpr forExpr
+                    let expr = mkLet spFor mFor strVar enumerableExpr forExpr
 
-                expr
+                    expr
 
-            elif isListTy g enumerableTy then
-                // type is list, optimize for expression as:
-                //  let mutable $currentVar = listExpr
-                //  let mutable $nextVar = $tailOrNull
-                //  while $guardExpr do
-                //    let i = $headExpr
-                //    bodyExpr ()
-                //    $current <- $next
-                //    $next <- $tailOrNull
+                elif isListTy g enumerableTy then
+                    // type is list, optimize for expression as:
+                    //  let mutable $currentVar = listExpr
+                    //  let mutable $nextVar = $tailOrNull
+                    //  while $guardExpr do
+                    //    let i = $headExpr
+                    //    bodyExpr ()
+                    //    $current <- $next
+                    //    $next <- $tailOrNull
 
-                let IndexHead = 0
-                let IndexTail = 1
+                    let IndexHead = 0
+                    let IndexTail = 1
 
-                let currentVar, currentExpr = mkMutableCompGenLocal mIn "current" enumerableTy
-                let nextVar, nextExpr = mkMutableCompGenLocal mIn "next" enumerableTy
-                let elemTy = destListTy g enumerableTy
+                    let currentVar, currentExpr = mkMutableCompGenLocal mIn "current" enumerableTy
+                    let nextVar, nextExpr = mkMutableCompGenLocal mIn "next" enumerableTy
+                    let elemTy = destListTy g enumerableTy
 
-                let guardExpr = mkNonNullTest g mFor nextExpr
+                    let guardExpr = mkNonNullTest g mFor nextExpr
 
-                let headOrDefaultExpr =
-                    mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [ elemTy ], IndexHead, mIn)
+                    let headOrDefaultExpr =
+                        mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [ elemTy ], IndexHead, mIn)
 
-                let tailOrNullExpr =
-                    mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [ elemTy ], IndexTail, mIn)
+                    let tailOrNullExpr =
+                        mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [ elemTy ], IndexTail, mIn)
 
-                let bodyExpr =
-                    mkInvisibleLet
-                        mIn
-                        elemVar
-                        headOrDefaultExpr
-                        (mkSequential
+                    let bodyExpr =
+                        mkInvisibleLet
                             mIn
-                            bodyExpr
+                            elemVar
+                            headOrDefaultExpr
                             (mkSequential
                                 mIn
-                                (mkValSet mIn (mkLocalValRef currentVar) nextExpr)
-                                (mkValSet mIn (mkLocalValRef nextVar) tailOrNullExpr)))
+                                bodyExpr
+                                (mkSequential
+                                    mIn
+                                    (mkValSet mIn (mkLocalValRef currentVar) nextExpr)
+                                    (mkValSet mIn (mkLocalValRef nextVar) tailOrNullExpr)))
 
-                let expr =
-                    // let mutable current = enumerableExpr
-                    mkLet
-                        spFor
-                        mIn
-                        currentVar
-                        enumerableExpr
-                        // let mutable next = current.TailOrNull
-                        (mkInvisibleLet
-                            mFor
-                            nextVar
-                            tailOrNullExpr
-                            // while nonNull next do
-                            (mkWhile g (spInWhile, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, mBody)))
+                    let expr =
+                        // let mutable current = enumerableExpr
+                        mkLet
+                            spFor
+                            mIn
+                            currentVar
+                            enumerableExpr
+                            // let mutable next = current.TailOrNull
+                            (mkInvisibleLet
+                                mFor
+                                nextVar
+                                tailOrNullExpr
+                                // while nonNull next do
+                                (mkWhile g (spInWhile, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, mBody)))
 
-                expr
+                    expr
 
-            else
-                expr
+                else
+                    expr
 
         | _ -> expr
 
@@ -2882,7 +2882,6 @@ module internal ResumableCodePatterns =
             ValueSome(bind.Expr, e2, m, (fun e1 e2 -> mkLet bind.DebugPoint m bind.Var e1 e2))
 
         | _ -> ValueNone
-
 
     [<return: Struct>]
     let (|ResumableCodeInvoke|_|) g expr =

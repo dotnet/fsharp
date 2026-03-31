@@ -959,7 +959,6 @@ module internal AttributeHelpers =
                 | CompiledTypeRepr.ILAsmNamed(typeRef, _, _) -> typeRef.Enclosing.IsEmpty && typeRef.Name = attrFullName
                 | CompiledTypeRepr.ILAsmOpen _ -> false)
 
-
     type ValRef with
         member vref.IsDispatchSlot =
             match vref.MemberInfo with
@@ -1252,7 +1251,6 @@ module internal AttributeHelpers =
            | _ ->
                warning (Failure(FSComp.SR.tastUnexpectedDecodeOfInterfaceDataVersionAttribute ()))
                false
-
 
     let isSealedTy g ty =
         let ty = stripTyEqnsAndMeasureEqns g ty

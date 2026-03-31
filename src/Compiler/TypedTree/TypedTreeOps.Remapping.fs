@@ -588,7 +588,6 @@ module internal SignatureOps =
     let freeTyvarsAllPublic tyvars =
         Zset.forall isPublicTycon tyvars.FreeTycons
 
-
     /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
     /// duplicate modules etc.
     let CombineCcuContentFragments l =
@@ -2706,7 +2705,6 @@ module internal ExprAnalysis =
         | Expr.WitnessArg(traitInfo, _m) ->
             let witnessInfo = traitInfo.GetWitnessInfo()
             GenWitnessTy g witnessInfo
-
 
     //--------------------------------------------------------------------------
     // Decision tree reduction
