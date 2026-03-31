@@ -2,29 +2,7 @@
   "c": 0,
   "lr": "2026-03-31",
   "ms": 19439,
-  "woc": 4087,
+  "woc": 15350,
   "rtc": 19456,
-  "comments_made": {
-    "6131": "2026-03-22",
-    "11785": "2026-03-27",
-    "12300": "2026-03-27",
-    "13849": "2026-03-27",
-    "13981": "2026-03-26",
-    "14160": "2026-03-26",
-    "14284": "2026-03-27",
-    "14508": "2026-03-27",
-    "14492": "2026-03-28",
-    "7177": "2026-03-28",
-    "16007": "2026-03-28",
-    "16154": "2026-03-28",
-    "18841": "2026-03-29",
-    "19456": "2026-03-29",
-    "15070": "2026-03-29",
-    "15987": "2026-03-30",
-    "16056": "2026-03-30",
-    "16034": "2026-03-30",
-    "15339": "2026-03-30",
-    "16464": "2026-03-30"
-  },
-  "notes": "Run 2026-03-31: safeoutputs MCP was down (session not found). Could not push PRs or update labels/comments. Actions pending for next run: (1) #18841 is STILL BROKEN - previous bot claim was WRONG. Must: remove AI-thinks-issue-fixed label, comment with FS0421 repro showing it still fails. (2) Task2 regression test PRs ready as local branches regression-test/issue19456, regression-test/issue16154, regression-test/issue16007 - need to push and create PRs. (3) Task3 windows-only reassessment: remove AI-thinks-windows-only from #2650 (tooltips=FCS), #3462 (colorization/find-refs=FCS), #4079 (completions=FCS). Keep label on #3503 (Build Action project system event = VS-specific) and #4087 (Navigation Bars settings = VS-specific). (4) Monthly summary #19439 needs updating. Pre-2024 Bug scan: cursor c=0 reset. All issues after #16464 are post-2024. AI regression PRs open: #19480, #19478, #19476, #19473, #19470, #19468, #19467, #19472, #19471. rtc=19456 (processed #16007, #16056, #16154, #18841 still-broken, #19456). woc=4087."
+  "notes": "Run 2026-03-31 (latest): Task3 processed #14632(keep),#14678(NOT windows-only,commented),#14840(keep),#15101(keep),#15350(keep). woc=15350. Task2: wrote regression tests for #19456(comment posted),#18841,#16007,#16154 - local branches created but CANNOT push (no git auth in runner, missing create_pull_request tool). Test code for #19456 in issue comment. Need manual PRs for #18841 (#RegressionTests.fs),#16007 (#IWSAMsAndSRTPsTests.fs),#16154 (#StateMachineTests.fs). Open regression PRs needing review/merge: #19467,#19468,#19472,#19476,#19478. Labels needing manual removal by maintainer: AI-thinks-windows-only on #14678,#2650,#3462,#4079. Task1: c=0 reset, lr=today so no new pre-2024 bugs to process. runner lacks create_pull_request and push_to_pull_request_branch safeoutputs tools consistently."
 }
