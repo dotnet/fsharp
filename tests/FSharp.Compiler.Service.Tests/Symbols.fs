@@ -1371,6 +1371,59 @@ let test = System.DateTimeKind.Utc
                 failwith "Expected metadata text, got None"
         | _ -> failwith "Expected FSharpEntity symbol"
 
+module IsByRef =
+    // https://github.com/dotnet/fsharp/issues/3532
+    [<Fact>]
+    let ``FSharpEntity.IsByRef is true for byref return type of address-of operator`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let mutable x = 1
+let y = &x
+"""
+
+        let symbolUse = findSymbolUseByName "op_AddressOf" checkResults
+
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            let retTy = mfv.ReturnParameter.Type
+
+            Assert.True(
+                retTy.HasTypeDefinition,
+                $"Expected return type of op_AddressOf to have a TypeDefinition, got: %A{retTy}"
+            )
+
+            Assert.True(
+                retTy.TypeDefinition.IsByRef,
+                $"Expected return type TypeDefinition.IsByRef = true for op_AddressOf, got entity: %s{retTy.TypeDefinition.DisplayName}"
+            )
+        | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
+
+    [<Fact>]
+    let ``FSharpEntity.IsByRef is true for byref type used explicitly`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let f (x: byref<int>) = x <- 42
+"""
+
+        let symbolUse = findSymbolUseByName "f" checkResults
+
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            let paramTy = mfv.CurriedParameterGroups.[0].[0].Type
+
+            Assert.True(
+                paramTy.HasTypeDefinition,
+                $"Expected byref parameter type to have a TypeDefinition, got: %A{paramTy}"
+            )
+
+            Assert.True(
+                paramTy.TypeDefinition.IsByRef,
+                $"Expected parameter TypeDefinition.IsByRef = true for byref<int>, got entity: %s{paramTy.TypeDefinition.DisplayName}"
+            )
+        | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
+        
 module OperatorsWithDots =
     // https://github.com/dotnet/fsharp/issues/14057
     [<Fact>]
