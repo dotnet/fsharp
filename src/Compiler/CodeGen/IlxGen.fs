@@ -3208,7 +3208,7 @@ and DelayCodeGenMethodForExpr cenv mgbuf (_, _, eenv, _, _, _, _ as args) =
     let change3rdOutOf7 (a1, a2, _, a4, a5, a6, a7) newA3 = (a1, a2, newA3, a4, a5, a6, a7)
 
     if eenv.delayCodeGen then
-        let cenv =
+        let cenv: cenv =
             { cenv with
                 stackGuard = getEmptyStackGuard ()
             }
