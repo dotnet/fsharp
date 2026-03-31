@@ -253,3 +253,21 @@ let q = <@ fun (x: string) -> match x with "hello" -> "match" | _ -> "other" @>
         |> asLibrary
         |> typecheck
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/18706
+    [<Fact>]
+    let ``Empty string pattern match in quotation produces correct runtime result`` () =
+        FSharp """
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+
+let q = <@ fun (x: string) -> match x with "" -> "empty" | _ -> "other" @>
+
+// Verify the quotation has the expected shape: a Lambda containing an IfThenElse
+match q with
+| Lambda(_, IfThenElse _) -> ()
+| _ -> failwithf "Unexpected quotation shape: %A" q
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
