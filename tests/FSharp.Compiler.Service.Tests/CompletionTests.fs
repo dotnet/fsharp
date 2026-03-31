@@ -691,7 +691,7 @@ exception E
 try () with E{caret}
 """
 
-        // https://github.com/dotnet/fsharp/issues/13693
+        // https://github.com/dotnet/fsharp/issues/13512
         [<Fact>]
         let ``Event - Instance 01`` () =
             assertItem "Ev" """
@@ -702,7 +702,7 @@ type T() =
 T().{caret}
 """
 
-        // https://github.com/dotnet/fsharp/issues/13693
+        // https://github.com/dotnet/fsharp/issues/13512
         [<Fact>]
         let ``Event - Static 01`` () =
             assertItem "Ev" """
@@ -712,6 +712,64 @@ type T() =
 
 T.{caret}
 """
+
+        /// Helper to assert completion with a reference to the CSharp_Analysis assembly
+        let private assertCSharpInteropItem name source =
+            let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+            let compilerOptions = [| $"-r:{csharpAssembly}" |]
+            [allowObsoleteOptions; disallowObsoleteOptions]
+            |> List.iter (fun completionOptions ->
+                let contains = completionOptions.SuggestObsoleteSymbols
+                let info = Checker.getCompletionInfoWithCompilerAndCompletionOptions compilerOptions completionOptions source
+                assertItemsWithNames contains [name] info
+            )
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Obsolete field is hidden`` () =
+            assertCSharpInteropItem "ObsoleteField" """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Obsolete method is hidden`` () =
+            assertCSharpInteropItem "ObsoleteMethod" """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Obsolete property is hidden`` () =
+            assertCSharpInteropItem "ObsoleteProperty" """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Obsolete event is hidden`` () =
+            assertCSharpInteropItem "ObsoleteEvent" """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+
+        // https://github.com/dotnet/fsharp/issues/13512
+        [<Fact>]
+        let ``CSharp - Non-obsolete members are always shown`` () =
+            let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+            let compilerOptions = [| $"-r:{csharpAssembly}" |]
+            let source = """
+open FSharp.Compiler.Service.Tests
+ObsoleteMembersClass.{caret}
+"""
+            [allowObsoleteOptions; disallowObsoleteOptions]
+            |> List.iter (fun completionOptions ->
+                let info = Checker.getCompletionInfoWithCompilerAndCompletionOptions compilerOptions completionOptions source
+                assertItemsWithNames true ["NonObsoleteField"; "NonObsoleteMethod"; "NonObsoleteProperty"; "NonObsoleteEvent"] info
+            )
 
 
     module PatternNameSuggestions =
