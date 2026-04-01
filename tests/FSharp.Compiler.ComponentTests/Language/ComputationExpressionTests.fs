@@ -2396,3 +2396,22 @@ let foo() =
         """
         |> typecheck
         |> shouldSucceed
+        
+    // https://github.com/dotnet/fsharp/issues/19456
+    [<Fact>]
+    let ``Issue 19456 - let bang nested in plain let binding inside task CE should raise FS0750`` () =
+        FSharp """
+open System.Threading.Tasks
+
+let y() =
+    task {
+        let a =
+            let! b = Task.FromResult([| "hello" |])
+            b
+        return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750

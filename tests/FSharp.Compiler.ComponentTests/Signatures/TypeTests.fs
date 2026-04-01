@@ -343,3 +343,101 @@ type GenericType<'X> with
     one |> withAdditionalSourceFiles [ two; three ]
     |> compile
     |> verifyILContains [ ".Print<ActualType>" ]
+
+// https://github.com/dotnet/fsharp/issues/14310
+[<Fact>]
+let ``Signature generation via --sig includes private field for struct type`` () =
+    let implSource =
+        """
+module StructPrivateField
+
+[<Struct; NoComparison; NoEquality>]
+type C =
+    [<DefaultValue>]
+    val mutable private goo : byte array
+    member this.P with set(x) = this.goo <- x
+"""
+
+    let sigSource =
+        """
+module StructPrivateField
+
+[<NoComparison; NoEquality; Struct>]
+type C =
+
+    [<DefaultValue>]
+    val mutable private goo: byte array
+
+    member P: byte array with set
+"""
+
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/14308
+[<Fact>]
+let ``Signature generation via --sig includes Sealed, AbstractClass, Interface and Class attributes`` () =
+    let implSource =
+        """
+module AttrTest
+
+[<Sealed>]
+type SealedClass() =
+    member _.X = 1
+
+[<AbstractClass>]
+type AbstractClass() =
+    abstract member Y : int
+
+[<Interface>]
+type IMyInterface =
+    abstract member Z : int
+
+[<Class>]
+type ExplicitClass() =
+    member _.W = 2
+"""
+
+    let sigSource =
+        """
+module AttrTest
+
+[<Sealed>]
+type SealedClass =
+
+    new: unit -> SealedClass
+
+    member X: int
+
+[<AbstractClass>]
+type AbstractClass =
+
+    new: unit -> AbstractClass
+
+    abstract Y: int
+
+[<Interface>]
+type IMyInterface =
+
+    abstract Z: int
+
+[<Class>]
+type ExplicitClass =
+
+    new: unit -> ExplicitClass
+
+    member W: int
+"""
+
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
