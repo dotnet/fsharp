@@ -465,3 +465,26 @@ module FlatList =
     let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS0039 for missing opens - generic type suggests correct namespace`` () =
+    let code =
+        """
+let x (enumerator: IEnumerator<int>) = ()
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System.Collections.Generic"
+                FixedCode =
+                    """
+open System.Collections.Generic
+
+let x (enumerator: IEnumerator<int>) = ()
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)

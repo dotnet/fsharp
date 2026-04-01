@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -159,8 +160,26 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                         let isAttribute =
                             ParsedInput.GetEntityKind(unresolvedIdentRange.Start, parseResults.ParseTree) = Some EntityKind.Attribute
 
-                        let entities =
+                        let hasTypeArgs =
+                            let endPos = context.Span.End
+                            let remainingText = sourceText.ToString(TextSpan(endPos, min 1 (sourceText.Length - endPos)))
+                            remainingText.StartsWith "<"
+
+                        let allSymbols =
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
+
+                        let filteredSymbols =
+                            if hasTypeArgs then
+                                allSymbols
+                                |> Array.filter (fun s ->
+                                    match s.Symbol with
+                                    | :? FSharpEntity as e -> e.GenericParameters.Count > 0
+                                    | _ -> true)
+                            else
+                                allSymbols
+
+                        let entities =
+                            filteredSymbols
                             |> Array.collect (fun s ->
                                 [|
                                     yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
