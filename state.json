@@ -1,8 +1,8 @@
 {
   "c": 0,
   "lr": "2026-04-01",
-  "ms": 19439,
-  "woc": 15350,
+  "ms": 19537,
+  "woc": 16886,
   "rtc": 19456,
-  "notes": "Run 2026-04-01 01:xx UTC: No pre-2024 bugs with new activity since lr=2026-03-31. No windows-only issues above woc=15350. No AI-thinks-issue-fixed issues above rtc=19456. Created April 2026 monthly summary (create_issue returned success but issue number unknown - ms still set to March #19439 until April issue is findable). Open regression PRs: #19467, #19468, #19471, #19472, #19476, #19528, #19529, #19530, #19531, #19533, #19534, #19535. All AI-thinks-issue-fixed issues: #7177, #12386, #15070, #15987, #16007, #16056, #16154, #19456 - all have PRs."
+  "notes": "Run 2026-04-01 07:02 UTC: Task 1: no pre-2024 bugs with new activity. Task 3: confirmed #16083,#16130,#16275,#16300,#16886 correctly labeled windows-only; woc=16886. Task 2: no new AI-thinks-issue-fixed above rtc=19456. Open regression PRs: #19467,#19468,#19471,#19472,#19476,#19528,#19529,#19530,#19531,#19533,#19534,#19535. New fix PR #19532 (T-Gro, fixes #19527 FS0452 quotation issue). All AI-thinks-issue-fixed: #7177,#12386,#15070,#15987,#16007,#16056,#16154,#19456 - all have PRs."
 }
