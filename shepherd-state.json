@@ -1,17 +1,17 @@
 {
-  "last_run": "2026-03-31T21:11:35Z",
+  "last_run": "2026-04-01T01:27:44Z",
   "prs": {
     "19535": {
-      "status": "ci_in_progress",
-      "note": "New PR. Some CI checks still in_progress (FsharpPlus_NET10). No failures, no reviews. Category C."
+      "status": "ci_passing",
+      "note": "All CI checks passed. No reviews. Category C."
     },
     "19534": {
       "status": "ci_passing",
-      "note": "New PR. All CI checks passing. No reviews. Category C."
+      "note": "All CI checks passing. No reviews. Category C."
     },
     "19533": {
-      "status": "ci_in_progress",
-      "note": "New PR. Most CI passing, FsharpPlus_NET10_Test still in_progress. No failures, no reviews. Category C."
+      "status": "ci_passing",
+      "note": "All CI checks passed. No reviews. Category C."
     },
     "19531": {
       "status": "ci_passing",
@@ -20,7 +20,7 @@
     "19530": {
       "status": "b3_bug_confirmed",
       "last_shepherd_comment": "2026-03-31T17:25:06Z",
-      "note": "Bug still exists on Desktop .NET Framework. VerificationException in task CE with IQueryable. Commented on issue #16154 and PR. Label removed. Awaiting human action."
+      "note": "Bug still exists on Desktop .NET Framework. VerificationException in task CE with IQueryable. Commented on issue #16154 and PR. Label removed. Awaiting human action. mergeable_state=blocked."
     },
     "19529": {
       "status": "ci_passing",
@@ -37,18 +37,17 @@
     "19472": {
       "status": "b3_bug_confirmed",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Commented, label removed from #12796. Awaiting human action."
+      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Commented, label removed from #12796. Awaiting human action. mergeable_state=blocked."
     },
     "19471": {
       "status": "merge_conflict_src",
-      "last_shepherd_comment": "2026-03-31T21:11:35Z",
-      "note": "PR touches src/ files. mergeable_state=dirty. Shallow clone prevents rebase. Commented to T-Gro to rebase. CI was passing on 2026-03-26 before divergence."
+      "last_shepherd_comment": "2026-03-31T21:18:36Z",
+      "note": "PR touches src/ files. mergeable_state=dirty. Commented to T-Gro to rebase. No response yet from T-Gro."
     },
     "19468": {
       "status": "review_addressed_awaiting_resolution",
-      "last_shepherd_comment": "2026-03-31T17:25:02Z",
       "last_shepherd_commit": "8265f62",
-      "note": "auduchinok review (pat->ty rename) fixed and pushed. Thread is outdated+unresolved (reviewer must resolve). mergeable_state=blocked. Nothing more shepherd can do."
+      "note": "auduchinok review (pat->ty rename) fixed and pushed. Thread is outdated+unresolved (reviewer must resolve). mergeable_state=blocked."
     },
     "19467": {
       "status": "ci_passing_approved",
