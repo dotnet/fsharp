@@ -1,8 +1,8 @@
 {
   "c": 0,
-  "lr": "2026-03-31",
+  "lr": "2026-04-01",
   "ms": 19439,
   "woc": 15350,
   "rtc": 19456,
-  "notes": "Run 2026-03-31 19:xx UTC: Task2 created PRs for #15070(regression-test/issue15070), #15987(regression-test/issue15987), #16056(regression-test/issue16056). All 7 AI-thinks-issue-fixed issues now have PRs: #7177->19528, #12386->19471, #15070->new, #15987->new, #16056->new, #16007->19529, #19456->19531, #16154->19530. Task3: woc=15350, no new windows-only issues. Task1: #19527 is a new quotation bug (match string with '' -> causes FS0452, T-Gro engaged). Root cause: PatternMatchCompilation.fs line 807-813 generates mkNonNullTest([AI_ldnull; AI_cgt_un]) for empty string match, QuotationTranslator can't handle that ILAsm pattern. Issue is post-2024 so not commented."
+  "notes": "Run 2026-04-01 01:xx UTC: No pre-2024 bugs with new activity since lr=2026-03-31. No windows-only issues above woc=15350. No AI-thinks-issue-fixed issues above rtc=19456. Created April 2026 monthly summary (create_issue returned success but issue number unknown - ms still set to March #19439 until April issue is findable). Open regression PRs: #19467, #19468, #19471, #19472, #19476, #19528, #19529, #19530, #19531, #19533, #19534, #19535. All AI-thinks-issue-fixed issues: #7177, #12386, #15070, #15987, #16007, #16056, #16154, #19456 - all have PRs."
 }
