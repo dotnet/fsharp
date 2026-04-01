@@ -271,3 +271,14 @@ match q with
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/18706
+    [<Fact>]
+    let ``Empty string pattern match in quotation with outer variable should compile`` () =
+        FSharp """
+let x = "test"
+let q = <@@ match x with "" -> "empty" | _ -> "other" @@>
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
