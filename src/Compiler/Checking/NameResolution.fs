@@ -728,7 +728,30 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
 
 /// Query the available extension methods of a type (including extension methods for inherited types)
 let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) ad optFilter isInstanceFilter m ty =
-    let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
+    let g = infoReader.g
+    let amap = infoReader.amap
+
+    let extMemsDangling = 
+        SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
+        |> List.filter (fun minfo ->
+            let isAccesible = AccessibilityLogic.IsMethInfoAccessible amap m ad minfo
+
+            let isThisArgEq = 
+                match minfo.GetObjArgTypes(amap, m, []) with
+                | thisTy :: _ ->
+                    let t1 = stripTyEqnsWrtErasure EraseNone g thisTy
+                    let t2 = stripTyEqnsWrtErasure EraseNone g ty
+
+                    match t1, t2 with
+                    | TType_app (tc1, _, _), TType_app (tc2, _, _) ->
+                        tyconRefEq g tc1 tc2
+                    | _ -> 
+                        false 
+                | _ ->
+                    false
+
+            isAccesible && isThisArgEq)
+
     if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
         extMemsDangling
     else
@@ -743,27 +766,6 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
                 | _ -> [])
         extMemsDangling @ extMemsFromHierarchy
     |> List.filter (fun minfo ->
-        let g = infoReader.g
-        let amap = infoReader.amap
-
-        let isAccesible = AccessibilityLogic.IsMethInfoAccessible amap m ad minfo
-
-        let isThisArgEq = 
-            match minfo.GetObjArgTypes(amap, m, []) with
-            | thisTy :: _ ->
-                let t1 = stripTyEqnsWrtErasure EraseNone g thisTy
-                let t2 = stripTyEqnsWrtErasure EraseNone g ty
-
-                match t1, t2 with
-                | TType_app (tc1, _, _), TType_app (tc2, _, _) ->
-                    tyconRefEq g tc1 tc2
-                | _ -> 
-                    false 
-            | _ ->
-                false
-
-        isAccesible &&
-        isThisArgEq &&
         match isInstanceFilter with
         | LookupIsInstance.Ambivalent -> true
         | LookupIsInstance.Yes -> minfo.IsInstance
