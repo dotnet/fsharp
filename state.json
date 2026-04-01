@@ -2,7 +2,7 @@
   "c": 0,
   "lr": "2026-04-01",
   "ms": 19537,
-  "woc": 16886,
+  "woc": 18119,
   "rtc": 19456,
-  "notes": "Run 2026-04-01 07:02 UTC: Task 1: no pre-2024 bugs with new activity. Task 3: confirmed #16083,#16130,#16275,#16300,#16886 correctly labeled windows-only; woc=16886. Task 2: no new AI-thinks-issue-fixed above rtc=19456. Open regression PRs: #19467,#19468,#19471,#19472,#19476,#19528,#19529,#19530,#19531,#19533,#19534,#19535. New fix PR #19532 (T-Gro, fixes #19527 FS0452 quotation issue). All AI-thinks-issue-fixed: #7177,#12386,#15070,#15987,#16007,#16056,#16154,#19456 - all have PRs."
+  "notes": "Run 2026-04-01 12:49 UTC: Task 1: labelled #11127 AI-thinks-issue-fixed (fix in FSharp.Core via PR #19243); removed AI-thinks-issue-fixed from #12386 (false positive). Task 3: removed AI-thinks-windows-only from #16982 (FCS-testable); confirmed #17280,#17307,#18064,#18119 correctly windows-only; woc=18119. Task 2: #11127 has existing test coverage (Outcome 1). Merged today: #19467,#19528,#19529,#19531,#19533,#19534,#19535,#19532. Open PRs: #19468,#19471,#19472,#19476,#19530."
 }
