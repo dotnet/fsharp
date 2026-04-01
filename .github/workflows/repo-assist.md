@@ -178,7 +178,7 @@ Each run, do Task 1, Task 3, Task 2, and Task FINAL (in this order — Task 3 fe
   If you previously labelled issues as windows-only that fall into the testable category above, you were wrong. Task 3 below will systematically revisit and correct those.
 
 - Otherwise, do nothing to avoid noise. If you don't have high confidence in a fix, it's better to say nothing than to risk a false positive. If you have some other high-confidence judgement, leave a note in the "Additional observations" section of the Monthly Activity Summary. If you have written a solid reproduction not yet covered in the issue, write it down — this helps future implementers.
-4. Expect to engage substantively on 1–10 issues per run; you may scan many more to find good candidates. 
+4. Expect to engage substantively on 1–10 issues per run; you may scan many more to find good candidates. **After each issue where you comment or label, call the safe output tool immediately** — do not defer outputs.
 5. Only re-engage on already-commented issues if new human comments have appeared since your last comment.
 6. Begin every comment with: `🤖 *This is an automated response from Repo Assist.*`
 7. Update memory with comments made and the new cursor position - and also the second cursor for "windows-only" reassessment.
@@ -245,13 +245,13 @@ This is the primary expected outcome when no existing test is found.
        |> shouldSucceed
    ```
    
-3. **Build and run the test** to confirm it passes:
+3. **Build and run the test** to confirm it passes. **Limit yourself to at most 3 build-and-test cycles per issue** — if the test still doesn't pass after 3 attempts, the issue is likely not fixed (go to step 5). Do not create multiple test file variants; iterate on a single test file:
    ```bash
    dotnet build tests/{TestProject}/{TestProject}.fsproj -c Release
    dotnet test tests/{TestProject}/{TestProject}.fsproj -c Release --no-build -- --filter-method "*Issue {number}*"
    ```
 
-4. **If the test PASSES**: Before creating a PR, run the duplicate check from Step A one more time (another run may have created a PR since you last checked). Then create the PR:
+4. **If the test PASSES**: Before creating a PR, run the duplicate check from Step A one more time (another run may have created a PR since you last checked). Then create the PR **immediately** (do not defer to the end of the run):
    - Branch: `regression-test/issue{number}`
    - Title: `Add regression test: #{number}, {brief description}`
    - Body: **Must** contain `Fixes https://github.com/dotnet/fsharp/issues/{number}` on its own line — this is non-negotiable. GitHub automatically closes the issue when the PR is merged. This is the ONLY mechanism for closing issues. The workflow must never close issues directly.
@@ -260,7 +260,7 @@ This is the primary expected outcome when no existing test is found.
    - Auto-merge: squash
    - If the .fsproj needs a new `<Compile Include=.../>` entry, add it in alphabetical order within its section
 
-5. **If the test FAILS**: The issue is **not fixed**. Do all of the following:
+5. **If the test FAILS** (including after exhausting the 3-attempt limit): The issue is **not fixed**. Do all of the following **immediately** (do not defer):
    - **Remove** the `AI-thinks-issue-fixed` label from the issue
    - **Comment** on the issue with the test code, the failure output, and the conclusion that the issue remains open
    - Do **not** create a PR
@@ -386,3 +386,15 @@ Maintain a single open issue titled `[Repo Assist] Monthly Activity {YYYY}-{MM}`
 - **Systematic**: use the backlog cursor to process oldest issues first over successive runs. Do not stop early.
 - **Quality over quantity**: noise erodes trust. Do nothing rather than add low-value output.
 - **Bias toward action**: While avoiding spam, actively seek ways to contribute value within each task. A "no action" run should be genuinely exceptional. The threshold for commenting is: you have verified evidence (reproduction, test results, or commit references) to support your statement, and that evidence is not apparent from or duplicate with the existing description or comments.
+
+## Safe Output Discipline
+
+Every run **must** produce at least one safe output call. Follow these rules:
+
+1. **Produce outputs incrementally.** After completing work on each issue (commenting, labeling, creating a PR), call the safe output tool **immediately** — do not batch all outputs until the end of the run. This ensures partial work is captured even if the run is interrupted or you exhaust your context window.
+
+2. **Call `noop` if no action is warranted.** If after completing all tasks you have genuinely nothing to output (no comments, no labels, no PRs, no monthly summary update), call the `noop` tool with a brief explanation (e.g., "All scanned issues already have Repo Assist comments and no new activity since last run"). A run that produces zero safe outputs is treated as a failure by the workflow infrastructure.
+
+3. **Limit iteration on any single issue.** When writing a regression test (Task 2), allow at most **3 build-and-test cycles** per issue. If the test still fails after 3 attempts, conclude that the issue is not fixed: remove the `AI-thinks-issue-fixed` label, comment with your findings and the failing test code, and move on. Do not spend unbounded time iterating on a single test.
+
+4. **Time awareness.** You have a 60-minute timeout. Reserve at least 10 minutes for Task FINAL (monthly summary update). If you are deep in Task 2 test creation and have used over 40 minutes, wrap up the current issue and proceed to Task FINAL.
