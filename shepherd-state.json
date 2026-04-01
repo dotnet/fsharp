@@ -1,59 +1,28 @@
 {
-  "last_run": "2026-04-01T09:21:35Z",
+  "last_run": "2026-04-01T13:25:35Z",
   "prs": {
-    "19535": {
+    "19476": {
+      "status": "awaiting_ci_approval",
+      "last_shepherd_comment": "2026-04-01T09:26:30Z",
+      "note": "Merged main into branch to resolve conflict (2026-04-01). CI will show action_required again - needs maintainer workflow approval. No new comment posted (previous comment already explains)."
+    },
+    "19471": {
       "status": "ci_passing",
-      "note": "All CI checks passed. No reviews. Category C."
-    },
-    "19534": {
-      "status": "ci_passing_approved",
-      "note": "All CI checks passing. Approved by abonie 2026-03-31T22:58Z. Category C."
-    },
-    "19533": {
-      "status": "ci_passing_approved",
-      "note": "All CI checks passed. Approved by abonie 2026-03-31T23:00Z. Category C."
-    },
-    "19531": {
-      "status": "ci_passing",
-      "note": "All CI checks passed. No reviews. Category C."
+      "note": "All CI checks passing (2026-04-01T11:45Z). T-Gro rebased. Review thread resolved. Touches src/ files. Waiting on approval. Category C."
     },
     "19530": {
       "status": "b3_bug_confirmed",
       "last_shepherd_comment": "2026-03-31T17:25:06Z",
-      "note": "Bug still exists on Desktop .NET Framework. VerificationException in task CE with IQueryable. Commented on issue #16154 and PR. Label removed. Awaiting human action. mergeable_state=blocked."
+      "note": "Bug still exists on Desktop .NET Framework. VerificationException in task CE with IQueryable. Commented on issue #16154 and PR. Label removed. Awaiting human action."
     },
-    "19529": {
-      "status": "ci_passing",
-      "note": "All CI checks passed. No reviews. Category C."
-    },
-    "19528": {
-      "status": "ci_passing",
-      "note": "All CI checks passed. No reviews. Category C."
-    },
-    "19476": {
-      "status": "awaiting_ci_approval",
-      "last_shepherd_comment": "2026-04-01T09:21:35Z",
-      "note": "Rebased onto main (merge conflict). CI shows action_required - needs maintainer workflow approval. Commented on PR tagging T-Gro and abonie. No review threads."
+    "19468": {
+      "status": "ci_passing_all_resolved",
+      "note": "All CI checks passing (2026-03-31T21:43Z). All 3 review threads resolved (auduchinok pat->ty rename done). Waiting on approval. Category C."
     },
     "19472": {
       "status": "b3_bug_confirmed",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Commented, label removed from #12796. Awaiting human action. mergeable_state=blocked."
-    },
-    "19471": {
-      "status": "merge_conflict_src",
-      "last_shepherd_comment": "2026-03-31T21:18:36Z",
-      "note": "PR touches src/ files. mergeable_state=dirty. Commented to T-Gro to rebase. No response yet from T-Gro."
-    },
-    "19468": {
-      "status": "awaiting_reviewer_resolution",
-      "last_shepherd_commit": "8265f62",
-      "note": "auduchinok pat->ty rename done and pushed. Thread is outdated+unresolved - reviewer must resolve. No new feedback since 2026-03-31T17:25Z. Waiting."
-    },
-    "19467": {
-      "status": "awaiting_ci_approval",
-      "last_shepherd_comment": "2026-04-01T09:21:35Z",
-      "note": "Rebased onto main (merge conflict). CI shows action_required - needs maintainer workflow approval. Commented on PR tagging T-Gro and abonie. No review threads."
+      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Commented, label removed from #12796. Awaiting human action."
     }
   }
 }
