@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-04-01T05:37:05Z",
+  "last_run": "2026-04-01T09:21:35Z",
   "prs": {
     "19535": {
       "status": "ci_passing",
@@ -31,9 +31,9 @@
       "note": "All CI checks passed. No reviews. Category C."
     },
     "19476": {
-      "status": "rebased",
-      "last_shepherd_commit": "48234b5e6",
-      "note": "Had merge conflict (dirty). Added missing Issue 6715 and 15655 tests from main. Pushed fix. Awaiting CI rerun."
+      "status": "awaiting_ci_approval",
+      "last_shepherd_comment": "2026-04-01T09:21:35Z",
+      "note": "Rebased onto main (merge conflict). CI shows action_required - needs maintainer workflow approval. Commented on PR tagging T-Gro and abonie. No review threads."
     },
     "19472": {
       "status": "b3_bug_confirmed",
@@ -46,14 +46,14 @@
       "note": "PR touches src/ files. mergeable_state=dirty. Commented to T-Gro to rebase. No response yet from T-Gro."
     },
     "19468": {
-      "status": "review_addressed_awaiting_resolution",
+      "status": "awaiting_reviewer_resolution",
       "last_shepherd_commit": "8265f62",
-      "note": "auduchinok review (pat->ty rename) fixed and pushed. Thread is outdated+unresolved (reviewer must resolve). No approvals yet. mergeable_state=blocked."
+      "note": "auduchinok pat->ty rename done and pushed. Thread is outdated+unresolved - reviewer must resolve. No new feedback since 2026-03-31T17:25Z. Waiting."
     },
     "19467": {
-      "status": "rebased",
-      "last_shepherd_commit": "65b880997",
-      "note": "Had merge conflict (dirty). Added missing Issue 6648 test from main. Pushed fix. Awaiting CI rerun."
+      "status": "awaiting_ci_approval",
+      "last_shepherd_comment": "2026-04-01T09:21:35Z",
+      "note": "Rebased onto main (merge conflict). CI shows action_required - needs maintainer workflow approval. Commented on PR tagging T-Gro and abonie. No review threads."
     }
   }
 }
