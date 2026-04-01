@@ -1929,5 +1929,30 @@ let main _ =
         """
         |> asExe
         |> compileExeAndRun
+        
+    // https://github.com/dotnet/fsharp/issues/15987
+    [<Fact>]
+    let ``Issue 15987 - SRTP overload resolution returns correct value for typed argument`` () =
+        FSharp """
+module Test
+
+type A = A with
+    static member ($) (A, a: float  ) = 0.0
+    static member ($) (A, a: decimal) = 0M
+    static member ($) (A, a: 't     ) = 0
+
+let inline call x = ($) A x
+
+// Verify correct overload is selected: float argument should use the float overload
+let resultFloat: float = call 42.0
+let resultDecimal: decimal = call 42M
+let resultInt: int = call 42
+
+if resultFloat <> 0.0 then failwith $"Expected 0.0 but got {resultFloat}"
+if resultDecimal <> 0M then failwith $"Expected 0M but got {resultDecimal}"
+if resultInt <> 0 then failwith $"Expected 0 but got {resultInt}"
+"""
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed
 
