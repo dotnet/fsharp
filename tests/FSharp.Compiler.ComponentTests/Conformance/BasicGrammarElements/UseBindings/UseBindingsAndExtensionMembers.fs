@@ -1,4 +1,4 @@
-module Conformance.Expressions.CEExtensionMethodCapture
+module Conformance.BasicGrammarElements.UseBindExtensionMethodCapture
 
 open Xunit
 open FSharp.Test.Compiler
