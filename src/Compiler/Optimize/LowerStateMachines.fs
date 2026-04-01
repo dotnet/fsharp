@@ -102,8 +102,7 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
 let isExpandVar g (v: Val) = 
     isReturnsResumableCodeTy g v.TauType
 
-let isStateMachineBindingVar g (v: Val) = 
-    isExpandVar g v || v.IsMemberThisVal
+let isStateMachineBindingVar g (v: Val) = isExpandVar g v
 
 type env = 
     { 
