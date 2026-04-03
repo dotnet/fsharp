@@ -33,7 +33,7 @@ variables:
   # VS Insertion branch name (NOT the same as F# branch)
   # ( for main we insert into VS main and for all *previous* releases we insert into corresponding VS release),
   - name: VSInsertionTargetBranchName
-    value: main
+    value: rel/insiders
   - name: _TeamName
     value: FSharp
   - name: TeamName
