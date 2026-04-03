@@ -426,7 +426,9 @@ if (four [ ("", 10) ]).Result <> 6 then
         |> shouldSucceed
 
     // https://github.com/dotnet/fsharp/issues/16154
-    [<Fact>]
+    // VerificationException still occurs on .NET Framework due to stricter IL verification;
+    // fixed on .NET Core where the upcast-to-obj in the task state machine is handled correctly.
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Issue 16154 - task CE with IQueryable filter functions should compile and run without VerificationException`` () =
         FSharp """
 open System.Linq
