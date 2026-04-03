@@ -1207,6 +1207,14 @@ let languageFlags tcConfigB =
             None,
             Some(FSComp.SR.optsStrictIndentation (formatOptionSwitch (Option.defaultValue false tcConfigB.strictIndentation)))
         )
+
+        CompilerOption(
+            "inline-named-functions",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.inlineNamedFunctions <- Some(switch = OptionSwitch.On)),
+            None,
+            Some(FSComp.SR.optsInlineNamedFunctions ())
+        )
     ]
 
 // OptionBlock: Advanced user options

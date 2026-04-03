@@ -23,6 +23,7 @@ open FSharp.Compiler.Text.LayoutRender
 open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypedTreePickle
@@ -327,6 +328,8 @@ type OptimizationSettings =
       reportTotalSizes : bool
       
       processingMode : OptimizationProcessingMode
+
+      inlineNamedFunctions: bool
     }
 
     static member Defaults = 
@@ -344,6 +347,7 @@ type OptimizationSettings =
           reportHasEffect = false
           reportTotalSizes = false
           processingMode = OptimizationProcessingMode.Parallel
+          inlineNamedFunctions = false
         }
 
     /// Determines if JIT optimizations are enabled
@@ -429,6 +433,8 @@ type cenv =
       stackGuard: StackGuard
 
       realsig: bool
+
+      specializedInlineVals: HashMultiMap<Stamp, TType * Val * Expr>
     }
 
     override x.ToString() = "<cenv>"
@@ -1696,6 +1702,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
+    elif vspec1.InlineInfo = ValInline.InlinedDefinition then None
     elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
@@ -3447,8 +3454,60 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | _ -> None
 
 /// Attempt to inline an application of a known value at callsites
-and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m) =
+and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, args: Expr list, m) =
     let g = cenv.g
+
+    match cenv.settings.inlineNamedFunctions, stripExpr valExpr with
+    | false, Expr.Val(vref, _, _) when vref.ShouldInline ->
+        let origFinfo = GetInfoForValWithCheck cenv env m vref
+        match stripValue origFinfo.ValExprInfo with
+        | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) when not (Zset.contains origLambdaId env.dontInline) ->
+            let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
+            let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
+
+            let canCallDirectly =
+                let hasNoTraits =
+                    match vref.ValReprInfo with
+                    | Some reprInfo ->
+                        let tps, _, _, _ = GetValReprTypeInFSharpForm g reprInfo vref.Type m
+                        GetTraitWitnessInfosOfTypars g 0 tps |> List.isEmpty
+                    | None -> false
+
+                let hasNoFreeTyargs =
+                    tyargs |> List.forall (fun t -> (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty) |> not
+
+                hasNoTraits || hasNoFreeTyargs
+
+            if canCallDirectly then
+                Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
+            else
+                let f2R = CopyExprForInlining cenv true origLambda m
+                let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
+                let specLambdaTy = tyOfExpr g specLambda
+
+                let debugVal, specLambdaR =
+                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _, _) -> typeEquiv g ty specLambdaTy) with
+                    | Some (_, v, body) -> v, body
+                    | None ->
+
+                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
+                    let debugVal =
+                        let name = $"<{vref.LogicalName}>__debug"
+                        let valReprInfo = Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
+
+                        Construct.NewVal(name, m, None, specLambdaTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
+                            NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
+                            ParentNone)
+
+                    cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, debugVal, specLambdaR))
+                    debugVal, specLambdaR
+
+                let callExpr = mkApps g ((exprForVal m debugVal, specLambdaTy), [], argsR, m)
+                Some(mkCompGenLet m debugVal specLambdaR callExpr, info)
+
+        | _ -> None
+    | _ ->
+
     // Considering inlining app 
     match finfo.Info with 
     | StripLambdaValue (lambdaId, arities, size, f2, f2ty) when
@@ -3647,7 +3706,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
         OptimizeExpr cenv env remade
     | Choice2Of2 (newf0, remake) -> 
 
-    match TryInlineApplication cenv env finfo (tyargs, args, m) with 
+    match TryInlineApplication cenv env finfo f0 (tyargs, args, m) with 
     | Some (res, info) ->
         // inlined
         (res |> remake), info
@@ -3895,6 +3954,10 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
 
         // can't inline any values with semi-recursive object references to self or base 
         let value_ =   
+          match vspec with
+          | Some v when v.InlineInfo = ValInline.InlinedDefinition -> UnknownValue
+          | _ ->
+
           match baseValOpt with 
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy) 
           | Some baseVal -> 
@@ -4446,6 +4509,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           casApplied=Dictionary<Stamp, bool>() 
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
+          specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls

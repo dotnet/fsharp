@@ -472,6 +472,8 @@ type TcConfigBuilder =
 
         mutable strictIndentation: bool option
 
+        mutable inlineNamedFunctions: bool option
+
         mutable exename: string option
 
         mutable copyFSharpCore: CopyFSharpCoreFlag
@@ -813,6 +815,8 @@ type TcConfig =
     member FxResolver: FxResolver
 
     member strictIndentation: bool option
+
+    member inlineNamedFunctions: bool option
 
     member GetTargetFrameworkDirectories: unit -> string list
 

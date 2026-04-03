@@ -312,6 +312,7 @@ type cenv =
         /// Guard the stack and move to a new one if necessary
         mutable stackGuard: StackGuard
 
+        emittedSpecializedInlineVals: HashSet<Stamp>
     }
 
     member cenv.options =
@@ -8831,6 +8832,8 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         GenExpr cenv cgbuf eenv cctorBody discard
 
     | Method(valReprInfo, _, mspec, mspecW, _, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, argTys, retInfo) when not isStateVar ->
+        if vspec.InlineInfo = ValInline.InlinedDefinition && not (cenv.emittedSpecializedInlineVals.Add(vspec.Stamp)) then
+            CommitStartScope cgbuf startMarkOpt else
 
         let methLambdaTypars, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaCurriedVars, methLambdaBody, methLambdaBodyTy =
             IteratedAdjustLambdaToMatchValReprInfo g cenv.amap valReprInfo rhsExpr
@@ -13152,6 +13155,7 @@ type IlxAssemblyGenerator(amap: ImportMap, g: TcGlobals, tcVal: ConstraintSolver
             optimizeDuringCodeGen = (fun _flag expr -> expr)
             stackGuard = getEmptyStackGuard ()
             delayedGenMethods = Queue()
+            emittedSpecializedInlineVals = HashSet()
         }
 
     /// Register a set of referenced assemblies with the ILX code generator

@@ -327,6 +327,9 @@ let ApplyAllOptimizations
             // Only do abstractBigTargets in the first phase, and only when TLR is on.
             abstractBigTargets = tcConfig.doTLR
             reportingPhase = true
+            inlineNamedFunctions =
+                tcConfig.inlineNamedFunctions
+                |> Option.defaultValue (not tcConfig.debuginfo || tcConfig.optSettings.LocalOptimizationsEnabled)
         }
 
     // Only do these two steps in the first phase.
@@ -334,6 +337,7 @@ let ApplyAllOptimizations
         { firstLoopSettings with
             abstractBigTargets = false
             reportingPhase = false
+            inlineNamedFunctions = false
         }
 
     let addPhaseDiagnostics (f: PhaseFunc) (info: Phase) =

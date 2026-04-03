@@ -42,21 +42,15 @@ type StampMap<'T> = Map<Stamp, 'T>
 
 [<RequireQualifiedAccess>]
 type ValInline =
-
-    /// Indicates the value is inlined but the .NET IL code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
     | Always
-
-    /// Indicates the value may optionally be inlined by the optimizer
     | Optional
-
-    /// Indicates the value must never be inlined by the optimizer
     | Never
+    | InlinedDefinition
 
-    /// Returns true if the implementation of a value should be inlined
     member x.ShouldInline = 
         match x with 
         | ValInline.Always -> true 
-        | ValInline.Optional | ValInline.Never -> false
+        | ValInline.Optional | ValInline.Never | ValInline.InlinedDefinition -> false
 
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, and 
 /// if the value has been generalized or not as yet.
@@ -111,6 +105,7 @@ type ValFlags(flags: int64) =
                      (if isCompGen then                                      0b00000000000000001000L 
                       else                                                   0b000000000000000000000L) |||
                      (match inlineInfo with
+                                        | ValInline.InlinedDefinition ->     0b00000000000000000000L
                                         | ValInline.Always ->                0b00000000000000010000L
                                         | ValInline.Optional ->              0b00000000000000100000L
                                         | ValInline.Never ->                 0b00000000000000110000L) |||
@@ -167,7 +162,7 @@ type ValFlags(flags: int64) =
 
     member x.InlineInfo = 
                                   match (flags       &&&                     0b00000000000000110000L) with 
-                                                             |               0b00000000000000000000L
+                                                             |               0b00000000000000000000L -> ValInline.InlinedDefinition
                                                              |               0b00000000000000010000L -> ValInline.Always
                                                              |               0b00000000000000100000L -> ValInline.Optional
                                                              |               0b00000000000000110000L -> ValInline.Never
