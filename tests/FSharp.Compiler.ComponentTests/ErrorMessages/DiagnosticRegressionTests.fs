@@ -51,6 +51,23 @@ type Vehicle() = class end
           (Error 267, Line 3, Col 7, Line 3, Col 29, "This is not a valid constant expression or custom attribute value") ]
 
 
+// https://github.com/dotnet/fsharp/issues/7177
+[<Fact>]
+let ``Issue 7177 - never matched warning FS0026 is emitted when active pattern precedes wildcard rules`` () =
+    FSharp """
+let (|AP|_|) (x: obj) = Some()
+
+let _ =
+    match obj() with
+    | AP _ -> ()
+    | _ -> ()
+    | _ -> ()
+    """
+    |> asLibrary
+    |> typecheck
+    |> shouldFail
+    |> withWarningCode 26
+
 // https://github.com/dotnet/fsharp/issues/16410
 [<Fact>]
 let ``Issue 16410 - no spurious FS3570 warning with KeyValue active pattern`` () =

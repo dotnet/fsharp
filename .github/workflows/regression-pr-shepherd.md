@@ -61,9 +61,13 @@ List all open PRs with the `AI-Issue-Regression-PR` label:
 gh pr list --label "AI-Issue-Regression-PR" --state open --json number,title,headRefName,updatedAt
 ```
 
+**Process at most 3 PRs per run.** Prioritize PRs that have unaddressed review feedback (Category A) or CI failures (Category B) over healthy PRs (Category C). If more than 3 PRs need work, the next scheduled run will pick up the rest.
+
 For each PR, determine which category it falls into (check in this order):
 
 ### Step 2 — Categorize each PR
+
+First, do a quick triage pass: check the mergeable state and latest check-run status for each PR before reading any diffs or logs. This avoids loading unnecessary context for Category C (healthy) PRs. Skip healthy PRs immediately.
 
 **Category A: Has unaddressed review feedback**
 
