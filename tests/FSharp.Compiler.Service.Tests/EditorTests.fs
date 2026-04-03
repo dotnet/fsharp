@@ -706,7 +706,8 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                              ("ECMAScript", Some (box 256))
                              ("CultureInvariant", Some (box 512))
 #if NETCOREAPP
-                             ("NonBacktracking", Some 1024)
+                             ("NonBacktracking", Some (box 1024))
+                             ("AnyNewLine", Some (box 2048))
 #endif
                            ]
         |]
