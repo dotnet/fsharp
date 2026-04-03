@@ -40,3 +40,20 @@ module Constants =
             (Error 636, Line 22, Col 9, Line 22, Col 15, "Units-of-measure are only supported on float, float32, decimal, and integer types.")
             (Error 636, Line 23, Col 9, Line 23, Col 15, "Units-of-measure are only supported on float, float32, decimal, and integer types.")
         ]
+
+    // https://github.com/dotnet/fsharp/issues/6929
+    [<Fact>]
+    let ``Issue 6929 - Literal bindings preserve units of measure`` () =
+        FSharp
+            """
+[<Measure>] type rad
+
+[<Literal>]
+let pi = 3.14<rad>
+
+let a = pi
+
+let f (x: float<rad>) = x
+let _ = f a
+            """
+        |> shouldSucceed
