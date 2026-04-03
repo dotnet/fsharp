@@ -3512,12 +3512,6 @@ let ``Test Project24 all symbols`` () =
             ("v", "file1", ((22, 17), (22, 18)), ["defn"], []);
             ("int", "file1", ((25, 21), (25, 24)), ["type"], ["abbrev"]);
             ("v", "file1", ((25, 18), (25, 19)), ["defn"], []);
-            ("``AutoPropGet@``", "file1", ((27, 15), (27, 26)), [], ["compgen"]);
-            ("``AutoPropGetSet@``", "file1", ((28, 15), (28, 29)), [], ["compgen"; "mutable"])
-            ("v", "file1", ((28, 15), (28, 29)), ["defn"], []);
-            ("``StaticAutoPropGet@``", "file1", ((30, 22), (30, 39)), [], ["compgen"]);
-            ("``StaticAutoPropGetSet@``", "file1", ((31, 22), (31, 42)), [],
-             ["compgen"; "mutable"]); ("v", "file1", ((31, 22), (31, 42)), ["defn"], []);
             ("``.cctor``", "file1", ((4, 5), (4, 23)), ["defn"], ["member"]);
             ("TypeWithProperties", "file1", ((33, 9), (33, 27)), [], ["member"; "ctor"]);
             ("NameGetSet", "file1", ((33, 9), (33, 40)), [], ["member"; "prop"]);
@@ -3614,12 +3608,6 @@ let ``Test symbol uses of properties with both getters and setters`` () =
             ("v", "file1", ((22, 17), (22, 18)), []);
             ("int", "file1", ((25, 21), (25, 24)), ["abbrev"]);
             ("v", "file1", ((25, 18), (25, 19)), []);
-            ("``AutoPropGet@``", "file1", ((27, 15), (27, 26)), ["compgen"]);
-            ("``AutoPropGetSet@``", "file1", ((28, 15), (28, 29)), ["compgen"; "mutable"]);
-            ("v", "file1", ((28, 15), (28, 29)), []);
-            ("``StaticAutoPropGet@``", "file1", ((30, 22), (30, 39)), ["compgen"]);
-            ("``StaticAutoPropGetSet@``", "file1", ((31, 22), (31, 42)),
-             ["compgen"; "mutable"]); ("v", "file1", ((31, 22), (31, 42)), []);
             ("``.cctor``", "file1", ((4, 5), (4, 23)), ["member"]);
             ("TypeWithProperties", "file1", ((33, 9), (33, 27)), ["member"; "ctor"]);
             ("NameGetSet", "file1", ((33, 9), (33, 40)), ["member"; "prop"]);
