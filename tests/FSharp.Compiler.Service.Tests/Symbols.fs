@@ -842,6 +842,38 @@ type T() =
         let param = mfv.CurriedParameterGroups[0][0]
         param.Name.Value |> shouldEqual "x"
 
+    // https://github.com/dotnet/fsharp/issues/16056
+    [<Fact>]
+    let ``Auto property DeclarationLocation points to property name, not get accessor`` () =
+        let _, checkResults =
+            getParseAndCheckResults """
+module Module
+
+type T() =
+    member val Prop : int = 1 with get, set
+
+let _ = T().Prop
+"""
+        let propUsageOpt =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.tryFind (fun su ->
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as mfv ->
+                    mfv.IsProperty && mfv.LogicalName = "Prop" && not su.IsFromDefinition
+                | _ -> false)
+
+        match propUsageOpt with
+        | None -> failwith "Expected to find Prop usage symbol"
+        | Some symbolUse ->
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                let loc = mfv.DeclarationLocation
+                // "    member val Prop" - 'P' in 'Prop' starts at column 15 (0-indexed)
+                // Should NOT point to `get` accessor (which is at column 35)
+                Assert.Equal(5, loc.StartLine)
+                Assert.Equal(15, loc.StartColumn)
+            | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
