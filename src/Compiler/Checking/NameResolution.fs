@@ -734,6 +734,7 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
     let extMemsDangling = 
         SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
         |> List.filter (fun minfo ->
+            g.compilingFSharpCore ||
             match minfo.GetObjArgTypes(amap, m, []) with
             | thisTy :: _ ->
                 let ty1 = thisTy |> stripTyEqns g 
