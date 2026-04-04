@@ -728,21 +728,9 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
 
 /// Query the available extension methods of a type (including extension methods for inherited types)
 let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) ad optFilter isInstanceFilter m ty =
-    let g = infoReader.g
     let amap = infoReader.amap
 
-    let extMemsDangling = 
-        SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
-        |> List.filter (fun minfo ->
-            not minfo.IsCSharpStyleExtensionMember ||
-            match minfo.GetObjArgTypes(amap, m, []) with
-            | thisTy :: _ ->
-                let ty1 = thisTy |> stripTyEqns g 
-                let ty2 = ty |> stripTyEqns g
-
-                TypeRelations.TypeFeasiblySubsumesType 0 g amap m ty1 TypeRelations.CanCoerce ty2
-            | _ ->
-                true)
+    let extMemsDangling = SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
 
     if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
         extMemsDangling
