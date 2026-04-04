@@ -762,6 +762,26 @@ let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad fi
     else
         intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv ad optFilter LookupIsInstance.Ambivalent m ty
 
+let IsExtensionMethCompatibleWithTy g amap m (ty: TType) (minfo: MethInfo) =
+    not minfo.IsExtensionMember ||
+    match minfo.GetObjArgTypes(amap, m, []) with
+    | thisTy :: _ ->
+        let ty1 = thisTy |> stripTyEqns g
+        let ty2 = ty |> stripTyEqns g
+
+        match ty1, ty2 with
+        | TType_var (tp1, _), _ ->
+            tp1.Constraints |> List.exists (function
+                | TyparConstraint.CoercesTo(targetCTy, _) ->
+                    let cTy = targetCTy |> stripTyEqns g
+                    TypeRelations.TypeFeasiblySubsumesType 0 g amap m cTy TypeRelations.CanCoerce ty2
+                | _ -> false)
+        | _, TType_var _ -> true
+        | _ ->
+            TypeRelations.TypeFeasiblySubsumesType 0 g amap m ty1 TypeRelations.CanCoerce ty2
+    | _ -> 
+        true
+
 //-------------------------------------------------------------------------
 // Helpers to do with building environments
 //-------------------------------------------------------------------------

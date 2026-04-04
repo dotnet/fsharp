@@ -689,6 +689,15 @@ val internal AllMethInfosOfTypeInScope:
     ty: TType ->
         MethInfo list
 
+/// Check whether the 'this' argument of an extension method is compatible with the target type
+val internal IsExtensionMethCompatibleWithTy:
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    ty: TType ->
+    minfo: MethInfo ->
+        bool
+
 /// Used to report an error condition where name resolution failed due to an indeterminate type
 exception internal IndeterminateType of range
 

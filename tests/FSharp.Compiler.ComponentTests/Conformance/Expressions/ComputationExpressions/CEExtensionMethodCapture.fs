@@ -53,7 +53,7 @@ let ``CE doesn't capture an extension method with generic type``() =
                 AsyncSeq(x)
 
         [<Extension>]
-        type PrivateExtensions =
+        type PublicExtensions =
             [<Extension>]
             static member inline Run(this: #FooClass) =
                 this
@@ -89,6 +89,39 @@ let ``CE captures a public extension method and procudes an error due to invalid
         type PublicExtensions =
             [<Extension>]
             static member inline Run(this: AsyncSeqBuilder, invalidArg: string) =
+                this
+
+        let asyncSeq = AsyncSeqBuilder()
+
+        let xs : AsyncSeq<int> =
+            asyncSeq {
+                yield 1
+            }
+    """
+    |> asExe
+    |> compile
+    |> shouldFail
+
+// Deliberately trigger an error to ensure that a method is captured
+[<Fact>]
+let ``CE captures a public extension method with valid generic constrainted type and procudes an error due to invalid args``() =
+    FSharp """
+        open System.Runtime.CompilerServices
+
+        type AsyncSeq<'T>(i: 'T) = 
+            class
+            let l = [i]
+            member this.Data = l
+            end
+
+        type AsyncSeqBuilder() =
+            member _.Yield(x: 'T) : AsyncSeq<'T> =
+                AsyncSeq(x)
+
+        [<Extension>]
+        type PublicExtensions =
+            [<Extension>]
+            static member inline Run(this: #AsyncSeqBuilder, invalidArg: string) =
                 this
 
         let asyncSeq = AsyncSeqBuilder()

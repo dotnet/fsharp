@@ -67,6 +67,7 @@ let inline noTailCall ceenv = { ceenv with tailCall = false }
 
 let inline TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: TcEnv) m ad nm ty =
     AllMethInfosOfTypeInScope collectionSettings cenv.infoReader env.NameEnv (Some nm) ad IgnoreOverrides m ty
+    |> List.filter (IsExtensionMethCompatibleWithTy cenv.g cenv.amap m ty)
 
 /// Ignores an attribute
 let inline IgnoreAttribute _ = None
@@ -998,18 +999,7 @@ let inline addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>
     )
 
 let tryFindBuilderMethod (ceenv: ComputationExpressionContext<_>) (m: range) (methodName: string) =
-    let g = ceenv.cenv.g
-    let amap = ceenv.cenv.amap
     TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult ceenv.cenv ceenv.env m ceenv.ad methodName ceenv.builderTy
-    |> List.filter (fun minfo ->
-            match minfo.GetObjArgTypes(amap, m, []) with
-            | thisTy :: _ ->
-                let ty1 = thisTy |> stripTyEqns g 
-                let ty2 = ceenv.builderTy |> stripTyEqns g
-
-                TypeRelations.TypeFeasiblySubsumesType 0 g amap m ty1 TypeRelations.CanCoerce ty2
-            | _ ->
-                false)
 
 let hasBuilderMethod ceenv m methodName =
     tryFindBuilderMethod ceenv m methodName |> isNil |> not
