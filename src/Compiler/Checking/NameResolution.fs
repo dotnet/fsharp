@@ -732,18 +732,14 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
     let amap = infoReader.amap
 
     let extMemsDangling = 
-        SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
+        SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
         |> List.filter (fun minfo ->
             match minfo.GetObjArgTypes(amap, m, []) with
             | thisTy :: _ ->
-                let t1 = thisTy |> stripTyEqns g 
-                let t2 = ty |> stripTyEqns g
+                let ty1 = thisTy |> stripTyEqns g 
+                let ty2 = ty |> stripTyEqns g
 
-                match t1, t2 with
-                | TType_app (tc1, _, _), TType_app (tc2, _, _) ->
-                    tyconRefEq g tc1 tc2
-                | _ -> 
-                    false 
+                TypeRelations.TypeFeasiblySubsumesType 0 g amap m ty1 TypeRelations.CanCoerce ty2
             | _ ->
                 true)
 
