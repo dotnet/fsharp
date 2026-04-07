@@ -1057,6 +1057,11 @@
         <target state="translated">言語バージョンで許可されている値を表示します。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsInlineNamedFunctions">
+        <source>Inline named 'inline' functions</source>
+        <target state="new">Inline named 'inline' functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
         <target state="translated">参照アセンブリの出力の使用が無効です。'--standalone または --staticlink' を '--relabelly または --refout' と共に使用しないでください。</target>

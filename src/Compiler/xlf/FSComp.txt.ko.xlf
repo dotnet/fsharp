@@ -1057,6 +1057,11 @@
         <target state="translated">언어 버전에 허용되는 값을 표시합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsInlineNamedFunctions">
+        <source>Inline named 'inline' functions</source>
+        <target state="new">Inline named 'inline' functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
         <target state="translated">참조 어셈블리 내보내기를 잘못 사용했습니다. '--refonly 또는 --refout'과 함께 '--standalone 또는 --staticlink'를 사용하지 마세요.</target>

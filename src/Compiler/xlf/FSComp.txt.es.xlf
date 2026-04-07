@@ -1057,6 +1057,11 @@
         <target state="translated">Muestra los valores permitidos para la versión del lenguaje.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsInlineNamedFunctions">
+        <source>Inline named 'inline' functions</source>
+        <target state="new">Inline named 'inline' functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
         <target state="translated">Uso no válido de emisión de un ensamblado de referencia, no use '--standalone or --staticlink' con '--refonly or --refout'.</target>

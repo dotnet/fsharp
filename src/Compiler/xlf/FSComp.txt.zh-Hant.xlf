@@ -1057,6 +1057,11 @@
         <target state="translated">顯示語言版本的允許值。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsInlineNamedFunctions">
+        <source>Inline named 'inline' functions</source>
+        <target state="new">Inline named 'inline' functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
         <target state="translated">發出參考組件的使用無效，請勿同時使用 '--standalone 或 '--refonly' 和 '--refout'。</target>
