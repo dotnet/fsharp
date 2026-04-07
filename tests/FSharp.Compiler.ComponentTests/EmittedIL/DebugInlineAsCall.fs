@@ -300,7 +300,9 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains [ "call       int32 Test::'<add>__debug@6'(int32," ]
+        |> verifyILContains
+            [ "call       int32 Test::'<add>__debug@6'(int32,"
+              "call       int32 Test::'<add>__debug@6-1'(int32," ]
         |> shouldSucceed
     
 

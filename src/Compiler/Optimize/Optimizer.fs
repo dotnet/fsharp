@@ -434,7 +434,7 @@ type cenv =
 
       realsig: bool
 
-      specializedInlineVals: HashMultiMap<Stamp, TType * Val * Expr>
+      specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
     }
 
     override x.ToString() = "<cenv>"
@@ -3482,22 +3482,22 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
                 let specLambdaTy = tyOfExpr g specLambda
 
-                let debugVal, specLambdaR =
-                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _, _) -> typeEquiv g ty specLambdaTy) with
-                    | Some (_, v, body) -> v, body
+                let specLambdaR =
+                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _) -> typeEquiv g ty specLambdaTy) with
+                    | Some (_, body) -> copyExpr g CloneAll body
                     | None ->
 
                     let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
-                    let debugVal =
-                        let name = $"<{vref.LogicalName}>__debug"
-                        let valReprInfo = Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
+                    cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
+                    specLambdaR
 
-                        Construct.NewVal(name, m, None, specLambdaTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
-                            NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
-                            ParentNone)
+                let debugVal =
+                    let name = $"<{vref.LogicalName}>__debug"
+                    let valReprInfo = Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
 
-                    cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, debugVal, specLambdaR))
-                    debugVal, specLambdaR
+                    Construct.NewVal(name, m, None, specLambdaTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
+                        NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
+                        ParentNone)
 
                 let callExpr = mkApps g ((exprForVal m debugVal, specLambdaTy), [], argsR, m)
                 Some(mkCompGenLet m debugVal specLambdaR callExpr, info)
