@@ -127,7 +127,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<double>__debug@5'(int32)"]
+        |> verifyILContains ["callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -143,7 +143,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<apply>__debug@5'(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,"]
+        |> verifyILContains ["call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,int32>::InvokeFast<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,"]
         |> shouldSucceed
 
     [<Fact>]
@@ -228,7 +228,7 @@ let main _ =
         |> verifyILContains
             [ "ldc.i4.5"
               "ldc.i4.s   10"
-              "call       int32 Test::'<f>__debug@8'(int32)" ]
+              "callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)" ]
         |> shouldSucceed
 
     [<Fact>]

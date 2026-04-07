@@ -3467,11 +3467,8 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
             let canCallDirectly =
                 let hasNoTraits =
-                    match vref.ValReprInfo with
-                    | Some reprInfo ->
-                        let tps, _, _, _ = GetValReprTypeInFSharpForm g reprInfo vref.Type m
-                        GetTraitWitnessInfosOfTypars g 0 tps |> List.isEmpty
-                    | None -> false
+                    let tps, _ = tryDestForallTy g vref.Type
+                    GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
 
                 let hasNoFreeTyargs =
                     tyargs |> List.forall (fun t -> (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty) |> not
