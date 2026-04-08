@@ -1,8 +1,8 @@
 {
   "c": 0,
-  "lr": "2026-04-01",
+  "lr": "2026-04-08",
   "ms": 19537,
   "woc": 18119,
   "rtc": 19456,
-  "notes": "Run 2026-04-01 12:49 UTC: Task 1: labelled #11127 AI-thinks-issue-fixed (fix in FSharp.Core via PR #19243); removed AI-thinks-issue-fixed from #12386 (false positive). Task 3: removed AI-thinks-windows-only from #16982 (FCS-testable); confirmed #17280,#17307,#18064,#18119 correctly windows-only; woc=18119. Task 2: #11127 has existing test coverage (Outcome 1). Merged today: #19467,#19528,#19529,#19531,#19533,#19534,#19535,#19532. Open PRs: #19468,#19471,#19472,#19476,#19530."
+  "notes": "Run 2026-04-08 12:51 UTC: No actionable items in Tasks 1-3. Task 1: c=0 (reset), no pre-2024 bugs with activity since lr=2026-04-01. Task 3: woc=18119, all windows-only issues processed. Task 2: rtc=19456, #11127 already handled (Outcome 1). Updated monthly summary #19537 with refreshed PR statuses. Open PRs: #19468 (ready to merge), #19471 (needs review), #19472 (CI failing, T-Gro flagged wrong), #19476 (needs CI approval), #19530 (should be closed, issue not fixed on Desktop)."
 }
