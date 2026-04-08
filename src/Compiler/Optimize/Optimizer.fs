@@ -3465,15 +3465,15 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
             let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
 
+            let hasNoTraits =
+                let tps, _ = tryDestForallTy g vref.Type
+                GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
+
+            let allTyargsAreConcrete =
+                tyargs |> List.forall (fun t -> (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
+
             let canCallDirectly =
-                let hasNoTraits =
-                    let tps, _ = tryDestForallTy g vref.Type
-                    GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
-
-                let hasNoFreeTyargs =
-                    tyargs |> List.forall (fun t -> (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty) |> not
-
-                hasNoTraits || hasNoFreeTyargs
+                hasNoTraits || (not allTyargsAreConcrete && vref.ValReprInfo.IsSome)
 
             if canCallDirectly then
                 Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
@@ -3483,17 +3483,27 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 let specLambdaTy = tyOfExpr g specLambda
 
                 let specLambdaR =
-                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _) -> typeEquiv g ty specLambdaTy) with
-                    | Some (_, body) -> copyExpr g CloneAll body
-                    | None ->
+                    if allTyargsAreConcrete then
+                        match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _) -> typeEquiv g ty specLambdaTy) with
+                        | Some (_, body) -> copyExpr g CloneAll body
+                        | None ->
 
-                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
-                    cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
-                    specLambdaR
+                        let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
+                        cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
+                        specLambdaR
+                    else
+                        let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
+                        specLambdaR
 
                 let debugVal =
                     let name = $"<{vref.LogicalName}>__debug"
-                    let valReprInfo = Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
+                    // When tyargs have free type variables, omit ValReprInfo so IlxGen compiles this
+                    // as a closure that captures type variables and witnesses from the enclosing scope.
+                    let valReprInfo =
+                        if allTyargsAreConcrete then
+                            Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
+                        else
+                            None
 
                     Construct.NewVal(name, m, None, specLambdaTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
                         NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
