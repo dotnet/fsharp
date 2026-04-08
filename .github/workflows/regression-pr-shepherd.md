@@ -28,6 +28,11 @@ safe-outputs:
     title-prefix: "Add regression test: "
     labels: [AI-Issue-Regression-PR]
     max: 10
+    allowed-files:
+      - "tests/**"
+      - "vsintegration/tests/**"
+      - "*.fsproj"
+    protected-files: fallback-to-issue
   remove-labels:
     allowed: ["AI-thinks-issue-fixed"]
     max: 5
@@ -86,8 +91,9 @@ Check the PR's check runs and mergeable state.
 1. Check out the PR branch: `gh pr checkout {number}`
 2. Rebase onto main: `git fetch origin main && git rebase origin/main`
 3. Resolve conflicts — for `.fsproj` conflicts, keep both entries in alphabetical order. For test file conflicts, keep both tests.
-4. Build the test project to verify: `dotnet build tests/{TestProject}/{TestProject}.fsproj -c Release`
-5. Push the rebased branch to update the PR
+4. **Verify scope**: Run `git diff --name-only origin/main` and confirm only `tests/`, `vsintegration/tests/`, or `.fsproj` files are changed. If unrelated files appear (e.g., `.github/` files from main), reset them: `git checkout origin/main -- .github/`
+5. Build the test project to verify: `dotnet build tests/{TestProject}/{TestProject}.fsproj -c Release`
+6. Push the rebased branch to update the PR
 
 If any checks failed:
 
@@ -143,6 +149,8 @@ Track which PRs you've processed and the last review comment timestamp you addre
 ## Guidelines
 
 - **Never modify files outside `tests/` or `vsintegration/tests/`** — if a fix requires changing `src/`, that's beyond scope. Comment explaining this and tag maintainers.
+- **Never modify `.github/` files** — workflow definitions, agent configs, skills, and lock files are managed by the dedicated `aw-auto-update` workflow. Do not touch `.github/workflows/`, `.github/agents/`, `.github/aw/`, or `.github/skills/`.
+- **Verify before pushing**: After making changes or rebasing, run `git diff --name-only` and confirm every changed file is under `tests/` or `vsintegration/tests/` (or is a `.fsproj` in those directories). If unrelated files appear in the diff (e.g., from a rebase picking up main's changes), use `git checkout origin/main -- <file>` to restore them before committing.
 - **Only comment on PRs with the `AI-Issue-Regression-PR` label or their linked issues** — never comment on any other issue or PR in the repository. If you need to tag maintainers about a bug that still exists, comment on the linked issue only.
 - Begin every comment with: `🤖 *This is an automated response from Regression PR Shepherd.*`
 - When fixing review feedback, keep changes minimal — address exactly what was requested.
