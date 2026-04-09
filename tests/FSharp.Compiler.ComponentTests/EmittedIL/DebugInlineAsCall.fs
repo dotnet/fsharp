@@ -413,3 +413,196 @@ let main _ =
             [ "call       int32 Test::'<add>__debug@5'(int32,"
               "call       float64 Test::'<add>__debug@6-1'(float64," ]
         |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 09 - Witness`` () =
+        FSharp """
+let check s (b1: 'a) (b2: 'a) = if b1 = b2 then () else failwith s
+
+let inline add (x: ^T) (y: ^T) = x + y
+
+[<EntryPoint>]
+let main _ =
+    check "int" (add 3 4) 7
+    check "float" (add 1.0 2.0) 3.0
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 10 - Witness`` () =
+        FSharp """
+type MyNum =
+    { Value: float }
+    static member FromFloat (_: MyNum) = fun (x: float) -> { Value = x }
+
+type T =
+    static member inline Invoke(x: float) : 'Num =
+        let inline call (a: ^a) = (^a: (static member FromFloat : _ -> _) a)
+        call Unchecked.defaultof<'Num> x
+
+[<EntryPoint>]
+let main _ =
+    let result = T.Invoke<MyNum>(3.14)
+    if result.Value = 3.14 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains [ "call       class Test/MyNum Test::'<Invoke>__debug@13'(float64)" ]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 11 - Witness`` () =
+        FSharp """
+type MyNum =
+    { Value: float }
+    static member FromFloat (_: MyNum, _: T) = fun (x: float) -> { Value = x }
+
+and T =
+    { Dummy: int }
+    static member inline Invoke(x: float) : 'Num =
+        let inline call2 (a: ^a, b: ^b) = ((^a or ^b) : (static member FromFloat : _ * _ -> _) (b, a))
+        let inline call (a: 'a) = fun (x: 'x) -> call2 (a, Unchecked.defaultof<'r>) x : 'r
+        call Unchecked.defaultof<T> x
+
+[<EntryPoint>]
+let main _ =
+    let result = T.Invoke<MyNum>(2.71)
+    if result.Value = 2.71 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains [ "call       class Test/MyNum Test::'<Invoke>__debug@15'(float64)" ]
+        |> shouldSucceed
+
+
+    [<Fact>]
+    let ``Member 01 - Non-generic`` () =
+        FSharp """
+type T() =
+    member inline _.Double(x: int) = x + x
+
+[<EntryPoint>]
+let main _ =
+    let t = T()
+    let i = t.Double(5)
+    if i = 10 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["callvirt   instance int32 Test/T::Double(int32)"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Member 02 - Generic`` () =
+        FSharp """
+type T() =
+    member inline _.Apply(f: 'a -> 'b, x: 'a) : 'b = f x
+
+[<EntryPoint>]
+let main _ =
+    let t = T()
+    let i = t.Apply((fun x -> x + 1), 5)
+    if i = 6 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["callvirt   instance !!1 Test/T::Apply<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Member 03 - SRTP`` () =
+        FSharp """
+type T() =
+    member inline _.Add(x: ^T, y: ^T) = x + y
+
+[<EntryPoint>]
+let main _ =
+    let t = T()
+    let i = t.Add(3, 4)
+    if i = 7 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       int32 Test::'<Add>__debug@8'(class Test/T,"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Operator 01 - Top-level`` () =
+        FSharp """
+let inline (++) (x: int) (y: int) = x + y + 1
+
+[<EntryPoint>]
+let main _ =
+    let i = 3 ++ 4
+    if i = 8 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       int32 Test::op_PlusPlus(int32,"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Operator 02 - Top-level SRTP`` () =
+        FSharp """
+let inline (++) (x: ^T) (y: ^T) = x + y
+
+[<EntryPoint>]
+let main _ =
+    let i = 3 ++ 4
+    if i = 7 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       int32 Test::'<op_PlusPlus>__debug@6'(int32,"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Operator 03 - Local`` () =
+        FSharp """
+[<EntryPoint>]
+let main _ =
+    let inline (++) (x: int) (y: int) = x + y + 1
+    let i = 3 ++ 4
+    if i = 8 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::InvokeFast<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Operator 04 - Local SRTP`` () =
+        FSharp """
+[<EntryPoint>]
+let main _ =
+    let inline (++) (x: ^T) (y: ^T) = x + y
+    let i = 3 ++ 4
+    if i = 7 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       int32 Test::'<op_PlusPlus>__debug@5'(int32,"]
+        |> shouldSucceed
