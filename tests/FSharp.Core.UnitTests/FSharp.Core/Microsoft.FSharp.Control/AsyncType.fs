@@ -250,11 +250,11 @@ type AsyncType() =
         let a = async {
                 while true do ()
             }
-        use t = Async.StartAsTask a
+        let t = Async.StartAsTask a
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
-            waitASec t
+            t.Wait()
         with e -> exceptionThrown <- true
         Assert.True (exceptionThrown)
         Assert.True(t.IsCanceled)
