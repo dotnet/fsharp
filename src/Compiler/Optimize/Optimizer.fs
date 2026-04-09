@@ -2353,6 +2353,17 @@ let inline IsStateMachineExpr g overallExpr =
         isReturnsResumableCodeTy g valRef.TauType
     | _ -> false
 
+let shouldForceInlineMembersInDebug (g: TcGlobals) (tcref: EntityRef) =
+    match g.fslibForceInlineModules.TryGetValue tcref.LogicalName with
+    | true, modRef -> tyconRefEq g tcref modRef 
+    | _ -> false
+
+let shouldForceInlineInDebug (g: TcGlobals) (vref: ValRef) : bool =
+    ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_True vref.Deref ||
+    ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_False vref.Deref ||
+
+    vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity
+
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard <| fun () ->
@@ -3458,7 +3469,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
     let g = cenv.g
 
     match cenv.settings.inlineNamedFunctions, stripExpr valExpr with
-    | false, Expr.Val(vref, _, _) when vref.ShouldInline ->
+    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv.g vref) ->
         let origFinfo = GetInfoForValWithCheck cenv env m vref
         match stripValue origFinfo.ValExprInfo with
         | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) when not (Zset.contains origLambdaId env.dontInline) ->

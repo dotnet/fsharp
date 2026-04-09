@@ -158,8 +158,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       bool [FSharp.Core]Microsoft.FSharp.Core.Operators::Not(bool)"]
-        |> shouldSucceed
+        |> verifyILNotPresent ["call       bool [FSharp.Core]Microsoft.FSharp.Core.Operators::Not(bool)"]
 
     [<Fact>]
     let ``Call 10 - Different assembly`` () =

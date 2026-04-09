@@ -646,6 +646,18 @@ type TcGlobals(
 
                     yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
 
+  let v_FSharpCoreForceInlineModules =
+     dict [ for nleref in [ fslib_MFIntrinsicFunctions_nleref
+                            fslib_MFIntrinsicOperators_nleref
+                            fslib_MFLanguagePrimitives_nleref
+                            fslib_MFOperators_nleref
+                            fslib_MFOperatorIntrinsics_nleref
+                            fslib_MFOperatorsChecked_nleref
+                            fslib_MFOperatorsUnchecked_nleref
+                            fslib_MFNativePtrModule_nleref  ] do
+
+                    yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
+
   let tryDecodeTupleTy tupInfo l =
       match l with
       | [t1;t2;t3;t4;t5;t6;t7;markerTy] ->
@@ -1132,6 +1144,8 @@ type TcGlobals(
   // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
   // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
+
+  member _.fslibForceInlineModules = v_FSharpCoreForceInlineModules
 
   member _.compilingFSharpCore = compilingFSharpCore
 
