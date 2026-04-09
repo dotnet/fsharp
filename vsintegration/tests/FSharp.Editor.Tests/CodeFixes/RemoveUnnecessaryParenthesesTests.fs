@@ -2724,10 +2724,10 @@ module Patterns =
             let sb = StringBuilder()
 
             for original, expected in pairs ->
-                (let original = string (SynPat.fmt sb original) in
+                (let original = string (SynPat.fmt sb original)
                  ignore <| sb.Clear()
                  original),
-                (let expected = string (SynPat.fmt sb expected) in
+                (let expected = string (SynPat.fmt sb expected)
                  ignore <| sb.Clear()
                  expected)
         }
