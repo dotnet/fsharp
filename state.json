@@ -1,23 +1,23 @@
 {
-  "last_run": "2026-04-09T09:22:21Z",
+  "last_run": "2026-04-09T13:26:16Z",
   "prs": {
     "19476": {
-      "status": "conflict_push_blocked",
+      "status": "ci_infra_failure_only",
       "last_shepherd_comment": "2026-04-09T05:40:32Z",
-      "note": "Merge conflict persists. push_to_pull_request_branch blocked by protected .github files. Maintainers tagged 5+ times. Awaiting manual conflict resolution or maintainer action."
+      "note": "T-Gro force-pushed clean branch (1 commit, 1 file). All 46/48 jobs pass. Only Check_Published_Package_Versions FSCore+FCS fail (repo-wide infra issue, also fails on #19472). No new review threads. 10 Shepherd comments already posted — too many. Category C."
     },
     "19530": {
       "status": "ci_passing",
-      "note": "All CI checks passing (2026-04-03). Category C. No review threads. Awaiting review/approval."
+      "note": "All CI checks passing (2026-04-03). No review threads. Category C."
     },
     "19472": {
-      "status": "b3_bug_confirmed",
+      "status": "t_gro_fixing_bug",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Label removed from #12796. Awaiting human action."
+      "note": "T-Gro took over: rebased, added actual fix (FS3885 diagnostic for invalid custom attr array element types in IlxGen.fs). Now 16 files changed, 6 commits. CI still running (some jobs in_progress), all completed pass except repo-wide Check_Published_Package_Versions. Review thread outdated. Category C."
     },
     "19471": {
-      "status": "ci_passing",
-      "note": "All CI checks passing (2026-04-01). Review thread resolved. Category C."
+      "status": "skipped_title_mismatch",
+      "note": "Title does not start with 'Add regression test:'. Skipped."
     },
     "19468": {
       "status": "ci_passing_all_resolved",
