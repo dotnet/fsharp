@@ -1,30 +1,27 @@
 {
-  "last_run": "2026-03-31T13:25:28Z",
+  "last_run": "2026-04-09T09:22:21Z",
   "prs": {
     "19476": {
-      "status": "healthy",
-      "ci": "passing",
-      "note": "CI passing. No review threads. No shepherd action needed."
+      "status": "conflict_push_blocked",
+      "last_shepherd_comment": "2026-04-09T05:40:32Z",
+      "note": "Merge conflict persists. push_to_pull_request_branch blocked by protected .github files. Maintainers tagged 5+ times. Awaiting manual conflict resolution or maintainer action."
+    },
+    "19530": {
+      "status": "ci_passing",
+      "note": "All CI checks passing (2026-04-03). Category C. No review threads. Awaiting review/approval."
     },
     "19472": {
       "status": "b3_bug_confirmed",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "Bug still exists on Desktop .NET Framework. B3 diagnosed, AI-thinks-issue-fixed removed from #12796, maintainers tagged. CI still failing on WindowsNoRealsig_testDesktop. Awaiting human action."
+      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Label removed from #12796. Awaiting human action."
     },
     "19471": {
-      "status": "healthy",
-      "ci": "passing",
-      "note": "CI passing. Single resolved review thread. No shepherd action needed."
+      "status": "ci_passing",
+      "note": "All CI checks passing (2026-04-01). Review thread resolved. Category C."
     },
     "19468": {
-      "status": "waiting_src_rename",
-      "last_shepherd_comment": "2026-03-31T13:25:00Z",
-      "note": "auduchinok (2026-03-31T10:56:46Z) wants pat->ty rename in src/Compiler/Service/ServiceParseTreeWalk.fs:804. Commented tagging T-Gro. Cannot modify src/ files. CI passing."
-    },
-    "19467": {
-      "status": "healthy",
-      "ci": "passing",
-      "note": "CI passing. No review threads. No shepherd action needed."
+      "status": "ci_passing_all_resolved",
+      "note": "All CI checks passing (2026-03-31). All 3 review threads resolved. Category C."
     }
   }
 }
