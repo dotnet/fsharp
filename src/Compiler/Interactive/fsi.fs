@@ -1532,7 +1532,7 @@ type internal FsiConsoleInput
 
     /// Try to get the first line, if we snarfed it while probing.
     member _.TryGetFirstLine() =
-        let r = firstLine in
+        let r = firstLine
         firstLine <- None
         r
 

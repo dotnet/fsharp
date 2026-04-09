@@ -169,7 +169,7 @@ type internal HashMultiMap<'Key, 'Value when 'Key: not null>(size: int, comparer
             | _ -> false
 
         member s.Remove(k: 'Key) =
-            let res = s.ContainsKey(k) in
+            let res = s.ContainsKey(k)
             s.Remove(k)
             res
 

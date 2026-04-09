@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../FSComp.resx">
     <body>
@@ -8975,6 +8975,14 @@
         <trans-unit id="tcListLiteralWithSingleTupleElement">
           <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
           <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
+        <trans-unit id="featureWarnOnLetInSequenceExpression" translate="yes" xml:space="preserve">
+          <source>Warn when 'let ... in' is used in a sequence expression and the body extends to subsequent lines</source>
+          <target state="new">Warn when 'let ... in' is used in a sequence expression and the body extends to subsequent lines</target>
+          <note />
+        </trans-unit>
+        <trans-unit id="tcLetExpressionWithInHasMultiLineBody" translate="yes" xml:space="preserve">
+          <source>The use of 'in' in 'let ... in' on a single line followed by additional code on subsequent lines causes all subsequent lines to be part of the 'let' body. This may lead to unexpected scoping. Either remove the 'in' keyword and rely on indentation, or add parentheses to clarify the intended scope.</source>
+          <target state="new">The use of 'in' in 'let ... in' on a single line followed by additional code on subsequent lines causes all subsequent lines to be part of the 'let' body. This may lead to unexpected scoping. Either remove the 'in' keyword and rely on indentation, or add parentheses to clarify the intended scope.</target>
           <note />
         </trans-unit>
     </body>
