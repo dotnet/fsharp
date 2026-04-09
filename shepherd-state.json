@@ -1,27 +1,27 @@
 {
-  "last_run": "2026-04-09T05:32:30Z",
+  "last_run": "2026-04-09T17:20:49Z",
   "prs": {
     "19476": {
-      "status": "conflict_resolved",
-      "last_shepherd_comment": "2026-04-09T05:32:30Z",
-      "note": "Merged main to resolve conflict in DiagnosticRegressionTests.fs. CI needs maintainer approval."
+      "status": "ci_running_mostly_green",
+      "last_shepherd_comment": "2026-04-09T05:40:32Z",
+      "note": "T-Gro force-pushed clean branch (1 commit, 1 file). CI triggered ~16:09 UTC, 3 jobs still in_progress, all completed jobs pass. No new review threads. Category C."
     },
     "19530": {
       "status": "ci_passing",
-      "note": "All CI checks passing (2026-04-03). Category C. Awaiting review/approval."
+      "note": "All 48 CI checks passing (2026-04-03). No review threads. Category C. Awaiting review/approval."
     },
     "19472": {
-      "status": "b3_bug_confirmed",
+      "status": "t_gro_fixing_bug",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Label removed from #12796. Awaiting human action."
+      "note": "T-Gro took over: rebased, added actual fix (FS3885 diagnostic). 16 files changed, 6 commits, touches src/. CI overall 'failure' but T-Gro is actively working. Category C."
     },
     "19471": {
-      "status": "ci_passing",
-      "note": "All CI checks passing (2026-04-01). Touches src/ files. Waiting on approval. Category C."
+      "status": "skipped_title_mismatch",
+      "note": "Title does not start with 'Add regression test:'. Skipped."
     },
     "19468": {
       "status": "ci_passing_all_resolved",
-      "note": "All CI checks passing (2026-03-31). All 3 review threads resolved. Waiting on approval. Category C."
+      "note": "All 46 CI checks passing (2026-03-31). All 3 review threads resolved. Category C. Awaiting approval."
     }
   }
 }
