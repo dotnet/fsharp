@@ -1,28 +1,27 @@
 {
-  "last_run": "2026-04-08T21:10:54Z",
+  "last_run": "2026-04-09T05:32:30Z",
   "prs": {
     "19476": {
-      "status": "rebased_clean",
-      "last_shepherd_comment": "2026-04-08T21:10:54Z",
-      "note": "Rebuilt branch cleanly from main with single commit. 3 Issue 10043 tests only. CI needs maintainer approval."
-    },
-    "19471": {
-      "status": "ci_passing",
-      "note": "All CI checks passing (2026-04-01). T-Gro rebased. Review thread resolved. Touches src/ files. Waiting on approval. Category C."
+      "status": "conflict_resolved",
+      "last_shepherd_comment": "2026-04-09T05:32:30Z",
+      "note": "Merged main to resolve conflict in DiagnosticRegressionTests.fs. CI needs maintainer approval."
     },
     "19530": {
-      "status": "b3_then_ci_passing",
-      "last_shepherd_comment": "2026-03-31T17:25:06Z",
-      "note": "B3 diagnosed March 31 (Desktop VerificationException). CI all passed April 3. Label already removed. Awaiting human action."
-    },
-    "19468": {
-      "status": "ci_passing_all_resolved",
-      "note": "All CI checks passing (2026-03-31). All 3 review threads resolved. Waiting on approval. Category C."
+      "status": "ci_passing",
+      "note": "All CI checks passing (2026-04-03). Category C. Awaiting review/approval."
     },
     "19472": {
       "status": "b3_bug_confirmed",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Label removed from #12796. CI partial re-run April 6 (most jobs skipped). Awaiting human action."
+      "note": "Bug still exists on Desktop .NET Framework. FS0192 error. Label removed from #12796. Awaiting human action."
+    },
+    "19471": {
+      "status": "ci_passing",
+      "note": "All CI checks passing (2026-04-01). Touches src/ files. Waiting on approval. Category C."
+    },
+    "19468": {
+      "status": "ci_passing_all_resolved",
+      "note": "All CI checks passing (2026-03-31). All 3 review threads resolved. Waiting on approval. Category C."
     }
   }
 }
