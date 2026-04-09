@@ -3,6 +3,23 @@ module ErrorMessages.DiagnosticRegressionTests
 open Xunit
 open FSharp.Test.Compiler
 
+// https://github.com/dotnet/fsharp/issues/6715
+[<Fact>]
+let ``Issue 6715 - land is a valid identifier after ML compat removal`` () =
+    FSharp
+        """
+let land = 3
+let lor = 4
+let lxor = 5
+let lsl = 6
+let lsr = 7
+let asr = 8
+let sum = land + lor + lxor + lsl + lsr + asr
+        """
+    |> asLibrary
+    |> typecheck
+    |> shouldSucceed
+
 // https://github.com/dotnet/fsharp/issues/15655
 [<Fact>]
 let ``Issue 15655 - error codes 999 and 3217 are distinct`` () =
@@ -33,6 +50,23 @@ type Vehicle() = class end
         [ (Error 39, Line 3, Col 14, Line 3, Col 28, "The type 'OutOfScopeType' is not defined.")
           (Error 267, Line 3, Col 7, Line 3, Col 29, "This is not a valid constant expression or custom attribute value") ]
 
+
+// https://github.com/dotnet/fsharp/issues/7177
+[<Fact>]
+let ``Issue 7177 - never matched warning FS0026 is emitted when active pattern precedes wildcard rules`` () =
+    FSharp """
+let (|AP|_|) (x: obj) = Some()
+
+let _ =
+    match obj() with
+    | AP _ -> ()
+    | _ -> ()
+    | _ -> ()
+    """
+    |> asLibrary
+    |> typecheck
+    |> shouldFail
+    |> withWarningCode 26
 
 // https://github.com/dotnet/fsharp/issues/16410
 [<Fact>]
