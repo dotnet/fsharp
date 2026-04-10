@@ -4,5 +4,5 @@
   "ms": 19537,
   "woc": 18119,
   "rtc": 19456,
-  "notes": "Run 2026-04-10 01:04 UTC: No actionable items. Task 1: c=0, no pre-2024 bugs with activity since lr. Task 3: woc=18119, all windows-only issues processed. Task 2: rtc=19456, #11127 already handled. PRs #19468/#19471/#19476/#19472/#19530 unchanged."
+  "notes": "Run 2026-04-10 12:50 UTC: Investigated 7 pre-2024 bugs (#7451,#6110,#7114,#3998,#8137,#4601,#10282) — all still present. PRs #19476,#19530 merged. PRs #19468/#19471/#19472 still open."
 }
