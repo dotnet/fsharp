@@ -1,28 +1,28 @@
 {
-  "last_run": "2026-04-10T05:39:03Z",
+  "last_run": "2026-04-10T09:22:09Z",
   "prs": {
     "19476": {
       "status": "category_c_approved_infra_failures",
       "last_shepherd_comment": "2026-04-09T05:40:32Z",
-      "note": "T-Gro force-pushed clean 1-commit branch. Approved by abonie. CI: 45 pass, 3 fail (Check_Published_Package_Versions — repo-wide). Category C."
-    },
-    "19530": {
-      "status": "category_c_clean",
-      "note": "48/48 CI checks pass. No reviews. Category C."
+      "note": "Approved by abonie. CI: 45/48 pass, 3 fail (Check_Published_Package_Versions — repo-wide infra). No new reviews. Category C."
     },
     "19472": {
-      "status": "t_gro_fixing_bug",
+      "status": "t_gro_active_development",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro adding actual fix (IlxGen.fs). 6 commits. CI: 45 pass, 3 fail (repo-wide infra). Category C."
+      "note": "T-Gro actively developing: 6 commits including bug fix (IlxGen.fs) and CI fixes. CI: 45/48 pass, 3 infra. Category C."
+    },
+    "19468": {
+      "status": "category_c_clean",
+      "note": "46/46 CI pass. All review threads resolved. mergeable_state=clean. Category C."
     },
     "19471": {
       "status": "skipped_title_mismatch",
       "note": "Title does not start with 'Add regression test:'. Skipped."
     },
-    "19468": {
-      "status": "category_c_clean",
-      "note": "46/46 CI checks pass. All 3 review threads addressed. Category C."
+    "19530": {
+      "status": "no_longer_open",
+      "note": "Not found in open PR list as of 2026-04-10. Likely merged or closed."
     }
   },
-  "notes": "All PRs healthy. Repo-wide Check_Published_Package_Versions failures persist on main and PRs. No action needed."
+  "notes": "All eligible PRs healthy. Repo-wide Check_Published_Package_Versions failures persist. #19530 no longer open."
 }

@@ -1,23 +1,15 @@
 {
-  "last_run": "2026-04-10T05:39:03Z",
+  "last_run": "2026-04-10T09:22:09Z",
   "prs": {
     "19476": {
       "status": "category_c_approved_infra_failures",
       "last_shepherd_comment": "2026-04-09T05:40:32Z",
       "note": "Approved by abonie. CI: 45/48 pass, 3 repo-wide infra failures. Category C."
     },
-    "19530": {
-      "status": "category_c_clean",
-      "note": "48/48 CI pass. No reviews. Category C."
-    },
     "19472": {
-      "status": "t_gro_fixing_bug",
+      "status": "t_gro_active_development",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro fixing bug in IlxGen.fs. 6 commits. CI: 45/48 pass, 3 repo-wide infra. Category C."
-    },
-    "19471": {
-      "status": "skipped_title_mismatch",
-      "note": "Title mismatch. Skipped."
+      "note": "T-Gro actively developing with 6 commits including actual bug fix. Category C."
     },
     "19468": {
       "status": "category_c_clean",
