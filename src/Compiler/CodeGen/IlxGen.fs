@@ -1463,10 +1463,7 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
     // uses 'native int'. The method def must also use 'native int' to match.
     // This applies to both return types and parameter types.
     let nativePtrSlotRewriteInfo =
-        if
-            not (isCtor || cctor)
-            && memberInfo.MemberFlags.IsOverrideOrExplicitImpl
-        then
+        if not (isCtor || cctor) && memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
             memberInfo.ImplementedSlotSigs
             |> List.tryPick (fun (TSlotSig(_, ty, sctps, _, sParams, sRetTy)) ->
                 if slotSigRequiresNativePtrRewrite g ty sctps sParams sRetTy then
@@ -1539,46 +1536,46 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
     // Common: generate param types, method spec, witness spec
     |> fun flatArgInfos ->
 
-    let methodArgTys, paramInfos = List.unzip flatArgInfos
+        let methodArgTys, paramInfos = List.unzip flatArgInfos
 
-    let isSlotSig =
-        memberInfo.MemberFlags.IsDispatchSlot
-        || memberInfo.MemberFlags.IsOverrideOrExplicitImpl
+        let isSlotSig =
+            memberInfo.MemberFlags.IsDispatchSlot
+            || memberInfo.MemberFlags.IsOverrideOrExplicitImpl
 
-    let ilMethodArgTys =
-        let ilArgTys = GenParamTypes cenv m tyenvUnderTypars isSlotSig methodArgTys
+        let ilMethodArgTys =
+            let ilArgTys = GenParamTypes cenv m tyenvUnderTypars isSlotSig methodArgTys
 
-        match nativePtrSlotRewriteInfo with
-        | Some(slotEnv, sctps, slotParamTys, _) when slotParamTys.Length = ilArgTys.Length ->
-            (ilArgTys, slotParamTys)
-            ||> List.map2 (fun ilArgTy slotParamTy ->
-                if hasNativePtrWithTypar g sctps slotParamTy then
-                    GenParamType cenv m slotEnv true slotParamTy
-                else
-                    ilArgTy)
-        | _ -> ilArgTys
+            match nativePtrSlotRewriteInfo with
+            | Some(slotEnv, sctps, slotParamTys, _) when slotParamTys.Length = ilArgTys.Length ->
+                (ilArgTys, slotParamTys)
+                ||> List.map2 (fun ilArgTy slotParamTy ->
+                    if hasNativePtrWithTypar g sctps slotParamTy then
+                        GenParamType cenv m slotEnv true slotParamTy
+                    else
+                        ilArgTy)
+            | _ -> ilArgTys
 
-    let ilMethodInst = GenTypeArgs cenv m tyenvUnderTypars (List.map mkTyparTy mtps)
+        let ilMethodInst = GenTypeArgs cenv m tyenvUnderTypars (List.map mkTyparTy mtps)
 
-    let mkMethSpec =
-        if isCompiledAsInstance || isCtor then
-            mkILInstanceMethSpecInTy
-        else
-            mkILStaticMethSpecInTy
+        let mkMethSpec =
+            if isCompiledAsInstance || isCtor then
+                mkILInstanceMethSpecInTy
+            else
+                mkILStaticMethSpecInTy
 
-    let mspec = mkMethSpec (ilTy, nm, ilMethodArgTys, ilActualRetTy, ilMethodInst)
+        let mspec = mkMethSpec (ilTy, nm, ilMethodArgTys, ilActualRetTy, ilMethodInst)
 
-    let mspecW =
-        if not g.generateWitnesses || witnessInfos.IsEmpty then
-            mspec
-        else
-            let ilWitnessArgTys =
-                GenTypes cenv m tyenvUnderTypars (GenWitnessTys g witnessInfos)
+        let mspecW =
+            if not g.generateWitnesses || witnessInfos.IsEmpty then
+                mspec
+            else
+                let ilWitnessArgTys =
+                    GenTypes cenv m tyenvUnderTypars (GenWitnessTys g witnessInfos)
 
-            let nmW = ExtraWitnessMethodName nm
-            mkMethSpec (ilTy, nmW, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
+                let nmW = ExtraWitnessMethodName nm
+                mkMethSpec (ilTy, nmW, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
 
-    mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
+        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
 
 /// Determine how a top-level value is represented, when representing as a field, by computing an ILFieldSpec
 let ComputeFieldSpecForVal
@@ -6003,7 +6000,7 @@ and GenActualSlotsig
         mkTyparInst (ctps @ mtps) (argsOfAppTy g ty @ generalizeTypars methTyparsOfOverridingMethod)
 
     let slotHasNativePtrWithCtps =
-        slotSigRequiresNativePtrRewrite g ty ctps [ilSlotParams] ilSlotRetTy
+        slotSigRequiresNativePtrRewrite g ty ctps [ ilSlotParams ] ilSlotRetTy
 
     let eenvForSlotGen =
         if slotHasNativePtrWithCtps then
