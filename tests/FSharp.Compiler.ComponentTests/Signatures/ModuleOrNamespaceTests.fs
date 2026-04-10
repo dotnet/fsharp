@@ -26,6 +26,7 @@ namespace Foo.Types
   type Area = | Area of string * int
 namespace Foo.Other
 
+  [<Class>]
   type Map<'t,'v> =
 
     member Calculate: Foo.Types.Area"""
@@ -45,6 +46,7 @@ type Foo =
         """
 namespace Hey.There
 
+  [<Class>]
   type Foo =
 
     static member Zero: Foo"""

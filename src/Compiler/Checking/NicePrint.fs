@@ -2041,10 +2041,7 @@ module TastDefinitionPrinting =
             elif isMeasure then
                 None, tagClass
             elif isClassTy g ty then
-                if denv.printVerboseSignatures then
-                    (if simplified then None else Some "class"), tagClass
-                else
-                    None, tagClass
+                (if simplified then None else Some "class"), tagClass
             else
                 None, tagUnknownType
 
@@ -2240,15 +2237,15 @@ module TastDefinitionPrinting =
         let needsStartEnd =
             match start with 
             | Some "class" ->
+                // When allDecls is empty, the repr layout produces 'class end' which is sufficient
+                not (isNil allDecls) &&
                 // 'inherits' is not enough for F# type kind inference to infer a class
                 // inherits.IsEmpty &&
                 ilFields.IsEmpty &&
                 // 'abstract' is not enough for F# type kind inference to infer a class by default in signatures
                 // 'static member' is surprisingly not enough for F# type kind inference to infer a class by default in signatures
                 // 'overrides' is surprisingly not enough for F# type kind inference to infer a class by default in signatures
-                //(meths |> List.forall (fun m -> m.IsAbstract || m.IsDefiniteFSharpOverride || not m.IsInstance)) &&
-                //(props |> List.forall (fun m -> (not m.HasGetter || m.GetterMethod.IsAbstract))) &&
-                //(props |> List.forall (fun m -> (not m.HasSetter || m.SetterMethod.IsAbstract))) &&
+                // Concrete instance methods and properties are also not enough (Error 938)
                 ctors.IsEmpty &&
                 instanceVals.IsEmpty &&
                 staticVals.IsEmpty

@@ -240,6 +240,7 @@ type Foo =
         """
 module Lib
 
+[<Class>]
 type Foo =
 
   member Bar: int with get, set"""
@@ -257,6 +258,7 @@ type Foo =
         """
 module Lib
 
+[<Class>]
 type Foo =
 
   member Bar: a: int -> int with get
@@ -516,3 +518,80 @@ module R =
 
     Assert.Contains("type private 'a P", signatures)
     Assert.DoesNotContain("type 'a private P", signatures)
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``Private constructor class with static members gets Class attribute in signature`` () =
+    let implSource =
+        """
+module Telplin
+
+type A private () = 
+    static member Foo () = ()
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // Static members alone are not enough for the compiler to infer class
+    Assert.Contains("Class", generatedSignature)
+
+    // Roundtrip: the generated signature must compile with the implementation
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``Private constructor class with instance members gets Class attribute in signature`` () =
+    let implSource =
+        """
+module Telplin
+
+type A private () = 
+    member a.Foo () = ()
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // Private ctor is not visible in signature, so [<Class>] is needed
+    Assert.Contains("Class", generatedSignature)
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``Public constructor class does not need Class attribute in signature`` () =
+    let implSource =
+        """
+module Telplin
+
+type B() = 
+    member b.Bar () = ()
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // Public constructor is visible, so [<Class>] should not be needed
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
