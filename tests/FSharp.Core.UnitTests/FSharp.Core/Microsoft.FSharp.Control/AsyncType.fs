@@ -172,7 +172,8 @@ type AsyncType() =
         let t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
 
         // Wait for the async body to actually start executing before checking timing.
-        Assert.True(asyncStarted.Wait(5000), "Async body did not start within 5 seconds")
+        // Use a generous timeout to avoid flaky failures on loaded CI machines where the thread pool may be saturated.
+        Assert.True(asyncStarted.Wait(30_000), "Async body did not start within 30 seconds")
 
         // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
