@@ -186,6 +186,8 @@ Take heed of **instructions**: "${{ steps.sanitized.outputs.text }}"
 
 If these are non-empty (not ""), then you have been triggered via `/repo-assist <instructions>`. Follow the user's instructions instead of the normal scheduled workflow. Focus exclusively on those instructions. Apply all the same guidelines (read AGENTS.md, run formatters/linters/tests, be polite, use AI disclosure). Skip the normal task sequence and the monthly activity summary update, and instead directly do what the user requested. If no specific instructions were provided (empty or blank), proceed with the normal scheduled workflow below.
 
+If the instructions don't result in any actionable work, call `noop` with a brief explanation before exiting.
+
 Then exit  -  do not run the normal workflow after completing the instructions.
 
 ## Non-Command Mode
@@ -480,6 +482,7 @@ Maintain a single open issue titled `[Repo Assist] Monthly Activity {YYYY}-{MM}`
    - Any strategic suggestions (goals, priorities)
    Use repo memory and the activity log to compile this list. Include direct links for every item. Keep entries to one line each.
 5. Do not update the activity issue if nothing was done in the current run. However, if you conclude "nothing to do", first verify this by checking: (a) Are there any open issues without a Repo Assist comment? (b) Are there issues in your memory flagged for attention? (c) Are there any bugs that could be investigated or fixed? If any of these are true, go back and do that work instead of concluding with no action.
+6. **If genuinely nothing was done across all tasks**, you **must** call `noop` with a brief explanation (e.g., "All scanned issues already have Repo Assist comments and no new activity since last run"). A run with zero safe outputs is treated as a failure.
 
 ## Guidelines
 
