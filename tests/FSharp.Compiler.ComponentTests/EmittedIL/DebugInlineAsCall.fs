@@ -661,3 +661,35 @@ let main _ =
         |> compileAndRun
         |> verifyILContains ["call       int32 Test::'<op_PlusPlus>__debug@5'(int32,"]
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Accessibility 01`` () =
+        FSharp """
+module Module
+
+let inline internal fInternal () = ()
+let inline f () = fInternal ()
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Accessibility 02`` () =
+        FSharp """
+module Module
+
+type T() =
+    member inline internal this.InternalMethod() =
+        ()
+
+    member inline this.Method() =
+        this.InternalMethod()
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asLibrary
+        |> compile
+        |> shouldSucceed

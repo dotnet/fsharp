@@ -503,8 +503,9 @@ let CheckInlineValueIsComplete (v: Val) res =
         errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
         //System.Diagnostics.Debug.Assert(false, sprintf "Break for incomplete inline value %s" v.DisplayName)
 
-let check (vref: ValRef) (res: ValInfo) =
-    CheckInlineValueIsComplete vref.Deref res.ValExprInfo
+let check (cenv: cenv) (vref: ValRef) (res: ValInfo) =
+    if cenv.settings.inlineNamedFunctions then
+        CheckInlineValueIsComplete vref.Deref res.ValExprInfo
     (vref, res)
 
 //-------------------------------------------------------------------------
@@ -694,7 +695,7 @@ let GetInfoForVal cenv env m (vref: ValRef) =
 
 let GetInfoForValWithCheck cenv env m (vref: ValRef) =  
     let res = GetInfoForVal cenv env m vref
-    check vref res |> ignore
+    check cenv vref res |> ignore
     res
 
 let IsPartialExpr cenv env m x =
@@ -1328,7 +1329,7 @@ let CombineValueInfos einfos res =
 let CombineValueInfosUnknown einfos = CombineValueInfos einfos UnknownValue
 
 /// Hide information because of a signature
-let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
+let AbstractLazyModulInfoByHiding isAssemblyBoundary (cenv: cenv) mhi =
 
     // The freevars and FreeTyvars can indicate if the non-public (hidden) items have been used.
     // Under those checks, the further hidden* checks may be subsumed (meaning, not required anymore).
@@ -1403,7 +1404,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
            ValInfos = 
                ValInfos(ss.ValInfos.Entries 
                          |> Seq.filter (fun (vref, _) -> not (hiddenVal vref.Deref))
-                         |> Seq.map (fun (vref, e) -> check (* "its implementation uses a binding hidden by a signature" m *) vref (abstractValInfo e) )) } 
+                         |> Seq.map (fun (vref, e) -> check cenv vref (abstractValInfo e) )) }
 
     and abstractLazyModulInfo (ss: LazyModuleInfo) = 
           ss.Force() |> abstractModulInfo |> notlazy
@@ -1429,7 +1430,7 @@ let usesMethodLocalConstructsOrProtectedField cenv (fvs: FreeVars) expr =
     || (fvs.ContainsILFieldAccess && AccessibilityLogic.exprReferencesProtectedILField cenv.amap expr)
 
 /// Hide information because of a "let ... in ..." or "let rec ... in ... "
-let AbstractExprInfoByVars cenv (boundVars: Val list, boundTyVars) ivalue =
+let AbstractExprInfoByVars (cenv: cenv) (boundVars: Val list, boundTyVars) ivalue =
     // Module and member bindings can be skipped when checking abstraction, since abstraction of these values has already been done when 
     // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadratically retraversing  
     // the inferred optimization data, i.e. at each binding all the way up a sequences of 'lets' in a module. 
@@ -1489,7 +1490,7 @@ let AbstractExprInfoByVars cenv (boundVars: Val list, boundTyVars) ivalue =
       let rec abstractModulInfo ss =
          { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) 
            ValInfos = ss.ValInfos.Map (fun (vref, e) -> 
-               check vref (abstractValInfo e) ) }
+               check cenv vref (abstractValInfo e)) }
 
       abstractExprInfo ivalue
 
@@ -1529,9 +1530,9 @@ let RemapOptimizationInfo g tmenv =
     remapLazyModulInfo
 
 /// Hide information when a value is no longer visible
-let AbstractAndRemapModulInfo g (repackage, hidden) info =
+let AbstractAndRemapModulInfo g (cenv: cenv) (repackage, hidden) info =
     let mrpi = mkRepackageRemapping repackage
-    let info = info |> AbstractLazyModulInfoByHiding false hidden
+    let info = info |> AbstractLazyModulInfoByHiding false cenv hidden
     let info = info |> RemapOptimizationInfo g mrpi
     info
 
@@ -2876,7 +2877,7 @@ and OptimizeLetRec cenv env (binds, bodyExpr, m) =
         let fvs = List.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 bindsR
         SplitValuesByIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) bindsR
     // Trim out any optimization info that involves escaping values 
-    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info 
+    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info
     // REVIEW: size of constructing new closures - should probably add #freevars + #recfixups here 
     let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, Construct.NewFreeVarsCache()) 
     let info = CombineValueInfos (einfo :: bindinfos) evalueR 
@@ -2951,7 +2952,7 @@ and OptimizeLinearExpr cenv env expr contf =
               Info = UnknownValue }
         else 
             // On the way back up: Trim out any optimization info that involves escaping values on the way back up
-            let evalueR = AbstractExprInfoByVars cenv ([bindR.Var], []) bodyInfo.Info 
+            let evalueR = AbstractExprInfoByVars cenv ([bindR.Var], []) bodyInfo.Info
 
             // Preserve the debug points for eliminated bindings that have debug points. 
             let bodyR =
@@ -4127,9 +4128,9 @@ and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, flags)) =
     let env = BindInternalValsToUnknown cenv vs env 
     let exprR, einfo = OptimizeExpr cenv env expr 
     let exprR, einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (exprR, einfo) 
-    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info 
-    TTarget(vs, exprR, flags), 
-    { TotalSize=einfo.TotalSize 
+    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info
+    TTarget(vs, exprR, flags),
+    { TotalSize=einfo.TotalSize
       FunctionSize=einfo.FunctionSize
       HasEffect=einfo.HasEffect
       MightMakeCriticalTailcall = einfo.MightMakeCriticalTailcall 
@@ -4428,7 +4429,7 @@ and OptimizeModuleExprWithSig cenv env mty def  =
             
             elimModuleDefn def 
 
-        let info = AbstractAndRemapModulInfo g rpi info
+        let info = AbstractAndRemapModulInfo g cenv rpi info
 
         def, info 
 
@@ -4501,14 +4502,14 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleContents cenv (env, []) contents
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
-            let minfo = AbstractLazyModulInfoByHiding false hidden minfo
+            let minfo = AbstractLazyModulInfoByHiding false cenv hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, defR, minfo, hidden
         else
             // This optimizes and builds minfo w.r.t. the signature
             let mexprR, minfo = OptimizeModuleExprWithSig cenv env signature contents
             let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary signature hidden
-            let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
+            let minfoExternal = AbstractLazyModulInfoByHiding true cenv hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, mexprR, minfoExternal, hidden
 
