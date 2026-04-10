@@ -1,4 +1,5 @@
 # CI and PR triggers
+# Backport branch for PR 19532 - VS rel/stable (18.5)
 trigger:
   branches:
     include:
