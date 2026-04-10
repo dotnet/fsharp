@@ -441,3 +441,58 @@ type ExplicitClass =
     |> compile
     |> shouldSucceed
     |> ignore
+
+// https://github.com/dotnet/fsharp/issues/15339
+[<Fact>]
+let ``Struct with non-comparable field includes NoComparison in signature`` () =
+    let implSource =
+        """
+namespace FSInteractive
+
+open System
+
+[<Struct>]
+type LocalReadWriteLockCookie(locker: obj) =
+    interface IDisposable with
+        member _.Dispose () = ()
+"""
+
+    let generatedSignature =
+        FSharp implSource |> printSignatures
+
+    Assert.Contains("NoComparison", generatedSignature)
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/15339
+[<Fact>]
+let ``Struct with non-equatable field includes NoEquality in signature`` () =
+    let implSource =
+        """
+namespace TestNs
+
+[<Struct>]
+type StructWithFunc =
+    val Fn: int -> int
+    new(f) = { Fn = f }
+"""
+
+    let generatedSignature =
+        FSharp implSource |> printSignatures
+
+    Assert.Contains("NoComparison", generatedSignature)
+    Assert.Contains("NoEquality", generatedSignature)
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
