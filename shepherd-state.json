@@ -1,27 +1,28 @@
 {
-  "last_run": "2026-04-09T17:20:49Z",
+  "last_run": "2026-04-10T01:27:03Z",
   "prs": {
     "19476": {
-      "status": "ci_running_mostly_green",
+      "status": "category_c_repo_wide_ci_failures",
       "last_shepherd_comment": "2026-04-09T05:40:32Z",
-      "note": "T-Gro force-pushed clean branch (1 commit, 1 file). CI triggered ~16:09 UTC, 3 jobs still in_progress, all completed jobs pass. No new review threads. Category C."
+      "note": "T-Gro force-pushed clean 1-commit branch with backtick/@/! tests for #10043. Review feedback addressed. CI shows 12 failures but same failures present on main (7 fails) — repo-wide infra issue. Category C."
     },
     "19530": {
-      "status": "ci_passing",
-      "note": "All 48 CI checks passing (2026-04-03). No review threads. Category C. Awaiting review/approval."
+      "status": "category_c_repo_wide_ci_failures",
+      "note": "Previously all checks passing. Now 9 CI failures matching repo-wide pattern on main. No review threads. Category C."
     },
     "19472": {
       "status": "t_gro_fixing_bug",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro took over: rebased, added actual fix (FS3885 diagnostic). 16 files changed, 6 commits, touches src/. CI overall 'failure' but T-Gro is actively working. Category C."
+      "note": "T-Gro took over with src/ changes (FS3885 diagnostic). Beyond regression-test scope. CI shows 12 failures (repo-wide). Category C."
     },
     "19471": {
       "status": "skipped_title_mismatch",
-      "note": "Title does not start with 'Add regression test:'. Skipped."
+      "note": "Title 'Fix #12386...' does not start with 'Add regression test:'. Skipped."
     },
     "19468": {
-      "status": "ci_passing_all_resolved",
-      "note": "All 46 CI checks passing (2026-03-31). All 3 review threads resolved. Category C. Awaiting approval."
+      "status": "category_c_repo_wide_ci_failures",
+      "note": "All 3 review threads resolved (abonie/auduchinok). Previously all checks passing. Now 9 CI failures matching repo-wide pattern on main. Category C."
     }
-  }
+  },
+  "notes": "All PRs and main branch show 7-12 CI failures (repo-wide infra issue). No new review comments on any PR since last run. No action needed."
 }
