@@ -2551,7 +2551,7 @@ module InferredSigPrinting =
         let rec imdefsL denv x = aboveListL (x |> List.map (imdefL denv))
 
         and imdefL denv x = 
-            let filterVal (v: Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo
+            let filterVal (v: Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo && not (v.LogicalName.Contains("@"))
             let filterExtMem (v: Val) = v.IsExtensionMember
 
             match x with 

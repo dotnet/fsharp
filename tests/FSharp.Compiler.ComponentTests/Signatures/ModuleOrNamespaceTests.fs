@@ -183,6 +183,18 @@ do ()
 namespace Foo
 namespace Bar"""
 
+// https://github.com/dotnet/fsharp/issues/13832
+[<Fact>]
+let ``Recursive module with do binding`` () =
+    FSharp
+        """
+module rec Foobar
+
+do ()
+"""
+    |> printSignatures
+    |> assertEqualIgnoreLineEnding "\nmodule Foobar"
+
 [<Fact>]
 let ``Empty namespace module`` () =
     FSharp
