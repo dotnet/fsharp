@@ -298,3 +298,21 @@ module SubModule =
 
     [<System.ComponentModel.Category (A)>]
     member Meh: unit -> unit"""
+
+// https://github.com/dotnet/fsharp/issues/15389
+[<Fact>]
+let ``Backtick in identifier is properly escaped in signature`` () =
+    FSharp
+        """
+module Foo
+
+let ```a` b`` (a:int) (b:int) = ()
+"""
+    |> printSignatures
+    |> prependNewline
+    |> assertEqualIgnoreLineEnding
+        """
+
+module Foo
+
+val ```a` b`` : a: int -> b: int -> unit"""
