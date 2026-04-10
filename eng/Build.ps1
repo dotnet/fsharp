@@ -48,6 +48,7 @@ param (
     [switch]$useGlobalNuGetCache = $true,
     [switch]$dontUseGlobalNuGetCache = $false,
     [switch]$warnAsError = $true,
+    [string]$warnNotAsError = "",
     [switch][Alias('test')]$testDesktop,
     [string]$testDesktopBatch = "",
     [switch]$testCoreClr,
@@ -149,6 +150,7 @@ function Print-Usage() {
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
     Write-Host "  -buildnorealsig               Build product with realsig- (default use realsig+, where necessary)"
     Write-Host "  -verifypackageshipstatus      Verify whether the packages we are building have already shipped to nuget"
+    Write-Host "  -warnNotAsError <codes>       Suppress specific warnings from being treated as errors (semi-colon delimited)"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -305,6 +307,8 @@ function BuildSolution([string] $solutionName, $packSolution) {
 
     $pack = if ($packSolution -eq $False) {""} else {$pack}
 
+    $msbuildWarnNotAsError = if ($warnAsError -and $warnNotAsError -ne "") { "/warnNotAsError:$warnNotAsError" } else { "" }
+
     MSBuild $toolsetBuildProj `
         $bl `
         /p:Configuration=$configuration `
@@ -327,7 +331,8 @@ function BuildSolution([string] $solutionName, $packSolution) {
         /p:BuildNoRealsig=$buildnorealsig `
         /v:$verbosity `
         $suppressExtensionDeployment `
-        @properties
+        @properties `
+        $msbuildWarnNotAsError
 
     $env:BUILDING_USING_DOTNET=$BUILDING_USING_DOTNET_ORIG
 }
