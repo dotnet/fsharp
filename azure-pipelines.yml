@@ -1,4 +1,5 @@
 # CI and PR triggers
+# Backport branch for PR 19532 - VS rel/insiders (18.6)
 trigger:
   branches:
     include:
