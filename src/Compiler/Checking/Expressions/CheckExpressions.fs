@@ -11628,8 +11628,33 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
 
                 UnifyTypes cenv env mAttr ty (tyOfExpr g expr)
 
+                // Collect literal val references from the syntax expression to recover original names.
+                // TcVal inlines literal vals to Expr.Const, losing the original val reference.
+                // We recover it here by matching ranges from the syntax tree against the checked expression.
+                let literalIdents =
+                    let rec collect (synExpr: SynExpr) acc =
+                        match synExpr with
+                        | SynExpr.Ident ident ->
+                            match env.NameEnv.eUnqualifiedItems |> Map.tryFind ident.idText with
+                            | Some(Item.Value vref) when vref.LiteralValue.IsSome ->
+                                (ident.idRange, vref) :: acc
+                            | _ -> acc
+                        | SynExpr.Paren(expr = inner) -> collect inner acc
+                        | SynExpr.Tuple(exprs = exprs) -> List.fold (fun a e -> collect e a) acc exprs
+                        | _ -> acc
+
+                    collect arg []
+
                 let mkAttribExpr e =
-                    AttribExpr(e, EvalLiteralExprOrAttribArg g e)
+                    let sourceExpr =
+                        match e with
+                        | Expr.Const(_, m, _) ->
+                            match literalIdents |> List.tryFind (fun (r, _) -> Range.equals r m) with
+                            | Some(_, vref) -> Expr.Val(vref, NormalValUse, m)
+                            | None -> e
+                        | _ -> e
+
+                    AttribExpr(sourceExpr, EvalLiteralExprOrAttribArg g e)
                     
                 let checkPropSetterAttribAccess m (pinfo: PropInfo) =
                     let setterMeth = pinfo.SetterMethod

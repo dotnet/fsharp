@@ -561,8 +561,10 @@ module PrintTypes =
     /// Layout a single attribute arg, following the cases of 'gen_attr_arg' in ilxgen.fs
     /// This is the subset of expressions we display in the NicePrint pretty printer 
     /// See also dataExprL - there is overlap between these that should be removed 
-    let rec layoutAttribArg denv arg = 
-        match arg with 
+    let rec layoutAttribArg denv arg =
+        match arg with
+        | Expr.Val (vref, _, _) when vref.LiteralValue.IsSome -> wordL (tagLocal vref.DisplayName)
+
         | Expr.Const (c, _, ty) -> 
             if isEnumTy denv.g ty then 
                 WordL.keywordEnum ^^ angleL (layoutType denv ty) ^^ bracketL (layoutConst denv.g ty c)
@@ -2551,7 +2553,7 @@ module InferredSigPrinting =
         let rec imdefsL denv x = aboveListL (x |> List.map (imdefL denv))
 
         and imdefL denv x = 
-            let filterVal (v: Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo && not (v.LogicalName.Contains("@"))
+            let filterVal (v: Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo && not (IsCompilerGeneratedName v.LogicalName)
             let filterExtMem (v: Val) = v.IsExtensionMember
 
             match x with 

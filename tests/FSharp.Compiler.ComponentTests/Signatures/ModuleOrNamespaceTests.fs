@@ -262,3 +262,39 @@ namespace FSharp.MyStuff
   module Library =
 
     val batch: s: FSharp.Control.AsyncSeq<'t> -> FSharp.Control.AsyncSeq<'t>"""
+
+// https://github.com/dotnet/fsharp/issues/13810
+[<Fact>]
+let ``Literal value in attribute uses literal name`` () =
+    FSharp
+        """
+module Maybe
+
+open System.ComponentModel
+
+[<Literal>]
+let A = "A"
+
+module SubModule =
+    type Foo() =
+        [<Category(A)>]
+        member this.Meh () = ()
+"""
+    |> printSignatures
+    |> prependNewline
+    |> assertEqualIgnoreLineEnding
+        """
+
+module Maybe
+
+[<Literal>]
+val A: string = "A"
+
+module SubModule =
+
+  type Foo =
+
+    new: unit -> Foo
+
+    [<System.ComponentModel.Category (A)>]
+    member Meh: unit -> unit"""
