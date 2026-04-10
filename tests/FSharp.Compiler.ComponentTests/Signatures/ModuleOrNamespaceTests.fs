@@ -215,3 +215,38 @@ namespace MyApp.Types
 
     type Meh =
       class end"""
+
+// https://github.com/dotnet/fsharp/issues/12067
+[<Fact>]
+let ``External FSharp namespace type prefix is preserved in signature`` () =
+    let externalLib =
+        FSharp
+            """
+namespace FSharp.Control
+
+type AsyncSeq<'t> =
+    member this.Length: int = 0
+
+    static member BufferByCount: count: int -> source: AsyncSeq<'t> -> AsyncSeq<'t array> =
+        failwith "todo"
+"""
+
+    FSharp
+        """
+namespace FSharp.MyStuff
+
+module Library =
+    open FSharp.Control
+
+    let batch (s: AsyncSeq<'t>) = s
+"""
+    |> withReferences [ externalLib ]
+    |> printSignatures
+    |> prependNewline
+    |> assertEqualIgnoreLineEnding
+        """
+namespace FSharp.MyStuff
+
+  module Library =
+
+    val batch: s: FSharp.Control.AsyncSeq<'t> -> FSharp.Control.AsyncSeq<'t>"""

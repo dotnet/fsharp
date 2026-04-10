@@ -10903,6 +10903,13 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         | SynMemberKind.Constructor
         | SynMemberKind.Member ->
             let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttrs)
+
+            let mdef =
+                if vref.Deref.val_flags.IsGeneratedEventVal then
+                    mdef.WithSpecialName
+                else
+                    mdef
+
             [ mdef ], [], []
         | SynMemberKind.PropertyGetSet -> error (Error(FSComp.SR.ilUnexpectedGetSetAnnotation (), m))
         | SynMemberKind.PropertySet
@@ -11927,6 +11934,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     //
                     // Also discard the F#-compiler supplied implementation of the Empty, IsEmpty, Value and None properties.
 
+                    let nullaryCaseNames =
+                        if cuinfo.HasHelpers = AllHelpers || cuinfo.HasHelpers = NoHelpers then
+                            cuinfo.UnionCases
+                            |> Array.choose (fun alt -> if alt.IsNullary then Some alt.Name else None)
+                            |> Set.ofArray
+                        else
+                            Set.empty
+
+                    let isNullaryCaseClash name =
+                        not nullaryCaseNames.IsEmpty && nullaryCaseNames.Contains name
+
                     let tdefDiscards =
                         Some(
                             (fun (md: ILMethodDef) ->
@@ -11935,7 +11953,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 || (cuinfo.HasHelpers = SpecialFSharpOptionHelpers
                                     && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))
                                 || (cuinfo.HasHelpers = AllHelpers
-                                    && (md.Name.StartsWith("get_Is") && not (tdef2.Methods.FindByName(md.Name).IsEmpty)))),
+                                    && (md.Name.StartsWith("get_Is") && not (tdef2.Methods.FindByName(md.Name).IsEmpty)))
+                                || (md.Name.StartsWith("get_")
+                                    && md.Name.Length > 4
+                                    && isNullaryCaseClash (md.Name.Substring(4))
+                                    && not (tdef2.Methods.FindByName(md.Name).IsEmpty))),
 
                             (fun (pd: ILPropertyDef) ->
                                 (cuinfo.HasHelpers = SpecialFSharpListHelpers
@@ -11943,7 +11965,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 || (cuinfo.HasHelpers = SpecialFSharpOptionHelpers
                                     && (pd.Name = "Value" || pd.Name = "None"))
                                 || (cuinfo.HasHelpers = AllHelpers
-                                    && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty))))
+                                    && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)))
+                                || (isNullaryCaseClash pd.Name
+                                    && (not (tdef2.Properties.LookupByName(pd.Name).IsEmpty)
+                                        || not (tdef2.Methods.FindByName("get_" + pd.Name).IsEmpty))))
                         )
 
                     tdef2, tdefDiscards

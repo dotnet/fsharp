@@ -93,6 +93,17 @@ module ``External FSI tests`` =
         |> runFsi
         |> shouldFail
 
+    // https://github.com/dotnet/fsharp/issues/12023
+    [<FSharp.Test.FactSkipOnSignedBuild>]
+    let ``Issue 12023 - FSI can load System.Drawing.Common via nuget reference``() =
+        Fsx """
+#r "nuget: System.Drawing.Common"
+open System.Drawing
+printfn "Assembly loaded: %s" (typeof<Color>.Assembly.GetName().Name)
+        """
+        |> runFsi
+        |> shouldSucceed
+
 
     [<Fact>]
     let ``Internals visible over a large number of submissions``() =
@@ -157,3 +168,17 @@ module MultiEmit =
         |> withStdOutContains ".NET:"
         |> withStdOutContains "OS:"
         |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/14216
+    [<Fact>]
+    let ``Issue 14216 - No multiemit warning FS2303 when using DU in FSI`` () =
+        Fsx
+            """
+type T = U of unit
+let x = U()
+
+match x with
+| U v -> v
+"""
+        |> eval
+        |> shouldSucceed

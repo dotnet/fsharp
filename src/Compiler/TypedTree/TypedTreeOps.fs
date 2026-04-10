@@ -9707,7 +9707,9 @@ let XmlDocSigOfVal g full path (v: Val) =
                 | SynMemberKind.Member -> "M:", v.CompiledName g.CompilerGlobalState
                 | SynMemberKind.PropertyGetSet 
                 | SynMemberKind.PropertySet
-                | SynMemberKind.PropertyGet -> "P:", v.PropertyName
+                | SynMemberKind.PropertyGet -> 
+                    let prefix = if attribsHaveValFlag g WellKnownValAttributes.CLIEventAttribute v.Attribs then "E:" else "P:"
+                    prefix, v.PropertyName
 
             let path = if v.HasDeclaringEntity then prependPath path v.DeclaringEntity.CompiledName else path
 
