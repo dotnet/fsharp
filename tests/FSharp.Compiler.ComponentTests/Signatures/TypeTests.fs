@@ -496,3 +496,23 @@ type StructWithFunc =
     |> compile
     |> shouldSucceed
     |> ignore
+
+// https://github.com/dotnet/fsharp/issues/15560
+[<Fact>]
+let ``Private type abbreviation with prefix type parameter`` () =
+    let signatures =
+        FSharp
+            """
+module Foo
+
+type P<'a> = class end
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module R =     
+    type private 'a P = unit -> 'a
+"""
+        |> printSignatures
+
+    Assert.Contains("type private 'a P", signatures)
+    Assert.DoesNotContain("type 'a private P", signatures)

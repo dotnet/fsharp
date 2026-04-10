@@ -2056,13 +2056,13 @@ module TastDefinitionPrinting =
 
         let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayNameCore
 
-        let nameL = layoutAccessibility denv tycon.Accessibility nameL
-        let denv = denv.AddAccessibility tycon.Accessibility 
-
         let lhsL =
             let tps = tycon.TyparsNoRange
             let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
+            let tpsL = layoutAccessibility denv tycon.Accessibility tpsL
             typewordL ^^ tpsL
+
+        let denv = denv.AddAccessibility tycon.Accessibility
 
 
         let sortKey (minfo: MethInfo) = 
