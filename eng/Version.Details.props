@@ -6,7 +6,7 @@ This file should be imported by eng/Versions.props
 <Project>
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
-    <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26177.7</MicrosoftDotNetArcadeSdkPackageVersion>
+    <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26208.4</MicrosoftDotNetArcadeSdkPackageVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildPackageVersion>18.0.2</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>18.0.2</MicrosoftBuildFrameworkPackageVersion>
