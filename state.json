@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-04-11T13:20:57Z",
+  "last_run": "2026-04-11T17:07:03Z",
   "prs": {
     "19472": {
-      "status": "category_c_clean",
-      "last_shepherd_comment": "2026-04-10T21:07:12Z",
-      "note": "All 48 CI pass. mergeable_state=blocked (awaiting approval). T-Gro comment 2026-04-10 is discussion on issue semantics. No new activity since last run."
+      "status": "category_c_src_changes",
+      "last_shepherd_comment": "2026-03-31T01:41:52Z",
+      "note": "All 48 CI pass. mergeable_state=dirty (release notes conflict). PR touches src/ files (IlxGen.fs, FSComp.txt). T-Gro actively developing. auto_merge enabled. Conflict resolution beyond shepherd scope."
     },
     "19471": {
       "status": "skipped_title_mismatch",
@@ -12,9 +12,9 @@
     },
     "19468": {
       "status": "category_c_clean",
-      "last_shepherd_comment": "2026-03-31T17:25:02Z",
-      "note": "All 46 CI pass. mergeable_state=blocked (awaiting approval). All review threads addressed. No new activity since last run."
+      "last_shepherd_comment": "2026-03-31T01:41:53Z",
+      "note": "All 46 CI pass. mergeable_state=clean. auto_merge enabled. auduchinok naming comment on src/ file is beyond shepherd scope. Awaiting approval."
     }
   },
-  "notes": "All 3 labeled PRs checked. 2 eligible (#19472, #19468) both Category C. #19471 skipped (title mismatch). No action needed."
+  "notes": "All 3 labeled PRs checked. 2 eligible (#19472, #19468). #19471 skipped (title mismatch). Both eligible PRs Category C - no action needed."
 }
