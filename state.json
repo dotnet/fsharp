@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-04-11T09:10:05Z",
+  "last_run": "2026-04-11T13:20:57Z",
   "prs": {
     "19472": {
       "status": "category_c_clean",
       "last_shepherd_comment": "2026-04-10T21:07:12Z",
-      "note": "All 48 CI pass. mergeable_state=clean. auto_merge enabled. T-Gro comment 2026-04-10 is discussion on issue semantics, not review feedback. Awaiting approval."
+      "note": "All 48 CI pass. mergeable_state=blocked (awaiting approval). T-Gro comment 2026-04-10 is discussion on issue semantics. No new activity since last run."
     },
     "19471": {
       "status": "skipped_title_mismatch",
@@ -13,7 +13,7 @@
     "19468": {
       "status": "category_c_clean",
       "last_shepherd_comment": "2026-03-31T17:25:02Z",
-      "note": "All 46 CI pass. mergeable_state=clean. All review threads addressed. No new comments since 2026-03-31. Awaiting maintainer approval."
+      "note": "All 46 CI pass. mergeable_state=blocked (awaiting approval). All review threads addressed. No new activity since last run."
     }
   },
   "notes": "All 3 labeled PRs checked. 2 eligible (#19472, #19468) both Category C. #19471 skipped (title mismatch). No action needed."
