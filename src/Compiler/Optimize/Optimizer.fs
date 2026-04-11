@@ -3483,8 +3483,11 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let allTyargsAreConcrete =
                 tyargs |> List.forall (fun t -> (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
 
+            let allTyargsAreGeneric =
+                tyargs |> List.forall (fun t -> not (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
+
             let canCallDirectly =
-                hasNoTraits || (not allTyargsAreConcrete && vref.ValReprInfo.IsSome)
+                hasNoTraits || (allTyargsAreGeneric && vref.ValReprInfo.IsSome)
 
             if canCallDirectly then
                 Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)

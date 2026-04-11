@@ -485,6 +485,61 @@ let main _ =
 
 
     [<Fact>]
+    let ``SRTP 12 - Witness - Struct with partially resolved type args`` () =
+        FSharp """
+[<Struct>]
+type S =
+    member _.M() = ()
+
+type T() =
+    member _.N() = ()
+
+let inline f (a: ^A when ^A: (member M: unit -> unit)) (_b: ^B when ^B: (member N: unit -> unit)) =
+    (^A: (member M: unit -> unit) a)
+
+let inline g b = f (S()) b
+
+[<EntryPoint>]
+let main _ =
+    g (T())
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 13 - Witness - Struct with ResumableCode and partially resolved type args`` () =
+        FSharp """
+open Microsoft.FSharp.Core.CompilerServices
+
+[<Struct>]
+type S = member this.Foo() = ()
+
+type D = member _.Bar() = true
+
+let inline f (x: ^A) =
+    ResumableCode< ^B, _>(fun sm ->
+        (^A: (member Foo: unit -> unit) x)
+        (^B: (member Bar: unit -> bool) sm.Data)
+    )
+
+let inline g () = f (S())
+
+[<EntryPoint>]
+let main _ =
+    let _ : ResumableCode<D, _> = g ()
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =
