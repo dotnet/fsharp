@@ -746,7 +746,7 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
                 | _ -> [])
         extMemsDangling @ extMemsFromHierarchy
     |> List.filter (fun minfo ->
-        let isAccesible = AccessibilityLogic.IsMethInfoAccessible amap m ad minfo
+        let isAccesible = IsMethInfoAccessible amap m ad minfo
 
         isAccesible &&
         match isInstanceFilter with
@@ -754,15 +754,10 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
         | LookupIsInstance.Yes -> minfo.IsInstance
         | LookupIsInstance.No -> not minfo.IsInstance)
 
-/// Get all the available methods of a type (both intrinsic and extension)
-let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad findFlag m ty =
-    let intrinsic = IntrinsicMethInfosOfType infoReader optFilter ad AllowMultiIntfInstantiations.Yes findFlag m ty
-    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil intrinsic) then 
-        intrinsic
-    else
-        intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv ad optFilter LookupIsInstance.Ambivalent m ty
+let IsExtensionMethCompatibleWithTy (infoReader: InfoReader) m (ty: TType) (minfo: MethInfo) =
+    let g = infoReader.g
+    let amap = infoReader.amap
 
-let IsExtensionMethCompatibleWithTy g amap m (ty: TType) (minfo: MethInfo) =
     not minfo.IsExtensionMember ||
     match minfo.GetObjArgTypes(amap, m, []) with
     | thisTy :: _ ->
@@ -771,16 +766,30 @@ let IsExtensionMethCompatibleWithTy g amap m (ty: TType) (minfo: MethInfo) =
 
         match ty1, ty2 with
         | TType_var (tp1, _), _ ->
-            tp1.Constraints |> List.exists (function
-                | TyparConstraint.CoercesTo(targetCTy, _) ->
+            let coercesToConstraints =
+                tp1.Constraints |> List.choose (function
+                    | TyparConstraint.CoercesTo(targetCTy, _) -> Some targetCTy
+                    | _ -> None)
+            match coercesToConstraints with
+            | [] -> true  // No CoercesTo constraint means it could match anything
+            | constraints ->
+                constraints |> List.exists (fun targetCTy ->
                     let cTy = targetCTy |> stripTyEqns g
-                    TypeRelations.TypeFeasiblySubsumesType 0 g amap m cTy TypeRelations.CanCoerce ty2
-                | _ -> false)
+                    TypeRelations.TypeFeasiblySubsumesType 0 g amap m cTy TypeRelations.CanCoerce ty2)
         | _, TType_var _ -> true
         | _ ->
             TypeRelations.TypeFeasiblySubsumesType 0 g amap m ty1 TypeRelations.CanCoerce ty2
     | _ -> 
         true
+
+/// Get all the available methods of a type (both intrinsic and extension)
+let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad findFlag m ty =
+    let intrinsic = IntrinsicMethInfosOfType infoReader optFilter ad AllowMultiIntfInstantiations.Yes findFlag m ty
+    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil intrinsic) then 
+        intrinsic
+    else
+        intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv ad optFilter LookupIsInstance.Ambivalent m ty
+        |> List.filter (IsExtensionMethCompatibleWithTy infoReader m ty)
 
 //-------------------------------------------------------------------------
 // Helpers to do with building environments

@@ -67,7 +67,6 @@ let inline noTailCall ceenv = { ceenv with tailCall = false }
 
 let inline TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: TcEnv) m ad nm ty =
     AllMethInfosOfTypeInScope collectionSettings cenv.infoReader env.NameEnv (Some nm) ad IgnoreOverrides m ty
-    |> List.filter (IsExtensionMethCompatibleWithTy cenv.g cenv.amap m ty)
 
 /// Ignores an attribute
 let inline IgnoreAttribute _ = None

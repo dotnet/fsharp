@@ -691,8 +691,7 @@ val internal AllMethInfosOfTypeInScope:
 
 /// Check whether the 'this' argument of an extension method is compatible with the target type
 val internal IsExtensionMethCompatibleWithTy:
-    g: TcGlobals ->
-    amap: ImportMap ->
+    infoReader: InfoReader ->
     m: range ->
     ty: TType ->
     minfo: MethInfo ->
