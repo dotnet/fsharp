@@ -1,0 +1,29 @@
+{
+  "type": "run-record",
+  "run": "24295540812",
+  "date": "2026-04-12",
+  "findings": {
+    "fixed": [
+      "#13512 (completion obsolete filtering - fixed by PR #19506)"
+    ],
+    "still_open": [
+      "#462 (attributes on unparenthesized tuple types)",
+      "#527 (generic record equality semantics)",
+      "#711 (UseNullAsTrueValue with 4+ cases)",
+      "#774 (type annotation adjacency warning on operators)",
+      "#995 (enum type lost in attribute)",
+      "#3448 (duplicate match cases no warning)",
+      "#3705 (hidden _arg names leak)",
+      "#12607 (incorrect CE error message)",
+      "#12929 (type inference regression SRTP)",
+      "#13350 (EntryPoint suppresses top-level code in FSI)",
+      "#13849 (unused binding warning for recursive binding)",
+      "#14492 (TypeLoadException in release config)",
+      "#15419 (try/catch in task CE)",
+      "#15518 (invalid error range NoEquality)",
+      "#15557 (printf %+f negative zero)",
+      "#15558 (printf zero padding negative zero)"
+    ],
+    "actions_blocked": "safeoutputs MCP tools not available - could not comment/label"
+  }
+}
