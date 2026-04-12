@@ -7356,6 +7356,18 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
 
     let cloFreeTyvars = cloFreeTyvars.FreeTypars |> Zset.elements
 
+    // When generating witnesses, witness types may reference type variables that appear
+    // only in SRTP constraints of the captured type variables (e.g. 'b in 'a : (member M: unit -> 'b)).
+    // Include those so they are available when generating witness field types.
+    let cloFreeTyvars =
+        if ComputeGenerateWitnesses g eenv then
+            let extra =
+                GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
+                |> List.collect (fun w -> (freeInType CollectTyparsNoCaching (GenWitnessTy g w)).FreeTypars |> Zset.elements)
+            (cloFreeTyvars @ extra) |> List.distinctBy (fun tp -> tp.Stamp)
+        else
+            cloFreeTyvars
+
     let eenvinner = eenv |> EnvForTypars cloFreeTyvars
 
     let ilCloTyInner =

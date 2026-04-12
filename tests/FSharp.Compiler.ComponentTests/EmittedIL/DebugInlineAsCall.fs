@@ -654,6 +654,36 @@ let main _ =
         |> shouldSucceed
 
     [<Fact>]
+    let ``SRTP 18 - Type abbreviation with constraint`` () =
+        let additionalSource = FsSourceWithFileName "Program.fs" """
+module Program
+
+open Module
+
+type T() = member _.M() = 42
+
+let inline foo (a: 'a) = C.F(a); fun () -> ()
+
+[<EntryPoint>]
+let main _ =
+    let _ = foo (T())
+    0
+"""
+        FSharpWithFileName "Module.fs" """
+module Module
+
+type C<'a, 'b when 'a: (member M: unit -> 'b)> = 'a
+
+type C = static member inline F<'a, 'b, 'c when C<'a, 'b>>(_a: 'a) = ()
+"""
+        |> withAdditionalSourceFile additionalSource
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =
