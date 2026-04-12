@@ -596,6 +596,64 @@ let main _ =
         |> shouldSucceed
 
     [<Fact>]
+    let ``SRTP 16 - Same line`` () =
+        let additionalSource = FsSourceWithFileName "Program.fs" """
+module Program
+
+open Module
+
+let inline foo (a: 'a) = U.F(a, 0); fun () -> ()
+
+[<EntryPoint>]
+let main _ =
+    let _ = foo (T())
+    0
+"""
+        FSharpWithFileName "Module.fs" """
+module Module
+
+type T() = member _.M() = ()
+
+type U = static member inline F<'a, 'b when 'a: (member M: unit -> unit)>(_a: 'a, _b: 'b) = ()
+"""
+        |> withAdditionalSourceFile additionalSource
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 17 - Same line`` () =
+        let library =
+            FSharp """
+module Module
+
+let inline add<'a, 'b, 'c when 'a: (static member (+): 'a * 'a -> 'b)> (x: 'a) (y: 'a) =
+    x + y
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+
+        FSharp """
+open Module
+
+let inline foo x y = add x y |> ignore; fun () -> ()
+
+[<EntryPoint>]
+let main _ =
+    let _ = foo 1 2
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =
