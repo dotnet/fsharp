@@ -1,20 +1,20 @@
 {
-  "last_run": "2026-04-11T21:04:45Z",
+  "last_run": "2026-04-12T01:27:16Z",
   "prs": {
     "19472": {
-      "status": "category_c_src_changes",
+      "status": "category_c_active_development",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "All 48 CI pass. mergeable_state=dirty (release notes conflict). PR touches src/ files (IlxGen.fs, FSComp.txt). T-Gro actively developing and questioning bug analysis (2026-04-10). auto_merge enabled. Conflict resolution beyond shepherd scope."
+      "note": "T-Gro rebased 2026-04-10, CI all green (48 checks). T-Gro questioning bug analysis in comment 2026-04-10. PR now includes src/ changes (IlxGen.fs, FSComp.txt). T-Gro managing. Category C."
     },
     "19471": {
       "status": "skipped_title_mismatch",
-      "note": "Title 'Fix #12386...' does not start with 'Add regression test:'. Skipped."
+      "note": "Title 'Fix #12386...' does not start with 'Add regression test:'. Skipped per eligibility rules."
     },
     "19468": {
       "status": "category_c_clean",
       "last_shepherd_comment": "2026-03-31T17:25:02Z",
-      "note": "All 46 CI pass. mergeable_state=clean. auto_merge enabled. No new review feedback. Awaiting approval."
+      "note": "CI all green (46 checks). All abonie review feedback addressed. auduchinok naming comment on src/ file beyond shepherd scope. Awaiting approval."
     }
   },
-  "notes": "All 3 labeled PRs checked. 2 eligible (#19472, #19468). #19471 skipped (title mismatch). #19472 has merge conflict but touches src/ files - beyond scope. #19468 is Category C - no action needed."
+  "notes": "All 3 labeled PRs checked. 2 eligible (#19472, #19468), both Category C. No action taken."
 }
