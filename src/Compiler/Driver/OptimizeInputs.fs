@@ -587,6 +587,9 @@ let GenerateIlxCode
             isInteractiveItExpr = isInteractiveItExpr
             alwaysCallVirt = tcConfig.alwaysCallVirt
             parallelIlxGenEnabled = tcConfig.parallelIlxGen
+            inlineNamedFunctions =
+                tcConfig.inlineNamedFunctions
+                |> Option.defaultValue (not tcConfig.debuginfo || tcConfig.optSettings.LocalOptimizationsEnabled)
         }
 
     ilxGenerator.GenerateCode(ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)

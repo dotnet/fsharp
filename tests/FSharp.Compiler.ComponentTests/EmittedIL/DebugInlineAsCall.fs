@@ -540,6 +540,62 @@ let main _ =
         |> shouldSucceed
 
     [<Fact>]
+    let ``SRTP 14 - StateMachine with unresolved trait from composed inline function`` () =
+        FSharp """
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
+
+[<Struct>]
+type S<'T> = member _.M(_: 'T) = ()
+
+let inline f<'A, 'R, 'B when 'A: (member M: int -> 'R) and 'B: (member M: 'R -> unit)> (_a: 'A) : 'B = Unchecked.defaultof<_>
+
+let inline g (_: S<'T>) =
+    if __useResumableCode then
+        __stateMachine<S<'T>, int>
+            (MoveNextMethodImpl<_>(fun _ -> ()))
+            (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+            (AfterCode<_, _>(fun _ -> 0))
+    else 0
+
+let inline h a = g (f a)
+
+[<EntryPoint>]
+let main _ =
+    let _ = h (S<int>())
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 15 - Composed inline with linked constraints`` () =
+        FSharp """
+[<Struct>]
+type S<'T> = member _.M(_: 'T) = ()
+
+let inline f<'A, 'R, 'B when 'A: (member M: int -> 'R) and 'B: (member M: 'R -> unit)> (_a: 'A) : 'B = Unchecked.defaultof<_>
+
+let inline g (_: S<'T>) = 42
+
+let inline h a = g (f a)
+
+[<EntryPoint>]
+let main _ =
+    let i = h (S<int>())
+    if i = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =

@@ -61,6 +61,9 @@ type internal IlxGenOptions =
 
         /// When set to true, the IlxGen will delay generation of method bodies and generate them later in parallel (parallelized across files)
         parallelIlxGenEnabled: bool
+
+        /// Indicates if inline named functions are being inlined or emitted as calls
+        inlineNamedFunctions: bool
     }
 
 /// The results of the ILX compilation of one fragment of an assembly

@@ -269,6 +269,8 @@ type IlxGenOptions =
 
         /// When set to true, the IlxGen will delay generation of method bodies and generated them later in parallel (parallelized across files)
         parallelIlxGenEnabled: bool
+
+        inlineNamedFunctions: bool
     }
 
 /// Compilation environment for compiling a fragment of an assembly
@@ -5840,8 +5842,13 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
 
     | None ->
 
-        // If witnesses are available, we should now always find trait witnesses in scope
-        assert not generateWitnesses
+        // When inlineNamedFunctions is true, all trait calls should be resolved via witnesses in scope.
+        // When inlineNamedFunctions is false, inline functions are kept as calls rather than inlined.
+        // Their witness arguments may contain TraitCall operations for constraints that were resolved
+        // without a witness (e.g., when the constraint is satisfied by a known concrete type).
+        // In such cases, generateWitnesses can be true (because other witnesses are in scope) but
+        // the specific trait's witness is not found. Fall through to the constraint solver to resolve it.
+        assert (not generateWitnesses || not cenv.options.inlineNamedFunctions)
 
         let exprOpt =
             CommitOperationResult(ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
