@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-04-12T01:27:16Z",
+  "last_run": "2026-04-12T05:36:59Z",
   "prs": {
     "19472": {
-      "status": "category_c_active_development",
+      "status": "merge_conflict_src_changes",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro rebased 2026-04-10, CI all green (48 checks). T-Gro questioning bug analysis in comment 2026-04-10. PR now includes src/ changes (IlxGen.fs, FSComp.txt). T-Gro managing. Category C."
+      "note": "PR has merge conflict but touches src/ files (IlxGen.fs, FSComp.txt, xlf, release notes). T-Gro actively managing. Conflict resolution beyond shepherd scope. CI was green before conflict."
     },
     "19471": {
       "status": "skipped_title_mismatch",
@@ -13,8 +13,8 @@
     "19468": {
       "status": "category_c_clean",
       "last_shepherd_comment": "2026-03-31T17:25:02Z",
-      "note": "CI all green (46 checks). All abonie review feedback addressed. auduchinok naming comment on src/ file beyond shepherd scope. Awaiting approval."
+      "note": "CI all green (46/46). Mergeable state clean. All review feedback addressed. auduchinok naming comment on src/ file was addressed. Awaiting approval."
     }
   },
-  "notes": "All 3 labeled PRs checked. 2 eligible (#19472, #19468), both Category C. No action taken."
+  "notes": "No action taken. #19472 has merge conflict but PR now includes src/ changes beyond test scope. #19471 ineligible (title). #19468 healthy."
 }
