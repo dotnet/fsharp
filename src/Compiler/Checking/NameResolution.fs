@@ -754,6 +754,14 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
         | LookupIsInstance.Yes -> minfo.IsInstance
         | LookupIsInstance.No -> not minfo.IsInstance)
 
+/// Get all the available methods of a type (both intrinsic and extension)
+let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad findFlag m ty =
+    let intrinsic = IntrinsicMethInfosOfType infoReader optFilter ad AllowMultiIntfInstantiations.Yes findFlag m ty
+    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil intrinsic) then 
+        intrinsic
+    else
+        intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv ad optFilter LookupIsInstance.Ambivalent m ty
+
 let IsExtensionMethCompatibleWithTy (infoReader: InfoReader) m (ty: TType) (minfo: MethInfo) =
     let g = infoReader.g
     let amap = infoReader.amap
@@ -781,15 +789,6 @@ let IsExtensionMethCompatibleWithTy (infoReader: InfoReader) m (ty: TType) (minf
             TypeRelations.TypeFeasiblySubsumesType 0 g amap m ty1 TypeRelations.CanCoerce ty2
     | _ -> 
         true
-
-/// Get all the available methods of a type (both intrinsic and extension)
-let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad findFlag m ty =
-    let intrinsic = IntrinsicMethInfosOfType infoReader optFilter ad AllowMultiIntfInstantiations.Yes findFlag m ty
-    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil intrinsic) then 
-        intrinsic
-    else
-        intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv ad optFilter LookupIsInstance.Ambivalent m ty
-        |> List.filter (IsExtensionMethCompatibleWithTy infoReader m ty)
 
 //-------------------------------------------------------------------------
 // Helpers to do with building environments
