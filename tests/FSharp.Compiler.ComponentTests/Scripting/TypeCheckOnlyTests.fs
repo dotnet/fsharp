@@ -110,3 +110,18 @@ let ``typecheck-only flag prevents execution with #load``() =
         |> verifyNotInOutput "Domain.fsx output"
         |> verifyNotInOutput "A.fsx output"
         |> ignore)
+
+// https://github.com/dotnet/fsharp/issues/15070
+[<Fact>]
+let ``Issue 15070 - hash-load with dot-slash prefix does not produce FS1141`` () =
+    // Before the fix, #load "./path" produced FS1141 "Identifiers followed by '!' are reserved for future use"
+    // After the fix, the parser accepts "./path" and reports a file-not-found error instead.
+    withTempDirectory (fun tempDir ->
+        let mainContent = "#load \"./non-existent-subfolder/some-script.fsx\""
+        let mainPath = writeScript tempDir "main.fsx" mainContent
+
+        FsxFromPath mainPath
+        |> runFsi
+        |> shouldFail
+        |> withStdErrContains "Unable to find the file"
+        |> ignore)

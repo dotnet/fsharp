@@ -941,6 +941,13 @@ val typarConstraintsAEquiv: TcGlobals -> TypeEquivEnv -> TyparConstraint -> Typa
 
 val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
+/// Constraints that may be present in an implementation/extension but not required by a signature/base type.
+val isConstraintAllowedAsExtra: TyparConstraint -> bool
+
+/// Check if declaredTypars are compatible with reqTypars for a type extension.
+/// Allows declaredTypars to have extra NotSupportsNull constraints.
+val typarsAEquivWithAddedNotNullConstraintsAllowed: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
+
 val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
 val typeAEquiv: TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
@@ -1769,6 +1776,9 @@ val isStructTyconRef: TyconRef -> bool
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool
 
+/// Check if a type is a measureable type (like int<kg>) whose underlying type is a value type.
+val isMeasureableValueType: TcGlobals -> TType -> bool
+
 val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is a variable type with the ': struct' constraint.
@@ -1861,6 +1871,8 @@ val ValRefIsCompiledAsInstanceMember: TcGlobals -> ValRef -> bool
 val ModuleNameIsMangled: TcGlobals -> Attribs -> bool
 
 val CompileAsEvent: TcGlobals -> Attribs -> bool
+
+val ValCompileAsEvent: TcGlobals -> Val -> bool
 
 val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
@@ -2362,34 +2374,131 @@ val IsILAttrib: BuiltinAttribInfo -> ILAttribute -> bool
 
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
-val TryFindILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> bool
+val inline hasFlag: flags: ^F -> flag: ^F -> bool when ^F: enum<uint64>
+
+/// Compute well-known attribute flags for an ILAttributes collection.
+val classifyILAttrib: attr: ILAttribute -> WellKnownILAttributes
+
+val computeILWellKnownFlags: _g: TcGlobals -> attrs: ILAttributes -> WellKnownILAttributes
+
+val tryFindILAttribByFlag:
+    flag: WellKnownILAttributes -> cattrs: ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+
+[<return: Struct>]
+val (|ILAttribDecoded|_|):
+    flag: WellKnownILAttributes -> cattrs: ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) voption
+
+type ILAttributesStored with
+
+    member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
+
+type ILTypeDef with
+
+    member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
+
+type ILMethodDef with
+
+    member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
+
+type ILFieldDef with
+
+    member HasWellKnownAttribute: g: TcGlobals * flag: WellKnownILAttributes -> bool
+
+type ILAttributes with
+
+    /// Non-caching (unlike ILAttributesStored.HasWellKnownAttribute which caches).
+    member HasWellKnownAttribute: flag: WellKnownILAttributes -> bool
+
+/// Compute well-known attribute flags for an Entity's Attrib list.
+val computeEntityWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownEntityAttributes
+
+/// Classify a single entity-level attrib to its well-known flag (or None).
+val classifyEntityAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownEntityAttributes
+
+/// Classify a single val-level attrib to its well-known flag (or None).
+val classifyValAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownValAttributes
+
+/// Classify a single assembly-level attrib to its well-known flag (or None).
+val classifyAssemblyAttrib: g: TcGlobals -> attrib: Attrib -> WellKnownAssemblyAttributes
+
+/// Check if an Entity has a specific well-known attribute, computing and caching flags if needed.
+val attribsHaveEntityFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> bool
+
+val filterOutWellKnownAttribs:
+    g: TcGlobals ->
+    entityMask: WellKnownEntityAttributes ->
+    valMask: WellKnownValAttributes ->
+    attribs: Attribs ->
+        Attribs
+
+val tryFindEntityAttribByFlag: g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib option
+
+[<return: Struct>]
+val (|EntityAttrib|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> Attrib voption
+
+[<return: Struct>]
+val (|EntityAttribInt|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> int voption
+
+[<return: Struct>]
+val (|EntityAttribString|_|): g: TcGlobals -> flag: WellKnownEntityAttributes -> attribs: Attribs -> string voption
+
+val attribsHaveValFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> bool
+
+val tryFindValAttribByFlag: g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> Attrib option
+
+[<return: Struct>]
+val (|ValAttrib|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> Attrib voption
+
+[<return: Struct>]
+val (|ValAttribInt|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> int voption
+
+[<return: Struct>]
+val (|ValAttribString|_|): g: TcGlobals -> flag: WellKnownValAttributes -> attribs: Attribs -> string voption
+
+val EntityHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownEntityAttributes -> entity: Entity -> bool
+
+/// Get the computed well-known attribute flags for an entity.
+val GetEntityWellKnownFlags: g: TcGlobals -> entity: Entity -> WellKnownEntityAttributes
+
+/// Map a WellKnownILAttributes flag to its entity flag + provided-type AttribInfo equivalents.
+val mapILFlag:
+    g: TcGlobals -> flag: WellKnownILAttributes -> struct (WellKnownEntityAttributes * BuiltinAttribInfo option)
+
+val computeValWellKnownFlags: g: TcGlobals -> attribs: Attribs -> WellKnownValAttributes
+
+/// Check if an ArgReprInfo has a specific well-known attribute, computing and caching flags if needed.
+val ArgReprInfoHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownValAttributes -> argInfo: ArgReprInfo -> bool
+
+/// Check if a Val has a specific well-known attribute, computing and caching flags if needed.
+val ValHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownValAttributes -> v: Val -> bool
+
+/// Query a three-state bool attribute on an entity. Returns bool option.
+val EntityTryGetBoolAttribute:
+    g: TcGlobals ->
+    trueFlag: WellKnownEntityAttributes ->
+    falseFlag: WellKnownEntityAttributes ->
+    entity: Entity ->
+        bool option
+
+/// Query a three-state bool attribute on a Val. Returns bool option.
+val ValTryGetBoolAttribute:
+    g: TcGlobals -> trueFlag: WellKnownValAttributes -> falseFlag: WellKnownValAttributes -> v: Val -> bool option
 
 val IsMatchingFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 
-val IsMatchingFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool
-
 val HasFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
 
-val HasFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> bool
-
 val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
-
-val TryFindFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> Attrib option
-
-val TryFindFSharpBoolAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
-
-val TryFindFSharpBoolAttributeAssumeFalse: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
-
-val TryFindFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
-
-val TryFindLocalizedFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
-
-val TryFindFSharpInt32Attribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> int32 option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///
 /// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
 val TryFindTyconRefStringAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> string option
+
+/// Like TryFindTyconRefStringAttribute but with a fast-path flag check on the IL path.
+/// Use this when the attribute has a corresponding WellKnownILAttributes flag for O(1) early exit.
+val TryFindTyconRefStringAttributeFast:
+    TcGlobals -> range -> WellKnownILAttributes -> BuiltinAttribInfo -> TyconRef -> string option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a bool argument.
 val TryFindTyconRefBoolAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool option
@@ -2399,6 +2508,12 @@ val TyconRefHasAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef ->
 
 /// Try to find an attribute with a specific full name on a type definition
 val TyconRefHasAttributeByName: range -> string -> TyconRef -> bool
+
+/// Check if a TyconRef has a well-known attribute, handling both IL and F# metadata with O(1) flag tests.
+val TyconRefHasWellKnownAttribute: g: TcGlobals -> flag: WellKnownILAttributes -> tcref: TyconRef -> bool
+
+/// Check if a TyconRef has AllowNullLiteralAttribute, returning Some true/Some false/None.
+val TyconRefAllowsNull: g: TcGlobals -> tcref: TyconRef -> bool option
 
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
@@ -2763,8 +2878,6 @@ val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 val allTopLevelValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 
 val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
-
-val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 

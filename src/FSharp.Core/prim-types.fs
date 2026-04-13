@@ -5995,8 +5995,8 @@ namespace Microsoft.FSharp.Core
                     }
 
                     let current () = 
-                        // according to IEnumerator<int>.Current documentation, the result of of Current
-                        // is undefined prior to the first call of MoveNext and post called to MoveNext
+                        // according to IEnumerator<int>.Current documentation, the result of Current
+                        // is undefined prior to the first call of MoveNext and post call to MoveNext
                         // that return false (see https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerator-1.current?view=net-7.0)
                         // so we should be able to just return value here, and we could get rid of the 
                         // complete variable which would be faster
@@ -6053,8 +6053,8 @@ namespace Microsoft.FSharp.Core
                         let mutable value = n - GenericOne
 
                         let inline current () =
-                            // according to IEnumerator<int>.Current documentation, the result of of Current
-                            // is undefined prior to the first call of MoveNext and post called to MoveNext
+                            // according to IEnumerator<int>.Current documentation, the result of Current
+                            // is undefined prior to the first call of MoveNext and post call to MoveNext
                             // that return false (see https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerator-1.current?view=net-7.0)
                             // so we should be able to just return value here, which would be faster
                             let derefValue = value

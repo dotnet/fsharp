@@ -3,6 +3,7 @@
 namespace FSharp.Editor.Tests.Hints
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
 open Hints
@@ -47,7 +48,8 @@ module HintTestFramework =
                     }
 
                 let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
-                let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" ct
+                let textSpan = TextSpan(0, sourceText.Length)
+                let! hints = HintService.getHintsForDocument sourceText document hintKinds textSpan "test" ct
                 let! tooltips = hints |> Seq.map getTooltip |> Async.Parallel
                 return tooltips |> Seq.zip hints |> Seq.map convert
             }

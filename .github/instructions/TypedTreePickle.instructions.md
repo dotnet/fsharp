@@ -67,7 +67,7 @@ It tests both directions:
 
 Also run the import regression tests:
 ```bash
-dotnet test tests/FSharp.Compiler.ComponentTests -c Release --filter "FullyQualifiedName~Import" /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.ComponentTests -c Release -- --filter-method "*Import*" /p:BUILDING_USING_DOTNET=true
 ```
 
 For a detailed example of what goes wrong when these rules are violated, see `docs/postmortems/regression-fs0229-bstream-misalignment.md`.

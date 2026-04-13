@@ -294,7 +294,6 @@ let LimitVal cenv (v: Val) limit =
         cenv.limitVals[v.Stamp] <- limit
 
 let BindVal cenv env (v: Val) =
-    //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
 
@@ -315,7 +314,10 @@ let BindVal cenv env (v: Val) =
        not v.HasBeenReferenced &&
        (not v.IsCompiledAsTopLevel || topLevelBindingHiddenBySignatureFile ()) &&
        not (v.DisplayName.StartsWithOrdinal("_")) &&
-       not v.IsCompilerGenerated then
+       not v.IsCompilerGenerated &&
+       // Don't warn for variables with synthetic ranges - these are compiler-generated
+       // rebinding patterns in query/CE translation. See https://github.com/dotnet/fsharp/issues/422
+       not v.Range.IsSynthetic then
 
         if v.IsCtorThisVal then
             warning (Error(FSComp.SR.chkUnusedThisVariable v.DisplayName, v.Range))
@@ -2048,7 +2050,7 @@ and CheckValInfo cenv env (ValReprInfo(_, args, ret)) =
     ret |> CheckArgInfo cenv env
 
 and CheckArgInfo cenv env (argInfo : ArgReprInfo)  =
-    CheckAttribs cenv env argInfo.Attribs
+    CheckAttribs cenv env (argInfo.Attribs.AsList())
 
 and CheckValSpecAux permitByRefLike cenv env (v: Val) onInnerByrefError =
     v.Attribs |> CheckAttribs cenv env
@@ -2074,7 +2076,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
     let isTop = Option.isSome bind.Var.ValReprInfo
     //printfn "visiting %s..." v.DisplayName
 
-    let env = { env with external = env.external || g.attrib_DllImportAttribute |> Option.exists (fun attr -> HasFSharpAttribute g attr v.Attribs) }
+    let env = { env with external = env.external || ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute v }
 
     // Check that active patterns don't have free type variables in their result
     match TryGetActivePatternInfo vref with
@@ -2117,11 +2119,11 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
               (// Check the attributes on any enclosing module
                env.reflect ||
                // Check the attributes on the value
-               HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute v.Attribs ||
+               ValHasWellKnownAttribute g (WellKnownValAttributes.ReflectedDefinitionAttribute_True ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False) v ||
                // Also check the enclosing type for members - for historical reasons, in the TAST member values
                // are stored in the entity that encloses the type, hence we will not have noticed the ReflectedDefinition
                // on the enclosing type at this point.
-               HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute v.DeclaringEntity.Attribs) then
+               EntityHasWellKnownAttribute g WellKnownEntityAttributes.ReflectedDefinitionAttribute v.DeclaringEntity.Deref) then
 
                 if v.IsInstanceMember && v.MemberApparentEntity.IsStructOrEnumTycon then
                     errorR(Error(FSComp.SR.chkNoReflectedDefinitionOnStructMember(), v.Range))
@@ -2187,7 +2189,7 @@ and CheckBindings cenv env binds =
 // Top binds introduce expression, check they are reraise free.
 let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
     let g = cenv.g
-    let isExplicitEntryPoint = HasFSharpAttribute g g.attrib_EntryPointAttribute v.Attribs
+    let isExplicitEntryPoint = ValHasWellKnownAttribute g WellKnownValAttributes.EntryPointAttribute v
     if isExplicitEntryPoint then
         cenv.entryPointGiven <- true
         let isLastCompiland = fst cenv.isLastCompiland
@@ -2198,14 +2200,14 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
     if // Mutable values always have fields
        not v.IsMutable &&
        // Literals always have fields
-       not (HasFSharpAttribute g g.attrib_LiteralAttribute v.Attribs) &&
-       not (HasFSharpAttributeOpt g g.attrib_ThreadStaticAttribute v.Attribs) &&
-       not (HasFSharpAttributeOpt g g.attrib_ContextStaticAttribute v.Attribs) &&
+       not (ValHasWellKnownAttribute g WellKnownValAttributes.LiteralAttribute v) &&
+       not (ValHasWellKnownAttribute g WellKnownValAttributes.ThreadStaticAttribute v) &&
+       not (ValHasWellKnownAttribute g WellKnownValAttributes.ContextStaticAttribute v) &&
        // Having a field makes the binding a static initialization trigger
        IsSimpleSyntacticConstantExpr g e &&
        // Check the thing is actually compiled as a property
        IsCompiledAsStaticProperty g v ||
-       (g.compilingFSharpCore && v.Attribs |> List.exists(fun (Attrib(tc, _, _, _, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute"))
+       (g.compilingFSharpCore && ValHasWellKnownAttribute g WellKnownValAttributes.ValueAsStaticPropertyAttribute v)
      then
         v.SetIsCompiledAsStaticPropertyWithoutField()
 
@@ -2224,9 +2226,9 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             let tcref = v.DeclaringEntity
             let hasDefaultAugmentation =
                 tcref.IsUnionTycon &&
-                match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
-                | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
-                | _ -> true (* not hiddenRepr *)
+                match EntityTryGetBoolAttribute g WellKnownEntityAttributes.DefaultAugmentationAttribute_True WellKnownEntityAttributes.DefaultAugmentationAttribute_False tcref.Deref with
+                | Some b -> b
+                | None -> true
 
             let kind = (if v.IsMember then "member" else "value")
             let check skipValCheck nm =
@@ -2345,7 +2347,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     let tcref = mkLocalTyconRef tycon
     let ty = generalizedTyconRef g tcref
 
-    let env = { env with reflect = env.reflect || HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute tycon.Attribs }
+    let env = { env with reflect = env.reflect || EntityHasWellKnownAttribute g WellKnownEntityAttributes.ReflectedDefinitionAttribute tycon }
     let env = BindTypars g env (tycon.Typars m)
 
     CheckAttribs cenv env tycon.Attribs
@@ -2565,10 +2567,12 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix nm, m))
 
 
+    // Must use name-based matching (not type-identity) because user code can define
+    // its own IsByRefLikeAttribute per RFC FS-1053.
     if TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref && not tycon.IsStructOrEnumTycon then
         errorR(Error(FSComp.SR.tcByRefLikeNotStruct(), tycon.Range))
 
-    if TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref && not tycon.IsStructOrEnumTycon then
+    if TyconRefHasWellKnownAttribute g WellKnownILAttributes.IsReadOnlyAttribute tcref && not tycon.IsStructOrEnumTycon then
         errorR(Error(FSComp.SR.tcIsReadOnlyNotStruct(), tycon.Range))
 
     // Considers TFSharpTyconRepr and TFSharpUnionRepr.
@@ -2644,8 +2648,10 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             for f in tycon.AllInstanceFieldsAsList do
                 let m = f.Range
                 // Check if it's marked unsafe
-                let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
-                if zeroInitUnsafe = Some true then
+                let zeroInitUnsafe =
+                    attribsHaveValFlag g WellKnownValAttributes.DefaultValueAttribute_True f.FieldAttribs
+
+                if zeroInitUnsafe then
                     let ty = f.FormalType
                     // If the condition is detected because of a variation in logic introduced because
                     // of nullness checking, then only a warning is emitted.
@@ -2660,8 +2666,10 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             for f in tycon.AllInstanceFieldsAsList do
                 let m = f.Range
                 // Check if it's marked unsafe
-                let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
-                if zeroInitUnsafe = Some true then
+                let zeroInitUnsafe =
+                    attribsHaveValFlag g WellKnownValAttributes.DefaultValueAttribute_True f.FieldAttribs
+
+                if zeroInitUnsafe then
                     if not (TypeHasDefaultValue g m f.FormalType) then
                         errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
@@ -2751,7 +2759,7 @@ and CheckModuleSpec cenv env mbind =
         CheckModuleBinding cenv env bind
     | ModuleOrNamespaceBinding.Module (mspec, rhs) ->
         CheckEntityDefn cenv env mspec
-        let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
+        let env = { env with reflect = env.reflect || EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.ReflectedDefinitionAttribute mspec }
         CheckDefnInModule cenv env rhs
 
 let CheckImplFileContents cenv env implFileTy implFileContents  =

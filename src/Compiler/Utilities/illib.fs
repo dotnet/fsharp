@@ -1044,7 +1044,12 @@ type LazyWithContext<'T, 'Ctxt> =
 
     member x.Force(ctxt: 'Ctxt) =
         match x.funcOrException with
-        | null -> x.value
+        | null ->
+            // Ensure we read the latest value after seeing funcOrException as null.
+            // On weakly-ordered architectures like ARM64, without this barrier the CPU
+            // can reorder the reads and we may observe a stale (default/null) x.value.
+            Thread.MemoryBarrier()
+            x.value
         | _ ->
             // Enter the lock in case another thread is in the process of evaluating the result
             Monitor.Enter x
@@ -1066,6 +1071,11 @@ type LazyWithContext<'T, 'Ctxt> =
             try
                 let res = f ctxt
                 x.value <- res
+                // Ensure the write to x.value is globally visible before funcOrException
+                // is set to null, so that readers on the fast path of Force see the result.
+                // Without this barrier, ARM64 may reorder the stores causing readers to see
+                // funcOrException as null but x.value as stale (Unchecked.defaultof).
+                Thread.MemoryBarrier()
                 x.funcOrException <- null
                 res
             with RecoverableException exn ->

@@ -1325,12 +1325,15 @@ module Seq =
     val indexed: source: seq<'T> -> seq<int * 'T>
 
     /// <summary>Generates a new sequence which, when iterated, will return successive
-    /// elements by calling the given function, up to the given count.  Each element is saved after its
-    /// initialization.  The function is passed the index of the item being
-    /// generated.</summary>
+    /// elements by calling the given function, up to the given count. The results of calling the function
+    /// will not be saved, that is the function will be reapplied as necessary to
+    /// regenerate the elements. The function is passed the index of the item being
+    /// generated. To cache the results, see <see cref="M:Microsoft.FSharp.Collections.SeqModule.Cache``1"/>.</summary>
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
-    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently. This is an O(n) operation, where n is the count.</remarks>
+    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
+    /// Construction of the sequence object is an O(1) operation. Each enumeration is an O(n) operation, where n is the count,
+    /// invoking the initializer function once per element.</remarks>
     ///
     /// <param name="count">The maximum number of items to generate for the sequence.</param>
     /// <param name="initializer">A function that generates an item in the sequence from a given index.</param>
@@ -1776,6 +1779,8 @@ module Seq =
 
     /// <summary>Returns the greatest of all elements of the sequence, compared via Operators.max on the function result.</summary>
     ///
+    /// <remarks>Returns the first maximal element of the sequence if there are multiple equal maximum elements.
+    /// This is an O(n) operation, where n is the length of the sequence.</remarks>
     /// <param name="projection">A function to transform items from the input sequence into comparable keys.</param>
     /// <param name="source">The input sequence.</param>
     ///
@@ -1801,8 +1806,6 @@ module Seq =
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MaxBy")>]
     val inline maxBy: projection: ('T -> 'U) -> source: seq<'T> -> 'T when 'U: comparison
 
@@ -1839,6 +1842,9 @@ module Seq =
 
     /// <summary>Returns the lowest of all elements of the sequence, compared via Operators.min on the function result.</summary>
     ///
+    /// <remarks>Returns the first minimal element of the sequence if there are multiple equal minimal elements.
+    /// This is an O(n) operation, where n is the length of the sequence.</remarks>
+    ///
     /// <param name="projection">A function to transform items from the input sequence into comparable keys.</param>
     /// <param name="source">The input sequence.</param>
     ///
@@ -1864,8 +1870,6 @@ module Seq =
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MinBy")>]
     val inline minBy: projection: ('T -> 'U) -> source: seq<'T> -> 'T when 'U: comparison
 

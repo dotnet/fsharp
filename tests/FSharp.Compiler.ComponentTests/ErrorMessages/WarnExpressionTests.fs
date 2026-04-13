@@ -176,6 +176,63 @@ while x < 1 do
         |> withSingleDiagnostic (Warning 20, Line 6, Col 5, Line 6, Col 9,
                                  "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
 
+    // https://github.com/dotnet/fsharp/issues/5735
+    [<Fact>]
+    let ``Warn On Last Expression In For Loop - int``() =
+        FSharp """
+module ClassLibrary17
+
+for i in 1 .. 10 do
+    printfn ""
+    printfn "" |> ignore
+    123
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 20, Line 7, Col 5, Line 7, Col 8,
+                                 "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+
+    // https://github.com/dotnet/fsharp/issues/5735
+    [<Fact>]
+    let ``Warn On Last Expression In For Loop - string``() =
+        FSharp """
+for i in 1 .. 10 do
+    printfn ""
+    "hello"
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 20, Line 4, Col 5, Line 4, Col 12,
+                                 "The result of this expression has type 'string' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+
+    // https://github.com/dotnet/fsharp/issues/5735
+    [<Fact>]
+    let ``Warn On Last Expression In Integer For Loop``() =
+        FSharp """
+for i = 1 to 10 do
+    printfn ""
+    42
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 20, Line 4, Col 5, Line 4, Col 7,
+                                 "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+
+    // https://github.com/dotnet/fsharp/issues/5735
+    [<Fact>]
+    let ``Warn On Last Expression In While Loop - non-bool``() =
+        FSharp """
+let mutable x = 0
+while x < 1 do
+    printfn "unneeded"
+    x <- x + 1
+    123
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 20, Line 6, Col 5, Line 6, Col 8,
+                                 "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+
     [<Fact>]
     let ``Warn If Possible Property Setter``() =
         FSharp """

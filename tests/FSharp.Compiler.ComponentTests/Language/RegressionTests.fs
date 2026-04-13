@@ -53,3 +53,32 @@ let f (start: DateTime) (stop: DateTime) (input: (DateTime * 'a) list) =
         |> compile
         |> shouldSucceed
         |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/14152
+    [<Fact>]
+    let ``Issue 14152 - nowarn directive before module declaration should compile`` () =
+        FSharp
+            """
+#nowarn "20"
+
+module XXX.MyModule
+
+let x = 15
+            """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/16007
+    [<Fact>]
+    let ``Issue 16007 - SRTP ctor constraint should not cause value restriction error`` () =
+        FSharp """
+type T() = class end
+let dosmth (a: T) = System.Console.WriteLine(a.ToString())
+let inline NEW () = (^a : (new : unit -> ^a) ())
+let x = NEW ()
+dosmth x
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed

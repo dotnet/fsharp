@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
@@ -301,19 +301,28 @@ let signStream stream keyBlob =
     patchSignature stream peReader signature
 
 let signatureSize (pk: byte array) =
-    if pk.Length < 25 then
+    if obj.ReferenceEquals(pk, null) || pk.Length < 16 then
         raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
+    else
+        let tryReadBitLen (offset: int) =
+            if pk.Length >= offset + 12 then
+                let mutable reader = BlobReader pk
+                reader._offset <- offset
+                let magic = reader.ReadInt32()
 
-    let mutable reader = BlobReader pk
-    reader.ReadBigInteger 12 |> ignore // Skip CLRHeader
-    reader.ReadBigInteger 8 |> ignore // Skip BlobHeader
-    let magic = reader.ReadInt32() // Read magic
+                if magic = RSA_PUB_MAGIC || magic = RSA_PRIV_MAGIC then
+                    let bitLen = reader.ReadInt32()
+                    Some(bitLen / 8)
+                else
+                    None
+            else
+                None
 
-    if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then // RSAPubKey.magic
-        raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
-
-    let x = reader.ReadInt32() / 8
-    x
+        // Try offset 8: RSAPUBKEY header in a raw key blob (no CLR header)
+        // Try offset 20: RSAPUBKEY header in a CLR key blob (12-byte CLR header + 8-byte BLOBHEADER)
+        [ 8; 20 ]
+        |> List.tryPick tryReadBitLen
+        |> Option.defaultWith (fun () -> raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ()))))
 
 // Returns a CLR Format Blob public key
 let getPublicKeyForKeyPair keyBlob =
@@ -321,6 +330,13 @@ let getPublicKeyForKeyPair keyBlob =
     rsa.ImportParameters(RSAParametersFromBlob keyBlob KeyType.KeyPair)
     let rsaParameters = rsa.ExportParameters false
     toCLRKeyBlob rsaParameters CALG_RSA_KEYX
+
+// Detect whether a byte array is a raw CAPI PRIVATEKEYBLOB (full key pair).
+// A raw key pair blob starts with bType=0x07 (PRIVATEKEYBLOB), bVersion=0x02.
+let isKeyPairBlob (blob: byte array) =
+    blob.Length > 8
+    && int blob.[0] = PRIVATEKEYBLOB
+    && int blob.[1] = BLOBHEADER_CURRENT_BVERSION
 
 // Key signing
 type keyContainerName = string
@@ -366,7 +382,12 @@ type ILStrongNameSigner =
         | PublicKeySigner pk -> pk
         | PublicKeyOptionsSigner pko ->
             let pk, _ = pko
-            pk
+            // If the blob is a full key pair (PRIVATEKEYBLOB), extract the public key
+            // to avoid embedding private key material in the assembly.
+            if isKeyPairBlob pk then
+                signerGetPublicKeyForKeyPair pk
+            else
+                pk
         | KeyPair kp -> signerGetPublicKeyForKeyPair kp
         | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 

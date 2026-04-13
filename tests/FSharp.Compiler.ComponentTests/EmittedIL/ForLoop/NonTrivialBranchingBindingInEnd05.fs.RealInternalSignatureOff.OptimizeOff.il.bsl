@@ -127,7 +127,7 @@
     IL_0040:  stloc.2
     IL_0041:  ldloc.2
     IL_0042:  ldloc.3
-    IL_0043:  blt.s      IL_00af
+    IL_0043:  blt.s      IL_00a3
 
     IL_0045:  ldc.i4.0
     IL_0046:  stloc.s    V_7
@@ -154,61 +154,60 @@
     IL_006a:  stloc.s    V_6
     IL_006c:  ldloc.s    V_6
     IL_006e:  ldloc.s    V_7
-    IL_0070:  blt.s      IL_00a5
+    IL_0070:  blt.s      IL_0099
 
     IL_0072:  call       int32[] assembly::get_r()
     IL_0077:  ldloc.s    V_7
     IL_0079:  call       int32[] assembly::get_r()
     IL_007e:  ldloc.s    V_7
-    IL_0080:  ldelem     [runtime]System.Int32
-    IL_0085:  call       int32[] assembly::get_w()
-    IL_008a:  ldloc.s    V_7
-    IL_008c:  ldelem     [runtime]System.Int32
-    IL_0091:  add
-    IL_0092:  stelem     [runtime]System.Int32
-    IL_0097:  ldloc.s    V_7
-    IL_0099:  ldc.i4.1
-    IL_009a:  add
-    IL_009b:  stloc.s    V_7
-    IL_009d:  ldloc.s    V_7
-    IL_009f:  ldloc.s    V_6
-    IL_00a1:  ldc.i4.1
-    IL_00a2:  add
-    IL_00a3:  bne.un.s   IL_0072
+    IL_0080:  ldelem.i4
+    IL_0081:  call       int32[] assembly::get_w()
+    IL_0086:  ldloc.s    V_7
+    IL_0088:  ldelem.i4
+    IL_0089:  add
+    IL_008a:  stelem.i4
+    IL_008b:  ldloc.s    V_7
+    IL_008d:  ldc.i4.1
+    IL_008e:  add
+    IL_008f:  stloc.s    V_7
+    IL_0091:  ldloc.s    V_7
+    IL_0093:  ldloc.s    V_6
+    IL_0095:  ldc.i4.1
+    IL_0096:  add
+    IL_0097:  bne.un.s   IL_0072
 
-    IL_00a5:  ldloc.3
-    IL_00a6:  ldc.i4.1
-    IL_00a7:  add
-    IL_00a8:  stloc.3
-    IL_00a9:  ldloc.3
-    IL_00aa:  ldloc.2
-    IL_00ab:  ldc.i4.1
-    IL_00ac:  add
-    IL_00ad:  bne.un.s   IL_0045
+    IL_0099:  ldloc.3
+    IL_009a:  ldc.i4.1
+    IL_009b:  add
+    IL_009c:  stloc.3
+    IL_009d:  ldloc.3
+    IL_009e:  ldloc.2
+    IL_009f:  ldc.i4.1
+    IL_00a0:  add
+    IL_00a1:  bne.un.s   IL_0045
 
-    IL_00af:  nop
-    IL_00b0:  nop
-    IL_00b1:  call       int32[] assembly::get_r()
-    IL_00b6:  ldc.i4.0
-    IL_00b7:  ldelem     [runtime]System.Int32
-    IL_00bc:  ldc.i4.s   11
-    IL_00be:  bne.un.s   IL_00c4
+    IL_00a3:  nop
+    IL_00a4:  nop
+    IL_00a5:  call       int32[] assembly::get_r()
+    IL_00aa:  ldc.i4.0
+    IL_00ab:  ldelem.i4
+    IL_00ac:  ldc.i4.s   11
+    IL_00ae:  bne.un.s   IL_00b4
 
-    IL_00c0:  ldc.i4.0
-    IL_00c1:  nop
-    IL_00c2:  br.s       IL_00c6
+    IL_00b0:  ldc.i4.0
+    IL_00b1:  nop
+    IL_00b2:  br.s       IL_00b6
 
-    IL_00c4:  ldc.i4.1
-    IL_00c5:  nop
-    IL_00c6:  stloc.s    V_10
-    IL_00c8:  ldloc.s    V_10
-    IL_00ca:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_00cf:  pop
-    IL_00d0:  ret
+    IL_00b4:  ldc.i4.1
+    IL_00b5:  nop
+    IL_00b6:  stloc.s    V_10
+    IL_00b8:  ldloc.s    V_10
+    IL_00ba:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
+    IL_00bf:  pop
+    IL_00c0:  ret
   } 
 
 } 
-
 
 
 

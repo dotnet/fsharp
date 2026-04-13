@@ -24,6 +24,7 @@ type IdentTrivia =
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ConditionalDirectiveTrivia =
     | If of expr: IfDirectiveExpression * range: range
+    | Elif of expr: IfDirectiveExpression * range: range
     | Else of range: range
     | EndIf of range: range
 
@@ -48,7 +49,7 @@ type CommentTrivia =
 [<NoEquality; NoComparison>]
 type ParsedInputTrivia =
     {
-        /// Preprocessor directives of type #if, #else or #endif
+        /// Preprocessor directives of type #if, #elif, #else or #endif
         ConditionalDirectives: ConditionalDirectiveTrivia list
 
         /// Warn directives (#nowarn / #warnon)

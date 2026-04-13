@@ -779,6 +779,7 @@ type Exception with
         | ErrorFromAddingTypeEquation(_, _, _, _, (ConstraintSolverTypesNotInEqualityRelation(_, _, _, _, _, contextInfo) as e), _) when
             (match contextInfo with
              | ContextInfo.NoContext -> false
+             | ContextInfo.NullnessCheckOfCapturedArg _ -> false
              | _ -> true)
             ->
             e.Output(os, suggestNames)
@@ -900,7 +901,7 @@ type Exception with
                         tTy,
                         {
                             ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range0))
-                            ArgReprInfo.Attribs = []
+                            ArgReprInfo.Attribs = WellKnownValAttribs.Empty
                             ArgReprInfo.OtherRange = None
                         })
 
@@ -1283,7 +1284,8 @@ type Exception with
                 | Parser.TOKEN_HASH_LINE
                 | Parser.TOKEN_HASH_IF
                 | Parser.TOKEN_HASH_ELSE
-                | Parser.TOKEN_HASH_ENDIF -> SR.GetString("Parser.TOKEN.HASH.ENDIF")
+                | Parser.TOKEN_HASH_ENDIF
+                | Parser.TOKEN_HASH_ELIF -> SR.GetString("Parser.TOKEN.HASH.ENDIF")
                 | Parser.TOKEN_INACTIVECODE -> SR.GetString("Parser.TOKEN.INACTIVECODE")
                 | Parser.TOKEN_LEX_FAILURE -> SR.GetString("Parser.TOKEN.LEX.FAILURE")
                 | Parser.TOKEN_WHITESPACE -> SR.GetString("Parser.TOKEN.WHITESPACE")

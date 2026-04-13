@@ -14,6 +14,7 @@ type Ident =
     new: text: string * range: range -> Ident
     member idText: string
     member idRange: range
+    member internal MakeSynthetic: unit -> Ident
 
 /// Represents an identifier with potentially additional trivia information.
 type SynIdent =

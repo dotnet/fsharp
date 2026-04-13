@@ -99,7 +99,7 @@ jobs:
             "/run fantomas") dotnet fantomas . ;;
             "/run xlf") dotnet build src/Compiler /t:UpdateXlf ;;
             "/run ilverify") pwsh tests/ILVerify/ilverify.ps1 || true ;;
-            "/run test-baseline") dotnet test ./FSharp.Compiler.Service.sln --filter "${{ needs.parsing_job.outputs.arg }}" -c Release || true ;;
+            "/run test-baseline") dotnet test ./FSharp.Compiler.Service.sln -- --filter-query "${{ needs.parsing_job.outputs.arg }}" -c Release || true ;;
             *) echo "Unknown command" && exit 1 ;;
           esac
 

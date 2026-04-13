@@ -14,6 +14,13 @@ open FSharp.Compiler.SyntaxTrivia
 type Ident(text: string, range: range) =
     member _.idText = text
     member _.idRange = range
+
+    member x.MakeSynthetic() =
+        if range.IsSynthetic then
+            x
+        else
+            Ident(text, range.MakeSynthetic())
+
     override _.ToString() = text
 
 type SynIdent =

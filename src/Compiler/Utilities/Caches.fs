@@ -123,9 +123,8 @@ module CacheMetrics =
                 Console.WriteLine(StatsToString())
         }
 
-    // Currently the Cache emits telemetry for raw cache events: hits, misses, evictions etc.
-    // This type observes those counters and keeps a snapshot of readings. It is used in tests and can be used to print cache stats in debug mode.
-    type CacheMetricsListener(cacheTags: TagList) =
+    [<Sealed>]
+    type CacheMetricsListener(cacheTags: TagList, ?nameOnlyFilter: string) =
 
         let stats = Stats()
         let listener = new MeterListener()
@@ -135,19 +134,36 @@ module CacheMetrics =
                 listener.EnableMeasurementEvents instrument
 
             listener.SetMeasurementEventCallback(fun instrument v tags _ ->
-                let tagsMatch = tags[0] = cacheTags[0] && tags[1] = cacheTags[1]
+                let shouldIncrement =
+                    match nameOnlyFilter with
+                    | Some filterName ->
+                        match tags[0].Value with
+                        | :? string as name when name = filterName -> true
+                        | _ -> false
+                    | None -> tags[0] = cacheTags[0] && tags[1] = cacheTags[1]
 
-                if tagsMatch then
+                if shouldIncrement then
                     stats.Incr instrument.Name v)
 
             listener.Start()
 
+        /// Creates a listener that aggregates metrics across all cache instances with the given name.
+        new(cacheName: string) = new CacheMetricsListener(TagList(), nameOnlyFilter = cacheName)
+
         interface IDisposable with
             member _.Dispose() = listener.Dispose()
 
+        /// Gets the current totals for each metric type.
         member _.GetTotals() = stats.GetTotals()
 
+        /// Gets the current hit ratio (hits / (hits + misses)).
         member _.Ratio = stats.Ratio
+
+        /// Gets the total number of cache hits.
+        member _.Hits = stats.GetTotals().[hits.Name]
+
+        /// Gets the total number of cache misses.
+        member _.Misses = stats.GetTotals().[misses.Name]
 
         override _.ToString() = stats.ToString()
 

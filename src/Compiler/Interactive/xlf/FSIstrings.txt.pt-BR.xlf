@@ -27,6 +27,11 @@
         <target state="translated">Exibir documentação para um identificador, por exemplo, #help \"List.map\";;</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashversionInfo">
+        <source>Display F# Interactive version and environment information</source>
+        <target state="new">Display F# Interactive version and environment information</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">Não foi possível concluir a operação devido a um erro anterior</target>

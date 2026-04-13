@@ -442,25 +442,22 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
         | Some _ -> None
 
     member x.CompiledRepresentation =
-        checkIsResolved()
-
-        let fail () =
-            invalidOp $"the type '{x.LogicalName}' does not have a qualified name"
+        if isUnresolved () then None else
 
 #if !NO_TYPEPROVIDERS
-        if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail ()
+        if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then None else
 #else
-        if entity.IsTypeAbbrev || entity.IsNamespace then fail ()
+        if entity.IsTypeAbbrev || entity.IsNamespace then None else
 #endif
         match entity.CompiledRepresentation with
-        | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> tref
-        | CompiledTypeRepr.ILAsmOpen _ -> fail ()
+        | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> Some tref
+        | CompiledTypeRepr.ILAsmOpen _ -> None
 
     member x.QualifiedName =
-        x.CompiledRepresentation.QualifiedName
+         x.CompiledRepresentation |> Option.map _.QualifiedName
 
     member x.BasicQualifiedName =
-        x.CompiledRepresentation.BasicQualifiedName
+        x.CompiledRepresentation |> Option.map _.BasicQualifiedName
 
     member x.FullName = 
         checkIsResolved()
@@ -1815,7 +1812,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m -> m.IsUnionCaseTester
         | V v ->
             v.IsPropertyGetterMethod &&
-            v.LogicalName.StartsWith("get_Is") &&
+            PrettyNaming.IsUnionCaseTesterPropertyName v.LogicalName &&
             v.IsImplied && v.MemberApparentEntity.IsUnionTycon
         | E _ | C _ -> false
 
@@ -1909,6 +1906,8 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsEvent = 
         match d with 
         | E _ -> true
+        | P p when p.IsFSharpEventProperty -> true
+        | V v when v.IsFSharpEventProperty cenv.g -> true
         | _ -> false
 
     member _.EventForFSharpProperty = 
@@ -2129,7 +2128,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             [ [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in p.GetParamDatas(cenv.amap, range0) do 
                     // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                     // either .NET or F# parameters
-                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=[]; OtherRange=None }
+                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Empty; OtherRange=None }
                     let m =
                         match nmOpt with
                         | Some v -> v.idRange
@@ -2148,7 +2147,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                    [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in argTys do 
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                 // either .NET or F# parameters
-                        let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=[]; OtherRange=None }
+                        let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Empty; OtherRange=None }
                         let m =
                             match nmOpt with
                             | Some v -> v.idRange
@@ -2184,10 +2183,10 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             [ for argTys in argTysl do 
                  yield 
                    [ for argTy, argInfo in argTys do 
-                        let isParamArrayArg = HasFSharpAttribute cenv.g cenv.g.attrib_ParamArrayAttribute argInfo.Attribs
-                        let isInArg = HasFSharpAttribute cenv.g cenv.g.attrib_InAttribute argInfo.Attribs && isByrefTy cenv.g argTy
-                        let isOutArg = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute argInfo.Attribs && isByrefTy cenv.g argTy
-                        let isOptionalArg = HasFSharpAttribute cenv.g cenv.g.attrib_OptionalArgumentAttribute argInfo.Attribs
+                        let isParamArrayArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.ParamArrayAttribute argInfo
+                        let isInArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.InAttribute argInfo && isByrefTy cenv.g argTy
+                        let isOutArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.OutAttribute argInfo && isByrefTy cenv.g argTy
+                        let isOptionalArg = ArgReprInfoHasWellKnownAttribute cenv.g WellKnownValAttributes.OptionalArgumentAttribute argInfo
                         let m =
                             match argInfo.Name with
                             | Some v -> v.idRange
@@ -2503,7 +2502,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let nm = String.uncapitalize witnessInfo.MemberName
                 let nm = if used.Contains nm then nm + string i else nm
                 let m = x.DeclarationLocation
-                let argReprInfo : ArgReprInfo = { Attribs=[]; Name=Some (mkSynId m nm); OtherRange=None }
+                let argReprInfo : ArgReprInfo = { Attribs=WellKnownValAttribs.Empty; Name=Some (mkSynId m nm); OtherRange=None }
                 let p = FSharpParameter(cenv, paramTy, argReprInfo, None, m, false, false, false, false, true)
                 p, (used.Add nm, i + 1))
             |> fst
@@ -2560,24 +2559,59 @@ type FSharpType(cenv, ty:TType) =
 
     member _.IsMeasureType =
        isResolved() &&
-       protect <| fun () ->
-        match stripTyparEqns ty with
-        | TType_measure _ -> true
-        | _ -> false
+       protect <| fun () -> isMeasureTy cenv.g ty
 
     member _.IsTupleType = 
        isResolved() &&
-       protect <| fun () -> 
-        match stripTyparEqns ty with 
-        | TType_tuple _ -> true 
-        | _ -> false
+       protect <| fun () -> isAnyTupleTy cenv.g ty
+
+    member _.IsReferenceTupleType = 
+       isResolved() &&
+       protect <| fun () -> isRefTupleTy cenv.g ty
 
     member _.IsStructTupleType = 
        isResolved() &&
-       protect <| fun () -> 
-        match stripTyparEqns ty with 
-        | TType_tuple (tupInfo, _) -> evalTupInfoIsStruct tupInfo
-        | _ -> false
+       protect <| fun () -> isStructTupleTy cenv.g ty
+
+    member _.IsUnitType =
+        isResolved () &&
+        protect <| fun () -> isUnitTy cenv.g ty
+
+    member _.IsArrayType =
+        isResolved () &&
+        protect <| fun () -> isArrayTy cenv.g ty
+
+    member _.IsNativePointerType =
+        isResolved () &&
+        protect <| fun () -> isNativePtrTy cenv.g ty
+
+    member _.IsFSharpList =
+        isResolved () &&
+        protect <| fun () -> isListTy cenv.g ty
+
+    member _.IsFSharpChoice =
+        isResolved () &&
+        protect <| fun () -> isChoiceTy cenv.g ty
+
+    member _.IsFSharpOption =
+        isResolved () &&
+        protect <| fun () -> isOptionTy cenv.g ty
+
+    member _.IsFSharpValueOption =
+        isResolved () &&
+        protect <| fun () -> isValueOptionTy cenv.g ty
+
+    member _.IsStringType =
+        isResolved () &&
+        protect <| fun () -> isStringTy cenv.g ty
+
+    member _.IsObjectType =
+        isResolved () &&
+        protect <| fun () -> isObjTyAnyNullness cenv.g ty
+
+    member _.IsBooleanType =
+        isResolved () &&
+        protect <| fun () -> isBoolTy cenv.g ty
 
     member _.TypeDefinition = 
        protect <| fun () -> 
@@ -2636,17 +2670,11 @@ type FSharpType(cenv, ty:TType) =
 
     member _.IsFunctionType = 
        isResolved() &&
-       protect <| fun () -> 
-        match stripTyparEqns ty with 
-        | TType_fun _ -> true 
-        | _ -> false
+       protect <| fun () -> isFunTy cenv.g ty
 
     member _.IsAnonRecordType = 
        isResolved() &&
-       protect <| fun () -> 
-        match stripTyparEqns ty with 
-        | TType_anon _ -> true 
-        | _ -> false
+       protect <| fun () -> isAnonRecdTy cenv.g ty
 
     member _.AnonRecordTypeDetails = 
        protect <| fun () -> 
@@ -2679,20 +2707,17 @@ type FSharpType(cenv, ty:TType) =
         GetSuperTypeOfType cenv.g cenv.amap range0 ty
         |> Option.map (fun ty -> FSharpType(cenv, ty)) 
 
-    member x.ErasedType=
+    member x.ErasedType =
         FSharpType(cenv, stripTyEqnsWrtErasure EraseAll cenv.g ty)
 
     member x.BasicQualifiedName =
-        let fail () =
-            invalidOp $"the type '{x}' does not have a qualified name"
-
         protect <| fun () ->
             match stripTyparEqns ty with 
             | TType_app(tcref, _, _) ->
                 match tcref.CompiledRepresentation with 
-                | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> tref.BasicQualifiedName
-                | CompiledTypeRepr.ILAsmOpen _ -> fail () 
-            | _ -> fail ()
+                | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> Some tref.BasicQualifiedName
+                | CompiledTypeRepr.ILAsmOpen _ -> None 
+            | _ -> None
 
     member _.Instantiate(instantiation:(FSharpGenericParameter * FSharpType) list) = 
         let resTy = instType (instantiation |> List.map (fun (tyv, ty) -> tyv.TypeParameter, ty.Type)) ty
@@ -2890,7 +2915,7 @@ type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, m:
                          (fun _ _ _ -> true))
 
     new (cenv, idOpt, ty, ownerOpt, m) =
-        let argInfo: ArgReprInfo = { Name = idOpt; Attribs = []; OtherRange = None }
+        let argInfo: ArgReprInfo = { Name = idOpt; Attribs = WellKnownValAttribs.Empty; OtherRange = None }
         FSharpParameter(cenv, ty, argInfo, ownerOpt, m, false, false, false, false, false)
 
     new (cenv, ty, argInfo: ArgReprInfo, m: range) =
@@ -2914,7 +2939,7 @@ type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, m:
         | _ -> None
 
     override _.Attributes = 
-        topArgInfo.Attribs |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
+        topArgInfo.Attribs.AsList() |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
 
     member _.IsParamArrayArg = isParamArrayArg
 

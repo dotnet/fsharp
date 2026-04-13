@@ -19,7 +19,12 @@
     ./Get-PrBuildIds.ps1 -PrNumber 33251 -Repo "dotnet/fsharp"
 
 .OUTPUTS
-    Array of objects with Pipeline, BuildId, State, and Link properties.
+    Array of objects with Pipeline, BuildId, State, Detail, and Link properties.
+    The State represents the worst-case state across all jobs in the build:
+    - FAILURE if any job failed
+    - IN_PROGRESS if any job is still running or queued
+    - SUCCESS if all jobs completed successfully
+    The Detail field shows the count of jobs in each state.
 #>
 
 [CmdletBinding()]
@@ -60,6 +65,30 @@ $builds = $checks | Where-Object { $_.link -match "dev\.azure\.com" } | ForEach-
         State    = $_.state
         Link     = $_.link
     }
-} | Sort-Object -Property Pipeline, BuildId -Unique
+} | Group-Object BuildId | ForEach-Object {
+    $jobs = $_.Group
+    $states = $jobs | Select-Object -ExpandProperty State -Unique
+    
+    # Determine overall state (worst case wins)
+    $overall = if ($states -contains "FAILURE") { 
+        "FAILURE" 
+    }
+    elseif ($states -contains "IN_PROGRESS" -or $states -contains "QUEUED") { 
+        "IN_PROGRESS" 
+    }
+    else { 
+        "SUCCESS" 
+    }
+    
+    $first = $jobs | Select-Object -First 1
+    
+    [PSCustomObject]@{
+        Pipeline = $first.Pipeline
+        BuildId  = $first.BuildId
+        State    = $overall
+        Detail   = ($jobs | Group-Object State | ForEach-Object { "$($_.Count) $($_.Name)" }) -join ", "
+        Link     = ($first.Link -replace "\&view=.*", "")
+    }
+}
 
 $builds

@@ -339,7 +339,7 @@ module MediumPriority =
     type TaskBuilder with
 
         /// <summary>
-        /// Implementation of the `and!` operation for a a task and a task-like value.
+        /// Implementation of the `and!` operation for a task and a task-like value.
         /// </summary>
         member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
             task1: Task< ^TResult1 > * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
@@ -379,7 +379,7 @@ module MediumPriority =
     type BackgroundTaskBuilder with
 
         /// <summary>
-        /// Implementation of the `and!` operation for a a task and a task-like value.
+        /// Implementation of the `and!` operation for a task and a task-like value.
         /// </summary>
         member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
             task1: Task< ^TResult1 > * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>

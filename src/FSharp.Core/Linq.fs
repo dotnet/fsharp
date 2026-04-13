@@ -34,9 +34,18 @@ module LeafExpressionConverter =
         {   varEnv : Map<Var, Expression> }
     let asExpr x = (x :> Expression)
 
-    let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
-
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
+
+    /// Determines if a property access on a derived union case type needs to be coerced to the declaring type.
+    /// This handles the case where a property is defined on a specific union case type that inherits from the union type.
+    let getUnionCaseCoercionType (objOpt: Expr option) (declaringType: Type) =
+        if objOpt.IsSome && 
+           FSharpType.IsUnion declaringType && 
+           not (isNull declaringType.BaseType) &&
+           FSharpType.IsUnion declaringType.BaseType then
+            Some declaringType
+        else
+            None
 
     let equivHeadTypes (ty1:Type) (ty2:Type) =
         isNamedType(ty1) &&
@@ -475,11 +484,7 @@ module LeafExpressionConverter =
              build arg.Type argP n
 
         | PropertyGet(objOpt, propInfo, args) ->
-            let coerceTo =
-                if objOpt.IsSome && FSharpType.IsUnion propInfo.DeclaringType && FSharpType.IsUnion propInfo.DeclaringType.BaseType then
-                    Some propInfo.DeclaringType
-                else
-                    None
+            let coerceTo = getUnionCaseCoercionType objOpt propInfo.DeclaringType
             match args with
             | [] ->
                 Expression.Property(ConvObjArg env objOpt coerceTo, propInfo) |> asExpr
@@ -623,7 +628,10 @@ module LeafExpressionConverter =
             | CheckedConvUInt16Q (_, _, [x]) | CheckedConvUInt32Q (_, _, [x]) | CheckedConvUInt64Q (_, _, [x]) | CheckedConvIntPtrQ (_, _, [x]) -> transConv inp env true x
             | CheckedConvUIntPtrQ (_, _, [x]) -> transConv inp env true x
 
-            | ArrayLookupQ (_, GenericArgs [|_; _; _|], [x1; x2]) ->
+            // Issue #16918: ArrayLookupQ pattern expects GenericArgs [|_|] (1 type param) not [|_; _; _|] (3 params)
+            // because GetArray only has 1 type parameter. This enables proper Expression.ArrayIndex generation
+            // that LINQ providers can translate, instead of falling through to method call handling.
+            | ArrayLookupQ (_, GenericArgs [|_|], [x1; x2]) ->
                 Expression.ArrayIndex(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
 
             // Throw away markers inserted to satisfy C#'s design where they pass an argument
@@ -770,13 +778,16 @@ module LeafExpressionConverter =
                     |> asExpr
 
         | Let (v, e, b) ->
+            // Use Expression.Block to properly scope the variable. This:
+            // 1. Evaluates the expression exactly once (preserving reference semantics)
+            // 2. Avoids Lambda.Invoke which EF Core cannot translate
+            // 3. Works for both mutable and immutable variables
             let vP = ConvVarToLinq v
+            let eP = ConvExprToLinqInContext env e
             let envinner = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
             let bodyP = ConvExprToLinqInContext envinner b
-            let eP = ConvExprToLinqInContext env e
-            let ty = Expression.GetFuncType [| v.Type; b.Type |]
-            let lam = Expression.Lambda(ty, bodyP, [| vP |]) |> asExpr
-            Expression.Call(lam, ty.GetMethod("Invoke", instanceBindingFlags), [| eP |]) |> asExpr
+            // Create a block with the variable declaration, initial assignment, and body
+            Expression.Block([| vP |], Expression.Assign(vP, eP), bodyP) |> asExpr
 
         | Lambda(v, body) ->
             let vP = ConvVarToLinq v
@@ -792,6 +803,41 @@ module LeafExpressionConverter =
             let convType = lambdaTy.MakeGenericType tyargs
             let convDelegate = Expression.Lambda(convType, bodyP, [| vP |]) |> asExpr
             Expression.Call(typeof<FuncConvert>, "ToFSharpFunc", tyargs, [| convDelegate |]) |> asExpr
+
+        // Issue #19099: Handle Sequential (e1; e2) expressions
+        | Sequential(e1, e2) ->
+            let e1P = ConvExprToLinqInContext env e1
+            let e2P = ConvExprToLinqInContext env e2
+            Expression.Block(e1P, e2P) |> asExpr
+
+        // Issue #19099: Handle VarSet (v <- value) expressions  
+        | VarSet(v, value) ->
+            let vP = 
+                try Map.find v env.varEnv
+                with :? KeyNotFoundException -> invalidOp ("The variable '"+ v.Name + "' was not found in the translation context'")
+            let valueP = ConvExprToLinqInContext env value
+            Expression.Assign(vP, valueP) |> asExpr
+
+        // Issue #19099: Handle FieldSet (obj.field <- value) expressions
+        | FieldSet(objOpt, fieldInfo, value) ->
+            let objP = ConvObjArg env objOpt None
+            let valueP = ConvExprToLinqInContext env value
+            Expression.Assign(Expression.Field(objP, fieldInfo), valueP) |> asExpr
+
+        // Issue #19099: Handle PropertySet (obj.prop <- value) expressions
+        | PropertySet(objOpt, propInfo, args, value) ->
+            let coerceTo = getUnionCaseCoercionType objOpt propInfo.DeclaringType
+            let valueP = ConvExprToLinqInContext env value
+            match args with
+            | [] ->
+                let propExpr = Expression.Property(ConvObjArg env objOpt coerceTo, propInfo)
+                Expression.Assign(propExpr, valueP) |> asExpr
+            | _ ->
+                // For indexed property sets, use the setter method directly
+                let argsP = ConvExprsToLinq env args
+                let allArgsP = Array.append argsP [| valueP |]
+                Expression.Call(ConvObjArg env objOpt coerceTo, propInfo.GetSetMethod(true), allArgsP) |> asExpr
+
         | _ ->
             failConvert inp
 
@@ -910,11 +956,23 @@ module LeafExpressionConverter =
        | Value (obj, _) -> obj
        | _ ->
        let ty = e.Type
-       let e = Expr.NewDelegate (Expression.GetFuncType([|typeof<unit>; ty |]), [new Var("unit", typeof<unit>)], e)
-       let linqExpr = (ConvExprToLinq e:?> LambdaExpression)
-       let d = linqExpr.Compile ()
-       try
-           d.DynamicInvoke [| box () |]
-       with :? TargetInvocationException as exn ->
-           raise exn.InnerException
+       // Helper to compile and invoke a delegate, re-raising inner exceptions
+       let compileAndInvoke (delegateExpr: Expr) =
+           let linqExpr = ConvExprToLinq delegateExpr :?> LambdaExpression
+           let d = linqExpr.Compile()
+           try
+               d.DynamicInvoke [| box () |]
+           with :? TargetInvocationException as exn ->
+               raise exn.InnerException
+
+       // Issue #19099: Handle unit/void return types by wrapping in an Action instead of Func
+       // When the expression returns unit, the LINQ expression will have type System.Void which cannot
+       // be a return type of Func<unit, unit>. We use Action<unit> instead and return box().
+       if ty = typeof<unit> then
+           let unitVar = new Var("unit", typeof<unit>)
+           compileAndInvoke (Expr.NewDelegate(typeof<Action<unit>>, [unitVar], e)) |> ignore
+           box ()
+       else
+           let unitVar = new Var("unit", typeof<unit>)
+           compileAndInvoke (Expr.NewDelegate(Expression.GetFuncType([|typeof<unit>; ty|]), [unitVar], e))
 #endif

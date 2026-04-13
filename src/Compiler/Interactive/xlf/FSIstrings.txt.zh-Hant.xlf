@@ -27,6 +27,11 @@
         <target state="translated">顯示識別碼的文件，例如#help \"List.map\";;</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashversionInfo">
+        <source>Display F# Interactive version and environment information</source>
+        <target state="new">Display F# Interactive version and environment information</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">因為先前發生錯誤，所以無法完成作業</target>

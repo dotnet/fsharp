@@ -2,6 +2,11 @@
 
 namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
+open System
+open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
+open System.Collections.Generic
+
 #nowarn "49" // no warning for uppercase variable names
 // ----------------------------------------------------------------------------
 // Mutable Tuples - used when translating queries that use F# tuples
@@ -22,193 +27,213 @@ namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
 /// <summary>This type shouldn't be used directly from user code.</summary>
 /// <exclude />
-type AnonymousObject<'T1> =
-    val private item1: 'T1
-    member x.Item1 = x.item1
+[<Sealed>]
+type AnonymousObject<'T1>(Item1: 'T1) =
+    member _.Item1 = Item1
 
-    new(Item1) = { item1 = Item1 }
+    override this.Equals(other: obj) =
+        match other with
+        | :? AnonymousObject<'T1> as o -> EqualityComparer<'T1>.Default.Equals(this.Item1, o.Item1)
+        | _ -> false
 
-/// <summary>This type shouldn't be used directly from user code.</summary>
-/// <exclude />
-type AnonymousObject<'T1, 'T2> =
-    val private item1: 'T1
-    member x.Item1 = x.item1
-
-    val private item2: 'T2
-    member x.Item2 = x.item2
-
-    new(Item1, Item2) = { item1 = Item1; item2 = Item2 }
+    override this.GetHashCode() =
+        EqualityComparer<'T1>.Default.GetHashCode(this.Item1)
 
 /// <summary>This type shouldn't be used directly from user code.</summary>
 /// <exclude />
-type AnonymousObject<'T1, 'T2, 'T3> =
-    val private item1: 'T1
-    member x.Item1 = x.item1
+[<Sealed>]
+type AnonymousObject<'T1, 'T2>(Item1: 'T1, Item2: 'T2) =
+    member _.Item1 = Item1
+    member _.Item2 = Item2
 
-    val private item2: 'T2
-    member x.Item2 = x.item2
+    override this.Equals(other: obj) =
+        match other with
+        | :? AnonymousObject<'T1, 'T2> as o ->
+            EqualityComparer<'T1>.Default.Equals(this.Item1, o.Item1)
+            && EqualityComparer<'T2>.Default.Equals(this.Item2, o.Item2)
+        | _ -> false
 
-    val private item3: 'T3
-    member x.Item3 = x.item3
-
-    new(Item1, Item2, Item3) =
-        {
-            item1 = Item1
-            item2 = Item2
-            item3 = Item3
-        }
-
-/// <summary>This type shouldn't be used directly from user code.</summary>
-/// <exclude />
-type AnonymousObject<'T1, 'T2, 'T3, 'T4> =
-    val private item1: 'T1
-    member x.Item1 = x.item1
-
-    val private item2: 'T2
-    member x.Item2 = x.item2
-
-    val private item3: 'T3
-    member x.Item3 = x.item3
-
-    val private item4: 'T4
-    member x.Item4 = x.item4
-
-    new(Item1, Item2, Item3, Item4) =
-        {
-            item1 = Item1
-            item2 = Item2
-            item3 = Item3
-            item4 = Item4
-        }
+    override this.GetHashCode() =
+        let h1 = EqualityComparer<'T1>.Default.GetHashCode(this.Item1)
+        let h2 = EqualityComparer<'T2>.Default.GetHashCode(this.Item2)
+        ((h1 <<< 5) + h1) ^^^ h2
 
 /// <summary>This type shouldn't be used directly from user code.</summary>
 /// <exclude />
-type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5> =
-    val private item1: 'T1
-    member x.Item1 = x.item1
+[<Sealed>]
+type AnonymousObject<'T1, 'T2, 'T3>(Item1: 'T1, Item2: 'T2, Item3: 'T3) =
+    member _.Item1 = Item1
+    member _.Item2 = Item2
+    member _.Item3 = Item3
 
-    val private item2: 'T2
-    member x.Item2 = x.item2
+    override this.Equals(other: obj) =
+        match other with
+        | :? AnonymousObject<'T1, 'T2, 'T3> as o ->
+            EqualityComparer<'T1>.Default.Equals(this.Item1, o.Item1)
+            && EqualityComparer<'T2>.Default.Equals(this.Item2, o.Item2)
+            && EqualityComparer<'T3>.Default.Equals(this.Item3, o.Item3)
+        | _ -> false
 
-    val private item3: 'T3
-    member x.Item3 = x.item3
-
-    val private item4: 'T4
-    member x.Item4 = x.item4
-
-    val private item5: 'T5
-    member x.Item5 = x.item5
-
-    new(Item1, Item2, Item3, Item4, Item5) =
-        {
-            item1 = Item1
-            item2 = Item2
-            item3 = Item3
-            item4 = Item4
-            item5 = Item5
-        }
+    override this.GetHashCode() =
+        let mutable hash = EqualityComparer<'T1>.Default.GetHashCode(this.Item1)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T2>.Default.GetHashCode(this.Item2)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T3>.Default.GetHashCode(this.Item3)
+        hash
 
 /// <summary>This type shouldn't be used directly from user code.</summary>
 /// <exclude />
-type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6> =
-    val private item1: 'T1
-    member x.Item1 = x.item1
+[<Sealed>]
+type AnonymousObject<'T1, 'T2, 'T3, 'T4>(Item1: 'T1, Item2: 'T2, Item3: 'T3, Item4: 'T4) =
+    member _.Item1 = Item1
+    member _.Item2 = Item2
+    member _.Item3 = Item3
+    member _.Item4 = Item4
 
-    val private item2: 'T2
-    member x.Item2 = x.item2
+    override this.Equals(other: obj) =
+        match other with
+        | :? AnonymousObject<'T1, 'T2, 'T3, 'T4> as o ->
+            EqualityComparer<'T1>.Default.Equals(this.Item1, o.Item1)
+            && EqualityComparer<'T2>.Default.Equals(this.Item2, o.Item2)
+            && EqualityComparer<'T3>.Default.Equals(this.Item3, o.Item3)
+            && EqualityComparer<'T4>.Default.Equals(this.Item4, o.Item4)
+        | _ -> false
 
-    val private item3: 'T3
-    member x.Item3 = x.item3
-
-    val private item4: 'T4
-    member x.Item4 = x.item4
-
-    val private item5: 'T5
-    member x.Item5 = x.item5
-
-    val private item6: 'T6
-    member x.Item6 = x.item6
-
-    new(Item1, Item2, Item3, Item4, Item5, Item6) =
-        {
-            item1 = Item1
-            item2 = Item2
-            item3 = Item3
-            item4 = Item4
-            item5 = Item5
-            item6 = Item6
-        }
+    override this.GetHashCode() =
+        let mutable hash = EqualityComparer<'T1>.Default.GetHashCode(this.Item1)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T2>.Default.GetHashCode(this.Item2)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T3>.Default.GetHashCode(this.Item3)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T4>.Default.GetHashCode(this.Item4)
+        hash
 
 /// <summary>This type shouldn't be used directly from user code.</summary>
 /// <exclude />
-type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7> =
-    val private item1: 'T1
-    member x.Item1 = x.item1
+[<Sealed>]
+type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5>(Item1: 'T1, Item2: 'T2, Item3: 'T3, Item4: 'T4, Item5: 'T5) =
+    member _.Item1 = Item1
+    member _.Item2 = Item2
+    member _.Item3 = Item3
+    member _.Item4 = Item4
+    member _.Item5 = Item5
 
-    val private item2: 'T2
-    member x.Item2 = x.item2
+    override this.Equals(other: obj) =
+        match other with
+        | :? AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5> as o ->
+            EqualityComparer<'T1>.Default.Equals(this.Item1, o.Item1)
+            && EqualityComparer<'T2>.Default.Equals(this.Item2, o.Item2)
+            && EqualityComparer<'T3>.Default.Equals(this.Item3, o.Item3)
+            && EqualityComparer<'T4>.Default.Equals(this.Item4, o.Item4)
+            && EqualityComparer<'T5>.Default.Equals(this.Item5, o.Item5)
+        | _ -> false
 
-    val private item3: 'T3
-    member x.Item3 = x.item3
-
-    val private item4: 'T4
-    member x.Item4 = x.item4
-
-    val private item5: 'T5
-    member x.Item5 = x.item5
-
-    val private item6: 'T6
-    member x.Item6 = x.item6
-
-    val private item7: 'T7
-    member x.Item7 = x.item7
-
-    new(Item1, Item2, Item3, Item4, Item5, Item6, Item7) =
-        {
-            item1 = Item1
-            item2 = Item2
-            item3 = Item3
-            item4 = Item4
-            item5 = Item5
-            item6 = Item6
-            item7 = Item7
-        }
+    override this.GetHashCode() =
+        let mutable hash = EqualityComparer<'T1>.Default.GetHashCode(this.Item1)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T2>.Default.GetHashCode(this.Item2)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T3>.Default.GetHashCode(this.Item3)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T4>.Default.GetHashCode(this.Item4)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T5>.Default.GetHashCode(this.Item5)
+        hash
 
 /// <summary>This type shouldn't be used directly from user code.</summary>
 /// <exclude />
-type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7, 'T8> =
-    val private item1: 'T1
-    member x.Item1 = x.item1
+[<Sealed>]
+type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6>
+    (Item1: 'T1, Item2: 'T2, Item3: 'T3, Item4: 'T4, Item5: 'T5, Item6: 'T6) =
+    member _.Item1 = Item1
+    member _.Item2 = Item2
+    member _.Item3 = Item3
+    member _.Item4 = Item4
+    member _.Item5 = Item5
+    member _.Item6 = Item6
 
-    val private item2: 'T2
-    member x.Item2 = x.item2
+    override this.Equals(other: obj) =
+        match other with
+        | :? AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6> as o ->
+            EqualityComparer<'T1>.Default.Equals(this.Item1, o.Item1)
+            && EqualityComparer<'T2>.Default.Equals(this.Item2, o.Item2)
+            && EqualityComparer<'T3>.Default.Equals(this.Item3, o.Item3)
+            && EqualityComparer<'T4>.Default.Equals(this.Item4, o.Item4)
+            && EqualityComparer<'T5>.Default.Equals(this.Item5, o.Item5)
+            && EqualityComparer<'T6>.Default.Equals(this.Item6, o.Item6)
+        | _ -> false
 
-    val private item3: 'T3
-    member x.Item3 = x.item3
+    override this.GetHashCode() =
+        let mutable hash = EqualityComparer<'T1>.Default.GetHashCode(this.Item1)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T2>.Default.GetHashCode(this.Item2)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T3>.Default.GetHashCode(this.Item3)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T4>.Default.GetHashCode(this.Item4)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T5>.Default.GetHashCode(this.Item5)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T6>.Default.GetHashCode(this.Item6)
+        hash
 
-    val private item4: 'T4
-    member x.Item4 = x.item4
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
+[<Sealed>]
+type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7>
+    (Item1: 'T1, Item2: 'T2, Item3: 'T3, Item4: 'T4, Item5: 'T5, Item6: 'T6, Item7: 'T7) =
+    member _.Item1 = Item1
+    member _.Item2 = Item2
+    member _.Item3 = Item3
+    member _.Item4 = Item4
+    member _.Item5 = Item5
+    member _.Item6 = Item6
+    member _.Item7 = Item7
 
-    val private item5: 'T5
-    member x.Item5 = x.item5
+    override this.Equals(other: obj) =
+        match other with
+        | :? AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7> as o ->
+            EqualityComparer<'T1>.Default.Equals(this.Item1, o.Item1)
+            && EqualityComparer<'T2>.Default.Equals(this.Item2, o.Item2)
+            && EqualityComparer<'T3>.Default.Equals(this.Item3, o.Item3)
+            && EqualityComparer<'T4>.Default.Equals(this.Item4, o.Item4)
+            && EqualityComparer<'T5>.Default.Equals(this.Item5, o.Item5)
+            && EqualityComparer<'T6>.Default.Equals(this.Item6, o.Item6)
+            && EqualityComparer<'T7>.Default.Equals(this.Item7, o.Item7)
+        | _ -> false
 
-    val private item6: 'T6
-    member x.Item6 = x.item6
+    override this.GetHashCode() =
+        let mutable hash = EqualityComparer<'T1>.Default.GetHashCode(this.Item1)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T2>.Default.GetHashCode(this.Item2)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T3>.Default.GetHashCode(this.Item3)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T4>.Default.GetHashCode(this.Item4)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T5>.Default.GetHashCode(this.Item5)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T6>.Default.GetHashCode(this.Item6)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T7>.Default.GetHashCode(this.Item7)
+        hash
 
-    val private item7: 'T7
-    member x.Item7 = x.item7
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
+[<Sealed>]
+type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7, 'T8>
+    (Item1: 'T1, Item2: 'T2, Item3: 'T3, Item4: 'T4, Item5: 'T5, Item6: 'T6, Item7: 'T7, Item8: 'T8) =
+    member _.Item1 = Item1
+    member _.Item2 = Item2
+    member _.Item3 = Item3
+    member _.Item4 = Item4
+    member _.Item5 = Item5
+    member _.Item6 = Item6
+    member _.Item7 = Item7
+    member _.Item8 = Item8
 
-    val private item8: 'T8
-    member x.Item8 = x.item8
+    override this.Equals(other: obj) =
+        match other with
+        | :? AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7, 'T8> as o ->
+            EqualityComparer<'T1>.Default.Equals(this.Item1, o.Item1)
+            && EqualityComparer<'T2>.Default.Equals(this.Item2, o.Item2)
+            && EqualityComparer<'T3>.Default.Equals(this.Item3, o.Item3)
+            && EqualityComparer<'T4>.Default.Equals(this.Item4, o.Item4)
+            && EqualityComparer<'T5>.Default.Equals(this.Item5, o.Item5)
+            && EqualityComparer<'T6>.Default.Equals(this.Item6, o.Item6)
+            && EqualityComparer<'T7>.Default.Equals(this.Item7, o.Item7)
+            && EqualityComparer<'T8>.Default.Equals(this.Item8, o.Item8)
+        | _ -> false
 
-    new(Item1, Item2, Item3, Item4, Item5, Item6, Item7, Item8) =
-        {
-            item1 = Item1
-            item2 = Item2
-            item3 = Item3
-            item4 = Item4
-            item5 = Item5
-            item6 = Item6
-            item7 = Item7
-            item8 = Item8
-        }
+    override this.GetHashCode() =
+        let mutable hash = EqualityComparer<'T1>.Default.GetHashCode(this.Item1)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T2>.Default.GetHashCode(this.Item2)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T3>.Default.GetHashCode(this.Item3)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T4>.Default.GetHashCode(this.Item4)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T5>.Default.GetHashCode(this.Item5)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T6>.Default.GetHashCode(this.Item6)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T7>.Default.GetHashCode(this.Item7)
+        hash <- ((hash <<< 5) + hash) ^^^ EqualityComparer<'T8>.Default.GetHashCode(this.Item8)
+        hash

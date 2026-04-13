@@ -6,7 +6,7 @@ open Xunit
 open FSharp.Test.Compiler
 
 /// Tests for --platform compiler option (migrated from FSharpQA suite - CompilerOptions/fsc/platform)
-module Platform =
+module PlatformErrors =
 
     // =================================================================
     // Platform option error tests - incorrect platform values

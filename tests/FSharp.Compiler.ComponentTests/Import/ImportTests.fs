@@ -937,11 +937,6 @@ let v = new y()
         |> shouldSucceed
         |> ignore
 
-    // Regression test: B-stream misalignment when pickling metadata with langFeatureNullness=false
-    // When a library is compiled with LangVersion 8.0 (no nullness), the type nullness B-stream bytes
-    // must still be written to keep the stream aligned with unconditional reads and constraint data.
-    // Without the fix, the reader hits NotSupportsNull constraint bytes (0x01) when expecting type
-    // nullness values, causing FS0229 "u_ty - 4/B".
     [<Fact>]
     let ``Referencing library compiled with LangVersion 8 should not produce FS0229 B-stream error`` () =
         let fsLib =

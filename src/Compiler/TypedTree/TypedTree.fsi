@@ -423,7 +423,7 @@ type Entity =
         mutable entity_range: range
 
         /// The declared attributes for the type
-        mutable entity_attribs: Attribs
+        mutable entity_attribs: WellKnownEntityAttribs
 
         /// The declared representation of the type, i.e. record, union, class etc.
         mutable entity_tycon_repr: TyconRepresentation
@@ -470,6 +470,16 @@ type Entity =
 
     /// Set the custom attributes on an F# type definition.
     member SetAttribs: attribs: Attribs -> unit
+
+    /// Set the custom attributes wrapper on an F# type definition.
+    member SetEntityAttribs: WellKnownEntityAttribs -> unit
+
+    /// Check if this entity has a specific well-known attribute, computing and caching flags if needed.
+    member HasWellKnownAttribute:
+        flag: WellKnownEntityAttributes * computeFlags: (Attribs -> WellKnownEntityAttributes) -> bool
+
+    /// Get the computed well-known attribute flags, computing and caching if needed.
+    member GetWellKnownEntityFlags: computeFlags: (Attribs -> WellKnownEntityAttributes) -> WellKnownEntityAttributes
 
     member SetCompiledName: name: string option -> unit
 
@@ -527,6 +537,9 @@ type Entity =
     /// The F#-defined custom attributes of the entity, if any. If the entity is backed by Abstract IL or provided metadata
     /// then this does not include any attributes from those sources.
     member Attribs: Attribs
+
+    /// The wrapped F#-defined custom attributes of the entity with cached well-known flags.
+    member EntityAttribs: WellKnownEntityAttribs
 
     /// Get a blob of data indicating how this type is nested inside other namespaces, modules type types.
     member CompilationPath: CompilationPath
@@ -1926,7 +1939,7 @@ type ValOptionalData =
 
         /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup
         /// these value references after copying a collection of values.
-        mutable val_attribs: Attribs
+        mutable val_attribs: WellKnownValAttribs
     }
 
     override ToString: unit -> string
@@ -1980,6 +1993,12 @@ type Val =
     member Link: tg: ValData -> unit
 
     member SetAttribs: attribs: Attribs -> unit
+
+    member SetValAttribs: attribs: WellKnownValAttribs -> unit
+
+    /// Check if this val has a specific well-known attribute, computing and caching flags if needed.
+    member HasWellKnownAttribute:
+        flag: WellKnownValAttributes * computeFlags: (Attribs -> WellKnownValAttributes) -> bool
 
     /// Set all the data on a value
     member SetData: tg: ValData -> unit
@@ -2036,6 +2055,9 @@ type Val =
 
     /// Get the declared attributes for the value
     member Attribs: Attrib list
+
+    /// Get the declared attributes wrapper for the value
+    member ValAttribs: WellKnownValAttribs
 
     /// Indicates if this is a 'base' or 'this' value?
     member BaseOrThisInfo: ValBaseOrThisInfo
@@ -3102,6 +3124,11 @@ type NullnessInfo =
 type Nullness =
     | Known of NullnessInfo
     | Variable of NullnessVar
+    /// The value is known to be non-null because it was produced by a constructor call.
+    | KnownFromConstructor
+
+    /// Returns Known WithoutNull if KnownFromConstructor, otherwise identity.
+    member Normalize: unit -> Nullness
 
     member Evaluate: unit -> NullnessInfo
 
@@ -3228,6 +3255,22 @@ type Measure =
     override ToString: unit -> string
 
     member Range: range
+
+/// Wraps an Attrib list together with cached WellKnownEntityAttributes flags for O(1) lookup.
+type WellKnownEntityAttribs = WellKnownAttribs<Attrib, WellKnownEntityAttributes>
+
+module WellKnownEntityAttribs =
+    val Empty: WellKnownEntityAttribs
+    val Create: attribs: Attrib list -> WellKnownEntityAttribs
+    val CreateWithFlags: attribs: Attrib list * flags: WellKnownEntityAttributes -> WellKnownEntityAttribs
+
+/// Wraps an Attrib list together with cached WellKnownValAttributes flags for O(1) lookup.
+type WellKnownValAttribs = WellKnownAttribs<Attrib, WellKnownValAttributes>
+
+module WellKnownValAttribs =
+    val Empty: WellKnownValAttribs
+    val Create: attribs: Attrib list -> WellKnownValAttribs
+    val CreateWithFlags: attribs: Attrib list * flags: WellKnownValAttributes -> WellKnownValAttribs
 
 type Attribs = Attrib list
 
@@ -3530,7 +3573,7 @@ type ArgReprInfo =
     {
 
         /// The attributes for the argument
-        mutable Attribs: Attribs
+        mutable Attribs: WellKnownValAttribs
 
         /// The name for the argument at this position, if any
         mutable Name: Ident option

@@ -57,6 +57,8 @@ variables:
     value: true
   - name: _WindowsMachineQueueName
     value: windows.vs2026preview.scout.amd64.open
+  - name: LinuxMachineQueueName
+    value: build.azurelinux.3.amd64.open
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
@@ -140,7 +142,8 @@ stages:
           # Check FSComp.txt error code sorting and code formatting
         - job: CheckCodeFormatting
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           steps:
           - checkout: self
             clean: true
@@ -159,6 +162,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check code formatting (run 'dotnet fantomas .' to fix)
+          - script: ./eng/common/dotnet.sh fsi eng/tests/TestSplit.fsx --validate
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Validate test projects are registered in TestSplit.fsx
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -167,7 +174,8 @@ stages:
         #       It is also helping the release notes automation to be up to date with packages versions.
         - job: Check_Published_Package_Versions
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           strategy:
             maxParallel: 2
             matrix:
@@ -178,17 +186,8 @@ stages:
           steps:
           - checkout: self
             clean: true
-          # We first download a publicly available .NET SDK. That one has support for `path` in global.json. dotnet.cmd script can then download a version which is not yet shipped, but matches global.json.
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              version: '10.x'
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: ./eng/common/dotnet.sh
-          - pwsh: ./check.ps1 -project $(_project)
+          - script: ./check.sh $(_project)
             workingDirectory: $(Build.SourcesDirectory)/buildtools/checkpackages
             env:
                 DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
@@ -212,6 +211,9 @@ stages:
           - name: 'Managed'
             container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
             buildArguments: '--source-build'
+          - name: 'Managed_MonoRuntime'
+            container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
+            buildArguments: '--source-build /p:DotNetBuildUseMonoRuntime=true'
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
@@ -303,13 +305,11 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
-          strategy:
-            parallel: 4
           steps:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release -testBatch $(System.JobPositionInPhase)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
@@ -322,7 +322,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: WindowsNoRealsig_testDesktop batch $(System.JobPositionInPhase)
+              testRunTitle: WindowsNoRealsig_testDesktop
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
@@ -330,7 +330,6 @@ stages:
             continueOnError: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
@@ -343,7 +342,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps $(System.JobPositionInPhase)'
+                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -515,8 +514,16 @@ stages:
             continueOnError: true
             condition: failed()
 
-          # Windows With Compressed Metadata Desktop
+          # Windows With Compressed Metadata Desktop (split into 3 batches)
         - job: WindowsCompressedMetadata_Desktop
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
+              Batch3:
+                batchNumber: 3
           variables:
           - name: XUNIT_LOGS
             value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
@@ -526,70 +533,22 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
-          strategy:
-            parallel: 4
 
           steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
-            env:
-              FSharp_CacheEvictionImmediate: true
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build / Test
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata testDesktop batch $(System.JobPositionInPhase)
-              mergeTestResults: true
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            continueOnError: true
-            condition: succeededOrFailed()
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows testDesktop binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop process dumps $(System.JobPositionInPhase)'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop test logs batch $(System.JobPositionInPhase)'
-              publishLocation: Container
-            continueOnError: true
-            condition: always()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop $(System.JobPositionInPhase)'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktopBatch $(batchNumber)
+              buildEnv:
+                FSharp_CacheEvictionImmediate: true
+                DOTNET_DbgEnableMiniDump: 1
+                DOTNET_DbgMiniDumpType: 3
+                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+                NativeToolsOnMachine: true
+              testRunTitlePrefix: 'WindowsCompressedMetadata testDesktop'
+              artifactNamePrefix: 'Windows testDesktop'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+              publishDumps: true
 
         # Mock official build
         - job: MockOfficial
@@ -605,7 +564,8 @@ stages:
         # Linux
         - job: Linux
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           timeoutInMinutes: 120
           variables:
           - name: _SignType
@@ -645,8 +605,14 @@ stages:
             continueOnError: true
             condition: failed()
 
-        # MacOS
+        # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: MacOS
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
           pool:
             vmImage: macos-latest
           timeoutInMinutes: 120
@@ -654,41 +620,15 @@ stages:
           - name: _SignType
             value: Test
           steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            env:
-              COMPlus_DefaultStackSize: 1000000
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testResultsFiles: '*.xml'
-              testRunTitle: MacOS
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'MacOS $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Mac'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber)
+              buildEnv:
+                COMPlus_DefaultStackSize: 1000000
+              testRunTitlePrefix: 'MacOS'
+              artifactNamePrefix: 'MacOS'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
 
         # End to end build
         - job: EndToEndBuildTests
@@ -777,7 +717,8 @@ stages:
         # Plain FCS build Linux
         - job: Plain_Build_Linux
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
@@ -900,7 +841,7 @@ stages:
         testMatrix:
         - repo: marklam/SlowBuildRepro
           commit: bbe2dec4d0379b5d7d0480997858c30d442fbb42
-          buildScript: dotnet build
+          buildScript: dotnet build -bl
           displayName: UMX_Slow_Repro        
         - repo: fsprojects/FSharpPlus
           commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
@@ -910,42 +851,52 @@ stages:
           commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
           buildScript: build.sh
           displayName: FSharpPlus_Linux
-          useVmImage: $(UbuntuMachineQueueName)
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: build.cmd
-          displayName: FsharpPlus_NET10
+          buildScript: dotnet build tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj -c Release -bl
+          displayName: FsharpPlus_NET10_Build_Lib_Tests
          # remove this before merging
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: dotnet msbuild build.proj -t:Build;Test
+          buildScript: dotnet msbuild build.proj -t:Build;Test -bl
           displayName: FsharpPlus_NET10_Test
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: dotnet msbuild build.proj -t:Build;AllDocs
+          buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
           displayName: FsharpPlus_NET10_Docs
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
           buildScript: build.sh
           displayName: FsharpPlus_Net10_Linux
-          useVmImage: $(UbuntuMachineQueueName)
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)
         - repo: TheAngryByrd/IcedTasks
           commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
-          buildScript: dotnet build IcedTasks.sln
+          buildScript: dotnet build IcedTasks.sln -bl
           displayName: IcedTasks_Build
         - repo: TheAngryByrd/IcedTasks
           commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
-          buildScript: dotnet test IcedTasks.sln
+          buildScript: dotnet test IcedTasks.sln -bl
           displayName: IcedTasks_Test
         - repo: demystifyfp/FsToolkit.ErrorHandling
           commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
-          buildScript: dotnet build FsToolkit.ErrorHandling.sln
+          buildScript: dotnet build FsToolkit.ErrorHandling.sln -bl
           displayName: FsToolkit_ErrorHandling_Build
         - repo: demystifyfp/FsToolkit.ErrorHandling
           commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
-          buildScript: dotnet test FsToolkit.ErrorHandling.sln
+          buildScript: dotnet test FsToolkit.ErrorHandling.sln -bl
           displayName: FsToolkit_ErrorHandling_Test
         - repo: opentk/opentk
           commit: 60c20cca65a7df6e8335e8d6060d91b30909fbea
-          buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release
+          buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release -bl:build_1.binlog ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release -bl:build_2.binlog
           displayName: OpenTK_FSharp_Build
+        - repo: bryanedds/Prime
+          commit: 8d55f4e8e1d76e42f5fb3c9ba69eb79fe695e9fa
+          buildScript: dotnet build Prime.sln --configuration Release
+          displayName: Prime_Build
+        - repo: bryanedds/Nu
+          commit: b35cbe02029e0e33d72a4846816cf22714eb3aac
+          buildScript: dotnet build Nu.sln --configuration Release
+          displayName: Nu_Build

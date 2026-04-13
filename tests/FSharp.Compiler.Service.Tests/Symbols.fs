@@ -842,6 +842,38 @@ type T() =
         let param = mfv.CurriedParameterGroups[0][0]
         param.Name.Value |> shouldEqual "x"
 
+    // https://github.com/dotnet/fsharp/issues/16056
+    [<Fact>]
+    let ``Auto property DeclarationLocation points to property name, not get accessor`` () =
+        let _, checkResults =
+            getParseAndCheckResults """
+module Module
+
+type T() =
+    member val Prop : int = 1 with get, set
+
+let _ = T().Prop
+"""
+        let propUsageOpt =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.tryFind (fun su ->
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as mfv ->
+                    mfv.IsProperty && mfv.LogicalName = "Prop" && not su.IsFromDefinition
+                | _ -> false)
+
+        match propUsageOpt with
+        | None -> failwith "Expected to find Prop usage symbol"
+        | Some symbolUse ->
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                let loc = mfv.DeclarationLocation
+                // "    member val Prop" - 'P' in 'Prop' starts at column 15 (0-indexed)
+                // Should NOT point to `get` accessor (which is at column 35)
+                Assert.Equal(5, loc.StartLine)
+                Assert.Equal(15, loc.StartColumn)
+            | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
@@ -1286,6 +1318,19 @@ type T() =
             )
 
         Assert.False hasPropertySymbols
+        
+    [<Fact>]
+    let ``CLIEvent is recognized as event`` () =
+        let symbolUse = Checker.getSymbolUse """
+type T() =
+    [<CLIEvent>]
+    member this.Ev{caret}ent = Event<int>().Publish
+"""
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.True mfv.IsEvent
+            Assert.StartsWith("E:", mfv.XmlDocSig)
+        | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
     [<Fact>]
     let ``CLIEvent 01 - Synthetic range`` () =
@@ -1329,6 +1374,19 @@ module Delegates =
         symbols["EventHandler"].IsDelegate |> shouldEqual true
         symbols["Action"].IsDelegate |> shouldEqual true
 
+module Parameters =
+    [<Fact>]
+    let ``Optional 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+type T =
+    static member M(?a) = ()
+"""
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.filter (fun su -> su.Range.StartLine = 3)
+        |> Seq.map _.Symbol.DisplayName
+        |> Seq.toList
+        |> shouldEqual [ "M"; "a" ]
+
 module MetadataAsText =
     [<Fact>]
     let ``TryGetMetadataAsText returns metadata for external enum field`` () =
@@ -1344,3 +1402,104 @@ let test = System.DateTimeKind.Utc
             | None ->
                 failwith "Expected metadata text, got None"
         | _ -> failwith "Expected FSharpEntity symbol"
+
+module IsByRef =
+    // https://github.com/dotnet/fsharp/issues/3532
+    [<Fact>]
+    let ``FSharpEntity.IsByRef is true for byref return type of address-of operator`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let mutable x = 1
+let y = &x
+"""
+
+        let symbolUse = findSymbolUseByName "op_AddressOf" checkResults
+
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            let retTy = mfv.ReturnParameter.Type
+
+            Assert.True(
+                retTy.HasTypeDefinition,
+                $"Expected return type of op_AddressOf to have a TypeDefinition, got: %A{retTy}"
+            )
+
+            Assert.True(
+                retTy.TypeDefinition.IsByRef,
+                $"Expected return type TypeDefinition.IsByRef = true for op_AddressOf, got entity: %s{retTy.TypeDefinition.DisplayName}"
+            )
+        | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
+
+    [<Fact>]
+    let ``FSharpEntity.IsByRef is true for byref type used explicitly`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let f (x: byref<int>) = x <- 42
+"""
+
+        let symbolUse = findSymbolUseByName "f" checkResults
+
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            let paramTy = mfv.CurriedParameterGroups.[0].[0].Type
+
+            Assert.True(
+                paramTy.HasTypeDefinition,
+                $"Expected byref parameter type to have a TypeDefinition, got: %A{paramTy}"
+            )
+
+            Assert.True(
+                paramTy.TypeDefinition.IsByRef,
+                $"Expected parameter TypeDefinition.IsByRef = true for byref<int>, got entity: %s{paramTy.TypeDefinition.DisplayName}"
+            )
+        | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
+        
+module OperatorsWithDots =
+    // https://github.com/dotnet/fsharp/issues/14057
+    [<Fact>]
+    let ``Operator containing dot is resolved as single symbol`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let ( -.- ) x y = x - y
+let result = 1 -.- 2
+"""
+
+        let symbolUse = findSymbolUseByName "op_MinusDotMinus" checkResults
+
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.Equal("(-.-)", mfv.DisplayName)
+
+            // Verify the operator is found at definition and usage sites
+            let allUses = checkResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+            Assert.True(allUses.Length >= 2, $"Expected at least 2 uses (def + use), got %d{allUses.Length}")
+        | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
+
+    [<Fact>]
+    let ``Operator with dot has correct symbol range at usage site`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+let ( -.- ) x y = x - y
+let result = 1 -.- 2
+"""
+
+        let usageSymbols =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.filter (fun su ->
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as mfv ->
+                    mfv.LogicalName = "op_MinusDotMinus" && su.Range.StartLine = 3
+                | _ -> false)
+            |> Seq.toArray
+
+        Assert.True(usageSymbols.Length >= 1, $"Expected usage of -.- on line 3, got %d{usageSymbols.Length}")
+
+        // Verify the range spans the full operator (3 chars: -.-), not just part after '.'
+        let range = usageSymbols.[0].Range
+        let rangeLength = range.EndColumn - range.StartColumn
+
+        Assert.Equal(3, rangeLength)

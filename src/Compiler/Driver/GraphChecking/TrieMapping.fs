@@ -53,6 +53,10 @@ let rec mergeTrieNodes (accumulatorTrie: TrieNode) (currentTrie: TrieNode) : Tri
         // Replace the module in favour of the namespace (which can hold nested children).
         | TrieNodeInfo.Module(_name, file), TrieNodeInfo.Namespace(name, currentFilesThatExposeTypes, filesDefiningNamespaceWithoutTypes) ->
             TrieNodeInfo.Namespace(name, currentFilesThatExposeTypes.Add file, filesDefiningNamespaceWithoutTypes)
+        // Multiple files define the same module name in the same namespace.
+        // Promote to a Namespace node so both file indices are preserved as dependencies.
+        | TrieNodeInfo.Module(name, file1), TrieNodeInfo.Module(_, file2) ->
+            TrieNodeInfo.Namespace(name, ImmutableHashSet.singleton file1 |> _.Add(file2), ImmutableHashSet.empty ())
         | _ -> accumulatorTrie.Current
 
     let nextChildren =
