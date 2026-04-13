@@ -929,3 +929,83 @@ let main _ =
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Accessibility 06`` () =
+        let impl =
+            FsSource """
+module Lib
+
+module internal Impl =
+    let inline implFn (x: int) =
+        x * x
+
+let inline publicFn (x: int) =
+    Impl.implFn x + 1
+"""
+        let fsi = Fsi """
+module Lib
+
+val inline publicFn: x: int -> int
+"""
+        let library =
+            fsi
+            |> withAdditionalSourceFile impl
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+
+        FSharp """
+open Lib
+
+[<EntryPoint>]
+let main _ =
+    let i = publicFn 3
+    if i = 10 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Accessibility 07`` () =
+        let impl =
+            FsSource """
+module Lib
+
+module Impl =
+    let inline implFn (x: int) =
+        x * x
+
+let inline publicFn (x: int) =
+    Impl.implFn x + 1
+"""
+        let fsi = Fsi """
+module Lib
+
+val inline publicFn: x: int -> int
+"""
+        let library =
+            fsi
+            |> withAdditionalSourceFile impl
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+
+        FSharp """
+open Lib
+
+[<EntryPoint>]
+let main _ =
+    let i = publicFn 3
+    if i = 10 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed

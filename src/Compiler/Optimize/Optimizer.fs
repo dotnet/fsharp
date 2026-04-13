@@ -435,6 +435,8 @@ type cenv =
       realsig: bool
 
       specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
+
+      signatureHidingInfo: SignatureHidingInfo
     }
 
     override x.ToString() = "<cenv>"
@@ -3485,8 +3487,14 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         let allTyargsAreGeneric =
             tyargs |> List.forall (fun t -> not (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
 
+        // When inside an inline function body being prepared for export (!cenv.optimizing),
+        // only emit a direct call if the callee is publicly accessible. Non-public vals
+        // (e.g. in internal modules, or hidden by .fsi) can't be called by consumers,
+        // so route those through the specialization path which inlines the body.
+        let isHiddenBySignature = cenv.signatureHidingInfo.HiddenVals.Contains vref.Deref
         let canCallDirectly =
-            hasNoTraits || (allTyargsAreGeneric && vref.ValReprInfo.IsSome)
+            (cenv.optimizing || (vref.Accessibility.IsPublic && not isHiddenBySignature)) &&
+            (hasNoTraits || (allTyargsAreGeneric && vref.ValReprInfo.IsSome))
 
         let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
         let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
@@ -4367,16 +4375,22 @@ and OptimizeBindings cenv isRec env xs =
     
 and OptimizeModuleExprWithSig cenv env mty def  = 
         let g = cenv.g
-        // Optimize the module implementation
-        let (def, info), (_env, bindInfosColl) = OptimizeModuleContents cenv (env, []) def  
-        let bindInfosColl = List.concat bindInfosColl 
-        
+
         // Compute the elements truly hidden by the module signature.
         // The hidden set here must contain NOT MORE THAN the set of values made inaccessible by 
         // the application of the signature. If it contains extra elements we'll accidentally eliminate
         // bindings.
-         
+        // This only walks structural elements (Val/Entity declarations), not expressions,
+        // so it gives the same result before and after optimization.
         let _renaming, hidden as rpi = ComputeRemappingFromImplementationToSignature g def mty
+
+        // Make hiding info available during optimization so TryInlineApplication
+        // can avoid emitting direct calls to vals hidden by signature.
+        let cenv = { cenv with signatureHidingInfo = hidden }
+
+        // Optimize the module implementation
+        let (def, info), (_env, bindInfosColl) = OptimizeModuleContents cenv (env, []) def
+        let bindInfosColl = List.concat bindInfosColl
 
         let def = 
             if not cenv.settings.LocalOptimizationsEnabled then def else 
@@ -4543,6 +4557,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
           specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
+          signatureHidingInfo = SignatureHidingInfo.Empty
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
