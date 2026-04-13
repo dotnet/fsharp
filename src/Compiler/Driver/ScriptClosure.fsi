@@ -42,6 +42,9 @@ type LoadClosure =
         /// The resolved package references along with the ranges of the #r positions in each file.
         PackageReferences: (range * string list)[]
 
+        /// The raw package manager lines in the script
+        PackageManagerLines: Map<string, PackageManagerLine list>
+
         /// Whether we're decided to use .NET Framework analysis for this script
         UseDesktopFramework: bool
 
@@ -80,6 +83,7 @@ type LoadClosure =
         defaultFSharpBinariesDir: string *
         fileName: string *
         sourceText: ISourceText *
+        caret: Position option *
         implicitDefines: CodeContext *
         useSimpleResolution: bool *
         useFsiAuxLib: bool *
