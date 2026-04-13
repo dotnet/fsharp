@@ -7363,7 +7363,10 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         if ComputeGenerateWitnesses g eenv then
             let extra =
                 GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
-                |> List.collect (fun w -> (freeInType CollectTyparsNoCaching (GenWitnessTy g w)).FreeTypars |> Zset.elements)
+                |> List.collect (fun w ->
+                    (freeInType CollectTyparsNoCaching (GenWitnessTy g w)).FreeTypars
+                    |> Zset.elements)
+
             (cloFreeTyvars @ extra) |> List.distinctBy (fun tp -> tp.Stamp)
         else
             cloFreeTyvars
