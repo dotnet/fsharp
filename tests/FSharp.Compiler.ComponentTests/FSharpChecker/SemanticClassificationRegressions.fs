@@ -14,7 +14,7 @@ let getClassifications (source: string) =
     let fileName, snapshot, checker = singleFileChecker source
     let results = checker.ParseAndCheckFileInProject(fileName, snapshot) |> Async.RunSynchronously
     let checkResults = getTypeCheckResult results
-    checkResults.GetSemanticClassification(None)
+    checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
 
 /// (#15290 regression) Copy-and-update record fields must not be classified as type names.
 /// Before the fix, Item.Types was registered with mWholeExpr and ItemOccurrence.Use, producing

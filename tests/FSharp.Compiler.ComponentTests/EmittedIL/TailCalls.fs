@@ -248,10 +248,10 @@ let run() =
         |> shouldSucceed
         |> verifyIL [
             """
-    IL_0040:  ldc.i4.s   42
-    IL_0042:  ldc.i4.5
-    IL_0043:  call       void TailCall06::foo<int32>(int32,
-                                                      !!0)
+    IL_0034:  ldc.i4.s   42
+    IL_0036:  ldc.i4.5
+    IL_0037:  call       void TailCall06::foo<int32>(int32,
+                                                     !!0)
             """
             ]
 

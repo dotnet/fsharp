@@ -40,6 +40,7 @@ usage()
   echo "  --fromVMR                      Set when building from within the VMR"
   echo "  --buildnorealsig               Build product with realsig- (default use realsig+ where necessary)"
   echo "  --tfm                          Override the default target framework"
+  echo "  --warnNotAsError <codes>       Suppress specific warnings from being treated as errors (semi-colon delimited)"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -63,6 +64,7 @@ pack=false
 publish=false
 sign=false
 test_core_clr=false
+test_core_clr_batch=""
 test_compilercomponent_tests=false
 test_benchmarks=false
 test_scripting=false
@@ -79,6 +81,7 @@ product_build=false
 from_vmr=false
 buildnorealsig=true
 properties=""
+warn_not_as_error=""
 docker=false
 args=""
 
@@ -142,6 +145,11 @@ while [[ $# > 0 ]]; do
     --testcoreclr|--test|-t)
       test_core_clr=true
       ;;
+    --testcoreclrbatch)
+      test_core_clr=true
+      test_core_clr_batch=$2
+      shift
+      ;;
     --testcompilercomponenttests)
       test_compilercomponent_tests=true
       ;;
@@ -183,6 +191,10 @@ while [[ $# > 0 ]]; do
       tfm=$2
       shift
       ;;
+    --warnnotaserror)
+      warn_not_as_error=$2
+      shift
+      ;;
     /p:*)
       properties+=("$1")
       ;;
@@ -204,6 +216,7 @@ function Test() {
   BuildMessage="Error running tests"
   testproject=""
   targetframework=""
+  extraargs=""
   while [[ $# > 0 ]]; do
     opt="$(echo "$1" | awk '{print tolower($0)}')"
     case "$opt" in
@@ -213,6 +226,10 @@ function Test() {
         ;;
       --targetframework)
         targetframework=$2
+        shift
+        ;;
+      --extraargs)
+        extraargs=$2
         shift
         ;;
       *)
@@ -233,18 +250,18 @@ function Test() {
   testresultsdir="$artifacts_dir/TestResults/$configuration"
 
   # MTP requires --solution flag for .sln files
-  # For solutions, omit --report-xunit-trx-filename so each test assembly generates a unique .trx file.
-  # With a static filename, all assemblies overwrite the same file and only the last one's results survive.
   if [[ "$testproject" == *.sln ]]; then
     testtarget="--solution"
-    reportargs="--report-xunit-trx"
   else
     testtarget="--project"
-    testlogfilename="${projectname}_${targetframework}.trx"
-    reportargs="--report-xunit-trx --report-xunit-trx-filename $testlogfilename"
   fi
 
-  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" $reportargs --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full)
+  # Xunit XML report via XunitXml.TestLogger with CI-friendly filenames
+  jobname="${SYSTEM_JOBNAME:-local}"
+  xunitlogfilename="{assembly}.{framework}.${jobname}.xml"
+  reportargs="--report-spekt-xunit --report-spekt-xunit-filename $xunitlogfilename"
+
+  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" $reportargs --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full $extraargs)
 
   "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
 }
@@ -317,6 +334,11 @@ function BuildSolution {
     # do real build
     BuildMessage="Error building solution"
 
+    local msbuild_warn_not_as_error=""
+    if [[ "$warn_not_as_error" != "" && "$warn_as_error" == true ]]; then
+      msbuild_warn_not_as_error="/warnNotAsError:$warn_not_as_error"
+    fi
+
     MSBuild $toolset_build_proj \
       $bl \
       /p:Configuration=$configuration \
@@ -336,7 +358,8 @@ function BuildSolution {
       /p:DotNetBuild=$product_build \
       /p:DotNetBuildSourceOnly=$source_build \
       /p:DotNetBuildFromVMR=$from_vmr \
-      ${properties[@]+"${properties[@]}"}
+      ${properties[@]+"${properties[@]}"} \
+      $msbuild_warn_not_as_error
   fi
 }
 
@@ -362,12 +385,36 @@ BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=$tfm
-  # Note: FSharp.Test.Utilities is a utility library, not a test project. Its tests are disabled due to xUnit3 API incompatibilities.
-  Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
+
+  if [[ "$test_core_clr_batch" != "" ]]; then
+    # Run batched: use TestSplit.fsx to get the commands for this batch
+    splitOutput=$("$DOTNET_INSTALL_DIR/dotnet" fsi "$scriptroot/tests/TestSplit.fsx" "$test_core_clr_batch" coreclr)
+    fsi_exit=$?
+    if [[ $fsi_exit -ne 0 ]]; then
+      echo "TestSplit.fsx failed with exit code $fsi_exit"
+      ExitWithExitCode 1
+    fi
+    matchCount=0
+    while IFS= read -r line; do
+      [[ "$line" =~ ^dotnet\ test ]] || continue
+      # Extract project path and extra filter args from each line
+      project=$(echo "$line" | sed 's/^dotnet test //' | sed 's/ --no-build.*//')
+      filterargs=$(echo "$line" | sed 's/^dotnet test [^ ]* --no-build -c Release *//')
+      Test --testproject "$repo_root/$project" --targetframework $coreclrtestframework --extraargs "$filterargs"
+      matchCount=$((matchCount + 1))
+    done <<< "$splitOutput"
+    if [[ $matchCount -eq 0 ]]; then
+      echo "No test commands parsed from TestSplit.fsx output"
+      ExitWithExitCode 1
+    fi
+  else
+    # Run all tests without batching
+    Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
+  fi
 fi
 
 if [[ "$test_compilercomponent_tests" == true ]]; then

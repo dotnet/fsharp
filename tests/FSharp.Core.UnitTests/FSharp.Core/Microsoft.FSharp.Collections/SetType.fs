@@ -11,6 +11,24 @@ open System.Collections.Generic
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 
+
+/// This type is used to verify that Set.intersect preserves the object identity (reference) 
+/// of the first set (S1). By overriding equality to only check the 'Id' field, 
+/// we can create two objects that are "equal" but live in different memory locations.
+[<CustomEquality; CustomComparison>]
+type IntersectItem = 
+    { Id: int; Tag: string }
+    override x.Equals(obj) =
+        match obj with
+        | :? IntersectItem as other -> x.Id = other.Id
+        | _ -> false
+    override x.GetHashCode() = hash x.Id
+    interface IComparable with
+        member x.CompareTo(obj) =
+            match obj with
+            | :? IntersectItem as other -> compare x.Id other.Id
+            | _ -> invalidArg "obj" "not an IntersectItem"
+
 (*
 [Test Strategy]
 Make sure each method works on:
@@ -331,6 +349,62 @@ type SetType() =
         Assert.AreEqual(sec.MaximumElement, 7)
         Assert.AreEqual(Set.maxElement fir, 6)
         Assert.AreEqual(Set.maxElement sec, 7)
+
+
+    [<Fact>]
+    member _.Intersect_PreservesIdentity() =
+        // 1. [Test Strategy] Empty set
+        let emptyA : Set<IntersectItem> = Set.empty
+        let emptyB : Set<IntersectItem> = Set.empty
+        Assert.True((Set.intersect emptyA emptyB).IsEmpty)
+        Assert.True((Set.intersect (Set.singleton {Id=1; Tag="x"}) emptyB).IsEmpty)
+
+        // 2. [Test Strategy] Single-element set & [Identity Property]
+        let item1_S1 = { Id = 1; Tag = "From_S1" }
+        let item1_S2 = { Id = 1; Tag = "From_S2" }
+        
+        let s1_single = Set.singleton item1_S1
+        let s2_single = Set.singleton item1_S2
+        
+        let resSingle = Set.intersect s1_single s2_single
+        Assert.Equal(1, resSingle.Count)
+        
+        // Identity Check: Must be EXACTLY the same object in memory as S1
+        let singleResult = Set.minElement resSingle
+        Assert.True(Object.ReferenceEquals(singleResult, item1_S1), "Single-element identity failed: Reference must come from S1")
+
+        // 3. [Test Strategy] Sets with 4 or more elements (Optimized Path Check)
+        let item5_S1 = { Id = 5; Tag = "ID5_From_S1" }
+        let item5_S2 = { Id = 5; Tag = "ID5_From_S2" }
+
+        // S1 is large: hits intersectionAuxFromSmall (The optimized path)
+        let list1 = [ for i in 1..50 -> if i = 5 then item5_S1 else { Id = i; Tag = sprintf "L%d" i } ]
+        let list2 = [ for i in 1..5 -> if i = 5 then item5_S2 else { Id = i; Tag = sprintf "R%d" i } ]
+        
+        let s1_large = Set.ofList list1
+        let s2_small = Set.ofList list2
+        
+        let resMany = Set.intersect s1_large s2_small
+        
+        // Identity Check in Loop: 
+        // We iterate through the result and ensure every common element 
+        // has the physical reference from the first set (list1)
+        resMany |> Set.iter (fun item ->
+            let originalInS1 = list1 |> List.find (fun x -> x.Id = item.Id)
+            if not (Object.ReferenceEquals(item, originalInS1)) then
+                Assert.Fail(sprintf "Identity mismatch for ID %d: Expected reference from S1 (list1), but got another instance." item.Id)
+        )
+
+        // 4. [Reversed Size Case] (Standard Path Check)
+        // S1 is small, S2 is large: hits intersectionAux (The standard path)
+        let resReversed = Set.intersect s2_small s1_large
+        
+        // Find the specific item with ID 5 in the result
+        let item5InResult = resReversed |> Set.filter (fun x -> x.Id = 5) |> Set.minElement
+        
+        // Identity Check: Since s2_small was the FIRST argument, 
+        // the result MUST contain item5_S2 (from s2_small)
+        Assert.True(Object.ReferenceEquals(item5InResult, item5_S2), "Reversed path identity failed: Reference must come from s2_small")
 
 #if NET8_0_OR_GREATER
 

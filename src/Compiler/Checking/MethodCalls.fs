@@ -918,7 +918,14 @@ let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad noEagerConst
         CalledArgMatchesType(adjustedCalledArgTy, noEagerConstraintApplication)  
         
 let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr>) ad =
-    let noEagerConstraintApplication = MethInfoHasAttribute g m g.attrib_NoEagerConstraintApplicationAttribute meth.Method
+    let noEagerConstraintApplication =
+        MethInfoHasWellKnownAttributeSpec
+            g
+            m
+            { ILFlag = WellKnownILAttributes.NoEagerConstraintApplicationAttribute
+              ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
+              AttribInfo = g.attrib_NoEagerConstraintApplicationAttribute }
+            meth.Method
 
     // The logic associated with NoEagerConstraintApplicationAttribute is part of the
     // Tasks and Resumable Code RFC
@@ -1231,10 +1238,16 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
             let vExpr, vExprTy = tcVal vref valUseFlags (minfo.DeclaringTypeInst @ minst) m
             BuildFSharpMethodApp g m vref vExpr vExprTy allArgs
 
-        | MethInfoWithModifiedReturnType(mi,retTy) ->
-            let expr, exprTy = BuildMethodCall tcVal g amap isMutable m isProp mi valUseFlags minst objArgs args staticTyOpt
-            let expr = mkCoerceExpr(expr, retTy, m, exprTy)
+        | MethInfoWithModifiedReturnType(ILMeth(_, ilMethInfo, _), retTy) ->
+            // Build the inner call directly, without re-invoking TakeObjAddrForMethodCall.
+            let expr, exprTy =
+                BuildILMethInfoCall g amap m isProp ilMethInfo valUseFlags minst direct allArgs
+
+            let expr = mkCoerceExpr (expr, retTy, m, exprTy)
             expr, retTy
+
+        | MethInfoWithModifiedReturnType _ ->
+            failwith "MethInfoWithModifiedReturnType: unexpected inner method kind"
 
         // Build a 'call' to a struct default constructor 
         | DefaultStructCtor (g, ty) -> 

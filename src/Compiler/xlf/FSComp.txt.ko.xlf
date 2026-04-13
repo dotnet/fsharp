@@ -8952,6 +8952,16 @@
         <target state="translated">종속성 관리자 확장 {0}을(를) 로드할 수 없습니다. 메시지: {1}</target>
         <note />
       </trans-unit>
+        <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+          <source>Warn when a function value is used as an interpolated string argument</source>
+          <target state="new">Warn when a function value is used as an interpolated string argument</target>
+          <note />
+        </trans-unit>
+        <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+          <source>This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</source>
+          <target state="new">This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</target>
+          <note />
+        </trans-unit>
     </body>
   </file>
 </xliff>

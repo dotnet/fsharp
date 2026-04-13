@@ -208,20 +208,14 @@ module Nullness =
     [<Struct;NoEquality;NoComparison>]
     type AttributesFromIL = AttributesFromIL of metadataIndex:int * attrs:ILAttributesStored
         with
-            member this.Read() =  match this with| AttributesFromIL(idx,attrs) -> attrs.GetCustomAttrs(idx)
+            member this.Read() = match this with | AttributesFromIL(_, attrs) -> attrs.CustomAttrs
             member this.GetNullable(g:TcGlobals) =
-                match g.attrib_NullableAttribute_opt with
-                | None -> ValueNone
-                | Some n ->
-                    TryDecodeILAttribute n.TypeRef (this.Read())
-                    |> tryParseAttributeDataToNullableByteFlags g
+                tryFindILAttribByFlag WellKnownILAttributes.NullableAttribute (this.Read())
+                |> tryParseAttributeDataToNullableByteFlags g
 
             member this.GetNullableContext(g:TcGlobals) =
-                match g.attrib_NullableContextAttribute_opt with
-                | None -> ValueNone
-                | Some n ->
-                    TryDecodeILAttribute n.TypeRef (this.Read())
-                    |> tryParseAttributeDataToNullableByteFlags g
+                tryFindILAttribByFlag WellKnownILAttributes.NullableContextAttribute (this.Read())
+                |> tryParseAttributeDataToNullableByteFlags g
 
     [<Struct;NoEquality;NoComparison>]
     type NullableContextSource =
@@ -244,7 +238,7 @@ module Nullness =
                         |> ValueOption.orElseWith (fun () -> classCtx.GetNullableContext(g)))
                 |> ValueOption.defaultValue arrayWithByte0
             static member Empty =
-                let emptyFromIL = AttributesFromIL(0,Given(ILAttributes.Empty))
+                let emptyFromIL = AttributesFromIL(0,ILAttributesStored.CreateGiven(ILAttributes.Empty))
                 {DirectAttributes = emptyFromIL; Fallback = FromClass(emptyFromIL)}
 
     [<Struct;NoEquality;NoComparison>]
@@ -648,7 +642,7 @@ let ImportILGenericParameters amap m scoref tinst (nullableFallback:Nullness.Nul
                     //|  [|2uy|] -> TyparConstraint.SupportsNull(m)
                     | _ -> ()
 
-                  if gp.CustomAttrs |> TryFindILAttribute amap.g.attrib_IsUnmanagedAttribute then
+                  if gp.CustomAttrsStored.HasWellKnownAttribute(amap.g, WellKnownILAttributes.IsUnmanagedAttribute) then
                     TyparConstraint.IsUnmanaged(m)
                   if gp.HasDefaultConstructorConstraint then
                     TyparConstraint.RequiresDefaultConstructor(m)

@@ -301,25 +301,11 @@ FSharp.Compiler.AbstractIL.IL+ILAttribute: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILAttribute: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILAttributes: ILAttribute[] AsArray()
 FSharp.Compiler.AbstractIL.IL+ILAttributes: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute] AsList()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Given: ILAttributes Item
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Given: ILAttributes get_Item()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Reader: Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]] Item
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Reader: Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]] get_Item()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Tags: Int32 Given
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Tags: Int32 Reader
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean IsGiven
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean IsReader
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean get_IsGiven()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean get_IsReader()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Given
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Reader
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: FSharp.Compiler.AbstractIL.IL+ILAttributesStored+Tags
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributes GetCustomAttrs(Int32)
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored NewGiven(ILAttributes)
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored NewReader(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]])
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 Tag
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Int32 get_Tag()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStored: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: Boolean HasWellKnownAttribute(WellKnownILAttributes, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.AbstractIL.IL+ILAttributes,FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes])
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributes CustomAttrs
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributes get_CustomAttrs()
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored CreateGiven(ILAttributes)
+FSharp.Compiler.AbstractIL.IL+ILAttributesStored: ILAttributesStored CreateReader(Int32, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,FSharp.Compiler.AbstractIL.IL+ILAttribute[]])
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object)
@@ -1827,6 +1813,34 @@ FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey KeyAsToken(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey NewPublicKey(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey NewPublicKeyToken(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: UInt32 value__
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AllowNullLiteralAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AttributeUsageAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes AutoOpenAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerFilePathAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerLineNumberAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CallerMemberNameAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes CompilerFeatureRequiredAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes DefaultMemberAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ExperimentalAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ExtensionAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IDispatchConstantAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IUnknownConstantAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes InternalsVisibleToAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IsByRefLikeAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IsReadOnlyAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes IsUnmanagedAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NoEagerConstraintApplicationAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes None
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NotComputed
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NullableAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes NullableContextAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ObsoleteAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ParamArrayAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ReflectedDefinitionAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes RequiredMemberAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes RequiresLocationAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes SetsRequiredMembersAttribute
 FSharp.Compiler.AbstractIL.IL: Boolean |HasFlag|_|(ILTypeDefAdditionalFlags, ILTypeDefAdditionalFlags)
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILArgConvention
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILArrayShape
@@ -1891,6 +1905,7 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILVersionInfo
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+InterfaceImpl
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+MethodBody
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+PublicKey
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes
 FSharp.Compiler.AbstractIL.IL: ILAttributes emptyILCustomAttrs
 FSharp.Compiler.AbstractIL.IL: ILAttributes get_emptyILCustomAttrs()
 FSharp.Compiler.AbstractIL.IL: ILAttributes mkILCustomAttrs(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute])
@@ -2075,13 +2090,13 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean IsRelativeNameResol
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean get_HasFullTypeCheckInfo()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext ProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext get_ProjectContext()
-FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse[] GetUsesOfSymbolInFile(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse[] GetUsesOfSymbolInFile(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Diagnostics
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Diagnostics()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.DeclarationListInfo GetDeclarationListInfo(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults], Int32, System.String, FSharp.Compiler.EditorServices.PartialLongName, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol]]], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Position,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.CompletionContext]]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCodeCompletionOptions])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.FindDeclResult GetDeclarationLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.MethodGroup GetMethods(Int32, Int32, System.String, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
-FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetDescription(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]], Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetKeywordTooltip(Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetToolTip(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
@@ -2582,6 +2597,11 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.Proje
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind All
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind CopyAndUpdateRecord
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind None
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind UnionCaseTester
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: Int32 value__
 FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes)
 FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(System.Object)
@@ -5847,23 +5867,45 @@ FSharp.Compiler.Symbols.FSharpType: Boolean HasNullAnnotation
 FSharp.Compiler.Symbols.FSharpType: Boolean HasTypeDefinition
 FSharp.Compiler.Symbols.FSharpType: Boolean IsAbbreviation
 FSharp.Compiler.Symbols.FSharpType: Boolean IsAnonRecordType
+FSharp.Compiler.Symbols.FSharpType: Boolean IsArrayType
+FSharp.Compiler.Symbols.FSharpType: Boolean IsBooleanType
+FSharp.Compiler.Symbols.FSharpType: Boolean IsFSharpChoice
+FSharp.Compiler.Symbols.FSharpType: Boolean IsFSharpList
+FSharp.Compiler.Symbols.FSharpType: Boolean IsFSharpOption
+FSharp.Compiler.Symbols.FSharpType: Boolean IsFSharpValueOption
 FSharp.Compiler.Symbols.FSharpType: Boolean IsFunctionType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsGenericParameter
 FSharp.Compiler.Symbols.FSharpType: Boolean IsMeasureType
+FSharp.Compiler.Symbols.FSharpType: Boolean IsNativePointerType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsNullAmbivalent
+FSharp.Compiler.Symbols.FSharpType: Boolean IsObjectType
+FSharp.Compiler.Symbols.FSharpType: Boolean IsReferenceTupleType
+FSharp.Compiler.Symbols.FSharpType: Boolean IsStringType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsStructTupleType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsTupleType
+FSharp.Compiler.Symbols.FSharpType: Boolean IsUnitType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsUnresolved
 FSharp.Compiler.Symbols.FSharpType: Boolean get_HasNullAnnotation()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_HasTypeDefinition()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsAbbreviation()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsAnonRecordType()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsArrayType()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsBooleanType()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsFSharpChoice()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsFSharpList()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsFSharpOption()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsFSharpValueOption()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsFunctionType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsGenericParameter()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsMeasureType()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsNativePointerType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsNullAmbivalent()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsObjectType()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsReferenceTupleType()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsStringType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsStructTupleType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsTupleType()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsUnitType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsUnresolved()
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpAnonRecordTypeDetails AnonRecordTypeDetails
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpAnonRecordTypeDetails get_AnonRecordTypeDetails()

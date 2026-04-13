@@ -48,7 +48,9 @@ param (
     [switch]$useGlobalNuGetCache = $true,
     [switch]$dontUseGlobalNuGetCache = $false,
     [switch]$warnAsError = $true,
+    [string]$warnNotAsError = "",
     [switch][Alias('test')]$testDesktop,
+    [string]$testDesktopBatch = "",
     [switch]$testCoreClr,
     [switch]$testCambridge,
     [switch]$testCompiler,
@@ -121,6 +123,7 @@ function Print-Usage() {
     Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
     Write-Host "  -testCompilerComponentTests   Run FSharpCompilerService component tests"
     Write-Host "  -testDesktop                  Run tests against full .NET Framework"
+    Write-Host "  -testDesktopBatch <1|2|3>       Run a specific batch of the desktop test split (implies -testDesktop)"
     Write-Host "  -testCoreClr                  Run tests against CoreCLR"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
     Write-Host "  -testIntegration              Run F# integration tests"
@@ -147,6 +150,7 @@ function Print-Usage() {
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
     Write-Host "  -buildnorealsig               Build product with realsig- (default use realsig+, where necessary)"
     Write-Host "  -verifypackageshipstatus      Verify whether the packages we are building have already shipped to nuget"
+    Write-Host "  -warnNotAsError <codes>       Suppress specific warnings from being treated as errors (semi-colon delimited)"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -191,6 +195,10 @@ function Process-Arguments() {
 
     if($script:testVs) {
         $script:testEditor = $True
+    }
+
+    if ($script:testDesktopBatch -ne "") {
+        $script:testDesktop = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
@@ -299,6 +307,8 @@ function BuildSolution([string] $solutionName, $packSolution) {
 
     $pack = if ($packSolution -eq $False) {""} else {$pack}
 
+    $msbuildWarnNotAsError = if ($warnAsError -and $warnNotAsError -ne "") { "/warnNotAsError:$warnNotAsError" } else { "" }
+
     MSBuild $toolsetBuildProj `
         $bl `
         /p:Configuration=$configuration `
@@ -321,7 +331,8 @@ function BuildSolution([string] $solutionName, $packSolution) {
         /p:BuildNoRealsig=$buildnorealsig `
         /v:$verbosity `
         $suppressExtensionDeployment `
-        @properties
+        @properties `
+        $msbuildWarnNotAsError
 
     $env:BUILDING_USING_DOTNET=$BUILDING_USING_DOTNET_ORIG
 }
@@ -374,14 +385,10 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     # MTP requires --solution flag for .sln files
     $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
     
-    # For solutions, omit --report-xunit-trx-filename so each test assembly generates a unique .trx file.
-    # With a static filename, all assemblies overwrite the same file and only the last one's results survive.
-    if ($testProject.EndsWith('.sln')) {
-        $reportArgs = "--report-xunit-trx"
-    } else {
-        $testLogFileName = "${projectName}_${targetFramework}.trx"
-        $reportArgs = "--report-xunit-trx --report-xunit-trx-filename ""$testLogFileName"""
-    }
+    # Xunit XML report via XunitXml.TestLogger with CI-friendly filenames
+    $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
+    $xunitLogFileName = "{assembly}.{framework}.${jobName}.xml"
+    $reportArgs = "--report-spekt-xunit --report-spekt-xunit-filename ""$xunitLogFileName"""
     
     $test_args = "test $testTarget -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
     # MTP HangDump extension replaces VSTest --blame-hang-timeout
@@ -605,7 +612,26 @@ try {
     }
 
     if ($testDesktop) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
+        if ($testDesktopBatch -ne "") {
+            $dotnetPath = InitializeDotNetCli
+            $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+            $splitScript = Join-Path $RepoRoot "eng\tests\TestSplit.fsx"
+            $splitOutput = & $dotnetExe fsi $splitScript $testDesktopBatch desktop
+            if ($LASTEXITCODE -ne 0) { throw "TestSplit.fsx failed with exit code $LASTEXITCODE" }
+            $matchCount = 0
+            foreach ($line in $splitOutput) {
+                if ($line -match '^dotnet test (\S+) --no-build -c Release\s*(.*)$') {
+                    $proj = $Matches[1] -replace '/', '\'
+                    $projPath = Join-Path $RepoRoot $proj
+                    $settings = $Matches[2].Trim()
+                    TestUsingMSBuild -testProject $projPath -targetFramework $script:desktopTargetFramework -settings $settings
+                    $matchCount++
+                }
+            }
+            if ($matchCount -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
+        } else {
+            TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
+        }
     }
 
     if ($testFSharpCore) {

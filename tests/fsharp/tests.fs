@@ -27,11 +27,6 @@ let FSI = FSI_NETFX
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-let log = printfn
-
-// Disable parallel execution for CoreTests because the printing and FSI tests
-// spawn external FSI processes with stdin redirection that can interfere with each other
-[<Collection(nameof NotThreadSafeResourceCollection)>]
 module CoreTests =
 
 

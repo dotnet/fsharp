@@ -4062,6 +4062,7 @@ type 'a T4063 = | AT4063 of 'a
     #help;;                                       // Display help
     #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
     #clear;;                                      // Clear screen
+    #version;;                                    // Display F# Interactive version and environment information
     #quit;;                                       // Exit
     #exit;;                                       // Exit
 
