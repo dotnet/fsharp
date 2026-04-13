@@ -409,8 +409,10 @@ module StructuralUtilities =
 
     let private hashTokenArray (tokens: TypeToken[]) =
         let mutable acc = 0
+
         for t in tokens do
             acc <- combineHash acc (hash t)
+
         acc
 
     [<CustomEquality; NoComparison>]
@@ -588,12 +590,16 @@ module StructuralUtilities =
         let out = ctx.Tokens
 
         // If the sequence got too long, just drop it, we could be dealing with an infinite type.
-        if out.Count >= MaxTokenCount then PossiblyInfinite
+        if out.Count >= MaxTokenCount then
+            PossiblyInfinite
         else
             let tokens = out.ToArray()
             let h = hashTokenArray tokens
-            if not ctx.Stable then Unstable(h, tokens)
-            else Stable(h, tokens)
+
+            if not ctx.Stable then
+                Unstable(h, tokens)
+            else
+                Stable(h, tokens)
 
     // Speed up repeated calls by memoizing results for types that yield a stable structure.
     let private getTypeStructureOfStrippedType =
