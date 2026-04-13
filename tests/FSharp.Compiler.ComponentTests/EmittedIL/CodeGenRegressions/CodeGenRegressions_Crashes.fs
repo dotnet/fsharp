@@ -269,6 +269,11 @@ printfn "CopyImpl loaded and Copy called"
         |> run
         |> shouldSucceed
         |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/14492
+    // Same-assembly variant: constrained generics inlined into closures trigger Specialize
+    [<Fact>]
+    let ``Issue_14492_SameAssemblyInline`` () =
         let source = """
 module Test
 
