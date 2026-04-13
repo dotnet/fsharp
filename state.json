@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-04-13T09:27:21Z",
+  "last_run": "2026-04-13T13:25:41Z",
   "prs": {
     "19472": {
-      "status": "out_of_scope_src_changes",
+      "status": "category_c_maintainer_active",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro took over PR with src/ fix. CI green Apr 10. T-Gro posted design question Apr 10 about empty array encoding. merge_commit_sha null (possible merge conflict). Beyond shepherd scope due to src/ changes."
+      "note": "T-Gro force-pushed single commit Apr 13. CI green (48/48). Mergeable clean. T-Gro actively developing, design question about empty arrays answered by new commit. Shepherd should not interfere."
     },
     "19471": {
       "status": "skipped_title_mismatch",
@@ -13,8 +13,8 @@
     "19468": {
       "status": "category_c_clean",
       "last_shepherd_comment": "2026-03-31T17:25:02Z",
-      "note": "CI green (Mar 31). mergeable. All review feedback (abonie x2, auduchinok x1) addressed. Awaiting approval. No new comments since Mar 31."
+      "note": "CI green (46/46). Mergeable clean. All review feedback (abonie x2, auduchinok x1) addressed. Awaiting approval. No new comments since Mar 31."
     }
   },
-  "notes": "No action taken. Same 3 PRs as previous runs. #19472 still managed by T-Gro with src/ changes. #19468 still healthy Category C. #19471 ineligible."
+  "notes": "All 3 PRs stable. #19472 actively maintained by T-Gro. #19468 awaiting approval. #19471 ineligible."
 }
