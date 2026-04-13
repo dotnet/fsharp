@@ -11650,8 +11650,11 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                         match e with
                         | Expr.Const(_, m, _) ->
                             match literalIdents |> List.tryFind (fun (r, _) -> Range.equals r m) with
-                            | Some(_, vref) -> Expr.Val(vref, NormalValUse, m)
-                            | None -> e
+                            // Only use Expr.Val for local refs to avoid creating transitive assembly
+                            // dependencies in pickled metadata (VRefNonLocal would require the
+                            // external assembly to be available when importing this DLL).
+                            | Some(_, vref) when vref.IsLocalRef -> Expr.Val(vref, NormalValUse, m)
+                            | _ -> e
                         | _ -> e
 
                     AttribExpr(sourceExpr, EvalLiteralExprOrAttribArg g e)
