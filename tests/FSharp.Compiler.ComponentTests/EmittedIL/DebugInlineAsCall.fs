@@ -837,3 +837,95 @@ type T() =
         |> asLibrary
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Accessibility 03`` () =
+        let library =
+            FSharp """
+module Lib
+
+type T() =
+    member inline internal _.F(x) = x
+    member inline this.G(x) = this.F(x)
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+            |> withName "lib"
+
+        FSharp """
+module App
+let r = Lib.T().G(1)
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> compile
+        |> shouldSucceed
+
+
+    [<Fact>]
+    let ``Accessibility 04`` () =
+        let library =
+            FSharp """
+module MyLib
+
+let inline internal addInternal (x: ^T) (y: ^T) = x + y
+let inline addPublic (x: ^T) (y: ^T) = addInternal x y
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+
+        FSharp """
+open MyLib
+
+[<EntryPoint>]
+let main _ =
+    let i = addPublic 3 4
+    if i = 7 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Accessibility 05`` () =
+        let library =
+            FSharp """
+module Module
+
+type MyNum =
+    { Value: float }
+    static member FromFloat (_: MyNum) = fun (x: float) -> { Value = x }
+
+type T =
+    static member inline internal InvokeInternal(x: float) : 'Num =
+        let inline call (a: ^a) = (^a: (static member FromFloat : _ -> _) a)
+        call Unchecked.defaultof<'Num> x
+
+    static member inline Invoke(x: float) : 'Num =
+        T.InvokeInternal<'Num>(x)
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+            |> withName "Library"
+
+        FSharp """
+open Module
+
+[<EntryPoint>]
+let main _ =
+    let result = T.Invoke<MyNum>(3.14)
+    if result.Value = 3.14 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed

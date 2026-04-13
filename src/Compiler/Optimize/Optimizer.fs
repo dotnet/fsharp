@@ -1355,8 +1355,9 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary (cenv: cenv) mhi =
             then detailR
             else ValValue (vref2, detailR)
 
-        // Check for escape in lambda 
-        | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when            
+        // Check for escape in lambda
+        | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when
+            cenv.settings.inlineNamedFunctions &&
             (let fvs = freeInExpr CollectAll expr
              (isAssemblyBoundary && not (freeVarsAllPublic fvs)) || 
              Zset.exists hiddenVal fvs.FreeLocals ||
@@ -1403,7 +1404,9 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary (cenv: cenv) mhi =
          { ModuleOrNamespaceInfos = NameMap.map abstractLazyModulInfo ss.ModuleOrNamespaceInfos
            ValInfos = 
                ValInfos(ss.ValInfos.Entries 
-                         |> Seq.filter (fun (vref, _) -> not (hiddenVal vref.Deref))
+                         |> Seq.filter (fun (vref, _) ->
+                             not (hiddenVal vref.Deref) ||
+                             (not cenv.settings.inlineNamedFunctions && vref.Deref.ShouldInline))
                          |> Seq.map (fun (vref, e) -> check cenv vref (abstractValInfo e) )) }
 
     and abstractLazyModulInfo (ss: LazyModuleInfo) = 
@@ -3130,7 +3133,8 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         failwith "tuple, union and record values cannot be marked 'inline'"
 
     | UnknownValue when shouldInline ->
-        warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
+        if cenv.settings.inlineNamedFunctions then
+            warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
         None
 
     | _ when shouldInline ->
@@ -3179,7 +3183,7 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
            e, AddValEqualityInfo g m v einfo 
 
     | None ->
-       if v.ShouldInline then
+       if v.ShouldInline && cenv.settings.inlineNamedFunctions then
             match valInfoForVal.ValExprInfo with
             | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
             | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
@@ -3471,67 +3475,68 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
     match cenv.settings.inlineNamedFunctions, stripExpr valExpr with
     | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv.g vref) ->
+        let hasNoTraits =
+            let tps, _ = tryDestForallTy g vref.Type
+            GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
+
+        let allTyargsAreConcrete =
+            tyargs |> List.forall (fun t -> (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
+
+        let allTyargsAreGeneric =
+            tyargs |> List.forall (fun t -> not (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
+
+        let canCallDirectly =
+            hasNoTraits || (allTyargsAreGeneric && vref.ValReprInfo.IsSome)
+
+        let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
+        let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
+
+        if canCallDirectly then
+            Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
+        else
+
         let origFinfo = GetInfoForValWithCheck cenv env m vref
         match stripValue origFinfo.ValExprInfo with
         | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) when not (Zset.contains origLambdaId env.dontInline) ->
-            let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
-            let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
+            let f2R = CopyExprForInlining cenv true origLambda m
+            let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
+            let specLambdaTy = tyOfExpr g specLambda
 
-            let hasNoTraits =
-                let tps, _ = tryDestForallTy g vref.Type
-                GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
+            let specLambdaR =
+                if allTyargsAreConcrete then
+                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _) -> typeEquiv g ty specLambdaTy) with
+                    | Some (_, body) -> copyExpr g CloneAll body
+                    | None ->
 
-            let allTyargsAreConcrete =
-                tyargs |> List.forall (fun t -> (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
+                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
+                    cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
+                    specLambdaR
+                else
+                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
+                    specLambdaR
 
-            let allTyargsAreGeneric =
-                tyargs |> List.forall (fun t -> not (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
+            let specLambdaR =
+                match specLambdaR with
+                | Expr.Lambda(uniq, a, b, c, d, _, ty) -> Expr.Lambda(uniq, a, b, c, d, m, ty)
+                | Expr.TyLambda(uniq, a, b, _, ty) -> Expr.TyLambda(uniq, a, b, m, ty)
+                | _ -> specLambdaR
 
-            let canCallDirectly =
-                hasNoTraits || (allTyargsAreGeneric && vref.ValReprInfo.IsSome)
-
-            if canCallDirectly then
-                Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
-            else
-                let f2R = CopyExprForInlining cenv true origLambda m
-                let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
-                let specLambdaTy = tyOfExpr g specLambda
-
-                let specLambdaR =
+            let debugVal =
+                let name = $"<{vref.LogicalName}>__debug"
+                // When tyargs have free type variables, omit ValReprInfo so IlxGen compiles this
+                // as a closure that captures type variables and witnesses from the enclosing scope.
+                let valReprInfo =
                     if allTyargsAreConcrete then
-                        match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _) -> typeEquiv g ty specLambdaTy) with
-                        | Some (_, body) -> copyExpr g CloneAll body
-                        | None ->
-
-                        let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
-                        cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
-                        specLambdaR
+                        Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
                     else
-                        let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
-                        specLambdaR
+                        None
 
-                let specLambdaR =
-                    match specLambdaR with
-                    | Expr.Lambda(uniq, a, b, c, d, _, ty) -> Expr.Lambda(uniq, a, b, c, d, m, ty)
-                    | Expr.TyLambda(uniq, a, b, _, ty) -> Expr.TyLambda(uniq, a, b, m, ty)
-                    | _ -> specLambdaR
+                Construct.NewVal(name, m, None, specLambdaTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
+                    NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
+                    ParentNone)
 
-                let debugVal =
-                    let name = $"<{vref.LogicalName}>__debug"
-                    // When tyargs have free type variables, omit ValReprInfo so IlxGen compiles this
-                    // as a closure that captures type variables and witnesses from the enclosing scope.
-                    let valReprInfo =
-                        if allTyargsAreConcrete then
-                            Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
-                        else
-                            None
-
-                    Construct.NewVal(name, m, None, specLambdaTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
-                        NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
-                        ParentNone)
-
-                let callExpr = mkApps g ((exprForVal m debugVal, specLambdaTy), [], argsR, m)
-                Some(mkCompGenLet m debugVal specLambdaR callExpr, info)
+            let callExpr = mkApps g ((exprForVal m debugVal, specLambdaTy), [], argsR, m)
+            Some(mkCompGenLet m debugVal specLambdaR callExpr, info)
 
         | _ -> None
     | _ ->
