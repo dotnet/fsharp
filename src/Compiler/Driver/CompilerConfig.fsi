@@ -816,7 +816,7 @@ type TcConfig =
 
     member strictIndentation: bool option
 
-    member inlineNamedFunctions: bool option
+    member inlineNamedFunctions: bool
 
     member GetTargetFrameworkDirectories: unit -> string list
 

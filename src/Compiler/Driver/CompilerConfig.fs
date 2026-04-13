@@ -1256,7 +1256,15 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
     member _.strictIndentation = data.strictIndentation
-    member _.inlineNamedFunctions = data.inlineNamedFunctions
+
+    member _.inlineNamedFunctions =
+        data.inlineNamedFunctions
+        |> Option.defaultValue (
+            not data.debuginfo
+            || data.optSettings.LocalOptimizationsEnabled
+            || data.extraOptimizationIterations > 0
+        )
+
     member _.primaryAssembly = data.primaryAssembly
     member _.noFeedback = data.noFeedback
     member _.stackReserveSize = data.stackReserveSize
