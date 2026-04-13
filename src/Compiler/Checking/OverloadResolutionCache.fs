@@ -162,7 +162,11 @@ let tryComputeOverloadCacheKey
                     | Some retTy ->
                         match tryGetTypeStructureForOverloadCache g retTy with
                         | ValueSome ts -> ValueSome ts
-                        | ValueNone -> if anyHasOutArgs then ValueNone else ValueSome(Stable(0, [||]))
+                        | ValueNone ->
+                            if anyHasOutArgs then
+                                ValueNone
+                            else
+                                ValueSome(Stable(0, [||]))
                     | None -> ValueSome(Stable(0, [||]))
 
                 match retTyStructure with
