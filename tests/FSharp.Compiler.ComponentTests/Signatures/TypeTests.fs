@@ -474,6 +474,46 @@ type LocalReadWriteLockCookie(locker: obj) =
 
 // https://github.com/dotnet/fsharp/issues/15339
 [<Fact>]
+let ``Struct with explicit NoComparison does not get duplicate attribute`` () =
+    let generatedSignature =
+        FSharp
+            """
+namespace TestNs
+
+[<Struct; NoComparison>]
+type AlreadyMarked =
+    val X: obj
+    new(x) = { X = x }
+"""
+        |> printSignatures
+
+    // Should NOT duplicate [<NoComparison>] — the explicit one is sufficient
+    let count = System.Text.RegularExpressions.Regex.Matches(generatedSignature, "NoComparison").Count
+    Assert.Equal(1, count)
+
+// https://github.com/dotnet/fsharp/issues/15339
+[<Fact>]
+let ``Struct with CustomComparison does not get NoComparison`` () =
+    let generatedSignature =
+        FSharp
+            """
+namespace TestNs
+
+open System
+
+[<Struct; CustomComparison; NoEquality>]
+type WithCustomCompare =
+    val X: obj
+    new(x) = { X = x }
+    interface IComparable with
+        member _.CompareTo(_) = 0
+"""
+        |> printSignatures
+
+    Assert.DoesNotContain("NoComparison", generatedSignature)
+
+// https://github.com/dotnet/fsharp/issues/15339
+[<Fact>]
 let ``Struct with non-equatable field includes NoEquality in signature`` () =
     let implSource =
         """
@@ -591,6 +631,54 @@ type B() =
     Fsi generatedSignature
     |> withAdditionalSourceFile (FsSource implSource)
     |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``Empty class with private constructor uses class end`` () =
+    let implSource =
+        """
+module Telplin
+
+type Empty private () = class end
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // Empty class should use 'class end' repr, not [<Class>] attribute
+    Assert.Contains("class end", generatedSignature)
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``AbstractClass with private constructor roundtrips`` () =
+    let implSource =
+        """
+module Telplin
+
+[<AbstractClass>]
+type A private () =
+    abstract member M: unit -> unit
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // The generated signature should compile with the implementation
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
     |> ignoreWarnings
     |> compile
     |> shouldSucceed
