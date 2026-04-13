@@ -301,6 +301,64 @@ module SubModule =
     [<System.ComponentModel.Category (A)>]
     member Meh: unit -> unit"""
 
+// https://github.com/dotnet/fsharp/issues/13810
+[<Fact>]
+let ``Multiple literal values in attribute tuple args use literal names`` () =
+    let actual =
+        FSharp
+            """
+module TestMod
+
+open System
+
+[<AttributeUsage(AttributeTargets.All)>]
+type TwoArgAttribute(a: string, b: string) =
+    inherit Attribute()
+
+[<Literal>]
+let First = "first"
+
+[<Literal>]
+let Second = "second"
+
+type Foo() =
+    [<TwoArg(First, Second)>]
+    member _.Bar() = ()
+"""
+        |> printSignatures
+
+    // The attribute argument line should show literal names, not constant values
+    let attrLine = actual.Split('\n') |> Array.find (fun l -> l.Contains("TwoArg") && l.Contains("[<"))
+    Assert.Contains("First", attrLine)
+    Assert.Contains("Second", attrLine)
+    Assert.DoesNotContain("\"first\"", attrLine)
+    Assert.DoesNotContain("\"second\"", attrLine)
+
+// https://github.com/dotnet/fsharp/issues/13810 — known limitation:
+// Qualified literal references (e.g. Module.Literal) are not recovered;
+// the constant value is shown instead.
+[<Fact>]
+let ``Qualified literal in attribute shows constant value`` () =
+    FSharp
+        """
+module TestMod
+
+open System.ComponentModel
+
+module Constants =
+    [<Literal>]
+    let A = "QualifiedValue"
+
+type Foo() =
+    [<Category(Constants.A)>]
+    member this.Meh () = ()
+"""
+    |> printSignatures
+    |> prependNewline
+    |> fun actual ->
+        // Qualified literal refs are not recovered — constant value is shown
+        Assert.Contains("QualifiedValue", actual)
+
 // https://github.com/dotnet/fsharp/issues/15389
 [<Fact>]
 let ``Backtick in identifier is properly escaped in signature`` () =
