@@ -13,6 +13,12 @@
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <UnitTestType>nunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
+    <!-- Ensure this test uses an msbuild compatible with the VS -->
+    <MicrosoftBuildFrameworkVersion>17.13.9</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>17.13.9</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>17.13.9</MicrosoftBuildUtilitiesCoreVersion>
+    <MicrosoftBuildVersion>17.13.9</MicrosoftBuildVersion>
+    <SystemReflectionMetadataVersion>8.0.0</SystemReflectionMetadataVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -144,4 +150,7 @@
     <PackageReference Include="Nerdbank.Streams" Version="$(NerdbankStreamsVersion)" />
   </ItemGroup>
 
+  <Target Name="CopyFile" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetDir)VisualFSharp.UnitTests.dll.config" DestinationFiles="$(TargetDir)fsc.exe.config" />
+  </Target>
 </Project>

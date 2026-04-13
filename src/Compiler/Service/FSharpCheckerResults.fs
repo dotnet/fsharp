@@ -3577,6 +3577,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                     defaultFSharpBinariesDir,
                     fileName,
                     sourceText,
+                    None,
                     CodeContext.Editing,
                     tcConfig.useSimpleResolution,
                     tcConfig.useFsiAuxLib,

@@ -55,16 +55,30 @@ module FSharpDependencyManager =
                 Version = ver
                 RestoreSources = src
                 Script = script
+                UsePackageTargets = usePackageTargets
             } =
             p
 
+        let usePackageTargets =
+            match usePackageTargets with
+            | false -> "ExcludeAssets='build;buildTransitive;buildMultitargeting'"
+            | true -> ""
+
         seq {
             match not (String.IsNullOrEmpty(inc)), not (String.IsNullOrEmpty(ver)), not (String.IsNullOrEmpty(script)) with
-            | true, true, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' /></ItemGroup>" inc ver
+            | true, true, false ->
+                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' %s /></ItemGroup>" inc ver usePackageTargets
             | true, true, true ->
-                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' /></ItemGroup>" inc ver script
-            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' /></ItemGroup>" inc
-            | true, false, true -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' /></ItemGroup>" inc script
+                yield
+                    sprintf
+                        @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' %s /></ItemGroup>"
+                        inc
+                        ver
+                        script
+                        usePackageTargets
+            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' %s /></ItemGroup>" inc usePackageTargets
+            | true, false, true ->
+                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' %s /></ItemGroup>" inc script usePackageTargets
             | _ -> ()
 
             match not (String.IsNullOrEmpty(src)) with
@@ -96,6 +110,7 @@ module FSharpDependencyManager =
                         Version = "*"
                         RestoreSources = ""
                         Script = ""
+                        UsePackageTargets = false
                     }
 
             match options with
@@ -114,11 +129,21 @@ module FSharpDependencyManager =
 
                 let setVersion v = Some { current with Version = v }
 
+                let setUsePackageTargets v =
+                    Some { current with UsePackageTargets = v }
+
                 match opt with
                 | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "include", None -> raise (ArgumentException(SR.requiresAValue ("Include")))
                 | Some "version", Some v -> setVersion v |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "version", None -> setVersion "*" |> parsePackageReferenceOption' rest implicitArgumentCount
+                | Some "usepackagetargets", v ->
+                    match v with
+                    | Some v when v.ToLowerInvariant() = "true" -> setUsePackageTargets true
+                    | Some v when v.ToLowerInvariant() = "false" -> setUsePackageTargets false
+                    | _ ->
+                        raise (ArgumentException(ArgumentOutOfRangeException("usepackagetargets").Message))
+                    |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "restoresources", Some v ->
                     Some
                         { current with
@@ -212,12 +237,12 @@ module FSharpDependencyManager =
         let referencesHaveWildCardVersion =
             // Verify to see if the developer specified a wildcard version.  If they did then caching is not possible
             let hasWildCardVersion p =
-                // Todo: named record please
                 let {
                         Include = package
                         Version = ver
                         RestoreSources = _
                         Script = _
+                        UsePackageTargets = _
                     } =
                     p
 
