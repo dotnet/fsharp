@@ -1,20 +1,20 @@
 {
-  "last_run": "2026-04-12T21:05:52Z",
+  "last_run": "2026-04-13T01:27:11Z",
   "prs": {
     "19472": {
       "status": "out_of_scope_src_changes",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "PR evolved beyond regression test. 16 src/docs files changed (IlxGen.fs, FSComp.txt, xlf, release notes). Merge conflict (dirty). T-Gro actively managing (last comment Apr 10 about fix approach). auto_merge enabled. Beyond shepherd scope."
+      "note": "Merge conflict (dirty). 17 changed files including src/Compiler/CodeGen/IlxGen.fs, FSComp.txt, xlf, release notes. T-Gro actively managing (last comment Apr 10 about fix approach). auto_merge enabled. Beyond shepherd scope."
     },
     "19471": {
       "status": "skipped_title_mismatch",
-      "note": "Title 'Fix #12386...' does not start with 'Add regression test:'. Skipped per eligibility rules."
+      "note": "Title 'Fix #12386...' does not start with 'Add regression test:'. Skipped."
     },
     "19468": {
       "status": "category_c_clean",
       "last_shepherd_comment": "2026-03-31T17:25:02Z",
-      "note": "CI all green (46/46). mergeable_state=clean. auto_merge=true. All review feedback from abonie and auduchinok addressed. Awaiting approval. No new comments since last shepherd action."
+      "note": "CI all green. mergeable_state=clean. auto_merge=true. All review feedback (abonie x2, auduchinok x1) addressed. Awaiting approval. No new comments since Mar 31."
     }
   },
-  "notes": "No action taken. #19472 has evolved to a full fix PR with src/ changes - beyond scope. #19468 is healthy Category C awaiting merge. #19471 ineligible (title)."
+  "notes": "No action taken. Same state as previous runs. #19472 still has merge conflict with src/ changes (beyond scope). #19468 still healthy Category C awaiting merge. #19471 ineligible (title)."
 }
