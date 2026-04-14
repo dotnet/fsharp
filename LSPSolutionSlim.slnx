@@ -14,4 +14,5 @@
   <Folder Name="/src/Compiler/">
     <Project Path="src/Compiler/FSharp.Compiler.Service.fsproj" />
   </Folder>
+  <Project Path="buildtools/Misc/Misc.csproj" />
 </Solution>

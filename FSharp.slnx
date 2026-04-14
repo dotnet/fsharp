@@ -14,95 +14,11 @@
       <BuildType Solution="Proto|*" Project="Release" />
     </Project>
   </Folder>
-  <Folder Name="/Docs/">
-    <File Path="docs/builder-caches.md" />
-    <File Path="docs/changing-the-ast.md" />
-    <File Path="docs/coding-standards.md" />
-    <File Path="docs/compiler-startup-performance.md" />
-    <File Path="docs/debug-emit.md" />
-    <File Path="docs/diagnostics.md" />
-    <File Path="docs/fsharp-core-notes.md" />
-    <File Path="docs/fsi-emit.md" />
-    <File Path="docs/index.md" />
-    <File Path="docs/large-inputs-and-stack-overflows.md" />
-    <File Path="docs/memory-usage.md" />
-    <File Path="docs/names.md" />
-    <File Path="docs/optimizations-equality.md" />
-    <File Path="docs/optimizations.md" />
-    <File Path="docs/overview.md" />
-    <File Path="docs/perf-discussions-archive.md" />
-    <File Path="docs/project-builds.md" />
-    <File Path="docs/representations.md" />
-    <File Path="docs/running-documentation-locally.md" />
-    <File Path="docs/tooling-features.md" />
-  </Folder>
-  <Folder Name="/Docs/content/">
-    <File Path="docs/content/fsdocs-theme.css" />
-  </Folder>
-  <Folder Name="/Docs/fcs/">
-    <File Path="docs/fcs/caches.fsx" />
-    <File Path="docs/fcs/compiler.fsx" />
-    <File Path="docs/fcs/corelib.fsx" />
-    <File Path="docs/fcs/editor.fsx" />
-    <File Path="docs/fcs/filesystem.fsx" />
-    <File Path="docs/fcs/index.md" />
-    <File Path="docs/fcs/interactive.fsx" />
-    <File Path="docs/fcs/project.fsx" />
-    <File Path="docs/fcs/react.fsx" />
-    <File Path="docs/fcs/symbols.fsx" />
-    <File Path="docs/fcs/tokenizer.fsx" />
-    <File Path="docs/fcs/typedtree.fsx" />
-    <File Path="docs/fcs/untypedtree-apis.fsx" />
-    <File Path="docs/fcs/untypedtree.fsx" />
-  </Folder>
-  <Folder Name="/Docs/img/">
-    <File Path="docs/img/favicon.ico" />
-    <File Path="docs/img/logo.png" />
-  </Folder>
-  <Folder Name="/Docs/release-notes/">
-    <File Path="docs/release-notes/About.md" />
-    <File Path="docs/release-notes/FSharp.Compiler.Service.fsx" />
-    <File Path="docs/release-notes/FSharp.Core.fsx" />
-    <File Path="docs/release-notes/Language.fsx" />
-  </Folder>
-  <Folder Name="/Docs/release-notes/.aux/">
-    <File Path="docs/release-notes/.aux/Common.fsx" />
-  </Folder>
-  <Folder Name="/Docs/release-notes/.FSharp.Compiler.Service/">
-    <File Path="docs/release-notes/.FSharp.Compiler.Service/8.0.100.md" />
-    <File Path="docs/release-notes/.FSharp.Compiler.Service/8.0.200.md" />
-    <File Path="docs/release-notes/.FSharp.Compiler.Service/8.0.202.md" />
-    <File Path="docs/release-notes/.FSharp.Compiler.Service/8.0.300.md" />
-    <File Path="docs/release-notes/.FSharp.Compiler.Service/8.0.400.md" />
-    <File Path="docs/release-notes/.FSharp.Compiler.Service/9.0.100.md" />
-    <File Path="docs/release-notes/.FSharp.Compiler.Service/9.0.200.md" />
-  </Folder>
-  <Folder Name="/Docs/release-notes/.FSharp.Core/">
-    <File Path="docs/release-notes/.FSharp.Core/8.0.200.md" />
-    <File Path="docs/release-notes/.FSharp.Core/8.0.300.md" />
-  </Folder>
-  <Folder Name="/Docs/release-notes/.Language/">
-    <File Path="docs/release-notes/.Language/8.0.md" />
-    <File Path="docs/release-notes/.Language/preview.md" />
-  </Folder>
-  <Folder Name="/Docs/release-notes/.VisualStudio/">
-    <File Path="docs/release-notes/.VisualStudio/17.10.md" />
-    <File Path="docs/release-notes/.VisualStudio/17.9.md" />
-  </Folder>
-  <Folder Name="/eng/">
-    <File Path="eng/Version.Details.props" />
-    <File Path="eng/Version.Details.xml" />
-    <File Path="eng/Versions.props" />
-  </Folder>
+  <Project Path="buildtools/Misc/Misc.csproj" />
   <Folder Name="/Libraries/">
     <Project Path="src/FSharp.Core/FSharp.Core.fsproj">
       <BuildType Solution="Proto|*" Project="Release" />
     </Project>
-  </Folder>
-  <Folder Name="/Solution Items/">
-    <File Path="src/Compiler/default.win32manifest" />
-    <File Path="src/Compiler/FSComp.txt" />
-    <File Path="src/Compiler/FSCompCheck.fsx" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj">
