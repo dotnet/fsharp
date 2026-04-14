@@ -277,3 +277,19 @@ let main _argv =
         """
         |> typecheck
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/4473
+    [<Fact>]
+    let ``Issue 4473 - extern function parameters not flagged as unused with warnon 1182``() =
+        FSharp """
+module Test4473
+
+open System.Runtime.InteropServices
+
+[<DllImport("kernel32.dll")>]
+extern bool Beep(int frequency, int duration)
+        """
+        |> withWarnOn 1182
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
