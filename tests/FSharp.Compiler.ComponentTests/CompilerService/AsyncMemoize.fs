@@ -439,11 +439,13 @@ let ``Cancel running jobs with the same key`` () =
 
     job.Wait()
 
-    // Wait for all 10 outdated jobs to be canceled and the new one to finish.
-    let events = eventsWhen events (fun e -> countOf Canceled e = 10 && countOf Finished e = 1)
+    let events = eventsWhen events (received Finished)
 
     Assert.Equal(0, events |> countOf Failed)
+
+    // All outdated jobs should have been canceled by now.
     Assert.Equal(10, events |> countOf Canceled)
+
     Assert.Equal(1, events |> countOf Finished)
 
 type DummyException(msg) =

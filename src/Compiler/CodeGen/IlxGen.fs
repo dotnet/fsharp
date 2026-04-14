@@ -12270,6 +12270,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         ],
                         mkMethodBody (false, [], 8, ilInstrsForSerialization, None, eenv.imports)
                     )
+                    |> AddNonUserCompilerGeneratedAttribs g
 
                 let ilInstrsToSaveFields =
                     emitSerializationFieldIL (fun ilFieldName ilPropType ->
@@ -12327,6 +12328,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkILCustomAttribute (g.attrib_SecurityCriticalAttribute.TypeRef, [], [], [])
 
                     mdef.With(customAttrs = mkILCustomAttrs [ securityCriticalAttr ])
+                    |> AddNonUserCompilerGeneratedAttribs g
 
                 // FSharp.Core has [assembly: SecurityTransparent], making all code transparent.
                 // On .NET Framework, transparent code cannot override SecurityCritical virtual
