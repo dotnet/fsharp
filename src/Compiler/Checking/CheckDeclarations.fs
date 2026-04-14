@@ -3460,7 +3460,8 @@ module EstablishTypeDefinitionCores =
 
             let extendedLayoutAttributeCheck () =
                 if hasExtendedLayoutAttr then
-                    // Check runtime support
+                    // Note: hasExtendedLayoutAttr is only true when attrib_ExtendedLayoutAttribute_opt is Some,
+                    // so the None branch below is currently unreachable. Kept as a defensive check.
                     match g.attrib_ExtendedLayoutAttribute_opt with
                     | None -> 
                         errorR (Error(FSComp.SR.tcRuntimeDoesNotSupportExtendedLayoutTypes(), m))

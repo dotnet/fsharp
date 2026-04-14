@@ -2685,7 +2685,7 @@ let convertLayout layout =
     | ILTypeDefLayout.Explicit _ -> TypeAttributes.ExplicitLayout
     | ILTypeDefLayout.Extended ->
         // Extended layout is represented by TypeAttributes value 0x18 (both Sequential and Explicit bits set)
-        // This is defined by the ECMA-335 spec for extended layout types
+        // See: https://github.com/dotnet/runtime/issues/102727
         enum<TypeAttributes> (0x18)
 
 let convertEncoding encoding =

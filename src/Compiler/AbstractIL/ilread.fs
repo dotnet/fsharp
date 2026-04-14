@@ -2136,6 +2136,8 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let super = seekReadSuperType ctxt numTypars AsObject extendsIdx
         let layout = typeLayoutOfFlags ctxt mdv flags idx
 
+        // Only Explicit layout has per-field offsets in the FieldLayout metadata table.
+        // Sequential and Extended layouts don't use FieldLayout rows.
         let hasLayout =
             match layout with
             | ILTypeDefLayout.Explicit _ -> true
