@@ -244,6 +244,9 @@ g 1 |> ignore
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       int32 Test::g(int32)"]
+        |> shouldSucceed
+        |> verifyILNotPresent ["Test::'<f>__debug"]
 
     [<Fact>]
     let ``Call 14`` () =
@@ -259,6 +262,9 @@ g 1 2 |> ignore
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       int32 Test::'<g>__debug@7'(int32,"]
+        |> shouldSucceed
+        |> verifyILNotPresent ["Test::'<f>__debug"]
 
     [<Fact>]
     let ``Call 15`` () =
@@ -274,6 +280,9 @@ g 1 2 |> ignore
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       int32 Test::'<g>__debug@7'(int32,"]
+        |> shouldSucceed
+        |> verifyILNotPresent ["Test::'<f>__debug"]
 
     [<Fact>]
     let ``SRTP 01`` () =
@@ -474,6 +483,9 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains
+            [ "call       int32 Test::'<add>__debug@8'(int32,"
+              "call       float64 Test::'<add>__debug@9-1'(float64," ]
         |> shouldSucceed
 
     [<Fact>]
@@ -551,6 +563,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       void Test::'<g>__debug@16'(class Test/T)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -580,6 +593,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["Test::'<g>__debug@19'()"]
         |> shouldSucceed
 
     [<Fact>]
@@ -613,6 +627,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       int32 Test::'<h>__debug@23'(valuetype Test/S`1<int32>)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -636,6 +651,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       int32 Test::'<h>__debug@13'(valuetype Test/S`1<int32>)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -664,6 +680,7 @@ type U = static member inline F<'a, 'b when 'a: (member M: unit -> unit)>(_a: 'a
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["Program::'<foo>__debug@10'(class Module/T)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -694,6 +711,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["Test::'<foo>__debug@8'(int32,"]
         |> shouldSucceed
 
     [<Fact>]
@@ -724,6 +742,7 @@ type C = static member inline F<'a, 'b, 'c when C<'a, 'b>>(_a: 'a) = ()
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["Program::'<foo>__debug@12'(class Program/T)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -747,6 +766,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       void Test::'<f>__debug@13'(valuetype Test/S&,"]
         |> shouldSucceed
 
     [<Fact>]
@@ -781,6 +801,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       void Test::'<f>__debug@12'(valuetype Test/S&,"]
         |> shouldSucceed
 
     [<Fact>]
@@ -818,6 +839,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       void Test::'<g>__debug@12'(valuetype Test/S&,"]
         |> shouldSucceed
 
     [<Fact>]
@@ -955,6 +977,7 @@ let inline f () = fInternal ()
         |> withNoOptimize
         |> asLibrary
         |> compile
+        |> verifyILContains ["call       void Module::'<fInternal>__debug@5'()"]
         |> shouldSucceed
 
     [<Fact>]
@@ -973,6 +996,7 @@ type T() =
         |> withNoOptimize
         |> asLibrary
         |> compile
+        |> verifyILContains ["call       void Module/T::'<InternalMethod>__debug@9'(class Module/T)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -997,6 +1021,7 @@ let r = Lib.T().G(1)
         |> withNoOptimize
         |> withReferences [library]
         |> compile
+        |> verifyILContains ["Lib/T::G<int32>(!!0)"]
         |> shouldSucceed
 
 
@@ -1026,6 +1051,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       int32 Test::'<addPublic>__debug@6'(int32,"]
         |> shouldSucceed
 
     [<Fact>]
@@ -1063,6 +1089,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["Test::'<Invoke>__debug@6'(float64)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -1089,6 +1116,7 @@ val inline publicFn: x: int -> int
             |> withDebug
             |> withNoOptimize
             |> asLibrary
+            |> withName "Lib"
 
         FSharp """
 open Lib
@@ -1103,6 +1131,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
+        |> verifyILContains ["call       int32 [Lib]Lib::publicFn(int32)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -1129,6 +1158,7 @@ val inline publicFn: x: int -> int
             |> withDebug
             |> withNoOptimize
             |> asLibrary
+            |> withName "Lib"
 
         FSharp """
 open Lib
@@ -1141,6 +1171,72 @@ let main _ =
         |> withDebug
         |> withNoOptimize
         |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       int32 [Lib]Lib::publicFn(int32)"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Resumable 01`` () =
+        FSharp """
+open System.Threading.Tasks
+
+[<EntryPoint>]
+let main _ =
+    let t = task { return 1 }
+    if t.Result = 1 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Resumable 02`` () =
+        FSharp """
+open System.Threading.Tasks
+
+[<EntryPoint>]
+let main _ =
+    let t = task {
+        let! x = Task.FromResult(1)
+        let! y = Task.FromResult(2)
+        return x + y
+    }
+    if t.Result = 3 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Resumable 03`` () =
+        FSharp """
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
+
+[<Struct>]
+type S<'T> = member _.M(_: 'T) = ()
+
+let inline g (_: S<'T>) =
+    if __useResumableCode then
+        __stateMachine<S<'T>, int>
+            (MoveNextMethodImpl<_>(fun _ -> ()))
+            (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+            (AfterCode<_, _>(fun _ -> 42))
+    else 42
+
+[<EntryPoint>]
+let main _ =
+    let r = g (S<int>())
+    if r = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
         |> asExe
         |> compileAndRun
         |> shouldSucceed
