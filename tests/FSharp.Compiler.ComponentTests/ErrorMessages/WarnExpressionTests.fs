@@ -308,9 +308,7 @@ do
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3885, Line 5, Col 15, Line 5, Col 17,
-             "The use of 'in' in 'let ... in' on a single line followed by additional code on subsequent lines causes all subsequent lines to be part of the 'let' body. This may lead to unexpected scoping. Either remove the 'in' keyword and rely on indentation, or add parentheses to clarify the intended scope.")
-            (Warning 20, Line 5, Col 18, Line 5, Col 23,
+            (Warning 20, Line 5, Col 5, Line 5, Col 23,
              "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
             (Warning 20, Line 5, Col 5, Line 6, Col 6,
              "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
@@ -374,8 +372,6 @@ let f () =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3885, Line 4, Col 15, Line 4, Col 17,
-             "The use of 'in' in 'let ... in' on a single line followed by additional code on subsequent lines causes all subsequent lines to be part of the 'let' body. This may lead to unexpected scoping. Either remove the 'in' keyword and rely on indentation, or add parentheses to clarify the intended scope.")
-            (Warning 20, Line 4, Col 18, Line 4, Col 23,
+            (Warning 20, Line 4, Col 5, Line 4, Col 23,
              "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]

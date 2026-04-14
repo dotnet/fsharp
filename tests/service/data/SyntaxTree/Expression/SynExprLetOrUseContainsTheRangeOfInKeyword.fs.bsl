@@ -23,7 +23,7 @@ ImplFile
                   Range = (2,0--2,15)
                   Trivia = { InKeyword = Some (2,10--2,12) }
                   IsFromSource = true }, (2,0--2,15))], PreXmlDocEmpty, [], None,
-          (2,0--2,15), { LeadingKeyword = None })], (true, true),
+          (2,0--3,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

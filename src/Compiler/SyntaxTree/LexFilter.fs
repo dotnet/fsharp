@@ -1680,8 +1680,24 @@ type LexFilterImpl (
             if debug then dprintf "IN at %a (becomes %s)\n" outputPos tokenStartPos (if blockLet then "ODECLEND" else "IN")
             if tokenStartCol < offsidePos.Column then warn tokenTup (FSComp.SR.lexfltIncorrentIndentationOfIn())
             popCtxt()
-            // Make sure we queue a dummy token at this position to check if any other pop rules apply
-            delayToken(pool.UseLocation(tokenTup, ODUMMY token))
+
+            if blockLet && lexbuf.SupportsFeature LanguageFeature.WarnOnLetInSequenceExpression then
+                let nextTokenTup = peekNextTokenTup()
+                let nextTokenStartPos = startPosOfTokenTup nextTokenTup
+
+                if nextTokenStartPos.Line = tokenStartPos.Line then
+                    // When the body expression starts on the same line as the 'in' keyword in light syntax,
+                    // push a new seq block to limit the body scope to that line. This prevents the parser
+                    // from greedily capturing all subsequent lines as part of the let body.
+                    pushCtxtSeqBlock tokenTup AddBlockEnd
+                else
+                    // Body starts on a new line after 'in' — the user intentionally placed the body
+                    // on the next line, so use standard behavior.
+                    delayToken(pool.UseLocation(tokenTup, ODUMMY token))
+            else
+                // Make sure we queue a dummy token at this position to check if any other pop rules apply
+                delayToken(pool.UseLocation(tokenTup, ODUMMY token))
+
             returnToken tokenLexbufState (if blockLet then ODECLEND(mkSynRange tokenTup.StartPos tokenTup.EndPos, true) else token)
 
         // Balancing rule. Encountering a 'done' balances with a 'do'. i.e. even a non-offside 'done' closes a 'do'
