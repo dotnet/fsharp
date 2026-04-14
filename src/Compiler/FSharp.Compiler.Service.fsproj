@@ -437,6 +437,8 @@
     <Compile Include="CodeGen\IlxGenSupport.fs" />
     <Compile Include="CodeGen\EraseClosures.fsi" />
     <Compile Include="CodeGen\EraseClosures.fs" />
+    <Compile Include="CodeGen\EraseUnions.Types.fs" />
+    <Compile Include="CodeGen\EraseUnions.Emit.fs" />
     <Compile Include="CodeGen\EraseUnions.fsi" />
     <Compile Include="CodeGen\EraseUnions.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
