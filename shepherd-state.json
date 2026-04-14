@@ -1,19 +1,15 @@
 {
-  "last_run": "2026-04-14T13:25:35Z",
+  "last_run": "2026-04-14T17:21:47Z",
   "prs": {
-    "19579": {
-      "status": "category_c_clean",
-      "note": "All 46 CI checks passing. No reviews. mergeable_state=clean. Awaiting review/approval."
-    },
     "19472": {
       "status": "out_of_scope_src_changes",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro took over with compiler fix (17 changed files including src/). All 48 CI passing. Beyond shepherd scope."
+      "note": "T-Gro driving with compiler fix (17 files, src/ changes). Latest: T-Gro tagged copilot-opus for implementation work 2026-04-14. All 48 real CI passing. Copilot workflow check failed (irrelevant)."
     },
     "19468": {
       "status": "category_c_clean",
       "last_shepherd_comment": "2026-03-31T17:25:02Z",
-      "note": "All 46 CI passing. All review feedback addressed. No new comments since 2026-03-31. Awaiting approval."
+      "note": "All 46 CI passing. All review feedback addressed (abonie + auduchinok). No new comments since 2026-03-31. Awaiting approval."
     }
   }
 }

@@ -1,14 +1,9 @@
 {
-  "last_run": "2026-04-14T09:24:39Z",
+  "last_run": "2026-04-14T17:21:47Z",
   "prs": {
-    "19579": {
-      "status": "category_c_clean",
-      "note": "All 46 CI checks passing. No reviews. Awaiting review."
-    },
     "19472": {
       "status": "out_of_scope_src_changes",
-      "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro took over with compiler fix. 17 changed files. Beyond shepherd scope."
+      "note": "T-Gro driving with compiler fix. All real CI passing. Beyond shepherd scope."
     },
     "19468": {
       "status": "category_c_clean",
