@@ -6,29 +6,6 @@
     <Platform Name="Any CPU" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/Benchmarks/">
-    <File Path="tests/benchmarks/README.md" />
-    <Project Path="tests/benchmarks/CompiledCodeBenchmarks/MicroPerf/CS/MicroPerfCSharp.csproj">
-      <BuildType Solution="Proto|*" Project="Debug" />
-    </Project>
-    <Project Path="tests/benchmarks/CompiledCodeBenchmarks/MicroPerf/MicroPerf.fsproj">
-      <BuildType Solution="Proto|*" Project="Debug" />
-    </Project>
-    <Project Path="tests/benchmarks/FSharp.Benchmarks.Common/FSharp.Benchmarks.Common.fsproj">
-      <BuildType Solution="Proto|*" Project="Debug" />
-    </Project>
-  </Folder>
-  <Folder Name="/Benchmarks/FCSBenchmarks/">
-    <File Path="tests/benchmarks/FCSBenchmarks/decentlySizedStandAloneFile.fs" />
-    <File Path="tests/benchmarks/FCSBenchmarks/README.md" />
-    <File Path="tests/benchmarks/FCSBenchmarks/SmokeTestAllBenchmarks.ps1" />
-    <Project Path="tests/benchmarks/FCSBenchmarks/BenchmarkComparison/HistoricalBenchmark.fsproj">
-      <BuildType Project="Release" />
-    </Project>
-    <Project Path="tests/benchmarks/FCSBenchmarks/CompilerServiceBenchmarks/FSharp.Compiler.Benchmarks.fsproj">
-      <BuildType Solution="Proto|*" Project="Debug" />
-    </Project>
-  </Folder>
   <Folder Name="/Compiler/">
     <File Path="src/Compiler/FSComp.txt" />
     <Project Path="src/Compiler/FSharp.Compiler.Service.fsproj">

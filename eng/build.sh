@@ -26,7 +26,6 @@ usage()
   echo "Test actions:"
   echo "  --testcoreclr                  Run unit tests on .NET Core (short: --test, -t)"
   echo "  --testCompilerComponentTests   Run FSharp.Compiler.ComponentTests on .NET Core"
-  echo "  --testBenchmarks               Build and Run Benchmark suite"
   echo "  --testScripting                Run FSharp.Private.ScriptingTests on .NET Core"
   echo ""
   echo "Advanced settings:"
@@ -152,9 +151,6 @@ while [[ $# > 0 ]]; do
       ;;
     --testcompilercomponenttests)
       test_compilercomponent_tests=true
-      ;;
-      --testbenchmarks)
-      test_benchmarks=true
       ;;
     --testscripting)
       test_scripting=true
@@ -420,12 +416,6 @@ fi
 if [[ "$test_compilercomponent_tests" == true ]]; then
   coreclrtestframework=$tfm
   Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
-fi
-
-if [[ "$test_benchmarks" == true ]]; then
-  pushd "$repo_root/tests/benchmarks"
-  ./SmokeTestBenchmarks.sh
-  popd
 fi
 
 if [[ "$test_scripting" == true ]]; then

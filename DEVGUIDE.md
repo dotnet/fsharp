@@ -422,23 +422,15 @@ Use the `Debug` configuration to test your changes locally. It is the default. D
 
 ### Benchmarking
 
-Existing compiler benchmarks can be found in `tests\benchmarks\`. The folder contains READMEs describing specific benchmark projects as well as guidelines for creating new benchmarks. There is also `FSharp.Benchmarks.slnx` solution containing all the benchmark project and their dependencies.
+Existing compiler benchmarks can be found in `tests\benchmarks\`. The folder contains READMEs describing specific benchmark projects as well as guidelines for creating new benchmarks.
 
-To exercise the benchmarking infrastructure locally, run:
+To run benchmarks locally, build the benchmark projects individually in Release configuration, e.g.:
 
-(Windows)
 ```cmd
-build.cmd -configuration Release -testBenchmarks
+dotnet run -c Release --project tests/benchmarks/FCSBenchmarks/CompilerServiceBenchmarks/FSharp.Compiler.Benchmarks.fsproj
 ```
 
-(Linux/Mac)
-```shell
-./build.sh --configuration Release --testBenchmarks
-```
-
-This is executed in CI as well. It does the following:
-- builds all the benchmarking projects
-- does smoke testing for fast benchmarks (executes them once to check they don't fail in the runtime)
+See the READMEs in `tests\benchmarks\` for details on each benchmark suite and how to interpret results.
 
 ### Benchmarking and profiling the compiler
 

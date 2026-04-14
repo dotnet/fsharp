@@ -66,7 +66,6 @@ param (
     [switch]$testpack,
     [switch]$testAOT,
     [switch]$testEditor,
-    [switch]$testBenchmarks,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch][Alias('pb')]$productBuild,
@@ -132,7 +131,6 @@ function Print-Usage() {
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -testEditor                   Run VS Editor tests"
-    Write-Host "  -testBenchmarks               Build and Run Benchmark suite"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -215,7 +213,6 @@ function Process-Arguments() {
         $script:testVs = $False
         $script:testpack = $False
         $script:testAOT = $False
-        $script:testBenchmarks = $False
         $script:verifypackageshipstatus = $True
     }
 
@@ -253,10 +250,6 @@ function Process-Arguments() {
 
     if ($testAOT) {
         $script:pack = $True;
-    }
-
-    if ($testBenchmarks) {
-        $script:testBenchmarks = $True
     }
 
     foreach ($property in $properties) {
@@ -589,10 +582,6 @@ try {
         $publish = $originalPublishValue
     }
 
-    if ($testBenchmarks) {
-        BuildSolution "FSharp.Benchmarks.slnx" $False
-    }
-
     # When building in product build mode, only build the compiler solution.
     if ($pack -or $productBuild) {
         $properties_storage = $properties
@@ -683,12 +672,6 @@ try {
     if ($testAOT) {
         Push-Location "$RepoRoot\tests\AheadOfTime"
         ./check.ps1
-        Pop-Location
-    }
-
-    if ($testBenchmarks) {
-        Push-Location "$RepoRoot\tests\benchmarks"
-        ./SmokeTestBenchmarks.ps1
         Pop-Location
     }
 
