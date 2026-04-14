@@ -1,19 +1,19 @@
 {
-  "last_run": "2026-04-14T01:27:00Z",
+  "last_run": "2026-04-14T09:24:39Z",
   "prs": {
+    "19579": {
+      "status": "category_c_clean",
+      "note": "All 46 CI checks passing. No reviews. Awaiting review."
+    },
     "19472": {
       "status": "out_of_scope_src_changes",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro took over with compiler fix (IlxGen.fs, FSComp.txt, xlf, release notes). 17 changed files. CI still running (MacOS Batch2 in progress). Beyond shepherd scope."
-    },
-    "19471": {
-      "status": "skipped_title_mismatch",
-      "note": "Title 'Fix #12386...' does not start with 'Add regression test:'. Skipped per eligibility rules."
+      "note": "T-Gro took over with compiler fix. 17 changed files. Beyond shepherd scope."
     },
     "19468": {
       "status": "category_c_clean",
       "last_shepherd_comment": "2026-03-31T17:25:02Z",
-      "note": "CI green. mergeable_state=clean. All 3 review threads addressed. Awaiting approval."
+      "note": "All 46 CI passing. All review feedback addressed. Awaiting approval."
     }
   }
 }
