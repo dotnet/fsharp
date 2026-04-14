@@ -1,9 +1,4 @@
 <Solution>
-  <Folder Name="/Benchmarks/">
-    <File Path="tests/benchmarks/FCSBenchmarks/decentlySizedStandAloneFile.fs" />
-    <File Path="tests/benchmarks/FCSBenchmarks/README.md" />
-    <File Path="tests/benchmarks/FCSBenchmarks/SmokeTestAllBenchmarks.ps1" />
-  </Folder>
   <Folder Name="/FSharp.Compiler.Service.Tests support/">
     <Project Path="tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj" />
     <Project Path="tests/service/data/CSharp_Analysis/CSharp_Analysis.csproj" />

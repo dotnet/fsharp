@@ -585,7 +585,7 @@ try {
     # When building in product build mode, only build the compiler solution.
     if ($pack -or $productBuild) {
         $properties_storage = $properties
-        BuildSolution "Microsoft.FSharp.Compiler.slnx" $True
+        BuildSolution "src\Microsoft.FSharp.Compiler\Microsoft.FSharp.Compiler.fsproj" $True
         $properties = $properties_storage
     }
 

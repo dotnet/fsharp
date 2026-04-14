@@ -277,7 +277,7 @@ function BuildSolution {
 
   local projects="$repo_root/FSharp.slnx"
   if [[ "$product_build" = true ]]; then
-    projects="$repo_root/Microsoft.FSharp.Compiler.slnx"
+    projects="$repo_root/src/Microsoft.FSharp.Compiler/Microsoft.FSharp.Compiler.fsproj"
   fi
 
   echo "$projects:"
