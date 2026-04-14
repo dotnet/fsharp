@@ -3535,7 +3535,11 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 // as a closure that captures type variables and witnesses from the enclosing scope.
                 let valReprInfo =
                     if allTyargsAreConcrete then
-                        Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
+                        match vref.ValReprInfo with
+                        | Some(ValReprInfo(_, argInfos, retInfo)) ->
+                            Some(ValReprInfo([], argInfos, retInfo))
+                        | None ->
+                            Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
                     else
                         None
 

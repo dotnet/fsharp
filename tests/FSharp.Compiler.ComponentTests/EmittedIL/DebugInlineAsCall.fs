@@ -171,7 +171,7 @@ let inline triple (x: int) = x + x + x
             |> withDebug
             |> withNoOptimize
             |> asLibrary
-            |> withName "mylib"
+            |> withName "Lib"
 
         FSharp """
 open MyLib
@@ -186,7 +186,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 [mylib]MyLib::triple(int32)"]
+        |> verifyILContains ["call       int32 [Lib]MyLib::triple(int32)"]
         |> shouldSucceed
 
     [<Fact>]
@@ -229,6 +229,51 @@ let main _ =
               "ldc.i4.s   10"
               "callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)" ]
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Call 13`` () =
+        FSharp """
+[<NoDynamicInvocation>]
+let inline f x = x + 1
+
+let inline g x = f x
+
+g 1 |> ignore
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+
+    [<Fact>]
+    let ``Call 14`` () =
+        FSharp """
+[<NoDynamicInvocation>]
+let inline f x = x + 1
+
+let inline g (x: ^T) (y: ^T) = f (x + y)
+
+g 1 2 |> ignore
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+
+    [<Fact>]
+    let ``Call 15`` () =
+        FSharp """
+[<NoDynamicInvocation>]
+let inline f (x: ^T) = x
+
+let inline g (x: ^T) (y: ^T) = f (x + y)
+
+g 1 2 |> ignore
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
 
     [<Fact>]
     let ``SRTP 01`` () =
@@ -316,7 +361,6 @@ let inline add (x: ^T) (y: ^T) = x + y
             |> withDebug
             |> withNoOptimize
             |> asLibrary
-            |> withName "mylib2"
 
         FSharp """
 open MyLib
@@ -345,7 +389,6 @@ let inline add (x: ^T) (y: ^T) = x + y
             |> withDebug
             |> withNoOptimize
             |> asLibrary
-            |> withName "mylib3"
 
         FSharp """
 open MyLib
@@ -684,6 +727,100 @@ type C = static member inline F<'a, 'b, 'c when C<'a, 'b>>(_a: 'a) = ()
         |> shouldSucceed
 
     [<Fact>]
+    let ``SRTP 19 - byref`` () =
+        FSharp """
+let inline f<'T, 'U when 'T: (member M: byref<'U> -> unit)> (x: byref<'T>, y: byref<'U>) =
+    x.M(&y)
+
+[<Struct>]
+type S =
+    member _.M(x: byref<int>) = x <- 42
+
+[<EntryPoint>]
+let main _ =
+    let mutable s = S()
+    let mutable v = 0
+    f(&s, &v)
+    if v = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 20 - byref`` () =
+        let library =
+            FSharp """
+module MyLib
+
+let inline f<'T, 'U when 'T: (member M: byref<'U> -> unit)> (x: byref<'T>, y: byref<'U>) =
+    x.M(&y)
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+
+        FSharp """
+open MyLib
+
+[<Struct>]
+type S =
+    member _.M(x: byref<int>) = x <- 42
+
+[<EntryPoint>]
+let main _ =
+    let mutable s = S()
+    let mutable v = 0
+    f(&s, &v)
+    if v = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 21 - byref`` () =
+        let library =
+            FSharp """
+module MyLib
+
+let inline f<'T, 'U when 'T: (member M: byref<'U> -> unit)> (x: byref<'T>, y: byref<'U>) =
+    x.M(&y)
+
+let inline g<'T, 'U when 'T: (member M: byref<'U> -> unit)> (x: byref<'T>, y: byref<'U>) =
+    f(&x, &y)
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+
+        FSharp """
+open MyLib
+
+[<Struct>]
+type S =
+    member _.M(x: byref<int>) = x <- 42
+
+[<EntryPoint>]
+let main _ =
+    let mutable s = S()
+    let mutable v = 0
+    g(&s, &v)
+    if v = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =
@@ -851,7 +988,6 @@ type T() =
             |> withDebug
             |> withNoOptimize
             |> asLibrary
-            |> withName "lib"
 
         FSharp """
 module App
@@ -913,7 +1049,6 @@ type T =
             |> withDebug
             |> withNoOptimize
             |> asLibrary
-            |> withName "Library"
 
         FSharp """
 open Module
