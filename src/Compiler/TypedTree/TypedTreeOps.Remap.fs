@@ -508,7 +508,8 @@ module internal TypeRemapping =
                     match cx with
                     | TyparConstraint.MayResolveMember(traitInfo, m) ->
                         TyparConstraint.MayResolveMember(traitInfo.CloneWithFreshSolution(), m)
-                    | c -> c))
+                    | c -> c)
+            )
 
     let mkTyparToTyparRenaming tpsorig tps =
         let tinst = generalizeTypars tps
