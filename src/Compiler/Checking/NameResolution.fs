@@ -4393,6 +4393,8 @@ let ItemIsUnseen ad g amap m allowObsolete item =
         isUnseenNameOfOperator || IsValUnseen ad g m allowObsolete x
     | Item.UnionCase(x, _) -> IsUnionCaseUnseen ad g amap m allowObsolete x.UnionCaseRef
     | Item.ExnCase x -> IsTyconUnseen ad g amap m allowObsolete x
+    | Item.ILField finfo -> not allowObsolete && ILFieldInfoIsUnseen finfo
+    | Item.Event einfo -> not allowObsolete && EventInfoIsUnseen allowObsolete einfo
     | _ -> false
 
 let ItemOfTyconRef ncenv m (x: TyconRef) =
@@ -4467,7 +4469,8 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             ncenv.InfoReader.GetEventInfosOfType(None, ad, m, ty)
             |> List.filter (fun x ->
                 IsStandardEventInfo ncenv.InfoReader m ad x &&
-                x.IsStatic = statics)
+                x.IsStatic = statics &&
+                (allowObsolete || not (EventInfoIsUnseen allowObsolete x)))
         else []
 
     let nestedTypes =
@@ -4482,7 +4485,8 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         |> List.filter (fun x ->
             not x.IsSpecialName &&
             x.IsStatic = statics &&
-            IsILFieldInfoAccessible g amap m ad x)
+            IsILFieldInfoAccessible g amap m ad x &&
+            (allowObsolete || not (ILFieldInfoIsUnseen x)))
 
     let qinfos =
         ncenv.InfoReader.GetTraitInfosInType None ty
