@@ -194,7 +194,7 @@ module internal AttributeHelpers =
     /// Check if a TyconRef has AllowNullLiteralAttribute, returning Some true/Some false/None.
     val TyconRefAllowsNull: g: TcGlobals -> tcref: TyconRef -> bool option
 
-    /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
+    /// Try to find the AllowMultiple value of the AttributeUsage attribute on a type definition.
     val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
 
     val (|AttribBitwiseOrExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption

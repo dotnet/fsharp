@@ -77,3 +77,114 @@ type C() =
         |> withReferences [csharpBaseClass]
         |> compile
         |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``C# attribute subclass inherits AllowMultiple true from base`` () =
+        let csharpLib =
+            CSharp """
+            using System;
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+            public class BaseAttribute : Attribute { }
+            public class ChildAttribute : BaseAttribute { }
+            """ |> withName "csAttrLib"
+
+        FSharp """
+module Test
+
+[<Child; Child>]
+type C() = class end
+        """
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``C# attribute subclass inherits AllowMultiple false from base`` () =
+        let csharpLib =
+            CSharp """
+            using System;
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = false)]
+            public class BaseAttribute : Attribute { }
+            public class ChildAttribute : BaseAttribute { }
+            """ |> withName "csAttrLib"
+
+        FSharp """
+module Test
+
+[<Child; Child>]
+type C() = class end
+        """
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 429, Line 4, Col 10, Line 4, Col 15, "The attribute type 'ChildAttribute' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``C# attribute multi-level inheritance inherits AllowMultiple true`` () =
+        let csharpLib =
+            CSharp """
+            using System;
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+            public class BaseAttribute : Attribute { }
+            public class MiddleAttribute : BaseAttribute { }
+            public class LeafAttribute : MiddleAttribute { }
+            """ |> withName "csAttrLib"
+
+        FSharp """
+module Test
+
+[<Leaf; Leaf>]
+type C() = class end
+        """
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``C# attribute subclass with own AttributeUsage overrides base AllowMultiple`` () =
+        let csharpLib =
+            CSharp """
+            using System;
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+            public class BaseAttribute : Attribute { }
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = false)]
+            public class ChildAttribute : BaseAttribute { }
+            """ |> withName "csAttrLib"
+
+        FSharp """
+module Test
+
+[<Child; Child>]
+type C() = class end
+        """
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 429, Line 4, Col 10, Line 4, Col 15, "The attribute type 'ChildAttribute' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``F# attribute subclass of C# base inherits AllowMultiple true`` () =
+        let csharpLib =
+            CSharp """
+            using System;
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+            public class BaseAttribute : Attribute { }
+            """ |> withName "csAttrLib"
+
+        FSharp """
+module Test
+
+type ChildAttribute() = inherit BaseAttribute()
+
+[<Child; Child>]
+type C() = class end
+        """
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
