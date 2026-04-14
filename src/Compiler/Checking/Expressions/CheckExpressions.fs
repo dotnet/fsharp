@@ -11641,6 +11641,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                             | _ -> acc
                         | SynExpr.Paren(expr = inner) -> collect inner acc
                         | SynExpr.Tuple(exprs = exprs) -> List.fold (fun a e -> collect e a) acc exprs
+                        | SynExpr.App(_, _, funcExpr, argExpr, _) -> collect funcExpr (collect argExpr acc)
                         | _ -> acc
 
                     collect arg []
