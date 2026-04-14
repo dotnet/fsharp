@@ -814,9 +814,10 @@ module internal AttributeHelpers =
 
     /// Try to find the AllowMultiple value of the AttributeUsage attribute on a type definition.
     let TryFindAttributeUsageAttribute g m tcref =
-        TryBindTyconRefAttribute
+        tryBindTyconRefAttributeCore
             g
             m
+            (ValueSome WellKnownILAttributes.AttributeUsageAttribute)
             g.attrib_AttributeUsageAttribute
             tcref
             (fun (_, named) ->
