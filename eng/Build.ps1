@@ -382,8 +382,8 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
     
-    # MTP requires --solution flag for .sln files
-    $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
+    # MTP requires --solution flag for .sln/.slnx files
+    $testTarget = if ($testProject.EndsWith('.sln') -or $testProject.EndsWith('.slnx')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
     
     # Xunit XML report via XunitXml.TestLogger with CI-friendly filenames
     $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
@@ -573,30 +573,30 @@ try {
         $originalSignValue = $sign
         $originalPublishValue = $publish
         if ($msbuildEngine -eq "dotnet") {
-            # Building FSharp.sln and VisualFSharp.sln with .NET Core MSBuild
+            # Building FSharp.slnx and VisualFSharp.slnx with .NET Core MSBuild
             # don't produce any artifacts to sign. Skip signing in this case.
             $sign = $False
         }
         if ($noVisualStudio) {
-            BuildSolution "FSharp.sln" $False
+            BuildSolution "FSharp.slnx" $False
         }
         else {
             # vsixes do not count as publishing artifacts from Arcade perspective, and arcade publish.proj is failing when it encounters 0 items to publish.
             $publish = $False
-            BuildSolution "VisualFSharp.sln" $False
+            BuildSolution "VisualFSharp.slnx" $False
         }
         $sign = $originalSignValue
         $publish = $originalPublishValue
     }
 
     if ($testBenchmarks) {
-        BuildSolution "FSharp.Benchmarks.sln" $False
+        BuildSolution "FSharp.Benchmarks.slnx" $False
     }
 
     # When building in product build mode, only build the compiler solution.
     if ($pack -or $productBuild) {
         $properties_storage = $properties
-        BuildSolution "Microsoft.FSharp.Compiler.sln" $True
+        BuildSolution "Microsoft.FSharp.Compiler.slnx" $True
         $properties = $properties_storage
     }
 
@@ -608,7 +608,7 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework
+        TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:coreclrTargetFramework
     }
 
     if ($testDesktop) {
@@ -630,7 +630,7 @@ try {
             }
             if ($matchCount -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
         } else {
-            TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
+            TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:desktopTargetFramework
         }
     }
 

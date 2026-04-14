@@ -249,8 +249,8 @@ function Test() {
   projectname="${projectname%.*}"
   testresultsdir="$artifacts_dir/TestResults/$configuration"
 
-  # MTP requires --solution flag for .sln files
-  if [[ "$testproject" == *.sln ]]; then
+  # MTP requires --solution flag for .sln/.slnx files
+  if [[ "$testproject" == *.sln ]] || [[ "$testproject" == *.slnx ]]; then
     testtarget="--solution"
   else
     testtarget="--project"
@@ -279,9 +279,9 @@ function BuildSolution {
     bl="/bl:\"$log_dir/Build.binlog\""
   fi
 
-  local projects="$repo_root/FSharp.sln"
+  local projects="$repo_root/FSharp.slnx"
   if [[ "$product_build" = true ]]; then
-    projects="$repo_root/Microsoft.FSharp.Compiler.sln"
+    projects="$repo_root/Microsoft.FSharp.Compiler.slnx"
   fi
 
   echo "$projects:"

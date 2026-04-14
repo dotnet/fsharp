@@ -1,0 +1,17 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/FSharp.Compiler.LanguageServer/FSharp.Compiler.LanguageServer.fsproj" />
+    <Project Path="src/FSharp.Core/FSharp.Core.fsproj" />
+    <Project Path="src/FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj" />
+    <Project Path="src/FSharp.VisualStudio.Extension/FSharp.VisualStudio.Extension.csproj" />
+    <Project Path="src/Microsoft.CommonLanguageServerProtocol.Framework.Proxy/Microsoft.CommonLanguageServerProtocol.Framework.Proxy.csproj" />
+  </Folder>
+  <Folder Name="/src/Compiler/">
+    <Project Path="src/Compiler/FSharp.Compiler.Service.fsproj" />
+  </Folder>
+</Solution>
