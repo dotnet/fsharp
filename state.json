@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-04-13T21:12:20Z",
+  "last_run": "2026-04-14T01:27:00Z",
   "prs": {
     "19472": {
-      "status": "category_c_maintainer_active",
+      "status": "out_of_scope_src_changes",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro force-pushed actual compiler fix (IlxGen.fs, FSComp.txt) on Apr 13. CI green (48/48). Beyond shepherd scope — modifies src/ files."
+      "note": "T-Gro took over with compiler fix (IlxGen.fs, FSComp.txt, xlf, release notes). 17 changed files. CI still running (MacOS Batch2 in progress). Beyond shepherd scope."
     },
     "19471": {
       "status": "skipped_title_mismatch",
@@ -13,8 +13,7 @@
     "19468": {
       "status": "category_c_clean",
       "last_shepherd_comment": "2026-03-31T17:25:02Z",
-      "note": "CI green (46/46). All review feedback (abonie x2, auduchinok x1) previously addressed. No new comments since Mar 31. Awaiting approval."
+      "note": "CI green. mergeable_state=clean. All 3 review threads addressed. Awaiting approval."
     }
-  },
-  "notes": "All eligible PRs stable. #19472 now an actual fix by T-Gro (not just regression test). #19468 awaiting approval."
+  }
 }
