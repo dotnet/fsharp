@@ -3417,7 +3417,10 @@ module EstablishTypeDefinitionCores =
                 match attrs with
                 | EntityAttribInt g WellKnownEntityAttributes.StructLayoutAttribute v -> Some v
                 | _ -> None
-            let hasExtendedLayoutAttr = HasFSharpAttributeOpt g g.attrib_ExtendedLayoutAttribute_opt attrs
+            let hasExtendedLayoutAttr =
+                match g.attrib_ExtendedLayoutAttribute_opt with
+                | Some attrib -> HasFSharpAttribute g attrib attrs
+                | None -> false
             let hasAllowNullLiteralAttr = hasFlag entityFlags WellKnownEntityAttributes.AllowNullLiteralAttribute_True
 
             if hasAbstractAttr then 
