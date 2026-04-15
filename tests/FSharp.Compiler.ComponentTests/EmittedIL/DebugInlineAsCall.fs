@@ -285,6 +285,41 @@ g 1 2 |> ignore
         |> verifyILNotPresent ["Test::'<f>__debug"]
 
     [<Fact>]
+    let ``Call 16 - Debug lib called from optimized app`` () =
+        let lib =
+            FSharp """
+module Module
+
+let inline double (x: int) = x + x
+
+let inline quadruple (x: int) = double (double x)
+"""
+            |> withDebug
+            |> withNoOptimize
+            |> asLibrary
+
+        lib
+            |> compile
+            |> verifyILContains ["call       int32 Module::double(int32)"]
+            |> shouldSucceed
+            |> ignore
+
+        FSharp """
+open Module
+
+[<EntryPoint>]
+let main (args: string[]) =
+    let i = quadruple args.Length
+    i
+"""
+        |> withOptimize
+        |> withReferences [lib]
+        |> asExe
+        |> compile
+        |> verifyILContains ["add"] |> shouldSucceed
+        |> verifyILNotPresent ["quadruple"; "double"]
+
+    [<Fact>]
     let ``SRTP 01`` () =
         FSharp """
 let inline add (x: ^T) (y: ^T) =

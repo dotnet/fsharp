@@ -3123,7 +3123,9 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
     | ConstExprValue(_size, expr) ->
         Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
-    | CurriedLambdaValue (_, _, _, expr, _) when shouldInline || inlineIfLambda ->
+    | CurriedLambdaValue (_, _, _, expr, _) when
+            shouldInline && (cenv.settings.inlineNamedFunctions || Option.exists (shouldForceInlineInDebug cenv.g) vOpt) ||
+            inlineIfLambda ->
         let fvs = freeInExpr CollectLocals expr
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
             None
@@ -3139,7 +3141,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
             warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
         None
 
-    | _ when shouldInline ->
+    | _ when shouldInline && cenv.settings.inlineNamedFunctions ->
         warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m))
         None
 
@@ -3999,10 +4001,6 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
 
         // can't inline any values with semi-recursive object references to self or base 
         let value_ =   
-          match vspec with
-          | Some v when not cenv.settings.inlineNamedFunctions && v.InlineInfo = ValInline.InlinedDefinition -> UnknownValue
-          | _ ->
-
           match baseValOpt with 
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy) 
           | Some baseVal -> 
