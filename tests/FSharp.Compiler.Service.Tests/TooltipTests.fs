@@ -699,3 +699,24 @@ type T() =
     static member Defaul{caret}t = T()
 """
     |> assertNameTagInTooltip TextTag.Property "Default"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e with get(key: string) = key
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter and setter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string, int>
+    member x.Valu{caret}e
+        with get(key: string) = store.[key]
+        and set (key: string) (v: int) = store <- store.Add(key, v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
