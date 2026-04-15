@@ -1681,7 +1681,7 @@ type LexFilterImpl (
             if tokenStartCol < offsidePos.Column then warn tokenTup (FSComp.SR.lexfltIncorrentIndentationOfIn())
             popCtxt()
 
-            if blockLet && lexbuf.SupportsFeature LanguageFeature.WarnOnLetInSequenceExpression then
+            if blockLet && lexbuf.SupportsFeature LanguageFeature.LetInBodyScoping then
                 let nextTokenTup = peekNextTokenTup()
                 let nextTokenStartPos = startPosOfTokenTup nextTokenTup
 

@@ -99,7 +99,7 @@ type LanguageFeature =
     | MethodOverloadsCache
     | ImplicitDIMCoverage
     | PreprocessorElif
-    | WarnOnLetInSequenceExpression
+    | LetInBodyScoping
 
 /// LanguageVersion management
 type LanguageVersion =

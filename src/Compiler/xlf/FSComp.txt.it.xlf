@@ -8975,8 +8975,9 @@
         <trans-unit id="tcListLiteralWithSingleTupleElement">
           <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
           <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
-        <trans-unit id="featureWarnOnLetInSequenceExpression" translate="yes" xml:space="preserve">
-          <source>Scope 'let ... in' body to the same line in sequence expressions</source>
+          <note />
+        </trans-unit>
+        <trans-unit id="featureLetInBodyScoping" translate="yes" xml:space="preserve">          <source>Scope 'let ... in' body to the same line in sequence expressions</source>
           <target state="new">Scope 'let ... in' body to the same line in sequence expressions</target>
           <note />
         </trans-unit>

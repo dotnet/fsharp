@@ -30,7 +30,7 @@ ImplFile
                        Some ([Wild (2,13--2,14)], Ident x), (2,9--2,19),
                        { ArrowRange = Some (2,15--2,17) })), (2,0--2,19),
                  { ArrowRange = Some (2,6--2,8) }), (2,0--2,19))],
-          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--2,19), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
                       CodeComments = [] }, set []))

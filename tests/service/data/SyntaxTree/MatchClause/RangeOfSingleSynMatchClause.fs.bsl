@@ -50,7 +50,7 @@ ImplFile
                                    TryToWithRange = (2,0--5,4)
                                    WithKeyword = (5,0--5,4)
                                    WithToEndRange = (5,0--7,8) }), (2,0--7,8))],
-          PreXmlDocEmpty, [], None, (2,0--8,0), { LeadingKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--7,8), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
                       CodeComments = [] }, set []))

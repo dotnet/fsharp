@@ -15,7 +15,7 @@ ImplFile
                       (NonAtomic, false, Ident printf,
                        Const (String ("%d ", Regular, (3,7--3,12)), (3,7--3,12)),
                        (3,0--3,12)), Ident i, (3,0--3,14)), (2,0--3,14)),
-              (2,0--3,14))], PreXmlDocEmpty, [], None, (2,0--4,0),
+              (2,0--3,14))], PreXmlDocEmpty, [], None, (2,0--3,14),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []

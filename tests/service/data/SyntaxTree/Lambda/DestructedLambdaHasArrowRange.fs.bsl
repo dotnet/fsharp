@@ -69,7 +69,7 @@ ImplFile
                        { MatchKeyword = (2,4--2,22)
                          WithKeyword = (2,4--2,22) })), (2,0--2,22),
                  { ArrowRange = Some (2,14--2,16) }), (2,0--2,22))],
-          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--2,22), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
                       CodeComments = [] }, set []))

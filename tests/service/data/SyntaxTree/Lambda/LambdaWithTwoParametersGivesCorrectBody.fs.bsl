@@ -20,7 +20,7 @@ ImplFile
                    ([Named (SynIdent (a, None), false, None, (2,4--2,5));
                      Named (SynIdent (b, None), false, None, (2,6--2,7))],
                     Ident x), (2,0--2,12), { ArrowRange = Some (2,8--2,10) }),
-              (2,0--2,12))], PreXmlDocEmpty, [], None, (2,0--3,0),
+              (2,0--2,12))], PreXmlDocEmpty, [], None, (2,0--2,12),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []

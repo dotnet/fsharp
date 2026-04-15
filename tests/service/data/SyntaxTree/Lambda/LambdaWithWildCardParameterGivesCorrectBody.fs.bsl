@@ -27,7 +27,7 @@ ImplFile
                      Wild (2,6--2,7);
                      Named (SynIdent (b, None), false, None, (2,8--2,9))],
                     Ident x), (2,0--2,14), { ArrowRange = Some (2,10--2,12) }),
-              (2,0--2,14))], PreXmlDocEmpty, [], None, (2,0--3,0),
+              (2,0--2,14))], PreXmlDocEmpty, [], None, (2,0--2,14),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
