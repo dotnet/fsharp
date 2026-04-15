@@ -683,3 +683,62 @@ type A private () =
     |> compile
     |> shouldSucceed
     |> ignore
+
+// =========================================================================
+// Corpus-wide roundtrip sweep failures (1483 standalone .fs files swept).
+// Each test below is a REAL sig-gen bug found in POSITIVE (legit) test code.
+// Negative tests (intentionally broken code) are excluded.
+// =========================================================================
+
+let assertRoundtrip (implSource: string) =
+    let generatedSignature = FSharp implSource |> printSignatures
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Sweep: SRTP multi-witness constraint lost in generated sig (FS0340)
+// Source: tests/fsharp/typecheck/sigs/pos36-srtp-lib.fs
+[<Fact(Skip = "Sig gen roundtrip: SRTP witness constraint lost - FS0340")>]
+let ``Sweep - SRTP multi-witness constraint roundtrips`` () =
+    assertRoundtrip """
+module Lib
+
+let inline RequireM< ^Witnesses, ^T when (^Witnesses or ^T): (static member M : ^T -> string) > (x: ^T) : string = 
+    ((^Witnesses or ^T): (static member M : ^T -> string) x)
+
+type C(p:int) = 
+    member x.P = p
+
+type Witnesses() =
+    static member M (x: C) : string = sprintf "M(C), x = %d"  x.P
+    static member M (x: int64) : string = sprintf "M(int64), x = %d"  x
+
+type StaticMethods =
+    static member inline M< ^T when (Witnesses or  ^T): (static member M: ^T -> string)>  (x: ^T) : string =
+        RequireM< Witnesses, ^T> (x)
+"""
+
+// Sweep: type application syntax wrong in generated sig (FS0010)
+// Source: tests/fsharp/typecheck/sigs/pos34.fs
+[<Fact(Skip = "Sig gen roundtrip: type application parse error in sig - FS0010")>]
+let ``Sweep - type application in member sig roundtrips`` () =
+    assertRoundtrip """
+module Pos34
+
+[<Sealed>]
+type Foo<'bar>() =
+    member inline _.Baz<'a> (x: 'a) = x
+"""
+
+// Sweep: unexpected identifier in value signature (FS0010)
+// Source: tests/fsharp/typecheck/sigs/pos16.fs
+[<Fact(Skip = "Sig gen roundtrip: unexpected identifier in value sig - FS0010")>]
+let ``Sweep - active pattern in sig roundtrips`` () =
+    assertRoundtrip """
+module Pos16
+
+let (|A|B|) (x: int) = if x > 0 then A else B
+"""
