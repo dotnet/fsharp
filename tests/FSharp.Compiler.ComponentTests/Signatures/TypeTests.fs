@@ -699,6 +699,16 @@ let assertRoundtrip (implSource: string) =
     |> shouldSucceed
     |> ignore
 
+// Sweep: single-case struct DU gets spurious bar (FS0300)
+// Source: tests/fsharp/core/fsfromfsviacs/lib.fs — #19597
+[<Fact>]
+let ``Sweep - single-case struct DU roundtrips`` () =
+    assertRoundtrip """
+module Repro
+[<Struct>]
+type U0 = U0
+"""
+
 // Sweep: SRTP multi-witness constraint lost in generated sig (FS0340)
 // Source: tests/fsharp/typecheck/sigs/pos36-srtp-lib.fs
 [<Fact(Skip = "Sig gen roundtrip: SRTP witness constraint lost - FS0340")>]
