@@ -1,11 +1,11 @@
 {
-  "last_run": "2026-04-15T05:38:17Z",
+  "last_run": "2026-04-15T21:12:14Z",
   "prs": {
     "19472": {
       "status": "category_c_maintainer_driven",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "last_human_comment": "2026-04-14T14:11:20Z",
-      "note": "T-Gro driving compiler fix in src/Compiler/CodeGen/IlxGen.fs + FSComp.txt + xlf files. 17 changed files incl src/. mergeable_state=dirty (merge conflict in src/ files). T-Gro directing copilot-opus for impl (2026-04-14). Beyond shepherd scope — src/ changes."
+      "last_human_comment": "2026-04-15T08:47:50Z",
+      "note": "T-Gro driving fix in src/Compiler with Copilot. All 48 CI passing. mergeable_state=clean. Beyond shepherd scope — src/ changes."
     }
   }
 }
