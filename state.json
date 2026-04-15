@@ -1,11 +1,11 @@
 {
-  "last_run": "2026-04-15T09:24:34Z",
+  "last_run": "2026-04-15T13:26:48Z",
   "prs": {
     "19472": {
-      "status": "category_c_ci_running",
+      "status": "category_c_maintainer_driven",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
       "last_human_comment": "2026-04-15T08:47:50Z",
-      "note": "T-Gro directing copilot-opus for IlxGen.fs empty array default value support. Commit d2be16e pushed 2026-04-15T09:11:27Z. CI running (28/32 in_progress). 23 changed files incl src/. Beyond shepherd scope."
+      "note": "T-Gro driving with copilot-opus. Commit d2be16e adds IlxGen.fs empty array default value support. CI passing (117888 tests, 0 failed). Beyond shepherd scope — src/ changes."
     }
   }
 }
