@@ -1359,14 +1359,14 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary (cenv: cenv) mhi =
 
         // Check for escape in lambda
         | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when
-            cenv.settings.inlineNamedFunctions &&
             (let fvs = freeInExpr CollectAll expr
-             (isAssemblyBoundary && not (freeVarsAllPublic fvs)) || 
-             Zset.exists hiddenVal fvs.FreeLocals ||
-             Zset.exists hiddenTycon fvs.FreeTyvars.FreeTycons ||
              Zset.exists hiddenTyconRepr fvs.FreeLocalTyconReprs ||
              Zset.exists hiddenRecdField fvs.FreeRecdFields ||
-             Zset.exists hiddenUnionCase fvs.FreeUnionCases ) ->
+             Zset.exists hiddenUnionCase fvs.FreeUnionCases ||
+             (cenv.settings.inlineNamedFunctions &&
+              ((isAssemblyBoundary && not (freeVarsAllPublic fvs)) ||
+               Zset.exists hiddenVal fvs.FreeLocals ||
+               Zset.exists hiddenTycon fvs.FreeTyvars.FreeTycons))) ->
                 UnknownValue
 
         // Check for escape in constant 
