@@ -501,7 +501,17 @@ let ConvertValLogicalNameToDisplayNameCore opName =
     match standardOpsDecompile.TryGetValue opName with
     | true, res -> res
     | false, _ ->
-        if IsPossibleOpName opName then
+        if IsActivePatternName opName then
+            // Active pattern case names may need backtick escaping (e.g. |``A B``|)
+            let inner = opName.[1..opName.Length-2] // strip outer | |
+            let cases = inner.Split('|')
+            let escapedCases =
+                cases |> Array.map (fun c ->
+                    if c = "_" then c
+                    elif not (IsIdentifierName c) then "``" + c + "``"
+                    else c)
+            "|" + (escapedCases |> String.concat "|") + "|"
+        elif IsPossibleOpName opName then
             decompileCustomOpName opName
         else
             opName
