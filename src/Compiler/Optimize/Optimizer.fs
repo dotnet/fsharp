@@ -1708,7 +1708,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
-    elif vspec1.InlineInfo = ValInline.InlinedDefinition then None
+    elif not cenv.settings.inlineNamedFunctions && vspec1.InlineInfo = ValInline.InlinedDefinition then None
     elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
@@ -4000,7 +4000,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
         // can't inline any values with semi-recursive object references to self or base 
         let value_ =   
           match vspec with
-          | Some v when v.InlineInfo = ValInline.InlinedDefinition -> UnknownValue
+          | Some v when not cenv.settings.inlineNamedFunctions && v.InlineInfo = ValInline.InlinedDefinition -> UnknownValue
           | _ ->
 
           match baseValOpt with 
