@@ -1902,8 +1902,12 @@ module TastDefinitionPrinting =
             | fields -> (prefixL ^^ nmL ^^ WordL.keywordOf) --- layoutUnionCaseFields denv infoReader true enclosingTcref fields
         layoutXmlDocOfUnionCase denv infoReader (UnionCaseRef(enclosingTcref, ucase.Id.idText)) caseL
 
-    let layoutUnionCases denv infoReader enclosingTcref ucases =
-        let prefixL = WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
+    let layoutUnionCases denv infoReader isStruct enclosingTcref ucases =
+        let prefixL =
+            match ucases with
+            // Single-case struct: bar changes base type semantics (FS0300), so omit it
+            | [ _ ] when isStruct -> emptyL
+            | _ -> WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
         List.map (layoutUnionCase denv infoReader prefixL enclosingTcref) ucases
 
     /// When to force a break? "type tyname = <HERE> repn"
@@ -2332,8 +2336,9 @@ module TastDefinitionPrinting =
 
             | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } ->
                 let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
+                let isStruct = tycon.IsStructOrEnumTycon
                 tycon.UnionCasesAsList
-                |> layoutUnionCases denv infoReader tcref
+                |> layoutUnionCases denv infoReader isStruct tcref
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL
                 |> addReprAccessL
