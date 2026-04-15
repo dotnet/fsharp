@@ -709,6 +709,14 @@ module Repro
 type U0 = U0
 """
 
+// Sweep: backticked active pattern case names (FS0010) — #19592
+[<Fact>]
+let ``Sweep - backticked active pattern roundtrips`` () =
+    assertRoundtrip """
+module Repro
+let (|``A B``|) (x:int) = x * 2
+"""
+
 // Sweep: SRTP multi-witness constraint lost in generated sig (FS0340)
 // Source: tests/fsharp/typecheck/sigs/pos36-srtp-lib.fs
 [<Fact(Skip = "Sig gen roundtrip: SRTP witness constraint lost - FS0340")>]
