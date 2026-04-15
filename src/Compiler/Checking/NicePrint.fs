@@ -2041,7 +2041,10 @@ module TastDefinitionPrinting =
             elif isMeasure then
                 None, tagClass
             elif isClassTy g ty then
-                (if simplified then None else Some "class"), tagClass
+                if denv.showAttributes then
+                    (if simplified then None else Some "class"), tagClass
+                else
+                    None, tagClass
             else
                 None, tagUnknownType
 
