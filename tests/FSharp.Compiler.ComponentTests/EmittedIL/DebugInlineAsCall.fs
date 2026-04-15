@@ -878,6 +878,29 @@ let main _ =
         |> shouldSucceed
 
     [<Fact>]
+    let ``SRTP 22 - Recursive inline with different type arg`` () =
+        FSharp """
+type T = T with
+    static member ($) (T, _:int) = (+)
+    static member ($) (T, _:decimal) = (+)
+
+let inline sum (i:'a) (x:'a) :'r = (T $ Unchecked.defaultof<'r>) i x
+
+type T with
+    static member inline ($) (T, _:'t -> 'rest) = fun (a:'t) x -> sum (x + a)
+
+[<EntryPoint>]
+let main _ =
+    let y:int = sum 2 3 4
+    if y = 9 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =

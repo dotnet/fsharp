@@ -451,8 +451,12 @@ type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
       latestBoundId: Ident option
 
-      /// The set of lambda IDs we've inlined to reach this point. Helps to prevent recursive inlining 
-      dontInline: Zset<Unique>  
+      /// Prevents recursive inlining/specialization. Maps lambda ID to a list of specialized types
+      /// currently being processed. An empty list means "block unconditionally" (used by normal
+      /// inlining and non-concrete debug specialization). A non-empty list means "block only these
+      /// specific type specializations" (used by concrete debug specialization, allowing different
+      /// type instantiations of the same function to proceed).
+      dontInline: Map<Stamp, TType list>
 
       /// Recursively bound vars. If an sub-expression that is a candidate for method splitting
       /// contains any of these variables then don't split it, for fear of mucking up tailcalls.
@@ -476,7 +480,7 @@ type IncrementalOptimizationEnv =
 
     static member Empty = 
         { latestBoundId = None 
-          dontInline = Zset.empty Int64.order
+          dontInline = Map.empty
           typarInfos = []
           functionVal = None 
           dontSplitVars = ValMap.Empty
@@ -3507,10 +3511,21 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
         let origFinfo = GetInfoForValWithCheck cenv env m vref
         match stripValue origFinfo.ValExprInfo with
-        | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) when not (Zset.contains origLambdaId env.dontInline) ->
+        | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) ->
             let f2R = CopyExprForInlining cenv true origLambda m
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
+
+            // For concrete type args, only block the exact same (stamp, type) pair, allowing different
+            // type instantiations to proceed (e.g. sum<int, int->int> calling sum<int, int> in its body).
+            // For non-concrete type args, block unconditionally.
+            let shouldInline =
+                match Map.tryFind origLambdaId env.dontInline with
+                | Some tys -> not allTyargsAreConcrete || tys.IsEmpty || tys |> List.exists (typeEquiv g specLambdaTy)
+                | None -> false
+
+            if shouldInline then
+                None else
 
             let specLambdaR =
                 if allTyargsAreConcrete then
@@ -3518,11 +3533,13 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     | Some (_, body) -> copyExpr g CloneAll body
                     | None ->
 
-                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
+                    let existingTypes = defaultArg (Map.tryFind origLambdaId env.dontInline) []
+                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline }
+                    let specLambdaR, _ = OptimizeExpr cenv env specLambda
                     cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
                     specLambdaR
                 else
-                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Zset.add origLambdaId env.dontInline } specLambda
+                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline } specLambda
                     specLambdaR
 
             let specLambdaR =
@@ -3563,7 +3580,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         cenv.settings.InlineLambdas &&
         not finfo.HasEffect &&
         // Don't inline recursively! 
-        not (Zset.contains lambdaId env.dontInline) &&
+        not (Map.containsKey lambdaId env.dontInline) &&
         (// Check the number of argument groups is enough to saturate the lambdas of the target. 
          (if tyargs |> List.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
           if size <= cenv.settings.lambdaInlineThreshold + args.Length then true
@@ -3635,7 +3652,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         // Inlining: beta reducing 
         let exprR = MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
         // Inlining: reoptimizing
-        Some(OptimizeExpr cenv {env with dontInline= Zset.add lambdaId env.dontInline} exprR)
+        Some(OptimizeExpr cenv {env with dontInline = Map.add lambdaId [] env.dontInline} exprR)
           
     | _ -> None
 
