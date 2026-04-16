@@ -1,0 +1,15 @@
+{
+  "type": "run-record",
+  "run": "24486521708",
+  "date": "2026-04-16",
+  "findings": {
+    "task1": "No pre-2024 bugs with new activity since 2026-04-15; #7741 human discussion ongoing",
+    "task3": "No windows-only issues above woc=18119",
+    "task2": "#5418 and #13512 already processed (Outcome 1 - existing test coverage on Apr 15)",
+    "verified": "#5418 fix confirmed on F# 11.0 (FSI 15.2.101.0, commit c3c01c991)"
+  },
+  "actions_blocked": "safeoutputs MCP tools not available - monthly summary update prepared in pending-summary-update.md",
+  "pending": {
+    "monthly_summary_update": "issue #19537 body update prepared - close suggestions for #5418 and #13512, removal of merged PRs"
+  }
+}
