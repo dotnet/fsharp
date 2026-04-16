@@ -497,6 +497,20 @@ module internal TypeRemapping =
     let copySlotSig ss =
         remapSlotSig (fun _ -> []) Remap.Empty ss
 
+    /// Decouple SRTP constraint solution ref cells on typars from any shared expression-tree nodes.
+    /// In FSI, codegen mutates shared TTrait solution cells after typechecking; decoupling at
+    /// generalization prevents stale solutions from bleeding into subsequent submissions. See #12386.
+    let decoupleTraitSolutions (typars: Typars) =
+        for tp in typars do
+            tp.SetConstraints(
+                tp.Constraints
+                |> List.map (fun cx ->
+                    match cx with
+                    | TyparConstraint.MayResolveMember(traitInfo, m) ->
+                        TyparConstraint.MayResolveMember(traitInfo.CloneWithFreshSolution(), m)
+                    | c -> c)
+            )
+
     let mkTyparToTyparRenaming tpsorig tps =
         let tinst = generalizeTypars tps
         mkTyparInst tpsorig tinst, tinst

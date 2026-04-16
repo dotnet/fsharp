@@ -634,18 +634,23 @@ type Foo =
             Assert.True(setMfv.CompiledName.StartsWith("set_"))
         | _ -> failwith $"Expected three symbols, got %A{symbols}"
 
-    [<Fact(Skip = "Should not resolve the `v` name")>]
-    let ``AutoProperty with get, set has property symbol 02`` () =
-        let symbol = Checker.getSymbolUse """
+    // https://github.com/dotnet/fsharp/issues/3939
+    [<Fact>]
+    let ``AutoProperty with get, set does not expose compiler-generated v symbol`` () =
+        let _, checkResults = getParseAndCheckResults """
 namespace Foo
 
 type Foo =
-    member val AutoPropGetSet{caret} = 0 with get, set
+    member val AutoPropGetSet = 0 with get, set
 """
-        // The setter should have a symbol for the generated parameter `v`.
-        let setVMfv = symbol |> chooseMemberOrFunctionOrValue
-        if Option.isNone setVMfv then
-            failwith "No generated v symbol for the setter was found"
+        let allSymbols = checkResults.GetAllUsesOfAllSymbolsInFile()
+        let allMfvs = allSymbols |> Seq.choose (fun su -> match su.Symbol with :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv | _ -> None) |> Seq.toList
+        // The compiler-generated `v` setter parameter should NOT appear in symbol uses
+        let vSymbols = allMfvs |> List.filter (fun mfv -> mfv.DisplayName = "v")
+        Assert.True(vSymbols.IsEmpty, $"Compiler-generated 'v' symbol should not be exposed via GetAllUsesOfAllSymbolsInFile, but found {vSymbols.Length} occurrences")
+        // The compiler-generated backing field should also not appear
+        let backingFieldSymbols = allMfvs |> List.filter (fun mfv -> mfv.DisplayName.Contains("@"))
+        Assert.True(backingFieldSymbols.IsEmpty, $"Compiler-generated backing field should not appear, but found: {backingFieldSymbols |> List.map (fun m -> m.DisplayName)}")
 
     [<Fact>]
     let ``Property symbol is resolved for property`` () =

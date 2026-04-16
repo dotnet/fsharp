@@ -1542,11 +1542,3 @@ module internal MemberRepresentation =
         match tycon.TypeContents.tcaug_super with
         | None -> g.obj_ty_noNulls
         | Some ty -> ty
-
-    /// walk a TyconRef's inheritance tree, yielding any parent types as an array
-    let supersOfTyconRef (tcref: TyconRef) =
-        tcref
-        |> Array.unfold (fun tcref ->
-            match tcref.TypeContents.tcaug_super with
-            | Some(TType_app(sup, _, _)) -> Some(sup, sup)
-            | _ -> None)

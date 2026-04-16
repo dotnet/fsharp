@@ -1690,6 +1690,11 @@ let GeneralizeVal (cenv: cenv) denv enclosingDeclaredTypars generalizedTyparsFor
     // This is just about the only place we form a GeneralizedType
     let tyScheme = GeneralizedType(generalizedTypars, ty)
 
+    // Decouple SRTP solution ref cells so codegen mutations don't bleed across FSI submissions.
+    // In compiled code, pickling naturally creates fresh cells. See #12386.
+    if cenv.g.isInteractive then
+        decoupleTraitSolutions generalizedTypars
+
     PrelimVal2(id, tyScheme, prelimValReprInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, argAttribs, vis, isCompGen, hasDeclaredTypars)
 
 let GeneralizeVals (cenv: cenv) denv enclosingDeclaredTypars generalizedTypars types =
