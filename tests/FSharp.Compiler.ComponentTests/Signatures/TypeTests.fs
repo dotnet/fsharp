@@ -171,7 +171,7 @@ type DataItem<'data> =
     Data: 'data
   }
 
-  static member inline Create: item: ^input -> DataItem<^input> when ^input: (member get_StringValue: unit -> string) and ^input: (member get_FriendlyStringValue: unit -> string)
+  static member inline Create<^input when ^input: (member get_StringValue: unit -> string) and ^input: (member get_FriendlyStringValue: unit -> string)> : item: ^input -> DataItem<^input>
 
   static member Create<'data> : identifier: string * label: string * data: 'data -> DataItem<'data>"""
 
@@ -719,7 +719,7 @@ let (|``A B``|) (x:int) = x * 2
 
 // Sweep: SRTP multi-witness constraint lost in generated sig (FS0340)
 // Source: tests/fsharp/typecheck/sigs/pos36-srtp-lib.fs
-[<Fact(Skip = "Sig gen roundtrip: SRTP witness constraint lost - FS0340")>]
+[<Fact>]
 let ``Sweep - SRTP multi-witness constraint roundtrips`` () =
     assertRoundtrip """
 module Lib
