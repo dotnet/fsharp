@@ -3460,13 +3460,6 @@ module EstablishTypeDefinitionCores =
 
             let extendedLayoutAttributeCheck () =
                 if hasExtendedLayoutAttr then
-                    // Note: hasExtendedLayoutAttr is only true when attrib_ExtendedLayoutAttribute_opt is Some,
-                    // so the None branch below is currently unreachable. Kept as a defensive check.
-                    match g.attrib_ExtendedLayoutAttribute_opt with
-                    | None -> 
-                        errorR (Error(FSComp.SR.tcRuntimeDoesNotSupportExtendedLayoutTypes(), m))
-                    | Some _ -> ()
-                    
                     // Check not combined with StructLayoutAttribute
                     if structLayoutAttr.IsSome then
                         errorR (Error(FSComp.SR.tcStructLayoutAndExtendedLayout(), m))
@@ -3477,6 +3470,7 @@ module EstablishTypeDefinitionCores =
                 
             let hiddenReprChecks hasRepr =
                  structLayoutAttributeCheck false
+                 noExtendedLayoutAttributeCheck()
                  if hasSealedAttr = Some false || (hasRepr && hasSealedAttr <> Some true && not (id.idText = "Unit" && g.compilingFSharpCore) ) then 
                     errorR(Error(FSComp.SR.tcRepresentationOfTypeHiddenBySignature(), m))
                  if hasAbstractAttr then 
@@ -3570,6 +3564,7 @@ module EstablishTypeDefinitionCores =
                 | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) (unionCaseName, _) ->
                           
                     structLayoutAttributeCheck false
+                    noExtendedLayoutAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
 
                     let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
@@ -3603,6 +3598,7 @@ module EstablishTypeDefinitionCores =
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
+                    noExtendedLayoutAttributeCheck()
 
                     let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
@@ -3619,6 +3615,7 @@ module EstablishTypeDefinitionCores =
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck true  // these are allowed for records
+                    noExtendedLayoutAttributeCheck()
                     let recdFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent false tpenv fields
                     recdFields |> CheckDuplicates (fun f -> f.Id) "field" |> ignore
                     writeFakeRecordFieldsToSink recdFields
@@ -3641,6 +3638,7 @@ module EstablishTypeDefinitionCores =
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedAssemblyCode
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
+                    noExtendedLayoutAttributeCheck()
                     noAbstractClassAttributeCheck()
                     TAsmRepr s, None, NoSafeInitInfo
 
@@ -3806,6 +3804,7 @@ module EstablishTypeDefinitionCores =
                     let fieldTy, fields' = TcRecdUnionAndEnumDeclarations.TcEnumDecls cenv envinner tpenv innerParent thisTy decls
                     let kind = TFSharpEnum
                     structLayoutAttributeCheck false
+                    noExtendedLayoutAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedEnum
                     noAllowNullLiteralAttributeCheck()
                     let vid = ident("value__", m)
