@@ -258,7 +258,12 @@ type ValFlags(flags: int64) =
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
         // Clear the IsParameter, only used during type checking of the current compilation to specialize diagnostics
-                                                      (flags       &&&   ~~~0b10010011001100000000000L) 
+        let bits =                                    (flags       &&&   ~~~0b10010011001100000000000L)
+        // Pickle ValInline.InlinedDefinition as ValInline.Always.
+        if bits &&& 0b00000000000000110000L = 0L then
+            bits ||| 0b00000000000000010000L
+        else
+            bits
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
