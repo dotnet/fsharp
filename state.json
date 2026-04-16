@@ -1,11 +1,14 @@
 {
-  "last_run": "2026-04-16T01:27:10Z",
+  "last_run": "2026-04-16T05:41:30Z",
   "prs": {
     "19472": {
       "status": "category_c_maintainer_driven",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
       "last_human_comment": "2026-04-15T08:47:50Z",
-      "note": "T-Gro driving implementation changes in src/Compiler/CodeGen/IlxGen.fs with Copilot. All 48 CI passing. mergeable_state=clean. Beyond shepherd scope — src/ changes."
+      "last_copilot_action": "2026-04-15T09:11:27Z",
+      "ci_status": "success",
+      "ci_completed_at": "2026-04-15T11:42:48Z",
+      "note": "T-Gro directed Copilot to implement src/Compiler fix for empty array DefaultValue encoding. CI passing (117888 tests). Beyond shepherd scope — src/ changes."
     }
   }
 }
