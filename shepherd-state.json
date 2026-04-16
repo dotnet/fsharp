@@ -1,10 +1,5 @@
 {
-  "last_run": "2026-04-15T21:12:14Z",
-  "prs": {
-    "19472": {
-      "status": "category_c_maintainer_driven",
-      "last_shepherd_comment": "2026-03-31T01:41:52Z",
-      "note": "T-Gro driving fix in src/Compiler with Copilot. All 48 CI passing. mergeable_state=clean. Beyond shepherd scope."
-    }
-  }
+  "last_run": "2026-04-16T13:26:02Z",
+  "prs": {},
+  "note": "No open regression test PRs found."
 }
