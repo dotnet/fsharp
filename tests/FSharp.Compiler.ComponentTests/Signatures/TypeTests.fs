@@ -760,3 +760,17 @@ module Pos16
 
 let (|A|B|) (x: int) = if x > 0 then A else B
 """
+
+// Sweep: overloaded member with unit parameter (FS0193) — #19596
+// The generated sig text is correct (fsc --sig roundtrips fine).
+// FCS Compile API path fails to match the overloads — may be FCS-specific.
+[<Fact(Skip = "FCS Compile path fails sig conformance for unit overload; fsc roundtrips OK")>]
+let ``Sweep - overloaded member with unit param roundtrips`` () =
+    assertRoundtrip """
+module Repro
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""
