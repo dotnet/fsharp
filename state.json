@@ -1,11 +1,11 @@
 {
-  "last_run": "2026-04-15T21:12:14Z",
+  "last_run": "2026-04-16T01:27:10Z",
   "prs": {
     "19472": {
       "status": "category_c_maintainer_driven",
       "last_shepherd_comment": "2026-03-31T01:41:52Z",
       "last_human_comment": "2026-04-15T08:47:50Z",
-      "note": "T-Gro driving fix in src/Compiler with Copilot. All 48 CI passing. mergeable_state=clean. Beyond shepherd scope — src/ changes."
+      "note": "T-Gro driving implementation changes in src/Compiler/CodeGen/IlxGen.fs with Copilot. All 48 CI passing. mergeable_state=clean. Beyond shepherd scope — src/ changes."
     }
   }
 }
