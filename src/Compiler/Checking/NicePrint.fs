@@ -730,11 +730,12 @@ module PrintTypes =
         | _, _ -> squareAngleL (sepListL RightL.semicolon ((match kind with TyparKind.Type -> [] | TyparKind.Measure -> [wordL (tagText "Measure")]) @ List.map (layoutAttrib denv) attrs)) ^^ restL
 
     and layoutTyparRef denv (typar: Typar) =
+        let name = NormalizeIdentifierBackticks (typar.DeclaredName |> Option.defaultValue typar.Name)
         tagTypeParameter 
             (sprintf "%s%s%s"
                 (if denv.showStaticallyResolvedTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
                 (if denv.showInferenceTyparAnnotations then prefixOfInferenceTypar typar else "")
-                (typar.DeclaredName |> Option.defaultValue typar.Name))
+                name)
         |> mkNav typar.Range
         |> wordL
 
