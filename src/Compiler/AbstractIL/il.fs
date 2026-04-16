@@ -3375,6 +3375,15 @@ let mkILSimpleTypar nm =
         MetadataIndex = NoMetadataIdx
     }
 
+let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
+    { gp with
+        Constraints = []
+        HasReferenceTypeConstraint = false
+        HasNotNullableValueTypeConstraint = false
+        HasDefaultConstructorConstraint = false
+        HasAllowsRefStruct = false
+    }
+
 let genericParamOfGenericActual (_ga: ILType) = mkILSimpleTypar "T"
 
 let mkILFormalTypars (x: ILGenericArgsList) = List.map genericParamOfGenericActual x

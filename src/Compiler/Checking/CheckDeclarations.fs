@@ -4418,7 +4418,7 @@ module TcDeclarations =
                 // Only the keep the field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
                 let mLetPortion = synExpr.Range
-                let fldId = ident (CompilerGeneratedName id.idText, mLetPortion)
+                let fldId = ident (CompilerGeneratedName id.idText, mLetPortion.MakeSynthetic())
                 let headPat = SynPat.LongIdent (SynLongIdent([fldId], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [], None, mLetPortion)
                 let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                 let isMutable = 
@@ -4446,7 +4446,7 @@ module TcDeclarations =
                 let mMemberPortion = id.idRange
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
-                let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
+                let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion.MakeSynthetic())
                 let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
                 let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                 let memberFlags = { memberFlags with GetterOrSetterIsCompilerGenerated = true }
@@ -4475,7 +4475,7 @@ module TcDeclarations =
                     | SynMemberKind.PropertySet 
                     | SynMemberKind.PropertyGetSet -> 
                         let setter = 
-                            let vId = ident("v", mMemberPortion)
+                            let vId = ident("v", mMemberPortion.MakeSynthetic())
                             let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                             let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                             let binding = mkSynBinding (xmlDoc, headPat) (setterAccess, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)

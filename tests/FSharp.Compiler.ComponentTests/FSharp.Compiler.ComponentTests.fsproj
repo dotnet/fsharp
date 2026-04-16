@@ -283,6 +283,7 @@
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_TypeDefs.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Signatures.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Closures.fs" />
+    <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Crashes.fs" />
     <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
@@ -417,6 +418,8 @@
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerOptions\Fsc\FscCliTests.fs" />
     <Compile Include="CompilerOptions\Fsc\Removed.fs" />
+    <Compile Include="CompilerOptions\Fsc\ParserErrors.fs" />
+    <Compile Include="CompilerOptions\Fsc\UncoveredOptions.fs" />
     <Compile Include="CompilerOptions\Fsc\responsefile\responsefile.fs" />
     <Compile Include="CompilerOptions\fsc\standalone\standalone.fs" />
     <Compile Include="CompilerOptions\fsc\dumpAllCommandLineOptions\dumpAllCommandLineOptions.fs" />

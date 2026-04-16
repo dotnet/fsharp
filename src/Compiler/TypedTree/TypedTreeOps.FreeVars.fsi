@@ -357,9 +357,6 @@ module internal MemberRepresentation =
 
     val superOfTycon: TcGlobals -> Tycon -> TType
 
-    /// walk a TyconRef's inheritance tree, yielding any parent types as an array
-    val supersOfTyconRef: TyconRef -> TyconRef array
-
     val GetTraitConstraintInfosOfTypars: TcGlobals -> Typars -> TraitConstraintInfo list
 
     val GetTraitWitnessInfosOfTypars: TcGlobals -> numParentTypars: int -> typars: Typars -> TraitWitnessInfos

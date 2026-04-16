@@ -255,10 +255,13 @@ type AsyncType() =
 
     [<Fact>]
     member _.CancellationPropagatesToTask () =
+        let ewh = new ManualResetEvent(false)
         let a = async {
+                ewh.Set() |> Assert.True
                 while true do ()
             }
         let t = Async.StartAsTask a
+        ewh.WaitOne() |> Assert.True
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
