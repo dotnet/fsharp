@@ -2747,7 +2747,7 @@ module EstablishTypeDefinitionCores =
             use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
             (env, shapes) ||> List.fold (fun env shape ->
                 match shape with
-                | MutRecShape.Open(MutRecDataForOpen(target, openm, moduleRange, _)) ->
+                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, openm, moduleRange, _)) ->
                     let env, _ = TcOpenDecl cenv openm moduleRange env target
                     env
                 | _ -> env))

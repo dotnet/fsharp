@@ -140,3 +140,18 @@ module DeprecatedModule =
         |> asLibrary
         |> typecheck
         |> shouldSucceed
+
+    // Negative test: undefined attribute still errors in namespace rec
+    [<Fact>]
+    let ``Undefined attribute still errors in namespace rec`` () =
+        FSharp """
+namespace rec Ns
+
+[<DoesNotExist>]
+module M =
+    let x = 1
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 39
