@@ -155,3 +155,39 @@ module M =
         |> typecheck
         |> shouldFail
         |> withErrorCode 39
+
+    // Negative test: invalid open target still errors despite error suppression in pre-pass
+    [<Fact>]
+    let ``Invalid open target still errors in namespace rec`` () =
+        FSharp """
+namespace rec Ns
+
+open DoesNotExist.Namespace
+
+[<System.Obsolete>]
+module M =
+    let x = 1
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 39
+
+    // Forward-reference open to sibling module in the same recursive scope
+    [<Fact>]
+    let ``Forward reference open to sibling module in namespace rec`` () =
+        FSharp """
+namespace rec Ns
+
+open Ns.Later
+
+module Earlier =
+    let x = Later.y
+
+module Later =
+    let y = 42
+        """
+        |> asLibrary
+        |> withOptions [ "--nowarn:22"; "--nowarn:40" ]
+        |> typecheck
+        |> shouldSucceed
