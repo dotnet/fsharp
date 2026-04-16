@@ -377,19 +377,40 @@ module Foo
 
 val ```a` b`` : a: int -> b: int -> unit"""
 
-// Found by corpus-wide roundtrip sweep of 1483 test files.
-// namespace global + class type produces unparseable signature.
-[<Fact(Skip = "Signature generation roundtrip failure: namespace global + class produces FS0010")>]
+// Found by corpus-wide roundtrip sweep. Fixed: #19593
+[<Fact>]
 let ``Namespace global with class type roundtrips`` () =
     let implSource =
         """
 namespace global
 
-type TheGeneratedTypeJ() = 
-    member x.Item1 = 1
+type Foo() = 
+    member _.X = 1
+"""
 
-module IntraAssemblyCode = 
-   let f (x:TheGeneratedTypeJ) = x
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Namespace global with nested module — more complex case
+[<Fact(Skip = "namespace global + nested module layout needs further investigation")>]
+let ``Namespace global with module roundtrips`` () =
+    let implSource =
+        """
+namespace global
+
+type Foo() = 
+    member _.X = 1
+
+module Utils = 
+   let f (x:Foo) = x
 """
 
     let generatedSignature =
