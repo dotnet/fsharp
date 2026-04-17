@@ -739,9 +739,9 @@ type StaticMethods =
         RequireM< Witnesses, ^T> (x)
 """
 
-// Sweep: type application syntax wrong in generated sig (FS0010)
+// Sweep: type application syntax — fixed by SRTP explicit type param change
 // Source: tests/fsharp/typecheck/sigs/pos34.fs
-[<Fact(Skip = "Sig gen roundtrip: type application parse error in sig - FS0010")>]
+[<Fact>]
 let ``Sweep - type application in member sig roundtrips`` () =
     assertSignatureRoundtrip """
 module Pos34
@@ -751,9 +751,9 @@ type Foo<'bar>() =
     member inline _.Baz<'a> (x: 'a) = x
 """
 
-// Sweep: unexpected identifier in value signature (FS0010)
+// Sweep: multi-case active pattern — fixed by backtick escaping change
 // Source: tests/fsharp/typecheck/sigs/pos16.fs
-[<Fact(Skip = "Sig gen roundtrip: unexpected identifier in value sig - FS0010")>]
+[<Fact>]
 let ``Sweep - active pattern in sig roundtrips`` () =
     assertSignatureRoundtrip """
 module Pos16

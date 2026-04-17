@@ -2600,6 +2600,16 @@ module InferredSigPrinting =
 
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
 
+        // Detect namespace global: bare types/vals at root level (not wrapped in Module binding)
+        let rec hasBareToplevelTypes x =
+            match x with
+            | TMDefRec(_, _, tycons, _, _) -> not (List.isEmpty tycons)
+            | TMDefLet _ | TMDefDo _ -> true
+            | TMDefOpens _ -> false
+            | TMDefs defs -> defs |> List.exists hasBareToplevelTypes
+
+        let isGlobalNamespace = hasBareToplevelTypes expr
+
         let rec isConcreteNamespace x = 
             match x with 
             | TMDefRec(_, _opens, tycons, mbinds, _) -> 
@@ -2725,7 +2735,7 @@ module InferredSigPrinting =
                         if showHeader then
                             // OK, we're not in F# Interactive
                             // Check if this is an outer module with no namespace
-                            if isNil outerPath then
+                            if isNil outerPath && not isGlobalNamespace then
                                 // If so print a "module" declaration, no indentation
                                 modNameL @@ basic
                             else
@@ -2763,7 +2773,12 @@ module InferredSigPrinting =
         | EmptyModuleOrNamespaces mspecs when showHeader ->
             List.map emptyModuleOrNamespace mspecs
             |> aboveListL
-        | expr -> imdefL denv expr
+        | expr ->
+            let layout = imdefL denv expr
+            if isGlobalNamespace then
+                WordL.keywordNamespace ^^ wordL (TaggedText.tagNamespace "global") @@* layout
+            else
+                layout
 
 //--------------------------------------------------------------------------
 

@@ -399,8 +399,8 @@ type Foo() =
     |> shouldSucceed
     |> ignore
 
-// Namespace global with nested module — more complex case
-[<Fact(Skip = "namespace global + nested module layout needs further investigation")>]
+// Namespace global with nested module — fixed by moving ns global detection into NicePrint
+[<Fact>]
 let ``Namespace global with module roundtrips`` () =
     let implSource =
         """
