@@ -515,8 +515,8 @@ let DoesIdentifierNeedBackticks (name: string) : bool =
 let AddBackticksToIdentifierIfNeeded (name: string) : string =
     if
         DoesIdentifierNeedBackticks name
-        && not (name.StartsWithOrdinal("`"))
-        && not (name.EndsWithOrdinal("`"))
+        && not (name.StartsWithOrdinal("``"))
+        && not (name.EndsWithOrdinal("``"))
     then
         "``" + name + "``"
     else
