@@ -3618,22 +3618,6 @@ type FSharpCheckFileResults
                 let layout =
                     layoutImpliedSignatureOfModuleOrNamespace true denv infoReader ad range0 mexpr
 
-                // Detect namespace global: types/vals directly at root TMDefRec (not
-                // wrapped in any Module binding). Module sources have all content inside
-                // ModuleOrNamespaceBinding.Module, while namespace global has bare types.
-                let rec hasBareToplevelTypes x =
-                    match x with
-                    | TMDefRec(_, _, tycons, _, _) -> not (List.isEmpty tycons)
-                    | TMDefLet _ | TMDefDo _ -> true
-                    | TMDefOpens _ -> false
-                    | TMDefs defs -> defs |> List.exists hasBareToplevelTypes
-
-                let layout =
-                    if hasBareToplevelTypes mexpr then
-                        WordL.keywordNamespace ^^ wordL (TaggedText.tagNamespace "global") @@ layout
-                    else
-                        layout
-
                 match pageWidth with
                 | None -> layout
                 | Some pageWidth -> Display.squashTo pageWidth layout
