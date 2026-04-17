@@ -15,6 +15,14 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
+/// Check for TailCallAttribute via O(1) flag lookup, with fallback for user-defined shadow types.
+let private hasTailCallAttrib (g: TcGlobals) (attribs: Attribs) =
+    attribsHaveValFlag g WellKnownValAttributes.TailCallAttribute attribs
+    || attribs
+       |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
+           tcref.IsLocalRef
+           && tcref.CompiledRepresentationForNamedType.FullName = "Microsoft.FSharp.Core.TailCallAttribute")
+
 [<return: Struct>]
 let (|ValUseAtApp|_|) e =
     match e with
@@ -63,7 +71,7 @@ type TailCall =
         | TailCall.No -> TailCall.No
 
 let IsValRefIsDllImport g (vref: ValRef) =
-    vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
+    ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute vref.Deref
 
 type cenv =
     {
@@ -756,7 +764,7 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
 
     // warn for non-rec functions which have the attribute
     if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailCallAttrOnNonRec then
-        if not isRec && cenv.g.HasTailCallAttrib bind.Var.Attribs then
+        if not isRec && hasTailCallAttrib cenv.g bind.Var.Attribs then
             warning (Error(FSComp.SR.chkTailCallAttrOnNonRec (), bind.Var.Range))
 
     // Check if a let binding to the result of a rec expression is not inside the rec expression
@@ -839,7 +847,7 @@ and CheckDefnInModule cenv mdef =
                 let mustTailCall =
                     Seq.fold
                         (fun mustTailCall (v: Val) ->
-                            if cenv.g.HasTailCallAttrib v.Attribs then
+                            if hasTailCallAttrib cenv.g v.Attribs then
                                 let newSet = Zset.add v mustTailCall
                                 newSet
                             else

@@ -16,6 +16,9 @@ open Internal.Utilities.Library
 open FSharp.Compiler.Service.Tests.Common
 open Xunit
 
+// Dedicated checker to isolate cancellation tests from the shared checker's state.
+let private checker = FSharpChecker.Create(useTransparentCompiler = FSharp.Test.CompilerAssertHelpers.UseTransparentCompiler)
+
 let mutable private cts = new CancellationTokenSource()
 let mutable private wasCancelled = false
 
@@ -149,6 +152,10 @@ let parseAndCheck path source options =
             match Async.RunSynchronously(checkFileAsync, cancellationToken = cts.Token) with
             | _, FSharpCheckFileAnswer.Aborted -> None
             | _, FSharpCheckFileAnswer.Succeeded results -> Some results
+
+        // AsyncLocal cleanup may not have propagated yet on slower CI platforms (Linux, MacOS).
+        if Cancellable.HasCancellationToken then
+            System.Threading.Thread.Sleep(200)
 
         Cancellable.HasCancellationToken |> shouldEqual false
         result

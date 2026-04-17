@@ -7,9 +7,6 @@
 #load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
-// Disable parallel execution because this module contains FSI stdin tests
-// that can interfere with other FSI stdin tests in CoreTests
-[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module FSharp.Test.FSharpSuite.TypeProviderTests
 #endif
 

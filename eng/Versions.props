@@ -14,12 +14,12 @@
   <PropertyGroup>
     <!-- Don't use the built in support for pre-release iteration. The nuget repack task doesn't support
          the iteration format at the moment. https://github.com/dotnet/arcade/issues/15919 -->
-    <FSharpPreReleaseIteration>3</FSharpPreReleaseIteration>
+    <FSharpPreReleaseIteration>4</FSharpPreReleaseIteration>
     <PreReleaseVersionLabel>preview$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
     <!-- F# Version components -->
     <FSMajorVersion>11</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>100</FSBuildVersion>
+    <FSBuildVersion>101</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -89,12 +89,7 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-    <!-- System.* packages from dotnet/runtime, aligned with MSBuild and Roslyn deps. -->
-    <SystemPackagesVersion>10.0.2</SystemPackagesVersion>
-    <SystemCollectionsImmutableVersion>$(SystemPackagesVersion)</SystemCollectionsImmutableVersion>
-    <SystemCompositionVersion>$(SystemPackagesVersion)</SystemCompositionVersion>
-    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemPackagesVersion)</SystemDiagnosticsDiagnosticSourceVersion>
-    <SystemReflectionMetadataVersion>$(SystemPackagesVersion)</SystemReflectionMetadataVersion>
+    <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
   </PropertyGroup>
 
   <PropertyGroup>
@@ -166,6 +161,7 @@
     <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
     <XunitVersion>3.2.2</XunitVersion>
     <XunitRunnerConsoleVersion>3.2.2</XunitRunnerConsoleVersion>
+    <XunitXmlTestLoggerVersion>8.0.0</XunitXmlTestLoggerVersion>
     <!-- -->
   </PropertyGroup>
 

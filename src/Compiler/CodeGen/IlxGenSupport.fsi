@@ -25,3 +25,8 @@ val GetIsUnmanagedAttribute: g: TcGlobals -> ILAttribute
 val GetNullableAttribute: g: TcGlobals -> nullnessInfos: TypedTree.NullnessInfo list -> ILAttribute
 val GetNullableContextAttribute: g: TcGlobals -> byte -> ILAttribute
 val GetNotNullWhenTrueAttribute: g: TcGlobals -> string array -> ILAttribute
+
+/// Given a base name and a set of existing names, produce a unique name.
+/// If baseName doesn't conflict, returns it as-is.
+/// Otherwise appends "0", "1", "2", etc. until a unique name is found.
+val ChooseUniqueName: baseName: string -> existingNames: Set<string> -> string

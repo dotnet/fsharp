@@ -282,6 +282,10 @@
     <Compile Include="EmittedIL\Nullness\NullnessMetadata.fs" />
     <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Observations.fs" />
+    <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_TypeDefs.fs" />
+    <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Signatures.fs" />
+    <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Closures.fs" />
+    <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Crashes.fs" />
     <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
@@ -300,6 +304,7 @@
     <Compile Include="ErrorMessages\MissingElseBranch.fs" />
     <Compile Include="ErrorMessages\MissingExpressionTests.fs" />
     <Compile Include="ErrorMessages\ModuleTests.fs" />
+    <Compile Include="ErrorMessages\DiagnosticRegressionTests.fs" />
     <Compile Include="ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="ErrorMessages\SuggestionsTests.fs" />
     <Compile Include="ErrorMessages\TypeMismatchTests.fs" />
@@ -415,6 +420,8 @@
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerOptions\Fsc\FscCliTests.fs" />
     <Compile Include="CompilerOptions\Fsc\Removed.fs" />
+    <Compile Include="CompilerOptions\Fsc\ParserErrors.fs" />
+    <Compile Include="CompilerOptions\Fsc\UncoveredOptions.fs" />
     <Compile Include="CompilerOptions\Fsc\responsefile\responsefile.fs" />
     <Compile Include="CompilerOptions\fsc\standalone\standalone.fs" />
     <Compile Include="CompilerOptions\fsc\dumpAllCommandLineOptions\dumpAllCommandLineOptions.fs" />
@@ -438,7 +445,11 @@
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
     <Compile Include="CompilerService\DependencyGraph.fs" />
+    <Compile Include="Debugger\DebuggerTestHelpers.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
+    <Compile Include="Debugger\ForArrowDebugPoints.fs" />
+    <Compile Include="Debugger\CEDebugPoints.fs" />
+    <Compile Include="Debugger\MatchEndSequencePoint.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
     <Compile Include="Diagnostics\Records.fs" />

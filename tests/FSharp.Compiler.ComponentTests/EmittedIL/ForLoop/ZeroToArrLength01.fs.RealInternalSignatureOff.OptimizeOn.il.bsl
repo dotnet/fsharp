@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -50,23 +40,23 @@
     .locals init (int32 V_0)
     IL_0000:  ldc.i4.0
     IL_0001:  stloc.0
-    IL_0002:  br.s       IL_0010
+    IL_0002:  br.s       IL_000c
 
     IL_0004:  ldarg.0
     IL_0005:  ldloc.0
     IL_0006:  ldloc.0
-    IL_0007:  stelem     [runtime]System.Int32
+    IL_0007:  stelem.i4
+    IL_0008:  ldloc.0
+    IL_0009:  ldc.i4.1
+    IL_000a:  add
+    IL_000b:  stloc.0
     IL_000c:  ldloc.0
-    IL_000d:  ldc.i4.1
-    IL_000e:  add
-    IL_000f:  stloc.0
-    IL_0010:  ldloc.0
-    IL_0011:  ldarg.0
-    IL_0012:  ldlen
-    IL_0013:  conv.i4
-    IL_0014:  blt.s      IL_0004
+    IL_000d:  ldarg.0
+    IL_000e:  ldlen
+    IL_000f:  conv.i4
+    IL_0010:  blt.s      IL_0004
 
-    IL_0016:  ret
+    IL_0012:  ret
   } 
 
 } 
@@ -83,7 +73,6 @@
   } 
 
 } 
-
 
 
 
