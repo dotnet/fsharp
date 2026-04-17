@@ -41,7 +41,7 @@
                 "build",
                 "-c",
                 "Debug",
-                "FSharp.Compiler.Service.sln"
+                "FSharp.Compiler.Service.slnx"
             ],
             "windows": {
                 "command": "dotnet",
@@ -49,7 +49,7 @@
                     "build",
                     "-c",
                     "Debug",
-                    "FSharp.Compiler.Service.sln"
+                    "FSharp.Compiler.Service.slnx"
                 ]
             },
             "options": {
@@ -71,7 +71,7 @@
                 "build",
                 "-c",
                 "Release",
-                "FSharp.Compiler.Service.sln"
+                "FSharp.Compiler.Service.slnx"
             ],
             "windows": {
                 "command": "dotnet",
@@ -79,7 +79,7 @@
                     "build",
                     "-c",
                     "Release",
-                    "FSharp.Compiler.Service.sln"
+                    "FSharp.Compiler.Service.slnx"
                 ]
             },
             "options": {

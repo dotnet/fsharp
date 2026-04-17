@@ -2096,6 +2096,7 @@ val internal mkILFormalNamedTy: ILBoxity -> ILTypeRef -> ILGenericParameterDef l
 val internal mkILFormalTypars: ILType list -> ILGenericParameterDefs
 val internal mkILFormalGenericArgs: int -> ILGenericParameterDefs -> ILGenericArgsList
 val internal mkILSimpleTypar: string -> ILGenericParameterDef
+val internal stripILGenericParamConstraints: ILGenericParameterDef -> ILGenericParameterDef
 
 /// Make custom attributes.
 val internal mkILCustomAttribMethRef:

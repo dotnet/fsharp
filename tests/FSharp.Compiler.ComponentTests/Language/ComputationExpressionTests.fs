@@ -2270,6 +2270,9 @@ let data2 = [(1, "one"); (2, "two"); (3, "three")]
 let result = query { for x in data1 do join (y, name) in data2 on (x = y); select name }"""
             "let result = query { for a in [1;2;3] do for b in [4;5;6] do where (a < b); select (a + b) }"
             "let result = query { for x in [3;1;2] do sortBy x; select x }"
+            // https://github.com/dotnet/fsharp/issues/14566
+            """let result = query { join a in ["x"] on ("x" = a); join b in ["y"] on ("y" = b); select a }"""
+            """let result = query { for r in [1;2;3] do for i in [true; false] do where i; select r }"""
         ]
         |> List.map (fun s -> [| box s |])
 

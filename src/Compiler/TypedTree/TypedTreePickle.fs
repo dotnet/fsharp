@@ -2875,7 +2875,18 @@ and p_attribkind x st =
 and p_attrib (Attrib(a, b, c, d, e, _targets, f)) st = // AttributeTargets are not preserved
     p_tup6 (p_tcref "attrib") p_attribkind (p_list p_attrib_expr) (p_list p_attrib_arg) p_bool p_dummy_range (a, b, c, d, e, f) st
 
-and p_attrib_expr (AttribExpr(e1, e2)) st = p_tup2 p_expr p_expr (e1, e2) st
+and p_attrib_expr (AttribExpr(e1, e2)) st =
+    // Normalize Expr.Val back to Expr.Const before pickling.
+    // The literal name recovery (Expr.Val in source field) is an in-memory optimization
+    // for signature generation display. We must not change the pickle format, because
+    // old compilers reading Expr.Val in this position would show degraded attribute display.
+    let e1 =
+        match e1 with
+        | Expr.Val(vref, _, m) when vref.LiteralValue.IsSome ->
+            Expr.Const(vref.LiteralValue.Value, m, vref.Type)
+        | _ -> e1
+
+    p_tup2 p_expr p_expr (e1, e2) st
 
 and p_attrib_arg (AttribNamedArg(a, b, c, d)) st =
     p_tup4 p_string p_ty p_bool p_attrib_expr (a, b, c, d) st
