@@ -708,6 +708,15 @@ module Repro
 let (|``A B``|) (x:int) = x * 2
 """
 
+// Sweep: type param with special chars needs backtick escaping (FS0010) — #19595
+[<Fact>]
+let ``Sweep - type param with angle brackets roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+type Foo<'a, 'b>() =
+    member _.Bar<'``c<d>``> (x: '``c<d>``) = x
+"""
+
 // Sweep: SRTP multi-witness constraint lost in generated sig (FS0340)
 // Source: tests/fsharp/typecheck/sigs/pos36-srtp-lib.fs
 [<Fact>]
