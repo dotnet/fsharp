@@ -690,20 +690,11 @@ type A private () =
 // Negative tests (intentionally broken code) are excluded.
 // =========================================================================
 
-let assertRoundtrip (implSource: string) =
-    let generatedSignature = FSharp implSource |> printSignatures
-    Fsi generatedSignature
-    |> withAdditionalSourceFile (FsSource implSource)
-    |> ignoreWarnings
-    |> compile
-    |> shouldSucceed
-    |> ignore
-
 // Sweep: single-case struct DU gets spurious bar (FS0300)
 // Source: tests/fsharp/core/fsfromfsviacs/lib.fs — #19597
 [<Fact>]
 let ``Sweep - single-case struct DU roundtrips`` () =
-    assertRoundtrip """
+    assertSignatureRoundtrip """
 module Repro
 [<Struct>]
 type U0 = U0
@@ -712,7 +703,7 @@ type U0 = U0
 // Sweep: backticked active pattern case names (FS0010) — #19592
 [<Fact>]
 let ``Sweep - backticked active pattern roundtrips`` () =
-    assertRoundtrip """
+    assertSignatureRoundtrip """
 module Repro
 let (|``A B``|) (x:int) = x * 2
 """
@@ -721,7 +712,7 @@ let (|``A B``|) (x:int) = x * 2
 // Source: tests/fsharp/typecheck/sigs/pos36-srtp-lib.fs
 [<Fact>]
 let ``Sweep - SRTP multi-witness constraint roundtrips`` () =
-    assertRoundtrip """
+    assertSignatureRoundtrip """
 module Lib
 
 let inline RequireM< ^Witnesses, ^T when (^Witnesses or ^T): (static member M : ^T -> string) > (x: ^T) : string = 
@@ -743,7 +734,7 @@ type StaticMethods =
 // Source: tests/fsharp/typecheck/sigs/pos34.fs
 [<Fact(Skip = "Sig gen roundtrip: type application parse error in sig - FS0010")>]
 let ``Sweep - type application in member sig roundtrips`` () =
-    assertRoundtrip """
+    assertSignatureRoundtrip """
 module Pos34
 
 [<Sealed>]
@@ -755,18 +746,19 @@ type Foo<'bar>() =
 // Source: tests/fsharp/typecheck/sigs/pos16.fs
 [<Fact(Skip = "Sig gen roundtrip: unexpected identifier in value sig - FS0010")>]
 let ``Sweep - active pattern in sig roundtrips`` () =
-    assertRoundtrip """
+    assertSignatureRoundtrip """
 module Pos16
 
 let (|A|B|) (x: int) = if x > 0 then A else B
 """
 
 // Sweep: overloaded member with unit parameter (FS0193) — #19596
-// The generated sig text is correct (fsc --sig roundtrips fine).
-// FCS Compile API path fails to match the overloads — may be FCS-specific.
-[<Fact(Skip = "FCS Compile path fails sig conformance for unit overload; fsc roundtrips OK")>]
+// Roundtrip fails: member M(()) generates sig 'member M: unit -> unit' but
+// conformance checker can't match it when M is overloaded. The sig syntax
+// is correct but the conformance check for unit-parameter overloads is broken.
+[<Fact(Skip = "Sig conformance: member M(()) vs member M: unit -> unit fails when overloaded - FS0193")>]
 let ``Sweep - overloaded member with unit param roundtrips`` () =
-    assertRoundtrip """
+    assertSignatureRoundtrip """
 module Repro
 type R1 = { f1 : int }
 type D() =
