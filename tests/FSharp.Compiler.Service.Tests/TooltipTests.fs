@@ -806,3 +806,54 @@ type T() =
         and set (a: string, b: string) (v: int) = store <- store.Add((a, b), v)
 """
     |> assertNameTagInTooltip TextTag.Property "Value"
+
+// =========================================================================
+// Tooltip display correctness for signature generation changes
+// =========================================================================
+
+// Backticked active pattern case names must be preserved in tooltips
+[<Fact>]
+let ``Tooltip shows backtick-escaped active pattern case names`` () =
+    Checker.getTooltip """
+module Foo
+let (|``A{caret} B``|) (x:int) = x * 2
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text -> Assert.Contains("``A B``", text)
+
+// SRTP inline function shows type params in tooltip
+[<Fact>]
+let ``Tooltip shows type params for SRTP inline function`` () =
+    Checker.getTooltip """
+module Foo
+let inline a{caret}dd (x: ^T) (y: ^T) : ^T = x + y
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text ->
+        // Tooltip shows 'T form (not ^T) with requires clause
+        Assert.Contains("'T", text)
+        Assert.Contains("requires", text)
+
+// Single-case struct DU tooltip shows without leading bar
+[<Fact>]
+let ``Tooltip shows single-case struct DU without bar`` () =
+    Checker.getTooltip """
+module Foo
+[<Struct>]
+type U{caret}0 = U0
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text ->
+        Assert.Contains("U0", text)
+
+// Inline function type param names are properly displayed in tooltip
+[<Fact>]
+let ``Tooltip shows inline function type params properly`` () =
+    Checker.getTooltip """
+module Foo
+let inline fo{caret}o< ^T> (x: ^T) = x
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text ->
+        // Type param appears in tooltip
+        Assert.Contains("'T", text)
