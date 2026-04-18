@@ -295,11 +295,24 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityGenericParametersDiffer(x, y, z, string mtps, string ntps))
                 elif implValInfo.KindsOfTypars <> sigValInfo.KindsOfTypars then
                   err(FSComp.SR.ValueNotContainedMutabilityGenericParametersAreDifferentKinds)
-                elif not (nSigArgInfos <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.splitAt nSigArgInfos implArgInfos))) then 
+                else
+                // Check arg group arities. An empty impl group [] is compatible with
+                // a singleton sig group [_] when the member takes unit (e.g. member M(()) vs member M: unit -> unit)
+                let argGroupsCompatible =
+                    nSigArgInfos <= implArgInfos.Length &&
+                    List.forall2
+                        (fun (sigGroup: ArgReprInfo list) (implGroup: ArgReprInfo list) ->
+                            List.length sigGroup <= List.length implGroup
+                            || (List.length implGroup = 0 && List.length sigGroup = 1))
+                        sigArgInfos
+                        (fst (List.splitAt nSigArgInfos implArgInfos))
+
+                if not argGroupsCompatible then
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string nSigArgInfos, id.idText, id.idText))
                 else 
                   let implArgInfos = implArgInfos |> List.truncate nSigArgInfos
-                  let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.take l2.Length)
+                  // When impl has empty group [] and sig has [unit_arg], use min to avoid taking more than available
+                  let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.take (min l1.Length l2.Length))
                   // Propagate some information signature to implementation. 
 
                   // Check the attributes on each argument, and update the ValReprInfo for
@@ -307,7 +320,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   // This ensures that the compiled form of the value matches the signature rather than 
                   // the implementation. This also propagates argument names from signature to implementation
                   let res = 
-                      (implArgInfos, sigArgInfos) ||> List.forall2 (List.forall2 (fun implArgInfo sigArgInfo -> 
+                      (implArgInfos, sigArgInfos) ||> List.forall2 (fun (implGroup: ArgReprInfo list) (sigGroup: ArgReprInfo list) ->
+                          // When impl group is empty (unit param like member M(())), skip arg-level checks
+                          if implGroup.IsEmpty then true
+                          else
+                          (implGroup, sigGroup) ||> List.forall2 (fun implArgInfo sigArgInfo -> 
                           checkAttribs aenv (implArgInfo.Attribs.AsList()) (sigArgInfo.Attribs.AsList()) (fun attribs -> 
                               match implArgInfo.Name, sigArgInfo.Name with 
                               | Some iname, Some sname when sname.idText <> iname.idText ->
@@ -661,7 +678,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let fkey = fv.GetLinkagePartialKey()
                 (akey.MemberParentMangledName = fkey.MemberParentMangledName) &&
                 (akey.LogicalName = fkey.LogicalName) &&
-                (akey.TotalArgCount = fkey.TotalArgCount)    
+                (akey.TotalArgCount = fkey.TotalArgCount)
                                        
             (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached)
               ||> NameMap.suball2 
@@ -683,9 +700,29 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                       | None -> None
                                       | Some av -> Some(fv, av))
                              
+                             // For unmatched sig vals, try relaxed matching for unit-parameter equivalence:
+                             // member M(()) has TotalArgCount 1, sig member M: unit -> unit has TotalArgCount 2,
+                             // but their types are both unit -> unit.
+                             let matchedAvs = matchingPairs |> List.map snd
+                             let matchedFvs = matchingPairs |> List.map fst
+                             let unmatchedFvs = fvs |> List.filter (fun fv -> not (List.exists (fun fv2 -> System.Object.ReferenceEquals(fv, fv2)) matchedFvs))
+                             let unmatchedAvs = avs |> List.filter (fun av -> not (List.exists (fun av2 -> System.Object.ReferenceEquals(av, av2)) matchedAvs))
+                             let relaxedPairs =
+                                 unmatchedFvs |> List.choose (fun fv ->
+                                     let fkey = fv.GetLinkagePartialKey()
+                                     match unmatchedAvs |> List.tryFind (fun av ->
+                                         let akey = av.GetLinkagePartialKey()
+                                         akey.MemberParentMangledName = fkey.MemberParentMangledName &&
+                                         akey.LogicalName = fkey.LogicalName &&
+                                         av.IsMember && fv.IsMember &&
+                                         typeAEquivAux EraseAll g aenv av.Type fv.Type) with
+                                     | None -> None
+                                     | Some av -> Some(fv, av))
+                             let allMatchingPairs = matchingPairs @ relaxedPairs
+
                              // Check the ones with matching linkage
-                             let allPairsOk = matchingPairs |> List.map (fun (fv, av) -> checkVal implModRef aenv infoReader av fv) |> List.forall id
-                             let someNotOk = matchingPairs.Length < fvs.Length
+                             let allPairsOk = allMatchingPairs |> List.map (fun (fv, av) -> checkVal implModRef aenv infoReader av fv) |> List.forall id
+                             let someNotOk = allMatchingPairs.Length < fvs.Length
                              // Report an error for those that don't. Try pairing up by enclosing-type/name
                              if someNotOk then 
                                  let noMatches, partialMatchingPairs = 

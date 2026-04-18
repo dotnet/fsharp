@@ -762,10 +762,90 @@ let (|A|B|) (x: int) = if x > 0 then A else B
 """
 
 // Sweep: overloaded member with unit parameter (FS0193) — #19596
-// Roundtrip fails: member M(()) generates sig 'member M: unit -> unit' but
-// conformance checker can't match it when M is overloaded. The sig syntax
-// is correct but the conformance check for unit-parameter overloads is broken.
-[<Fact(Skip = "Sig conformance: member M(()) vs member M: unit -> unit fails when overloaded - FS0193")>]
+// Testing both directions and consumer access to understand conformance boundaries.
+
+// Direction 1: handwritten sig says "member M: unit -> unit", impl has "member M(()) = ()"
+[<Fact>]
+let ``Unit param overload - sig with consumer compiles`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M(())
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Direction 2: impl without explicit unit parens "member x.M() = ()"
+[<Fact>]
+let ``Unit param overload - non-paren impl with sig and consumer`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M() = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Roundtrip: generated sig from impl, then compile sig+impl+consumer
+[<Fact>]
 let ``Sweep - overloaded member with unit param roundtrips`` () =
     assertSignatureRoundtrip """
 module Repro
