@@ -187,3 +187,45 @@ if giveMeZ().IsX then failwith "Should not be X"
         """
         |> compileExeAndRun
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/6750
+    [<Fact>]
+    let ``Mutually recursive DU values are fully initialized`` () =
+        Fsx """
+type A = A of B
+and B = B of A | C
+
+// Case 1: non-recursive values declared with let rec
+let rec a1 = B (A b1)
+and b1 = B (A c1)
+and c1 = C
+
+// Case 2: truly recursive values
+let rec a2 = A b2
+and b2 = B a2
+
+// Verify Case 1
+match a1 with
+| B (A (B (A C))) -> ()
+| _ -> failwithf "a1 was not fully initialized: %A" a1
+
+match b1 with
+| B (A C) -> ()
+| _ -> failwithf "b1 was not fully initialized: %A" b1
+
+match c1 with
+| C -> ()
+| _ -> failwithf "c1 was not fully initialized: %A" c1
+
+// Verify Case 2
+match a2 with
+| A (B a2ref) -> if not (obj.ReferenceEquals(a2ref, a2)) then failwithf "a2 inner ref is wrong: %A" a2
+| _ -> failwithf "a2 was not fully initialized: %A" a2
+
+match b2 with
+| B (A b2inner) ->
+    if not (obj.ReferenceEquals(b2inner, b2)) then failwithf "b2 inner ref is wrong: %A" b2
+| _ -> failwithf "b2 was not fully initialized: %A" b2
+        """
+        |> compileExeAndRun
+        |> shouldSucceed

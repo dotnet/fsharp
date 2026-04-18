@@ -425,5 +425,44 @@ if (four [ ("", 10) ]).Result <> 6 then
         |> compileExeAndRun
         |> shouldSucceed
 
+    // https://github.com/dotnet/fsharp/issues/16154
+    // VerificationException still occurs on .NET Framework due to stricter IL verification;
+    // fixed on .NET Core where the upcast-to-obj in the task state machine is handled correctly.
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Issue 16154 - task CE with IQueryable filter functions should compile and run without VerificationException`` () =
+        FSharp """
+open System.Linq
 
+type Shape = {x: int; y: int}
 
+let returnFilter condition =
+    task {
+        if condition = "a" then
+            let filter1 : IQueryable<Shape> -> IQueryable<Shape> =
+                fun data -> data.Where(fun a -> a.x = 1)
+            return Some filter1
+        elif condition = "b" then
+            let filter2 : IQueryable<Shape> -> IQueryable<Shape> =
+                fun data -> data.Where(fun a -> a.y <> 2)
+            return Some filter2
+        else
+            return None
+    }
+
+let data = [{x = 1; y = 1}; {x = 2; y = 2}].AsQueryable()
+let result =
+    task {
+        let! f1 = returnFilter "a"
+        let! f2 = returnFilter "b"
+        match f1, f2 with
+        | Some filter1, Some filter2 ->
+            return data |> filter2 |> filter1 |> Seq.toList
+        | _ -> return []
+    } |> (fun t -> t.GetAwaiter().GetResult())
+
+if result.Length <> 1 then failwith $"unexpected result length {result.Length}"
+if result[0].x <> 1 then failwith $"unexpected result {result[0]}"
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed

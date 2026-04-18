@@ -189,16 +189,25 @@ extends:
                 targetPath: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
                 artifactName: 'NativeSymbols'
               condition: succeeded()
+            - task: AzureCLI@2
+              displayName: Get DevDiv Drop Access Token
+              inputs:
+                azureSubscription: 'dnceng-devdiv-drop-rw-code-rw-wif'
+                scriptType: pscore
+                scriptLocation: inlineScript
+                inlineScript: |
+                  $token = az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv
+                  Write-Host "##vso[task.setvariable variable=DevDivDropAccessToken;issecret=true]$token"
+              condition: succeeded()
             - task: 1ES.MicroBuildVstsDrop@1
               displayName: Upload VSTS Drop
               inputs:
                 dropName: $(VisualStudioDropName)
                 dropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
                 dropRetentionDays: 90
-                accessToken: $(dn-bot-devdiv-drop-rw-code-rw)
+                accessToken: $(DevDivDropAccessToken)
                 dropServiceUri: 'https://devdiv.artifacts.visualstudio.com'
                 vsDropServiceUri: 'https://vsdrop.corp.microsoft.com/file/v1'
-
               condition: succeeded()
 
     #---------------------------------------------------------------------------------------------------------------------#
@@ -239,3 +248,4 @@ extends:
         insertTeamEmail: fsharpteam@microsoft.com
         insertTeamName: 'F#'
         completeInsertion: 'auto'
+

@@ -2242,9 +2242,13 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             | Some r -> r :: convertedArgs
             | None -> convertedArgs
 
-        // Fix bug 1281: If we resolve to an instance method on a struct and we haven't yet taken 
-        // the address of the object then go do that 
-        if minfo.IsStruct && minfo.IsInstance then 
+        // Fix bug 1281 / issue #8098: If the receiver needs its address taken for a
+        // constrained call, go do that and re-resolve via TraitCall with the byref receiver.
+        let needsAddrTaken =
+            minfo.IsInstance &&
+            (minfo.IsStruct || (ComputeConstrainedCallInfo g amap m staticTyOpt argExprs minfo).IsSome)
+
+        if needsAddrTaken then 
             match argExprs with
             | h :: t when not (isByrefTy g (tyOfExpr g h)) ->
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 

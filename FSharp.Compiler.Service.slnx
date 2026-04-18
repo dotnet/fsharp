@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/FSharp.Compiler.Service.Tests support/">
+    <Project Path="tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj" />
+    <Project Path="tests/service/data/CSharp_Analysis/CSharp_Analysis.csproj" />
+    <Project Path="tests/service/data/TestTP/TestTP.fsproj" />
+  </Folder>
+  <Project Path="buildtools/Misc/Misc.csproj" />
+  <Project Path="buildtools/AssemblyCheck/AssemblyCheck.fsproj" />
+  <Project Path="buildtools/fslex/fslex.fsproj" />
+  <Project Path="buildtools/fsyacc/fsyacc.fsproj" />
+  <Project Path="src/Compiler/FSharp.Compiler.Service.fsproj" />
+  <Project Path="src/fsc/fscProject/fsc.fsproj" />
+  <Project Path="src/FSharp.Build/FSharp.Build.fsproj" />
+  <Project Path="src/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
+  <Project Path="src/FSharp.Core/FSharp.Core.fsproj" />
+  <Project Path="src/FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj" />
+  <Project Path="src/fsi/fsiProject/fsi.fsproj" />
+  <Project Path="tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj">
+    <BuildDependency Project="tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj" />
+  </Project>
+  <Project Path="tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" />
+</Solution>

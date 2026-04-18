@@ -26,15 +26,15 @@ set "DEVENV=%DevEnvDir%devenv.exe"
 
 if exist "%DEVENV%" (
     :: Fully qualified works
-    set "COMMAND=start "" /B "%ComSpec%" /S /C ""%DEVENV%" "%~dp0FSharp.sln"""
+    set "COMMAND=start "" /B "%ComSpec%" /S /C ""%DEVENV%" "%~dp0FSharp.slnx"""
 ) else (
     where devenv.exe /Q
     if !errorlevel! equ 0 (
         :: On the PATH, use that.
-        set "COMMAND=start "" /B "%ComSpec%" /S /C "devenv.exe "%~dp0FSharp.sln"""
+        set "COMMAND=start "" /B "%ComSpec%" /S /C "devenv.exe "%~dp0FSharp.slnx"""
     ) else (
         :: Can't find devenv.exe, let file associations take care of it
-        set "COMMAND=start /B .\FSharp.sln"
+        set "COMMAND=start /B .\FSharp.slnx"
     )
 )
 

@@ -639,6 +639,27 @@ let PropInfoIsUnseen _m allowObsolete pinfo =
         CheckProvidedAttributesForUnseen (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m
 #endif
 
+/// Indicate if an ILFieldInfo has 'Obsolete' attribute.
+/// Used to suppress the item in intellisense.
+let ILFieldInfoIsUnseen (finfo: ILFieldInfo) =
+    match finfo with
+    | ILFieldInfo(_, fdef) -> CheckILAttributesForUnseen fdef.CustomAttrs
+#if !NO_TYPEPROVIDERS
+    | ProvidedField(_amap, fi, m) ->
+        CheckProvidedAttributesForUnseen (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m
+#endif
+
+/// Indicate if an EventInfo has 'Obsolete' or 'CompilerMessageAttribute'.
+/// Used to suppress the item in intellisense.
+let EventInfoIsUnseen allowObsolete (einfo: EventInfo) =
+    match einfo with
+    | ILEvent(ILEventInfo(_, ilEventDef)) -> CheckILAttributesForUnseen ilEventDef.CustomAttrs
+    | FSEvent(g, _, addValRef, _) -> CheckFSharpAttributesForUnseen g addValRef.Attribs allowObsolete
+#if !NO_TYPEPROVIDERS
+    | ProvidedEvent(_amap, ei, m) ->
+        CheckProvidedAttributesForUnseen (ei.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m
+#endif
+
 /// Check the attributes on a union case, returning errors and warnings as data.
 let CheckUnionCaseAttributes g (x:UnionCaseRef) m =
     trackErrors {

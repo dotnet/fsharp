@@ -162,6 +162,11 @@ module Checker =
         let parseResults, checkResults = getParseAndCheckResults context.Source
         checkResults.GetCodeCompletionSuggestions(context, parseResults, options)
 
+    let getCompletionInfoWithCompilerAndCompletionOptions (compilerOptions: string array) (completionOptions: FSharpCodeCompletionOptions) (markedSource: string) =
+        let context = getCompletionContext markedSource
+        let parseResults, checkResults = getParseAndCheckResultsWithOptions compilerOptions context.Source
+        checkResults.GetCodeCompletionSuggestions(context, parseResults, completionOptions)
+
     let getCompletionInfo markedSource =
         getCompletionInfoWithOptions FSharpCodeCompletionOptions.Default markedSource
 

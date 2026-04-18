@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FSharp.VisualStudio.Extension/FSharp.VisualStudio.Extension.csproj" />
+    <Project Path="src/FSharp.Compiler.LanguageServer/FSharp.Compiler.LanguageServer.fsproj" />
+    <Project Path="src/Microsoft.CommonLanguageServerProtocol.Framework.Proxy/Microsoft.CommonLanguageServerProtocol.Framework.Proxy.csproj" />
+  </Folder>
+  <Folder Name="/src/Compiler/">
+    <Project Path="src/Compiler/FSharp.Compiler.Service.fsproj" />
+    <Project Path="src/FSharp.Core/FSharp.Core.fsproj" />
+    <Project Path="src/FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj" />
+  </Folder>
+  <Folder Name="/vsintegration/">
+    <Project Path="vsintegration/src/FSharp.Editor/FSharp.Editor.fsproj" />
+  </Folder>
+  <Project Path="buildtools/Misc/Misc.csproj" />
+</Solution>
