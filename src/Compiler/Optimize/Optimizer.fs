@@ -3487,9 +3487,6 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
 
-        let allTyargsAreConcrete =
-            tyargs |> List.forall (fun t -> (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
-
         let allTyargsAreGeneric =
             tyargs |> List.forall (fun t -> not (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
 
@@ -3515,6 +3512,15 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let f2R = CopyExprForInlining cenv true origLambda m
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
+
+            // Typars that flow in from the enclosing scope when tyargs are non-concrete.
+            // specLambdaTy is closed over the vref's typars after beta-reduction, so its free
+            // typars are exactly the ones carried in by tyargs.
+            let freeTypars =
+                (freeInType CollectTyparsNoCaching specLambdaTy).FreeTypars
+                |> Zset.elements
+
+            let allTyargsAreConcrete = List.isEmpty freeTypars
 
             // For concrete type args, only block the exact same (stamp, type) pair, allowing different
             // type instantiations to proceed (e.g. sum<int, int->int> calling sum<int, int> in its body).
@@ -3542,26 +3548,46 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline } specLambda
                     specLambdaR
 
-            let debugVal =
-                let name = $"<{vref.LogicalName}>__debug"
-                // When tyargs have free type variables, omit ValReprInfo so IlxGen compiles this
-                // as a closure that captures type variables and witnesses from the enclosing scope.
-                let valReprInfo =
-                    if allTyargsAreConcrete then
+            // Abstract the specialized lambda over its free typars so IlxGen emits a static
+            // method with flattened arguments. The alternative closure form (valReprInfo = None)
+            // wraps args in a reference Tuple<>, which cannot hold byrefs and fails to load at
+            // runtime. When a free typar carries SRTP constraints the specialized body still
+            // needs runtime witnesses from the enclosing scope; those only flow through the
+            // closure path, so keep the closure compilation for that case.
+            let freeTyparsNeedWitnesses =
+                not (GetTraitWitnessInfosOfTypars g 0 freeTypars |> List.isEmpty)
+
+            let debugValName = $"<{vref.LogicalName}>__debug"
+
+            if not freeTyparsNeedWitnesses then
+                let debugValTy = mkForallTyIfNeeded freeTypars specLambdaTy
+                let debugValBody = mkTypeLambda m freeTypars (specLambdaR, specLambdaTy)
+
+                let debugVal =
+                    let argInfos, retInfo =
                         match vref.ValReprInfo with
-                        | Some(ValReprInfo(_, argInfos, retInfo)) ->
-                            Some(ValReprInfo([], argInfos, retInfo))
+                        | Some(ValReprInfo(_, argInfos, retInfo)) -> argInfos, retInfo
                         | None ->
-                            Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR)
-                    else
-                        None
+                            let (ValReprInfo(_, a, r)) =
+                                InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR
+                            a, r
+                    let valReprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, argInfos, retInfo)
 
-                Construct.NewVal(name, m, None, specLambdaTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
-                    NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
-                    ParentNone)
+                    Construct.NewVal(debugValName, m, None, debugValTy, Immutable, true, Some valReprInfo, taccessPublic, ValNotInRecScope, None,
+                        NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
+                        ParentNone)
 
-            let callExpr = mkApps g ((exprForVal m debugVal, specLambdaTy), [], argsR, m)
-            Some(mkCompGenLet m debugVal specLambdaR callExpr, info)
+                let callTyargs = freeTypars |> List.map mkTyparTy
+                let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), [callTyargs], argsR, m)
+                Some(mkCompGenLet m debugVal debugValBody callExpr, info)
+            else
+                let debugVal =
+                    Construct.NewVal(debugValName, m, None, specLambdaTy, Immutable, true, None, taccessPublic, ValNotInRecScope, None,
+                        NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
+                        ParentNone)
+
+                let callExpr = mkApps g ((exprForVal m debugVal, specLambdaTy), [], argsR, m)
+                Some(mkCompGenLet m debugVal specLambdaR callExpr, info)
 
         | _ -> None
     | _ ->

@@ -945,6 +945,97 @@ let monad' = MonadBuilder ()
         |> shouldSucceed
 
     [<Fact>]
+    let ``SRTP 24 - byref with free typar at callsite`` () =
+        FSharp """
+type MyBuilder<'T>() =
+    member _.M(a: byref<int>, b: byref<int>) = ()
+
+let inline callMember<'Builder, 'A
+    when 'Builder: (member M: byref<'A> * byref<'A> -> unit)>
+    (builder: 'Builder, a: byref<'A>) =
+    builder.M(&a, &a)
+
+let runDynamic (builder: MyBuilder<'T>) =
+    let mutable x = 0
+    callMember (builder, &x)
+
+[<EntryPoint>]
+let main _ =
+    runDynamic (MyBuilder<int>())
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       void Test::'<callMember>__debug@12'<!!0>(class Test/MyBuilder`1<!!0>,"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 25 - byref with free typar at callsite - large tuple`` () =
+        // F# represents tuples with 8+ elements as nested System.Tuple. When building a closure
+        // for such a call the compiler would otherwise pack args into a reference Tuple shape
+        // that cannot contain byrefs. The debug-call path must flatten to a method regardless
+        // of arity.
+        FSharp """
+type MyBuilder<'T>() =
+    member _.M(a1: byref<int>, a2: byref<int>, a3: byref<int>,
+               a4: byref<int>, a5: byref<int>, a6: byref<int>,
+               a7: byref<int>, a8: byref<int>) =
+        a1 <- 1
+
+let inline callMember<'Builder, 'A
+    when 'Builder: (member M: byref<'A> * byref<'A> * byref<'A> * byref<'A>
+                            * byref<'A> * byref<'A> * byref<'A> * byref<'A> -> unit)>
+    (builder: 'Builder,
+     a1: byref<'A>, a2: byref<'A>, a3: byref<'A>, a4: byref<'A>,
+     a5: byref<'A>, a6: byref<'A>, a7: byref<'A>, a8: byref<'A>) =
+    builder.M(&a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8)
+
+let runDynamic (builder: MyBuilder<'T>) =
+    let mutable x = 0
+    callMember (builder, &x, &x, &x, &x, &x, &x, &x, &x)
+
+[<EntryPoint>]
+let main _ =
+    runDynamic (MyBuilder<int>())
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       void Test::'<callMember>__debug@18'<!!0>(class Test/MyBuilder`1<!!0>,"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 26 - byref with free typar at callsite - three tupled args`` () =
+        FSharp """
+type MyBuilder<'T>() =
+    member _.M(a: byref<int>, b: byref<int>) = ()
+
+let inline callMember<'Builder, 'A
+    when 'Builder: (member M: byref<'A> * byref<'A> -> unit)>
+    (builder: 'Builder, a: byref<'A>, b: byref<'A>) =
+    builder.M(&a, &b)
+
+let runDynamic (builder: MyBuilder<'T>) =
+    let mutable x = 0
+    callMember (builder, &x, &x)
+
+[<EntryPoint>]
+let main _ =
+    runDynamic (MyBuilder<int>())
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       void Test::'<callMember>__debug@12'<!!0>(class Test/MyBuilder`1<!!0>,"]
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =
