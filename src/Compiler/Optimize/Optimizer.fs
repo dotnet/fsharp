@@ -3542,12 +3542,6 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline } specLambda
                     specLambdaR
 
-            let specLambdaR =
-                match specLambdaR with
-                | Expr.Lambda(uniq, a, b, c, d, _, ty) -> Expr.Lambda(uniq, a, b, c, d, m, ty)
-                | Expr.TyLambda(uniq, a, b, _, ty) -> Expr.TyLambda(uniq, a, b, m, ty)
-                | _ -> specLambdaR
-
             let debugVal =
                 let name = $"<{vref.LogicalName}>__debug"
                 // When tyargs have free type variables, omit ValReprInfo so IlxGen compiles this

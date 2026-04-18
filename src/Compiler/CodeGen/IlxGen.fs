@@ -7297,8 +7297,19 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let cloName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
+            // The closure name counter is keyed by (basicName, fileIndex). When an expression is copied
+            // from another file (e.g. specializing an inline function body across files), its ranges
+            // still point at the original file, so its closures fall into a different counter bucket
+            // than closures minted for the current file. Since all these closures live under the same
+            // enclosing type, that can produce two closures with the same final name. Bucket the counter
+            // by the enclosing type's file while keeping expr.Range's StartLine for the displayed name.
+            let nameRange =
+                if expr.Range.FileIndex = eenv.cloc.Range.FileIndex then
+                    expr.Range
+                else
+                    Range.mkFileIndexRange eenv.cloc.Range.FileIndex expr.Range.Start expr.Range.End
 
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, nameRange, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 

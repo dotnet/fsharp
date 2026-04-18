@@ -901,6 +901,50 @@ let main _ =
         |> shouldSucceed
 
     [<Fact>]
+    let ``SRTP 23 - Cross-file specialization with nested closures at same line`` () =
+        // Two specializations in wrap's body each contain nested closures whose ranges are in the
+        // other file. Without bucketing the closure-name counter by the enclosing type's file, the
+        // two nested closures end up with identical names ('wrap@12-1') and ilwrite rejects them
+        // with FS2014 duplicate entry in type index table.
+        let additionalSource = FsSourceWithFileName "Program.fs" """
+module Program
+open Module
+
+
+let inline wrap source =
+    let mutable state = false
+    monad' {
+        match state with
+        | true -> return false
+        | _ ->
+            let! _ = source
+            state <- true
+            return true }
+"""
+        FSharpWithFileName "Module.fs" """
+module Module
+type Bind =
+    static member inline Invoke (s: 'M) (b: 'T -> 'U) =
+        ((^M or ^U) : (static member (>>=) : _*_ -> _) s, b)
+
+type Return =
+    static member Return (_: 'T list, _: Return) : 'T -> 'T list = Unchecked.defaultof<_>
+    static member inline Invoke (x: 'T) =
+        (^A : (static member Return : 'T -> ^A) x)
+
+type MonadBuilder () =
+    member inline _.Return x = Return.Invoke x
+    member inline _.Bind (p, r) = Bind.Invoke p r
+let monad' = MonadBuilder ()
+"""
+        |> withAdditionalSourceFile additionalSource
+        |> withDebug
+        |> withNoOptimize
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =
