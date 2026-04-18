@@ -3487,8 +3487,13 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
 
-        let allTyargsAreGeneric =
-            tyargs |> List.forall (fun t -> not (freeInType CollectTyparsNoCaching t).FreeTypars.IsEmpty)
+        // Direct-calling an SRTP callee is only safe when every tyarg is a bare typar: then the
+        // callee's SRTP constraints land on the caller's own typars and IlxGen rewrites the
+        // call to the $W variant inside the caller's $W compilation context. Non-typar tyargs
+        // (e.g. MyBuilder<'T>) require static resolution of the trait, which the callee's
+        // non-$W stub cannot do, so those must go through the specialization path.
+        let allTyargsAreBareTypars =
+            tyargs |> List.forall (isTyparTy g)
 
         // When inside an inline function body being prepared for export (!cenv.optimizing),
         // only emit a direct call if the callee is publicly accessible. Non-public vals
@@ -3497,7 +3502,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         let isHiddenBySignature = cenv.signatureHidingInfo.HiddenVals.Contains vref.Deref
         let canCallDirectly =
             (cenv.optimizing || (vref.Accessibility.IsPublic && not isHiddenBySignature)) &&
-            (hasNoTraits || (allTyargsAreGeneric && vref.ValReprInfo.IsSome))
+            (hasNoTraits || (allTyargsAreBareTypars && vref.ValReprInfo.IsSome))
 
         let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
         let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }

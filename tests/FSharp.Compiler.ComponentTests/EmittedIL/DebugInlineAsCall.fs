@@ -1036,6 +1036,59 @@ let main _ =
         |> shouldSucceed
 
     [<Fact>]
+    let ``SRTP 27 - non-typar tyarg to SRTP callee - non-inline caller`` () =
+        // Non-typar tyargs (MyBuilder<'T>) cannot satisfy the callee's SRTP via witness
+        // propagation; they must go through the specialization path so the trait resolves
+        // statically to MyBuilder<T>.M.
+        FSharp """
+type MyBuilder<'T>() =
+    member _.M() = ()
+
+let inline callMember<'Builder when 'Builder: (member M: unit -> unit)> (builder: 'Builder) =
+    builder.M()
+
+let runDynamic (builder: MyBuilder<'T>) =
+    callMember builder
+
+[<EntryPoint>]
+let main _ =
+    runDynamic (MyBuilder<int>())
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       void Test::'<callMember>__debug@9'<!!0>(class Test/MyBuilder`1<!!0>)"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP 28 - non-typar tyarg to SRTP callee - inline caller`` () =
+        // Same pattern as SRTP 27 but the caller is itself inline. The non-$W variant of the
+        // inline caller would otherwise contain a direct call to the SRTP callee's non-$W
+        // stub and throw at runtime when invoked from non-inline code.
+        FSharp """
+type MyBuilder<'T>() =
+    member _.M() = ()
+
+let inline callMember<'Builder when 'Builder: (member M: unit -> unit)> (builder: 'Builder) =
+    builder.M()
+
+let inline outerInline<'T> (builder: MyBuilder<'T>) =
+    callMember builder
+
+[<EntryPoint>]
+let main _ =
+    outerInline (MyBuilder<int>())
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =
