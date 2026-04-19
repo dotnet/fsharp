@@ -856,6 +856,87 @@ type D() =
     member x.M(()) = ()
 """
 
+// Inverse direction 1: impl M(()) but consumer calls d.M() (no parens) — must fail with FS0503
+[<Fact>]
+let ``Unit param overload - consumer cannot call M() when impl is M(()) with overloads`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldFail
+    |> withErrorCode 503
+    |> ignore
+
+// Inverse direction 2: impl M() (no explicit unit), sig M: unit -> unit, consumer calls d.M()
+[<Fact>]
+let ``Unit param overload - consumer calls M() with normal impl and sig`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M() = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
 // Verify M(()) and M() produce identical IL method signatures
 [<Fact>]
 let ``Unit param - M(()) and M() produce same IL method signature`` () =
