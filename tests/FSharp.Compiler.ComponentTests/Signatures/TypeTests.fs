@@ -855,3 +855,20 @@ type D() =
     member x.M((y: R1)) = ()
     member x.M(()) = ()
 """
+
+// Verify M(()) and M() produce identical IL method signatures
+[<Fact>]
+let ``Unit param - M(()) and M() produce same IL method signature`` () =
+    FSharp """
+module Test
+type D() =
+    member x.M(()) = 1
+    member x.M(y: int) = y
+"""
+    |> compile
+    |> shouldSucceed
+    |> verifyILContains [
+        ".method public hidebysig instance int32 M() cil managed"
+        ".method public hidebysig instance int32 M(int32 y) cil managed"
+    ]
+    |> ignore
