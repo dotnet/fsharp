@@ -1,5 +1,10 @@
 {
-  "last_run": "2026-04-19T09:11:39Z",
-  "prs": {},
-  "note": "No open regression test PRs found with AI-Issue-Regression-PR label."
+  "last_run": "2026-04-19T13:22:38Z",
+  "prs": {
+    "19613": {
+      "status": "category_c_ci_running",
+      "last_check": "2026-04-19T13:22:38Z",
+      "note": "New PR, CI still in progress, no reviews. 6/31 checks completed (all success). Skip."
+    }
+  }
 }
