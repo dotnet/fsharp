@@ -232,7 +232,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:FSharpLangVersion=preview
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -268,7 +268,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testCoreclr -configuration Release
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -315,7 +315,7 @@ stages:
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -360,7 +360,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -396,7 +396,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -463,7 +463,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build and Test $(_testKind) $(transparentCompiler)
@@ -543,7 +543,7 @@ stages:
               buildEnv:
                 FSharp_CacheEvictionImmediate: true
                 DOTNET_DbgEnableMiniDump: 1
-                DOTNET_DbgMiniDumpType: 3
+                DOTNET_DbgMiniDumpType: 2
                 DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
                 NativeToolsOnMachine: true
               testRunTitlePrefix: 'WindowsCompressedMetadata testDesktop'
