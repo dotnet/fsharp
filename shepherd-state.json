@@ -1,12 +1,11 @@
 {
-  "last_run": "2026-04-20T17:19:04Z",
+  "last_run": "2026-04-20T21:10:43Z",
   "prs": {
     "19613": {
-      "status": "category_c_approved",
-      "last_check": "2026-04-20T17:19:04Z",
-      "ci_status": "all_45_passed",
-      "reviews": "approved_by_abonie_2026-04-20T13:29:22Z",
-      "note": "All 45 CI checks passed. Approved by abonie. mergeable_state=clean. Ready to merge by maintainer."
+      "status": "merged",
+      "merged_at": "2026-04-20T17:57:51Z",
+      "merged_by": "abonie",
+      "note": "Merged successfully. No longer tracked."
     }
   }
 }
