@@ -6569,6 +6569,7 @@ FSharp.Compiler.Syntax.PrettyNaming: Microsoft.FSharp.Collections.FSharpList`1[S
 FSharp.Compiler.Syntax.PrettyNaming: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryChopPropertyName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String CompileOpName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String ConvertValLogicalNameToDisplayNameCore(System.String)
+FSharp.Compiler.Syntax.PrettyNaming: System.String EscapeActivePatternCases(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String FormatAndOtherOverloadsString(Int32)
 FSharp.Compiler.Syntax.PrettyNaming: System.String FsiDynamicModulePrefix
 FSharp.Compiler.Syntax.PrettyNaming: System.String NormalizeIdentifierBackticks(System.String)

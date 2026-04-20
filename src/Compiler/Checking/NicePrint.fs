@@ -730,7 +730,8 @@ module PrintTypes =
         | _, _ -> squareAngleL (sepListL RightL.semicolon ((match kind with TyparKind.Type -> [] | TyparKind.Measure -> [wordL (tagText "Measure")]) @ List.map (layoutAttrib denv) attrs)) ^^ restL
 
     and layoutTyparRef denv (typar: Typar) =
-        let name = NormalizeIdentifierBackticks (typar.DeclaredName |> Option.defaultValue typar.Name)
+        let rawName = typar.DeclaredName |> Option.defaultValue typar.Name
+        let name = if System.String.IsNullOrEmpty rawName then rawName else NormalizeIdentifierBackticks rawName
         tagTypeParameter 
             (sprintf "%s%s%s"
                 (if denv.showStaticallyResolvedTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
@@ -1543,6 +1544,11 @@ module PrintTastMemberOrVals =
             if isTyFunction || isOverGeneric || denv.showTyparBinding || typarOrderMismatch || hasStaticallyResolvedTypars then 
                 layoutTyparDecls denv nameL true tps 
             else nameL
+        // When SRTP method typars are shown on explicit type param declarations, exclude their constraints from postfix
+        let cxs =
+            if hasStaticallyResolvedTypars then
+                cxs |> List.filter (fun (tp, _) -> tp.StaticReq <> TyparStaticReq.HeadType)
+            else cxs
         let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- layoutTopType denv env argInfos retTy cxs
         let valAndTypeL =
             match denv.generatedValueLayout v with
