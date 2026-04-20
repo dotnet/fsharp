@@ -387,7 +387,7 @@ module CustomAttributes_Basic =
         compilation
         |> verifyCompile
         |> shouldFail
-        |> withSingleDiagnostic (Error 3890, Line 7, Col 6, Line 7, Col 36, "LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.")
+        |> withSingleDiagnostic (Error 3889, Line 7, Col 6, Line 7, Col 36, "LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.")
 
     [<Fact>]
     let ``StructLayoutAttribute has size=1 for struct DUs with no instance fields`` () =
