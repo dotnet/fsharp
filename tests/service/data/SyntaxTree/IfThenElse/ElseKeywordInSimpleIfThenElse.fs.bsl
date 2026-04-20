@@ -12,7 +12,7 @@ ImplFile
                                 ThenKeyword = (2,5--2,9)
                                 ElseKeyword = Some (2,12--2,16)
                                 IfToThenRange = (2,0--2,9) }), (2,0--2,18))],
-          PreXmlDocEmpty, [], None, (2,0--2,18), { LeadingKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
                       CodeComments = [] }, set []))

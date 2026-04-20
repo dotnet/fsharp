@@ -14,7 +14,7 @@ ImplFile
                    ThenKeyword = (1,5--1,9)
                    ElseKeyword = None
                    IfToThenRange = (1,0--1,9) }), (1,0--1,9));
-           Expr (Ident b, (2,0--2,1))], PreXmlDocEmpty, [], None, (1,0--2,1),
+           Expr (Ident b, (2,0--2,1))], PreXmlDocEmpty, [], None, (1,0--3,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []

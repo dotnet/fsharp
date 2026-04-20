@@ -39,7 +39,7 @@ ImplFile
                      Range = (3,4--5,6)
                      Trivia = { InKeyword = Some (4,15--4,17) }
                      IsFromSource = true }, (2,0--5,6)), (2,0--5,6))],
-          PreXmlDocEmpty, [], None, (2,0--5,6), { LeadingKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--6,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
                       CodeComments = [] }, set []))

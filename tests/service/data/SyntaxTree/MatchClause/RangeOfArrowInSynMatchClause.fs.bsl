@@ -17,7 +17,7 @@ ImplFile
                                          BarRange = Some (3,0--3,1) })],
                  (2,0--3,15), { MatchKeyword = (2,0--2,5)
                                 WithKeyword = (2,10--2,14) }), (2,0--3,15))],
-          PreXmlDocEmpty, [], None, (2,0--3,15), { LeadingKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
                       CodeComments = [] }, set []))

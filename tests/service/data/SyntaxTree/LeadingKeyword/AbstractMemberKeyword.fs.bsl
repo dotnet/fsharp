@@ -36,7 +36,7 @@ ImplFile
                   (2,5--3,27), { LeadingKeyword = Type (2,0--2,4)
                                  EqualsRange = Some (2,7--2,8)
                                  WithKeyword = None })], (2,0--3,27))],
-          PreXmlDocEmpty, [], None, (2,0--3,27), { LeadingKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
                       CodeComments = [] }, set []))

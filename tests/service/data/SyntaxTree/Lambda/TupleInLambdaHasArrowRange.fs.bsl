@@ -39,7 +39,7 @@ ImplFile
                              None, (2,16--2,17)), Ident x, (2,14--2,17)),
                        Const (Int32 3, (2,18--2,19)), (2,14--2,19))),
                  (2,0--2,19), { ArrowRange = Some (2,11--2,13) }), (2,0--2,19))],
-          PreXmlDocEmpty, [], None, (2,0--2,19), { LeadingKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
                       CodeComments = [] }, set []))

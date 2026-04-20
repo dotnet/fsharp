@@ -21,7 +21,7 @@ ImplFile
                    ThenKeyword = (1,5--1,9)
                    ElseKeyword = Some (3,0--3,4)
                    IfToThenRange = (1,0--1,9) }), (1,0--4,5))], PreXmlDocEmpty,
-          [], None, (1,0--4,5), { LeadingKeyword = None })], (true, true),
+          [], None, (1,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [BlockComment (3,5--3,33)] }, set []))

@@ -616,12 +616,7 @@ fileModuleSpec:
     { let m = (rhs parseState 1)
       (fun (mNamespaceOpt, isRec, path, xml) ->
         match path with
-        | [] ->
-            let m =
-                match List.tryLast $1 with
-                | Some lastDecl -> Range.withEnd lastDecl.Range.End m
-                | None -> m
-            ParsedSigFileFragment.AnonModule($1, m)
+        | [] -> ParsedSigFileFragment.AnonModule($1, m)
         | _ ->
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = withStart (lhs parseState).Start lastDeclRange
@@ -1205,13 +1200,7 @@ fileModuleImpl:
     { let m = (rhs parseState 1)
       (fun (mNamespaceOpt, isRec, path, xml) ->
         match path, mNamespaceOpt with
-        | [], None ->
-            // Use last declaration's end to avoid the range being extended to the OBLOCKEND/EOF position
-            let m =
-                match List.tryLast $1 with
-                | Some lastDecl -> Range.withEnd lastDecl.Range.End m
-                | None -> m
-            ParsedImplFileFragment.AnonModule($1, m)
+        | [], None -> ParsedImplFileFragment.AnonModule($1, m)
         | _ ->
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = withStart (lhs parseState).Start lastDeclRange

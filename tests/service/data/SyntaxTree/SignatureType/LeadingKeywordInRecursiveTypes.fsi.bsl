@@ -29,7 +29,7 @@ SigFile
                   { LeadingKeyword = And (3,0--3,3)
                     EqualsRange = Some (3,6--3,7)
                     WithKeyword = None })], (2,0--3,11))], PreXmlDocEmpty, [],
-          None, (2,0--3,11), { LeadingKeyword = None })],
+          None, (2,0--4,0), { LeadingKeyword = None })],
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

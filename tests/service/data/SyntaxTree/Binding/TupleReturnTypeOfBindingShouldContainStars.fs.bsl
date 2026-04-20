@@ -77,7 +77,7 @@ ImplFile
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
                     EqualsRange = Some (3,28--3,29) })], (3,0--3,42),
-              { InKeyword = None })], PreXmlDocEmpty, [], None, (2,0--3,42),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (2,0--4,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []

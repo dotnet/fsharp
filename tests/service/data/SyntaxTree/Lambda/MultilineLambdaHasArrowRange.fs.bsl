@@ -70,7 +70,7 @@ ImplFile
                              Ident y, (4,32--4,37)), (4,32--4,39)), Ident z,
                        (4,32--4,41))), (2,0--4,41),
                  { ArrowRange = Some (3,28--3,30) }), (2,0--4,41))],
-          PreXmlDocEmpty, [], None, (2,0--4,41), { LeadingKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
                       CodeComments = [] }, set []))
