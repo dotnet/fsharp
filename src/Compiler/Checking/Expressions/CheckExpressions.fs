@@ -6174,7 +6174,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.WhileBang (range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
-
     | SynExpr.IndexFromEnd (rightExpr, m) ->
         errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
         let adjustedExpr = ParseHelpers.adjustHatPrefixToTyparLookup m rightExpr
