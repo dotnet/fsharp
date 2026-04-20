@@ -310,7 +310,7 @@ do
         |> withDiagnostics [
             (Warning 20, Line 5, Col 5, Line 5, Col 23,
              "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
-            (Warning 20, Line 5, Col 5, Line 6, Col 6,
+            (Warning 20, Line 6, Col 5, Line 6, Col 6,
              "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]
 
