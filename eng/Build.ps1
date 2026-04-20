@@ -66,7 +66,6 @@ param (
     [switch]$testpack,
     [switch]$testAOT,
     [switch]$testEditor,
-    [switch]$testBenchmarks,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch][Alias('pb')]$productBuild,
@@ -132,7 +131,6 @@ function Print-Usage() {
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -testEditor                   Run VS Editor tests"
-    Write-Host "  -testBenchmarks               Build and Run Benchmark suite"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -215,7 +213,6 @@ function Process-Arguments() {
         $script:testVs = $False
         $script:testpack = $False
         $script:testAOT = $False
-        $script:testBenchmarks = $False
         $script:verifypackageshipstatus = $True
     }
 
@@ -253,10 +250,6 @@ function Process-Arguments() {
 
     if ($testAOT) {
         $script:pack = $True;
-    }
-
-    if ($testBenchmarks) {
-        $script:testBenchmarks = $True
     }
 
     foreach ($property in $properties) {
@@ -382,8 +375,8 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
     
-    # MTP requires --solution flag for .sln files
-    $testTarget = if ($testProject.EndsWith('.sln')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
+    # MTP requires --solution flag for .sln/.slnx files
+    $testTarget = if ($testProject.EndsWith('.sln') -or $testProject.EndsWith('.slnx')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
     
     # Xunit XML report via XunitXml.TestLogger with CI-friendly filenames
     $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
@@ -573,30 +566,26 @@ try {
         $originalSignValue = $sign
         $originalPublishValue = $publish
         if ($msbuildEngine -eq "dotnet") {
-            # Building FSharp.sln and VisualFSharp.sln with .NET Core MSBuild
+            # Building FSharp.slnx and VisualFSharp.slnx with .NET Core MSBuild
             # don't produce any artifacts to sign. Skip signing in this case.
             $sign = $False
         }
         if ($noVisualStudio) {
-            BuildSolution "FSharp.sln" $False
+            BuildSolution "FSharp.slnx" $False
         }
         else {
             # vsixes do not count as publishing artifacts from Arcade perspective, and arcade publish.proj is failing when it encounters 0 items to publish.
             $publish = $False
-            BuildSolution "VisualFSharp.sln" $False
+            BuildSolution "VisualFSharp.slnx" $False
         }
         $sign = $originalSignValue
         $publish = $originalPublishValue
     }
 
-    if ($testBenchmarks) {
-        BuildSolution "FSharp.Benchmarks.sln" $False
-    }
-
     # When building in product build mode, only build the compiler solution.
     if ($pack -or $productBuild) {
         $properties_storage = $properties
-        BuildSolution "Microsoft.FSharp.Compiler.sln" $True
+        BuildSolution "src\Microsoft.FSharp.Compiler\Microsoft.FSharp.Compiler.fsproj" $True
         $properties = $properties_storage
     }
 
@@ -608,7 +597,7 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework
+        TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:coreclrTargetFramework
     }
 
     if ($testDesktop) {
@@ -630,7 +619,7 @@ try {
             }
             if ($matchCount -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
         } else {
-            TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
+            TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:desktopTargetFramework
         }
     }
 
@@ -683,12 +672,6 @@ try {
     if ($testAOT) {
         Push-Location "$RepoRoot\tests\AheadOfTime"
         ./check.ps1
-        Pop-Location
-    }
-
-    if ($testBenchmarks) {
-        Push-Location "$RepoRoot\tests\benchmarks"
-        ./SmokeTestBenchmarks.ps1
         Pop-Location
     }
 

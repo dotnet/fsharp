@@ -5,6 +5,7 @@ trigger:
     - main
     - dev16.1
     - feature/*
+    - feature*
     - release/*
   paths:
     include:
@@ -31,6 +32,7 @@ pr:
     - main
     - dev16.1
     - feature/*
+    - feature*
     - release/*
   paths:
     include:
@@ -240,7 +242,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -286,7 +288,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -332,7 +334,7 @@ stages:
             displayName: Publish Build BinLog
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -368,7 +370,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -404,7 +406,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -481,7 +483,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: Windows $(_configuration) $(_testKind) $(transparentCompiler) test binlogs
                 ArtifactType: Container
                 parallel: true
@@ -547,7 +549,7 @@ stages:
               testRunTitlePrefix: 'WindowsCompressedMetadata testDesktop'
               artifactNamePrefix: 'Windows testDesktop'
               publishBinLog: true
-              binLogPath: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+              binLogPath: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
               publishDumps: true
 
         # Mock official build
@@ -708,9 +710,9 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
             condition: always()
 
@@ -727,9 +729,9 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
             condition: always()
 
@@ -745,26 +747,10 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
-            condition: always()
-
-        # Build and run fast benchmarks
-        - job: Benchmarks
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          variables:
-          - name: _BuildConfig
-            value: Release
-          steps:
-          - checkout: self
-            clean: true
-          - script: eng\CIBuild.cmd -configuration $(_BuildConfig) -testBenchmarks
-            displayName: Smoke test fast benchmarks
-            continueOnError: true
             condition: always()
 
         # Test trimming on Windows

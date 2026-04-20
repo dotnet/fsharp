@@ -26,6 +26,7 @@ namespace Foo.Types
   type Area = | Area of string * int
 namespace Foo.Other
 
+  [<Class>]
   type Map<'t,'v> =
 
     member Calculate: Foo.Types.Area"""
@@ -45,6 +46,7 @@ type Foo =
         """
 namespace Hey.There
 
+  [<Class>]
   type Foo =
 
     static member Zero: Foo"""
@@ -183,6 +185,18 @@ do ()
 namespace Foo
 namespace Bar"""
 
+// https://github.com/dotnet/fsharp/issues/13832
+[<Fact>]
+let ``Recursive module with do binding`` () =
+    FSharp
+        """
+module rec Foobar
+
+do ()
+"""
+    |> printSignatures
+    |> assertEqualIgnoreLineEnding "\nmodule Foobar"
+
 [<Fact>]
 let ``Empty namespace module`` () =
     FSharp
@@ -250,3 +264,115 @@ namespace FSharp.MyStuff
   module Library =
 
     val batch: s: FSharp.Control.AsyncSeq<'t> -> FSharp.Control.AsyncSeq<'t>"""
+
+// https://github.com/dotnet/fsharp/issues/13810
+[<Fact>]
+let ``Literal value in attribute uses literal name`` () =
+    FSharp
+        """
+module Maybe
+
+open System.ComponentModel
+
+[<Literal>]
+let A = "A"
+
+module SubModule =
+    type Foo() =
+        [<Category(A)>]
+        member this.Meh () = ()
+"""
+    |> printSignatures
+    |> prependNewline
+    |> assertEqualIgnoreLineEnding
+        """
+
+module Maybe
+
+[<Literal>]
+val A: string = "A"
+
+module SubModule =
+
+  type Foo =
+
+    new: unit -> Foo
+
+    [<System.ComponentModel.Category (A)>]
+    member Meh: unit -> unit"""
+
+// https://github.com/dotnet/fsharp/issues/13810
+[<Fact>]
+let ``Multiple literal values in attribute tuple args use literal names`` () =
+    let actual =
+        FSharp
+            """
+module TestMod
+
+open System
+
+[<AttributeUsage(AttributeTargets.All)>]
+type TwoArgAttribute(a: string, b: string) =
+    inherit Attribute()
+
+[<Literal>]
+let First = "first"
+
+[<Literal>]
+let Second = "second"
+
+type Foo() =
+    [<TwoArg(First, Second)>]
+    member _.Bar() = ()
+"""
+        |> printSignatures
+
+    // The attribute argument line should show literal names, not constant values
+    let attrLine = actual.Split('\n') |> Array.find (fun l -> l.Contains("TwoArg") && l.Contains("[<"))
+    Assert.Contains("First", attrLine)
+    Assert.Contains("Second", attrLine)
+    Assert.DoesNotContain("\"first\"", attrLine)
+    Assert.DoesNotContain("\"second\"", attrLine)
+
+// https://github.com/dotnet/fsharp/issues/13810 — known limitation:
+// Qualified literal references (e.g. Module.Literal) are not recovered;
+// the constant value is shown instead.
+[<Fact>]
+let ``Qualified literal in attribute shows constant value`` () =
+    FSharp
+        """
+module TestMod
+
+open System.ComponentModel
+
+module Constants =
+    [<Literal>]
+    let A = "QualifiedValue"
+
+type Foo() =
+    [<Category(Constants.A)>]
+    member this.Meh () = ()
+"""
+    |> printSignatures
+    |> prependNewline
+    |> fun actual ->
+        // Qualified literal refs are not recovered — constant value is shown
+        Assert.Contains("QualifiedValue", actual)
+
+// https://github.com/dotnet/fsharp/issues/15389
+[<Fact>]
+let ``Backtick in identifier is properly escaped in signature`` () =
+    FSharp
+        """
+module Foo
+
+let ```a` b`` (a:int) (b:int) = ()
+"""
+    |> printSignatures
+    |> prependNewline
+    |> assertEqualIgnoreLineEnding
+        """
+
+module Foo
+
+val ```a` b`` : a: int -> b: int -> unit"""
