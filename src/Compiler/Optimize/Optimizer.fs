@@ -3564,7 +3564,27 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
             let debugValName = $"<{vref.LogicalName}>__debug"
 
-            if not freeTyparsNeedWitnesses then
+            // The closure form wraps tupled args in a reference Tuple<> and cannot hold byrefs.
+            // When byrefs appear in the specialized call shape and the closure path is our only
+            // option (witnesses required), skip specialization entirely and let the outer pass
+            // emit a regular call - IlxGen handles $W witness rewriting inside inline callers.
+            let specArgsHaveByref =
+                let rec check ty =
+                    match tryDestFunTy g ty with
+                    | ValueSome(argTy, retTy) ->
+                        let argHasByref =
+                            if isRefTupleTy g argTy then
+                                destRefTupleTy g argTy |> List.exists (isByrefTy g)
+                            else
+                                isByrefTy g argTy
+                        argHasByref || check retTy
+                    | ValueNone -> false
+
+                check specLambdaTy
+
+            if freeTyparsNeedWitnesses && specArgsHaveByref then
+                None
+            elif not freeTyparsNeedWitnesses then
                 let debugValTy = mkForallTyIfNeeded freeTypars specLambdaTy
                 let debugValBody = mkTypeLambda m freeTypars (specLambdaR, specLambdaTy)
 

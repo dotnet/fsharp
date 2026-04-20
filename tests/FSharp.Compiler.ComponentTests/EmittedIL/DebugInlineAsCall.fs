@@ -1089,6 +1089,52 @@ let main _ =
         |> shouldSucceed
 
     [<Fact>]
+    let ``SRTP 29 - byref callee under SRTP witnesses, nested in delegate bodies`` () =
+        // The specialized callee shape has byref in a tupled-arg position and the enclosing
+        // scope needs a trait witness. Neither a byref-bearing closure (invalid System.Tuple
+        // instantiation) nor a non-$W stub method works here, so the optimizer must leave the
+        // call as-is and let IlxGen's $W rewriting pick up the witness from the inline caller.
+        FSharp """
+type Aw(value: int) =
+    member _.GetResult() = value
+
+type Code<'T> = delegate of byref<'T> -> unit
+
+let inline bindDynamic<'TResult1, 'TOverall, 'Awaiter
+    when 'Awaiter: (member GetResult: unit -> 'TResult1)>
+    (d: byref<'TOverall>, awaiter: 'Awaiter, continuation: 'TResult1 -> Code<'TOverall>) =
+    (continuation (awaiter.GetResult())).Invoke(&d)
+
+let inline wrap<'T1, 'T2, 'Awaiter1, 'Awaiter2
+    when 'Awaiter1: (member GetResult: unit -> 'T1)
+    and 'Awaiter2: (member GetResult: unit -> 'T2)>
+    (left: 'Awaiter1) (right: 'Awaiter2) : Code<'T1 * 'T2> =
+    Code<'T1 * 'T2>(fun d ->
+        bindDynamic (&d, left, fun leftR ->
+            Code<'T1 * 'T2>(fun d2 ->
+                bindDynamic (&d2, right, fun rightR ->
+                    Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR))))))
+
+[<EntryPoint>]
+let main _ =
+    let code = wrap (Aw(1)) (Aw(2))
+    let mutable result = (0, 0)
+    code.Invoke(&result)
+    printfn "Result = %A" result
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains
+            [ "call       void Test::'<bindDynamic>__debug@17'(class [runtime]System.Tuple`2<int32,int32>&,"
+              "call       void Test::'<bindDynamic>__debug@19-1'(class [runtime]System.Tuple`2<int32,int32>&,"
+              "call       class Test/Code`1<class [runtime]System.Tuple`2<int32,int32>> Test::'<wrap>__debug@24'(class Test/Aw," ]
+        |> shouldSucceed
+        |> withStdOutContains "Result = (1, 2)"
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =
