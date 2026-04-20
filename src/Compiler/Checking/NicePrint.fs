@@ -561,8 +561,10 @@ module PrintTypes =
     /// Layout a single attribute arg, following the cases of 'gen_attr_arg' in ilxgen.fs
     /// This is the subset of expressions we display in the NicePrint pretty printer 
     /// See also dataExprL - there is overlap between these that should be removed 
-    let rec layoutAttribArg denv arg = 
-        match arg with 
+    let rec layoutAttribArg denv arg =
+        match arg with
+        | Expr.Val (vref, _, _) when vref.LiteralValue.IsSome -> wordL (tagLocal vref.DisplayName)
+
         | Expr.Const (c, _, ty) -> 
             if isEnumTy denv.g ty then 
                 WordL.keywordEnum ^^ angleL (layoutType denv ty) ^^ bracketL (layoutConst denv.g ty c)
@@ -1986,6 +1988,47 @@ module TastDefinitionPrinting =
         let isMeasure = (tycon.TypeOrMeasureKind = TyparKind.Measure)
         let ty = generalizedTyconRef g tcref 
 
+        // Augment tycon.Attribs with synthetic [<NoComparison>] / [<NoEquality>] when the type
+        // is a candidate for comparison/equality augmentation but augmentation was not generated
+        // (e.g. struct with non-comparable fields). This ensures generated signatures compile. (#15339)
+        let augmentedAttribs =
+            let isTrueFSharpStruct =
+                tycon.IsFSharpStructOrEnumTycon && not tycon.IsFSharpEnumTycon
+
+            // Only structs need synthetic NoComparison/NoEquality in signatures.
+            // Reference types (records, unions) compile fine without them.
+            let canBeAugmentedWithCompare = isTrueFSharpStruct
+            let canBeAugmentedWithEquals = isTrueFSharpStruct
+
+            let mkSyntheticCoreAttrib (attrName: string) =
+                let fsharpCorePath = [| "Microsoft"; "FSharp"; "Core" |]
+                let attrTcref = mkNonLocalTyconRef (mkNonLocalEntityRef g.fslibCcu fsharpCorePath) attrName
+
+                let ilTypeRef =
+                    ILTypeRef.Create(g.ilg.fsharpCoreAssemblyScopeRef, [], "Microsoft.FSharp.Core." + attrName)
+
+                let ilMethodRef =
+                    ILMethodRef.Create(ilTypeRef, ILCallingConv.Instance, ".ctor", 0, [], ILType.Void)
+
+                Attrib(attrTcref, ILAttrib ilMethodRef, [], [], false, None, Range.range0)
+
+            let mutable attribs = tycon.Attribs
+
+            if canBeAugmentedWithCompare
+               && not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoComparisonAttribute tycon)
+               && not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.CustomComparisonAttribute tycon)
+               && tycon.GeneratedCompareToValues.IsNone then
+                attribs <- mkSyntheticCoreAttrib "NoComparisonAttribute" :: attribs
+
+            if canBeAugmentedWithEquals
+               && not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tycon)
+               && not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.CustomEqualityAttribute tycon)
+               && not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.ReferenceEqualityAttribute tycon)
+               && tycon.GeneratedHashAndEqualsValues.IsNone then
+                attribs <- mkSyntheticCoreAttrib "NoEqualityAttribute" :: attribs
+
+            attribs
+
         let start, tagger =
             if isStructTy g ty && not tycon.TypeAbbrev.IsSome then
                 // Always show [<Struct>] whether verbose or not
@@ -1998,7 +2041,7 @@ module TastDefinitionPrinting =
             elif isMeasure then
                 None, tagClass
             elif isClassTy g ty then
-                if denv.printVerboseSignatures then
+                if denv.showAttributes then
                     (if simplified then None else Some "class"), tagClass
                 else
                     None, tagClass
@@ -2009,17 +2052,17 @@ module TastDefinitionPrinting =
             if isFirstType then
                 WordL.keywordType
             else
-                wordL (tagKeyword "and") ^^ layoutAttribs denv start false tycon.TypeOrMeasureKind tycon.Attribs emptyL
+                wordL (tagKeyword "and") ^^ layoutAttribs denv start false tycon.TypeOrMeasureKind augmentedAttribs emptyL
 
         let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayNameCore
-
-        let nameL = layoutAccessibility denv tycon.Accessibility nameL
-        let denv = denv.AddAccessibility tycon.Accessibility 
 
         let lhsL =
             let tps = tycon.TyparsNoRange
             let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
+            let tpsL = layoutAccessibility denv tycon.Accessibility tpsL
             typewordL ^^ tpsL
+
+        let denv = denv.AddAccessibility tycon.Accessibility
 
 
         let sortKey (minfo: MethInfo) = 
@@ -2197,15 +2240,15 @@ module TastDefinitionPrinting =
         let needsStartEnd =
             match start with 
             | Some "class" ->
+                // When allDecls is empty, the repr layout produces 'class end' which is sufficient
+                not (isNil allDecls) &&
                 // 'inherits' is not enough for F# type kind inference to infer a class
                 // inherits.IsEmpty &&
                 ilFields.IsEmpty &&
                 // 'abstract' is not enough for F# type kind inference to infer a class by default in signatures
                 // 'static member' is surprisingly not enough for F# type kind inference to infer a class by default in signatures
                 // 'overrides' is surprisingly not enough for F# type kind inference to infer a class by default in signatures
-                //(meths |> List.forall (fun m -> m.IsAbstract || m.IsDefiniteFSharpOverride || not m.IsInstance)) &&
-                //(props |> List.forall (fun m -> (not m.HasGetter || m.GetterMethod.IsAbstract))) &&
-                //(props |> List.forall (fun m -> (not m.HasSetter || m.SetterMethod.IsAbstract))) &&
+                // Concrete instance methods and properties are also not enough (Error 938)
                 ctors.IsEmpty &&
                 instanceVals.IsEmpty &&
                 staticVals.IsEmpty
@@ -2384,7 +2427,7 @@ module TastDefinitionPrinting =
                 |> addLhs
 
         typeDeclL 
-        |> fun tdl -> if isFirstType then layoutAttribs denv start false tycon.TypeOrMeasureKind tycon.Attribs tdl else tdl
+        |> fun tdl -> if isFirstType then layoutAttribs denv start false tycon.TypeOrMeasureKind augmentedAttribs tdl else tdl
         |> layoutXmlDocOfEntity denv infoReader tcref 
 
     // Layout: exception definition
@@ -2551,7 +2594,7 @@ module InferredSigPrinting =
         let rec imdefsL denv x = aboveListL (x |> List.map (imdefL denv))
 
         and imdefL denv x = 
-            let filterVal (v: Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo
+            let filterVal (v: Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo && not (v.LogicalName.StartsWithOrdinal("doval@"))
             let filterExtMem (v: Val) = v.IsExtensionMember
 
             match x with 

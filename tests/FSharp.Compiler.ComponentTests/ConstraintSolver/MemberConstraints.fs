@@ -114,6 +114,34 @@ ignore ["1" .. "42"]
         |> withSingleDiagnostic
             (Error 1, Line 2, Col 9, Line 2, Col 12, "The type 'string' does not support the operator 'op_Range'")
 
+    // https://github.com/dotnet/fsharp/issues/12386
+    [<Fact>]
+    let ``Issue 12386 - SRTP trait call should resolve correct overload at runtime`` () =
+        FSharp
+            """
+type A =
+    | A
+    static member ($) (A, _a: float) = 0.0
+    static member ($) (A, _a: decimal) = 0M
+    static member ($) (A, _a: 't) = 0
+
+let inline call x = ($) A x
+
+[<EntryPoint>]
+let main _ =
+    let resultFloat = call 42.0
+    let resultDecimal = call 42M
+    let resultInt = call 42
+    if resultFloat <> 0.0 then failwithf "Expected 0.0 but got %A" resultFloat
+    if resultDecimal <> 0M then failwithf "Expected 0M but got %A" resultDecimal
+    if resultInt <> 0 then failwithf "Expected 0 but got %A" resultInt
+    printfn "All SRTP overload resolutions correct"
+    0
+            """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
     // https://github.com/dotnet/fsharp/issues/6648
     [<Fact>]
     let ``Issue 6648 - DU of DUs with inline static members should compile`` () =
@@ -145,6 +173,23 @@ type UnionOfUnions<'T> =
         | ParentCase1 x, ParentCase1 y -> x - y |> ParentCase1
         | ParentCase2 x, ParentCase2 y -> x - y |> ParentCase2
         | _ -> failwith "mismatch"
+            """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/9878
+    [<Fact>]
+    let ``Issue 9878 - SRTP with phantom type parameter should compile`` () =
+        FSharp
+            """
+type DuCaseName<'T> =
+    static member ToCaseName<'t, 'u>(value: 't) = failwith "delayed resolution"
+    static member ToCaseName(value: 'T) =
+        match FSharp.Reflection.FSharpValue.GetUnionFields(value, typeof<'T>) with case, _ -> case.Name
+    static member inline Invoke(value: 'a) =
+        let inline call (other: ^M, value: ^I) = ((^M or ^I) : (static member ToCaseName: ^I -> string) value)
+        call (Unchecked.defaultof<DuCaseName<_>>, value)
             """
         |> asLibrary
         |> typecheck
