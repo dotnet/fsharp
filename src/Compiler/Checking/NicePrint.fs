@@ -1539,7 +1539,8 @@ module PrintTastMemberOrVals =
 
         let hasStaticallyResolvedTypars =
             tps |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType) &&
-            not (IsLogicalOpName v.LogicalName)
+            not (IsLogicalOpName v.LogicalName) &&
+            not denv.shortConstraints
         let typarBindingsL = 
             if isTyFunction || isOverGeneric || denv.showTyparBinding || typarOrderMismatch || hasStaticallyResolvedTypars then 
                 layoutTyparDecls denv nameL true tps 
