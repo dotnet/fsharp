@@ -1687,8 +1687,9 @@ type LexFilterImpl (
 
                 if nextTokenStartPos.Line = tokenStartPos.Line then
                     // When the body expression starts on the same line as the 'in' keyword in light syntax,
-                    // push a new seq block to limit the body scope to that line. This prevents the parser
-                    // from greedily capturing all subsequent lines as part of the let body.
+                    // push a new seq block anchored at the body's start column. Offside rules then limit
+                    // the body to the indented block starting on this line, preventing the parser from
+                    // greedily capturing subsequent lines at lower indentation as part of the let body.
                     pushCtxtSeqBlock tokenTup AddBlockEnd
                 else
                     // Body starts on a new line after 'in' — the user intentionally placed the body
