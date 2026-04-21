@@ -102,8 +102,6 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
 let isExpandVar g (v: Val) = 
     isReturnsResumableCodeTy g v.TauType
 
-let isStateMachineBindingVar g (v: Val) = isExpandVar g v
-
 type env = 
     { 
       ResumableCodeDefns: ValMap<Expr>
@@ -120,7 +118,7 @@ type env =
 let rec IsStateMachineExpr g overallExpr = 
     match overallExpr with
     // 'let' binding of initial code
-    | Expr.Let (defn, bodyExpr, m, _) when isStateMachineBindingVar g defn.Var -> 
+    | Expr.Let (defn, bodyExpr, m, _) when isExpandVar g defn.Var -> 
         match IsStateMachineExpr g bodyExpr with
         | None -> None
         | Some altExpr as r ->
@@ -171,7 +169,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
 
         match expr with
         // Bind 'let __expand_ABC = bindExpr in bodyExpr'
-        | Expr.Let (defn, bodyExpr, _, _) when isStateMachineBindingVar g defn.Var -> 
+        | Expr.Let (defn, bodyExpr, _, _) when isExpandVar g defn.Var -> 
             if sm_verbose then printfn "binding %A --> %A..." defn.Var defn.Expr
             let envR = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add defn.Var defn.Expr }
             BindResumableCodeDefinitions envR bodyExpr
