@@ -1895,7 +1895,8 @@ module Array =
 
     /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
     ///
-    /// <remarks>Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
+    /// <remarks>Returns the first maximal element of the array if there are multiple equal maximum elements.
+    /// Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
     ///
     /// <param name="projection">The function to transform the elements into a type supporting comparison.</param>
     /// <param name="array">The input array.</param>
@@ -1958,7 +1959,8 @@ module Array =
 
     /// <summary>Returns the lowest of all elements of the array, compared via Operators.min on the function result.</summary>
     ///
-    /// <remarks>Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
+    /// <remarks>Returns the first minimal element of the array if there are multiple equal minimal elements.
+    /// Throws ArgumentException for empty arrays. This is an O(n) operation, where n is the length of the array.</remarks>
     ///
     /// <param name="projection">The function to transform the elements into a type supporting comparison.</param>
     /// <param name="array">The input array.</param>

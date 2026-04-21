@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -113,9 +103,7 @@
       IL_0008:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32> 
-            get_F() cil managed
+    .method public hidebysig specialname instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32>  get_F() cil managed
     {
       
       .maxstack  3

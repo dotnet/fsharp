@@ -66,12 +66,12 @@ build.cmd -test -c Release
 After you build the first time you can open and use this solution in Visual Studio:
 
 ```shell
-.\VisualFSharp.sln
+.\VisualFSharp.slnx
 ```
 
 If you don't have everything installed yet, you'll get prompted by Visual Studio to install a few more things. This is because we use a `.vsconfig` file that specifies all our dependencies.
 
-If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
+If you are just developing the core compiler and library then building ``FSharp.slnx`` will be enough.
 
 We recommend installing the latest Visual Studio preview and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
@@ -84,7 +84,7 @@ You'll need to pass an additional flag to the build script:
 build.cmd -noVisualStudio
 ```
 
-You can open `FSharp.sln` in your editor of choice.
+You can open `FSharp.slnx` in your editor of choice.
 
 ## Developing on Linux or macOS
 
@@ -100,7 +100,7 @@ Running tests:
 ./build.sh --test
 ```
 
-You can then open `FSharp.sln` in your editor of choice.
+You can then open `FSharp.slnx` in your editor of choice.
 
 ## Working with non-released .NET SDKs
 
@@ -141,7 +141,7 @@ After running the setup script once to install the SDK, you can use regular `dot
 
 2. **Regular dotnet commands** (after SDK installation):
    ```shell
-   dotnet build FSharp.Compiler.Service.sln
+   dotnet build FSharp.Compiler.Service.slnx
    dotnet test tests/FSharp.Compiler.Service.Tests/
    ```
 
@@ -422,23 +422,15 @@ Use the `Debug` configuration to test your changes locally. It is the default. D
 
 ### Benchmarking
 
-Existing compiler benchmarks can be found in `tests\benchmarks\`. The folder contains READMEs describing specific benchmark projects as well as guidelines for creating new benchmarks. There is also `FSharp.Benchmarks.sln` solution containing all the benchmark project and their dependencies.
+Existing compiler benchmarks can be found in `tests\benchmarks\`. The folder contains READMEs describing specific benchmark projects as well as guidelines for creating new benchmarks.
 
-To exercise the benchmarking infrastructure locally, run:
+To run benchmarks locally, build the benchmark projects individually in Release configuration, e.g.:
 
-(Windows)
 ```cmd
-build.cmd -configuration Release -testBenchmarks
+dotnet run -c Release --project tests/benchmarks/FCSBenchmarks/CompilerServiceBenchmarks/FSharp.Compiler.Benchmarks.fsproj
 ```
 
-(Linux/Mac)
-```shell
-./build.sh --configuration Release --testBenchmarks
-```
-
-This is executed in CI as well. It does the following:
-- builds all the benchmarking projects
-- does smoke testing for fast benchmarks (executes them once to check they don't fail in the runtime)
+See the READMEs in `tests\benchmarks\` for details on each benchmark suite and how to interpret results.
 
 ### Benchmarking and profiling the compiler
 

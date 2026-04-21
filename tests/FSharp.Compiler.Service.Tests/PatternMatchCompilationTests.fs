@@ -82,7 +82,7 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(7,5--7,12): This expression was expected to have type 'int' but here has type ''a * 'b * 'c'";
+        "(7,5--7,12): This expression was expected to have type 'int' but is a tuple of type ''a * 'b * 'c'";
         "(6,6--6,7): Incomplete pattern matches on this expression."
     ]
 
@@ -955,7 +955,7 @@ Some "" |> eq<int> // No more type checks after the above line?
 """
     assertHasSymbolUsages (Set.toList validSet) checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(27,2--27,14): This expression was expected to have type 'objnull' but here has type 'struct ('a * 'b)'";
+        "(27,2--27,14): This expression was expected to have type 'objnull' but is a tuple of type 'struct ('a * 'b)'";
         "(52,2--52,13): This expression was expected to have type 'objnull' but here has type 'AAA'";
         "(26,6--26,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";

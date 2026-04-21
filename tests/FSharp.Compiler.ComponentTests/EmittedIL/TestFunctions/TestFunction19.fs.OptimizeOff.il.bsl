@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -49,9 +39,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly int32 y
     .field assembly int32 x
-    .method public specialname rtspecialname 
-            instance void  .ctor(int32 x,
-                                 int32 y) cil managed
+    .method public specialname rtspecialname instance void  .ctor(int32 x, int32 y) cil managed
     {
       
       .maxstack  8
@@ -68,8 +56,7 @@
       IL_0016:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance int32  get_X() cil managed
+    .method public hidebysig specialname instance int32  get_X() cil managed
     {
       
       .maxstack  8
@@ -78,8 +65,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance int32  get_Y() cil managed
+    .method public hidebysig specialname instance int32  get_Y() cil managed
     {
       
       .maxstack  8
@@ -105,8 +91,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -120,8 +105,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit 
-            Invoke(class assembly/C arg20) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class assembly/C arg20) cil managed
     {
       
       .maxstack  8
@@ -142,8 +126,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo1) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo1) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -157,8 +140,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> 
-            Invoke(class assembly/C arg10) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class assembly/C arg10) cil managed
     {
       
       .maxstack  6

@@ -16,9 +16,9 @@ neg60.fs(79,18,79,21): typecheck error FS0001: The type ''a * 'b' does not match
 
 neg60.fs(79,15,79,16): typecheck error FS0043: The type ''a * 'b' does not match the type 'int'
 
-neg60.fs(80,22,80,25): typecheck error FS0001: Expecting a type supporting the operator '+' but given a tuple type
+neg60.fs(80,22,80,25): typecheck error FS0001: Operator '+' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.
 
-neg60.fs(80,19,80,20): typecheck error FS0043: Expecting a type supporting the operator '+' but given a tuple type
+neg60.fs(80,19,80,20): typecheck error FS0043: Operator '+' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.
 
 neg60.fs(81,22,81,34): typecheck error FS0002: This function takes too many arguments, or is used in a context where a function is not expected
 

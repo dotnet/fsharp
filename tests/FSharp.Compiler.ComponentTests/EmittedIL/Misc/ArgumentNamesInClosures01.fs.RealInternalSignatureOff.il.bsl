@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -47,8 +37,7 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public hidebysig instance int32 
-            F(object o) cil managed
+    .method public hidebysig instance int32 F(object o) cil managed
     {
       
       .maxstack  3
@@ -67,8 +56,7 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -79,9 +67,7 @@
       IL_0008:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32> 
-            get_F() cil managed
+    .method public hidebysig specialname instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32>  get_F() cil managed
     {
       
       .maxstack  3
@@ -103,8 +89,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32>
   {
     .field static assembly initonly class M/get_F@41 @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -115,8 +100,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance int32 
-            Invoke(class M/C i_want_to_see_this_identifier) cil managed
+    .method public strict virtual instance int32 Invoke(class M/C i_want_to_see_this_identifier) cil managed
     {
       
       .maxstack  8
@@ -126,8 +110,7 @@
       IL_0008:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10

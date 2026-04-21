@@ -66,7 +66,7 @@ let a6 = TestType<int, string>.(+++)((fun (x : string) -> 18), tt0)"""
         |> compile
         |> shouldFail
         |> withErrorCode 0670
-        |> withDiagnosticMessageMatches " 'a\) could not be generalized because it would escape its scope"
+        |> withDiagnosticMessageMatches " 'a\) could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'."
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicOperators)

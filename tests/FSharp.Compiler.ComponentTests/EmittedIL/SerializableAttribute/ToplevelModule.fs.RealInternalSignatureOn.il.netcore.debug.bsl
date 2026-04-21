@@ -137,15 +137,12 @@
                class ABC/Expr V_1,
                class [runtime]System.Collections.IComparer V_2,
                int32 V_3,
-               int32 V_4,
-               class [runtime]System.Collections.IComparer V_5,
-               int32 V_6,
-               int32 V_7)
+               int32 V_4)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_003b
+      IL_0001:  brfalse.s  IL_002f
 
       IL_0003:  ldarg.1
-      IL_0004:  brfalse.s  IL_0039
+      IL_0004:  brfalse.s  IL_002d
 
       IL_0006:  ldarg.0
       IL_0007:  pop
@@ -161,32 +158,26 @@
       IL_0019:  ldloc.1
       IL_001a:  ldfld      int32 ABC/Expr::item
       IL_001f:  stloc.s    V_4
-      IL_0021:  ldloc.2
-      IL_0022:  stloc.s    V_5
-      IL_0024:  ldloc.3
-      IL_0025:  stloc.s    V_6
+      IL_0021:  ldloc.3
+      IL_0022:  ldloc.s    V_4
+      IL_0024:  cgt
+      IL_0026:  ldloc.3
       IL_0027:  ldloc.s    V_4
-      IL_0029:  stloc.s    V_7
-      IL_002b:  ldloc.s    V_6
-      IL_002d:  ldloc.s    V_7
-      IL_002f:  cgt
-      IL_0031:  ldloc.s    V_6
-      IL_0033:  ldloc.s    V_7
-      IL_0035:  clt
-      IL_0037:  sub
-      IL_0038:  ret
+      IL_0029:  clt
+      IL_002b:  sub
+      IL_002c:  ret
 
-      IL_0039:  ldc.i4.1
-      IL_003a:  ret
+      IL_002d:  ldc.i4.1
+      IL_002e:  ret
 
-      IL_003b:  ldarg.1
-      IL_003c:  brfalse.s  IL_0040
+      IL_002f:  ldarg.1
+      IL_0030:  brfalse.s  IL_0034
 
-      IL_003e:  ldc.i4.m1
-      IL_003f:  ret
+      IL_0032:  ldc.i4.m1
+      IL_0033:  ret
 
-      IL_0040:  ldc.i4.0
-      IL_0041:  ret
+      IL_0034:  ldc.i4.0
+      IL_0035:  ret
     } 
 
     .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
@@ -211,19 +202,16 @@
                class ABC/Expr V_2,
                class [runtime]System.Collections.IComparer V_3,
                int32 V_4,
-               int32 V_5,
-               class [runtime]System.Collections.IComparer V_6,
-               int32 V_7,
-               int32 V_8)
+               int32 V_5)
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  ABC/Expr
       IL_0006:  stloc.0
       IL_0007:  ldarg.0
-      IL_0008:  brfalse.s  IL_0045
+      IL_0008:  brfalse.s  IL_003a
 
       IL_000a:  ldarg.1
       IL_000b:  unbox.any  ABC/Expr
-      IL_0010:  brfalse.s  IL_0043
+      IL_0010:  brfalse.s  IL_0038
 
       IL_0012:  ldarg.0
       IL_0013:  pop
@@ -239,33 +227,27 @@
       IL_0022:  ldloc.2
       IL_0023:  ldfld      int32 ABC/Expr::item
       IL_0028:  stloc.s    V_5
-      IL_002a:  ldloc.3
-      IL_002b:  stloc.s    V_6
-      IL_002d:  ldloc.s    V_4
-      IL_002f:  stloc.s    V_7
-      IL_0031:  ldloc.s    V_5
-      IL_0033:  stloc.s    V_8
-      IL_0035:  ldloc.s    V_7
-      IL_0037:  ldloc.s    V_8
-      IL_0039:  cgt
-      IL_003b:  ldloc.s    V_7
-      IL_003d:  ldloc.s    V_8
-      IL_003f:  clt
-      IL_0041:  sub
-      IL_0042:  ret
+      IL_002a:  ldloc.s    V_4
+      IL_002c:  ldloc.s    V_5
+      IL_002e:  cgt
+      IL_0030:  ldloc.s    V_4
+      IL_0032:  ldloc.s    V_5
+      IL_0034:  clt
+      IL_0036:  sub
+      IL_0037:  ret
 
-      IL_0043:  ldc.i4.1
-      IL_0044:  ret
+      IL_0038:  ldc.i4.1
+      IL_0039:  ret
 
-      IL_0045:  ldarg.1
-      IL_0046:  unbox.any  ABC/Expr
-      IL_004b:  brfalse.s  IL_004f
+      IL_003a:  ldarg.1
+      IL_003b:  unbox.any  ABC/Expr
+      IL_0040:  brfalse.s  IL_0044
 
-      IL_004d:  ldc.i4.m1
-      IL_004e:  ret
+      IL_0042:  ldc.i4.m1
+      IL_0043:  ret
 
-      IL_004f:  ldc.i4.0
-      IL_0050:  ret
+      IL_0044:  ldc.i4.0
+      IL_0045:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -275,11 +257,9 @@
       .maxstack  7
       .locals init (int32 V_0,
                class ABC/Expr V_1,
-               class [runtime]System.Collections.IEqualityComparer V_2,
-               int32 V_3,
-               class [runtime]System.Collections.IEqualityComparer V_4)
+               class [runtime]System.Collections.IEqualityComparer V_2)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0029
+      IL_0001:  brfalse.s  IL_0024
 
       IL_0003:  ldc.i4.0
       IL_0004:  stloc.0
@@ -294,25 +274,21 @@
       IL_0011:  stloc.2
       IL_0012:  ldloc.1
       IL_0013:  ldfld      int32 ABC/Expr::item
-      IL_0018:  stloc.3
-      IL_0019:  ldloc.2
-      IL_001a:  stloc.s    V_4
-      IL_001c:  ldloc.3
-      IL_001d:  ldloc.0
-      IL_001e:  ldc.i4.6
-      IL_001f:  shl
-      IL_0020:  ldloc.0
-      IL_0021:  ldc.i4.2
-      IL_0022:  shr
-      IL_0023:  add
-      IL_0024:  add
-      IL_0025:  add
-      IL_0026:  stloc.0
-      IL_0027:  ldloc.0
-      IL_0028:  ret
+      IL_0018:  ldloc.0
+      IL_0019:  ldc.i4.6
+      IL_001a:  shl
+      IL_001b:  ldloc.0
+      IL_001c:  ldc.i4.2
+      IL_001d:  shr
+      IL_001e:  add
+      IL_001f:  add
+      IL_0020:  add
+      IL_0021:  stloc.0
+      IL_0022:  ldloc.0
+      IL_0023:  ret
 
-      IL_0029:  ldc.i4.0
-      IL_002a:  ret
+      IL_0024:  ldc.i4.0
+      IL_0025:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode() cil managed
@@ -334,15 +310,12 @@
       .locals init (class ABC/Expr V_0,
                class ABC/Expr V_1,
                class ABC/Expr V_2,
-               class [runtime]System.Collections.IEqualityComparer V_3,
-               int32 V_4,
-               int32 V_5,
-               class [runtime]System.Collections.IEqualityComparer V_6)
+               class [runtime]System.Collections.IEqualityComparer V_3)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_002c
+      IL_0001:  brfalse.s  IL_0021
 
       IL_0003:  ldarg.1
-      IL_0004:  brfalse.s  IL_002a
+      IL_0004:  brfalse.s  IL_001f
 
       IL_0006:  ldarg.1
       IL_0007:  stloc.0
@@ -356,26 +329,20 @@
       IL_000f:  stloc.3
       IL_0010:  ldloc.1
       IL_0011:  ldfld      int32 ABC/Expr::item
-      IL_0016:  stloc.s    V_4
-      IL_0018:  ldloc.2
-      IL_0019:  ldfld      int32 ABC/Expr::item
-      IL_001e:  stloc.s    V_5
-      IL_0020:  ldloc.3
-      IL_0021:  stloc.s    V_6
-      IL_0023:  ldloc.s    V_4
-      IL_0025:  ldloc.s    V_5
-      IL_0027:  ceq
-      IL_0029:  ret
+      IL_0016:  ldloc.2
+      IL_0017:  ldfld      int32 ABC/Expr::item
+      IL_001c:  ceq
+      IL_001e:  ret
 
-      IL_002a:  ldc.i4.0
-      IL_002b:  ret
+      IL_001f:  ldc.i4.0
+      IL_0020:  ret
 
-      IL_002c:  ldarg.1
-      IL_002d:  ldnull
-      IL_002e:  cgt.un
-      IL_0030:  ldc.i4.0
-      IL_0031:  ceq
-      IL_0033:  ret
+      IL_0021:  ldarg.1
+      IL_0022:  ldnull
+      IL_0023:  cgt.un
+      IL_0025:  ldc.i4.0
+      IL_0026:  ceq
+      IL_0028:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -544,11 +511,9 @@
       
       .maxstack  7
       .locals init (int32 V_0,
-               class [runtime]System.Collections.IEqualityComparer V_1,
-               int32 V_2,
-               class [runtime]System.Collections.IEqualityComparer V_3)
+               class [runtime]System.Collections.IEqualityComparer V_1)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0027
+      IL_0001:  brfalse.s  IL_0023
 
       IL_0003:  ldc.i4.0
       IL_0004:  stloc.0
@@ -558,25 +523,21 @@
       IL_000c:  ldarg.0
       IL_000d:  castclass  ABC/MyExn
       IL_0012:  call       instance int32 ABC/MyExn::get_Data0()
-      IL_0017:  stloc.2
-      IL_0018:  ldloc.1
-      IL_0019:  stloc.3
-      IL_001a:  ldloc.2
-      IL_001b:  ldloc.0
-      IL_001c:  ldc.i4.6
-      IL_001d:  shl
-      IL_001e:  ldloc.0
-      IL_001f:  ldc.i4.2
-      IL_0020:  shr
-      IL_0021:  add
-      IL_0022:  add
-      IL_0023:  add
-      IL_0024:  stloc.0
-      IL_0025:  ldloc.0
-      IL_0026:  ret
+      IL_0017:  ldloc.0
+      IL_0018:  ldc.i4.6
+      IL_0019:  shl
+      IL_001a:  ldloc.0
+      IL_001b:  ldc.i4.2
+      IL_001c:  shr
+      IL_001d:  add
+      IL_001e:  add
+      IL_001f:  add
+      IL_0020:  stloc.0
+      IL_0021:  ldloc.0
+      IL_0022:  ret
 
-      IL_0027:  ldc.i4.0
-      IL_0028:  ret
+      IL_0023:  ldc.i4.0
+      IL_0024:  ret
     } 
 
     .method public hidebysig virtual instance int32 GetHashCode() cil managed
@@ -597,15 +558,12 @@
       .maxstack  4
       .locals init (class [runtime]System.Exception V_0,
                object V_1,
-               class [runtime]System.Collections.IEqualityComparer V_2,
-               int32 V_3,
-               int32 V_4,
-               class [runtime]System.Collections.IEqualityComparer V_5)
+               class [runtime]System.Collections.IEqualityComparer V_2)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_003d
+      IL_0001:  brfalse.s  IL_0034
 
       IL_0003:  ldarg.1
-      IL_0004:  brfalse.s  IL_003b
+      IL_0004:  brfalse.s  IL_0032
 
       IL_0006:  ldarg.1
       IL_0007:  stloc.0
@@ -615,37 +573,31 @@
       IL_000b:  isinst     ABC/MyExn
       IL_0010:  ldnull
       IL_0011:  cgt.un
-      IL_0013:  brfalse.s  IL_0039
+      IL_0013:  brfalse.s  IL_0030
 
       IL_0015:  ldarg.2
       IL_0016:  stloc.2
       IL_0017:  ldarg.0
       IL_0018:  castclass  ABC/MyExn
       IL_001d:  call       instance int32 ABC/MyExn::get_Data0()
-      IL_0022:  stloc.3
-      IL_0023:  ldloc.0
-      IL_0024:  castclass  ABC/MyExn
-      IL_0029:  call       instance int32 ABC/MyExn::get_Data0()
-      IL_002e:  stloc.s    V_4
-      IL_0030:  ldloc.2
-      IL_0031:  stloc.s    V_5
-      IL_0033:  ldloc.3
-      IL_0034:  ldloc.s    V_4
-      IL_0036:  ceq
-      IL_0038:  ret
+      IL_0022:  ldloc.0
+      IL_0023:  castclass  ABC/MyExn
+      IL_0028:  call       instance int32 ABC/MyExn::get_Data0()
+      IL_002d:  ceq
+      IL_002f:  ret
 
-      IL_0039:  ldc.i4.0
-      IL_003a:  ret
+      IL_0030:  ldc.i4.0
+      IL_0031:  ret
 
-      IL_003b:  ldc.i4.0
-      IL_003c:  ret
+      IL_0032:  ldc.i4.0
+      IL_0033:  ret
 
-      IL_003d:  ldarg.1
-      IL_003e:  ldnull
-      IL_003f:  cgt.un
-      IL_0041:  ldc.i4.0
-      IL_0042:  ceq
-      IL_0044:  ret
+      IL_0034:  ldarg.1
+      IL_0035:  ldnull
+      IL_0036:  cgt.un
+      IL_0038:  ldc.i4.0
+      IL_0039:  ceq
+      IL_003b:  ret
     } 
 
     .method public hidebysig virtual instance bool Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -885,15 +837,12 @@
                  class ABC/ABC/Expr V_1,
                  class [runtime]System.Collections.IComparer V_2,
                  int32 V_3,
-                 int32 V_4,
-                 class [runtime]System.Collections.IComparer V_5,
-                 int32 V_6,
-                 int32 V_7)
+                 int32 V_4)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_003b
+        IL_0001:  brfalse.s  IL_002f
 
         IL_0003:  ldarg.1
-        IL_0004:  brfalse.s  IL_0039
+        IL_0004:  brfalse.s  IL_002d
 
         IL_0006:  ldarg.0
         IL_0007:  pop
@@ -909,32 +858,26 @@
         IL_0019:  ldloc.1
         IL_001a:  ldfld      int32 ABC/ABC/Expr::item
         IL_001f:  stloc.s    V_4
-        IL_0021:  ldloc.2
-        IL_0022:  stloc.s    V_5
-        IL_0024:  ldloc.3
-        IL_0025:  stloc.s    V_6
+        IL_0021:  ldloc.3
+        IL_0022:  ldloc.s    V_4
+        IL_0024:  cgt
+        IL_0026:  ldloc.3
         IL_0027:  ldloc.s    V_4
-        IL_0029:  stloc.s    V_7
-        IL_002b:  ldloc.s    V_6
-        IL_002d:  ldloc.s    V_7
-        IL_002f:  cgt
-        IL_0031:  ldloc.s    V_6
-        IL_0033:  ldloc.s    V_7
-        IL_0035:  clt
-        IL_0037:  sub
-        IL_0038:  ret
+        IL_0029:  clt
+        IL_002b:  sub
+        IL_002c:  ret
 
-        IL_0039:  ldc.i4.1
-        IL_003a:  ret
+        IL_002d:  ldc.i4.1
+        IL_002e:  ret
 
-        IL_003b:  ldarg.1
-        IL_003c:  brfalse.s  IL_0040
+        IL_002f:  ldarg.1
+        IL_0030:  brfalse.s  IL_0034
 
-        IL_003e:  ldc.i4.m1
-        IL_003f:  ret
+        IL_0032:  ldc.i4.m1
+        IL_0033:  ret
 
-        IL_0040:  ldc.i4.0
-        IL_0041:  ret
+        IL_0034:  ldc.i4.0
+        IL_0035:  ret
       } 
 
       .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
@@ -959,19 +902,16 @@
                  class ABC/ABC/Expr V_2,
                  class [runtime]System.Collections.IComparer V_3,
                  int32 V_4,
-                 int32 V_5,
-                 class [runtime]System.Collections.IComparer V_6,
-                 int32 V_7,
-                 int32 V_8)
+                 int32 V_5)
         IL_0000:  ldarg.1
         IL_0001:  unbox.any  ABC/ABC/Expr
         IL_0006:  stloc.0
         IL_0007:  ldarg.0
-        IL_0008:  brfalse.s  IL_0045
+        IL_0008:  brfalse.s  IL_003a
 
         IL_000a:  ldarg.1
         IL_000b:  unbox.any  ABC/ABC/Expr
-        IL_0010:  brfalse.s  IL_0043
+        IL_0010:  brfalse.s  IL_0038
 
         IL_0012:  ldarg.0
         IL_0013:  pop
@@ -987,33 +927,27 @@
         IL_0022:  ldloc.2
         IL_0023:  ldfld      int32 ABC/ABC/Expr::item
         IL_0028:  stloc.s    V_5
-        IL_002a:  ldloc.3
-        IL_002b:  stloc.s    V_6
-        IL_002d:  ldloc.s    V_4
-        IL_002f:  stloc.s    V_7
-        IL_0031:  ldloc.s    V_5
-        IL_0033:  stloc.s    V_8
-        IL_0035:  ldloc.s    V_7
-        IL_0037:  ldloc.s    V_8
-        IL_0039:  cgt
-        IL_003b:  ldloc.s    V_7
-        IL_003d:  ldloc.s    V_8
-        IL_003f:  clt
-        IL_0041:  sub
-        IL_0042:  ret
+        IL_002a:  ldloc.s    V_4
+        IL_002c:  ldloc.s    V_5
+        IL_002e:  cgt
+        IL_0030:  ldloc.s    V_4
+        IL_0032:  ldloc.s    V_5
+        IL_0034:  clt
+        IL_0036:  sub
+        IL_0037:  ret
 
-        IL_0043:  ldc.i4.1
-        IL_0044:  ret
+        IL_0038:  ldc.i4.1
+        IL_0039:  ret
 
-        IL_0045:  ldarg.1
-        IL_0046:  unbox.any  ABC/ABC/Expr
-        IL_004b:  brfalse.s  IL_004f
+        IL_003a:  ldarg.1
+        IL_003b:  unbox.any  ABC/ABC/Expr
+        IL_0040:  brfalse.s  IL_0044
 
-        IL_004d:  ldc.i4.m1
-        IL_004e:  ret
+        IL_0042:  ldc.i4.m1
+        IL_0043:  ret
 
-        IL_004f:  ldc.i4.0
-        IL_0050:  ret
+        IL_0044:  ldc.i4.0
+        IL_0045:  ret
       } 
 
       .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -1023,11 +957,9 @@
         .maxstack  7
         .locals init (int32 V_0,
                  class ABC/ABC/Expr V_1,
-                 class [runtime]System.Collections.IEqualityComparer V_2,
-                 int32 V_3,
-                 class [runtime]System.Collections.IEqualityComparer V_4)
+                 class [runtime]System.Collections.IEqualityComparer V_2)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_0029
+        IL_0001:  brfalse.s  IL_0024
 
         IL_0003:  ldc.i4.0
         IL_0004:  stloc.0
@@ -1042,25 +974,21 @@
         IL_0011:  stloc.2
         IL_0012:  ldloc.1
         IL_0013:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0018:  stloc.3
-        IL_0019:  ldloc.2
-        IL_001a:  stloc.s    V_4
-        IL_001c:  ldloc.3
-        IL_001d:  ldloc.0
-        IL_001e:  ldc.i4.6
-        IL_001f:  shl
-        IL_0020:  ldloc.0
-        IL_0021:  ldc.i4.2
-        IL_0022:  shr
-        IL_0023:  add
-        IL_0024:  add
-        IL_0025:  add
-        IL_0026:  stloc.0
-        IL_0027:  ldloc.0
-        IL_0028:  ret
+        IL_0018:  ldloc.0
+        IL_0019:  ldc.i4.6
+        IL_001a:  shl
+        IL_001b:  ldloc.0
+        IL_001c:  ldc.i4.2
+        IL_001d:  shr
+        IL_001e:  add
+        IL_001f:  add
+        IL_0020:  add
+        IL_0021:  stloc.0
+        IL_0022:  ldloc.0
+        IL_0023:  ret
 
-        IL_0029:  ldc.i4.0
-        IL_002a:  ret
+        IL_0024:  ldc.i4.0
+        IL_0025:  ret
       } 
 
       .method public hidebysig virtual final instance int32  GetHashCode() cil managed
@@ -1082,15 +1010,12 @@
         .locals init (class ABC/ABC/Expr V_0,
                  class ABC/ABC/Expr V_1,
                  class ABC/ABC/Expr V_2,
-                 class [runtime]System.Collections.IEqualityComparer V_3,
-                 int32 V_4,
-                 int32 V_5,
-                 class [runtime]System.Collections.IEqualityComparer V_6)
+                 class [runtime]System.Collections.IEqualityComparer V_3)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_002c
+        IL_0001:  brfalse.s  IL_0021
 
         IL_0003:  ldarg.1
-        IL_0004:  brfalse.s  IL_002a
+        IL_0004:  brfalse.s  IL_001f
 
         IL_0006:  ldarg.1
         IL_0007:  stloc.0
@@ -1104,26 +1029,20 @@
         IL_000f:  stloc.3
         IL_0010:  ldloc.1
         IL_0011:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0016:  stloc.s    V_4
-        IL_0018:  ldloc.2
-        IL_0019:  ldfld      int32 ABC/ABC/Expr::item
-        IL_001e:  stloc.s    V_5
-        IL_0020:  ldloc.3
-        IL_0021:  stloc.s    V_6
-        IL_0023:  ldloc.s    V_4
-        IL_0025:  ldloc.s    V_5
-        IL_0027:  ceq
-        IL_0029:  ret
+        IL_0016:  ldloc.2
+        IL_0017:  ldfld      int32 ABC/ABC/Expr::item
+        IL_001c:  ceq
+        IL_001e:  ret
 
-        IL_002a:  ldc.i4.0
-        IL_002b:  ret
+        IL_001f:  ldc.i4.0
+        IL_0020:  ret
 
-        IL_002c:  ldarg.1
-        IL_002d:  ldnull
-        IL_002e:  cgt.un
-        IL_0030:  ldc.i4.0
-        IL_0031:  ceq
-        IL_0033:  ret
+        IL_0021:  ldarg.1
+        IL_0022:  ldnull
+        IL_0023:  cgt.un
+        IL_0025:  ldc.i4.0
+        IL_0026:  ceq
+        IL_0028:  ret
       } 
 
       .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -1292,11 +1211,9 @@
         
         .maxstack  7
         .locals init (int32 V_0,
-                 class [runtime]System.Collections.IEqualityComparer V_1,
-                 int32 V_2,
-                 class [runtime]System.Collections.IEqualityComparer V_3)
+                 class [runtime]System.Collections.IEqualityComparer V_1)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_0027
+        IL_0001:  brfalse.s  IL_0023
 
         IL_0003:  ldc.i4.0
         IL_0004:  stloc.0
@@ -1306,25 +1223,21 @@
         IL_000c:  ldarg.0
         IL_000d:  castclass  ABC/ABC/MyExn
         IL_0012:  call       instance int32 ABC/ABC/MyExn::get_Data0()
-        IL_0017:  stloc.2
-        IL_0018:  ldloc.1
-        IL_0019:  stloc.3
-        IL_001a:  ldloc.2
-        IL_001b:  ldloc.0
-        IL_001c:  ldc.i4.6
-        IL_001d:  shl
-        IL_001e:  ldloc.0
-        IL_001f:  ldc.i4.2
-        IL_0020:  shr
-        IL_0021:  add
-        IL_0022:  add
-        IL_0023:  add
-        IL_0024:  stloc.0
-        IL_0025:  ldloc.0
-        IL_0026:  ret
+        IL_0017:  ldloc.0
+        IL_0018:  ldc.i4.6
+        IL_0019:  shl
+        IL_001a:  ldloc.0
+        IL_001b:  ldc.i4.2
+        IL_001c:  shr
+        IL_001d:  add
+        IL_001e:  add
+        IL_001f:  add
+        IL_0020:  stloc.0
+        IL_0021:  ldloc.0
+        IL_0022:  ret
 
-        IL_0027:  ldc.i4.0
-        IL_0028:  ret
+        IL_0023:  ldc.i4.0
+        IL_0024:  ret
       } 
 
       .method public hidebysig virtual instance int32 GetHashCode() cil managed
@@ -1345,15 +1258,12 @@
         .maxstack  4
         .locals init (class [runtime]System.Exception V_0,
                  object V_1,
-                 class [runtime]System.Collections.IEqualityComparer V_2,
-                 int32 V_3,
-                 int32 V_4,
-                 class [runtime]System.Collections.IEqualityComparer V_5)
+                 class [runtime]System.Collections.IEqualityComparer V_2)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_003d
+        IL_0001:  brfalse.s  IL_0034
 
         IL_0003:  ldarg.1
-        IL_0004:  brfalse.s  IL_003b
+        IL_0004:  brfalse.s  IL_0032
 
         IL_0006:  ldarg.1
         IL_0007:  stloc.0
@@ -1363,37 +1273,31 @@
         IL_000b:  isinst     ABC/ABC/MyExn
         IL_0010:  ldnull
         IL_0011:  cgt.un
-        IL_0013:  brfalse.s  IL_0039
+        IL_0013:  brfalse.s  IL_0030
 
         IL_0015:  ldarg.2
         IL_0016:  stloc.2
         IL_0017:  ldarg.0
         IL_0018:  castclass  ABC/ABC/MyExn
         IL_001d:  call       instance int32 ABC/ABC/MyExn::get_Data0()
-        IL_0022:  stloc.3
-        IL_0023:  ldloc.0
-        IL_0024:  castclass  ABC/ABC/MyExn
-        IL_0029:  call       instance int32 ABC/ABC/MyExn::get_Data0()
-        IL_002e:  stloc.s    V_4
-        IL_0030:  ldloc.2
-        IL_0031:  stloc.s    V_5
-        IL_0033:  ldloc.3
-        IL_0034:  ldloc.s    V_4
-        IL_0036:  ceq
-        IL_0038:  ret
+        IL_0022:  ldloc.0
+        IL_0023:  castclass  ABC/ABC/MyExn
+        IL_0028:  call       instance int32 ABC/ABC/MyExn::get_Data0()
+        IL_002d:  ceq
+        IL_002f:  ret
 
-        IL_0039:  ldc.i4.0
-        IL_003a:  ret
+        IL_0030:  ldc.i4.0
+        IL_0031:  ret
 
-        IL_003b:  ldc.i4.0
-        IL_003c:  ret
+        IL_0032:  ldc.i4.0
+        IL_0033:  ret
 
-        IL_003d:  ldarg.1
-        IL_003e:  ldnull
-        IL_003f:  cgt.un
-        IL_0041:  ldc.i4.0
-        IL_0042:  ceq
-        IL_0044:  ret
+        IL_0034:  ldarg.1
+        IL_0035:  ldnull
+        IL_0036:  cgt.un
+        IL_0038:  ldc.i4.0
+        IL_0039:  ceq
+        IL_003b:  ret
       } 
 
       .method public hidebysig virtual instance bool Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed

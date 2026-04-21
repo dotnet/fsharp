@@ -172,6 +172,16 @@
         <target state="translated">この式に必要な型は\n    '{1}'    \nですが、ここでは次の型が指定されています\n    '{0}'    {2}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation1Tuple">
+        <source>This expression was expected to have type\n    '{1}'    \nbut is a tuple of type\n    '{0}'    {2}</source>
+        <target state="new">This expression was expected to have type\n    '{1}'    \nbut is a tuple of type\n    '{0}'    {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation2Tuple">
+        <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a tuple of type\n    '{1}'    {2}\n</source>
+        <target state="new">Type mismatch. Expecting a\n    '{0}'    \nbut given a tuple of type\n    '{1}'    {2}\n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquation2">
         <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</source>
         <target state="translated">型が一致しません。\n    '{0}'    \nという指定が必要ですが、\n    '{1}'    {2}\nが指定されました。</target>
@@ -233,8 +243,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IndeterminateType">
-        <source>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</source>
-        <target state="translated">このプログラムの場所の前方にある情報に基づく不確定の型のオブジェクトに対する参照です。場合によっては、オブジェクトの型を制約する型の注釈がこのプログラムの場所の前に必要です。この操作で参照が解決される可能性があります。</target>
+        <source>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</source>
+        <target state="new">このプログラムの場所の前方にある情報に基づく不確定の型のオブジェクトに対する参照です。場合によっては、オブジェクトの型を制約する型の注釈がこのプログラムの場所の前に必要です。この操作で参照が解決される可能性があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">
@@ -1555,6 +1565,11 @@
       <trans-unit id="MatchIncomplete4">
         <source> Unmatched elements will be ignored.</source>
         <target state="translated"> 一致しない要素は無視されます。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MatchIncompleteForLoop">
+        <source> Did you use a constant where a loop variable was expected?</source>
+        <target state="new"> Did you use a constant where a loop variable was expected?</target>
         <note />
       </trans-unit>
       <trans-unit id="EnumMatchIncomplete1">

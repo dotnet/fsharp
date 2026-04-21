@@ -334,94 +334,85 @@
                class assembly/U/B V_5,
                class [runtime]System.Collections.IComparer V_6,
                int32 V_7,
-               int32 V_8,
-               class [runtime]System.Collections.IComparer V_9,
-               int32 V_10,
-               int32 V_11)
+               int32 V_8)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse    IL_0081
+      IL_0001:  brfalse    IL_0072
 
       IL_0006:  ldarg.1
-      IL_0007:  brfalse    IL_007f
+      IL_0007:  brfalse.s  IL_0070
 
-      IL_000c:  ldarg.0
-      IL_000d:  stloc.1
-      IL_000e:  ldloc.1
-      IL_000f:  isinst     assembly/U/B
-      IL_0014:  brfalse.s  IL_0019
+      IL_0009:  ldarg.0
+      IL_000a:  stloc.1
+      IL_000b:  ldloc.1
+      IL_000c:  isinst     assembly/U/B
+      IL_0011:  brfalse.s  IL_0016
 
-      IL_0016:  ldc.i4.1
-      IL_0017:  br.s       IL_001a
+      IL_0013:  ldc.i4.1
+      IL_0014:  br.s       IL_0017
 
-      IL_0019:  ldc.i4.0
-      IL_001a:  stloc.0
-      IL_001b:  ldarg.1
-      IL_001c:  stloc.3
-      IL_001d:  ldloc.3
-      IL_001e:  isinst     assembly/U/B
-      IL_0023:  brfalse.s  IL_0028
+      IL_0016:  ldc.i4.0
+      IL_0017:  stloc.0
+      IL_0018:  ldarg.1
+      IL_0019:  stloc.3
+      IL_001a:  ldloc.3
+      IL_001b:  isinst     assembly/U/B
+      IL_0020:  brfalse.s  IL_0025
 
-      IL_0025:  ldc.i4.1
-      IL_0026:  br.s       IL_0029
+      IL_0022:  ldc.i4.1
+      IL_0023:  br.s       IL_0026
 
-      IL_0028:  ldc.i4.0
-      IL_0029:  stloc.2
-      IL_002a:  ldloc.0
-      IL_002b:  ldloc.2
-      IL_002c:  bne.un.s   IL_007b
+      IL_0025:  ldc.i4.0
+      IL_0026:  stloc.2
+      IL_0027:  ldloc.0
+      IL_0028:  ldloc.2
+      IL_0029:  bne.un.s   IL_006c
 
-      IL_002e:  ldarg.0
-      IL_002f:  isinst     assembly/U/B
-      IL_0034:  brfalse.s  IL_0079
+      IL_002b:  ldarg.0
+      IL_002c:  isinst     assembly/U/B
+      IL_0031:  brfalse.s  IL_006a
 
-      IL_0036:  ldarg.0
-      IL_0037:  castclass  assembly/U/B
-      IL_003c:  stloc.s    V_4
-      IL_003e:  ldarg.1
-      IL_003f:  castclass  assembly/U/B
-      IL_0044:  stloc.s    V_5
-      IL_0046:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_004b:  stloc.s    V_6
-      IL_004d:  ldloc.s    V_4
-      IL_004f:  ldfld      int32 assembly/U/B::item
-      IL_0054:  stloc.s    V_7
-      IL_0056:  ldloc.s    V_5
-      IL_0058:  ldfld      int32 assembly/U/B::item
-      IL_005d:  stloc.s    V_8
-      IL_005f:  ldloc.s    V_6
-      IL_0061:  stloc.s    V_9
-      IL_0063:  ldloc.s    V_7
-      IL_0065:  stloc.s    V_10
-      IL_0067:  ldloc.s    V_8
-      IL_0069:  stloc.s    V_11
-      IL_006b:  ldloc.s    V_10
-      IL_006d:  ldloc.s    V_11
-      IL_006f:  cgt
-      IL_0071:  ldloc.s    V_10
-      IL_0073:  ldloc.s    V_11
-      IL_0075:  clt
-      IL_0077:  sub
+      IL_0033:  ldarg.0
+      IL_0034:  castclass  assembly/U/B
+      IL_0039:  stloc.s    V_4
+      IL_003b:  ldarg.1
+      IL_003c:  castclass  assembly/U/B
+      IL_0041:  stloc.s    V_5
+      IL_0043:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0048:  stloc.s    V_6
+      IL_004a:  ldloc.s    V_4
+      IL_004c:  ldfld      int32 assembly/U/B::item
+      IL_0051:  stloc.s    V_7
+      IL_0053:  ldloc.s    V_5
+      IL_0055:  ldfld      int32 assembly/U/B::item
+      IL_005a:  stloc.s    V_8
+      IL_005c:  ldloc.s    V_7
+      IL_005e:  ldloc.s    V_8
+      IL_0060:  cgt
+      IL_0062:  ldloc.s    V_7
+      IL_0064:  ldloc.s    V_8
+      IL_0066:  clt
+      IL_0068:  sub
+      IL_0069:  ret
+
+      IL_006a:  ldc.i4.0
+      IL_006b:  ret
+
+      IL_006c:  ldloc.0
+      IL_006d:  ldloc.2
+      IL_006e:  sub
+      IL_006f:  ret
+
+      IL_0070:  ldc.i4.1
+      IL_0071:  ret
+
+      IL_0072:  ldarg.1
+      IL_0073:  brfalse.s  IL_0077
+
+      IL_0075:  ldc.i4.m1
+      IL_0076:  ret
+
+      IL_0077:  ldc.i4.0
       IL_0078:  ret
-
-      IL_0079:  ldc.i4.0
-      IL_007a:  ret
-
-      IL_007b:  ldloc.0
-      IL_007c:  ldloc.2
-      IL_007d:  sub
-      IL_007e:  ret
-
-      IL_007f:  ldc.i4.1
-      IL_0080:  ret
-
-      IL_0081:  ldarg.1
-      IL_0082:  brfalse.s  IL_0086
-
-      IL_0084:  ldc.i4.m1
-      IL_0085:  ret
-
-      IL_0086:  ldc.i4.0
-      IL_0087:  ret
     } 
 
     .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
@@ -450,99 +441,90 @@
                class assembly/U/B V_6,
                class [runtime]System.Collections.IComparer V_7,
                int32 V_8,
-               int32 V_9,
-               class [runtime]System.Collections.IComparer V_10,
-               int32 V_11,
-               int32 V_12)
+               int32 V_9)
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  assembly/U
       IL_0006:  stloc.0
       IL_0007:  ldarg.0
-      IL_0008:  brfalse    IL_008b
+      IL_0008:  brfalse    IL_007c
 
       IL_000d:  ldarg.1
       IL_000e:  unbox.any  assembly/U
-      IL_0013:  brfalse    IL_0089
+      IL_0013:  brfalse.s  IL_007a
 
-      IL_0018:  ldarg.0
-      IL_0019:  stloc.2
-      IL_001a:  ldloc.2
-      IL_001b:  isinst     assembly/U/B
-      IL_0020:  brfalse.s  IL_0025
+      IL_0015:  ldarg.0
+      IL_0016:  stloc.2
+      IL_0017:  ldloc.2
+      IL_0018:  isinst     assembly/U/B
+      IL_001d:  brfalse.s  IL_0022
 
-      IL_0022:  ldc.i4.1
-      IL_0023:  br.s       IL_0026
+      IL_001f:  ldc.i4.1
+      IL_0020:  br.s       IL_0023
 
-      IL_0025:  ldc.i4.0
-      IL_0026:  stloc.1
-      IL_0027:  ldloc.0
-      IL_0028:  stloc.s    V_4
-      IL_002a:  ldloc.s    V_4
-      IL_002c:  isinst     assembly/U/B
-      IL_0031:  brfalse.s  IL_0036
+      IL_0022:  ldc.i4.0
+      IL_0023:  stloc.1
+      IL_0024:  ldloc.0
+      IL_0025:  stloc.s    V_4
+      IL_0027:  ldloc.s    V_4
+      IL_0029:  isinst     assembly/U/B
+      IL_002e:  brfalse.s  IL_0033
 
-      IL_0033:  ldc.i4.1
-      IL_0034:  br.s       IL_0037
+      IL_0030:  ldc.i4.1
+      IL_0031:  br.s       IL_0034
 
-      IL_0036:  ldc.i4.0
-      IL_0037:  stloc.3
-      IL_0038:  ldloc.1
-      IL_0039:  ldloc.3
-      IL_003a:  bne.un.s   IL_0085
+      IL_0033:  ldc.i4.0
+      IL_0034:  stloc.3
+      IL_0035:  ldloc.1
+      IL_0036:  ldloc.3
+      IL_0037:  bne.un.s   IL_0076
 
-      IL_003c:  ldarg.0
-      IL_003d:  isinst     assembly/U/B
-      IL_0042:  brfalse.s  IL_0083
+      IL_0039:  ldarg.0
+      IL_003a:  isinst     assembly/U/B
+      IL_003f:  brfalse.s  IL_0074
 
-      IL_0044:  ldarg.0
-      IL_0045:  castclass  assembly/U/B
-      IL_004a:  stloc.s    V_5
-      IL_004c:  ldloc.0
-      IL_004d:  castclass  assembly/U/B
-      IL_0052:  stloc.s    V_6
-      IL_0054:  ldarg.2
-      IL_0055:  stloc.s    V_7
-      IL_0057:  ldloc.s    V_5
-      IL_0059:  ldfld      int32 assembly/U/B::item
-      IL_005e:  stloc.s    V_8
-      IL_0060:  ldloc.s    V_6
-      IL_0062:  ldfld      int32 assembly/U/B::item
-      IL_0067:  stloc.s    V_9
-      IL_0069:  ldloc.s    V_7
-      IL_006b:  stloc.s    V_10
-      IL_006d:  ldloc.s    V_8
-      IL_006f:  stloc.s    V_11
-      IL_0071:  ldloc.s    V_9
-      IL_0073:  stloc.s    V_12
-      IL_0075:  ldloc.s    V_11
-      IL_0077:  ldloc.s    V_12
-      IL_0079:  cgt
-      IL_007b:  ldloc.s    V_11
-      IL_007d:  ldloc.s    V_12
-      IL_007f:  clt
-      IL_0081:  sub
-      IL_0082:  ret
+      IL_0041:  ldarg.0
+      IL_0042:  castclass  assembly/U/B
+      IL_0047:  stloc.s    V_5
+      IL_0049:  ldloc.0
+      IL_004a:  castclass  assembly/U/B
+      IL_004f:  stloc.s    V_6
+      IL_0051:  ldarg.2
+      IL_0052:  stloc.s    V_7
+      IL_0054:  ldloc.s    V_5
+      IL_0056:  ldfld      int32 assembly/U/B::item
+      IL_005b:  stloc.s    V_8
+      IL_005d:  ldloc.s    V_6
+      IL_005f:  ldfld      int32 assembly/U/B::item
+      IL_0064:  stloc.s    V_9
+      IL_0066:  ldloc.s    V_8
+      IL_0068:  ldloc.s    V_9
+      IL_006a:  cgt
+      IL_006c:  ldloc.s    V_8
+      IL_006e:  ldloc.s    V_9
+      IL_0070:  clt
+      IL_0072:  sub
+      IL_0073:  ret
 
-      IL_0083:  ldc.i4.0
-      IL_0084:  ret
+      IL_0074:  ldc.i4.0
+      IL_0075:  ret
 
-      IL_0085:  ldloc.1
-      IL_0086:  ldloc.3
-      IL_0087:  sub
-      IL_0088:  ret
+      IL_0076:  ldloc.1
+      IL_0077:  ldloc.3
+      IL_0078:  sub
+      IL_0079:  ret
 
-      IL_0089:  ldc.i4.1
-      IL_008a:  ret
+      IL_007a:  ldc.i4.1
+      IL_007b:  ret
 
-      IL_008b:  ldarg.1
-      IL_008c:  unbox.any  assembly/U
-      IL_0091:  brfalse.s  IL_0095
+      IL_007c:  ldarg.1
+      IL_007d:  unbox.any  assembly/U
+      IL_0082:  brfalse.s  IL_0086
 
-      IL_0093:  ldc.i4.m1
-      IL_0094:  ret
+      IL_0084:  ldc.i4.m1
+      IL_0085:  ret
 
-      IL_0095:  ldc.i4.0
-      IL_0096:  ret
+      IL_0086:  ldc.i4.0
+      IL_0087:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -553,17 +535,15 @@
       .locals init (int32 V_0,
                class assembly/U/B V_1,
                class [runtime]System.Collections.IEqualityComparer V_2,
-               int32 V_3,
-               class [runtime]System.Collections.IEqualityComparer V_4,
-               class assembly/U V_5)
+               class assembly/U V_3)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0045
+      IL_0001:  brfalse.s  IL_003e
 
       IL_0003:  ldc.i4.0
       IL_0004:  stloc.0
       IL_0005:  ldarg.0
       IL_0006:  isinst     assembly/U/B
-      IL_000b:  brfalse.s  IL_0034
+      IL_000b:  brfalse.s  IL_002f
 
       IL_000d:  ldarg.0
       IL_000e:  castclass  assembly/U/B
@@ -575,37 +555,33 @@
       IL_001c:  stloc.2
       IL_001d:  ldloc.1
       IL_001e:  ldfld      int32 assembly/U/B::item
-      IL_0023:  stloc.3
-      IL_0024:  ldloc.2
-      IL_0025:  stloc.s    V_4
-      IL_0027:  ldloc.3
-      IL_0028:  ldloc.0
-      IL_0029:  ldc.i4.6
-      IL_002a:  shl
-      IL_002b:  ldloc.0
-      IL_002c:  ldc.i4.2
-      IL_002d:  shr
-      IL_002e:  add
-      IL_002f:  add
-      IL_0030:  add
-      IL_0031:  stloc.0
-      IL_0032:  ldloc.0
-      IL_0033:  ret
+      IL_0023:  ldloc.0
+      IL_0024:  ldc.i4.6
+      IL_0025:  shl
+      IL_0026:  ldloc.0
+      IL_0027:  ldc.i4.2
+      IL_0028:  shr
+      IL_0029:  add
+      IL_002a:  add
+      IL_002b:  add
+      IL_002c:  stloc.0
+      IL_002d:  ldloc.0
+      IL_002e:  ret
 
-      IL_0034:  ldarg.0
-      IL_0035:  stloc.s    V_5
-      IL_0037:  ldloc.s    V_5
-      IL_0039:  isinst     assembly/U/B
-      IL_003e:  brfalse.s  IL_0043
+      IL_002f:  ldarg.0
+      IL_0030:  stloc.3
+      IL_0031:  ldloc.3
+      IL_0032:  isinst     assembly/U/B
+      IL_0037:  brfalse.s  IL_003c
 
-      IL_0040:  ldc.i4.1
-      IL_0041:  br.s       IL_0044
+      IL_0039:  ldc.i4.1
+      IL_003a:  br.s       IL_003d
 
-      IL_0043:  ldc.i4.0
-      IL_0044:  ret
+      IL_003c:  ldc.i4.0
+      IL_003d:  ret
 
-      IL_0045:  ldc.i4.0
-      IL_0046:  ret
+      IL_003e:  ldc.i4.0
+      IL_003f:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode() cil managed
@@ -631,15 +607,12 @@
                class assembly/U V_4,
                class assembly/U/B V_5,
                class assembly/U/B V_6,
-               class [runtime]System.Collections.IEqualityComparer V_7,
-               int32 V_8,
-               int32 V_9,
-               class [runtime]System.Collections.IEqualityComparer V_10)
+               class [runtime]System.Collections.IEqualityComparer V_7)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_006a
+      IL_0001:  brfalse.s  IL_005e
 
       IL_0003:  ldarg.1
-      IL_0004:  brfalse.s  IL_0068
+      IL_0004:  brfalse.s  IL_005c
 
       IL_0006:  ldarg.1
       IL_0007:  stloc.0
@@ -667,11 +640,11 @@
       IL_0027:  stloc.3
       IL_0028:  ldloc.1
       IL_0029:  ldloc.3
-      IL_002a:  bne.un.s   IL_0066
+      IL_002a:  bne.un.s   IL_005a
 
       IL_002c:  ldarg.0
       IL_002d:  isinst     assembly/U/B
-      IL_0032:  brfalse.s  IL_0064
+      IL_0032:  brfalse.s  IL_0058
 
       IL_0034:  ldarg.0
       IL_0035:  castclass  assembly/U/B
@@ -683,32 +656,26 @@
       IL_0045:  stloc.s    V_7
       IL_0047:  ldloc.s    V_5
       IL_0049:  ldfld      int32 assembly/U/B::item
-      IL_004e:  stloc.s    V_8
-      IL_0050:  ldloc.s    V_6
-      IL_0052:  ldfld      int32 assembly/U/B::item
-      IL_0057:  stloc.s    V_9
-      IL_0059:  ldloc.s    V_7
-      IL_005b:  stloc.s    V_10
-      IL_005d:  ldloc.s    V_8
-      IL_005f:  ldloc.s    V_9
-      IL_0061:  ceq
-      IL_0063:  ret
+      IL_004e:  ldloc.s    V_6
+      IL_0050:  ldfld      int32 assembly/U/B::item
+      IL_0055:  ceq
+      IL_0057:  ret
 
-      IL_0064:  ldc.i4.1
+      IL_0058:  ldc.i4.1
+      IL_0059:  ret
+
+      IL_005a:  ldc.i4.0
+      IL_005b:  ret
+
+      IL_005c:  ldc.i4.0
+      IL_005d:  ret
+
+      IL_005e:  ldarg.1
+      IL_005f:  ldnull
+      IL_0060:  cgt.un
+      IL_0062:  ldc.i4.0
+      IL_0063:  ceq
       IL_0065:  ret
-
-      IL_0066:  ldc.i4.0
-      IL_0067:  ret
-
-      IL_0068:  ldc.i4.0
-      IL_0069:  ret
-
-      IL_006a:  ldarg.1
-      IL_006b:  ldnull
-      IL_006c:  cgt.un
-      IL_006e:  ldc.i4.0
-      IL_006f:  ceq
-      IL_0071:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed

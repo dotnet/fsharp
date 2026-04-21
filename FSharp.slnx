@@ -1,0 +1,80 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Proto" />
+    <BuildType Name="Release" />
+    <Platform Name="Any CPU" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Compiler/">
+    <Project Path="src/Compiler/FSharp.Compiler.Service.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Project Path="buildtools/Misc/Misc.csproj" />
+  <Folder Name="/Libraries/">
+    <Project Path="src/FSharp.Core/FSharp.Core.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="tests/fsharp/FSharpSuite.Tests.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/Tests/FSharp.Compiler.Service.Tests support/">
+    <Project Path="tests/service/data/CSharp_Analysis/CSharp_Analysis.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="tests/service/data/TestTP/TestTP.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="src/fsc/fscAnyCpuProject/fscAnyCpu.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/fsc/fscArm64Project/fscArm64.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/FSharp.Build/FSharp.Build.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="src/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="src/fsi/fsiAnyCpuProject/fsiAnyCpu.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/fsi/fsiArm64Project/fsiArm64.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/fsi/fsiProject/fsi.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Project Path="src/fsc/fscProject/fsc.fsproj">
+    <BuildType Solution="Proto|*" Project="Debug" />
+  </Project>
+</Solution>

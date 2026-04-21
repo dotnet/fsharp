@@ -23,7 +23,7 @@ module ScriptRunner =
     let private getOrCreateEngine(args,version) sessionIsolation =
         match sessionIsolation with
         | ScriptSessionIsolation.Isolated ->
-            new FSharpScript(args, true, version)
+            getIsolatedSessionForEval args version
         | ScriptSessionIsolation.Shared ->
             getSessionForEval args version
 

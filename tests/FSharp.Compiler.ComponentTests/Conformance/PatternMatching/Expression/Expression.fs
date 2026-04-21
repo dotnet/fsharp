@@ -141,3 +141,34 @@ module Expression =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``MatchIncomplete for-loop with constant pattern includes hint`` () =
+        FSharp """
+for 0 in 1..10 do
+    ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 25, Line 2, Col 5, Line 2, Col 6, "Incomplete pattern matches on this expression. For example, the value '1' may indicate a case not covered by the pattern(s). Did you use a constant where a loop variable was expected? Unmatched elements will be ignored.")
+
+    [<Fact>]
+    let ``MatchIncomplete for-loop with parenthesized constant pattern includes hint`` () =
+        FSharp """
+for (0) in 1..10 do
+    ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 25, Line 2, Col 6, Line 2, Col 7, "Incomplete pattern matches on this expression. For example, the value '1' may indicate a case not covered by the pattern(s). Did you use a constant where a loop variable was expected? Unmatched elements will be ignored.")
+
+    [<Fact>]
+    let ``MatchIncomplete regular match does not include for-loop hint`` () =
+        FSharp """
+let f x =
+    match x with
+    | 0 -> 0
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 25, Line 3, Col 11, Line 3, Col 12, "Incomplete pattern matches on this expression. For example, the value '1' may indicate a case not covered by the pattern(s).")

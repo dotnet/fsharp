@@ -661,7 +661,7 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 /// This test is run in unison with its optimized counterpart below
 [<Fact>]
 let ``Test Unoptimized Declarations Project1`` () =
-    let options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
+    let options = Project1.createOptionsWithArgs [ "--langversion:preview"; "--nowarn:3886" ]
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
@@ -799,7 +799,7 @@ let ``Test Unoptimized Declarations Project1`` () =
 
 [<Fact>]
 let ``Test Optimized Declarations Project1`` () =
-    let options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
+    let options = Project1.createOptionsWithArgs [ "--langversion:preview"; "--nowarn:3886" ]
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 

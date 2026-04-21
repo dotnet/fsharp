@@ -18,7 +18,7 @@ let x = { Person.Names = "Isaac" }
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 4, Col 18, Line 4, Col 23,
-                                 ("The type 'Person' does not define the field, constructor or member 'Names'. Maybe you want one of the following:" + Environment.NewLine + "   Name"))
+                                 ("The type 'Person' does not define a field, constructor, or member named 'Names'. Maybe you want one of the following:" + Environment.NewLine + "   Name"))
 
     [<Fact>]
     let ``Suggest Array Module Functions`` () =
@@ -77,7 +77,7 @@ let x = N.MyUnion.``My Case2``
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 9, Col 19, Line 9,Col 31,
-                                 ("The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:" + Environment.NewLine + "   Case2" + Environment.NewLine + "   ``My Case1``" + Environment.NewLine + "   IsMy Case1"))
+                                 ("The type 'MyUnion' does not define a field, constructor, or member named 'My Case2'. Maybe you want one of the following:" + Environment.NewLine + "   Case2" + Environment.NewLine + "   ``My Case1``" + Environment.NewLine + "   IsMy Case1"))
 
 
     [<Fact>]
@@ -120,7 +120,7 @@ module Test2 =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 9, Col 7, Line 9, Col 14,
-                                 ("The type 'D' does not define the field, constructor or member 'Method2'. Maybe you want one of the following:" + Environment.NewLine + "   Method1"))
+                                 ("The type 'D' does not define a field, constructor, or member named 'Method2'. Maybe you want one of the following:" + Environment.NewLine + "   Method1"))
 
     [<Fact>]
     let ``Suggest Modules`` () =
@@ -158,7 +158,7 @@ let x = r.ello
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 6, Col 11, Line 6, Col 15,
-                                 ("The type 'MyRecord' does not define the field, constructor or member 'ello'. Maybe you want one of the following:" + Environment.NewLine + "   Hello"))
+                                 ("The type 'MyRecord' does not define a field, constructor, or member named 'ello'. Maybe you want one of the following:" + Environment.NewLine + "   Hello"))
 
     [<Fact>]
     let ``Suggest Record Type for RequireQualifiedAccess Records`` () =
@@ -224,7 +224,7 @@ let u = MyUnion.AntherCase
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 6, Col 17, Line 6, Col 27,
-                                 ("The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:" + Environment.NewLine + "   AnotherCase" + Environment.NewLine + "   IsAnotherCase"))
+                                 ("The type 'MyUnion' does not define a field, constructor, or member named 'AntherCase'. Maybe you want one of the following:" + Environment.NewLine + "   AnotherCase" + Environment.NewLine + "   IsAnotherCase"))
 
     [<Fact>]
     let ``Suggest Union Type for RequireQualifiedAccess Unions`` () =
@@ -260,4 +260,4 @@ let x =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 11, Col 15, Line 11, Col 19,
-                                 ("The type 'MyUnion' does not define the field, constructor or member 'Cas1'. Maybe you want one of the following:" + Environment.NewLine + "   Case1" + Environment.NewLine + "   Case2"))
+                                 ("The type 'MyUnion' does not define a field, constructor, or member named 'Cas1'. Maybe you want one of the following:" + Environment.NewLine + "   Case1" + Environment.NewLine + "   Case2"))

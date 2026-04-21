@@ -1,5 +1,5 @@
 // #Regression #Conformance #SignatureFiles #Namespaces 
-//<Expects id="FS0247" status="error" span="(14,13)">A namespace and a module named 'A\.B' both occur in two parts of this assembly</Expects>
+//<Expects id="FS0247" status="error" span="(14,13)">The name 'A\.B' is used as both a namespace and a module in this assembly\. Rename one of them to avoid the conflict\.</Expects>
 
 namespace A
 

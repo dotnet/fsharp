@@ -365,3 +365,62 @@ let main _ =
         |> shouldSucceed
         |> ignore
 
+    // https://github.com/dotnet/fsharp/issues/3660
+    [<Fact>]
+    let ``Issue_3660_ArrayOfFunctionsInvocationCorrectness`` () =
+        let source =
+            """
+module Test
+
+let runAll (fArr: (int -> int) array) x =
+    let mutable n = 0
+
+    for i = 0 to fArr.Length - 1 do
+        n <- n + fArr[i] x
+
+    n
+
+[<EntryPoint>]
+let main _ =
+    let fns = [| (fun x -> x + 1); (fun x -> x * 2); (fun x -> x - 3) |]
+    let result = runAll fns 10
+    if result <> (11 + 20 + 7) then failwithf "Expected 38, got %d" result
+    printfn "SUCCESS"
+    0
+"""
+
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/3660
+    // Verify that indexed array function invocation does not emit closure classes
+    [<Fact>]
+    let ``Issue_3660_NoClosureClassForIndexedArrayInvocation`` () =
+        let source =
+            """
+module Test
+
+let runAll (fArr: (int -> int) array) x =
+    let mutable n = 0
+
+    for i = 0 to fArr.Length - 1 do
+        n <- n + fArr[i] x
+
+    n
+"""
+
+        FSharp source
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILNotPresent [
+            "extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc"
+        ]
+        |> ignore
+

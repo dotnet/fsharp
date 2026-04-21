@@ -1,5 +1,5 @@
 
-neg06.fs(3,40,3,45): typecheck error FS0039: The type 'Encoding' does not define the field, constructor or member 'Ascii'. Maybe you want one of the following:
+neg06.fs(3,40,3,45): typecheck error FS0039: The type 'Encoding' does not define a field, constructor, or member named 'Ascii'. Maybe you want one of the following:
    ASCII
 
 neg06.fs(12,6,12,31): typecheck error FS0942: Struct types are always sealed
@@ -116,4 +116,4 @@ Candidates:
  - static member C.M1: x: int -> int
  - static member C.M1: x: string -> int
 
-neg06.fs(398,13,398,14): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s). Unmatched elements will be ignored.
+neg06.fs(398,13,398,14): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s). Did you use a constant where a loop variable was expected? Unmatched elements will be ignored.

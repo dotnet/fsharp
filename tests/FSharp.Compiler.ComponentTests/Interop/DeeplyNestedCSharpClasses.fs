@@ -54,7 +54,7 @@ let loss2 = MyNamespace.OuterClass.InnerClass_.MoreInnerClass.somefunction()   /
         |> withReferences [cslib]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 2, Col 36, Line 2, Col 47, "The type 'OuterClass' does not define the field, constructor or member 'InnerClass_'.")
+        |> withSingleDiagnostic (Error 39, Line 2, Col 36, Line 2, Col 47, "The type 'OuterClass' does not define a field, constructor, or member named 'InnerClass_'.")
 
     [<Fact>]
     let ``Missing type nested type moreinnerclass generates good message and range`` () =
@@ -68,7 +68,7 @@ let loss2 = MyNamespace.OuterClass.InnerClass.MoareInnerClass.somefunction()   /
         |> withReferences [cslib]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 2, Col 47, Line 2, Col 62, "The type 'InnerClass' does not define the field, constructor or member 'MoareInnerClass'.")
+        |> withSingleDiagnostic (Error 39, Line 2, Col 47, Line 2, Col 62, "The type 'InnerClass' does not define a field, constructor, or member named 'MoareInnerClass'.")
 
     [<Fact>]
     let ``Missing function generates good message and range`` () =
@@ -82,5 +82,5 @@ let loss2 = MyNamespace.OuterClass.InnerClass.MoreInnerClass.somefunction_()   /
         |> withReferences [cslib]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic ((Error 39, Line 2, Col 62, Line 2, Col 75, """The type 'MoreInnerClass' does not define the field, constructor or member 'somefunction_'. Maybe you want one of the following:
+        |> withSingleDiagnostic ((Error 39, Line 2, Col 62, Line 2, Col 75, """The type 'MoreInnerClass' does not define a field, constructor, or member named 'somefunction_'. Maybe you want one of the following:
    somefunction"""))

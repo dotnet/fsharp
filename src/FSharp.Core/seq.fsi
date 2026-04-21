@@ -1779,6 +1779,8 @@ module Seq =
 
     /// <summary>Returns the greatest of all elements of the sequence, compared via Operators.max on the function result.</summary>
     ///
+    /// <remarks>Returns the first maximal element of the sequence if there are multiple equal maximum elements.
+    /// This is an O(n) operation, where n is the length of the sequence.</remarks>
     /// <param name="projection">A function to transform items from the input sequence into comparable keys.</param>
     /// <param name="source">The input sequence.</param>
     ///
@@ -1804,8 +1806,6 @@ module Seq =
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MaxBy")>]
     val inline maxBy: projection: ('T -> 'U) -> source: seq<'T> -> 'T when 'U: comparison
 
@@ -1842,6 +1842,9 @@ module Seq =
 
     /// <summary>Returns the lowest of all elements of the sequence, compared via Operators.min on the function result.</summary>
     ///
+    /// <remarks>Returns the first minimal element of the sequence if there are multiple equal minimal elements.
+    /// This is an O(n) operation, where n is the length of the sequence.</remarks>
+    ///
     /// <param name="projection">A function to transform items from the input sequence into comparable keys.</param>
     /// <param name="source">The input sequence.</param>
     ///
@@ -1867,8 +1870,6 @@ module Seq =
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
-    ///
-    /// <remarks>This is an O(n) operation, where n is the length of the sequence.</remarks>
     [<CompiledName("MinBy")>]
     val inline minBy: projection: ('T -> 'U) -> source: seq<'T> -> 'T when 'U: comparison
 

@@ -215,7 +215,7 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
             let signatureDataFile =
                 FileSystem.ChangeExtensionShim(outputFile, ".signature-data.json")
 
-            serializeEntity signatureDataFile mspec)
+            DebugPrint.serializeEntity signatureDataFile mspec)
 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.

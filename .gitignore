@@ -16,10 +16,12 @@ scripts/*.patch
 /src/fsi/*.resx
 /src/FSharp.Compiler.Interactive.Settings/*.resx
 /src/fsi/Fsi.sln
+/src/fsi/Fsi.slnx
 /src/FSharp.Build/*.resources
 /src/Compiler/*.resx
 /src/Compiler/*.resources
 /src/Compiler/*.sln
+/src/Compiler/*.slnx
 /src/Compiler/*.userprefs
 /src/Compiler/StandardOutput.txt
 /src/Compiler/StandardError.txt
@@ -68,6 +70,7 @@ ossreadme*.txt
 *.fsproj.user
 *.vbproj.user
 *.sln.DotSettings.user
+*.slnx.DotSettings.user
 *.props.user
 launchSettings.json
 *.log

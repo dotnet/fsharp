@@ -148,3 +148,25 @@ module IdentifiersAndKeywords =
         |> shouldFail
         |> withErrorCode 0883
         |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/1255
+    [<Fact>]
+    let ``Issue 1255 - Identifiers with at sign produce correct codegen`` () =
+        FSharp """
+type Foo() =
+  static let ``BarAt@`` = "hello"
+  static member BarAt = ``BarAt@``
+  static member val Bar = "bar"
+
+[<EntryPoint>]
+let main _ =
+  if Foo.BarAt <> "hello" then
+    failwithf "Expected BarAt='hello' but got '%s'" Foo.BarAt
+  if Foo.Bar <> "bar" then
+    failwithf "Expected Bar='bar' but got '%s'" Foo.Bar
+  0
+        """
+        |> ignoreWarnings
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed

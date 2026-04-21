@@ -77,7 +77,7 @@ module Lib =
         |> shouldFail
         |> withDiagnostics [
             (Warning 3566, Line 22, Col 9, Line 22, Col 19, "Multiple type matches were found:\n    N.Module1.OtherThing\n    N.Module2.Person\nThe type 'N.Module1.OtherThing' was used. Due to the overlapping field names\n    Name\nconsider using type annotations or change the order of open statements.")
-            (Error 39, Line 22, Col 15, Line 22, Col 19, "The type 'OtherThing' does not define the field, constructor or member 'City'.")
+            (Error 39, Line 22, Col 15, Line 22, Col 19, "The type 'OtherThing' does not define a field, constructor, or member named 'City'.")
         ]
 
     let multipleRecdTypeChoiceWarningWith2AlternativeSource = """
@@ -123,7 +123,7 @@ module Lib =
         |> shouldFail
         |> withDiagnostics [
             (Warning 3566, Line 33, Col 9, Line 33, Col 19, "Multiple type matches were found:\n    N.Module1.OtherThing\n    N.Module2.Person\n    N.Module3.Cafe\nThe type 'N.Module1.OtherThing' was used. Due to the overlapping field names\n    Name\n    Planet\nconsider using type annotations or change the order of open statements.")
-            (Error 39, Line 33, Col 15, Line 33, Col 19, "The type 'OtherThing' does not define the field, constructor or member 'City'.")
+            (Error 39, Line 33, Col 15, Line 33, Col 19, "The type 'OtherThing' does not define a field, constructor, or member named 'City'.")
         ]
 
     let multipleRecdTypeChoiceWarningNotRaisedWithCorrectOpenStmtsOrderingSource = """

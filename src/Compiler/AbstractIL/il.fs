@@ -3375,6 +3375,15 @@ let mkILSimpleTypar nm =
         MetadataIndex = NoMetadataIdx
     }
 
+let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
+    { gp with
+        Constraints = []
+        HasReferenceTypeConstraint = false
+        HasNotNullableValueTypeConstraint = false
+        HasDefaultConstructorConstraint = false
+        HasAllowsRefStruct = false
+    }
+
 let genericParamOfGenericActual (_ga: ILType) = mkILSimpleTypar "T"
 
 let mkILFormalTypars (x: ILGenericArgsList) = List.map genericParamOfGenericActual x
@@ -4874,8 +4883,6 @@ let rec encodeCustomAttrElemTypeForObject x =
     | ILAttribElem.Double _ -> [| et_R8 |]
     | ILAttribElem.Array(elemTy, _) -> [| yield et_SZARRAY; yield! encodeCustomAttrElemType elemTy |]
 
-let tspan = TimeSpan(DateTime.UtcNow.Ticks - DateTime(2000, 1, 1).Ticks)
-
 let parseILVersion (vstr: string) =
     // matches "v1.2.3.4" or "1.2.3.4". Note, if numbers are missing, returns -1 (not 0).
     let mutable vstr = vstr.TrimStart [| 'v' |]
@@ -4884,6 +4891,7 @@ let parseILVersion (vstr: string) =
 
     // account for wildcards
     if versionComponents.Length > 2 then
+        let tspan = TimeSpan(DateTime.UtcNow.Ticks - DateTime(2000, 1, 1).Ticks)
         let defaultBuild = uint16 tspan.Days % UInt16.MaxValue - 1us
 
         let defaultRevision =

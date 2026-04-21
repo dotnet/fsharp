@@ -23,7 +23,7 @@ The build depends on an installation of Visual Studio. To build the compiler wit
 build.cmd -noVisualStudio
 ```
 
-After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
+After it's finished, open either `FSharp.slnx` or `VisualFSharp.slnx` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
 
 ### Quickstart on Linux or macOS
 
@@ -33,7 +33,7 @@ Build from the command line:
 ./build.sh
 ```
 
-After it's finished, open `FSharp.sln` in your editor of choice.
+After it's finished, open `FSharp.slnx` in your editor of choice.
 
 ### Documentation for contributors
 

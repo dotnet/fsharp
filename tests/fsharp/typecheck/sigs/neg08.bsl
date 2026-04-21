@@ -3,7 +3,7 @@ neg08.fs(7,24,7,55): typecheck error FS0033: The type 'System.Collections.Generi
 
 neg08.fs(9,24,9,67): typecheck error FS0033: The type 'System.Collections.Generic.List<_>' expects 1 type argument(s) but is given 2
 
-neg08.fs(16,8,16,10): typecheck error FS0670: This code is not sufficiently generic. The type variable 'b could not be generalized because it would escape its scope.
+neg08.fs(16,8,16,10): typecheck error FS0670: This code is not sufficiently generic. The type variable 'b could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.
 
 neg08.fs(21,1,21,28): typecheck error FS0919: Exception abbreviations must refer to existing exceptions or F# types deriving from System.Exception
 
@@ -19,6 +19,6 @@ neg08.fs(55,7,55,14): typecheck error FS0773: Cannot create an extension of a se
 
 neg08.fs(55,7,55,14): typecheck error FS0776: Object construction expressions may only be used to implement constructors in class types
 
-neg08.fs(61,19,61,26): typecheck error FS0039: The type 'Type' does not define the field, constructor or member 'value__'.
+neg08.fs(61,19,61,26): typecheck error FS0039: The type 'Type' does not define a field, constructor, or member named 'value__'.
 
 neg08.fs(79,5,79,44): typecheck error FS0502: The member or object constructor 'Random' takes 0 type argument(s) but is here given 1. The required signature is 'static member Variable.Random: y: Variable<'a> -> Variable<'a>'.

@@ -13,7 +13,7 @@ neg45.fs(34,27,34,28): typecheck error FS0465: Type inference problem too compli
 
 neg45.fs(41,24,41,33): typecheck error FS0827: '(|Foo|Bir|)' is not a valid method name. Use a 'let' binding instead.
 
-neg45.fs(52,14,52,17): typecheck error FS0039: The type 'FooBir' does not define the field, constructor or member 'Foo'.
+neg45.fs(52,14,52,17): typecheck error FS0039: The type 'FooBir' does not define a field, constructor, or member named 'Foo'.
 
 neg45.fs(56,19,56,28): typecheck error FS0827: '(|Foo|Bir|)' is not a valid method name. Use a 'let' binding instead.
 
