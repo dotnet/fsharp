@@ -116,27 +116,35 @@ type private ExpansionContext =
 /// Load and expand includes from an external file
 let rec private resolveSingleInclude (baseFileName: string) (includeInfo: IncludeInfo) (ctx: ExpansionContext) : Result<XNode seq, string> =
 
-    let resolvedPath = resolveFilePath baseFileName includeInfo.FilePath
+    let resolvedPathResult =
+        try
+            Result.Ok(resolveFilePath baseFileName includeInfo.FilePath)
+        with _ ->
+            Result.Error $"Invalid file path: {includeInfo.FilePath}"
 
-    if ctx.InProgressFiles.Contains(resolvedPath) then
-        Result.Error $"Circular include detected: {resolvedPath}"
-    else
-        loadXmlFile ctx.FileCache resolvedPath
-        |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
-        |> Result.map (fun elements ->
-            // Clone the in-progress set and add the current file for recursive expansion
-            let childInProgress = HashSet<string>(ctx.InProgressFiles, pathComparer)
-            childInProgress.Add(resolvedPath) |> ignore
+    match resolvedPathResult with
+    | Result.Error msg -> Result.Error msg
+    | Result.Ok resolvedPath ->
 
-            let childCtx =
-                {
-                    FileCache = ctx.FileCache
-                    InProgressFiles = childInProgress
-                    Range = ctx.Range
-                }
+        if ctx.InProgressFiles.Contains(resolvedPath) then
+            Result.Error $"Circular include detected: {resolvedPath}"
+        else
+            loadXmlFile ctx.FileCache resolvedPath
+            |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
+            |> Result.map (fun elements ->
+                // Clone the in-progress set and add the current file for recursive expansion
+                let childInProgress = HashSet<string>(ctx.InProgressFiles, pathComparer)
+                childInProgress.Add(resolvedPath) |> ignore
 
-            let nodes = elements |> Seq.cast<XNode>
-            expandAllIncludeNodes resolvedPath nodes childCtx)
+                let childCtx =
+                    {
+                        FileCache = ctx.FileCache
+                        InProgressFiles = childInProgress
+                        Range = ctx.Range
+                    }
+
+                let nodes = elements |> Seq.cast<XNode>
+                expandAllIncludeNodes resolvedPath nodes childCtx)
 
 /// Recursively expand includes in XElement nodes
 and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx: ExpansionContext) : XNode seq =
