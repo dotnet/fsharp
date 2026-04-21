@@ -495,5 +495,6 @@ let trigger() =
     }
 """
         |> withDebug
+        |> withNoOptimize
         |> compile
         |> shouldSucceed
