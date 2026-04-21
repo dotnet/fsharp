@@ -720,3 +720,89 @@ type T() =
         and set (key: string) (v: int) = store <- store.Add(key, v)
 """
     |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with setter only (1 arg) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable data = [| 0 |]
+    member x.Ite{caret}m
+        with set (i: int) (v: int) = data.[i] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with getter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Ite{caret}m with get (i: int, j: int) = i + j
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with setter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let store = System.Collections.Generic.Dictionary<int * int, int>()
+    member x.Ite{caret}m
+        with set (i: int, j: int) (v: int) = store[(i, j)] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with getter and setter (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let store = System.Collections.Generic.Dictionary<int * int, int>()
+    member x.Ite{caret}m
+        with get (i: int, j: int) = store[(i, j)]
+        and set (i: int, j: int) (v: int) = store[(i, j)] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with setter only (1 arg) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string, int>
+    member x.Valu{caret}e
+        with set (key: string) (v: int) = store <- store.Add(key, v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e with get (a: string, b: string) = a + b
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with setter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string * string, int>
+    member x.Valu{caret}e
+        with set (a: string, b: string) (v: int) = store <- store.Add((a, b), v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter and setter (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string * string, int>
+    member x.Valu{caret}e
+        with get (a: string, b: string) = store[(a, b)]
+        and set (a: string, b: string) (v: int) = store <- store.Add((a, b), v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
