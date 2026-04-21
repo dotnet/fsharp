@@ -600,7 +600,7 @@ type TcConfigBuilder =
 
         mutable strictIndentation: bool option
 
-        mutable inlineNamedFunctions: bool option
+        mutable alwaysInline: bool option
 
         mutable exename: string option
 
@@ -855,7 +855,7 @@ type TcConfigBuilder =
             dumpSignatureData = false
             realsig = false
             strictIndentation = None
-            inlineNamedFunctions = None
+            alwaysInline = None
             compilationMode = TcGlobals.CompilationMode.Unset
         }
 
@@ -1257,8 +1257,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.FxResolver = data.FxResolver
     member _.strictIndentation = data.strictIndentation
 
-    member _.inlineNamedFunctions =
-        data.inlineNamedFunctions
+    member _.alwaysInline =
+        data.alwaysInline
         |> Option.defaultValue (
             not data.debuginfo
             || data.optSettings.LocalOptimizationsEnabled

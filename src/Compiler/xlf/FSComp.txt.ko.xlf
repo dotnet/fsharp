@@ -1032,6 +1032,11 @@
         <target state="translated">모든 컴파일 파일의 유추된 인터페이스를 관련 서명 파일로 인쇄합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsAlwaysInline">
+        <source>Always inline 'inline' functions</source>
+        <target state="new">Always inline 'inline' functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsCheckNulls">
         <source>Enable nullness declarations and checks ({0} by default)</source>
         <target state="new">Enable nullness declarations and checks ({0} by default)</target>
@@ -1055,11 +1060,6 @@
       <trans-unit id="optsGetLangVersions">
         <source>Display the allowed values for language version.</source>
         <target state="translated">언어 버전에 허용되는 값을 표시합니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsInlineNamedFunctions">
-        <source>Inline named 'inline' functions</source>
-        <target state="new">Inline named 'inline' functions</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">

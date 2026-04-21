@@ -329,7 +329,7 @@ type OptimizationSettings =
       
       processingMode : OptimizationProcessingMode
 
-      inlineNamedFunctions: bool
+      alwaysInline: bool
     }
 
     static member Defaults = 
@@ -347,7 +347,7 @@ type OptimizationSettings =
           reportHasEffect = false
           reportTotalSizes = false
           processingMode = OptimizationProcessingMode.Parallel
-          inlineNamedFunctions = false
+          alwaysInline = false
         }
 
     /// Determines if JIT optimizations are enabled
@@ -510,7 +510,7 @@ let CheckInlineValueIsComplete (v: Val) res =
         //System.Diagnostics.Debug.Assert(false, sprintf "Break for incomplete inline value %s" v.DisplayName)
 
 let check (cenv: cenv) (vref: ValRef) (res: ValInfo) =
-    if cenv.settings.inlineNamedFunctions then
+    if cenv.settings.alwaysInline then
         CheckInlineValueIsComplete vref.Deref res.ValExprInfo
     (vref, res)
 
@@ -1367,7 +1367,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary (cenv: cenv) mhi =
              Zset.exists hiddenTyconRepr fvs.FreeLocalTyconReprs ||
              Zset.exists hiddenRecdField fvs.FreeRecdFields ||
              Zset.exists hiddenUnionCase fvs.FreeUnionCases ||
-             (cenv.settings.inlineNamedFunctions &&
+             (cenv.settings.alwaysInline &&
               ((isAssemblyBoundary && not (freeVarsAllPublic fvs)) ||
                Zset.exists hiddenVal fvs.FreeLocals ||
                Zset.exists hiddenTycon fvs.FreeTyvars.FreeTycons))) ->
@@ -1412,7 +1412,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary (cenv: cenv) mhi =
                ValInfos(ss.ValInfos.Entries 
                          |> Seq.filter (fun (vref, _) ->
                              not (hiddenVal vref.Deref) ||
-                             (not cenv.settings.inlineNamedFunctions && vref.Deref.ShouldInline))
+                             (not cenv.settings.alwaysInline && vref.Deref.ShouldInline))
                          |> Seq.map (fun (vref, e) -> check cenv vref (abstractValInfo e) )) }
 
     and abstractLazyModulInfo (ss: LazyModuleInfo) = 
@@ -3128,8 +3128,8 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | CurriedLambdaValue (_, _, _, expr, _) when
-            shouldInline && (cenv.settings.inlineNamedFunctions || Option.exists (shouldForceInlineInDebug cenv.g) vOpt) ||
-            inlineIfLambda && cenv.settings.inlineNamedFunctions ->
+            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv.g) vOpt) ||
+            inlineIfLambda && cenv.settings.alwaysInline ->
         let fvs = freeInExpr CollectLocals expr
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
             None
@@ -3140,11 +3140,11 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when shouldInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"
 
-    | UnknownValue when shouldInline && cenv.settings.inlineNamedFunctions ->
+    | UnknownValue when shouldInline && cenv.settings.alwaysInline ->
         warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
         None
 
-    | _ when shouldInline && cenv.settings.inlineNamedFunctions ->
+    | _ when shouldInline && cenv.settings.alwaysInline ->
         warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m))
         None
 
@@ -3190,7 +3190,7 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
            e, AddValEqualityInfo g m v einfo 
 
     | None ->
-       if cenv.settings.inlineNamedFunctions then
+       if cenv.settings.alwaysInline then
            if v.ShouldInline then
                 match valInfoForVal.ValExprInfo with
                 | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
@@ -3482,7 +3482,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
 and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, args: Expr list, m) =
     let g = cenv.g
 
-    match cenv.settings.inlineNamedFunctions, stripExpr valExpr with
+    match cenv.settings.alwaysInline, stripExpr valExpr with
     | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv.g vref) ->
         let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type

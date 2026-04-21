@@ -472,7 +472,7 @@ type TcConfigBuilder =
 
         mutable strictIndentation: bool option
 
-        mutable inlineNamedFunctions: bool option
+        mutable alwaysInline: bool option
 
         mutable exename: string option
 
@@ -816,7 +816,7 @@ type TcConfig =
 
     member strictIndentation: bool option
 
-    member inlineNamedFunctions: bool
+    member alwaysInline: bool
 
     member GetTargetFrameworkDirectories: unit -> string list
 

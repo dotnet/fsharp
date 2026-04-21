@@ -1209,11 +1209,11 @@ let languageFlags tcConfigB =
         )
 
         CompilerOption(
-            "inline-named-functions",
+            "always-inline",
             tagNone,
-            OptionSwitch(fun switch -> tcConfigB.inlineNamedFunctions <- Some(switch = OptionSwitch.On)),
+            OptionSwitch(fun switch -> tcConfigB.alwaysInline <- Some(switch = OptionSwitch.On)),
             None,
-            Some(FSComp.SR.optsInlineNamedFunctions ())
+            Some(FSComp.SR.optsAlwaysInline ())
         )
     ]
 

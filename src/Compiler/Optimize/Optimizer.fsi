@@ -52,7 +52,7 @@ type OptimizationSettings =
 
         processingMode: OptimizationProcessingMode
 
-        inlineNamedFunctions: bool
+        alwaysInline: bool
     }
 
     member JitOptimizationsEnabled: bool
