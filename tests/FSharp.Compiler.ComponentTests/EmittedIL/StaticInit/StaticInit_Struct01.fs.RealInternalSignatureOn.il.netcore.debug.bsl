@@ -22,16 +22,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -66,27 +56,18 @@
       
       .maxstack  4
       .locals init (valuetype assembly/C& V_0,
-               class [runtime]System.Collections.IComparer V_1,
-               valuetype [runtime]System.DateTime V_2,
-               valuetype [runtime]System.DateTime V_3,
-               class [runtime]System.Collections.IComparer V_4)
+               class [runtime]System.Collections.IComparer V_1)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
       IL_0008:  stloc.1
       IL_0009:  ldarg.0
       IL_000a:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_000f:  stloc.2
-      IL_0010:  ldloc.0
-      IL_0011:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_0016:  stloc.3
-      IL_0017:  ldloc.1
-      IL_0018:  stloc.s    V_4
-      IL_001a:  ldloc.2
-      IL_001b:  ldloc.3
-      IL_001c:  call       int32 [netstandard]System.DateTime::Compare(valuetype [netstandard]System.DateTime,
+      IL_000f:  ldloc.0
+      IL_0010:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
+      IL_0015:  call       int32 [netstandard]System.DateTime::Compare(valuetype [netstandard]System.DateTime,
                                                                        valuetype [netstandard]System.DateTime)
-      IL_0021:  ret
+      IL_001a:  ret
     } 
 
     .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
@@ -101,19 +82,14 @@
       IL_000c:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj,
-                                      class [runtime]System.Collections.IComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
       .locals init (valuetype assembly/C V_0,
                valuetype assembly/C& V_1,
-               class [runtime]System.Collections.IComparer V_2,
-               valuetype [runtime]System.DateTime V_3,
-               valuetype [runtime]System.DateTime V_4,
-               class [runtime]System.Collections.IComparer V_5)
+               class [runtime]System.Collections.IComparer V_2)
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  assembly/C
       IL_0006:  stloc.0
@@ -123,17 +99,11 @@
       IL_000b:  stloc.2
       IL_000c:  ldarg.0
       IL_000d:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_0012:  stloc.3
-      IL_0013:  ldloc.1
-      IL_0014:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_0019:  stloc.s    V_4
-      IL_001b:  ldloc.2
-      IL_001c:  stloc.s    V_5
-      IL_001e:  ldloc.3
-      IL_001f:  ldloc.s    V_4
-      IL_0021:  call       int32 [netstandard]System.DateTime::Compare(valuetype [netstandard]System.DateTime,
+      IL_0012:  ldloc.1
+      IL_0013:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
+      IL_0018:  call       int32 [netstandard]System.DateTime::Compare(valuetype [netstandard]System.DateTime,
                                                                        valuetype [netstandard]System.DateTime)
-      IL_0026:  ret
+      IL_001d:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -175,40 +145,27 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(valuetype assembly/C obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool Equals(valuetype assembly/C obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
       .locals init (valuetype assembly/C& V_0,
-               class [runtime]System.Collections.IEqualityComparer V_1,
-               valuetype [runtime]System.DateTime V_2,
-               valuetype [runtime]System.DateTime V_3,
-               class [runtime]System.Collections.IEqualityComparer V_4)
+               class [runtime]System.Collections.IEqualityComparer V_1)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  ldarg.2
       IL_0004:  stloc.1
       IL_0005:  ldarg.0
       IL_0006:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_000b:  stloc.2
-      IL_000c:  ldloc.0
-      IL_000d:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_0012:  stloc.3
-      IL_0013:  ldloc.1
-      IL_0014:  stloc.s    V_4
-      IL_0016:  ldloc.2
-      IL_0017:  ldloc.3
-      IL_0018:  call       bool [netstandard]System.DateTime::Equals(valuetype [netstandard]System.DateTime,
+      IL_000b:  ldloc.0
+      IL_000c:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
+      IL_0011:  call       bool [netstandard]System.DateTime::Equals(valuetype [netstandard]System.DateTime,
                                                                      valuetype [netstandard]System.DateTime)
-      IL_001d:  ret
+      IL_0016:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
-                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       

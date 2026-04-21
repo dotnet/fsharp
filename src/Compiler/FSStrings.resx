@@ -153,8 +153,14 @@
   <data name="ErrorFromAddingTypeEquation1" xml:space="preserve">
     <value>This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</value>
   </data>
+  <data name="ErrorFromAddingTypeEquation1Tuple" xml:space="preserve">
+    <value>This expression was expected to have type\n    '{1}'    \nbut is a tuple of type\n    '{0}'    {2}</value>
+  </data>
   <data name="ErrorFromAddingTypeEquation2" xml:space="preserve">
     <value>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</value>
+  </data>
+  <data name="ErrorFromAddingTypeEquation2Tuple" xml:space="preserve">
+    <value>Type mismatch. Expecting a\n    '{0}'    \nbut given a tuple of type\n    '{1}'    {2}\n</value>
   </data>
   <data name="ErrorFromApplyingDefault1" xml:space="preserve">
     <value>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </value>
@@ -190,7 +196,7 @@
     <value>The type '{0}' expects {1} type argument(s) but is given {2}</value>
   </data>
   <data name="IndeterminateType" xml:space="preserve">
-    <value>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</value>
+    <value>The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.</value>
   </data>
   <data name="NameClash1" xml:space="preserve">
     <value>Duplicate definition of {0} '{1}'</value>
@@ -1016,6 +1022,9 @@
   </data>
   <data name="MatchIncomplete4" xml:space="preserve">
     <value> Unmatched elements will be ignored.</value>
+  </data>
+  <data name="MatchIncompleteForLoop" xml:space="preserve">
+    <value> Did you use a constant where a loop variable was expected?</value>
   </data>
   <data name="EnumMatchIncomplete1" xml:space="preserve">
     <value>Enums may take values outside known cases.</value>

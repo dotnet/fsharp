@@ -28,7 +28,7 @@ if not foo.IsBar then failwith "Should be Bar"
         """
         |> typecheck
         |> shouldFail
-        |> withDiagnostics  [Error 39, Line 4, Col 12, Line 4, Col 17, "The type 'Foo' does not define the field, constructor or member 'IsBar'. Maybe you want one of the following:
+        |> withDiagnostics  [Error 39, Line 4, Col 12, Line 4, Col 17, "The type 'Foo' does not define a field, constructor, or member named 'IsBar'. Maybe you want one of the following:
    Bar"]
 
     [<Fact>]
@@ -136,7 +136,7 @@ let isFoo = foo.IsFoo
         """
         |> typecheck
         |> shouldFail
-        |> withErrorMessage "The type 'Foo' does not define the field, constructor or member 'IsFoo'. Maybe you want one of the following:
+        |> withErrorMessage "The type 'Foo' does not define a field, constructor, or member named 'IsFoo'. Maybe you want one of the following:
    Foo"
 
 
@@ -154,7 +154,7 @@ let x = (PrimaryAssembly.Mscorlib).IsMscorlib
         |> withLangVersion80
         |> typecheck
         |> shouldFail
-        |> withErrorMessage "The type 'PrimaryAssembly' does not define the field, constructor or member 'IsMscorlib'. Maybe you want one of the following:
+        |> withErrorMessage "The type 'PrimaryAssembly' does not define a field, constructor, or member named 'IsMscorlib'. Maybe you want one of the following:
    Mscorlib"
 
 

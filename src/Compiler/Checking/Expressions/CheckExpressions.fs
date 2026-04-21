@@ -4118,6 +4118,12 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOK
     | NoNewTypars
 
+/// Formats a list of names for display in diagnostics, truncating to at most 5 entries.
+let formatAvailableNames (names: string array) =
+    let truncated = names |> Array.truncate 5
+    let result = truncated |> String.concat ", "
+    if names.Length > 5 then result + ", ..." else result
+
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //-------------------------------------------------------------------------
@@ -5022,7 +5028,12 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
              if staticParameters |> Array.exists (fun sp -> n.idText = sp.PUntaint((fun sp -> sp.Name), n.idRange)) then
                  error (Error(FSComp.SR.etStaticParameterAlreadyHasValue n.idText, n.idRange))
              else
-                 error (Error(FSComp.SR.etNoStaticParameterWithName n.idText, n.idRange))
+                 let availableNames =
+                     staticParameters
+                     |> Array.map (fun sp -> sp.PUntaint((fun sp -> sp.Name), n.idRange))
+                     |> formatAvailableNames
+
+                 error (Error(FSComp.SR.etNoStaticParameterWithName (n.idText, availableNames), n.idRange))
          | [_] -> ()
          | _ -> error (Error(FSComp.SR.etMultipleStaticParameterWithName n.idText, n.idRange))
 
@@ -6162,6 +6173,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
     | SynExpr.WhileBang (range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+
     | SynExpr.IndexFromEnd (rightExpr, m) ->
         errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
         let adjustedExpr = ParseHelpers.adjustHatPrefixToTyparLookup m rightExpr
@@ -6293,6 +6305,11 @@ and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
 
 and TcExprArrayOrList (cenv: cenv) overallTy env tpenv (isArray, args, m) =
     let g = cenv.g
+
+    match isArray, args with
+    | false, [ SynExpr.Tuple(false, _, _, _) ] ->
+        informationalWarning (Error(FSComp.SR.tcListLiteralWithSingleTupleElement (), m))
+    | _ -> ()
 
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
     let argTy = NewInferenceType g
@@ -8295,11 +8312,40 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
     // Add the pattern match compilation
     let bodyExpr =
         let valsDefinedByMatching = ListSet.remove valEq elemVar vspecs
-        CompilePatternForMatch
-            cenv env synEnumExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None)
-            [MatchClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, None), mIn)]
-            enumElemTy
-            overallTy.Commit
+
+        let isConstantPattern =
+            match synPat with
+            | SynPat.Const _
+            | SynPat.Paren(SynPat.Const _, _)
+            | SynPat.Typed(SynPat.Const _, _, _)
+            | SynPat.Paren(SynPat.Typed(SynPat.Const _, _, _), _) -> true
+            | _ -> false
+
+        let compileMatch () =
+            CompilePatternForMatch
+                cenv env synEnumExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None)
+                [MatchClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, None), mIn)]
+                enumElemTy
+                overallTy.Commit
+
+        if isConstantPattern then
+            use _ =
+                UseTransformedDiagnosticsLogger(fun oldLogger ->
+                    { new DiagnosticsLogger("forLoopConstantHint") with
+                        member _.DiagnosticSink(diagnostic) =
+                            match diagnostic.Exception with
+                            | MatchIncomplete _ ->
+                                oldLogger.DiagnosticSink(
+                                    { diagnostic with
+                                        Exception = MatchIncompleteForLoopHint(diagnostic.Exception) })
+                            | _ -> oldLogger.DiagnosticSink(diagnostic)
+
+                        member _.ErrorCount = oldLogger.ErrorCount
+                    })
+
+            compileMatch ()
+        else
+            compileMatch ()
 
     // Apply the fixup to bind the elemVar if needed
     let bodyExpr = bodyExprFixup elemVar bodyExpr
@@ -8466,15 +8512,17 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                         else
                             if IsIndexerType g cenv.amap expr.Type then
                                 let old = not (g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot)
+                                // NotAFunctionButIndexer uses overallTy (expected type) for the indexer suggestion message.
                                 error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, old))
                             else
-                                error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
+                                // NotAFunction uses exprTy (actual type) to show "has type X, which does not accept arguments".
+                                error (NotAFunction(denv, exprTy, mExpr, mArg))
 
                 // f x  (where 'f' is not a function)
                 | _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutionsDelayed cenv env tpenv delayed
-                    error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
+                    error (NotAFunction(denv, exprTy, mExpr, mArg))
 
     propagate false delayed expr.Range exprTy
 
@@ -8795,7 +8843,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
 
         | _ ->
-            error (NotAFunction(denv, overallTy.Commit, mLeftExpr, mArg))
+            error (NotAFunction(denv, exprTy, mLeftExpr, mArg))
 
 //-------------------------------------------------------------------------
 // TcLongIdentThen: Typecheck "A.B.C<D>.E.F ... " constructs
@@ -9358,7 +9406,6 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.YieldOrReturn _
         | SynExpr.YieldOrReturnFrom _
         | SynExpr.MatchBang _
-        | LetOrUse(_, true, _)
         | SynExpr.DoBang _
         | SynExpr.WhileBang _
         | SynExpr.TraitCall _
@@ -10773,6 +10820,13 @@ and CheckRecursiveBindingIds binds =
         if nm <> "" && not (hashOfBinds.Add nm) then
             error(Duplicate("value", nm, m))
 
+/// Returns true if the expression is an elif chain that ends without a final 'else' branch.
+and elifChainMissingElse expr =
+    match expr with
+    | SynExpr.IfThenElse(elseExpr = None) -> true
+    | SynExpr.IfThenElse(elseExpr = Some elseExpr) -> elifChainMissingElse elseExpr
+    | _ -> false
+
 /// Process a sequence of sequentials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way
 /// This avoids stack overflow on really large "let" and "letrec" lists
 and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
@@ -10819,12 +10873,15 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
         let env = { env with eIsControlFlow = true }
         let thenExpr, tpenv =
             let env =
-                match env.eContextInfo with
-                | ContextInfo.ElseBranchResult _ -> { env with eContextInfo = ContextInfo.ElseBranchResult synThenExpr.Range }
-                | _ ->
-                    match synElseExprOpt with
-                    | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
-                    | _ -> { env with eContextInfo = ContextInfo.IfExpression synThenExpr.Range }
+                match env.eContextInfo, synElseExprOpt with
+                // Inside an elif chain with no final else: use full elif range (m) so the error points at the whole elif.
+                | ContextInfo.ElseBranchResult _, None -> { env with eContextInfo = ContextInfo.OmittedElseBranch m }
+                | ContextInfo.ElseBranchResult _, _ -> { env with eContextInfo = ContextInfo.ElseBranchResult synThenExpr.Range }
+                // Top-level if with no else: use then-branch range.
+                | _, None -> { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
+                | _, Some elseExpr when elifChainMissingElse elseExpr ->
+                    { env with eContextInfo = ContextInfo.OmittedElseBranch synThenExpr.Range }
+                | _ -> { env with eContextInfo = ContextInfo.IfExpression synThenExpr.Range }
 
             if not isRecovery && Option.isNone synElseExprOpt then
                 UnifyTypes cenv env m g.unit_ty overallTy.Commit

@@ -1,6 +1,6 @@
 {
   "sdk": {
-    "version": "10.0.105",
+    "version": "10.0.202",
     "allowPrerelease": true,
     "paths": [
       ".dotnet",
@@ -12,7 +12,7 @@
     "runner": "Microsoft.Testing.Platform"
   },
   "tools": {
-    "dotnet": "10.0.105",
+    "dotnet": "10.0.202",
     "vs": {
       "version": "18.0",
       "components": [
@@ -22,7 +22,7 @@
     "xcopy-msbuild": "18.0.0"
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "10.0.0-beta.26208.4",
+    "Microsoft.DotNet.Arcade.Sdk": "10.0.0-beta.26220.5",
     "Microsoft.DotNet.Helix.Sdk": "8.0.0-beta.23255.2"
   }
 }
