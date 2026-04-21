@@ -467,3 +467,33 @@ if result[0].x <> 1 then failwith $"unexpected result {result[0]}"
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Debug-mode: mixing resumable and standard computation expressions compiles``() =
+        FSharp """
+module ReproMixedBuilders
+open System.Threading.Tasks
+
+type TaskMaybeBuilder() =
+
+    member inline _.Zero() = Task.FromResult None
+
+    member inline _.Delay([<InlineIfLambda>] f) = task { return! f () }
+
+    member inline _.Bind(value, [<InlineIfLambda>] f) =
+        task {
+            match value with
+            | None -> return None
+            | Some result -> return! f result
+        }
+
+let taskMaybe = TaskMaybeBuilder()
+
+let trigger() =
+    taskMaybe {
+        do! None
+    }
+"""
+        |> withDebug
+        |> compile
+        |> shouldSucceed
