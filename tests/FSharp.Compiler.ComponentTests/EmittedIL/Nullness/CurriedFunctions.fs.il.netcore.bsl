@@ -46,9 +46,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`3<string,string,int32> 
-            Invoke(string b,
-                   int32 c) cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`3<string,string,int32> Invoke(string b, int32 c) cil managed
     {
       
       .maxstack  8
@@ -131,6 +129,7 @@
        extends [runtime]System.Object
 {
 } 
+
 
 
 

@@ -5,11 +5,6 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern System.Collections
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 9:0:0:0
-}
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -70,9 +65,7 @@
       IL_0008:  ret
     } 
 
-    .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> 
-            F(class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> x1,
-              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> x2) cil managed
+    .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> F(class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> x1, class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> x2) cil managed
     {
       .param [1]
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.OptionalArgumentAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -87,7 +80,7 @@
                int32 V_4,
                class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_5,
                class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_6,
-               class [System.Collections]System.Collections.Generic.List`1<class assembly/A> V_7,
+               class [runtime]System.Collections.Generic.List`1<class assembly/A> V_7,
                class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_8,
                class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_9,
                class assembly/A V_10,
@@ -133,7 +126,7 @@
       IL_0028:  nop
       IL_0029:  stloc.s    V_4
       IL_002b:  ldloc.s    V_4
-      IL_002d:  newobj     instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
+      IL_002d:  newobj     instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
       IL_0032:  stloc.s    V_7
       IL_0034:  ldarg.0
       IL_0035:  stloc.s    V_8
@@ -153,7 +146,7 @@
       IL_004c:  stloc.s    V_10
       IL_004e:  ldloc.s    V_7
       IL_0050:  ldloc.s    V_10
-      IL_0052:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+      IL_0052:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
       IL_0057:  nop
       IL_0058:  ldarg.1
       IL_0059:  stloc.s    V_11
@@ -173,7 +166,7 @@
       IL_0070:  stloc.s    V_13
       IL_0072:  ldloc.s    V_7
       IL_0074:  ldloc.s    V_13
-      IL_0076:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+      IL_0076:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
       IL_007b:  nop
       IL_007c:  ldloc.s    V_7
       IL_007e:  ret
@@ -181,7 +174,7 @@
 
   } 
 
-  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> test() cil managed
+  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> test() cil managed
   {
     
     .maxstack  4
@@ -194,7 +187,7 @@
              int32 V_6,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_7,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_8,
-             class [System.Collections]System.Collections.Generic.List`1<class assembly/A> V_9,
+             class [runtime]System.Collections.Generic.List`1<class assembly/A> V_9,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_10,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_11,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_12,
@@ -242,7 +235,7 @@
     IL_0030:  nop
     IL_0031:  stloc.s    V_6
     IL_0033:  ldloc.s    V_6
-    IL_0035:  newobj     instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
+    IL_0035:  newobj     instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
     IL_003a:  stloc.s    V_9
     IL_003c:  ldloc.0
     IL_003d:  stloc.s    V_10
@@ -259,7 +252,7 @@
     IL_004c:  ldloc.s    V_9
     IL_004e:  ldloc.s    V_11
     IL_0050:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::get_Value()
-    IL_0055:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+    IL_0055:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
     IL_005a:  nop
     IL_005b:  ldloc.1
     IL_005c:  stloc.s    V_12
@@ -276,13 +269,13 @@
     IL_006b:  ldloc.s    V_9
     IL_006d:  ldloc.s    V_13
     IL_006f:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::get_Value()
-    IL_0074:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+    IL_0074:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
     IL_0079:  nop
     IL_007a:  ldloc.s    V_9
     IL_007c:  ret
   } 
 
-  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> test2() cil managed
+  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> test2() cil managed
   {
     
     .maxstack  4
@@ -295,7 +288,7 @@
              int32 V_6,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_7,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_8,
-             class [System.Collections]System.Collections.Generic.List`1<class assembly/A> V_9,
+             class [runtime]System.Collections.Generic.List`1<class assembly/A> V_9,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_10,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_11,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_12,
@@ -344,7 +337,7 @@
     IL_0039:  nop
     IL_003a:  stloc.s    V_6
     IL_003c:  ldloc.s    V_6
-    IL_003e:  newobj     instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
+    IL_003e:  newobj     instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
     IL_0043:  stloc.s    V_9
     IL_0045:  ldloc.0
     IL_0046:  stloc.s    V_10
@@ -361,7 +354,7 @@
     IL_0055:  ldloc.s    V_9
     IL_0057:  ldloc.s    V_11
     IL_0059:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::get_Value()
-    IL_005e:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+    IL_005e:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
     IL_0063:  nop
     IL_0064:  ldloc.1
     IL_0065:  stloc.s    V_12
@@ -378,13 +371,13 @@
     IL_0074:  ldloc.s    V_9
     IL_0076:  ldloc.s    V_13
     IL_0078:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::get_Value()
-    IL_007d:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+    IL_007d:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
     IL_0082:  nop
     IL_0083:  ldloc.s    V_9
     IL_0085:  ret
   } 
 
-  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> test3() cil managed
+  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> test3() cil managed
   {
     
     .maxstack  4
@@ -397,7 +390,7 @@
              int32 V_6,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_7,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_8,
-             class [System.Collections]System.Collections.Generic.List`1<class assembly/A> V_9,
+             class [runtime]System.Collections.Generic.List`1<class assembly/A> V_9,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_10,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_11,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_12,
@@ -446,7 +439,7 @@
     IL_0039:  nop
     IL_003a:  stloc.s    V_6
     IL_003c:  ldloc.s    V_6
-    IL_003e:  newobj     instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
+    IL_003e:  newobj     instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
     IL_0043:  stloc.s    V_9
     IL_0045:  ldloc.0
     IL_0046:  stloc.s    V_10
@@ -463,7 +456,7 @@
     IL_0055:  ldloc.s    V_9
     IL_0057:  ldloc.s    V_11
     IL_0059:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::get_Value()
-    IL_005e:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+    IL_005e:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
     IL_0063:  nop
     IL_0064:  ldloc.1
     IL_0065:  stloc.s    V_12
@@ -480,13 +473,13 @@
     IL_0074:  ldloc.s    V_9
     IL_0076:  ldloc.s    V_13
     IL_0078:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::get_Value()
-    IL_007d:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+    IL_007d:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
     IL_0082:  nop
     IL_0083:  ldloc.s    V_9
     IL_0085:  ret
   } 
 
-  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> test4() cil managed
+  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> test4() cil managed
   {
     
     .maxstack  4
@@ -499,7 +492,7 @@
              int32 V_6,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_7,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_8,
-             class [System.Collections]System.Collections.Generic.List`1<class assembly/A> V_9,
+             class [runtime]System.Collections.Generic.List`1<class assembly/A> V_9,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_10,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_11,
              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> V_12,
@@ -549,7 +542,7 @@
     IL_0042:  nop
     IL_0043:  stloc.s    V_6
     IL_0045:  ldloc.s    V_6
-    IL_0047:  newobj     instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
+    IL_0047:  newobj     instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::.ctor(int32)
     IL_004c:  stloc.s    V_9
     IL_004e:  ldloc.0
     IL_004f:  stloc.s    V_10
@@ -566,7 +559,7 @@
     IL_005e:  ldloc.s    V_9
     IL_0060:  ldloc.s    V_11
     IL_0062:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::get_Value()
-    IL_0067:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+    IL_0067:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
     IL_006c:  nop
     IL_006d:  ldloc.1
     IL_006e:  stloc.s    V_12
@@ -583,7 +576,7 @@
     IL_007d:  ldloc.s    V_9
     IL_007f:  ldloc.s    V_13
     IL_0081:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::get_Value()
-    IL_0086:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
+    IL_0086:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<class assembly/A>::Add(!0)
     IL_008b:  nop
     IL_008c:  ldloc.s    V_9
     IL_008e:  ret
@@ -603,6 +596,7 @@
   } 
 
 } 
+
 
 
 

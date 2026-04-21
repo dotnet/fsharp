@@ -7,7 +7,7 @@
 .assembly extern netstandard
 {
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:0:0:0
+  .ver 2:1:0:0
 }
 .assembly extern FSharp.Core { }
 .assembly assembly
@@ -21,16 +21,6 @@
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
-}
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
 }
 .module assembly.dll
 
@@ -112,9 +102,7 @@
       IL_000c:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj,
-                                      class [netstandard]System.Collections.IComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [netstandard]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -186,9 +174,7 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(valuetype Experiment.Test/Repro obj,
-                   class [netstandard]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool Equals(valuetype Experiment.Test/Repro obj, class [netstandard]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -207,9 +193,7 @@
       IL_0013:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
-                                  class [netstandard]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj, class [netstandard]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
