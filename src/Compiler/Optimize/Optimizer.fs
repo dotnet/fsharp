@@ -1712,7 +1712,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
-    elif not cenv.settings.inlineNamedFunctions && vspec1.InlineInfo = ValInline.InlinedDefinition then None
+    elif vspec1.InlineInfo = ValInline.InlinedDefinition then None
     elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
@@ -3527,15 +3527,19 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
             let allTyargsAreConcrete = List.isEmpty freeTypars
 
-            // For concrete type args, only block the exact same (stamp, type) pair, allowing different
-            // type instantiations to proceed (e.g. sum<int, int->int> calling sum<int, int> in its body).
-            // For non-concrete type args, block unconditionally.
-            let shouldInline =
+            // Proceed with specialization only if this (stamp, type) pair isn't already being
+            // processed. For concrete type args, allow different type instantiations of the same
+            // function (e.g. sum<int, int->int> can call sum<int, int> in its body). For
+            // non-concrete type args, never specialize recursively.
+            let canSpecialize =
                 match Map.tryFind origLambdaId env.dontInline with
-                | Some tys -> not allTyargsAreConcrete || tys.IsEmpty || tys |> List.exists (typeEquiv g specLambdaTy)
-                | None -> false
+                | Some tys ->
+                    allTyargsAreConcrete &&
+                    not tys.IsEmpty &&
+                    not (tys |> List.exists (typeEquiv g specLambdaTy))
+                | None -> true
 
-            if shouldInline then
+            if not canSpecialize then
                 None else
 
             let specLambdaR =
@@ -3560,7 +3564,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             // needs runtime witnesses from the enclosing scope; those only flow through the
             // closure path, so keep the closure compilation for that case.
             let freeTyparsNeedWitnesses =
-                not (GetTraitWitnessInfosOfTypars g 0 freeTypars |> List.isEmpty)
+                GetTraitWitnessInfosOfTypars g 0 freeTypars |> List.isEmpty |> not
 
             let debugValName = $"<{vref.LogicalName}>__debug"
 
@@ -3583,12 +3587,16 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 check specLambdaTy
 
             if freeTyparsNeedWitnesses && specArgsHaveByref then
-                None
-            elif not freeTyparsNeedWitnesses then
-                let debugValTy = mkForallTyIfNeeded freeTypars specLambdaTy
-                let debugValBody = mkTypeLambda m freeTypars (specLambdaR, specLambdaTy)
+                None else
 
-                let debugVal =
+            // Static method path (no witnesses needed): abstract over free typars so IlxGen emits
+            // a method with flattened arguments rather than a closure that wraps args in Tuple<>.
+            // Closure path (witnesses needed, no byref): keep the body as-is; witnesses from the
+            // enclosing scope flow through the closure, so no typar abstraction is needed.
+            let debugValTy, debugValBody, valReprInfo, typeInstForCall =
+                if not freeTyparsNeedWitnesses then
+                    let ty = mkForallTyIfNeeded freeTypars specLambdaTy
+                    let body = mkTypeLambda m freeTypars (specLambdaR, specLambdaTy)
                     let argInfos, retInfo =
                         match vref.ValReprInfo with
                         | Some(ValReprInfo(_, argInfos, retInfo)) -> argInfos, retInfo
@@ -3596,23 +3604,18 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                             let (ValReprInfo(_, a, r)) =
                                 InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR
                             a, r
-                    let valReprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, argInfos, retInfo)
+                    let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, argInfos, retInfo)
+                    ty, body, Some reprInfo, [List.map mkTyparTy freeTypars]
+                else
+                    specLambdaTy, specLambdaR, None, []
 
-                    Construct.NewVal(debugValName, m, None, debugValTy, Immutable, true, Some valReprInfo, taccessPublic, ValNotInRecScope, None,
-                        NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
-                        ParentNone)
+            let debugVal =
+                Construct.NewVal(debugValName, m, None, debugValTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
+                    NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
+                    ParentNone)
 
-                let callTyargs = freeTypars |> List.map mkTyparTy
-                let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), [callTyargs], argsR, m)
-                Some(mkCompGenLet m debugVal debugValBody callExpr, info)
-            else
-                let debugVal =
-                    Construct.NewVal(debugValName, m, None, specLambdaTy, Immutable, true, None, taccessPublic, ValNotInRecScope, None,
-                        NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, false, false, false, false, false, false, None,
-                        ParentNone)
-
-                let callExpr = mkApps g ((exprForVal m debugVal, specLambdaTy), [], argsR, m)
-                Some(mkCompGenLet m debugVal specLambdaR callExpr, info)
+            let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, argsR, m)
+            Some(mkCompGenLet m debugVal debugValBody callExpr, info)
 
         | _ -> None
     | _ ->
