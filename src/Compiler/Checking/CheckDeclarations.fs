@@ -3441,7 +3441,7 @@ module EstablishTypeDefinitionCores =
                 
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
-                // LayoutKind.Extended will have enum value 1 in future .NET versions (currently unused slot)
+                // LayoutKind.Extended has enum value 1 in .NET 11+ (previously unused slot)
                 // It cannot be specified via StructLayoutAttribute - users must use ExtendedLayoutAttribute instead
                 // See: https://github.com/dotnet/runtime/issues/102727
                 let extendedLayoutKind = 1
@@ -3581,7 +3581,8 @@ module EstablishTypeDefinitionCores =
                         errorR (Error(FSComp.SR.tcAbbreviatedTypesCannotBeSealed(), m))
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
-                    if hasMeasureableAttr then 
+                    noExtendedLayoutAttributeCheck()
+                    if hasMeasureableAttr then
                         let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                         let theTypeAbbrev, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
