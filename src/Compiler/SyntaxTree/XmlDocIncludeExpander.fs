@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.Xml.XmlDocIncludeExpander
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Xml.Linq
 open System.Xml.XPath
@@ -12,27 +13,28 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open Internal.Utilities.Library
 
-/// Thread-safe cache for loaded XML files
-let private xmlDocCache =
-    let cacheOptions =
-        FSharp.Compiler.Caches.CacheOptions.getDefault StringComparer.OrdinalIgnoreCase
+/// Case-insensitive path comparer for cycle detection and caching
+let private pathComparer = StringComparer.OrdinalIgnoreCase
 
-    new FSharp.Compiler.Caches.Cache<string, Result<XDocument, string>>(cacheOptions, "XmlDocIncludeCache")
-
-/// Load an XML file from disk with caching
-let private loadXmlFile (filePath: string) : Result<XDocument, string> =
-    xmlDocCache.GetOrAdd(
-        filePath,
-        fun path ->
+/// Load an XML file from disk, using a per-expansion local cache.
+/// The local cache avoids re-reading the same file within a single doc generation pass
+/// while avoiding stale data across compilations (unlike a global static cache).
+let private loadXmlFile (cache: Dictionary<string, Result<XDocument, string>>) (filePath: string) : Result<XDocument, string> =
+    match cache.TryGetValue(filePath) with
+    | true, result -> result
+    | false, _ ->
+        let result =
             try
-                if not (FileSystem.FileExistsShim(path)) then
-                    Result.Error $"File not found: {path}"
+                if not (FileSystem.FileExistsShim(filePath)) then
+                    Result.Error $"File not found: {filePath}"
                 else
-                    let doc = XDocument.Load(path)
+                    let doc = XDocument.Load(filePath)
                     Result.Ok doc
             with ex ->
-                Result.Error $"Error loading file '{path}': {ex.Message}"
-    )
+                Result.Error $"Error loading file '{filePath}': {ex.Message}"
+
+        cache[filePath] <- result
+        result
 
 /// Resolve a file path (absolute or relative to source file).
 /// Always normalizes via GetFullPath so that cycle detection uses canonical paths.
@@ -73,8 +75,9 @@ type private IncludeInfo = { FilePath: string; XPath: string }
 let private mayContainInclude (text: string) : bool =
     not (String.IsNullOrEmpty(text)) && text.Contains("<include")
 
-/// Extract include directive from an XElement if it is an <include> with both required attributes
-let private tryGetInclude (elem: XElement) : IncludeInfo option =
+/// Classify an XElement as an include directive.
+/// Returns Some(Ok info) for valid includes, Some(Error msg) for malformed includes, None for non-includes.
+let private classifyInclude (elem: XElement) : Result<IncludeInfo, string> option =
     if elem.Name.LocalName <> "include" then
         None
     else
@@ -83,51 +86,60 @@ let private tryGetInclude (elem: XElement) : IncludeInfo option =
 
         match fileAttr, pathAttr with
         | NonNull file, NonNull path ->
-            Some
-                {
-                    FilePath = file.Value
-                    XPath = path.Value
-                }
-        | _ -> None
+            Some(
+                Result.Ok
+                    {
+                        FilePath = file.Value
+                        XPath = path.Value
+                    }
+            )
+        | NonNull _, Null -> Some(Result.Error "<include> element is missing required 'path' attribute")
+        | Null, NonNull _ -> Some(Result.Error "<include> element is missing required 'file' attribute")
+        | Null, Null -> Some(Result.Error "<include> element is missing required 'file' and 'path' attributes")
 
 /// Active pattern to parse a line as an include directive (must be include tag alone on the line)
-let private (|ParsedXmlInclude|_|) (line: string) : IncludeInfo option =
+let private (|ParsedXmlInclude|_|) (line: string) : Result<IncludeInfo, string> option =
     try
         let elem = XElement.Parse(line.Trim())
-
-        if elem.Name.LocalName = "include" then
-            tryGetInclude elem
-        else
-            None
+        classifyInclude elem
     with _ ->
         None
 
+/// Expansion context threaded through recursive calls
+type private ExpansionContext =
+    {
+        FileCache: Dictionary<string, Result<XDocument, string>>
+        InProgressFiles: HashSet<string>
+        Range: range
+    }
+
 /// Load and expand includes from an external file
-/// This is the single unified error-handling and expansion logic
-let rec private resolveSingleInclude
-    (baseFileName: string)
-    (includeInfo: IncludeInfo)
-    (inProgressFiles: Set<string>)
-    (range: range)
-    : Result<XNode seq, string> =
+let rec private resolveSingleInclude (baseFileName: string) (includeInfo: IncludeInfo) (ctx: ExpansionContext) : Result<XNode seq, string> =
 
     let resolvedPath = resolveFilePath baseFileName includeInfo.FilePath
 
-    // Check for circular includes
-    if inProgressFiles.Contains(resolvedPath) then
+    if ctx.InProgressFiles.Contains(resolvedPath) then
         Result.Error $"Circular include detected: {resolvedPath}"
     else
-        loadXmlFile resolvedPath
+        loadXmlFile ctx.FileCache resolvedPath
         |> Result.bind (fun includeDoc -> evaluateXPath includeDoc includeInfo.XPath)
         |> Result.map (fun elements ->
-            // Expand the loaded content recursively
-            let updatedInProgress = inProgressFiles.Add(resolvedPath)
+            // Clone the in-progress set and add the current file for recursive expansion
+            let childInProgress = HashSet<string>(ctx.InProgressFiles, pathComparer)
+            childInProgress.Add(resolvedPath) |> ignore
+
+            let childCtx =
+                {
+                    FileCache = ctx.FileCache
+                    InProgressFiles = childInProgress
+                    Range = ctx.Range
+                }
+
             let nodes = elements |> Seq.cast<XNode>
-            expandAllIncludeNodes resolvedPath nodes updatedInProgress range)
+            expandAllIncludeNodes resolvedPath nodes childCtx)
 
 /// Recursively expand includes in XElement nodes
-/// This is the ONLY recursive expansion - works on XElement level, never on strings
-and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (inProgressFiles: Set<string>) (range: range) : XNode seq =
+and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (ctx: ExpansionContext) : XNode seq =
     nodes
     |> Seq.collect (fun node ->
         if node.NodeType <> System.Xml.XmlNodeType.Element then
@@ -135,24 +147,23 @@ and private expandAllIncludeNodes (baseFileName: string) (nodes: XNode seq) (inP
         else
             let elem = node :?> XElement
 
-            match tryGetInclude elem with
+            match classifyInclude elem with
             | None ->
-                // Not an include element, recursively process children
-                let expandedChildren =
-                    expandAllIncludeNodes baseFileName (elem.Nodes()) inProgressFiles range
-
+                let expandedChildren = expandAllIncludeNodes baseFileName (elem.Nodes()) ctx
                 let newElem = XElement(elem.Name, elem.Attributes(), expandedChildren)
                 Seq.singleton (newElem :> XNode)
-            | Some includeInfo ->
-                // This is an include element - expand it
-                match resolveSingleInclude baseFileName includeInfo inProgressFiles range with
+            | Some(Result.Error msg) ->
+                warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
+                Seq.singleton node
+            | Some(Result.Ok includeInfo) ->
+                match resolveSingleInclude baseFileName includeInfo ctx with
                 | Result.Error msg ->
-                    warning (Error(FSComp.SR.xmlDocIncludeError msg, range))
+                    warning (Error(FSComp.SR.xmlDocIncludeError msg, ctx.Range))
                     Seq.singleton node
                 | Result.Ok expandedNodes -> expandedNodes)
 
-/// Expand all <include> elements in an XmlDoc
-/// Works directly on line array without string concatenation
+/// Expand all <include> elements in an XmlDoc.
+/// Uses a per-call file cache and case-insensitive cycle detection.
 let expandIncludes (doc: XmlDoc) : XmlDoc =
     if doc.IsEmpty then
         doc
@@ -160,29 +171,34 @@ let expandIncludes (doc: XmlDoc) : XmlDoc =
         let unprocessedLines = doc.UnprocessedLines
         let baseFileName = doc.Range.FileName
 
-        // Early exit: check if any line contains "<include" (cheap check)
         let hasIncludes = unprocessedLines |> Array.exists mayContainInclude
 
         if not hasIncludes then
             doc
         else
-            // Expand includes in the line array, keeping the array structure
+            let ctx =
+                {
+                    FileCache = Dictionary<string, Result<XDocument, string>>(pathComparer)
+                    InProgressFiles = HashSet<string>(pathComparer)
+                    Range = doc.Range
+                }
+
             let expandedLines =
                 unprocessedLines
                 |> Array.collect (fun line ->
                     match line with
                     | s when not (mayContainInclude s) -> [| line |]
-                    | ParsedXmlInclude includeInfo ->
-                        match resolveSingleInclude baseFileName includeInfo Set.empty doc.Range with
+                    | ParsedXmlInclude(Result.Ok includeInfo) ->
+                        match resolveSingleInclude baseFileName includeInfo ctx with
                         | Result.Error msg ->
                             warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
                             [| line |]
-                        | Result.Ok nodes ->
-                            // Convert nodes to strings (may be multiple lines)
-                            nodes |> Seq.map (fun n -> n.ToString()) |> Array.ofSeq
+                        | Result.Ok nodes -> nodes |> Seq.map (fun n -> n.ToString()) |> Array.ofSeq
+                    | ParsedXmlInclude(Result.Error msg) ->
+                        warning (Error(FSComp.SR.xmlDocIncludeError msg, doc.Range))
+                        [| line |]
                     | _ -> [| line |])
 
-            // Only create new XmlDoc if something changed
             if
                 expandedLines.Length = unprocessedLines.Length
                 && Array.forall2 (=) expandedLines unprocessedLines

@@ -280,3 +280,35 @@ let f x = x
             |> ignore
         finally
             cleanup dir
+
+    [<Fact>]
+    let ``Include missing file attribute does not fail compilation`` () =
+        Fs
+            """
+module Test
+/// <include path="/data/summary"/>
+let f x = x
+"""
+        |> withXmlDoc
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Include missing path attribute does not fail compilation`` () =
+        let dir = setupDir [ "data/simple.data.xml", simpleData ]
+        let dataPath = Path.Combine(dir, "data/simple.data.xml").Replace("\\", "/")
+
+        try
+            Fs
+                $"""
+module Test
+/// <include file="{dataPath}"/>
+let f x = x
+"""
+            |> withXmlDoc
+            |> compile
+            |> shouldSucceed
+            |> ignore
+        finally
+            cleanup dir
