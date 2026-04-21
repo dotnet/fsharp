@@ -1532,3 +1532,37 @@ let main _ =
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``InlineIfLambda 01 - Debug`` () =
+        FSharp """
+let inline apply ([<InlineIfLambda>] f: int -> int) (x: int) : int =
+    f x
+
+[<EntryPoint>]
+let main _ =
+    let result = apply (fun i -> i + 1) 5
+    if result = 6 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifyILContains ["call       int32 Test::apply(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,"]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``InlineIfLambda 02 - Release`` () =
+        FSharp """
+let inline apply ([<InlineIfLambda>] f: int -> int) (x: int) : int =
+    f x
+
+[<EntryPoint>]
+let main _ =
+    let result = apply (fun i -> i + 1) 5
+    if result = 6 then 0 else 1
+"""
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> verifyILNotPresent ["call       int32 Test::apply(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,"]
