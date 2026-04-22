@@ -338,7 +338,11 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         if sm_verbose then printfn "expanding defns and reducing %A..." expr
         //if sm_verbose then printfn "checking %A for possible resumable code application..." expr
         match expr with
+        // Reduce helper-local 'if __useResumableCode then ... else ...' after inlining,
+        // but preserve real nested state machines so their own lowering can still choose
+        // the dynamic fallback if static compilation fails.
         | IfUseResumableStateMachinesExpr g (thenExpr, _) when Option.isNone (IsStateMachineExpr g thenExpr) ->
+            if sm_verbose then printfn "reducing helper-local 'if __useResumableCode ...' to static branch"
             Some (remake thenExpr)
 
         // defn --> [expand_code]
