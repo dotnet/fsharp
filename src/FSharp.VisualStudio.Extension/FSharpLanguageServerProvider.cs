@@ -47,14 +47,14 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
         var capabilities = new VSInternalServerCapabilities
         {
             TextDocumentSync = value.TextDocumentSync,
-            SupportsDiagnosticRequests = true,
+            SupportsDiagnosticRequests = config.EnabledFeatures.Diagnostics,
             ProjectContextProvider = true,
             DiagnosticProvider =
                 config.EnabledFeatures.Diagnostics ?
 
             new()
             {
-                SupportsMultipleContextsDiagnostics = true,
+                SupportsMultipleContextsDiagnostics = false,
                 DiagnosticKinds = [
                         // Support a specialized requests dedicated to task-list items.  This way the client can ask just
                         // for these, independently of other diagnostics.  They can also throttle themselves to not ask if
@@ -92,12 +92,13 @@ internal class VsDiagnosticsHandler
     {
         var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
 
+        var snapshots = context.Workspace.Query.GetProjectSnapshotsForFile(request.TextDocument.Uri);
+        var projects = Utils.snapshotsToProjectInfos(snapshots);
+
         var vsReport = new VSInternalDiagnosticReport
         {
             ResultId = report.ResultId,
-            //Identifier = 1,
-            //Version = 1,
-            Diagnostics = [.. report.Diagnostics.Select(FSharpDiagnosticExtensions.ToLspDiagnostic)]
+            Diagnostics = [.. report.Diagnostics.Select(d => d.ToVsDiagnostic(projects))]
         };
 
         return [vsReport];

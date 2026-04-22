@@ -7,7 +7,6 @@ open FSharp.Compiler.LanguageServer.Common
 open FSharp.Compiler.LanguageServer
 open System.Threading.Tasks
 open System.Threading
-open System.Collections.Generic
 
 #nowarn "57"
 
@@ -25,25 +24,25 @@ type LanguageFeaturesHandler() =
             (request: DocumentDiagnosticParams, context: FSharpRequestContext, cancellationToken: CancellationToken)
             =
             cancellableTask {
+                let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
+
+                use _scope =
+                    telemetry.ReportEventWithDuration(
+                        TelemetryEvents.GetDiagnostics,
+                        [| "uri_hash", hash request.TextDocument.Uri :> obj |]
+                    )
 
                 let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile request.TextDocument.Uri
 
-                let report =
-                    FullDocumentDiagnosticReport(
-                        Items = (fsharpDiagnosticReport.Diagnostics |> Array.map (_.ToLspDiagnostic())),
-                        ResultId = fsharpDiagnosticReport.ResultId
-                    )
-
-                let relatedDocuments = Dictionary()
-
-                relatedDocuments.Add(
-                    request.TextDocument.Uri,
-                    SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport> report
-                )
+                let snapshots = context.Workspace.Query.GetProjectSnapshotsForFile(request.TextDocument.Uri)
+                let projects = snapshotsToProjectInfos snapshots
 
                 return
                     SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>(
-                        RelatedFullDocumentDiagnosticReport(RelatedDocuments = relatedDocuments)
+                        RelatedFullDocumentDiagnosticReport(
+                            Items = (fsharpDiagnosticReport.Diagnostics |> Array.map (_.ToVsDiagnostic(projects))),
+                            ResultId = fsharpDiagnosticReport.ResultId
+                        )
                     )
             }
             |> CancellableTask.start cancellationToken

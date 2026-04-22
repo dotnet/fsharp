@@ -57,6 +57,13 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
         // Otherwise we have to keep track of which project/configuration is active
         |> Seq.tryHead // For now just get the first one
 
+    member _.GetProjectSnapshotsForFile(file: Uri) =
+        use _ =
+            Activity.start "GetProjectSnapshotsForFile" [ Activity.Tags.fileName, file.LocalPath ]
+
+        depGraph.GetProjectsContaining file.LocalPath
+        |> Seq.toArray
+
     member this.GetParseAndCheckResultsForFile(file: Uri) =
         async {
 

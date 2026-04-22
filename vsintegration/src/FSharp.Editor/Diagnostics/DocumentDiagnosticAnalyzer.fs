@@ -3,7 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
+open System.ComponentModel.Composition
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Runtime.CompilerServices
@@ -14,9 +14,12 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
+open Microsoft.VisualStudio.Shell
 open FSharp.Compiler.Diagnostics
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open Microsoft.VisualStudio.Settings
+open Microsoft.Internal.VisualStudio.Shell.Interop
 
 [<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
 type internal DiagnosticsType =
@@ -34,11 +37,31 @@ type private CachedDiagnostics =
         Diagnostics: ImmutableArray<Diagnostic>
     }
 
-[<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>); Shared>]
-type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
+[<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>); PartCreationPolicy(CreationPolicy.Shared)>]
+type internal FSharpDocumentDiagnosticAnalyzer
+    [<ImportingConstructor>]
+    (
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
+    ) =
 
-    let shouldProduceDiagnostics (document: Document) =
-        document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceDiagnostics()
+    let produceDiagnostic =
+        let settingValue =
+            try
+                let settingsManager = serviceProvider.GetService(typeof<SVsUnifiedSettingsManager>) :?> Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager
+                let reader = settingsManager.GetReader()
+                reader.GetValueOrThrow<string>("fsharp.getDiagnosticsFrom")
+            with _ -> "both"
+        match settingValue with
+        | "both"
+        | "old" -> true
+        | "unset"
+        | "lsp" -> false
+        | _ -> true
+
+
+    let shouldProduceDiagnostics (_document: Document) =
+        produceDiagnostic
+
 
     // DocumentId keys survive solution snapshots, and holding them weakly means a document dropped from the
     // solution takes its cached diagnostics with it, so no eviction pass is needed on the request path.

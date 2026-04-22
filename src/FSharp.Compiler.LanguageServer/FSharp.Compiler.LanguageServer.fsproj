@@ -41,6 +41,7 @@
 
 	<ItemGroup>
 		<Compile Include="..\..\vsintegration\src\FSharp.Editor\Common\CancellableTasks.fs" />
+		<Compile Include="Telemetry.fs" />
 		<Compile Include="Utils.fs" />
 		<Compile Include="FSharpLanguageServerConfig.fs" />
 		<Compile Include="Common\LifecycleManager.fs" />

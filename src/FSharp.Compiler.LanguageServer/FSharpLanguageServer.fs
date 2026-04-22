@@ -1,10 +1,12 @@
 namespace FSharp.Compiler.LanguageServer
 
+open System
+open System.Diagnostics
 open System.Runtime.CompilerServices
+
 open FSharp.Compiler.LanguageServer.Common
 open FSharp.Compiler.LanguageServer.Handlers
 
-open System
 open Microsoft.CommonLanguageServerProtocol.Framework.Handlers
 open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.Extensions.DependencyInjection
@@ -12,7 +14,6 @@ open Microsoft.VisualStudio.LanguageServer.Protocol
 
 open StreamJsonRpc
 open Nerdbank.Streams
-open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis.Workspace
 
 #nowarn "57"
@@ -21,6 +22,11 @@ open FSharp.Compiler.CodeAnalysis.Workspace
 module Stuff =
     [<Literal>]
     let FSharpLanguageName = "F#"
+
+    let createConfiguredSerializer () =
+        let s = Newtonsoft.Json.JsonSerializer.CreateDefault()
+        VSExtensionUtilities.AddVSExtensionConverters(s)
+        s
 
 [<Extension>]
 type Extensions =
@@ -39,7 +45,7 @@ type FSharpLanguageServer
     ) =
 
     // TODO: Switch to SystemTextJsonLanguageServer
-    inherit NewtonsoftLanguageServer<FSharpRequestContext>(jsonRpc, Newtonsoft.Json.JsonSerializer.CreateDefault(), logger)
+    inherit NewtonsoftLanguageServer<FSharpRequestContext>(jsonRpc, createConfiguredSerializer (), logger)
 
     let config = defaultArg config FSharpLanguageServerConfig.Default
     let initialWorkspace = defaultArg initialWorkspace (FSharpWorkspace())
@@ -63,6 +69,7 @@ type FSharpLanguageServer
                 .AddSingleton<IMethodHandler, DocumentStateHandler>()
                 .AddSingleton<IMethodHandler, LanguageFeaturesHandler>()
                 .AddSingleton<ILspLogger>(logger)
+                .AddSingleton<ILspTelemetry>(NullTelemetry.Instance)
                 .AddSingleton<AbstractRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()
                 .AddSingleton<IInitializeManager<InitializeParams, InitializeResult>, CapabilitiesManager>()
                 .AddSingleton(this)
@@ -96,15 +103,15 @@ type FSharpLanguageServer
 
         // TODO: handle disposal of these
         let formatter = new JsonMessageFormatter()
+        VSExtensionUtilities.AddVSExtensionConverters(formatter.JsonSerializer)
 
         let messageHandler =
             new HeaderDelimitedMessageHandler(serverStream, serverStream, formatter)
 
         let jsonRpc = new JsonRpc(messageHandler)
 
-        let listener = new TextWriterTraceListener(Console.Out)
-
-        jsonRpc.TraceSource.Listeners.Add(listener) |> ignore
+        let consoleListener = new TextWriterTraceListener(Console.Out)
+        jsonRpc.TraceSource.Listeners.Add(consoleListener) |> ignore
 
         jsonRpc.TraceSource.Switch.Level <- SourceLevels.All
 
