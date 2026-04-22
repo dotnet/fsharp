@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -48,6 +48,7 @@
 		<Compile Include="Common\CapabilitiesManager.fs" />
 		<Compile Include="Common\FSharpRequestContext.fs" />
 		<Compile Include="Handlers\LanguageFeaturesHandler.fs" />
+		<Compile Include="Handlers\ProjectContextsHandler.fs" />
 		<Compile Include="Handlers\DocumentStateHandler.fs" />
 		<Compile Include="FSharpLanguageServer.fs" />
 		<Compile Include="Executable.fs" />
@@ -59,3 +60,4 @@
 	</ItemGroup>
 
 </Project>
+

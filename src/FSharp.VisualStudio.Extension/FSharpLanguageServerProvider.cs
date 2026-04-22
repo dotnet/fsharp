@@ -82,8 +82,7 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
 }
 
 internal class VsDiagnosticsHandler
-    : IRequestHandler<VSInternalDiagnosticParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
-      IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext>
+    : IRequestHandler<VSInternalDiagnosticParams, VSInternalDiagnosticReport[], FSharpRequestContext>
 {
     public bool MutatesSolutionState => false;
 
@@ -102,29 +101,6 @@ internal class VsDiagnosticsHandler
         };
 
         return [vsReport];
-    }
-
-    [LanguageServerEndpoint("textDocument/_vs_getProjectContexts", LanguageServerConstants.DefaultLanguageName)]
-    public Task<VSProjectContextList> HandleRequestAsync(VSGetProjectContextsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(new VSProjectContextList()
-        {
-            DefaultIndex = 0,
-            ProjectContexts = [
-                //new() {
-                //    Id = "potato",
-                //    Label = "Potato",
-                //    // PR for F# project kind: https://devdiv.visualstudio.com/DevDiv/_git/VSLanguageServerClient/pullrequest/529882
-                //    Kind = VSProjectKind.FSharp
-                //},
-                //new () {
-                //    Id = "potato2",
-                //    Label = "Potato2",
-                //    Kind = VSProjectKind.FSharp
-                //}
-
-            ]
-        });
     }
 }
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
@@ -19,6 +19,7 @@
 		<Compile Include="ProtocolHelpers.fs" />
 		<Compile Include="Protocol.fs" />
 		<Compile Include="DiagnosticsProtocolTests.fs" />
+		<Compile Include="ProjectContextsProtocolTests.fs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -48,3 +49,4 @@
 
 
 </Project>
+

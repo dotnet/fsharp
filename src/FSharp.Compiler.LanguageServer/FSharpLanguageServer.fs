@@ -68,6 +68,7 @@ type FSharpLanguageServer
                 .AddSingleton<IMethodHandler, InitializedHandler<InitializedParams, FSharpRequestContext>>()
                 .AddSingleton<IMethodHandler, DocumentStateHandler>()
                 .AddSingleton<IMethodHandler, LanguageFeaturesHandler>()
+                .AddSingleton<IMethodHandler, ProjectContextsHandler>()
                 .AddSingleton<ILspLogger>(logger)
                 .AddSingleton<ILspTelemetry>(NullTelemetry.Instance)
                 .AddSingleton<AbstractRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()
