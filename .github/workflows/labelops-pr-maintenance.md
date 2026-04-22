@@ -1,9 +1,10 @@
 ---
 description: |
   LabelOps — babysits open PRs carrying opt-in AI-Auto-Resolve-* labels.
-  Scheduled every 3 hours (8 runs/day). On each run, lists all open PRs
-  with AI-Auto-Resolve-Conflicts or AI-Auto-Resolve-CI, shuffles them
-  seeded by GITHUB_RUN_ID for fairness, caps at 5 PRs, then for each PR:
+  Scheduled every 3 hours (8 runs/day). On each run, lists all open non-draft
+  PRs with AI-Auto-Resolve-Conflicts or AI-Auto-Resolve-CI, shuffles them
+  seeded by GITHUB_RUN_ID for fairness, caps at 3 PRs, then for each PR
+  (one at a time, fully, before moving to the next):
   (1) triages CI (pr-build-status skill) and applies small fixes; (2)
   merges main into the PR branch and resolves conflicts semantically.
   On proven flakes (≥3 distinct PRs), dispatches the labelops-flake-fix
@@ -34,25 +35,23 @@ checkout:
   fetch-depth: 0
 
 tools:
-  web-fetch:
   github:
-    toolsets: [all]
+    toolsets: [default, issues, pull_requests, repos, actions]
     min-integrity: none
   bash: true
 
 safe-outputs:
   add-comment:
-    max: 10
+    max: 5
     target: "*"
     hide-older-comments: true
   push-to-pull-request-branch:
     target: "*"
-    title-prefix: "[LabelOps] "
-    max: 8
+    max: 5
     protected-files: fallback-to-issue
   add-labels:
     allowed: ["AI-needs-CI-fix-input"]
-    max: 5
+    max: 3
     target: "*"
   dispatch-workflow:
     workflows: [labelops-flake-fix]
@@ -68,13 +67,26 @@ You are an opt-in pull-request maintenance agent. Maintainers add labels to indi
 1. **Never modify `.github/**`.** Workflow files, agent configs, skills, and lock files are managed by `aw-auto-update`. The `protected-files: fallback-to-issue` guard enforces this; do not try to work around it.
 2. **Never merge, approve, close, or reopen a PR.** You only push commits, post comments, add labels, and dispatch the flake-fix workflow.
 3. **Never remove a label.** Labels are sticky — only maintainers remove them.
-4. **Never push without local verification.** Every code change or conflict resolution must be validated locally: `./build.sh -c Release` (or the narrower `dotnet build`) plus the targeted test project must succeed before you push.
-5. **Never rebase or force-push.** Always use merge commits to preserve the PR author's history.
+4. **Never push without local verification.** Every code change or conflict resolution must be validated locally: `./build.sh -c Release` (or the narrower `dotnet build`) plus the targeted test project must succeed before you push. Reproduce in the **same configuration/TFM** as the failing CI job (e.g. Debug vs Release matters for SurfaceArea tests).
+5. **Never rebase, force-push, amend, squash, or run `git add .`.** Always use merge commits. Commit only files you explicitly chose — use `git add <path>` with explicit paths.
 6. **Never touch PRs from external forks.** Filter them out in Step 1.
 7. **Never touch `AI-Issue-Regression-PR` PRs.** Those are owned by `regression-pr-shepherd`.
-8. **Never claim "pre-existing", "unrelated", or "flaky" without proof.** A failure may only be dismissed if (a) all checks are green, or (b) the `flaky-test-detector` skill proves it across **≥3 distinct unrelated PRs**.
-9. **Hard cap: 5 PRs per run. Max 3 attempts per PR per run.**
-10. **Always prefix every comment with `🤖 *LabelOps — <subtopic>.*`** so humans can see it is automated (Tenet #3).
+8. **Never touch draft PRs.** Filter them out in Step 1.
+9. **Never claim "pre-existing", "unrelated", or "flaky" without proof.** A failure may only be dismissed if (a) all checks are green per the `healthy` definition below, or (b) the `flaky-test-detector` skill proves it across **≥3 distinct unrelated PRs**.
+10. **Hard cap: 3 PRs per run. Max 3 attempts per PR per run.** An "attempt" is one code-changing hypothesis followed by a local validation (build + targeted test). Reading logs, listing files, or running existing commands do not count as attempts.
+11. **One PR at a time.** Complete all actions for PR N (classify → CI → conflicts → commenting / escalation / dispatch) before touching PR N+1. Do not interleave.
+12. **Every safe-output must target the PR currently being processed — by explicit PR number.** Never target a different PR, never use `"*"`, never post a comment on a PR you are not actively working on. Dispatched flake-fix inputs must include only the current PR number as `originating_pr`.
+13. **If unsure, be conservative.** When the right action is ambiguous, prefer `noop` (no code change, no comment) over a guess. A silent run is better than a wrong push or a speculative escalation.
+14. **Always prefix every comment with `🤖 *LabelOps — <subtopic>.*`** so humans can see it is automated (Tenet #3).
+
+### Definition of "healthy" and "ready to stop"
+
+- A PR is **healthy** only when `gh pr view <num> --json statusCheckRollup` shows every check in `SUCCESS`, `SKIPPED`, or `NEUTRAL`. Any `FAILURE`, `CANCELLED`, `TIMED_OUT`, `ACTION_REQUIRED`, `STARTUP_FAILURE`, `STALE`, `PENDING`, `QUEUED`, or `IN_PROGRESS` means **not healthy**.
+- An in-progress run is **not** healthy. Do not declare success based on "no failures shown yet".
+
+### Stuck-PR safeguard (before entering Step 3)
+
+If there is a commit on this PR authored by the LabelOps bot within the last **12 hours** AND the latest completed checks are still red, do **not** attempt another CI fix this run. Your previous attempts didn't hold; retrying will thrash. Post no comment; move to Step 4 (conflicts) if applicable, else next PR.
 
 ## Process
 
@@ -100,6 +112,8 @@ with open('/tmp/labelops/candidates.json') as f:
     prs = json.load(f)
 
 def keep(pr):
+    if pr.get('isDraft'):
+        return False
     hr = pr.get('headRepository') or {}
     if (hr.get('owner', {}).get('login') or hr.get('owner')) != 'dotnet':
         return False
@@ -117,7 +131,7 @@ def keep(pr):
 filtered = [pr for pr in prs if keep(pr)]
 rng = random.Random(os.environ.get('GITHUB_RUN_ID', '0'))
 rng.shuffle(filtered)
-selected = filtered[:5]
+selected = filtered[:3]
 json.dump(selected, sys.stdout, indent=2)
 PY
 python3 /tmp/labelops/select.py > /tmp/labelops/selected_prs.json
@@ -132,7 +146,7 @@ Read the PR's current labels directly from `selected_prs.json`. Do not rely on s
 
 - `has_ci` = `AI-Auto-Resolve-CI` is present.
 - `has_conflicts` = `AI-Auto-Resolve-Conflicts` is present.
-- `ci_blocked` = `AI-needs-CI-fix-input` is present **and** the PR's head commit date is **not newer** than the most recent comment on this PR whose body starts with `🤖 *LabelOps — CI escalation*`. To check: fetch PR comments with `gh pr view <num> --json comments,headRefOid` plus `git show -s --format=%cI <headRefOid>` (or `gh api /repos/dotnet/fsharp/commits/<sha>`) and compare timestamps. **If `ci_blocked`, skip the CI task for this PR; still do the conflict task.**
+- `ci_blocked` = `AI-needs-CI-fix-input` is present **AND** there exists a prior LabelOps escalation comment on this PR (body starts with `🤖 *LabelOps — CI escalation*`) that contains an HTML marker of the form `<!-- labelops:ci-escalation:<sha> -->` where `<sha>` equals the PR's current `headRefOid`. Fetch PR comments with `gh pr view <num> --json comments,headRefOid`, parse the marker, and compare SHAs as strings. **If `ci_blocked`, skip the CI task for this PR; still do the conflict task.** A maintainer pushing any new commit changes `headRefOid` and automatically un-blocks the next run.
 
 ### Step 3 — CI task (runs FIRST when `has_ci AND NOT ci_blocked`)
 
@@ -140,37 +154,42 @@ Use the **`pr-build-status`** skill. Its first tenet is "collect ALL errors from
 
 Decision tree:
 
-1. **All checks green** → no-op for this PR's CI; proceed to Step 4 (conflicts).
+1. **All checks healthy** (see "Definition of healthy" above) → no-op for this PR's CI; proceed to Step 4 (conflicts).
 
-2. **Small, mechanical fix** — examples: a missing `<Compile Include>` in a `.fsproj`, fantomas formatting, a baseline update (`.bsl`/`.bsl.debug`), a typo, a missing `open`, an out-of-date `.xlf` file, an obvious `NO_RELEASE_NOTES` omission. Test plan:
+2. **Small, mechanical fix** — examples: a missing `<Compile Include>` in a `.fsproj`, fantomas formatting, a typo, a missing `open`, an out-of-date `.xlf` file. Test plan:
    - Check out the PR branch: `gh pr checkout <num>`.
    - Apply the fix.
-   - Build locally: `./build.sh -c Release` if broad; otherwise the narrowest project that covers the failure.
+   - Build locally: `./build.sh -c Release` if broad; otherwise the narrowest project that covers the failure. Match the configuration of the failing CI job.
    - Run the failing test(s) locally until green.
-   - Push the commit to the PR branch (via `push-to-pull-request-branch`).
+   - Push the commit to the PR branch (via `push-to-pull-request-branch`) targeting **this PR's number**.
    - Post exactly one comment:
      ```
      🤖 *LabelOps — CI fix.* Fixed: <one-liner>. Verified locally on <os/tfm>. Build: <cmd>. Tests: <n> passed.
      ```
 
-3. **Suspected flake** — one or more failing tests look non-deterministic (timing, ordering, networking, file system races). Invoke the **`flaky-test-detector`** skill with the failing test name. If the skill does not find evidence in ≥3 distinct unrelated PRs, this is **not** a flake — return to step 4. If proven:
-   - **Do not touch this PR's code.**
-   - Emit a `dispatch-workflow` safe-output to `labelops-flake-fix` with inputs:
-     - `failing_test`: fully qualified test name
-     - `affected_prs`: JSON array of the distinct PR numbers where the skill saw it fail
-     - `originating_pr`: the current PR number
-   - Post on the current PR:
-     ```
-     🤖 *LabelOps — CI suspected-flake.* Dispatched `labelops-flake-fix` for `<test>` — proven across <N> unrelated PRs (<comma-separated list>). A separate PR will address it. Re-run checks on this PR once that PR merges.
-     ```
+   **Not in the mechanical-fix list:** `.bsl`/`.bsl.debug` baseline updates (auto-accepting a baseline can mask a real regression — route to decision 4), release-notes changes (ordering is semantic), anything touching public API surface.
 
-4. **Design-level bug** — cannot fix within **≤3 attempts or ≤500 LOC** or the fix touches non-local scope (multiple modules, public API). Do not fabricate fixes. Required steps before escalating:
-   - Reproduce locally. If the failure is Windows-only, port the test to Linux (skip markers, path separators, etc.) and reproduce there. If you genuinely cannot reproduce, the failure is probably a flake — go back to step 3.
+3. **Suspected flake — proven**: ≥1 failing test looks non-deterministic (timing, ordering, network, FS race). Invoke the **`flaky-test-detector`** skill with the failing test name.
+   - **If the skill finds evidence across <3 distinct unrelated PRs → treat as "insufficient evidence"**: do **not** dispatch flake-fix, do **not** escalate, do **not** push. `noop` for this PR's CI this run and proceed to Step 4. On a future run the evidence may accumulate.
+   - If the skill finds evidence in ≥3 distinct unrelated PRs, **and** the failing test was not introduced or modified by the originating PR (check `gh pr diff <num> -- '<test file>'` — if the PR adds or changes this test, do not dispatch; go to decision 4 instead):
+     - **Do not touch this PR's code.**
+     - Before dispatch, check for duplicate work: `gh pr list --repo dotnet/fsharp --state open --search 'in:title "[LabelOps Flake]" in:title "<short test name>"' --json number`. If a matching open LabelOps Flake PR exists, skip dispatch and instead comment referencing that PR.
+     - Emit a `dispatch-workflow` safe-output to `labelops-flake-fix` with inputs:
+       - `failing_test`: fully qualified test name (must match `^[A-Za-z0-9._+\-]+$`)
+       - `affected_prs`: JSON array of the distinct PR numbers where the skill saw it fail
+       - `originating_pr`: **exactly this PR's number** — no other value.
+     - Post on the current PR:
+       ```
+       🤖 *LabelOps — CI suspected-flake.* Dispatched `labelops-flake-fix` for `<test>` — proven across <N> unrelated PRs (<comma-separated list>). A separate PR will address it. Re-run checks on this PR once that PR merges.
+       ```
+
+4. **Design-level bug or cannot determine root cause** — cannot fix within **≤3 attempts or ≤500 LOC** or the fix touches non-local scope (multiple modules, public API, baselines, generated code). **Do not fabricate fixes. Do not loop back to decision 3 hoping it is a flake — if flake-fix-detector already said "<3 PRs", that is final for this run.** Required steps before escalating:
+   - Reproduce locally in the **same configuration/TFM as the failing CI job**. If the failure is Windows-only, port the test to Linux (skip markers, path separators, etc.) and reproduce there. If you genuinely cannot reproduce *and* the flake-detector didn't prove a flake, honestly say so in the escalation comment — do not guess.
    - Produce a minimal failing test or a minimal command that reproduces the error.
    - Capture exact error output.
-   - Draft up to **3 options** with tradeoffs.
+   - Draft up to **3 options** with tradeoffs. If you only have 1 well-founded option, list 1 — do not invent filler.
    - Emit a `add-labels` safe-output adding `AI-needs-CI-fix-input` to this PR.
-   - Post one comment:
+   - Post one comment (the `<!-- labelops:ci-escalation:<sha> -->` marker on the **last** line is mandatory — the next run uses it to detect new commits):
      ```
      🤖 *LabelOps — CI escalation.* I cannot fix this within a small-scope budget. Handing back to maintainers.
 
@@ -187,8 +206,12 @@ Decision tree:
      1. <option 1> — tradeoffs: <...>
      2. <option 2> — tradeoffs: <...>
      3. <option 3> — tradeoffs: <...>
+
+     <!-- labelops:ci-escalation:<exact-headRefOid-sha> -->
      ```
    - **Do not push any code. Do not dispatch the flake workflow.**
+
+**If Step 3 pushed a commit, STOP processing this PR for this run.** Do not run Step 4. Pushing restarts CI; the next scheduled run (3h later) will see fresh status.
 
 ### Step 4 — Conflict task (runs AFTER CI, when `has_conflicts` AND Step 3 did not push)
 
@@ -197,18 +220,18 @@ Decision tree:
 1. `gh pr checkout <num>` — lands you on the PR branch.
 2. `git fetch origin main && git merge origin/main --no-edit`.
 3. **`Already up to date`** → nothing to do. No push, no comment.
-4. **Merge clean, no conflicts** → build locally (`./build.sh -c Release`) to confirm nothing regressed; if green, push. **No comment** (per user requirement: no comments on a mere update).
+4. **Merge clean, no conflicts** → `git merge --abort` / reset and **do not push**. A PR that was merely behind `main` does not need a forced CI restart from us; the author can rebase when ready. Skip to next PR.
 5. **Conflicts present**:
    - Read the full PR diff: `gh pr diff <num>`.
    - Read the incoming change on `main` for each conflicting file: `git log --oneline origin/main..HEAD -- <file>` and the reverse.
    - Follow any linked issue (`Fixes #NNN`, `Closes #NNN`) to understand intent.
    - Resolution heuristics:
      - `.fsproj` `<Compile Include>` conflicts → keep both entries, in the same order as in `main`.
-     - `release-notes.md` / `docs/release-notes/` conflicts → keep both entries.
+     - `release-notes.md` / `docs/release-notes/` conflicts → keep both entries, **then dedupe**: if the same issue/PR number appears in both sides (common with cherry-picks), keep only one. Never leave two identical release-note lines.
      - Code conflicts where `main`'s change is mechanical (rename, formatting, whitespace) → prefer the PR's semantic change; reapply the mechanical pass on top.
      - Otherwise → preserve both behaviors if possible; if not, state the ambiguity and stop (step 6).
    - After resolving, `./build.sh -c Release` must succeed. Run targeted tests when possible.
-   - Push the resolved branch.
+   - Push the resolved branch (targeting **this PR's number** explicitly).
    - Post one comment:
      ```
      🤖 *LabelOps — Conflicts resolved.* Resolved <N> conflicts in `<files>`. Merged `main@<short-sha>`. Build + targeted tests green locally. Please re-review.

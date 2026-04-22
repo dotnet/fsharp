@@ -85,13 +85,17 @@ gh label create "AI-needs-CI-fix-input" \
 
 ## Operational notes
 
-- **Schedule initially disabled.** The first landing of these workflows ships
-  with only `workflow_dispatch` available. A follow-up PR enables the 3h
-  schedule once maintainers have validated the behavior via a manual dispatch
-  on one or two volunteer PRs.
-- **Re-engagement after escalation.** When a PR carries
-  `AI-needs-CI-fix-input`, CI work is skipped until the PR's head commit is
-  newer than the escalation comment. Push a new commit and the agent
-  retries. Conflict work is never blocked by this label.
+- **Schedule.** The babysitter runs on a 3-hour cron plus manual `workflow_dispatch`. To pause the bot entirely, remove or comment out the `schedule:` line in `.github/workflows/labelops-pr-maintenance.md` and re-compile with `gh aw compile`. To pause just one PR, remove both `AI-Auto-Resolve-*` labels.
+- **Re-engagement after escalation.** When a PR is escalated, the escalation
+  comment embeds an HTML marker `<!-- labelops:ci-escalation:<sha> -->`
+  where `<sha>` is the PR's head at the time of escalation. The next run
+  compares that SHA to the current `headRefOid`; if they match, CI work is
+  skipped (the maintainer has not yet pushed anything new). Push any commit
+  and the SHA changes, automatically un-blocking the agent. Conflict work is
+  never blocked by this label.
+- **Batch size.** Each run processes at most **3 PRs**, selected by a
+  `GITHUB_RUN_ID`-seeded shuffle over all opt-in PRs. PRs with commits newer
+  than 10 minutes (author still pushing), draft PRs, and external-fork PRs
+  are filtered out.
 - **No persistent memory.** Everything the agent decides is derived from
-  signals already on the PR (labels, commit SHAs, comment timestamps).
+  signals already on the PR (labels, commit SHAs, comment markers).

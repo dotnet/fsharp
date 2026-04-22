@@ -44,9 +44,8 @@ checkout:
   fetch-depth: 0
 
 tools:
-  web-fetch:
   github:
-    toolsets: [all]
+    toolsets: [default, issues, pull_requests, repos, actions]
     min-integrity: none
   bash: true
 
@@ -62,7 +61,7 @@ safe-outputs:
     protected-files: fallback-to-issue
   add-comment:
     target: "*"
-    max: 3
+    max: 1
   create-issue:
     title-prefix: "[LabelOps Flake] "
     labels: [Flaky, automation]
@@ -85,7 +84,37 @@ You fix **one** proven flaky test per invocation. You were dispatched by `labelo
 2. **Never modify `.github/**`.**
 3. **Re-verify before acting.** If the flake can't be re-confirmed, emit `noop` and exit.
 4. **One PR per invocation.**
-5. **Always prefix comments with `🤖 *LabelOps Flake — <subtopic>.*`**.
+5. **Never rebase, force-push, amend, squash, or run `git add .`.** Always commit explicit paths.
+6. **Never quarantine or modify a test that was introduced or changed by `originating_pr` or any still-open PR in `affected_prs`.** Quarantining such a test defeats the PR's purpose — the PR author added it intentionally. Skip to `noop` + comment if this is the case.
+7. **If unsure, prefer `noop` over a wrong action.**
+8. **Always prefix comments with `🤖 *LabelOps Flake — <subtopic>.*`**.
+
+## Step 0 — Validate inputs (mandatory before any other step)
+
+```bash
+set -euo pipefail
+
+# failing_test must match a conservative FQN charset
+if ! [[ "${{ inputs.failing_test }}" =~ ^[A-Za-z0-9._+\-]+$ ]]; then
+  echo "::error::failing_test does not match expected pattern; aborting."
+  exit 1
+fi
+
+# affected_prs must parse as a JSON array of positive integers
+echo '${{ inputs.affected_prs }}' | python3 -c '
+import json, sys
+v = json.loads(sys.stdin.read())
+assert isinstance(v, list) and all(isinstance(x, int) and x > 0 for x in v), "affected_prs must be a JSON array of positive ints"
+'
+
+# originating_pr must be a positive integer
+if ! [[ "${{ inputs.originating_pr }}" =~ ^[1-9][0-9]*$ ]]; then
+  echo "::error::originating_pr must be a positive integer."
+  exit 1
+fi
+```
+
+If any check fails, exit the run — do not invoke the LLM.
 
 ## Process
 
@@ -100,26 +129,50 @@ Emit `noop` and exit.
 ### Step 2 — Reproduce locally
 
 ```bash
-# Determine the containing test project from the fully qualified name.
-# Typical projects: tests/FSharp.Compiler.ComponentTests, tests/FSharp.Core.UnitTests,
-#                   tests/FSharp.Compiler.Service.Tests, vsintegration/tests/...
-PROJ=$(grep -rl "$(echo $FAILING_TEST | awk -F. '{print $(NF-1)"."$NF}')" tests/ vsintegration/tests/ \
-       --include='*.fs' | head -1 | xargs -I{} dirname {} | xargs -I{} \
-       find {} -maxdepth 4 -name '*.fsproj' | head -1)
+set -euo pipefail
+FAILING_TEST='${{ inputs.failing_test }}'
 
-# Run the test 20 times; count failures.
+# Determine the containing test project by enumerating candidate test projects
+# and asking the test host which one declares the exact FQN. This avoids the
+# footgun of grepping test-name fragments (which can silently pick the wrong
+# project when the same short name appears in multiple files).
+PROJ=""
+for candidate in $(find tests vsintegration/tests -maxdepth 4 -name '*.fsproj' 2>/dev/null); do
+  if dotnet test "$candidate" -c Release --no-build --list-tests 2>/dev/null | grep -Fqx -- "    $FAILING_TEST"; then
+    PROJ="$candidate"
+    break
+  fi
+done
+
+if [[ -z "$PROJ" ]]; then
+  echo "::warning::Could not locate test project for FQN $FAILING_TEST via --list-tests. Aborting."
+  exit 0  # soft-exit → agent will emit noop
+fi
+echo "Project: $PROJ"
+
+# Run the test up to 20 times or 15 minutes, whichever first.
 FAILS=0
-for i in $(seq 1 20); do
-  if ! dotnet test "$PROJ" -c Release --no-build --filter "FullyQualifiedName~$FAILING_TEST" --nologo -- --report-xml-filename "run-$i.xml" >/dev/null 2>&1; then
+RUN=0
+DEADLINE=$(( $(date +%s) + 15 * 60 ))
+while [[ $RUN -lt 20 && $(date +%s) -lt $DEADLINE ]]; do
+  RUN=$((RUN + 1))
+  if ! dotnet test "$PROJ" -c Release --no-build \
+        --filter "FullyQualifiedName=$FAILING_TEST" --nologo \
+        > "/tmp/run-$RUN.log" 2>&1; then
     FAILS=$((FAILS + 1))
   fi
 done
-echo "Local reproduction: $FAILS / 20 failures"
+echo "Local reproduction: $FAILS / $RUN failures"
 ```
 
-- `0/20` and ≥3 PRs showed it → still treat as a flake (the race may not trigger on your hardware). Prefer **Option B** (quarantine).
-- `1–19/20` → classic non-determinism. Prefer **Option A** (determinism fix).
-- `20/20` → not a flake, it's a hard failure. Emit `noop` and comment on the originating PR explaining that `pr-build-status` should have classified this as a real failure.
+- `0/N` and ≥3 PRs showed it → still treat as a flake (the race may not trigger on your hardware). Prefer **Option B** (quarantine), subject to the rule against quarantining tests the originating PR introduced.
+- `1–(N-1)/N` → classic non-determinism. Prefer **Option A** (determinism fix).
+- `N/N` → not a flake, it's a hard failure. Emit `noop` and comment on the originating PR explaining that `pr-build-status` should have classified this as a real failure.
+
+Before proceeding to Step 3, run `gh pr diff ${{ inputs.originating_pr }} -- '<test file path>'`. If the originating PR added or changed this test file, **stop**: emit `noop` and comment on the originating PR:
+```
+🤖 *LabelOps Flake — skipped.* This test was introduced or modified by this PR itself; I will not quarantine it. If it is actually flaky, please investigate the test as authored.
+```
 
 ### Step 3 — Fix
 
