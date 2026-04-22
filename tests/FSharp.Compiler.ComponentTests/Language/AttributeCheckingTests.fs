@@ -463,3 +463,98 @@ let main _ =
         |> run
         |> shouldSucceed
         |> withStdOutContains "interface: len=0"
+
+    // https://github.com/dotnet/fsharp/issues/12796
+    // Verify encodable array types still work correctly through the new code path.
+    [<Fact>]
+    let ``Issue 12796 - Empty array of obj type in attribute compiles, verifies IL, and runs`` () =
+        FSharp
+            """
+module TestModule
+
+open System
+open System.ComponentModel
+open System.Reflection
+
+[<DefaultValue([||] : obj[])>]
+type T() = class end
+
+[<EntryPoint>]
+let main _ =
+    let attr = typeof<T>.GetCustomAttribute<DefaultValueAttribute>()
+    let arr = attr.Value :?> obj[]
+    if arr.Length <> 0 then failwith "Expected empty array"
+    printfn "obj: len=%d" arr.Length
+    0
+            """
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> withStdOutContains "obj: len=0"
+
+    // https://github.com/dotnet/fsharp/issues/12796
+    [<Fact>]
+    let ``Issue 12796 - Empty array of string type in attribute compiles, verifies IL, and runs`` () =
+        FSharp
+            """
+module TestModule
+
+open System
+open System.ComponentModel
+open System.Reflection
+
+[<DefaultValue([||] : string[])>]
+type T() = class end
+
+[<EntryPoint>]
+let main _ =
+    let attr = typeof<T>.GetCustomAttribute<DefaultValueAttribute>()
+    let arr = attr.Value :?> string[]
+    if arr.Length <> 0 then failwith "Expected empty array"
+    printfn "string: len=%d" arr.Length
+    0
+            """
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> withStdOutContains "string: len=0"
+
+    // https://github.com/dotnet/fsharp/issues/12796
+    [<Fact>]
+    let ``Issue 12796 - Non-empty array of string type in attribute compiles and runs`` () =
+        FSharp
+            """
+module TestModule
+
+open System
+open System.ComponentModel
+open System.Reflection
+
+[<DefaultValue([| "hello"; "world" |])>]
+type T() = class end
+
+[<EntryPoint>]
+let main _ =
+    let attr = typeof<T>.GetCustomAttribute<DefaultValueAttribute>()
+    let arr = attr.Value :?> string[]
+    if arr.Length <> 2 then failwith "Expected 2 elements"
+    if arr.[0] <> "hello" then failwith "Expected 'hello'"
+    printfn "string-nonempty: len=%d" arr.Length
+    0
+            """
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> withStdOutContains "string-nonempty: len=2"

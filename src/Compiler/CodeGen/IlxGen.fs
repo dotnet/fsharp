@@ -10373,7 +10373,7 @@ and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
             else
                 let elemTypeName =
                     if ilElemTy.IsNominal then
-                        ilElemTy.TypeRef.Name
+                        ilElemTy.TypeRef.FullName
                     else
                         string ilElemTy
 
