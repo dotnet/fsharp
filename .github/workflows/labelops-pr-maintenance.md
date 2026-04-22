@@ -6,11 +6,13 @@ description: |
   seeded by GITHUB_RUN_ID for fairness, caps at 3 PRs, then for each PR
   (one at a time, fully, before moving to the next):
   (1) triages CI (pr-build-status skill) and applies small fixes; (2)
-  merges main into the PR branch and resolves conflicts semantically.
-  On proven flakes (≥3 distinct PRs), dispatches the labelops-flake-fix
-  workflow instead of touching the current PR. On unfixable CI, adds
-  the AI-needs-CI-fix-input label with an escalation comment listing
-  up to 3 options. Labels are sticky — the agent never removes labels.
+  merges main into the PR branch ONLY IF the branch would actually conflict
+  (checked via `git merge-tree`); clean-mergeable PRs are left untouched so
+  we do not thrash CI. On proven flakes (≥3 distinct PRs), dispatches the
+  labelops-flake-fix workflow instead of touching the current PR. On
+  unfixable CI, adds the AI-needs-CI-fix-input label with an escalation
+  comment listing up to 3 options. Labels are sticky — the agent never
+  removes labels.
 
 on:
   schedule: every 3h
@@ -78,6 +80,7 @@ You are an opt-in pull-request maintenance agent. Maintainers add labels to indi
 12. **Every safe-output must target the PR currently being processed — by explicit PR number.** Never target a different PR, never use `"*"`, never post a comment on a PR you are not actively working on. Dispatched flake-fix inputs must include only the current PR number as `originating_pr`.
 13. **If unsure, be conservative.** When the right action is ambiguous, prefer `noop` (no code change, no comment) over a guess. A silent run is better than a wrong push or a speculative escalation.
 14. **Always prefix every comment with `🤖 *LabelOps — <subtopic>.*`** so humans can see it is automated (Tenet #3).
+15. **Never push to a PR *just to update it from `main`*.** Push only when (a) resolving an actual merge conflict, or (b) applying a small CI fix under Step 3.2. A PR that is merely behind `main` but has no conflicts must be left alone — force-updating every 3h would thrash CI across all opt-in PRs.
 
 ### Definition of "healthy" and "ready to stop"
 
@@ -217,28 +220,44 @@ Decision tree:
 
 *Why this ordering:* pushing a merged branch restarts CI and discards the failure history the `pr-build-status` skill just analyzed. If the CI step already pushed, skip conflicts this run; the next run (3h later) will see updated CI and either return to healthy or find new work.
 
-1. `gh pr checkout <num>` — lands you on the PR branch.
-2. `git fetch origin main && git merge origin/main --no-edit`.
-3. **`Already up to date`** → nothing to do. No push, no comment.
-4. **Merge clean, no conflicts** → `git merge --abort` / reset and **do not push**. A PR that was merely behind `main` does not need a forced CI restart from us; the author can rebase when ready. Skip to next PR.
-5. **Conflicts present**:
-   - Read the full PR diff: `gh pr diff <num>`.
-   - Read the incoming change on `main` for each conflicting file: `git log --oneline origin/main..HEAD -- <file>` and the reverse.
-   - Follow any linked issue (`Fixes #NNN`, `Closes #NNN`) to understand intent.
-   - Resolution heuristics:
-     - `.fsproj` `<Compile Include>` conflicts → keep both entries, in the same order as in `main`.
-     - `release-notes.md` / `docs/release-notes/` conflicts → keep both entries, **then dedupe**: if the same issue/PR number appears in both sides (common with cherry-picks), keep only one. Never leave two identical release-note lines.
-     - Code conflicts where `main`'s change is mechanical (rename, formatting, whitespace) → prefer the PR's semantic change; reapply the mechanical pass on top.
-     - Otherwise → preserve both behaviors if possible; if not, state the ambiguity and stop (step 6).
-   - After resolving, `./build.sh -c Release` must succeed. Run targeted tests when possible.
-   - Push the resolved branch (targeting **this PR's number** explicitly).
-   - Post one comment:
-     ```
-     🤖 *LabelOps — Conflicts resolved.* Resolved <N> conflicts in `<files>`. Merged `main@<short-sha>`. Build + targeted tests green locally. Please re-review.
-     ```
-6. **Cannot resolve** (semantic ambiguity, >20 conflicts, or post-resolution build fails):
-   - Abort the merge: `git merge --abort`.
-   - Post one comment explaining **which** files have the blocking conflict and **why** you can't resolve it. Do not push, do not escalate the label. The next scheduled run retries with fresh context.
+**Pre-check (mandatory — do this before any merge attempt).** Detect whether a merge would even produce conflicts, without performing the merge:
+
+```bash
+set -euo pipefail
+gh pr checkout <num>
+git fetch origin main
+# git merge-tree writes conflict markers to stdout only when conflicts exist.
+# With --write-tree it also exits non-zero on conflicts (git ≥ 2.38).
+if git merge-tree --write-tree --messages origin/main HEAD 2>&1 | grep -q '^CONFLICT'; then
+  CONFLICTS=yes
+else
+  CONFLICTS=no
+fi
+```
+
+- **`CONFLICTS=no`** → the PR merges cleanly into `main`. **Do nothing.** No merge, no push, no comment. Leave the PR as-is. Move to next PR. A PR that is merely behind `main` is not our problem to solve — the author can rebase or GitHub will handle the merge at merge time.
+- **`CONFLICTS=yes`** → continue below.
+
+Now perform the actual merge and resolve:
+
+1. `git merge origin/main --no-edit` (expect it to stop with conflicts).
+2. Resolve using the heuristics below.
+3. Resolution heuristics:
+   - `.fsproj` `<Compile Include>` conflicts → keep both entries, in the same order as in `main`.
+   - `release-notes.md` / `docs/release-notes/` conflicts → keep both entries, **then dedupe**: if the same issue/PR number appears in both sides (common with cherry-picks), keep only one. Never leave two identical release-note lines.
+   - Code conflicts where `main`'s change is mechanical (rename, formatting, whitespace) → prefer the PR's semantic change; reapply the mechanical pass on top.
+   - Otherwise → preserve both behaviors if possible; if not, state the ambiguity and stop (step 5 below).
+4. Read the full PR diff once for context: `gh pr diff <num>`. Read the incoming change on `main` for each conflicting file. Follow any linked issue (`Fixes #NNN`, `Closes #NNN`) to understand intent.
+5. After resolving, `./build.sh -c Release` must succeed. Run targeted tests when possible.
+6. Push the resolved branch (targeting **this PR's number** explicitly).
+7. Post one comment:
+   ```
+   🤖 *LabelOps — Conflicts resolved.* Resolved <N> conflicts in `<files>`. Merged `main@<short-sha>`. Build + targeted tests green locally. Please re-review.
+   ```
+
+**Cannot resolve** (semantic ambiguity, >20 conflicts, or post-resolution build fails):
+- Abort the merge: `git merge --abort`.
+- Post one comment explaining **which** files have the blocking conflict and **why** you can't resolve it. Do not push, do not escalate the label. The next scheduled run retries with fresh context.
 
 ### Step 5 — Per-PR hygiene
 
