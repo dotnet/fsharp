@@ -1,7 +1,7 @@
 
 neg106.fs(8,59,8,61): typecheck error FS3230: A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
 
-neg106.fs(13,18,13,72): typecheck error FS0041: No overloads match for method 'CompareExchange'.
+neg106.fs(13,47,13,62): typecheck error FS0041: No overloads match for method 'CompareExchange'.
 
 Known types of arguments: inref<int> * int * int
 
@@ -16,7 +16,7 @@ Available overloads:
 
 neg106.fs(17,59,17,61): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
-neg106.fs(17,14,17,68): typecheck error FS0041: No overloads match for method 'CompareExchange'.
+neg106.fs(17,43,17,58): typecheck error FS0041: No overloads match for method 'CompareExchange'.
 
 Known types of arguments: inref<int> * int * int
 
@@ -41,7 +41,7 @@ but given a
     'inref<int>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
-neg106.fs(40,18,40,32): typecheck error FS0041: No overloads match for method 'M'.
+neg106.fs(40,20,40,21): typecheck error FS0041: No overloads match for method 'M'.
 
 Known types of arguments: string * inref<int>
 
@@ -49,7 +49,7 @@ Available overloads:
  - static member C.M: a: int * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'a' doesn't match
  - static member C.M: a: string * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'x' doesn't match
 
-neg106.fs(41,19,41,31): typecheck error FS0041: No overloads match for method 'M'.
+neg106.fs(41,21,41,22): typecheck error FS0041: No overloads match for method 'M'.
 
 Known types of arguments: int * inref<int>
 
@@ -164,6 +164,14 @@ neg106.fs(142,38,142,42): typecheck error FS0001: Type mismatch. Expecting a
 but given a
     'inref<'a>'    
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
+
+neg106.fs(146,34,146,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+
+neg106.fs(147,34,147,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+
+neg106.fs(148,34,148,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+
+neg106.fs(149,34,149,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
 neg106.fs(146,34,146,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 

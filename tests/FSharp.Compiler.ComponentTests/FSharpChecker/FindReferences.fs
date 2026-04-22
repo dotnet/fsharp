@@ -190,7 +190,7 @@ let bar x = Library.foo x""" })
     project.Workflow {
         placeCursor "Library" "foo"
         findAllReferences (expectToFind [
-            "FileFirst.fs", 4, 12, 23
+            "FileFirst.fs", 4, 20, 23
             "FileLibrary.fs", 5, 8, 11
         ])
     }
@@ -205,7 +205,7 @@ let ``We find back-ticked identifiers`` () =
             placeCursor "Second" 6 35 "let foo x = ModuleFirst.``foo bar`` x" ["``foo bar``"]
             findAllReferences (expectToFind [
                 "FileFirst.fs", 6, 4, 15
-                "FileSecond.fs", 6, 12, 35
+                "FileSecond.fs", 6, 24, 35
             ])
         }
 
@@ -445,7 +445,7 @@ let ``We find values of a type that has been aliased`` () =
         findAllReferences (expectToFind [
             "FileFirst.fs", 7, 4, 9
             "FileFirst.fsi", 3, 4, 9
-            "FileSecond.fs", 6, 12, 29
+            "FileSecond.fs", 6, 24, 29
         ])
     }
 
@@ -669,7 +669,7 @@ type internal SomeType() =
     let property1Locations() = [
         "FileFirst.fs", 4, 20, 29
         "FileSecond.fs", 7, 17, 26
-        "FileSecond.fs", 13, 12, 43 // Not sure why we get the whole range here, but it seems to work fine.
+        "FileSecond.fs", 13, 34, 43 // Narrow terminal-identifier range (see #3920).
     ]
 
     let method1Locations() = [
@@ -766,8 +766,8 @@ let test () =
             "test.fs", 7, 16, 26   // Definition
             "test.fs", 8, 13, 16   // Getter at 'get' keyword
             "test.fs", 9, 12, 15   // Setter at 'set' keyword
-            "test.fs", 13, 4, 20   // Usage with qualifier
-            "test.fs", 14, 4, 20   // Usage with qualifier
+            "test.fs", 13, 10, 20  // Usage narrows to terminal identifier (#3920)
+            "test.fs", 14, 10, 20  // Usage narrows to terminal identifier (#3920)
         ]
 
 /// Test for single-line interface syntax (related to #15399)
@@ -789,7 +789,7 @@ foo.Bar()
         testFindRefsInSource source "Bar" [
             "test.fs", 4, 28, 31  // Abstract member definition
             "test.fs", 6, 43, 46  // Implementation
-            "test.fs", 9, 0, 7    // Usage via foo.Bar()
+            "test.fs", 9, 4, 7    // Usage via foo.Bar() narrows to identifier (#3920)
         ]
 
     [<Fact>]

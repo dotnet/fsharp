@@ -39,7 +39,7 @@ Math.Max(a,)
     dumpDiagnosticNumbers checkResults |> shouldEqual [
         "(4,10--4,11)", 3100
         "(4,9--4,10)", 39
-        "(4,0--4,12)", 41
+        "(4,5--4,8)", 41
     ]
 
     assertHasSymbolUsages ["Max"] checkResults

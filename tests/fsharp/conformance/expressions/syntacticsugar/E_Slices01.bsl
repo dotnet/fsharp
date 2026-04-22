@@ -1,5 +1,5 @@
 
-E_Slices01.fsx(15,9,15,19): typecheck error FS0041: A unique overload for method 'GetSlice' could not be determined based on type information prior to this program point. A type annotation may be needed.
+E_Slices01.fsx(15,11,15,19): typecheck error FS0041: A unique overload for method 'GetSlice' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known types of arguments: int * int option * 'a option
 
@@ -15,7 +15,7 @@ Candidates:
  - member Foo.GetSlice: x: int * y1: int option * y2: float option -> unit
  - member Foo.GetSlice: x: int * y1: int option * y2: int option -> unit
 
-E_Slices01.fsx(17,9,17,19): typecheck error FS0041: A unique overload for method 'GetSlice' could not be determined based on type information prior to this program point. A type annotation may be needed.
+E_Slices01.fsx(17,11,17,19): typecheck error FS0041: A unique overload for method 'GetSlice' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known types of arguments: 'a option * int option * int
 

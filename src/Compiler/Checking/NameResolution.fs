@@ -4160,14 +4160,36 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
     | _ ->
         ForceRaise adhocDotSearchAccessible
 
+/// Returns a pair (itemRange, itemIdentRange):
+///
+/// * `itemRange` is the structural range of the long identifier as consumed
+///   by resolution — the whole-long-id span when `rest = []`, or the range
+///   over the consumed prefix when `rest <> []`. This is what typed-tree
+///   construction uses for expression ranges and sequence points, so we
+///   never narrow it.
+/// * `itemIdentRange` is the terminal identifier's own source range — the
+///   piece the user perceives as "this item's name". It is used for
+///   diagnostics and for sink-reported symbol ranges (Find Usages, symbol
+///   highlight, FSharpSymbolUse) so error / IDE UI hits only the resolved
+///   name. Fixes #14284 and #3920.
+///
+/// For `T.Instance.Method("")`:
+///   itemRange      = `T.Instance.Method`
+///   itemIdentRange = `Method`
 let ComputeItemRange wholem (lid: Ident list) rest =
-    match rest with
-    | [] -> wholem
-    | _ ->
-        let ids = List.truncate (max 0 (lid.Length - rest.Length)) lid
-        match ids with
+    let itemRange =
+        match rest with
         | [] -> wholem
-        | _ -> rangeOfLid ids
+        | _ ->
+            let ids = List.truncate (max 0 (lid.Length - rest.Length)) lid
+            match ids with
+            | [] -> wholem
+            | _ -> rangeOfLid ids
+    let itemIdentRange =
+        match rest, lid with
+        | [], _ :: _ -> (List.last lid).idRange
+        | _ -> itemRange
+    itemRange, itemIdentRange
 
 /// Filters method groups that will be sent to Visual Studio IntelliSense
 /// to include only static/instance members
@@ -4215,7 +4237,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
     match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid maybeAppliedArgExpr with 
     | Exception e -> Exception e 
     | Result (tinstEnclosing, item1, rest) ->
-    let itemRange = ComputeItemRange wholem lid rest
+    let itemRange, itemIdentRange = ComputeItemRange wholem lid rest
 
     let item = FilterMethodGroups ncenv itemRange item1 true
 
@@ -4241,13 +4263,16 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                 | Item.ActivePatternResult _ -> ItemOccurrence.Binding
                 | _ -> ItemOccurrence.Use
 
-            CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, item, tpinst, occurrence, ad)
+            // Use the narrow terminal-identifier range for the sink so that
+            // FSharpSymbolUse / Find Usages / symbol-highlight surfaces report
+            // only on the name the user perceives as the item's name, not on
+            // the full long-id span. See #3920, #14284.
+            CallMethodGroupNameResolutionSink sink (itemIdentRange, nenv, refinedItem, item, tpinst, occurrence, ad)
 
             // #16621
             match refinedItem with
             | Item.Property(_, pinfos, _) ->
-                let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
-                RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
+                RegisterUnionCaseTesterForProperty sink itemIdentRange pinfos
             | _ -> ()
 
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
@@ -4267,14 +4292,14 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                 AfterResolution.RecordResolution(None, (fun tpinst -> callSink(item, tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (item, emptyTyparInst)))
 
             elif isWrongItemInExpr item then
-               CallNameResolutionSink sink (itemRange, nenv, item, emptyTyparInst, ItemOccurrence.InvalidUse, ad)
+               CallNameResolutionSink sink (itemIdentRange, nenv, item, emptyTyparInst, ItemOccurrence.InvalidUse, ad)
                AfterResolution.DoNothing
 
             else
                callSink (item, emptyTyparInst)
                AfterResolution.DoNothing
 
-    success (tinstEnclosing, item, itemRange, rest, afterResolution)
+    success (tinstEnclosing, item, itemRange, itemIdentRange, rest, afterResolution)
 
 [<return: Struct>]
 let (|NonOverridable|_|) namedItem =
@@ -4292,11 +4317,11 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
             | id :: rest ->
                 ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag maybeAppliedArgExpr
             | _ -> error(InternalError("ResolveExprDotLongIdentAndComputeRange", wholem))
-        let itemRange = ComputeItemRange wholem lid rest
-        resInfo, item, rest, itemRange
+        let itemRange, itemIdentRange = ComputeItemRange wholem lid rest
+        resInfo, item, rest, itemRange, itemIdentRange
 
     // "true" resolution
-    let resInfo, item, rest, itemRange = resolveExpr findFlag
+    let resInfo, item, rest, itemRange, itemIdentRange = resolveExpr findFlag
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap itemRange item))
 
     // Record the precise resolution of the field for intellisense/goto definition
@@ -4305,25 +4330,26 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
         | None -> AfterResolution.DoNothing // do not refine the resolution if nobody listens
         | Some _ ->
             // resolution for goto definition
-            let unrefinedItem, itemRange, overrides =
+            let unrefinedItem, itemRange, itemIdentRange, overrides =
                 match findFlag, item with
                 | FindMemberFlag.PreferOverrides, _
-                | _, NonOverridable() -> item, itemRange, false
+                | _, NonOverridable() -> item, itemRange, itemIdentRange, false
                 | FindMemberFlag.IgnoreOverrides, _
                 | FindMemberFlag.DiscardOnFirstNonOverride, _ ->
-                    let _, item, _, itemRange = resolveExpr FindMemberFlag.PreferOverrides
-                    item, itemRange, true
+                    let _, item, _, itemRange, itemIdentRange = resolveExpr FindMemberFlag.PreferOverrides
+                    item, itemRange, itemIdentRange, true
 
             let callSink (refinedItem, tpinst) =
                 let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
                 let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
-                CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurrence.Use, ad)
+                // Use narrow terminal-identifier range for the sink (FSharpSymbolUse / Find Usages
+                // / symbol highlight). See #3920, #14284.
+                CallMethodGroupNameResolutionSink sink (itemIdentRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurrence.Use, ad)
 
                 // #16621
                 match refinedItem with
                 | Item.Property(_, pinfos, _) ->
-                    let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
-                    RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
+                    RegisterUnionCaseTesterForProperty sink itemIdentRange pinfos
                 | _ -> ()
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
@@ -4344,7 +4370,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing
 
-    item, itemRange, rest, afterResolution
+    item, itemRange, itemIdentRange, rest, afterResolution
 
 
 //-------------------------------------------------------------------------
