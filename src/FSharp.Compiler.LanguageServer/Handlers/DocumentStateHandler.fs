@@ -2,6 +2,7 @@
 
 open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.VisualStudio.LanguageServer.Protocol
+open FSharp.Compiler.LanguageServer
 open FSharp.Compiler.LanguageServer.Common
 
 open System.Threading
@@ -18,9 +19,15 @@ type DocumentStateHandler() =
         member _.HandleRequestAsync
             (request: DidOpenTextDocumentParams, context: FSharpRequestContext, _cancellationToken: CancellationToken)
             =
+            let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
             contextHolder.UpdateWorkspace _.Files.Open(request.TextDocument.Uri, request.TextDocument.Text)
+
+            telemetry.ReportEvent(
+                TelemetryEvents.DocumentOpened,
+                [| "uri_hash", hash request.TextDocument.Uri :> obj |]
+            )
 
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
@@ -40,8 +47,14 @@ type DocumentStateHandler() =
         member _.HandleNotificationAsync
             (request: DidCloseTextDocumentParams, context: FSharpRequestContext, _cancellationToken: CancellationToken)
             =
+            let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
             contextHolder.UpdateWorkspace _.Files.Close(request.TextDocument.Uri)
+
+            telemetry.ReportEvent(
+                TelemetryEvents.DocumentClosed,
+                [| "uri_hash", hash request.TextDocument.Uri :> obj |]
+            )
 
             Task.CompletedTask
