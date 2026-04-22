@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <MSTest>
+    <!-- Disable deployment to avoid "deployment issue" warnings for VS assemblies
+         that are resolved at runtime from the VS installation, not the test output. -->
+    <DeploymentEnabled>false</DeploymentEnabled>
+  </MSTest>
+</RunSettings>

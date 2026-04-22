@@ -44,7 +44,7 @@ type CapabilitiesManager(config: FSharpLanguageServerConfig, scOverrides: IServe
                      )
                  else
                      System.Nullable())
-            //CompletionProvider= CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
+            //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
             //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
         )
 

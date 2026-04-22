@@ -49,6 +49,13 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
             TextDocumentSync = value.TextDocumentSync,
             SupportsDiagnosticRequests = config.EnabledFeatures.Diagnostics,
             ProjectContextProvider = true,
+            CodeActionProvider = config.EnabledFeatures.CodeActions
+                ? new CodeActionOptions
+                {
+                    CodeActionKinds = [CodeActionKind.QuickFix],
+                    ResolveProvider = false,
+                }
+                : null,
             DiagnosticProvider =
                 config.EnabledFeatures.Diagnostics ?
 
@@ -72,14 +79,7 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
             } : null,
-            CodeActionProvider = config.EnabledFeatures.CodeActions
-                ? new CodeActionOptions
-                {
-                    CodeActionKinds = [CodeActionKind.QuickFix],
-                    ResolveProvider = false,
-                }
-                : null,
-            //HoverProvider= new HoverOptions()
+            //HoverProvider = new HoverOptions()
             //{
             //    WorkDoneProgress = true
             //}
@@ -109,6 +109,7 @@ internal class VsDiagnosticsHandler
 
         return [vsReport];
     }
+
 }
 
 
@@ -235,9 +236,12 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         "%FSharpLspExtension.FSharpLanguageServerProvider.DisplayName%",
         [Microsoft.VisualStudio.Extensibility.DocumentFilter.FromDocumentType(FSharpDocumentType)]);
 
+    private VsTelemetryReporter? _telemetryReporter;
+
     /// <inheritdoc/>
     public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
     {
+        _telemetryReporter = new VsTelemetryReporter();
         var activitySourceName = "fsc";
 
         FSharp.Compiler.LanguageServer.Activity.listenToSome();
@@ -262,7 +266,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         var serverConfig = new FSharpLanguageServerConfig(
             new FSharpLanguageServerFeatures(
                 diagnostics: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetDiagnosticsFrom, defaultValue: FSharpExtensionSettings.BOTH)),
-                codeActions: false
+                codeActions: true
                 ));
 
         var disposeToEndSubscription =
@@ -346,6 +350,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         {
             serviceCollection.AddSingleton<IServerCapabilitiesOverride, VsServerCapabilitiesOverride>();
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
+            serviceCollection.AddSingleton<ILspTelemetry>(_telemetryReporter!);
         });
 
         var solutions = await ws.QuerySolutionAsync(
@@ -374,6 +379,16 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         {
             // Log telemetry for failure and disable the server from being activated again.
             this.Enabled = false;
+            _telemetryReporter?.ReportFault(
+                TelemetryEvents.ServerFault,
+                "LSP server initialization failed",
+                null);
+        }
+        else
+        {
+            _telemetryReporter?.ReportEvent(
+                TelemetryEvents.LspServerInitialized,
+                []);
         }
 
         return base.OnServerInitializationResultAsync(serverInitializationResult, initializationFailureInfo, cancellationToken);
