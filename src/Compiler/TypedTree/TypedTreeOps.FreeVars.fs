@@ -1449,7 +1449,22 @@ module internal MemberRepresentation =
                 | SynMemberKind.PropertyGetSet -> tagProperty vref.DisplayName
                 | SynMemberKind.ClassConstructor
                 | SynMemberKind.Constructor -> tagMethod vref.DisplayName
-                | SynMemberKind.Member -> tagMember vref.DisplayName
+                | SynMemberKind.Member ->
+                    match vref.ValReprInfo with
+                    | Some valReprInfo ->
+                        let numArgGroups = valReprInfo.ArgInfos.Length
+
+                        let isMethod =
+                            if memberInfo.MemberFlags.IsInstance then
+                                numArgGroups > 1
+                            else
+                                numArgGroups > 0
+
+                        if isMethod then
+                            tagMethod vref.DisplayName
+                        else
+                            tagMember vref.DisplayName
+                    | None -> tagMember vref.DisplayName
 
         match fullNameOfParentOfValRefAsLayout vref with
         | ValueNone -> wordL n
