@@ -73,7 +73,7 @@ module MemberDefinitions_OptionalArguments =
         |> shouldFail
         |> withDiagnostics [
             (Error 1212, Line 7, Col 22, Line 7, Col 32, "Optional arguments must come at the end of the argument list, after any non-optional arguments")
-            (Error 39, Line 8, Col 5, Line 8, Col 8, "The type 'Foo' does not define the field, constructor or member 'Bar'.")
+            (Error 39, Line 8, Col 5, Line 8, Col 8, "The type 'Foo' does not define a field, constructor, or member named 'Bar'.")
         ]
 
     // SOURCE=E_SanityCheck02.fs
@@ -84,7 +84,7 @@ module MemberDefinitions_OptionalArguments =
         |> shouldFail
         |> withDiagnostics [
             (Error 1212, Line 7, Col 22, Line 7, Col 29, "Optional arguments must come at the end of the argument list, after any non-optional arguments")
-            (Error 39, Line 8, Col 5, Line 8, Col 8, "The type 'Foo' does not define the field, constructor or member 'Bar'.")
+            (Error 39, Line 8, Col 5, Line 8, Col 8, "The type 'Foo' does not define a field, constructor, or member named 'Bar'.")
         ]
 
     // SOURCE=optionalOfOptOptA.fs

@@ -293,6 +293,8 @@
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />
+    <Compile Include="ErrorMessages\OperatorTests.fs" />
+    <Compile Include="ErrorMessages\CommaSemicolonListTests.fs" />
     <Compile Include="ErrorMessages\ConstructorTests.fs" />
     <Compile Include="ErrorMessages\DontSuggestTests.fs" />
     <Compile Include="ErrorMessages\DuplicateExtensionMemberTests.fs" />
@@ -310,6 +312,8 @@
     <Compile Include="ErrorMessages\UpcastDowncastTests.fs" />
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />
+    <Compile Include="ErrorMessages\SuccessiveArgTests.fs" />
+    <Compile Include="ErrorMessages\StaticParameterFormattingTests.fs" />
     <Compile Include="ErrorMessages\ConfusingTypeName.fs" />
     <Compile Include="ErrorMessages\FS0988AtEndOfFile.fs" />
     <Compile Include="ErrorMessages\Repro1548.fs" />
