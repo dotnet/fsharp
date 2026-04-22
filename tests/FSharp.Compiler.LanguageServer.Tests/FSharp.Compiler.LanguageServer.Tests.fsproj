@@ -19,6 +19,7 @@
 		<Compile Include="ProtocolHelpers.fs" />
 		<Compile Include="Protocol.fs" />
 		<Compile Include="DiagnosticsProtocolTests.fs" />
+		<Compile Include="CodeActionProtocolTests.fs" />
 		<Compile Include="ProjectContextsProtocolTests.fs" />
 	</ItemGroup>
 

@@ -72,7 +72,14 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
             } : null,
-            //HoverProvider = new HoverOptions()
+            CodeActionProvider = config.EnabledFeatures.CodeActions
+                ? new CodeActionOptions
+                {
+                    CodeActionKinds = [CodeActionKind.QuickFix],
+                    ResolveProvider = false,
+                }
+                : null,
+            //HoverProvider= new HoverOptions()
             //{
             //    WorkDoneProgress = true
             //}

@@ -47,6 +47,7 @@
 		<Compile Include="Common\LifecycleManager.fs" />
 		<Compile Include="Common\CapabilitiesManager.fs" />
 		<Compile Include="Common\FSharpRequestContext.fs" />
+		<Compile Include="Handlers\CodeActionHandler.fs" />
 		<Compile Include="Handlers\LanguageFeaturesHandler.fs" />
 		<Compile Include="Handlers\ProjectContextsHandler.fs" />
 		<Compile Include="Handlers\DocumentStateHandler.fs" />
