@@ -12,5 +12,8 @@
   <Folder Name="/vsintegration/">
     <Project Path="vsintegration/src/FSharp.Editor/FSharp.Editor.fsproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj" />
+  </Folder>
   <Project Path="buildtools/Misc/Misc.csproj" />
 </Solution>

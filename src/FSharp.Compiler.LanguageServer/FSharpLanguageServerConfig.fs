@@ -3,13 +3,13 @@ namespace FSharp.Compiler.LanguageServer
 type FSharpLanguageServerFeatures =
     {
         Diagnostics: bool
-        SemanticHighlighting: bool
+        CodeActions: bool
     }
 
     static member Default =
         {
             Diagnostics = true
-            SemanticHighlighting = true
+            CodeActions = false
         }
 
 type FSharpLanguageServerConfig =

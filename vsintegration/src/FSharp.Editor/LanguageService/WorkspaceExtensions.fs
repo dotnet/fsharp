@@ -38,7 +38,6 @@ module internal SolutionConfigCache =
     type FSharpExtensionConfig =
         {
             GetDiagnosticsFrom: string
-            GetSemanticHighlightingFrom: string
         }
 
         static member Old = "old"
@@ -48,14 +47,11 @@ module internal SolutionConfigCache =
         static member Default =
             {
                 GetDiagnosticsFrom = FSharpExtensionConfig.Both
-                GetSemanticHighlightingFrom = FSharpExtensionConfig.Both
             }
 
         member this.ShouldProduceDiagnostics() =
             Set.contains this.GetDiagnosticsFrom (set [ FSharpExtensionConfig.Old; FSharpExtensionConfig.Both ])
 
-        member this.ShouldProduceSemanticHighlighting() =
-            Set.contains this.GetSemanticHighlightingFrom (set [ FSharpExtensionConfig.Old; FSharpExtensionConfig.Both ])
 
     let readFSharpExtensionConfig (solutionPath: string) =
         if String.IsNullOrEmpty(solutionPath) then
@@ -72,7 +68,6 @@ module internal SolutionConfigCache =
 
                     {
                         GetDiagnosticsFrom = jObject["fsharp.getDiagnosticsFrom"].ToString().ToLower()
-                        GetSemanticHighlightingFrom = jObject["fsharp.getSemanticHighlightingFrom"].ToString().ToLower()
                     }
                 with ex ->
                     System.Diagnostics.Trace.TraceError($"Error reading FSharpExtensionConfig from {configFilePath}", ex)
