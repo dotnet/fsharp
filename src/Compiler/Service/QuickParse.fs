@@ -390,17 +390,23 @@ module QuickParse =
                             EndColumn = index
                             LastDotPos = lastDotPos
                         }
-                else if IsWhitespace pos then
-                    AtStartOfIdentifier(pos + 1, current, throwAwayNext, lastDotPos)
-                else
-                    let remainingLength = lineStr.Length - pos
-
-                    if IsTick pos && remainingLength > 1 && IsTick(pos + 1) then
-                        InQuotedIdentifier(pos + 2, pos + 2, current, throwAwayNext, lastDotPos)
-                    elif IsStartOfComment pos then
-                        EatComment(1, pos + 1, EatCommentCallContext.StartIdentifier(current, throwAwayNext), lastDotPos)
-                    elif IsIdentifierStartCharacter pos then
-                        InUnquotedIdentifier(pos, pos + 1, current, throwAwayNext, lastDotPos)
+                    else if IsWhitespace pos then
+                        AtStartOfIdentifier(pos + 1, current, throwAwayNext, lastDotPos)
+                    else
+                        let remainingLength = lineStr.Length - pos
+                
+                        if IsTick pos && remainingLength > 1 && IsTick(pos + 1) then
+                            InQuotedIdentifier(pos + 2, pos + 2, current, throwAwayNext, lastDotPos)
+                        elif IsStartOfComment pos then
+                            EatComment(1, pos + 1, EatCommentCallContext.StartIdentifier(current, throwAwayNext), lastDotPos)
+                        elif IsIdentifierStartCharacter pos then
+                            InUnquotedIdentifier(pos, pos + 1, current, throwAwayNext, lastDotPos)
+                        elif
+                            lineStr[pos] = '?'
+                            && (pos + 1 < lineStr.Length)
+                            && IsIdentifierPartCharacter(pos + 1)
+                        ->
+                            InUnquotedIdentifier(pos + 1, pos + 2, current, throwAwayNext, lastDotPos)
                     elif IsDot pos then
                         if pos = 0 then
                             // dot on first char of line, currently treat it like empty identifier to the left
