@@ -401,11 +401,11 @@ module QuickParse =
                             EatComment(1, pos + 1, EatCommentCallContext.StartIdentifier(current, throwAwayNext), lastDotPos)
                         elif IsIdentifierStartCharacter pos then
                             InUnquotedIdentifier(pos, pos + 1, current, throwAwayNext, lastDotPos)
-                        elif
+                        elif // handles optional parameters
                             lineStr[pos] = '?'
                             && (pos + 1 < lineStr.Length)
                             && IsIdentifierPartCharacter(pos + 1)
-                        ->
+                        then
                             InUnquotedIdentifier(pos + 1, pos + 2, current, throwAwayNext, lastDotPos)
                     elif IsDot pos then
                         if pos = 0 then
