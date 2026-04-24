@@ -182,25 +182,31 @@ let TypeCheck
                         | SymbolCollection.SingleFile idx -> [ inputsArray.[idx] ]
                         | SymbolCollection.CycleGroup indices ->
                             let groupFiles = indices |> List.map (fun idx -> inputsArray.[idx])
-                            let groupId = nextGroupId
-                            nextGroupId <- nextGroupId + 1
-                            // Separate impls and sigs in the group
-                            let impls =
-                                groupFiles |> List.choose (fun f ->
+                            // Detect sig files in the group. Cycle groups containing .fsi files
+                            // need careful sig/impl coordination (the synthetic impl wrapper
+                            // changes structure in ways the sig can't match). For now, fall back
+                            // to original order for such groups — Level A behavior. This is a
+                            // known Level B limitation; future work needed.
+                            let hasSigFile =
+                                groupFiles |> List.exists (fun f ->
                                     match f with
-                                    | Syntax.ParsedInput.ImplFile i -> Some i
-                                    | _ -> None)
-                            let sigs =
-                                groupFiles |> List.choose (fun f ->
-                                    match f with
-                                    | Syntax.ParsedInput.SigFile s -> Some s
-                                    | _ -> None)
-                            let synthesized = ResizeArray<Syntax.ParsedInput>()
-                            if not sigs.IsEmpty then
-                                synthesized.Add(Syntax.ParsedInput.SigFile(CycleGroupProcessing.synthesizeCycleGroupSig groupId sigs))
-                            if not impls.IsEmpty then
-                                synthesized.Add(Syntax.ParsedInput.ImplFile(CycleGroupProcessing.synthesizeCycleGroupImpl groupId impls))
-                            List.ofSeq synthesized)
+                                    | Syntax.ParsedInput.SigFile _ -> true
+                                    | _ -> false)
+                            if hasSigFile then
+                                // Pass through original files (no synthesis) — type checker
+                                // will likely error on the cycle, but at least sig/impl integrity
+                                // is preserved.
+                                groupFiles
+                            else
+                                let impls =
+                                    groupFiles |> List.choose (fun f ->
+                                        match f with
+                                        | Syntax.ParsedInput.ImplFile i -> Some i
+                                        | _ -> None)
+                                let groupId = nextGroupId
+                                nextGroupId <- nextGroupId + 1
+                                if impls.IsEmpty then []
+                                else [ Syntax.ParsedInput.ImplFile(CycleGroupProcessing.synthesizeCycleGroupImpl groupId impls) ])
 
                 // Fix up IsLastCompiland flags: only the last file in the final
                 // sequence should have isLastCompiland=true (needed for [<EntryPoint>] check)

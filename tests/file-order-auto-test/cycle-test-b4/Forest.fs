@@ -1,7 +1,8 @@
 module CycleTest.ForestMod
 
-type ForestT = ForestT of CycleTest.TreeMod.TreeT list
+// Uses sibling module TreeMod via namespace-relative reference.
+type ForestT = ForestT of TreeMod.TreeT list
 
 let maxDepth (ForestT trees) =
     if List.isEmpty trees then 0
-    else trees |> List.map CycleTest.TreeMod.depth |> List.max
+    else trees |> List.map TreeMod.depth |> List.max

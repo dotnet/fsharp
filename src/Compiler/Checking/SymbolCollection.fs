@@ -633,6 +633,49 @@ let private resolvePathDeps
             prefix <- if prefix = "" then seg else prefix + "." + seg
             addDepFromExportMap exportMap sharedPrefixes skipShared selfIndex &deps prefix
 
+/// Get the namespace-prefix paths that should be prepended when resolving relative refs.
+/// For a file with `module CycleTest.TreeMod`, returns [["CycleTest"]; ["CycleTest"; "TreeMod"]]
+/// so that a reference like `ForestMod.X` can be tried as `CycleTest.ForestMod.X` and
+/// `CycleTest.TreeMod.ForestMod.X`.
+let private getEnclosingPrefixes (fd: FileDeclarations) : string list list =
+    fd.TopLevelModules
+    |> List.collect (fun topMod ->
+        // For module FileA.SubA.SubSubA, contributes prefixes:
+        //   [FileA]
+        //   [FileA; SubA]
+        //   [FileA; SubA; SubSubA]
+        let segments = topMod.QualifiedName |> List.map (fun id -> id.idText)
+        let mutable acc = []
+        let mutable prefix = []
+        for seg in segments do
+            prefix <- prefix @ [seg]
+            acc <- prefix :: acc
+        List.rev acc)
+    |> List.distinct
+
+/// Resolve a path against the export map, also trying the path with each
+/// enclosing-namespace prefix prepended (for namespace-relative references).
+let private resolvePathDepsWithPrefixes
+    (exportMap: Map<string, Set<int>>)
+    (sharedPrefixes: Set<string>)
+    (skipShared: bool)
+    (prefixesToo: bool)
+    (selfIndex: int)
+    (enclosingPrefixes: string list list)
+    (deps: byref<Set<int>>)
+    (path: LongIdent) =
+    // First: literal path resolution
+    resolvePathDeps exportMap sharedPrefixes skipShared prefixesToo selfIndex &deps path
+
+    // Then: try with each enclosing namespace prefix prepended.
+    // For a ref `ForestMod.X` from a file in `CycleTest.TreeMod`, also try
+    // `CycleTest.ForestMod.X` and `CycleTest.TreeMod.ForestMod.X`.
+    let pathStrs = path |> List.map (fun id -> id.idText)
+    for nsPrefix in enclosingPrefixes do
+        let prefixed = nsPrefix @ pathStrs
+        let prefixedPath = prefixed |> List.map (fun s -> Ident(s, range0))
+        resolvePathDeps exportMap sharedPrefixes skipShared prefixesToo selfIndex &deps prefixedPath
+
 /// Resolve a file's imports against the export map to find dependencies.
 /// Opens always create dependencies (they're explicit imports).
 /// IdentifierRefs skip shared namespace prefixes to avoid false cycles.
@@ -645,15 +688,18 @@ let private resolveFileDependencies
     : Set<int> =
 
     let mutable deps = Set.empty<int>
+    let enclosingPrefixes = getEnclosingPrefixes fd
 
     // Opens: match full path only (no prefix expansion), never skip shared.
+    // Also try with enclosing namespace prefixes (relative opens are valid F#).
     for openPath in fd.Opens do
-        resolvePathDeps exportMap sharedPrefixes false false fd.FileIndex &deps openPath
+        resolvePathDepsWithPrefixes exportMap sharedPrefixes false false fd.FileIndex enclosingPrefixes &deps openPath
 
     if includeIdentRefs then
         // Identifier refs: try prefixes, skip shared prefixes to avoid false cycles.
+        // Also try with enclosing namespace prefixes for relative refs.
         for identRef in fd.IdentifierRefs do
-            resolvePathDeps exportMap sharedPrefixes true true fd.FileIndex &deps identRef
+            resolvePathDepsWithPrefixes exportMap sharedPrefixes true true fd.FileIndex enclosingPrefixes &deps identRef
 
     deps
 
@@ -920,38 +966,59 @@ let computeCompilationUnits (fileDecls: FileDeclarations array) : CompilationUni
 
     let sccs = computeSCCs fileDecls.Length deps
 
-    // Convert SCCs to compilation units
+    // Build sig/impl pairing maps
+    let sigImplPairs = buildSigImplPairs fileDecls  // impl idx -> sig idx
+    let sigIndicesSet = sigImplPairs |> Map.toSeq |> Seq.map snd |> Set.ofSeq
+
+    // Convert SCCs to compilation units, expanding any cycle group to include
+    // sig files paired with the impls in that group (so sig+impl stay together).
     let units =
         sccs
         |> List.map (fun scc ->
             match scc with
             | [ single ] -> SingleFile single
-            | many -> CycleGroup (List.sort many))
+            | many ->
+                // Pull in any .fsi pairs for impls in this cycle group
+                let withSigs =
+                    many
+                    |> List.collect (fun idx ->
+                        match Map.tryFind idx sigImplPairs with
+                        | Some sigIdx -> [ sigIdx; idx ]
+                        | None -> [ idx ])
+                CycleGroup (withSigs |> List.distinct |> List.sort))
 
-    // Partition: auto-generated files first, then user units in dependency order.
-    // For sig files inside a cycle group, they remain in the cycle group.
+    // Track which sig indices are now claimed by a cycle group; they must NOT
+    // appear as separate units.
+    let sigsInCycleGroups =
+        units
+        |> List.collect (fun u ->
+            match u with
+            | CycleGroup ixs -> ixs |> List.filter (fun i -> Set.contains i sigIndicesSet)
+            | SingleFile _ -> [])
+        |> Set.ofList
+
+    // Partition: auto-generated files first, then user units in dependency order
     let isAutoGenUnit u =
         match u with
         | SingleFile idx -> isAutoGeneratedFile fileDecls.[idx]
-        | CycleGroup _ -> false  // Cycle groups never contain auto-gen files
+        | CycleGroup _ -> false
     let autoGen, userUnits = units |> List.partition isAutoGenUnit
-
-    // For SingleFile user units, enforce .fsi before .fs pairing.
-    // (CycleGroups bundle their own sig+impl together.)
-    let sigImplPairs = buildSigImplPairs fileDecls
-    let sigIndices = sigImplPairs |> Map.toSeq |> Seq.map snd |> Set.ofSeq
 
     let withSigsRepositioned =
         userUnits
         |> List.collect (fun u ->
             match u with
-            | SingleFile idx when Set.contains idx sigIndices ->
-                // Skip sig files here; they'll be re-inserted before their impl
+            | SingleFile idx when Set.contains idx sigsInCycleGroups ->
+                // This sig file is now part of a cycle group; drop the duplicate single-file entry
+                []
+            | SingleFile idx when Set.contains idx sigIndicesSet ->
+                // Sig file with no cycle-group claim; defer to be inserted before its impl
                 []
             | SingleFile idx ->
                 match Map.tryFind idx sigImplPairs with
-                | Some sigIdx -> [ SingleFile sigIdx; SingleFile idx ]  // sig before impl
-                | None -> [ u ]
+                | Some sigIdx when not (Set.contains sigIdx sigsInCycleGroups) ->
+                    [ SingleFile sigIdx; SingleFile idx ]  // sig before impl
+                | _ -> [ u ]
             | CycleGroup _ -> [ u ])
 
     (autoGen @ withSigsRepositioned) |> List.toArray

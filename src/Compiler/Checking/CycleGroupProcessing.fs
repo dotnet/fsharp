@@ -28,32 +28,32 @@ let private commonPrefix (longIds: LongIdent list) : LongIdent =
         prefix
 
 /// Given a top-level SynModuleOrNamespace and a common prefix to strip,
-/// produce a SynModuleDecl.NestedModule whose name is the remaining tail.
-/// Example: input `module Foo.Bar.Baz = decls` with prefix `[Foo; Bar]`
-/// becomes `SynModuleDecl.NestedModule(name=[Baz], decls=decls)`.
-let private rewriteAsNestedModule (prefix: LongIdent) (modOrNs: SynModuleOrNamespace) : SynModuleDecl option =
+/// produce a list of SynModuleDecl entries representing its content within
+/// the synthesized cycle-group namespace.
+///
+/// For NamedModule: produces a single NestedModule wrapping the original decls.
+/// For DeclaredNamespace at the prefix level: the decls are spliced in directly
+/// (the namespace IS the synthetic wrapper, so its content is already at the right level).
+/// For other kinds: skip (rare edge case).
+let private rewriteAsNestedDecls (prefix: LongIdent) (modOrNs: SynModuleOrNamespace) : SynModuleDecl list =
     let (SynModuleOrNamespace(longId, _isRec, kind, decls, xmlDoc, attribs, accessibility, range, _trivia)) = modOrNs
     let prefixLen = prefix.Length
 
-    // If the original was a namespace (not a module), we can't represent it as a NestedModule.
-    // For now, only handle named modules. Namespaces in cycle groups are an edge case.
     match kind with
     | SynModuleOrNamespaceKind.NamedModule ->
         // Strip the common prefix from the longId; what remains becomes the nested module name
         let remainingId = List.skip prefixLen longId
         match remainingId with
-        | [] ->
-            // The module name was entirely the prefix; nothing to nest. Skip.
-            None
+        | [] -> []  // Module name was entirely the prefix; skip
         | name ->
             let componentInfo =
                 SynComponentInfo(
                     attribs,
-                    None,  // typeParams
-                    [],    // constraints
+                    None,
+                    [],
                     name,
                     xmlDoc,
-                    false, // preferPostfix
+                    false,
                     accessibility,
                     range
                 )
@@ -61,11 +61,32 @@ let private rewriteAsNestedModule (prefix: LongIdent) (modOrNs: SynModuleOrNames
                 ModuleKeyword = None
                 EqualsRange = None
             }
-            Some(SynModuleDecl.NestedModule(componentInfo, false, decls, false, range, nestedModuleTrivia))
+            [ SynModuleDecl.NestedModule(componentInfo, false, decls, false, range, nestedModuleTrivia) ]
+
+    | SynModuleOrNamespaceKind.DeclaredNamespace ->
+        // If the namespace matches the common prefix exactly, splice its decls
+        // directly into the synthesized wrapper (they're already at the right level).
+        // If the namespace extends BEYOND the prefix (e.g., prefix=[Fantomas;Core] but
+        // file declares `namespace Fantomas.Core.Extras`), wrap the decls in a nested
+        // module with the remaining segments as the name.
+        let remainingId = List.skip prefixLen longId
+        match remainingId with
+        | [] ->
+            // Namespace == prefix; splice decls directly
+            decls
+        | extra ->
+            // Wrap in a nested module representing the namespace tail
+            let componentInfo =
+                SynComponentInfo(attribs, None, [], extra, xmlDoc, false, accessibility, range)
+            let nestedModuleTrivia : SynModuleDeclNestedModuleTrivia = {
+                ModuleKeyword = None
+                EqualsRange = None
+            }
+            [ SynModuleDecl.NestedModule(componentInfo, false, decls, false, range, nestedModuleTrivia) ]
+
     | _ ->
-        // Namespaces, anon modules, global namespace — pass through as a non-recursive nested decl.
-        // This isn't ideal but avoids crashing.
-        None
+        // AnonModule / GlobalNamespace — splice decls directly
+        decls
 
 /// Synthesize a single implementation file from a list of cycle group files.
 /// Strategy: detect common namespace prefix, wrap all modules in `namespace rec <prefix>`
@@ -91,27 +112,26 @@ let synthesizeCycleGroupImpl (groupId: int) (files: ParsedImplFileInput list) : 
         let allTopLevels =
             files |> List.collect (fun (ParsedImplFileInput(contents = cs)) -> cs)
 
-        // Find the common namespace prefix among all named modules
-        let namedModuleLongIds =
+        // Find common prefix considering BOTH named modules AND declared namespaces
+        // (Fantomas-style: some files declare `namespace Fantomas.Core` and provide
+        // content directly, others declare `module Fantomas.Core.Foo`).
+        let allLongIds =
             allTopLevels
             |> List.choose (fun (SynModuleOrNamespace(longId = lid; kind = k)) ->
                 match k with
                 | SynModuleOrNamespaceKind.NamedModule -> Some lid
+                | SynModuleOrNamespaceKind.DeclaredNamespace -> Some lid
                 | _ -> None)
 
-        let prefix = commonPrefix namedModuleLongIds
+        let prefix = commonPrefix allLongIds
 
-        // Determine the wrapping namespace structure.
-        // If all modules share a common prefix (e.g., Fantomas.Core), wrap in
-        // `namespace rec Fantomas.Core` containing each as a nested module.
-        // Otherwise fall back to wrapping in `namespace rec global`.
         let mergedRange =
             allTopLevels
             |> List.map (fun (SynModuleOrNamespace(range = r)) -> r)
             |> List.fold unionRanges range0
 
         let nestedDecls =
-            allTopLevels |> List.choose (rewriteAsNestedModule prefix)
+            allTopLevels |> List.collect (rewriteAsNestedDecls prefix)
 
         let mergedContent =
             let kind, longId =
