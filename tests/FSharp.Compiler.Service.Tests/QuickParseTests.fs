@@ -71,3 +71,29 @@ let ``QuickParse does not treat question mark as identifier in other contexts``(
     | None ->
         // Or we might get None, which is also acceptable
         ()
+
+[<Fact>]
+let ``GetPartialLongNameEx correctly parses optional parameter in member declaration``() =
+    let lineStr = "member x.TestMethod(?optionalParam) = optionalParam"
+    
+    // Cursor positioned at end of "optionalParam"
+    let pos = 33
+    Assert.Equal('m', lineStr[pos])
+    
+    let result = QuickParse.GetPartialLongNameEx(lineStr, pos)
+    
+    Assert.Equal("optionalParam", result.PartialIdent)
+    Assert.Equal<string list>([], result.QualifyingIdents)
+
+[<Fact>]
+let ``GetPartialLongNameEx handles optional parameter with type annotation``() =
+    let lineStr = "member x.TestMethod(?optionalParam:string) = optionalParam"
+    
+    // Cursor at end of "optionalParam" before the colon
+    let pos = 33
+    Assert.Equal('m', lineStr[pos])
+    
+    let result = QuickParse.GetPartialLongNameEx(lineStr, pos)
+    
+    Assert.Equal("optionalParam", result.PartialIdent)
+    Assert.Equal<string list>([], result.QualifyingIdents)
