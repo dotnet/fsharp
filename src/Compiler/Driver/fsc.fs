@@ -157,8 +157,13 @@ let TypeCheck
         // 3. For cycle groups: synthesize a merged ParsedImplFileInput with isRec=true
         //    so the existing F# type checker handles them as mutually recursive
         // 4. For single files: pass through unchanged
+        //
+        // EXCEPTION: When compiling FSharp.Core itself, skip the enter phase entirely.
+        // FSharp.Core defines primitive types (string, int, etc.) that our stubs would
+        // shadow incorrectly. FSharp.Core has no cycles and is hand-ordered by its
+        // maintainers; auto-ordering provides no value here.
         let tcInitialState, inputs =
-            if tcConfig.fileOrderAuto then
+            if tcConfig.fileOrderAuto && not tcConfig.compilingFSharpCore then
                 let amap = tcImports.GetImportMap()
                 let parsedInputs =
                     inputs
