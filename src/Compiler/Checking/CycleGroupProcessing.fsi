@@ -24,3 +24,21 @@ val synthesizeCycleGroupImpl: groupId: int -> files: ParsedImplFileInput list ->
 
 /// Same as synthesizeCycleGroupImpl but for signature files.
 val synthesizeCycleGroupSig: groupId: int -> files: ParsedSigFileInput list -> ParsedSigFileInput
+
+/// High-level entry point: apply --file-order-auto+ behavior to a list of parsed inputs.
+/// Used by both fsc.fs and FCS (BackgroundCompiler/IncrementalBuilder).
+///
+/// Steps:
+/// 1. Run symbol collection enter phase to populate TcEnv with stubs
+/// 2. Compute dependency-ordered compilation units (SingleFile or CycleGroup)
+/// 3. Synthesize cycle groups via namespace-rec wrapping (when no .fsi files in group)
+/// 4. Fix up IsLastCompiland flag on the actual last file
+///
+/// Returns: (reordered+synthesized inputs, pre-populated TcEnv).
+/// The TcEnv is the input env enriched with stubs for all top-level declarations.
+val applyAutoFileOrder:
+    g: TcGlobals.TcGlobals ->
+    amap: Import.ImportMap ->
+    tcEnv: CheckBasics.TcEnv ->
+    inputs: ParsedInput list ->
+        ParsedInput list * CheckBasics.TcEnv

@@ -8,6 +8,10 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Xml
+open FSharp.Compiler.SymbolCollection
+open FSharp.Compiler.CheckBasics
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Import
 
 /// Compute the longest common prefix of a non-empty list of LongIdent.
 /// Returns the prefix (possibly empty if files share no common namespace).
@@ -238,3 +242,69 @@ let synthesizeCycleGroupSig (groupId: int) (files: ParsedSigFileInput list) : Pa
             trivia,
             allIdentifiers
         )
+
+
+/// High-level entry point: apply --file-order-auto+ behavior to a list of parsed inputs.
+let applyAutoFileOrder
+    (g: TcGlobals)
+    (amap: ImportMap)
+    (tcEnv: TcEnv)
+    (inputs: ParsedInput list)
+    : ParsedInput list * TcEnv =
+
+    if List.isEmpty inputs then
+        (inputs, tcEnv)
+    else
+        // Step 1: run enter phase to populate TcEnv with stubs and gather FileDeclarations
+        let parsedInputs =
+            inputs
+            |> List.toArray
+            |> Array.map (fun (input: ParsedInput) -> (input.FileName, input))
+
+        let tcEnvPrepopulated, fileDecls = runEnterPhase g amap tcEnv parsedInputs
+
+        // Step 2: compute dependency-ordered compilation units
+        let units = computeCompilationUnits fileDecls
+        let inputsArray = inputs |> List.toArray
+
+        // Step 3: process each unit (single files pass through, cycle groups synthesize)
+        let mutable nextGroupId = 0
+        let processedInputs =
+            units
+            |> Array.toList
+            |> List.collect (fun unit ->
+                match unit with
+                | SingleFile idx -> [ inputsArray.[idx] ]
+                | CycleGroup indices ->
+                    let groupFiles = indices |> List.map (fun idx -> inputsArray.[idx])
+                    // Cycle groups containing .fsi files fall back to original order
+                    // (sig/impl pairing complications — see Track 03 plan).
+                    let hasSigFile =
+                        groupFiles |> List.exists (fun f ->
+                            match f with
+                            | ParsedInput.SigFile _ -> true
+                            | _ -> false)
+                    if hasSigFile then
+                        groupFiles
+                    else
+                        let impls =
+                            groupFiles |> List.choose (fun f ->
+                                match f with
+                                | ParsedInput.ImplFile i -> Some i
+                                | _ -> None)
+                        let groupId = nextGroupId
+                        nextGroupId <- nextGroupId + 1
+                        if impls.IsEmpty then []
+                        else [ ParsedInput.ImplFile(synthesizeCycleGroupImpl groupId impls) ])
+
+        // Step 4: fix up IsLastCompiland on the actual last file
+        let reorderedInputs =
+            let lastIdx = processedInputs.Length - 1
+            processedInputs |> List.mapi (fun i input ->
+                match input with
+                | ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (_, isExe), trivia, idents)) ->
+                    let isLast = (i = lastIdx)
+                    ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (isLast, isExe), trivia, idents))
+                | sigFile -> sigFile)
+
+        (reorderedInputs, tcEnvPrepopulated)

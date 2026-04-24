@@ -151,79 +151,15 @@ let TypeCheck
         let tcInitialState =
             GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
 
-        // When --file-order-auto is enabled:
-        // 1. Run symbol collection pre-pass to gather declarations from all files
-        // 2. Compute dependency-ordered compilation units (single files OR cycle groups)
-        // 3. For cycle groups: synthesize a merged ParsedImplFileInput with isRec=true
-        //    so the existing F# type checker handles them as mutually recursive
-        // 4. For single files: pass through unchanged
-        //
-        // EXCEPTION: When compiling FSharp.Core itself, skip the enter phase entirely.
-        // FSharp.Core defines primitive types (string, int, etc.) that our stubs would
-        // shadow incorrectly. FSharp.Core has no cycles and is hand-ordered by its
-        // maintainers; auto-ordering provides no value here.
+        // When --file-order-auto is enabled, apply the reordering+synthesis pipeline.
+        // EXCEPTION: skip when compiling FSharp.Core (its primitive types conflict
+        // with our stubs).
         let tcInitialState, inputs =
             if tcConfig.fileOrderAuto && not tcConfig.compilingFSharpCore then
                 let amap = tcImports.GetImportMap()
-                let parsedInputs =
-                    inputs
-                    |> List.toArray
-                    |> Array.map (fun (input: Syntax.ParsedInput) -> (input.FileName, input))
-
-                let tcEnvPrepopulated, fileDecls =
-                    SymbolCollection.runEnterPhase tcGlobals amap tcInitialState.TcEnvFromSignatures parsedInputs
-
-                // Compute dependency-ordered compilation units (Level B aware)
-                let units = SymbolCollection.computeCompilationUnits fileDecls
-                let inputsArray = inputs |> List.toArray
-
-                // Process each unit: SingleFile passes through, CycleGroup gets synthesized
-                let mutable nextGroupId = 0
-                let processedInputs =
-                    units
-                    |> Array.toList
-                    |> List.collect (fun unit ->
-                        match unit with
-                        | SymbolCollection.SingleFile idx -> [ inputsArray.[idx] ]
-                        | SymbolCollection.CycleGroup indices ->
-                            let groupFiles = indices |> List.map (fun idx -> inputsArray.[idx])
-                            // Detect sig files in the group. Cycle groups containing .fsi files
-                            // need careful sig/impl coordination (the synthetic impl wrapper
-                            // changes structure in ways the sig can't match). For now, fall back
-                            // to original order for such groups — Level A behavior. This is a
-                            // known Level B limitation; future work needed.
-                            let hasSigFile =
-                                groupFiles |> List.exists (fun f ->
-                                    match f with
-                                    | Syntax.ParsedInput.SigFile _ -> true
-                                    | _ -> false)
-                            if hasSigFile then
-                                // Pass through original files (no synthesis) — type checker
-                                // will likely error on the cycle, but at least sig/impl integrity
-                                // is preserved.
-                                groupFiles
-                            else
-                                let impls =
-                                    groupFiles |> List.choose (fun f ->
-                                        match f with
-                                        | Syntax.ParsedInput.ImplFile i -> Some i
-                                        | _ -> None)
-                                let groupId = nextGroupId
-                                nextGroupId <- nextGroupId + 1
-                                if impls.IsEmpty then []
-                                else [ Syntax.ParsedInput.ImplFile(CycleGroupProcessing.synthesizeCycleGroupImpl groupId impls) ])
-
-                // Fix up IsLastCompiland flags: only the last file in the final
-                // sequence should have isLastCompiland=true (needed for [<EntryPoint>] check)
-                let reorderedInputs =
-                    let lastIdx = processedInputs.Length - 1
-                    processedInputs |> List.mapi (fun i input ->
-                        match input with
-                        | Syntax.ParsedInput.ImplFile(Syntax.ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (_, isExe), trivia, idents)) ->
-                            let isLast = (i = lastIdx)
-                            Syntax.ParsedInput.ImplFile(Syntax.ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (isLast, isExe), trivia, idents))
-                        | sigFile -> sigFile)
-
+                let reorderedInputs, tcEnvPrepopulated =
+                    CycleGroupProcessing.applyAutoFileOrder
+                        tcGlobals amap tcInitialState.TcEnvFromSignatures inputs
                 let tcState = tcInitialState.NextStateAfterIncrementalFragment tcEnvPrepopulated
                 (tcState, reorderedInputs)
             else
