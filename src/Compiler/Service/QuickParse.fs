@@ -390,41 +390,41 @@ module QuickParse =
                             EndColumn = index
                             LastDotPos = lastDotPos
                         }
-                    else if IsWhitespace pos then
-                        AtStartOfIdentifier(pos + 1, current, throwAwayNext, lastDotPos)
-                    else
-                        let remainingLength = lineStr.Length - pos
+                elif IsWhitespace pos then
+                    AtStartOfIdentifier(pos + 1, current, throwAwayNext, lastDotPos)
+                else
+                    let remainingLength = lineStr.Length - pos
                 
-                        if IsTick pos && remainingLength > 1 && IsTick(pos + 1) then
-                            InQuotedIdentifier(pos + 2, pos + 2, current, throwAwayNext, lastDotPos)
-                        elif IsStartOfComment pos then
-                            EatComment(1, pos + 1, EatCommentCallContext.StartIdentifier(current, throwAwayNext), lastDotPos)
-                        elif IsIdentifierStartCharacter pos then
-                            InUnquotedIdentifier(pos, pos + 1, current, throwAwayNext, lastDotPos)
-                        elif // handles optional parameters
-                            lineStr[pos] = '?'
-                            && (pos + 1 < lineStr.Length)
-                            && IsIdentifierPartCharacter(pos + 1)
-                        then
-                            InUnquotedIdentifier(pos + 1, pos + 2, current, throwAwayNext, lastDotPos)
-                        elif IsDot pos then
-                            if pos = 0 then
-                                // dot on first char of line, currently treat it like empty identifier to the left
-                                AtStartOfIdentifier(pos + 1, "" :: current, throwAwayNext, Some pos)
-                            elif not (pos > 0 && (IsIdentifierPartCharacter(pos - 1) || IsWhitespace(pos - 1))) then
-                                // it's not dots as part.of.a.long.ident, it's e.g. the range operator (..), or some other multi-char operator ending in dot
-                                if lineStr[pos - 1] = ')' then
-                                    // one very problematic case is someCall(args).Name
-                                    // without special logic, we will decide that ). is an operator and parse Name as the plid
-                                    // but in fact this is an expression tail, and we don't want a plid, rather we need to use expression typings at that location
-                                    // so be sure not to treat the name here as a plid
-                                    AtStartOfIdentifier(pos + 1, [], true, None) // Throw away what we have, and the next apparent plid, and start over.
-                                else
-                                    AtStartOfIdentifier(pos + 1, [], false, None) // Throw away what we have and start over.
+                    if IsTick pos && remainingLength > 1 && IsTick(pos + 1) then
+                        InQuotedIdentifier(pos + 2, pos + 2, current, throwAwayNext, lastDotPos)
+                    elif IsStartOfComment pos then
+                        EatComment(1, pos + 1, EatCommentCallContext.StartIdentifier(current, throwAwayNext), lastDotPos)
+                    elif IsIdentifierStartCharacter pos then
+                        InUnquotedIdentifier(pos, pos + 1, current, throwAwayNext, lastDotPos)
+                    elif // handles optional parameters
+                        lineStr[pos] = '?'
+                        && (pos + 1 < lineStr.Length)
+                        && IsIdentifierPartCharacter(pos + 1)
+                    then
+                        InUnquotedIdentifier(pos + 1, pos + 2, current, throwAwayNext, lastDotPos)
+                    elif IsDot pos then
+                        if pos = 0 then
+                            // dot on first char of line, currently treat it like empty identifier to the left
+                            AtStartOfIdentifier(pos + 1, "" :: current, throwAwayNext, Some pos)
+                        elif not (pos > 0 && (IsIdentifierPartCharacter(pos - 1) || IsWhitespace(pos - 1))) then
+                            // it's not dots as part.of.a.long.ident, it's e.g. the range operator (..), or some other multi-char operator ending in dot
+                            if lineStr[pos - 1] = ')' then
+                                // one very problematic case is someCall(args).Name
+                                // without special logic, we will decide that ). is an operator and parse Name as the plid
+                                // but in fact this is an expression tail, and we don't want a plid, rather we need to use expression typings at that location
+                                // so be sure not to treat the name here as a plid
+                                AtStartOfIdentifier(pos + 1, [], true, None) // Throw away what we have, and the next apparent plid, and start over.
                             else
-                                AtStartOfIdentifier(pos + 1, "" :: current, throwAwayNext, Some pos)
+                                AtStartOfIdentifier(pos + 1, [], false, None) // Throw away what we have and start over.
                         else
-                            AtStartOfIdentifier(pos + 1, [], throwAwayNext, None)
+                            AtStartOfIdentifier(pos + 1, "" :: current, throwAwayNext, Some pos)
+                    else
+                        AtStartOfIdentifier(pos + 1, [], throwAwayNext, None)
 
             let partialLongName = AtStartOfIdentifier(0, [], false, None)
 
