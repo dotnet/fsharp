@@ -5,7 +5,8 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-CUSTOM_FSC="$REPO_ROOT/artifacts/bin/fsc/Debug/net10.0/fsc.dll"
+# Accept fsc path as first argument; default to Release (Debug has a parser concurrency bug)
+CUSTOM_FSC="${1:-$REPO_ROOT/artifacts/bin/fsc/Release/net10.0/fsc.dll}"
 PROJ="$REPO_ROOT/src/Compiler/FSharp.Compiler.Service.fsproj"
 SHUFFLED="$REPO_ROOT/src/Compiler/FSharp.Compiler.Service.shuffled.fsproj"
 

@@ -73,5 +73,15 @@ val runEnterPhase:
 
 /// Compute the dependency-ordered file indices from FileDeclarations.
 /// Returns file indices in topological order (dependencies before dependents).
-/// Raises an error if cycles are detected (Level A: cycles are errors).
+/// For Level A: when cycles are detected, falls back to original file order.
 val computeDependencyOrder: fileDecls: FileDeclarations array -> int array
+
+/// A compilation unit: either a single file or a cycle group of files to process together.
+type CompilationUnit =
+    | SingleFile of FileIndex: int
+    | CycleGroup of FileIndices: int list
+
+/// Compute the dependency-ordered sequence of compilation units from FileDeclarations.
+/// Unlike computeDependencyOrder, this preserves cycles as CycleGroup units for Level B.
+/// Units are returned in dependency order: units with no dependencies come first.
+val computeCompilationUnits: fileDecls: FileDeclarations array -> CompilationUnit array

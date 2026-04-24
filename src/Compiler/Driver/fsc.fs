@@ -32,6 +32,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.SymbolCollection
+open FSharp.Compiler.CycleGroupProcessing
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
@@ -152,8 +153,10 @@ let TypeCheck
 
         // When --file-order-auto is enabled:
         // 1. Run symbol collection pre-pass to gather declarations from all files
-        // 2. Compute dependency graph and topological sort
-        // 3. Reorder inputs so dependencies come before dependents
+        // 2. Compute dependency-ordered compilation units (single files OR cycle groups)
+        // 3. For cycle groups: synthesize a merged ParsedImplFileInput with isRec=true
+        //    so the existing F# type checker handles them as mutually recursive
+        // 4. For single files: pass through unchanged
         let tcInitialState, inputs =
             if tcConfig.fileOrderAuto then
                 let amap = tcImports.GetImportMap()
@@ -165,18 +168,45 @@ let TypeCheck
                 let tcEnvPrepopulated, fileDecls =
                     SymbolCollection.runEnterPhase tcGlobals amap tcInitialState.TcEnvFromSignatures parsedInputs
 
-                // Compute dependency order from collected declarations
-                let order = SymbolCollection.computeDependencyOrder fileDecls
-
-                // Reorder inputs according to the dependency graph
+                // Compute dependency-ordered compilation units (Level B aware)
+                let units = SymbolCollection.computeCompilationUnits fileDecls
                 let inputsArray = inputs |> List.toArray
-                let reorderedInputs = order |> Array.map (fun idx -> inputsArray.[idx]) |> Array.toList
 
-                // Fix up IsLastCompiland flags: only the last file in the reordered
+                // Process each unit: SingleFile passes through, CycleGroup gets synthesized
+                let mutable nextGroupId = 0
+                let processedInputs =
+                    units
+                    |> Array.toList
+                    |> List.collect (fun unit ->
+                        match unit with
+                        | SymbolCollection.SingleFile idx -> [ inputsArray.[idx] ]
+                        | SymbolCollection.CycleGroup indices ->
+                            let groupFiles = indices |> List.map (fun idx -> inputsArray.[idx])
+                            let groupId = nextGroupId
+                            nextGroupId <- nextGroupId + 1
+                            // Separate impls and sigs in the group
+                            let impls =
+                                groupFiles |> List.choose (fun f ->
+                                    match f with
+                                    | Syntax.ParsedInput.ImplFile i -> Some i
+                                    | _ -> None)
+                            let sigs =
+                                groupFiles |> List.choose (fun f ->
+                                    match f with
+                                    | Syntax.ParsedInput.SigFile s -> Some s
+                                    | _ -> None)
+                            let synthesized = ResizeArray<Syntax.ParsedInput>()
+                            if not sigs.IsEmpty then
+                                synthesized.Add(Syntax.ParsedInput.SigFile(CycleGroupProcessing.synthesizeCycleGroupSig groupId sigs))
+                            if not impls.IsEmpty then
+                                synthesized.Add(Syntax.ParsedInput.ImplFile(CycleGroupProcessing.synthesizeCycleGroupImpl groupId impls))
+                            List.ofSeq synthesized)
+
+                // Fix up IsLastCompiland flags: only the last file in the final
                 // sequence should have isLastCompiland=true (needed for [<EntryPoint>] check)
                 let reorderedInputs =
-                    let lastIdx = reorderedInputs.Length - 1
-                    reorderedInputs |> List.mapi (fun i input ->
+                    let lastIdx = processedInputs.Length - 1
+                    processedInputs |> List.mapi (fun i input ->
                         match input with
                         | Syntax.ParsedInput.ImplFile(Syntax.ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (_, isExe), trivia, idents)) ->
                             let isLast = (i = lastIdx)

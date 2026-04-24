@@ -486,6 +486,8 @@
     <Content Include="Driver\GraphChecking\Docs.md" />
     <Compile Include="Checking\SymbolCollection.fsi" />
     <Compile Include="Checking\SymbolCollection.fs" />
+    <Compile Include="Checking\CycleGroupProcessing.fsi" />
+    <Compile Include="Checking\CycleGroupProcessing.fs" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
     <Compile Include="Driver\ScriptClosure.fsi" />

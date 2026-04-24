@@ -489,35 +489,49 @@ let runEnterPhase
     : TcEnv * FileDeclarations array =
 
     // Step 1: Collect declarations from all files (parallelizable)
+    // Memory optimization: the full AST walk (FileContentMapping) produces millions
+    // of PrefixedIdentifier entries for large files. For dependency resolution we
+    // only need unique first-two-segment prefixes per file, not every occurrence.
     let fileDecls =
         parsedInputs
         |> Array.Parallel.mapi (fun idx (fileName, parsedInput) ->
             let fd = collectFileDeclarations idx fileName parsedInput
-            // Enrich with identifier references from the full AST walk
-            // using the existing GraphChecking.FileContentMapping infrastructure
             let fileInProject : FileInProject = { Idx = idx; FileName = fileName; ParsedInput = parsedInput }
             let fileContentEntries = FileContentMapping.mkFileContent fileInProject
-            // Separate open statements from identifier references.
-            // Opens always create dependencies; identifier refs skip shared prefixes.
-            let mutable extraOpens = []
-            let mutable identRefs = []
+
+            // Deduplicate opens and identifier refs by string key to bound memory.
+            // Keep only distinct first-two-segment prefixes for PrefixedIdentifier
+            // (sufficient for matching against module/namespace export map).
+            let opensSet = System.Collections.Generic.HashSet<string>()
+            let refsSet = System.Collections.Generic.HashSet<string>()
+            let extraOpens = ResizeArray<LongIdent>()
+            let identRefs = ResizeArray<LongIdent>()
+
+            let toIdents (parts: string list) = parts |> List.map (fun s -> Ident(s, range0))
+
             let rec collectRefs entry =
                 match entry with
                 | FileContentEntry.OpenStatement path ->
-                    let idents = path |> List.map (fun s -> Ident(s, range0))
-                    extraOpens <- idents :: extraOpens
+                    let key = String.concat "." path
+                    if path.Length > 0 && opensSet.Add(key) then
+                        extraOpens.Add(toIdents path)
                 | FileContentEntry.PrefixedIdentifier path ->
-                    let idents = path |> List.map (fun s -> Ident(s, range0))
-                    identRefs <- idents :: identRefs
+                    // Keep full path but dedup by string key — saves memory vs raw list
+                    // while preserving nested module paths like "FSharp.Compiler.AbstractIL.IL".
+                    let key = String.concat "." path
+                    if path.Length > 0 && refsSet.Add(key) then
+                        identRefs.Add(toIdents path)
                 | FileContentEntry.TopLevelNamespace(_, nested)
                 | FileContentEntry.NestedModule(_, nested) ->
                     for n in nested do collectRefs n
                 | _ -> ()
+
             for entry in fileContentEntries do
                 collectRefs entry
+
             { fd with
-                Opens = fd.Opens @ (List.rev extraOpens |> List.filter (fun ids -> ids.Length > 0))
-                IdentifierRefs = List.rev identRefs |> List.filter (fun ids -> ids.Length > 0) })
+                Opens = fd.Opens @ List.ofSeq extraOpens
+                IdentifierRefs = List.ofSeq identRefs })
 
     // Step 2: Build stubs for each file
     let stubs =
@@ -622,24 +636,95 @@ let private resolvePathDeps
 /// Resolve a file's imports against the export map to find dependencies.
 /// Opens always create dependencies (they're explicit imports).
 /// IdentifierRefs skip shared namespace prefixes to avoid false cycles.
+/// When includeIdentRefs is false, only Opens are used (fallback for cycle-prone projects).
 let private resolveFileDependencies
     (exportMap: Map<string, Set<int>>)
     (sharedPrefixes: Set<string>)
+    (includeIdentRefs: bool)
     (fd: FileDeclarations)
     : Set<int> =
 
     let mutable deps = Set.empty<int>
 
     // Opens: match full path only (no prefix expansion), never skip shared.
-    // "open SrtpTest.Types" depends on whoever defines "SrtpTest.Types" exactly.
     for openPath in fd.Opens do
         resolvePathDeps exportMap sharedPrefixes false false fd.FileIndex &deps openPath
 
-    // Identifier refs: try prefixes, skip shared prefixes to avoid false cycles.
-    for identRef in fd.IdentifierRefs do
-        resolvePathDeps exportMap sharedPrefixes true true fd.FileIndex &deps identRef
+    if includeIdentRefs then
+        // Identifier refs: try prefixes, skip shared prefixes to avoid false cycles.
+        for identRef in fd.IdentifierRefs do
+            resolvePathDeps exportMap sharedPrefixes true true fd.FileIndex &deps identRef
 
     deps
+
+/// Compute strongly connected components using Tarjan's algorithm.
+/// Returns SCCs in reverse topological order: SCCs with no dependencies come LAST.
+/// Each SCC is a list of file indices that mutually depend on each other.
+/// Single-file SCCs represent DAG nodes; multi-file SCCs represent cycle groups.
+let private computeSCCs (fileCount: int) (deps: Map<int, Set<int>>) : int list list =
+    // Build adjacency: for each file, the set of files it depends on (edges out)
+    let adj = Array.create fileCount Set.empty<int>
+    for KeyValue(fileIdx, fileDeps) in deps do
+        adj.[fileIdx] <- fileDeps
+
+    let index = Array.create fileCount -1
+    let lowlink = Array.create fileCount 0
+    let onStack = Array.create fileCount false
+    let stack = System.Collections.Generic.Stack<int>()
+    let sccs = ResizeArray<int list>()
+    let mutable nextIndex = 0
+
+    // Iterative Tarjan to avoid stack overflow on large graphs
+    let strongconnect (start: int) =
+        // Each stack frame: (node, deps enumerator, child state)
+        let callStack = System.Collections.Generic.Stack<int * System.Collections.Generic.IEnumerator<int>>()
+
+        let visitNode v =
+            index.[v] <- nextIndex
+            lowlink.[v] <- nextIndex
+            nextIndex <- nextIndex + 1
+            stack.Push(v)
+            onStack.[v] <- true
+            callStack.Push((v, (adj.[v] :> seq<int>).GetEnumerator()))
+
+        visitNode start
+
+        while callStack.Count > 0 do
+            let v, enumerator = callStack.Peek()
+            let mutable advanced = false
+            while not advanced && enumerator.MoveNext() do
+                let w = enumerator.Current
+                if index.[w] = -1 then
+                    // Recurse into w
+                    advanced <- true
+                    visitNode w
+                elif onStack.[w] then
+                    lowlink.[v] <- min lowlink.[v] index.[w]
+            if not advanced then
+                // Done processing v's children — finalize
+                callStack.Pop() |> ignore
+                // If parent exists, propagate v's lowlink
+                if callStack.Count > 0 then
+                    let parent, _ = callStack.Peek()
+                    lowlink.[parent] <- min lowlink.[parent] lowlink.[v]
+                // If v is a root (lowlink == index), emit SCC
+                if lowlink.[v] = index.[v] then
+                    let scc = ResizeArray<int>()
+                    let mutable w = -1
+                    while w <> v do
+                        w <- stack.Pop()
+                        onStack.[w] <- false
+                        scc.Add(w)
+                    sccs.Add(List.ofSeq scc)
+
+    for v in 0 .. fileCount - 1 do
+        if index.[v] = -1 then
+            strongconnect v
+
+    // Tarjan's algorithm emits SCCs in topological order (dependencies first):
+    // when DFS finishes processing a node, its dependencies have already finished
+    // and been emitted. So no reversal needed.
+    List.ofSeq sccs
 
 /// Topological sort using Kahn's algorithm with deterministic tie-breaking.
 /// Returns file indices in dependency order (dependencies first).
@@ -748,22 +833,43 @@ let private enforceSigBeforeImpl (fileDecls: FileDeclarations array) (order: int
 /// Compute the dependency-ordered file indices from FileDeclarations.
 /// Returns file indices in topological order (dependencies before dependents).
 let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
+    // Optional debug logging to file when FSHARP_FILE_ORDER_AUTO_DEBUG is set.
+    let debugPathOpt =
+        match System.Environment.GetEnvironmentVariable "FSHARP_FILE_ORDER_AUTO_DEBUG" with
+        | null -> None
+        | "" -> None
+        | v -> Some v
+    let logFile =
+        match debugPathOpt with
+        | Some p -> Some (System.IO.File.AppendText(p))
+        | None -> None
+    let log (msg: string) =
+        match logFile with
+        | Some w -> w.WriteLine(msg); w.Flush()
+        | None -> ()
+
     let exportMap, sharedPrefixes = buildExportMap fileDecls
 
-    // Build dependency map: fileIndex -> set of file indices it depends on
-    // Auto-generated files get empty dependency sets to avoid false cycles
-    // Sig files (.fsi) depend on nothing extra — they'll be placed before their impl
-    let deps =
+    let buildDeps (includeIdentRefs: bool) =
         fileDecls
         |> Array.map (fun fd ->
             if isAutoGeneratedFile fd then
                 (fd.FileIndex, Set.empty)
             elif isSigFile fd.FileName then
-                // Sig files get empty deps — they'll be inserted before their impl
                 (fd.FileIndex, Set.empty)
             else
-                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes fd))
+                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes includeIdentRefs fd))
         |> Map.ofArray
+
+    // Two-level retry: full refs, then opens-only. If both cycle, fall back to original order.
+    // Large tightly-coupled codebases (like the F# compiler itself) have real cycles in
+    // their opens — these require Level B (cycle groups) to resolve, which is future work.
+    let deps =
+        match topologicalSort fileDecls.Length (buildDeps true) with
+        | Ok _ -> buildDeps true
+        | Error _ ->
+            log "Cycles detected with identifier refs — retrying with opens-only"
+            buildDeps false
 
     match topologicalSort fileDecls.Length deps with
     | Ok order ->
@@ -772,12 +878,80 @@ let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
             order |> List.partition (fun idx -> isAutoGeneratedFile fileDecls.[idx])
         // Enforce .fsi before .fs pairing in user files
         let userFilesWithSigs = enforceSigBeforeImpl fileDecls userFiles
-        (autoGen @ userFilesWithSigs) |> List.toArray
+        let result = (autoGen @ userFilesWithSigs) |> List.toArray
+        if debug then
+            log (sprintf "Export map size: %d, shared prefixes: %d" (Map.count exportMap) (Set.count sharedPrefixes))
+            log (sprintf "Computed order has %d files" result.Length)
+            for idx, fileIdx in Array.indexed result do
+                let fn = fileDecls.[fileIdx].FileName
+                if fn.Contains("EraseClosures") || fn.EndsWith("il.fs") || fn.EndsWith("il.fsi") ||
+                   fn.Contains("ILX/Types") || fn.Contains("Morphs") then
+                    log (sprintf "  pos %d: %s" idx fn)
+            match logFile with Some w -> w.Close() | None -> ()
+        result
     | Error msg ->
-        // Level A: cycles are errors. Report which files are involved.
-        let cycleFileNames =
-            msg // msg contains "among file indices: X, Y, Z"
-        // Fall back to original file order when cycles are detected.
-        // This allows compilation to proceed (it may fail later with normal F# ordering errors).
-        eprintfn "warning: %s. Falling back to original file order." cycleFileNames
+        log (sprintf "Cycle detected: %s. Falling back to original order." msg)
+        match logFile with Some w -> w.Close() | None -> ()
+        eprintfn "warning: %s. Falling back to original file order." msg
         [| 0 .. fileDecls.Length - 1 |]
+
+/// A compilation unit: either a single file (DAG node) or a cycle group (SCC with >1 file).
+type CompilationUnit =
+    | SingleFile of FileIndex: int
+    | CycleGroup of FileIndices: int list
+
+/// Compute the dependency-ordered sequence of compilation units from FileDeclarations.
+/// Unlike computeDependencyOrder, this preserves cycles as CycleGroup units for Level B processing.
+/// Units are returned in dependency order: units with no dependencies come first.
+/// Auto-generated files (AssemblyInfo etc.) are placed first regardless.
+let computeCompilationUnits (fileDecls: FileDeclarations array) : CompilationUnit array =
+    let exportMap, sharedPrefixes = buildExportMap fileDecls
+
+    let deps =
+        fileDecls
+        |> Array.map (fun fd ->
+            if isAutoGeneratedFile fd then
+                (fd.FileIndex, Set.empty)
+            elif isSigFile fd.FileName then
+                (fd.FileIndex, Set.empty)
+            else
+                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes true fd))
+        |> Map.ofArray
+
+    let sccs = computeSCCs fileDecls.Length deps
+
+    // Convert SCCs to compilation units
+    let units =
+        sccs
+        |> List.map (fun scc ->
+            match scc with
+            | [ single ] -> SingleFile single
+            | many -> CycleGroup (List.sort many))
+
+    // Partition: auto-generated files first, then user units in dependency order.
+    // For sig files inside a cycle group, they remain in the cycle group.
+    let isAutoGenUnit u =
+        match u with
+        | SingleFile idx -> isAutoGeneratedFile fileDecls.[idx]
+        | CycleGroup _ -> false  // Cycle groups never contain auto-gen files
+    let autoGen, userUnits = units |> List.partition isAutoGenUnit
+
+    // For SingleFile user units, enforce .fsi before .fs pairing.
+    // (CycleGroups bundle their own sig+impl together.)
+    let sigImplPairs = buildSigImplPairs fileDecls
+    let sigIndices = sigImplPairs |> Map.toSeq |> Seq.map snd |> Set.ofSeq
+
+    let withSigsRepositioned =
+        userUnits
+        |> List.collect (fun u ->
+            match u with
+            | SingleFile idx when Set.contains idx sigIndices ->
+                // Skip sig files here; they'll be re-inserted before their impl
+                []
+            | SingleFile idx ->
+                match Map.tryFind idx sigImplPairs with
+                | Some sigIdx -> [ SingleFile sigIdx; SingleFile idx ]  // sig before impl
+                | None -> [ u ]
+            | CycleGroup _ -> [ u ])
+
+    (autoGen @ withSigsRepositioned) |> List.toArray

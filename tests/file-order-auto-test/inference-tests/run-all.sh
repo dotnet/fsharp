@@ -6,7 +6,7 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
-CUSTOM_FSC="$REPO_ROOT/artifacts/bin/fsc/Debug/net10.0/fsc.dll"
+CUSTOM_FSC="$REPO_ROOT/artifacts/bin/fsc/Release/net10.0/fsc.dll"
 
 echo "=== Inference Sensitivity Test Suite ==="
 echo ""
