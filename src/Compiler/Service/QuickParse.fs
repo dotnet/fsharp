@@ -394,7 +394,7 @@ module QuickParse =
                     AtStartOfIdentifier(pos + 1, current, throwAwayNext, lastDotPos)
                 else
                     let remainingLength = lineStr.Length - pos
-                
+
                     if IsTick pos && remainingLength > 1 && IsTick(pos + 1) then
                         InQuotedIdentifier(pos + 2, pos + 2, current, throwAwayNext, lastDotPos)
                     elif IsStartOfComment pos then
