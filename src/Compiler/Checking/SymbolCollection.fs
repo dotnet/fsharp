@@ -543,32 +543,56 @@ let buildFileStub (_g: TcGlobals) (fileDecls: FileDeclarations) : QualifiedNameO
         let moduleTy = mkModuleOrNamespaceTypeStub stub moduleKind
         Construct.NewModuleOrNamespace None taccessPublic stub.Name XmlDoc.Empty [] (MaybeLazy.Strict moduleTy)
 
-    /// Build a ModuleOrNamespaceType from a ModuleDeclStub's contents
+    /// Build a ModuleOrNamespaceType from a ModuleDeclStub's contents.
+    /// Filters out private/internal child modules and types: other files
+    /// can't reference them anyway, and stubbing them would conflict with
+    /// the real `module private X = ...` declaration when its file is
+    /// type-checked (FS0245 "X is not a concrete module or type").
     and mkModuleOrNamespaceTypeStub (stub: ModuleDeclStub) (kind: ModuleOrNamespaceKind) : ModuleOrNamespaceType =
-        let typeEntities = stub.Types |> List.map mkTypeEntityStub
-        let moduleEntities = stub.NestedModules |> List.map mkModuleEntityStub
+        let isPublic acc =
+            match acc with
+            | None -> true
+            | Some(SynAccess.Public _) -> true
+            | _ -> false
+        let typeEntities =
+            stub.Types
+            |> List.filter (fun t -> isPublic t.Accessibility)
+            |> List.map mkTypeEntityStub
+        let moduleEntities =
+            stub.NestedModules
+            |> List.filter (fun m -> isPublic m.Accessibility)
+            |> List.map mkModuleEntityStub
         let allEntities = typeEntities @ moduleEntities
         Construct.NewModuleOrNamespaceType kind allEntities []
 
     /// Build the top-level ModuleOrNamespaceType for the file, assembling
-    /// all top-level modules/namespaces into a single type.
+    /// top-level types into a single namespace-shaped container.
+    ///
+    /// We deliberately do NOT stub modules (top-level NamedModule files or
+    /// nested modules inside a namespace). F# treats a stub module as an
+    /// already-declared entity, and the real `module X = ...` declaration
+    /// then fails with FS0245 "X is not a concrete module or type". Type
+    /// stubs are fine because F# lets a type be forward-declared.
     let buildTopLevel () : ModuleOrNamespaceType =
+        let isPublic acc =
+            match acc with
+            | None -> true
+            | Some(SynAccess.Public _) -> true
+            | _ -> false
         let allEntities =
             fileDecls.TopLevelModules
             |> List.collect (fun topMod ->
                 match topMod.Kind with
                 | SynModuleOrNamespaceKind.DeclaredNamespace
                 | SynModuleOrNamespaceKind.GlobalNamespace ->
-                    // For namespaces, types and nested modules go directly into the namespace
-                    let typeEntities = topMod.Types |> List.map mkTypeEntityStub
-                    let moduleEntities = topMod.NestedModules |> List.map mkModuleEntityStub
-                    typeEntities @ moduleEntities
-
+                    // For namespaces, only types go in (modules are skipped).
+                    topMod.Types
+                    |> List.filter (fun t -> isPublic t.Accessibility)
+                    |> List.map mkTypeEntityStub
                 | SynModuleOrNamespaceKind.NamedModule
                 | SynModuleOrNamespaceKind.AnonModule ->
-                    // For modules, create a module entity containing everything
-                    [ mkModuleEntityStub topMod ])
-
+                    // Top-level module files: skip the module stub entirely.
+                    [])
         Construct.NewModuleOrNamespaceType ModuleOrNamespaceKind.ModuleOrType allEntities []
 
     (fileDecls.QualifiedName, buildTopLevel ())
