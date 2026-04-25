@@ -1591,6 +1591,33 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             // Check for the existence of loaded sources and prepend them to the sources list if present.
             let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
 
+            // Auto file order (Level A): when --file-order-auto+ is set, reorder
+            // the source file list based on dependency analysis. We pre-parse all
+            // files (eager) to compute the order, then hand the reordered list to
+            // the IncrementalBuilder for normal lazy processing.
+            //
+            // Level B (cycle group synthesis) is build-only — FCS keeps cycle group
+            // files in their original positions and lets the type checker error on
+            // the cycle (matching Level A behavior for cycle-heavy projects).
+            //
+            // Skipped when compiling FSharp.Core (stubs would shadow primitive types).
+            let sourceFiles =
+                if tcConfig.fileOrderAuto && not tcConfig.compilingFSharpCore && not (List.isEmpty sourceFiles) then
+                    try
+                        let preParseLogger = CompilationDiagnosticLogger("AutoFileOrderPreParse", tcConfig.diagnosticsOptions)
+                        let parsed =
+                            sourceFiles
+                            |> List.map (fun (_m, fileName) ->
+                                let input = ParseOneInputFile(tcConfig, resourceManager, fileName, (false, false), preParseLogger, true)
+                                (input, fileName))
+                        let reorderedNames = CycleGroupProcessing.computeReorderedFileNames parsed
+                        let rangeByName = sourceFiles |> List.map (fun (m, n) -> n, m) |> Map.ofList
+                        reorderedNames |> List.map (fun n -> (Map.find n rangeByName, n))
+                    with _ ->
+                        sourceFiles
+                else
+                    sourceFiles
+
             // Mark up the source files with an indicator flag indicating if they are the last source file in the project
             let sourceFiles =
                 let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)

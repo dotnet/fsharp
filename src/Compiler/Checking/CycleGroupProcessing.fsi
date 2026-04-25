@@ -42,3 +42,18 @@ val applyAutoFileOrder:
     tcEnv: CheckBasics.TcEnv ->
     inputs: ParsedInput list ->
         ParsedInput list * CheckBasics.TcEnv
+
+/// Lightweight Level-A-only reorder used by FCS (IncrementalBuilder).
+/// Takes parsed inputs (paired with their file paths) and returns the
+/// dependency-respecting order WITHOUT synthesizing cycle groups
+/// (cycle groups remain in their original positions).
+///
+/// Returns reordered file paths so FCS can keep its disk-backed source
+/// file model intact. Materially less powerful than `applyAutoFileOrder`:
+/// - No cycle group synthesis (Level B is build-only)
+/// - No TcEnv pre-population (FCS has its own incremental machinery)
+/// But sufficient for IDE diagnostics to match `dotnet build` for the
+/// common case (projects without cycles).
+val computeReorderedFileNames:
+    inputs: (ParsedInput * string) list ->
+        string list

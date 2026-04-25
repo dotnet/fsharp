@@ -12,6 +12,7 @@ open FSharp.Compiler.SymbolCollection
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Import
+open FSharp.Compiler.GraphChecking
 
 /// Compute the longest common prefix of a non-empty list of LongIdent.
 /// Returns the prefix (possibly empty if files share no common namespace).
@@ -308,3 +309,70 @@ let applyAutoFileOrder
                 | sigFile -> sigFile)
 
         (reorderedInputs, tcEnvPrepopulated)
+
+/// Level-A-only reorder for FCS. Returns just the dependency-ordered
+/// file names; cycle groups remain in original position.
+let computeReorderedFileNames (inputs: (ParsedInput * string) list) : string list =
+    if List.isEmpty inputs then []
+    else
+        // Collect FileDeclarations from each parsed input.
+        // Mirrors runEnterPhase: enrich Opens/IdentifierRefs from FileContentMapping
+        // so cross-file references via qualified paths (e.g. `Test.B.value`) are detected.
+        let parsedArray =
+            inputs
+            |> List.toArray
+            |> Array.mapi (fun idx (input, fileName) ->
+                let fd = collectFileDeclarations idx fileName input
+                let fileInProject : FileInProject =
+                    { Idx = idx; FileName = fileName; ParsedInput = input }
+                let fileContentEntries = FileContentMapping.mkFileContent fileInProject
+
+                let opensSet = System.Collections.Generic.HashSet<string>()
+                let refsSet = System.Collections.Generic.HashSet<string>()
+                let extraOpens = ResizeArray<LongIdent>()
+                let identRefs = ResizeArray<LongIdent>()
+
+                let toIdents (parts: string list) = parts |> List.map (fun s -> Ident(s, range0))
+
+                let rec collectRefs (entry: FileContentEntry) =
+                    match entry with
+                    | FileContentEntry.OpenStatement path ->
+                        let key = String.concat "." path
+                        if path.Length > 0 && opensSet.Add(key) then
+                            extraOpens.Add(toIdents path)
+                    | FileContentEntry.PrefixedIdentifier path ->
+                        let key = String.concat "." path
+                        if path.Length > 0 && refsSet.Add(key) then
+                            identRefs.Add(toIdents path)
+                    | FileContentEntry.TopLevelNamespace(_, nested)
+                    | FileContentEntry.NestedModule(_, nested) ->
+                        for n in nested do collectRefs n
+                    | _ -> ()
+
+                for entry in fileContentEntries do
+                    collectRefs entry
+
+                { fd with
+                    Opens = fd.Opens @ List.ofSeq extraOpens
+                    IdentifierRefs = List.ofSeq identRefs })
+
+        // Compute compilation units (Level A only — we'll keep cycle groups in place)
+        let units = computeCompilationUnits parsedArray
+
+        // Build a map from file index → original file name
+        let fileNameByIdx =
+            inputs
+            |> List.toArray
+            |> Array.mapi (fun idx (_, fn) -> (idx, fn))
+            |> Map.ofArray
+
+        // Flatten units: SingleFile → that file; CycleGroup → its files in original order
+        units
+        |> Array.toList
+        |> List.collect (fun unit ->
+            match unit with
+            | SingleFile idx -> [ Map.find idx fileNameByIdx ]
+            | CycleGroup indices ->
+                // Keep cycle group files in original (sorted) order — F# build will likely
+                // error on the cycle, same as Level A standalone behavior.
+                indices |> List.map (fun idx -> Map.find idx fileNameByIdx))
