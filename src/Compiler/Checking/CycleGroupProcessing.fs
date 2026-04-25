@@ -39,9 +39,30 @@ let private commonPrefix (longIds: LongIdent list) : LongIdent =
 /// For NamedModule: produces a single NestedModule wrapping the original decls.
 /// For DeclaredNamespace at the prefix level: the decls are spliced in directly
 /// (the namespace IS the synthetic wrapper, so its content is already at the right level).
+/// Hoist `open` decls to the front of a SynModuleDecl list, recursing into
+/// any nested modules. F#'s `namespace rec` requires opens to be first in
+/// each module/namespace block, but real-world F# code interleaves opens
+/// with lets (legal in non-recursive modules). When we synthesise a cycle
+/// group as `namespace rec X`, we must reorder.
+let rec private hoistOpens (decls: SynModuleDecl list) : SynModuleDecl list =
+    let rewriteNested (d: SynModuleDecl) =
+        match d with
+        | SynModuleDecl.NestedModule(info, isRec, inner, isCont, m, trivia) ->
+            SynModuleDecl.NestedModule(info, isRec, hoistOpens inner, isCont, m, trivia)
+        | other -> other
+    let rewritten = decls |> List.map rewriteNested
+    let opens, others =
+        rewritten
+        |> List.partition (fun d ->
+            match d with
+            | SynModuleDecl.Open _ -> true
+            | _ -> false)
+    opens @ others
+
 /// For other kinds: skip (rare edge case).
 let private rewriteAsNestedDecls (prefix: LongIdent) (modOrNs: SynModuleOrNamespace) : SynModuleDecl list =
     let (SynModuleOrNamespace(longId, _isRec, kind, decls, xmlDoc, attribs, accessibility, range, _trivia)) = modOrNs
+    let decls = hoistOpens decls
     let prefixLen = prefix.Length
 
     match kind with
@@ -135,8 +156,21 @@ let synthesizeCycleGroupImpl (groupId: int) (files: ParsedImplFileInput list) : 
             |> List.map (fun (SynModuleOrNamespace(range = r)) -> r)
             |> List.fold unionRanges range0
 
-        let nestedDecls =
+        // Synthesise inner content. F#'s `namespace rec` requires `open`
+        // declarations to be first in each module/namespace block. When we
+        // splice multiple `namespace FsCheck` files into a single
+        // `namespace rec FsCheck`, the second file's `open` statements end
+        // up after the first file's let bindings → FS3200. Hoist all opens
+        // to the top of the synthesised namespace, then concat the rest.
+        let allRewritten =
             allTopLevels |> List.collect (rewriteAsNestedDecls prefix)
+        let opens, others =
+            allRewritten
+            |> List.partition (fun d ->
+                match d with
+                | SynModuleDecl.Open _ -> true
+                | _ -> false)
+        let nestedDecls = opens @ others
 
         let mergedContent =
             let kind, longId =
