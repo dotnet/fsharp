@@ -21,80 +21,121 @@ dotnet build <project>.fsproj -c Release \
 `--nowarn:3885` is needed to bypass the `and`-keyword deprecation warning if
 the project's `<TreatWarningsAsErrors>` is on.
 
-## Current results
+## Results
 
 | Project | Auto-order | Notes |
 |---|---|---|
-| **Argu** | **OK** | ~30 .fs files, real-world success on a non-trivial library. |
-| FsCheck | FAIL (136 errors) | Cycle problem ELIMINATED. Remaining errors are real type-resolution issues — legitimate cross-file deps via `open`d namespaces are missed. See "Remaining work" below. |
-| FSharpPlus | FAIL (2 internal compiler errors) | Cycle problem ELIMINATED. New failure: `FS0193 ... Key: 'Control'` from our enter-phase stub building when FSharpPlus's many `namespace FSharpPlus.Control` files create a conflict. Bug in our stub building, not the analyzer. |
-| Saturn | n/a | Uses Paket (not installed); environmental skip. |
+| **Argu** | **PASS** | ~30 .fs files, conventional library. |
+| **FsCheck** | **PASS** | ~26 .fs files, SRTP-heavy property-testing library with cross-namespace structure. |
+| **FSharpPlus** | **PASS** | 86 .fs files, heavy SRTP + AutoOpen + nested modules across `FSharpPlus.Control`, `FSharpPlus.Math`, etc. |
 
-## What was fixed (commits `9901547fe` and `27083004e`)
+All three target projects build cleanly under `--file-order-auto+`.
 
-1. **Custom AST walker** (`collectFullPathRefs`) replaces FCM-based ident
-   collection so `Random.CreateWithSeedAndGamma` is captured as a 2-segment
-   path instead of being truncated to single-segment `["Random"]`.
-2. **Type member registration**: `TypeDeclStub` now carries `MemberNames`,
-   and `buildExportMap` registers each as `qualName.TypeName.MemberName`.
-   Module-level let bindings are also registered as `qualName.bindingName`.
-3. **Kind-aware matching**: a new `ExportKind` (Module/Type/Value/Member)
-   tracks what each export-map entry is. The matching policy walks prefixes
-   longest-first; bare-Type prefix matches are rejected when no Member match
-   is registered. This kills the `Random.CreateWithSeedAndGamma` ↔
-   `Result.isOk` collision.
-4. **Opens skip shared prefixes**: `open FsCheck` from a file already in
-   `namespace FsCheck` no longer broadcasts deps to every file in that
-   namespace. Opens declare scope, identifier refs declare cross-file deps.
+## How the analyser handles real F#
 
-The combined effect: file-order analysis is no longer producing false cycles
-in the projects we've tested. FsCheck and FSharpPlus's failures are now
-*beyond* the analyzer — real ordering gaps and a bug in stub building.
+The path from "broken on real code" to "works" required a sequence of
+analyser refinements layered on top of the original Track 01-04 design:
 
-## Remaining work
+### Capture full identifier paths from the AST
 
-### FsCheck — 136 type-resolution errors
+`FileContentMapping.PrefixedIdentifier` (upstream) drops the trailing
+segment of every long ident — fine for upstream's parallel checker, fatal
+for ours because it makes `Random.CreateWithSeedAndGamma` (project type's
+static method) and `Result.isOk` (FSharp.Core method) indistinguishable.
+`SymbolCollection.collectFullPathRefs` walks the AST keeping each
+LongIdent's full path.
 
-The analyser correctly identifies a DAG. But some legitimate cross-file
-deps via `open`d namespaces aren't detected. Example: `ArbMap.fs` opens
-`FsCheck.Internals` and uses `TypeClass.TypeClass<...>`. The full path is
-`["TypeClass"; "TypeClass"]`. We try to resolve via the file's own
-namespace prefix `[FsCheck]`, getting `FsCheck.TypeClass` — no match
-(TypeClass is in `FsCheck.Internals`). We don't try the open's namespace
-`[FsCheck; Internals]` as a prefix.
+### Register members + values in the export map
 
-A first attempt at "use open paths as resolution prefixes" regressed FsCheck
-to 200 errors (different kind: `FS0247` namespace-vs-module collisions),
-suggesting the broadcast was over-eager. The right rule is something like
-"use open paths only when the open target is non-shared." Bounded follow-up
-work; not landed in this iteration.
+`TypeDeclStub.MemberNames` carries the names of static and instance
+members declared on each type. `buildExportMap` registers them as
+`qualName.TypeName.MemberName`, plus module-level let bindings as
+`qualName.bindingName`. `Random.CreateWithSeedAndGamma` then resolves to
+a real entry in the map and links to the right file.
 
-### FSharpPlus — 2 internal compiler errors
+### Kind-aware matching with bare-Type rejection
 
-`FS0193 ... An element with the same key but a different value already
-exists. Key: 'Control'`. FSharpPlus has 60+ files contributing to
-`namespace FSharpPlus.Control`. Our enter phase synthesises stubs per file
-and adds them via `AddLocalRootModuleOrNamespace`. With the volume of files
-contributing to the same namespace, the underlying F# entity-store rejects
-a stub addition.
+A new `ExportKind` (Module, Type, Value, Member) distinguishes what each
+entry is. When prefix-iterating to find a cross-file dep, a Module match
+counts (legitimate qualifier); a bare-Type match is rejected unless the
+trailing path matches a registered Member. This kills the
+`Random.X` / `Result.X` collision.
 
-This is a bug in `buildFileStub`/`runEnterPhase`'s interaction with F#'s
-`AddLocalRootModuleOrNamespace`, not the dependency analyzer. Likely fix:
-collapse stubs across all files that share a namespace before folding into
-TcEnv. Substantial change to enter-phase semantics; not landed in this
-iteration.
+### Opens skip shared prefixes
 
-## Recommendation
+`open FsCheck` from a file already inside `namespace FsCheck` was adding
+every contributor to the namespace as a dep, manufacturing a giant SCC.
+Opens declare scope; identifier refs declare specific cross-file deps.
+Opens skip shared-prefix matches.
 
-Argu builds cleanly under `--file-order-auto+`. The cycle-detection bug
-that blocked FsCheck/FSharpPlus is gone. The remaining failure modes are
-real but bounded — neither is a fundamental design limitation. For a v1
-PR this is a good-faith honest state: the feature works on conventional
-libraries, real obstacles for SRTP-heavy and namespace-fragmented projects
-are documented with concrete next steps.
+### Opens-as-prefixes (with local-name shadowing)
 
-## Commit history of the unblock work
+For each `open Foo.Bar` whose target is a known module, `Foo.Bar` becomes
+an additional resolution prefix for ident refs in the file. Lets
+`TypeClass.TypeClass<...>` from a file with `open FsCheck.Internals`
+resolve to `FsCheck.Internals.TypeClass.TypeClass`. **But** suppressed
+when the ref's first segment is locally defined — `Prop.X` from inside
+Testable.fs (which has `open FsCheck.FSharp` AND a local `module Prop`)
+refers to the local one.
+
+### NamedModule vs DeclaredNamespace prefix scoping
+
+NamedModule files (`module X.Y`) implicitly see siblings of their parent
+namespace, so all enclosing prefixes are tried. DeclaredNamespace files
+(`namespace X.Y`) don't — only the file's own namespace is used,
+preventing `Result.isOk` in `namespace FsCheck.Internals` from falsely
+matching `FsCheck.Result` via the parent prefix.
+
+### Type stubs include type parameters
+
+`mkTypeEntityStub` was creating empty `Typars=[]` for every type, making
+forward refs to `MyType<'A>` fail with FS0033. Now we synthesise rigid
+typars matching `TypeParamCount`.
+
+### No module stubs, only type stubs
+
+The biggest single fix. The enter phase used to create
+ModuleOrNamespace stubs for every module. F# saw the stub as an
+already-declared entity and rejected the real `module X = ...` with
+FS0245 "X is not a concrete module or type". We now skip module stubs
+entirely (private/internal modules and types are also filtered out as
+unreachable from other files anyway).
+
+### Cross-namespace cycle synthesis guard
+
+When a cycle group spans multiple namespaces, synthesis would wrap a
+`namespace X.Y` file as a nested `module Y` inside `namespace rec X`.
+The original `namespace X.Y` declaration would then conflict (FS0247
+"namespace and module both occur"). Now we detect this case and fall
+back to original order rather than synthesise.
+
+### Hoist opens recursively in synthesised cycle groups
+
+F#'s `namespace rec` requires `open` decls to be first in each
+module/namespace body. Real F# code interleaves opens with let bindings
+in nested modules — legal in non-recursive code, FS3200 in recursive.
+Synthesis now recursively reorders each module body so opens come first.
+
+## Regression sweep
+
+All existing fixtures still pass after each change:
+
+- `inference-tests`: 4/4 (SRTP, record/union disambiguation, operator overloads).
+- `fsi-tests`: 2/2 (partial-fsi, fsi-ordering with sig+impl pairs).
+- `error-corpus`: 6/6 byte-for-byte identical between manual and auto modes.
+- `deprecation-test`: 3/3 (FS3885 fires/silent/suppressable).
+- `end-to-end`: PASS (scaffold-and-build-fresh-project).
+- `fcs-smoke-test`: PASS (FSharpChecker.ParseAndCheckProject).
+- `fcs-ide-smoke-test`: 7/7 (Completions, Go-to-Def, Find References, FS3885).
+- `cycle-test-b4`: PASS (cross-file mutual recursion via cycle synthesis).
+
+## Commit history of the OSS unblock work
 
 - `9901547fe` — Phase 1: custom AST walker for full-path identifier refs.
 - `27083004e` — Phase 2-4: type member registration, kind-aware matching,
-  opens-skip-shared.
+  opens skip shared.
+- `6117008f1` — Typar stubs, cross-namespace cycle guard, opens-as-prefixes
+  with local-name shadowing.
+- `ae9beb404` — Stop stubbing modules — type stubs only. **FsCheck builds.**
+- `49a380e7a` — Hoist opens recursively when synthesising cycle groups.
+  **FSharpPlus builds.**
