@@ -18,6 +18,7 @@ type TypeDeclStub =
       Accessibility: SynAccess option
       RecordFieldNames: Ident list
       UnionCaseNames: Ident list
+      MemberNames: Ident list
       Range: range
       FileIndex: int }
 

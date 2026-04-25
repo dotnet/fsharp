@@ -28,6 +28,10 @@ type TypeDeclStub =
       Accessibility: SynAccess option
       RecordFieldNames: Ident list
       UnionCaseNames: Ident list
+      /// Names of static and instance members defined directly on this type
+      /// (including those declared via `member this.X = ...`,
+      /// `static member X = ...`, and `member val X = ...`).
+      MemberNames: Ident list
       Range: range
       FileIndex: int }
 
@@ -93,9 +97,69 @@ let private tryGetBindingName (binding: SynBinding) =
           Range = name.idRange
           FileIndex = 0 })
 
+/// Extract a member name from a SynBinding's head pattern.
+/// `static member X = ...` → headPat is `SynPat.LongIdent([X])` → returns X.
+/// `member this.X = ...` → headPat is `SynPat.LongIdent([this; X])` → returns X.
+/// Other forms return None.
+let private tryGetMemberName (b: SynBinding) =
+    let (SynBinding(headPat = pat)) = b
+    let rec stripWrappers p =
+        match p with
+        | SynPat.Paren(pat = inner) | SynPat.Typed(pat = inner) | SynPat.Attrib(pat = inner) ->
+            stripWrappers inner
+        | _ -> p
+    match stripWrappers pat with
+    | SynPat.LongIdent(longDotId = SynLongIdent(id = ids)) ->
+        match ids with
+        | [] -> None
+        | _ -> Some(List.last ids)
+    | SynPat.Named(ident = SynIdent(ident, _)) -> Some ident
+    | _ -> None
+
+/// Extract member names from a list of SynMemberDefns. Static members,
+/// instance members, abstract slots, auto-properties, and let-bound class
+/// values all contribute names callable as `Type.X`.
+let private collectMemberNamesFromDefns (members: SynMemberDefns) : Ident list =
+    let acc = ResizeArray<Ident>()
+    let rec walk (m: SynMemberDefn) =
+        match m with
+        | SynMemberDefn.Member(memberDefn = b) ->
+            match tryGetMemberName b with Some i -> acc.Add(i) | None -> ()
+        | SynMemberDefn.GetSetMember(memberDefnForGet = bgOpt; memberDefnForSet = bsOpt) ->
+            (match bgOpt with
+             | Some b -> match tryGetMemberName b with Some i -> acc.Add(i) | None -> ()
+             | None -> ())
+            (match bsOpt with
+             | Some b -> match tryGetMemberName b with Some i -> acc.Add(i) | None -> ()
+             | None -> ())
+        | SynMemberDefn.LetBindings(bindings = bs) ->
+            for b in bs do
+                let (SynBinding(headPat = p)) = b
+                match tryGetBindingName b with
+                | Some stub -> acc.Add(stub.Name)
+                | None -> ignore p
+        | SynMemberDefn.AbstractSlot(slotSig = SynValSig(ident = SynIdent(ident, _))) ->
+            acc.Add(ident)
+        | SynMemberDefn.ValField(fieldInfo = SynField(idOpt = Some idF)) ->
+            acc.Add(idF)
+        | SynMemberDefn.AutoProperty(ident = ident) -> acc.Add(ident)
+        | _ -> ()
+    for m in members do walk m
+    List.ofSeq acc
+
+/// Extract member names from a list of SynMemberSigs (for signature files).
+let private collectMemberNamesFromSigs (members: SynMemberSig list) : Ident list =
+    let acc = ResizeArray<Ident>()
+    for m in members do
+        match m with
+        | SynMemberSig.Member(memberSig = SynValSig(ident = SynIdent(ident, _))) -> acc.Add(ident)
+        | SynMemberSig.ValField(field = SynField(idOpt = Some idF)) -> acc.Add(idF)
+        | _ -> ()
+    List.ofSeq acc
+
 /// Extract type declaration stubs from a SynTypeDefn
 let private collectTypeDeclStub (fileIndex: int) (synTypeDefn: SynTypeDefn) : TypeDeclStub =
-    let (SynTypeDefn(typeInfo = SynComponentInfo(typeParams = typarDecls; longId = ids; accessibility = access); typeRepr = repr)) =
+    let (SynTypeDefn(typeInfo = SynComponentInfo(typeParams = typarDecls; longId = ids; accessibility = access); typeRepr = repr; members = extraMembers; implicitConstructor = ctorOpt)) =
         synTypeDefn
 
     let name =
@@ -135,18 +199,32 @@ let private collectTypeDeclStub (fileIndex: int) (synTypeDefn: SynTypeDefn) : Ty
             |> List.map (fun (SynUnionCase(ident = SynIdent(ident, _))) -> ident)
         | _ -> []
 
+    let objectModelMembers =
+        match repr with
+        | SynTypeDefnRepr.ObjectModel(members = ms) -> collectMemberNamesFromDefns ms
+        | _ -> []
+
+    let memberNames =
+        let extra = collectMemberNamesFromDefns extraMembers
+        let ctor =
+            match ctorOpt with
+            | Some m -> collectMemberNamesFromDefns [ m ]
+            | None -> []
+        objectModelMembers @ extra @ ctor
+
     { Name = name
       Kind = kind
       TypeParamCount = typeParamCount
       Accessibility = access
       RecordFieldNames = recordFields
       UnionCaseNames = unionCases
+      MemberNames = memberNames
       Range = name.idRange
       FileIndex = fileIndex }
 
 /// Extract type declaration stubs from a SynTypeDefnSig (signature file)
 let private collectTypeDeclStubFromSig (fileIndex: int) (synTypeDefnSig: SynTypeDefnSig) : TypeDeclStub =
-    let (SynTypeDefnSig(typeInfo = SynComponentInfo(typeParams = typarDecls; longId = ids; accessibility = access); typeRepr = repr)) =
+    let (SynTypeDefnSig(typeInfo = SynComponentInfo(typeParams = typarDecls; longId = ids; accessibility = access); typeRepr = repr; members = extraMemberSigs)) =
         synTypeDefnSig
 
     let name =
@@ -186,12 +264,20 @@ let private collectTypeDeclStubFromSig (fileIndex: int) (synTypeDefnSig: SynType
             |> List.map (fun (SynUnionCase(ident = SynIdent(ident, _))) -> ident)
         | _ -> []
 
+    let memberNames =
+        let objectModelMembers =
+            match repr with
+            | SynTypeDefnSigRepr.ObjectModel(memberSigs = ms) -> collectMemberNamesFromSigs ms
+            | _ -> []
+        objectModelMembers @ collectMemberNamesFromSigs extraMemberSigs
+
     { Name = name
       Kind = kind
       TypeParamCount = typeParamCount
       Accessibility = access
       RecordFieldNames = recordFields
       UnionCaseNames = unionCases
+      MemberNames = memberNames
       Range = name.idRange
       FileIndex = fileIndex }
 
@@ -257,6 +343,7 @@ let rec private collectImplDecls (fileIndex: int) (parentPath: Ident list) (decl
                   Accessibility = access
                   RecordFieldNames = []
                   UnionCaseNames = []
+                  MemberNames = []
                   Range = ident.idRange
                   FileIndex = fileIndex }
                 :: types
@@ -323,6 +410,7 @@ let rec private collectSigDecls (fileIndex: int) (parentPath: Ident list) (decls
                   Accessibility = access
                   RecordFieldNames = []
                   UnionCaseNames = []
+                  MemberNames = []
                   Range = ident.idRange
                   FileIndex = fileIndex }
                 :: types
@@ -905,9 +993,21 @@ let runEnterPhase
 /// Build an export map: for each module/type name, which file index UNIQUELY defines it.
 /// Shared namespace prefixes (defined by multiple files) are tracked separately
 /// to avoid false dependencies between files in the same namespace.
-let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set<int>> * Set<string> =
+/// Classify each entry in the export map by what kind of declaration produced
+/// it. Used by the matching policy: when prefix-iterating a multi-segment
+/// reference to find a cross-file dep, a `Module` prefix counts as a module
+/// reference (legitimate dep), but a bare `Type` prefix is rejected unless
+/// the trailing path resolves to a registered Member of that type.
+type private ExportKind =
+    | Module
+    | Type
+    | Value
+    | Member
+
+let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set<int>> * Set<string> * Map<string, ExportKind> =
     let mutable exportMap = Map.empty<string, Set<int>>
     let mutable sharedPrefixes = Set.empty<string>
+    let mutable kinds = Map.empty<string, ExportKind>
 
     // Sig/impl pairs are one logical contributor — a name registered by both
     // halves of a pair must NOT count as a shared prefix, otherwise consumers
@@ -934,7 +1034,7 @@ let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set
                 | None -> ()
         m
 
-    let addExport (name: string) (fileIdx: int) =
+    let addExportWithKind (name: string) (fileIdx: int) (kind: ExportKind) =
         let existing = exportMap |> Map.tryFind name |> Option.defaultValue Set.empty
         let updated = Set.add fileIdx existing
         // Distinct logical contributors: collapse sig/impl pairs to one entity.
@@ -947,38 +1047,54 @@ let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set
         if distinctContributors.Count > 1 then
             sharedPrefixes <- Set.add name sharedPrefixes
         exportMap <- Map.add name updated exportMap
+        // Kind: if a name is registered as multiple kinds, prefer Module over
+        // others (a module can shadow nested type/value names in scope).
+        match Map.tryFind name kinds, kind with
+        | Some Module, _ -> ()
+        | _, k -> kinds <- Map.add name k kinds
 
     for fd in fileDecls do
         for topMod in fd.TopLevelModules do
             // Register the full qualified module/namespace name
             let qualName = topMod.QualifiedName |> List.map (fun id -> id.idText) |> String.concat "."
-            addExport qualName fd.FileIndex
+            addExportWithKind qualName fd.FileIndex Module
 
             // Register each segment prefix for namespace resolution
             let segments = topMod.QualifiedName |> List.map (fun id -> id.idText)
             let mutable prefix = ""
             for seg in segments do
                 prefix <- if prefix = "" then seg else prefix + "." + seg
-                addExport prefix fd.FileIndex
+                addExportWithKind prefix fd.FileIndex Module
 
-            // Register type names qualified by module
+            // Register type names + their members, qualified by module
             for ty in topMod.Types do
                 let tyQualName = qualName + "." + ty.Name.idText
-                addExport tyQualName fd.FileIndex
+                addExportWithKind tyQualName fd.FileIndex Type
+                for memberName in ty.MemberNames do
+                    addExportWithKind (tyQualName + "." + memberName.idText) fd.FileIndex Member
 
-            // Register nested module names
+            // Register module-level let-binding values
+            for v in topMod.Values do
+                addExportWithKind (qualName + "." + v.Name.idText) fd.FileIndex Value
+
+            // Register nested module names + their content
             let rec registerNested (parentName: string) (m: ModuleDeclStub) =
                 let nestedName = parentName + "." + m.Name.idText
-                addExport nestedName fd.FileIndex
+                addExportWithKind nestedName fd.FileIndex Module
                 for ty in m.Types do
-                    addExport (nestedName + "." + ty.Name.idText) fd.FileIndex
+                    let tyQualName = nestedName + "." + ty.Name.idText
+                    addExportWithKind tyQualName fd.FileIndex Type
+                    for memberName in ty.MemberNames do
+                        addExportWithKind (tyQualName + "." + memberName.idText) fd.FileIndex Member
+                for v in m.Values do
+                    addExportWithKind (nestedName + "." + v.Name.idText) fd.FileIndex Value
                 for nested in m.NestedModules do
                     registerNested nestedName nested
 
             for nested in topMod.NestedModules do
                 registerNested qualName nested
 
-    (exportMap, sharedPrefixes)
+    (exportMap, sharedPrefixes, kinds)
 
 /// Add a dependency on a name, optionally skipping shared prefixes.
 let private addDepFromExportMap
@@ -998,23 +1114,55 @@ let private addDepFromExportMap
         | None -> ()
 
 /// Resolve a path (list of idents) against the export map.
-/// If prefixesToo is true, also tries all prefixes of the path.
+///
+/// Strategy: walk the segments left-to-right looking for the LONGEST prefix
+/// that resolves to a Module/Value/Member entry. A bare Type prefix (with
+/// trailing segments unaccounted for) is skipped — that pattern usually
+/// means a member call where the member isn't registered (e.g. a
+/// FSharp.Core method whose qualifier collides with a project type name).
+/// The legacy short-prefix-iteration mode (used by Opens, where the full
+/// path is known to terminate at a module) keeps the older behaviour.
 let private resolvePathDeps
     (exportMap: Map<string, Set<int>>)
     (sharedPrefixes: Set<string>)
+    (kinds: Map<string, ExportKind>)
     (skipShared: bool)
     (prefixesToo: bool)
     (selfIndex: int)
     (deps: byref<Set<int>>)
     (path: LongIdent) =
-    let fullPath = path |> List.map (fun id -> id.idText) |> String.concat "."
+    let segments = path |> List.map (fun id -> id.idText)
+    let fullPath = String.concat "." segments
+    // Always try the literal full path first.
     addDepFromExportMap exportMap sharedPrefixes skipShared selfIndex &deps fullPath
     if prefixesToo then
-        let segments = path |> List.map (fun id -> id.idText)
-        let mutable prefix = ""
+        // Walk prefixes from longest (full path = handled above) to shortest,
+        // accepting Module/Value/Member matches but rejecting bare Type
+        // prefixes whose trailing segments aren't registered as members.
+        let mutable prefixes : (string * int) list = []
+        let mutable acc = ""
+        let mutable i = 0
         for seg in segments do
-            prefix <- if prefix = "" then seg else prefix + "." + seg
-            addDepFromExportMap exportMap sharedPrefixes skipShared selfIndex &deps prefix
+            acc <- if acc = "" then seg else acc + "." + seg
+            i <- i + 1
+            prefixes <- (acc, i) :: prefixes
+        // prefixes is now longest-first
+        for (prefix, _len) in prefixes do
+            // Skip the full path — already tried.
+            if prefix <> fullPath then
+                let kind = Map.tryFind prefix kinds
+                match kind with
+                | Some Module
+                | Some Value
+                | Some Member ->
+                    addDepFromExportMap exportMap sharedPrefixes skipShared selfIndex &deps prefix
+                | Some Type ->
+                    // Bare-type prefix match: only add the dep if the trailing
+                    // segments represent a member that's registered (i.e. the
+                    // full path matched above). They didn't, so skip — this is
+                    // the FsCheck.Result/FSharp.Core.Result collision case.
+                    ()
+                | None -> ()
 
 /// Get the namespace-prefix paths that should be prepended when resolving relative refs.
 ///
@@ -1052,6 +1200,7 @@ let private getEnclosingPrefixes (fd: FileDeclarations) : string list list =
 let private resolvePathDepsWithPrefixes
     (exportMap: Map<string, Set<int>>)
     (sharedPrefixes: Set<string>)
+    (kinds: Map<string, ExportKind>)
     (skipShared: bool)
     (prefixesToo: bool)
     (selfIndex: int)
@@ -1059,7 +1208,7 @@ let private resolvePathDepsWithPrefixes
     (deps: byref<Set<int>>)
     (path: LongIdent) =
     // First: literal path resolution
-    resolvePathDeps exportMap sharedPrefixes skipShared prefixesToo selfIndex &deps path
+    resolvePathDeps exportMap sharedPrefixes kinds skipShared prefixesToo selfIndex &deps path
 
     // Then: try with each enclosing namespace prefix prepended.
     // For a ref `ForestMod.X` from a file in `CycleTest.TreeMod`, also try
@@ -1068,7 +1217,7 @@ let private resolvePathDepsWithPrefixes
     for nsPrefix in enclosingPrefixes do
         let prefixed = nsPrefix @ pathStrs
         let prefixedPath = prefixed |> List.map (fun s -> Ident(s, range0))
-        resolvePathDeps exportMap sharedPrefixes skipShared prefixesToo selfIndex &deps prefixedPath
+        resolvePathDeps exportMap sharedPrefixes kinds skipShared prefixesToo selfIndex &deps prefixedPath
 
 /// Resolve a file's imports against the export map to find dependencies.
 /// Opens always create dependencies (they're explicit imports).
@@ -1077,6 +1226,7 @@ let private resolvePathDepsWithPrefixes
 let private resolveFileDependencies
     (exportMap: Map<string, Set<int>>)
     (sharedPrefixes: Set<string>)
+    (kinds: Map<string, ExportKind>)
     (includeIdentRefs: bool)
     (fd: FileDeclarations)
     : Set<int> =
@@ -1084,16 +1234,16 @@ let private resolveFileDependencies
     let mutable deps = Set.empty<int>
     let enclosingPrefixes = getEnclosingPrefixes fd
 
-    // Opens: match full path only (no prefix expansion), never skip shared.
-    // Also try with enclosing namespace prefixes (relative opens are valid F#).
+    // Opens: match full path only (no prefix expansion), AND skip shared
+    // prefixes. `open FsCheck` from a file already inside `namespace FsCheck`
+    // would otherwise add every contributor as a dep — opens declare scope,
+    // not specific deps. Identifier refs handle the actual cross-file links.
     for openPath in fd.Opens do
-        resolvePathDepsWithPrefixes exportMap sharedPrefixes false false fd.FileIndex enclosingPrefixes &deps openPath
+        resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds true false fd.FileIndex enclosingPrefixes &deps openPath
 
     if includeIdentRefs then
-        // Identifier refs: try prefixes, skip shared prefixes to avoid false cycles.
-        // Also try with enclosing namespace prefixes for relative refs.
         for identRef in fd.IdentifierRefs do
-            resolvePathDepsWithPrefixes exportMap sharedPrefixes true true fd.FileIndex enclosingPrefixes &deps identRef
+            resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds true true fd.FileIndex enclosingPrefixes &deps identRef
 
     deps
 
@@ -1288,7 +1438,7 @@ let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
         | Some w -> w.WriteLine(msg); w.Flush()
         | None -> ()
 
-    let exportMap, sharedPrefixes = buildExportMap fileDecls
+    let exportMap, sharedPrefixes, kinds = buildExportMap fileDecls
 
     let buildDeps (includeIdentRefs: bool) =
         fileDecls
@@ -1298,7 +1448,7 @@ let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
             elif isSigFile fd.FileName then
                 (fd.FileIndex, Set.empty)
             else
-                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes includeIdentRefs fd))
+                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes kinds includeIdentRefs fd))
         |> Map.ofArray
 
     // Two-level retry: full refs, then opens-only. If both cycle, fall back to original order.
@@ -1345,7 +1495,7 @@ type CompilationUnit =
 /// Units are returned in dependency order: units with no dependencies come first.
 /// Auto-generated files (AssemblyInfo etc.) are placed first regardless.
 let computeCompilationUnits (fileDecls: FileDeclarations array) : CompilationUnit array =
-    let exportMap, sharedPrefixes = buildExportMap fileDecls
+    let exportMap, sharedPrefixes, kinds = buildExportMap fileDecls
 
     let deps =
         fileDecls
@@ -1355,9 +1505,28 @@ let computeCompilationUnits (fileDecls: FileDeclarations array) : CompilationUni
             elif isSigFile fd.FileName then
                 (fd.FileIndex, Set.empty)
             else
-                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes true fd))
+                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes kinds true fd))
         |> Map.ofArray
 
+    if not (isNull (System.Environment.GetEnvironmentVariable "FSHARP_FILE_ORDER_AUTO_TRACE")) then
+        for fd in fileDecls do
+            let nm = (fd.FileName |> System.IO.Path.GetFileName |> string)
+            if nm = "Random.fs" || nm = "Testable.fs" then
+                eprintfn "[file-order-auto] %s top-modules:" nm
+                for tm in fd.TopLevelModules do
+                    let qual = tm.QualifiedName |> List.map (fun (i: Ident) -> i.idText) |> String.concat "."
+                    eprintfn "  Module %s (kind=%A)" qual tm.Kind
+                    for ty in tm.Types do
+                        let mems = ty.MemberNames |> List.map (fun (i: Ident) -> i.idText) |> String.concat ", "
+                        eprintfn "    Type %s members=[%s]" ty.Name.idText mems
+                    for v in tm.Values do
+                        eprintfn "    Value %s" v.Name.idText
+        eprintfn "[file-order-auto] FSharp.Gen.fs deps:"
+        for KeyValue(idx, depSet) in deps do
+            let nm = (fileDecls.[idx].FileName |> System.IO.Path.GetFileName |> string)
+            if nm = "FSharp.Gen.fs" || nm = "Random.fs" then
+                let depNames = depSet |> Seq.map (fun d -> (fileDecls.[d].FileName |> System.IO.Path.GetFileName |> string)) |> String.concat ", "
+                eprintfn "  %s -> [%s]" nm depNames
     let sccs = computeSCCs fileDecls.Length deps
 
     // Build sig/impl pairing maps
