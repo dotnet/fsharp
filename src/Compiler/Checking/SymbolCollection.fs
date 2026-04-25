@@ -665,23 +665,34 @@ let private resolvePathDeps
             addDepFromExportMap exportMap sharedPrefixes skipShared selfIndex &deps prefix
 
 /// Get the namespace-prefix paths that should be prepended when resolving relative refs.
-/// For a file with `module CycleTest.TreeMod`, returns [["CycleTest"]; ["CycleTest"; "TreeMod"]]
-/// so that a reference like `ForestMod.X` can be tried as `CycleTest.ForestMod.X` and
-/// `CycleTest.TreeMod.ForestMod.X`.
+///
+/// `module CycleTest.TreeMod` (NamedModule) returns
+/// [["CycleTest"]; ["CycleTest"; "TreeMod"]] — a NamedModule's contents live
+/// inside an implicit parent namespace, so siblings of that parent are
+/// visible without qualification. `namespace FsCheck.Internals`
+/// (DeclaredNamespace) returns only [["FsCheck"; "Internals"]] — F# does not
+/// auto-import parent namespaces of a declared namespace, so trying parent
+/// prefixes would conjure false dependency edges (e.g. a local `Result.isOk`
+/// in TypeClass.fs would otherwise match `FsCheck.Result` defined in an
+/// unrelated file via the parent prefix).
 let private getEnclosingPrefixes (fd: FileDeclarations) : string list list =
     fd.TopLevelModules
     |> List.collect (fun topMod ->
-        // For module FileA.SubA.SubSubA, contributes prefixes:
-        //   [FileA]
-        //   [FileA; SubA]
-        //   [FileA; SubA; SubSubA]
         let segments = topMod.QualifiedName |> List.map (fun id -> id.idText)
-        let mutable acc = []
-        let mutable prefix = []
-        for seg in segments do
-            prefix <- prefix @ [seg]
-            acc <- prefix :: acc
-        List.rev acc)
+        match topMod.Kind with
+        | SynModuleOrNamespaceKind.NamedModule ->
+            // NamedModule: emit each prefix length so parent-namespace siblings
+            // are reachable.
+            let mutable acc = []
+            let mutable prefix = []
+            for seg in segments do
+                prefix <- prefix @ [seg]
+                acc <- prefix :: acc
+            List.rev acc
+        | _ ->
+            // DeclaredNamespace / GlobalNamespace / AnonModule: only the file's
+            // own namespace is in scope — no implicit parent visibility.
+            if segments.IsEmpty then [] else [ segments ])
     |> List.distinct
 
 /// Resolve a path against the export map, also trying the path with each
