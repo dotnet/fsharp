@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <!-- Wrong order: Main first, then a sig+impl pair (Lib), then a sig-less file (Util).
+       Auto-order must put dependencies first AND keep Lib.fsi immediately before Lib.fs. -->
+  <ItemGroup>
+    <Compile Include="Main.fs" />
+    <Compile Include="Lib.fsi" />
+    <Compile Include="Lib.fs" />
+    <Compile Include="Util.fs" />
+  </ItemGroup>
+</Project>

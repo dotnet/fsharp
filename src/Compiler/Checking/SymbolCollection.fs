@@ -557,11 +557,42 @@ let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set
     let mutable exportMap = Map.empty<string, Set<int>>
     let mutable sharedPrefixes = Set.empty<string>
 
+    // Sig/impl pairs are one logical contributor — a name registered by both
+    // halves of a pair must NOT count as a shared prefix, otherwise consumers
+    // would skip the dependency entirely. Compute the partner map inline (the
+    // dedicated helpers live further down in the file).
+    let pairPartner =
+        let normalize (p: string) = p.Replace('\\', '/')
+        let isSig (n: string) = n.EndsWith(".fsi")
+        let sigByImplPath =
+            fileDecls
+            |> Array.choose (fun fd ->
+                if isSig fd.FileName then
+                    let implPath = normalize (fd.FileName.Substring(0, fd.FileName.Length - 1))
+                    Some (implPath, fd.FileIndex)
+                else None)
+            |> Map.ofArray
+        let mutable m = Map.empty<int, int>
+        for fd in fileDecls do
+            if not (isSig fd.FileName) then
+                match Map.tryFind (normalize fd.FileName) sigByImplPath with
+                | Some sigIdx ->
+                    m <- Map.add fd.FileIndex sigIdx m
+                    m <- Map.add sigIdx fd.FileIndex m
+                | None -> ()
+        m
+
     let addExport (name: string) (fileIdx: int) =
         let existing = exportMap |> Map.tryFind name |> Option.defaultValue Set.empty
         let updated = Set.add fileIdx existing
-        // Track names defined by multiple files as shared prefixes
-        if updated.Count > 1 then
+        // Distinct logical contributors: collapse sig/impl pairs to one entity.
+        let distinctContributors =
+            updated
+            |> Set.fold (fun (acc: Set<int>) idx ->
+                match Map.tryFind idx pairPartner with
+                | Some partner when Set.contains partner acc -> acc
+                | _ -> Set.add idx acc) Set.empty
+        if distinctContributors.Count > 1 then
             sharedPrefixes <- Set.add name sharedPrefixes
         exportMap <- Map.add name updated exportMap
 
