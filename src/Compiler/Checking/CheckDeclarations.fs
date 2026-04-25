@@ -5295,6 +5295,11 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.Types (typeDefs, m) ->
           let typeDefs = typeDefs |> List.filter (function SynTypeDefn(typeInfo = SynComponentInfo(longId = [])) -> false | _ -> true)
+          if cenv.fileOrderAuto && typeDefs.Length > 1 then
+              typeDefs.Tail
+              |> List.iter (fun td ->
+                  let (SynTypeDefn(typeInfo = SynComponentInfo(range = mTd))) = td
+                  warning(Error(FSComp.SR.chkAndKeywordDeprecatedWithFileOrderAuto(), mTd)))
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
           let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns false
