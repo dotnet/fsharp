@@ -1033,8 +1033,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsFileOrderAuto">
-        <source>Automatically determine file compilation order from dependency analysis {0}</source>
-        <target state="new">Automatically determine file compilation order from dependency analysis {0}</target>
+        <source>Automatically determine file compilation order from dependency analysis ({0} by default)</source>
+        <target state="new">Automatically determine file compilation order from dependency analysis ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">

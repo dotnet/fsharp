@@ -95,6 +95,9 @@
 --realsig[+|-]                           Generate assembly with IL visibility
                                          that matches the source code
                                          visibility (off by default)
+--file-order-auto[+|-]                   Automatically determine file
+                                         compilation order from dependency
+                                         analysis (off by default)
 --pathmap:<path=sourcePath;...>          Maps physical paths to source path
                                          names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module
