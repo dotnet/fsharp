@@ -511,7 +511,17 @@ let buildFileStub (_g: TcGlobals) (fileDecls: FileDeclarations) : QualifiedNameO
     /// Create a minimal Entity shell for a type declaration.
     /// The entity has a name, stamp, and arity but TNoRepr — the real
     /// representation is filled in during type checking.
+    ///
+    /// Synthesises rigid type parameters matching the count from the AST so
+    /// references like `MyType<'A>` or `Foo<int, string>` from another file
+    /// can be type-checked against the stub before the real implementation
+    /// runs (otherwise FS0033 "non-generic type does not expect type
+    /// arguments" surfaces for any cross-file generic-type ref).
     let mkTypeEntityStub (stub: TypeDeclStub) : Entity =
+        let typars : Typars =
+            [ for i in 0 .. stub.TypeParamCount - 1 ->
+                let nm = sprintf "T%d" i
+                Construct.NewRigidTypar nm stub.Name.idRange ]
         Construct.NewTycon(
             None,
             stub.Name.idText,
@@ -519,7 +529,7 @@ let buildFileStub (_g: TcGlobals) (fileDecls: FileDeclarations) : QualifiedNameO
             taccessPublic,
             taccessPublic,
             TyparKind.Type,
-            LazyWithContext<Typars, range>.NotLazy [],
+            LazyWithContext<Typars, range>.NotLazy typars,
             XmlDoc.Empty,
             false,
             false,
@@ -1232,18 +1242,66 @@ let private resolveFileDependencies
     : Set<int> =
 
     let mutable deps = Set.empty<int>
-    let enclosingPrefixes = getEnclosingPrefixes fd
+    let enclosingNs = getEnclosingPrefixes fd
 
     // Opens: match full path only (no prefix expansion), AND skip shared
     // prefixes. `open FsCheck` from a file already inside `namespace FsCheck`
     // would otherwise add every contributor as a dep — opens declare scope,
     // not specific deps. Identifier refs handle the actual cross-file links.
     for openPath in fd.Opens do
-        resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds true false fd.FileIndex enclosingPrefixes &deps openPath
+        resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds true false fd.FileIndex enclosingNs &deps openPath
+
+    // For ident-ref resolution we also use `open` paths as additional
+    // resolution prefixes — but ONLY for opens whose path itself names a
+    // unique declaration (not a shared namespace). `open FsCheck.Internals`
+    // where many files contribute would otherwise let any leftover ident
+    // path-match against unrelated names from sibling files via the
+    // shared parent. Limiting to non-shared opens means a ref like
+    // `TypeClass.TypeClass` from a file with `open FsCheck.Internals`
+    // can resolve via the [FsCheck; Internals] prefix without that prefix
+    // being a wildcard for everything else.
+    let openPrefixes =
+        fd.Opens
+        |> List.choose (fun lid ->
+            let segs = lid |> List.map (fun (i: Ident) -> i.idText)
+            let key = String.concat "." segs
+            // Use opens that point at a known module/namespace as resolution
+            // prefixes. This lets `TypeClass.TypeClass` from a file with
+            // `open FsCheck.Internals` resolve to `FsCheck.Internals.TypeClass.TypeClass`.
+            match Map.tryFind key kinds with
+            | Some Module -> Some segs
+            | _ -> None)
+
+    // Collect names defined LOCALLY in this file (top-level + nested types and
+    // modules). When an ident-ref's first segment matches a local name, we
+    // suppress opens-as-prefix expansion for it: `Prop.safeForce` from inside
+    // a file that has `open FsCheck.FSharp` AND a local `module Prop = ...`
+    // refers to the local one, not the opened FsCheck.FSharp.Prop.
+    let localNames =
+        let acc = System.Collections.Generic.HashSet<string>()
+        let rec visitMod (m: ModuleDeclStub) =
+            acc.Add(m.Name.idText) |> ignore
+            for ty in m.Types do acc.Add(ty.Name.idText) |> ignore
+            for v in m.Values do acc.Add(v.Name.idText) |> ignore
+            for nm in m.NestedModules do visitMod nm
+        for tm in fd.TopLevelModules do visitMod tm
+        acc
 
     if includeIdentRefs then
         for identRef in fd.IdentifierRefs do
-            resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds true true fd.FileIndex enclosingPrefixes &deps identRef
+            // Always try enclosing namespace prefixes.
+            // Try opens-as-prefix only when the ref's first segment isn't
+            // shadowed by a locally-defined name.
+            let firstSeg =
+                match identRef with
+                | (i: Ident) :: _ -> i.idText
+                | [] -> ""
+            let prefixes =
+                if firstSeg <> "" && localNames.Contains(firstSeg) then
+                    enclosingNs
+                else
+                    (enclosingNs @ openPrefixes) |> List.distinct
+            resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds true true fd.FileIndex prefixes &deps identRef
 
     deps
 

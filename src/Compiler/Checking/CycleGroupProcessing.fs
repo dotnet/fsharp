@@ -266,6 +266,14 @@ let applyAutoFileOrder
 
         // Step 2: compute dependency-ordered compilation units
         let units = computeCompilationUnits fileDecls
+        if not (isNull (System.Environment.GetEnvironmentVariable "FSHARP_FILE_ORDER_AUTO_TRACE")) then
+            eprintfn "[file-order-auto] units (%d):" units.Length
+            for u in units do
+                match u with
+                | SingleFile i -> eprintfn "  Single %s" ((fileDecls.[i].FileName |> System.IO.Path.GetFileName |> string))
+                | CycleGroup is ->
+                    let names = is |> List.map (fun i -> (fileDecls.[i].FileName |> System.IO.Path.GetFileName |> string)) |> String.concat ", "
+                    eprintfn "  CycleGroup [%s]" names
         let inputsArray = inputs |> List.toArray
 
         // Step 3: process each unit (single files pass through, cycle groups synthesize)
@@ -285,7 +293,26 @@ let applyAutoFileOrder
                             match f with
                             | ParsedInput.SigFile _ -> true
                             | _ -> false)
-                    if hasSigFile then
+                    // Cycle groups spanning multiple namespaces would force the
+                    // synthesis to wrap a `namespace X.Y` file as a nested
+                    // `module Y` inside the common-prefix namespace `rec X`.
+                    // If `namespace X.Y` is also declared by other (non-cycle)
+                    // files in the project, F# rejects the result with FS0247
+                    // "namespace and module both occur". Fall back to original
+                    // order in that case.
+                    let topLevelLongIds (input: ParsedInput) =
+                        match input with
+                        | ParsedInput.ImplFile(ParsedImplFileInput(contents = cs)) ->
+                            cs |> List.map (fun (SynModuleOrNamespace(longId = lid; kind = k)) -> lid, k)
+                        | ParsedInput.SigFile(ParsedSigFileInput(contents = cs)) ->
+                            cs |> List.map (fun (SynModuleOrNamespaceSig(longId = lid; kind = k)) -> lid, k)
+                    let allLongIds = groupFiles |> List.collect topLevelLongIds
+                    let prefix = allLongIds |> List.map fst |> commonPrefix
+                    let wouldWrapANamespace =
+                        allLongIds |> List.exists (fun (lid, kind) ->
+                            kind = SynModuleOrNamespaceKind.DeclaredNamespace
+                            && lid.Length > prefix.Length)
+                    if hasSigFile || wouldWrapANamespace then
                         groupFiles
                     else
                         let impls =
