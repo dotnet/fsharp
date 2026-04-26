@@ -678,7 +678,17 @@ let private collectFullPathRefs (parsedInput: ParsedInput) : LongIdent list =
             walkExpr e1; for c in cs do walkMatchClause c
         | SynExpr.Do(expr = e1) -> walkExpr e1
         | SynExpr.Assert(expr = e1) -> walkExpr e1
-        | SynExpr.App(funcExpr = e1; argExpr = e2) -> walkExpr e1; walkExpr e2
+        | SynExpr.App(funcExpr = e1; argExpr = e2) ->
+            // Special-case `f arg` where `f` is a single Ident: capture it
+            // as a 1-segment ref. Most local-bindings/parameters won't
+            // match anything in the export map; the few that DO match are
+            // exactly the cross-file deps we want to detect (e.g.
+            // `transferStream conn stream` from a file with `open Suave.Sockets`
+            // where transferStream is in `[<AutoOpen>] module AsyncSocket`).
+            (match e1 with
+             | SynExpr.Ident ident -> addIds [ ident ]
+             | _ -> ())
+            walkExpr e1; walkExpr e2
         | SynExpr.TypeApp(expr = e1; typeArgs = tys) ->
             walkExpr e1; for ty in tys do walkType ty
         | SynExpr.TryWith(tryExpr = e1; withCases = cs) ->
@@ -1044,10 +1054,17 @@ type private ExportKind =
     | Value
     | Member
 
-let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set<int>> * Set<string> * Map<string, ExportKind> =
+let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set<int>> * Set<string> * Map<string, ExportKind> * Map<string, Set<int>> =
     let mutable exportMap = Map.empty<string, Set<int>>
     let mutable sharedPrefixes = Set.empty<string>
     let mutable kinds = Map.empty<string, ExportKind>
+    // aliasMap is a SEPARATE resolution shortcut for [<AutoOpen>] modules.
+    // It's never used for sharedPrefixes/kinds/Module-tracking — only as a
+    // fallback when an ident ref doesn't resolve via exportMap. This keeps
+    // the "what's actually declared" map clean from "what's reachable via
+    // AutoOpen" so aliases can't create false sharedPrefix collisions or
+    // change prefix-iteration behaviour.
+    let mutable aliasMap = Map.empty<string, Set<int>>
 
     // Sig/impl pairs are one logical contributor — a name registered by both
     // halves of a pair must NOT count as a shared prefix, otherwise consumers
@@ -1093,6 +1110,10 @@ let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set
         | Some Module, _ -> ()
         | _, k -> kinds <- Map.add name k kinds
 
+    let addAlias (name: string) (fileIdx: int) =
+        let existing = aliasMap |> Map.tryFind name |> Option.defaultValue Set.empty
+        aliasMap <- Map.add name (Set.add fileIdx existing) aliasMap
+
     for fd in fileDecls do
         for topMod in fd.TopLevelModules do
             // Register the full qualified module/namespace name
@@ -1106,52 +1127,119 @@ let private buildExportMap (fileDecls: FileDeclarations array) : Map<string, Set
                 prefix <- if prefix = "" then seg else prefix + "." + seg
                 addExportWithKind prefix fd.FileIndex Module
 
+            // For [<AutoOpen>] top-level NamedModule (e.g.
+            // `[<AutoOpen>] module Suave.Sockets.AsyncSocket`), content is
+            // reachable via the PARENT namespace path. So `transferStream`
+            // (a let binding inside AsyncSocket) is visible after
+            // `open Suave.Sockets` without further qualification.
+            //
+            // Compute the parent path (everything except the last segment).
+            // If the topMod is at namespace root (e.g. `module Foo`), there's
+            // no parent and AutoOpen has no effect on resolution.
+            let topAlias =
+                if topMod.IsAutoOpen
+                   && topMod.Kind = SynModuleOrNamespaceKind.NamedModule
+                   && segments.Length > 1 then
+                    Some (segments |> List.take (segments.Length - 1) |> String.concat ".")
+                else None
+
             // Register type names + their members, qualified by module
             for ty in topMod.Types do
                 let tyQualName = qualName + "." + ty.Name.idText
                 addExportWithKind tyQualName fd.FileIndex Type
                 for memberName in ty.MemberNames do
                     addExportWithKind (tyQualName + "." + memberName.idText) fd.FileIndex Member
+                match topAlias with
+                | Some a ->
+                    addAlias (a + "." + ty.Name.idText) fd.FileIndex
+                    for memberName in ty.MemberNames do
+                        addAlias (a + "." + ty.Name.idText + "." + memberName.idText) fd.FileIndex
+                | None -> ()
 
             // Register module-level let-binding values
             for v in topMod.Values do
                 addExportWithKind (qualName + "." + v.Name.idText) fd.FileIndex Value
+                match topAlias with
+                | Some a -> addAlias (a + "." + v.Name.idText) fd.FileIndex
+                | None -> ()
 
-            // Register nested module names + their content
-            let rec registerNested (parentName: string) (m: ModuleDeclStub) =
+            // Register nested module names + their content.
+            //
+            // [<AutoOpen>] handling: when a nested module has the AutoOpen
+            // attribute, its content (Types, Values, Members, Module names)
+            // is reachable through the parent without an explicit `open`. We
+            // record this in `aliasMap` (separate from exportMap) so that
+            // refs to `SocketBinding` from a file with `open Suave` can
+            // fall back to `Suave.SocketBinding` resolution without the
+            // alias polluting sharedPrefixes/kinds calculations.
+            //
+            // `aliasParent` is the namespace under which the contents of
+            // this AutoOpen chain are reachable (always the topmost
+            // non-AutoOpen ancestor, or `None` if no AutoOpen ancestor).
+            let rec registerNested (parentName: string) (aliasParent: string option) (m: ModuleDeclStub) =
                 let nestedName = parentName + "." + m.Name.idText
                 addExportWithKind nestedName fd.FileIndex Module
+                let registerWithAlias (suffix: string) (kind: ExportKind) =
+                    addExportWithKind (nestedName + "." + suffix) fd.FileIndex kind
+                    match aliasParent with
+                    | Some a -> addAlias (a + "." + suffix) fd.FileIndex
+                    | None -> ()
                 for ty in m.Types do
-                    let tyQualName = nestedName + "." + ty.Name.idText
-                    addExportWithKind tyQualName fd.FileIndex Type
+                    registerWithAlias ty.Name.idText Type
                     for memberName in ty.MemberNames do
-                        addExportWithKind (tyQualName + "." + memberName.idText) fd.FileIndex Member
+                        registerWithAlias (ty.Name.idText + "." + memberName.idText) Member
                 for v in m.Values do
-                    addExportWithKind (nestedName + "." + v.Name.idText) fd.FileIndex Value
+                    registerWithAlias v.Name.idText Value
+                // Module names get aliased too (under aliasMap only). Lets
+                // `Common.foo` resolve when there's `[<AutoOpen>] module
+                // Suave.Utils { module Common = ... }` and the consumer has
+                // `open Suave.Utils`.
+                match aliasParent with
+                | Some a -> addAlias (a + "." + m.Name.idText) fd.FileIndex
+                | None -> ()
+                let childAlias =
+                    if m.IsAutoOpen then
+                        match aliasParent with
+                        | Some _ -> aliasParent
+                        | None -> Some parentName
+                    else None
                 for nested in m.NestedModules do
-                    registerNested nestedName nested
+                    registerNested nestedName childAlias nested
 
             for nested in topMod.NestedModules do
-                registerNested qualName nested
+                let alias = if nested.IsAutoOpen then Some qualName else None
+                registerNested qualName alias nested
 
-    (exportMap, sharedPrefixes, kinds)
+    (exportMap, sharedPrefixes, kinds, aliasMap)
 
 /// Add a dependency on a name, optionally skipping shared prefixes.
+/// Looks up `name` in the main exportMap; if not found, falls back to
+/// aliasMap (AutoOpen resolution shortcuts).
 let private addDepFromExportMap
     (exportMap: Map<string, Set<int>>)
     (sharedPrefixes: Set<string>)
+    (aliasMap: Map<string, Set<int>>)
     (skipShared: bool)
     (selfIndex: int)
     (deps: byref<Set<int>>)
     (name: string) =
     if skipShared && Set.contains name sharedPrefixes then ()
     else
-        match Map.tryFind name exportMap with
+        let primary = Map.tryFind name exportMap
+        match primary with
         | Some fileIndices ->
             for idx in fileIndices do
                 if idx <> selfIndex then
                     deps <- Set.add idx deps
-        | None -> ()
+        | None ->
+            match Map.tryFind name aliasMap with
+            | Some fileIndices ->
+                if not (isNull (System.Environment.GetEnvironmentVariable "FSHARP_FILE_ORDER_AUTO_TRACE")) then
+                    eprintfn "[file-order-auto] alias hit: %s -> %A from self=%d" name (Set.toList fileIndices) selfIndex
+                for idx in fileIndices do
+                    if idx <> selfIndex then
+                        deps <- Set.add idx deps
+            | None -> ()
 
 /// Resolve a path (list of idents) against the export map.
 ///
@@ -1166,6 +1254,7 @@ let private resolvePathDeps
     (exportMap: Map<string, Set<int>>)
     (sharedPrefixes: Set<string>)
     (kinds: Map<string, ExportKind>)
+    (aliasMap: Map<string, Set<int>>)
     (skipShared: bool)
     (prefixesToo: bool)
     (selfIndex: int)
@@ -1174,7 +1263,7 @@ let private resolvePathDeps
     let segments = path |> List.map (fun id -> id.idText)
     let fullPath = String.concat "." segments
     // Always try the literal full path first.
-    addDepFromExportMap exportMap sharedPrefixes skipShared selfIndex &deps fullPath
+    addDepFromExportMap exportMap sharedPrefixes aliasMap skipShared selfIndex &deps fullPath
     if prefixesToo then
         // Walk prefixes from longest (full path = handled above) to shortest,
         // accepting Module/Value/Member matches but rejecting bare Type
@@ -1195,7 +1284,7 @@ let private resolvePathDeps
                 | Some Module
                 | Some Value
                 | Some Member ->
-                    addDepFromExportMap exportMap sharedPrefixes skipShared selfIndex &deps prefix
+                    addDepFromExportMap exportMap sharedPrefixes aliasMap skipShared selfIndex &deps prefix
                 | Some Type ->
                     // Bare-type prefix match: only add the dep if the trailing
                     // segments represent a member that's registered (i.e. the
@@ -1241,6 +1330,7 @@ let private resolvePathDepsWithPrefixes
     (exportMap: Map<string, Set<int>>)
     (sharedPrefixes: Set<string>)
     (kinds: Map<string, ExportKind>)
+    (aliasMap: Map<string, Set<int>>)
     (skipShared: bool)
     (prefixesToo: bool)
     (selfIndex: int)
@@ -1248,7 +1338,7 @@ let private resolvePathDepsWithPrefixes
     (deps: byref<Set<int>>)
     (path: LongIdent) =
     // First: literal path resolution
-    resolvePathDeps exportMap sharedPrefixes kinds skipShared prefixesToo selfIndex &deps path
+    resolvePathDeps exportMap sharedPrefixes kinds aliasMap skipShared prefixesToo selfIndex &deps path
 
     // Then: try with each enclosing namespace prefix prepended.
     // For a ref `ForestMod.X` from a file in `CycleTest.TreeMod`, also try
@@ -1257,7 +1347,7 @@ let private resolvePathDepsWithPrefixes
     for nsPrefix in enclosingPrefixes do
         let prefixed = nsPrefix @ pathStrs
         let prefixedPath = prefixed |> List.map (fun s -> Ident(s, range0))
-        resolvePathDeps exportMap sharedPrefixes kinds skipShared prefixesToo selfIndex &deps prefixedPath
+        resolvePathDeps exportMap sharedPrefixes kinds aliasMap skipShared prefixesToo selfIndex &deps prefixedPath
 
 /// Resolve a file's imports against the export map to find dependencies.
 /// Opens always create dependencies (they're explicit imports).
@@ -1267,6 +1357,7 @@ let private resolveFileDependencies
     (exportMap: Map<string, Set<int>>)
     (sharedPrefixes: Set<string>)
     (kinds: Map<string, ExportKind>)
+    (aliasMap: Map<string, Set<int>>)
     (includeIdentRefs: bool)
     (fd: FileDeclarations)
     : Set<int> =
@@ -1279,7 +1370,7 @@ let private resolveFileDependencies
     // would otherwise add every contributor as a dep — opens declare scope,
     // not specific deps. Identifier refs handle the actual cross-file links.
     for openPath in fd.Opens do
-        resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds true false fd.FileIndex enclosingNs &deps openPath
+        resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds aliasMap true false fd.FileIndex enclosingNs &deps openPath
 
     // For ident-ref resolution we also use `open` paths as additional
     // resolution prefixes — but ONLY for opens whose path itself names a
@@ -1318,6 +1409,8 @@ let private resolveFileDependencies
         acc
 
     if includeIdentRefs then
+        let myName = (fd.FileName |> System.IO.Path.GetFileName |> string)
+        let traceMe = myName = "Stream.fs" && not (isNull (System.Environment.GetEnvironmentVariable "FSHARP_FILE_ORDER_AUTO_TRACE"))
         for identRef in fd.IdentifierRefs do
             // Always try enclosing namespace prefixes.
             // Try opens-as-prefix only when the ref's first segment isn't
@@ -1326,12 +1419,19 @@ let private resolveFileDependencies
                 match identRef with
                 | (i: Ident) :: _ -> i.idText
                 | [] -> ""
+            let isShadowed = firstSeg <> "" && localNames.Contains(firstSeg)
             let prefixes =
-                if firstSeg <> "" && localNames.Contains(firstSeg) then
+                if isShadowed then
                     enclosingNs
                 else
                     (enclosingNs @ openPrefixes) |> List.distinct
-            resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds true true fd.FileIndex prefixes &deps identRef
+            if traceMe && firstSeg = "transferStream" then
+                eprintfn "[stream-trace] ref=%A shadowed=%b prefixes=%A" (identRef |> List.map (fun (i: Ident) -> i.idText)) isShadowed prefixes
+            let before = deps
+            resolvePathDepsWithPrefixes exportMap sharedPrefixes kinds aliasMap true true fd.FileIndex prefixes &deps identRef
+            if traceMe && firstSeg = "transferStream" then
+                let added = Set.difference deps before |> Set.toList
+                eprintfn "[stream-trace] after resolve, added=%A" added
 
     deps
 
@@ -1526,7 +1626,7 @@ let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
         | Some w -> w.WriteLine(msg); w.Flush()
         | None -> ()
 
-    let exportMap, sharedPrefixes, kinds = buildExportMap fileDecls
+    let exportMap, sharedPrefixes, kinds, aliasMap = buildExportMap fileDecls
 
     let buildDeps (includeIdentRefs: bool) =
         fileDecls
@@ -1536,7 +1636,7 @@ let computeDependencyOrder (fileDecls: FileDeclarations array) : int array =
             elif isSigFile fd.FileName then
                 (fd.FileIndex, Set.empty)
             else
-                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes kinds includeIdentRefs fd))
+                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes kinds aliasMap includeIdentRefs fd))
         |> Map.ofArray
 
     // Two-level retry: full refs, then opens-only. If both cycle, fall back to original order.
@@ -1583,7 +1683,26 @@ type CompilationUnit =
 /// Units are returned in dependency order: units with no dependencies come first.
 /// Auto-generated files (AssemblyInfo etc.) are placed first regardless.
 let computeCompilationUnits (fileDecls: FileDeclarations array) : CompilationUnit array =
-    let exportMap, sharedPrefixes, kinds = buildExportMap fileDecls
+    let exportMap, sharedPrefixes, kinds, aliasMap = buildExportMap fileDecls
+
+    // Build sig→impl redirect: when a file depends on a sig (e.g.
+    // `Connection.fs` references `Suave.Runtime.SocketBinding` which is
+    // declared in `Runtime.fsi`), we redirect that dep to the IMPL
+    // (`Runtime.fs`). This way Tarjan places the impl at the right
+    // topological position and the pair-rewriting step (which emits
+    // `[sig; impl]` at the impl's position) preserves ordering for
+    // consumers.
+    let sigToImpl =
+        let pairs = buildSigImplPairs fileDecls  // impl → sig
+        pairs
+        |> Map.toSeq
+        |> Seq.map (fun (impl, sigIdx) -> sigIdx, impl)
+        |> Map.ofSeq
+
+    let redirectSig idx =
+        match Map.tryFind idx sigToImpl with
+        | Some implIdx -> implIdx
+        | None -> idx
 
     let deps =
         fileDecls
@@ -1593,8 +1712,21 @@ let computeCompilationUnits (fileDecls: FileDeclarations array) : CompilationUni
             elif isSigFile fd.FileName then
                 (fd.FileIndex, Set.empty)
             else
-                (fd.FileIndex, resolveFileDependencies exportMap sharedPrefixes kinds true fd))
+                let raw = resolveFileDependencies exportMap sharedPrefixes kinds aliasMap true fd
+                let redirected =
+                    raw
+                    |> Set.map redirectSig
+                    |> Set.filter (fun i -> i <> fd.FileIndex)
+                (fd.FileIndex, redirected))
         |> Map.ofArray
+
+    if not (isNull (System.Environment.GetEnvironmentVariable "FSHARP_FILE_ORDER_AUTO_TRACE")) then
+        for fd in fileDecls do
+            let nm = (fd.FileName |> System.IO.Path.GetFileName |> string)
+            if nm = "Stream.fs" || nm = "Runtime.fs" || nm = "Connection.fs" then
+                let d = Map.tryFind fd.FileIndex deps |> Option.defaultValue Set.empty
+                let depNames = d |> Seq.map (fun i -> (fileDecls.[i].FileName |> System.IO.Path.GetFileName |> string)) |> String.concat ", "
+                eprintfn "[file-order-auto] %s(idx=%d) deps: [%s]" nm fd.FileIndex depNames
 
     if not (isNull (System.Environment.GetEnvironmentVariable "FSHARP_FILE_ORDER_AUTO_TRACE")) then
         for fd in fileDecls do
@@ -1660,15 +1792,19 @@ let computeCompilationUnits (fileDecls: FileDeclarations array) : CompilationUni
         |> List.collect (fun u ->
             match u with
             | SingleFile idx when Set.contains idx sigsInCycleGroups ->
-                // This sig file is now part of a cycle group; drop the duplicate single-file entry
+                // Already pulled into a cycle group; drop the duplicate.
                 []
             | SingleFile idx when Set.contains idx sigIndicesSet ->
-                // Sig file with no cycle-group claim; defer to be inserted before its impl
+                // Sig file alone (not in a cycle group). Skip — its impl
+                // will pull it in at the impl's topo position. Consumers
+                // that depend on the sig had their deps redirected to the
+                // impl in the deps map (see computeCompilationUnits), so
+                // their ordering against the pair is preserved.
                 []
             | SingleFile idx ->
                 match Map.tryFind idx sigImplPairs with
                 | Some sigIdx when not (Set.contains sigIdx sigsInCycleGroups) ->
-                    [ SingleFile sigIdx; SingleFile idx ]  // sig before impl
+                    [ SingleFile sigIdx; SingleFile idx ]
                 | _ -> [ u ]
             | CycleGroup _ -> [ u ])
 
