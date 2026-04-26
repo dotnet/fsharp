@@ -164,6 +164,7 @@ let private collectTypeDeclStub (fileIndex: int) (synTypeDefn: SynTypeDefn) : Ty
 
     let name =
         match ids with
+        | [] -> Ident("", range0)
         | [ id ] -> id
         | _ -> List.last ids
 
@@ -229,6 +230,7 @@ let private collectTypeDeclStubFromSig (fileIndex: int) (synTypeDefnSig: SynType
 
     let name =
         match ids with
+        | [] -> Ident("", range0)
         | [ id ] -> id
         | _ -> List.last ids
 
@@ -309,6 +311,7 @@ let rec private collectImplDecls (fileIndex: int) (parentPath: Ident list) (decl
         | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(attributes = attribs; longId = ids; accessibility = access); decls = nestedDecls; range = m) ->
             let name =
                 match ids with
+                | [] -> Ident("", range0)
                 | [ id ] -> id
                 | _ -> List.last ids
 
@@ -376,6 +379,7 @@ let rec private collectSigDecls (fileIndex: int) (parentPath: Ident list) (decls
         | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(attributes = attribs; longId = ids; accessibility = access); moduleDecls = nestedDecls; range = m) ->
             let name =
                 match ids with
+                | [] -> Ident("", range0)
                 | [ id ] -> id
                 | _ -> List.last ids
 
@@ -430,6 +434,7 @@ let collectFileDeclarations (fileIndex: int) (fileName: string) (parsedInput: Pa
             |> List.map (fun (SynModuleOrNamespace(longId = longId; kind = kind; attribs = attribs; accessibility = access; decls = decls; range = m)) ->
                 let name =
                     match longId with
+                    | [] -> Ident("", range0)
                     | [ id ] -> id
                     | _ -> List.last longId
 
@@ -460,6 +465,7 @@ let collectFileDeclarations (fileIndex: int) (fileName: string) (parsedInput: Pa
             |> List.map (fun (SynModuleOrNamespaceSig(longId = longId; kind = kind; attribs = attribs; accessibility = access; decls = decls; range = m)) ->
                 let name =
                     match longId with
+                    | [] -> Ident("", range0)
                     | [ id ] -> id
                     | _ -> List.last longId
 
