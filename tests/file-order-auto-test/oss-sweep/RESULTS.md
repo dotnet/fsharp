@@ -1,133 +1,144 @@
 # Open-Source F# Project Sweep
 
-Test of how `--file-order-auto+` behaves against real-world F# projects, run against this fork's fsc.
+Test of how `--file-order-auto+` behaves against real-world F# projects, run against this fork's fsc on macOS arm64 + .NET 10 SDK.
 
 ## How to reproduce
 
 ```bash
-# 1. Clone targets
 mkdir -p /tmp/fsharp-oss-sweep && cd /tmp/fsharp-oss-sweep
+
 git clone --depth 1 https://github.com/fsprojects/Argu
 git clone --depth 1 https://github.com/fsprojects/FSharpPlus
 git clone --depth 1 https://github.com/fscheck/FsCheck
+git clone --depth 1 https://github.com/CompositionalIT/FsToolkit.ErrorHandling
+git clone --depth 1 https://github.com/SuaveIO/suave SuaveIO_suave
+git clone --depth 1 https://github.com/mbraceproject/FsPickler mbraceproject_FsPickler
+git clone --depth 1 https://github.com/haf/expecto haf_expecto
+git clone --depth 1 https://github.com/xyncro/aether xyncro_aether
+git clone --depth 1 https://github.com/fsprojects/Fantomas
+git clone --depth 1 https://github.com/fsprojects/FSharp.Data
+git clone --depth 1 https://github.com/fable-compiler/fable-promise
+git clone --depth 1 https://github.com/fable-compiler/Fable
+git clone --depth 1 https://github.com/fsprojects/Paket
 
-# 2. Build with the fork's fsc + --file-order-auto+
-FSC=$(pwd)/../fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll  # adjust path
+# Some repos pin to old SDKs via global.json — remove for testing
+for repo in /tmp/fsharp-oss-sweep/*/; do rm -f "$repo/global.json"; done
+
+# Install Paket (some repos use it instead of NuGet)
+dotnet tool install -g paket
+
+# For each project:
+FSC=$(pwd)/../fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll  # adjust
 dotnet build <project>.fsproj -c Release \
     -p:DotnetFscCompilerPath="$FSC" \
     -p:OtherFlags="--file-order-auto+ --nowarn:3885"
 ```
 
-`--nowarn:3885` is needed to bypass the `and`-keyword deprecation warning if
-the project's `<TreatWarningsAsErrors>` is on.
+The full sweep script lives at `/tmp/fsharp-oss-sweep/sweep.sh`.
 
 ## Results
 
-| Project | Auto-order | Notes |
-|---|---|---|
-| **Argu** | **PASS** | ~30 .fs files, conventional library. |
-| **FsCheck** | **PASS** | ~26 .fs files, SRTP-heavy property-testing library with cross-namespace structure. |
-| **FSharpPlus** | **PASS** | 86 .fs files, heavy SRTP + AutoOpen + nested modules across `FSharpPlus.Control`, `FSharpPlus.Math`, etc. |
+| Project | Baseline | Auto-order | Notes |
+|---|---|---|---|
+| **Argu** | OK | **PASS** | Conventional library, ~30 .fs files. |
+| **FsCheck** | OK | **PASS** | SRTP-heavy property-testing library. |
+| **FSharpPlus** | OK | **PASS** | 86 .fs files, heavy SRTP + AutoOpen + nested modules. |
+| **FsToolkit.ErrorHandling** | OK | **PASS** | Result/Async/Task combinators. |
+| **Expecto** | OK | **PASS** | Test framework. |
+| **FSharp.Data.Json.Core** | OK | **PASS** | JSON parsing core. |
+| **Fable.Promise** | OK | **PASS** | Fable's Promise type bindings. |
+| Suave | FAIL (30, env) | FAIL (56) | Baseline already broken on .NET 10 (`FS0971 Undefined value 'this'` in `task {}` blocks — F# semantic gap unrelated to our flag). Auto adds 26 more errors via the AutoOpen-tracking limitation below. |
+| FsPickler | FAIL (24, env) | FAIL (24) | `error FS0561: Accessibility modifiers are not allowed on this member`. Pre-existing F# language incompatibility. |
+| Aether | FAIL (12, env) | FAIL (12) | Targets net45; `NU1202` package incompatibility with current SDK. |
+| Fantomas.Core | FAIL (8, env) | FAIL (8) | `NU1403` package hash mismatch (transient NuGet cache issue). |
+| Fable.AST | FAIL (2, env) | FAIL (2) | netstandard2.0 target missing `System.ReadOnlySpan`. |
+| Paket.Core | FAIL (2, env) | FAIL (2) | Paket restore failure. |
 
-All three target projects build cleanly under `--file-order-auto+`.
+**Real auto-order pass rate: 7/8 buildable targets.** The 5 environmentally
+broken projects can't be fairly judged — baseline doesn't build under our
+toolchain. Suave is the only target where auto adds errors beyond baseline.
 
-## How the analyser handles real F#
+## What was fixed during this sweep
 
-The path from "broken on real code" to "works" required a sequence of
-analyser refinements layered on top of the original Track 01-04 design:
+A series of analyser refinements layered on top of the original Track 01-04
+design. The final state is:
 
-### Capture full identifier paths from the AST
+- **Custom AST walker** (`SymbolCollection.collectFullPathRefs`):
+  preserves full identifier paths instead of FCM's truncated qualifiers.
+- **Type-member registration**: `TypeDeclStub.MemberNames` populated;
+  `qualName.TypeName.MemberName` registered in the export map for static
+  members, instance members, abstract slots, auto-properties.
+- **Module-let registration**: top-level `let x = ...` registered as
+  `qualName.x` (Value).
+- **Kind-aware matching** (`ExportKind = Module | Type | Value | Member`):
+  prefix-iteration accepts Module/Value/Member matches; rejects bare-Type
+  matches when no Member match is registered. Eliminates the
+  `Random.X` (project type static) vs `Result.X` (FSharp.Core method)
+  collision.
+- **Opens skip shared prefixes**: `open FsCheck` from a file already in
+  `namespace FsCheck` no longer broadcasts deps to every contributor.
+- **Opens-as-prefixes for ident resolution** with **local-name shadowing**:
+  `TypeClass.TypeClass<...>` from a file with `open FsCheck.Internals`
+  resolves via that prefix; but `Prop.X` from inside a file with both
+  `open FsCheck.FSharp` AND a local `module Prop` refers to the local one.
+- **NamedModule vs DeclaredNamespace prefix scoping**: `module X.Y`
+  implicitly sees siblings of parent X; `namespace X.Y` does not.
+- **Type stubs include type parameters**: `Typars` synthesised from
+  `TypeParamCount` so `MyType<'A>` from another file resolves.
+- **No module stubs, only type stubs**: F# rejects re-declaration of an
+  existing module entity (`FS0245 not a concrete module or type`); types
+  tolerate forward stubbing, modules don't.
+- **Cross-namespace cycle synthesis guard**: refuse to synthesise when
+  the cycle group spans multiple namespaces (would create a `module Y`
+  inside `namespace rec X` that conflicts with the original
+  `namespace X.Y`).
+- **Recursive open-hoisting in synthesised cycle groups**: `open` decls
+  reordered to be first in each module/namespace block (FS3200 fix).
+- **Empty-longId guards**: every `match ids with | [id] | _ -> List.last`
+  pattern in `SymbolCollection.fs` now handles `[]` to avoid
+  `FS0193 internal error: input list was empty`.
 
-`FileContentMapping.PrefixedIdentifier` (upstream) drops the trailing
-segment of every long ident — fine for upstream's parallel checker, fatal
-for ours because it makes `Random.CreateWithSeedAndGamma` (project type's
-static method) and `Result.isOk` (FSharp.Core method) indistinguishable.
-`SymbolCollection.collectFullPathRefs` walks the AST keeping each
-LongIdent's full path.
+## Known limitation: AutoOpen modules
 
-### Register members + values in the export map
+Real-world F# uses `[<AutoOpen>]` to expose a nested module's contents
+through its parent namespace. Example: Suave declares
+`[<AutoOpen>] module Suave.Runtime { type SocketBinding = ... }`, and
+code in `namespace Suave.Sockets` with `open Suave` then references
+`SocketBinding` directly.
 
-`TypeDeclStub.MemberNames` carries the names of static and instance
-members declared on each type. `buildExportMap` registers them as
-`qualName.TypeName.MemberName`, plus module-level let bindings as
-`qualName.bindingName`. `Random.CreateWithSeedAndGamma` then resolves to
-a real entry in the map and links to the right file.
+Our analyser does NOT track AutoOpen visibility. It sees Connection.fs
+referencing `SocketBinding` and can't find it in scope, so it doesn't
+add a dep on Runtime.fs. The reorder places Connection.fs before
+Runtime.fs and type-checking fails with `'SocketBinding' is not defined`.
 
-### Kind-aware matching with bare-Type rejection
+I attempted three variants of "register AutoOpen aliases under the parent
+namespace" — all caused regressions (Suave 30→200 errors, Expecto 0→6,
+FSharpPlus regressed) because the aliases introduced new false-match
+cycles or shadowed local scopes. The structural fix needs either:
 
-A new `ExportKind` (Module, Type, Value, Member) distinguishes what each
-entry is. When prefix-iterating to find a cross-file dep, a Module match
-counts (legitimate qualifier); a bare-Type match is rejected unless the
-trailing path matches a registered Member. This kills the
-`Random.X` / `Result.X` collision.
+1. A more sophisticated tracker that distinguishes "alias for cross-file
+   resolution" from "name registered in exportMap" (current code uses the
+   same map for both).
+2. A separate pass that, after computing the initial DAG, examines
+   unresolved refs and tries AutoOpen-aware fallback resolution.
 
-### Opens skip shared prefixes
-
-`open FsCheck` from a file already inside `namespace FsCheck` was adding
-every contributor to the namespace as a dep, manufacturing a giant SCC.
-Opens declare scope; identifier refs declare specific cross-file deps.
-Opens skip shared-prefix matches.
-
-### Opens-as-prefixes (with local-name shadowing)
-
-For each `open Foo.Bar` whose target is a known module, `Foo.Bar` becomes
-an additional resolution prefix for ident refs in the file. Lets
-`TypeClass.TypeClass<...>` from a file with `open FsCheck.Internals`
-resolve to `FsCheck.Internals.TypeClass.TypeClass`. **But** suppressed
-when the ref's first segment is locally defined — `Prop.X` from inside
-Testable.fs (which has `open FsCheck.FSharp` AND a local `module Prop`)
-refers to the local one.
-
-### NamedModule vs DeclaredNamespace prefix scoping
-
-NamedModule files (`module X.Y`) implicitly see siblings of their parent
-namespace, so all enclosing prefixes are tried. DeclaredNamespace files
-(`namespace X.Y`) don't — only the file's own namespace is used,
-preventing `Result.isOk` in `namespace FsCheck.Internals` from falsely
-matching `FsCheck.Result` via the parent prefix.
-
-### Type stubs include type parameters
-
-`mkTypeEntityStub` was creating empty `Typars=[]` for every type, making
-forward refs to `MyType<'A>` fail with FS0033. Now we synthesise rigid
-typars matching `TypeParamCount`.
-
-### No module stubs, only type stubs
-
-The biggest single fix. The enter phase used to create
-ModuleOrNamespace stubs for every module. F# saw the stub as an
-already-declared entity and rejected the real `module X = ...` with
-FS0245 "X is not a concrete module or type". We now skip module stubs
-entirely (private/internal modules and types are also filtered out as
-unreachable from other files anyway).
-
-### Cross-namespace cycle synthesis guard
-
-When a cycle group spans multiple namespaces, synthesis would wrap a
-`namespace X.Y` file as a nested `module Y` inside `namespace rec X`.
-The original `namespace X.Y` declaration would then conflict (FS0247
-"namespace and module both occur"). Now we detect this case and fall
-back to original order rather than synthesise.
-
-### Hoist opens recursively in synthesised cycle groups
-
-F#'s `namespace rec` requires `open` decls to be first in each
-module/namespace body. Real F# code interleaves opens with let bindings
-in nested modules — legal in non-recursive code, FS3200 in recursive.
-Synthesis now recursively reorders each module body so opens come first.
+Either is real engineering work beyond this iteration. Documented as
+known limitation; the workaround for users is to write
+`Suave.Runtime.SocketBinding` (or `open Suave.Runtime` explicitly).
 
 ## Regression sweep
 
-All existing fixtures still pass after each change:
+All existing fixtures pass:
+- `inference-tests`: 4/4
+- `fsi-tests`: 2/2
+- `error-corpus`: 6/6 byte-for-byte identical
+- `deprecation-test`: 3/3
+- `end-to-end`: PASS
+- `fcs-smoke-test` / `fcs-ide-smoke-test`: PASS
+- `cycle-test-b4`: PASS
 
-- `inference-tests`: 4/4 (SRTP, record/union disambiguation, operator overloads).
-- `fsi-tests`: 2/2 (partial-fsi, fsi-ordering with sig+impl pairs).
-- `error-corpus`: 6/6 byte-for-byte identical between manual and auto modes.
-- `deprecation-test`: 3/3 (FS3885 fires/silent/suppressable).
-- `end-to-end`: PASS (scaffold-and-build-fresh-project).
-- `fcs-smoke-test`: PASS (FSharpChecker.ParseAndCheckProject).
-- `fcs-ide-smoke-test`: 7/7 (Completions, Go-to-Def, Find References, FS3885).
-- `cycle-test-b4`: PASS (cross-file mutual recursion via cycle synthesis).
+Full upstream F# test suite: 15,404 tests, 0 failures (last run before this
+batch of changes; manual mode is bit-for-bit upstream).
 
 ## Commit history of the OSS unblock work
 
@@ -139,3 +150,4 @@ All existing fixtures still pass after each change:
 - `ae9beb404` — Stop stubbing modules — type stubs only. **FsCheck builds.**
 - `49a380e7a` — Hoist opens recursively when synthesising cycle groups.
   **FSharpPlus builds.**
+- `319ac6210` — Empty-longId guards. **Expecto builds.**
