@@ -1,8 +1,6 @@
 {
-  "timestamp": "2026-04-26T05:47:45Z",
-  "result": "noop",
-  "reason": "No open PRs with AI-Issue-Regression-PR label found",
-  "open_prs_checked": 0,
-  "total_labeled_prs": 30,
-  "all_closed": true
+  "timestamp": "2026-04-26T09:16:36Z",
+  "result": "no_eligible_prs",
+  "prs_processed": 0,
+  "notes": "No open PRs with AI-Issue-Regression-PR label found."
 }
