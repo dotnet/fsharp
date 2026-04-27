@@ -53,7 +53,7 @@ dotnet tool install -g paket
 FSC=$(pwd)/../fsharp/artifacts/bin/fsc/Release/net10.0/fsc.dll  # adjust
 dotnet build <project>.fsproj -c Release \
     -p:DotnetFscCompilerPath="$FSC" \
-    -p:OtherFlags="--file-order-auto+ --nowarn:3885"
+    -p:OtherFlags="--file-order-auto+ --nowarn:3887"
 ```
 
 ## What was needed to make this work

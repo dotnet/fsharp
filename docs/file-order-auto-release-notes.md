@@ -16,9 +16,9 @@ to maintain `.fsproj` file ordering by hand.
   and Find-All-References work end-to-end on auto-ordered projects.
 - **Cycle group synthesis** (build path only): a set of files that mutually
   reference each other gets compiled as one synthetic recursive namespace.
-- **`and`-keyword deprecation** (warning **FS3885**): under `--file-order-auto+`,
+- **`and`-keyword deprecation** (warning **FS3887**): under `--file-order-auto+`,
   `type X = ... and Y = ...` now produces a deprecation warning. Suppressable
-  via `--nowarn:3885` or `<NoWarn>3885</NoWarn>`. The warning is silent in
+  via `--nowarn:3887` or `<NoWarn>3887</NoWarn>`. The warning is silent in
   manual mode.
 
 ## What hasn't changed
@@ -76,9 +76,9 @@ the regression sweep at `tests/file-order-auto-test/`.
 | `inference-tests/` | SRTP, record/union disambiguation, operator overloads (4/4). |
 | `fsi-tests/` | `.fsi`/`.fs` pairing with partial coverage and ordering constraints (2/2). |
 | `error-corpus/` | Six error categories, byte-for-byte parity manual vs auto (6/6). |
-| `deprecation-test/` | FS3885 fires/suppresses correctly (3/3). |
+| `deprecation-test/` | FS3887 fires/suppresses correctly (3/3). |
 | `fcs-smoke-test/` | `FSharpChecker.ParseAndCheckProject` reorders via OtherOptions. |
-| `fcs-ide-smoke-test/` | Completions, Go-to-Def, Find-References, FS3885 via FCS. |
+| `fcs-ide-smoke-test/` | Completions, Go-to-Def, Find-References, FS3887 via FCS. |
 | `oss-sweep/` | 13 real-world OSS projects under `--file-order-auto+`. **Auto-mode adds zero errors over baseline for every buildable target.** See [`tests/file-order-auto-test/oss-sweep/RESULTS.md`](../tests/file-order-auto-test/oss-sweep/RESULTS.md). |
 
 ### OSS sweep results

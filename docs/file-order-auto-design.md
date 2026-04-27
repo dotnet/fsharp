@@ -268,7 +268,7 @@ which we haven't implemented).
 | FCS | `src/Compiler/Service/IncrementalBuild.fs` | `computeReorderedFileNames` runs the same logic for `IncrementalBuilder` |
 | MSBuild | `src/FSharp.Build/Microsoft.FSharp.NetSdk.props` + `Targets` + `Fsc.fs` | `FSharpAutoFileOrder=true` → `--file-order-auto+` |
 | Compiler options | `src/Compiler/Driver/CompilerOptions.fs` | flag parsing, default-on/off, help text |
-| Localized strings | `src/Compiler/FSComp.txt` + 13× `xlf` | `optsFileOrderAuto`, FS3885 message |
+| Localized strings | `src/Compiler/FSComp.txt` + 13× `xlf` | `optsFileOrderAuto`, FS3887 message |
 
 ## The chain of refinements (TL;DR)
 

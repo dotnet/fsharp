@@ -72,7 +72,7 @@ make types mutually recursive, see [Migrating off `and`](#migrating-off-and).
 ## Migrating off `and`
 
 When `--file-order-auto+` is set, every `and`-joined type declaration emits
-warning **FS3885**:
+warning **FS3887**:
 
 > The 'and' keyword for mutually recursive types is unnecessary when using
 > `--file-order-auto`. Consider placing types in separate declarations. This
@@ -89,13 +89,13 @@ cycle group automatically.
 The warning is suppressable like any other:
 
 ```xml
-<NoWarn>3885</NoWarn>
+<NoWarn>3887</NoWarn>
 ```
 
 or
 
 ```bash
-fsc --file-order-auto+ --nowarn:3885 ...
+fsc --file-order-auto+ --nowarn:3887 ...
 ```
 
 ## How it works (briefly)

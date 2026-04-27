@@ -1,7 +1,7 @@
 module FcsIdeSmokeTest.Program
 
 // Exercises IDE-style FCS APIs against an auto-ordered project to confirm
-// IntelliSense, Go-to-Definition, Find All References, and the FS3885
+// IntelliSense, Go-to-Definition, Find All References, and the FS3887
 // deprecation warning all flow through the IncrementalBuilder hook added
 // in Track 05 Phase 2.
 
@@ -173,7 +173,7 @@ let main _ =
             assertTrue "FindReferences hits FileA (use site)" (refsInA >= 1)
 
     printfn ""
-    printfn "=== FS3885: `and` keyword deprecation under --file-order-auto+ ==="
+    printfn "=== FS3887: `and` keyword deprecation under --file-order-auto+ ==="
     // Stand-up a separate single-file project to keep the deprecation case isolated.
     let andDir =
         let d = Path.Combine(Path.GetTempPath(), "fcs-ide-and-test")
@@ -195,9 +195,9 @@ and Forest = Tree list
     let andProj = checker.ParseAndCheckProject(andOptions) |> Async.RunSynchronously
     let warnings =
         andProj.Diagnostics
-        |> Array.filter (fun d -> d.ErrorNumber = 3885)
-    printfn "  FS3885 warnings: %d" warnings.Length
-    assertTrue "FS3885 surfaces under auto-order when `and` is used" (warnings.Length >= 1)
+        |> Array.filter (fun d -> d.ErrorNumber = 3887)
+    printfn "  FS3887 warnings: %d" warnings.Length
+    assertTrue "FS3887 surfaces under auto-order when `and` is used" (warnings.Length >= 1)
 
     printfn ""
     if failed = 0 then
