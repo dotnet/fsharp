@@ -34,14 +34,26 @@ let visitSynLongIdent (lid: SynLongIdent) : FileContentEntry list = visitLongIde
 
 let visitLongIdent (lid: LongIdent) =
     match lid with
-    | []
-    | [ _ ] -> []
-    | lid -> [ FileContentEntry.PrefixedIdentifier(longIdentToPath true lid) ]
+    | [] -> []
+    | [ _ ] ->
+        // Single ident: not emitted as a prefix (graph-based ignores 1-segment
+        // refs), but recorded as a FullPathIdentifier so --file-order-auto+
+        // can resolve it via AutoOpen alias when needed.
+        [ FileContentEntry.FullPathIdentifier lid ]
+    | lid ->
+        [
+            FileContentEntry.PrefixedIdentifier(longIdentToPath true lid)
+            FileContentEntry.FullPathIdentifier lid
+        ]
 
 let visitLongIdentForModuleAbbrev (lid: LongIdent) =
     match lid with
     | [] -> []
-    | lid -> [ FileContentEntry.PrefixedIdentifier(longIdentToPath false lid) ]
+    | lid ->
+        [
+            FileContentEntry.PrefixedIdentifier(longIdentToPath false lid)
+            FileContentEntry.FullPathIdentifier lid
+        ]
 
 let visitSynAttribute (a: SynAttribute) : FileContentEntry list =
     [ yield! visitSynLongIdent a.TypeName; yield! visitSynExpr a.ArgExpr ]
@@ -444,7 +456,19 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.Do(expr, _) -> visit expr continuation
             | SynExpr.Assert(expr, _) -> visit expr continuation
             | SynExpr.App(funcExpr = funcExpr; argExpr = argExpr) ->
-                visit funcExpr (fun funcNodes -> visit argExpr (fun argNodes -> funcNodes @ argNodes |> continuation))
+                // Surgical single-ident capture: a bare ident at a function-
+                // application head is recorded as a 1-segment FullPathIdentifier
+                // so --file-order-auto+ can resolve it via AutoOpen alias
+                // (e.g. `transferStream conn` from a file with
+                // `open Suave.Sockets`). Capturing every SynExpr.Ident would
+                // catch local parameters; this is restricted to the function
+                // position. Graph-based resolution ignores FullPathIdentifier.
+                let appHead =
+                    match funcExpr with
+                    | SynExpr.Ident ident -> [ FileContentEntry.FullPathIdentifier [ ident ] ]
+                    | _ -> []
+
+                visit funcExpr (fun funcNodes -> visit argExpr (fun argNodes -> appHead @ funcNodes @ argNodes |> continuation))
             | SynExpr.TypeApp(expr = expr; typeArgs = typeArgs) ->
                 visit expr (fun exprNodes -> exprNodes @ List.collect visitSynType typeArgs |> continuation)
             | SynExpr.LetOrUse({ Bindings = bindings; Body = body }) ->

@@ -106,6 +106,12 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
                     let queryResult = queryTrieDual trie openNS path
                     processIdentifier queryResult acc))
 
+    | FileContentEntry.FullPathIdentifier _ ->
+        // Used by --file-order-auto+ to key dependencies on the trailing
+        // segment of a path. Graph-based resolution keys on the prefix
+        // (via PrefixedIdentifier) and ignores this entry.
+        state
+
     | FileContentEntry.NestedModule(nestedContent = nestedContent) ->
         // We don't want our current state to be affect by any open statements in the nested module
         let nestedState = List.fold (processStateEntry trie) state nestedContent
