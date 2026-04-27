@@ -63,7 +63,7 @@
   <PropertyGroup>
     <!-- These have to be in sync with latest release branch -->
     <VSMajorVersion>18</VSMajorVersion>
-    <VSMinorVersion>4</VSMinorVersion>
+    <VSMinorVersion>7</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
