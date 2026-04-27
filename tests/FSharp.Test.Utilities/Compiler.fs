@@ -582,6 +582,9 @@ module rec Compiler =
         | CS cs -> CS { cs with OutputDirectory = path }
         | _ -> failwith "withOutputDirectory is only supported on F# and C#"
 
+    let withFileOrderAuto (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--file-order-auto+" ] "withFileOrderAuto is only supported on F#" cUnit
+
     let withCheckNulls (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper ["--checknulls+"] "checknulls is only supported in F#" cUnit
 

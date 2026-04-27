@@ -393,6 +393,7 @@
     <Compile Include="TypeChecks\Graph\CompilationFromCmdlineArgsTests.fs" />
     <Compile Include="TypeChecks\Graph\TypedTreeGraph.fs" />
     <Compile Include="TypeChecks\Graph\GraphProcessingTests.fs" />
+    <Compile Include="TypeChecks\FileOrderAuto\FileOrderAutoTests.fs" />
     <Compile Include="TypeChecks\TyparNameTests.fs" />
     <Compile Include="TypeChecks\CheckTypeTests.fs" />
     <Compile Include="TypeChecks\PropertyShadowingTests.fs" />
