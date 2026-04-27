@@ -54,6 +54,4 @@ val applyAutoFileOrder:
 /// - No TcEnv pre-population (FCS has its own incremental machinery)
 /// But sufficient for IDE diagnostics to match `dotnet build` for the
 /// common case (projects without cycles).
-val computeReorderedFileNames:
-    inputs: (ParsedInput * string) list ->
-        string list
+val computeReorderedFileNames: inputs: (ParsedInput * string) list -> string list

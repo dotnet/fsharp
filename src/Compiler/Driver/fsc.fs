@@ -157,9 +157,10 @@ let TypeCheck
         let tcInitialState, inputs =
             if tcConfig.fileOrderAuto && not tcConfig.compilingFSharpCore then
                 let amap = tcImports.GetImportMap()
+
                 let reorderedInputs, tcEnvPrepopulated =
-                    CycleGroupProcessing.applyAutoFileOrder
-                        tcGlobals amap tcInitialState.TcEnvFromSignatures inputs
+                    CycleGroupProcessing.applyAutoFileOrder tcGlobals amap tcInitialState.TcEnvFromSignatures inputs
+
                 let tcState = tcInitialState.NextStateAfterIncrementalFragment tcEnvPrepopulated
                 (tcState, reorderedInputs)
             else

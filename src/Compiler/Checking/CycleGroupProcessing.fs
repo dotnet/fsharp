@@ -21,15 +21,19 @@ let private commonPrefix (longIds: LongIdent list) : LongIdent =
     | [] -> []
     | first :: rest ->
         let mutable prefix = first
+
         for li in rest do
             // Take prefix common between current `prefix` and `li`
-            let pairs = List.zip (List.truncate (min prefix.Length li.Length) prefix)
-                                 (List.truncate (min prefix.Length li.Length) li)
+            let pairs =
+                List.zip (List.truncate (min prefix.Length li.Length) prefix) (List.truncate (min prefix.Length li.Length) li)
+
             let common =
                 pairs
                 |> List.takeWhile (fun (a: Ident, b: Ident) -> a.idText = b.idText)
                 |> List.map fst
+
             prefix <- common
+
         prefix
 
 /// Given a top-level SynModuleOrNamespace and a common prefix to strip,
@@ -50,18 +54,23 @@ let rec private hoistOpens (decls: SynModuleDecl list) : SynModuleDecl list =
         | SynModuleDecl.NestedModule(info, isRec, inner, isCont, m, trivia) ->
             SynModuleDecl.NestedModule(info, isRec, hoistOpens inner, isCont, m, trivia)
         | other -> other
+
     let rewritten = decls |> List.map rewriteNested
+
     let opens, others =
         rewritten
         |> List.partition (fun d ->
             match d with
             | SynModuleDecl.Open _ -> true
             | _ -> false)
+
     opens @ others
 
 /// For other kinds: skip (rare edge case).
 let private rewriteAsNestedDecls (prefix: LongIdent) (modOrNs: SynModuleOrNamespace) : SynModuleDecl list =
-    let (SynModuleOrNamespace(longId, _isRec, kind, decls, xmlDoc, attribs, accessibility, range, _trivia)) = modOrNs
+    let (SynModuleOrNamespace(longId, _isRec, kind, decls, xmlDoc, attribs, accessibility, range, _trivia)) =
+        modOrNs
+
     let decls = hoistOpens decls
     let prefixLen = prefix.Length
 
@@ -69,25 +78,22 @@ let private rewriteAsNestedDecls (prefix: LongIdent) (modOrNs: SynModuleOrNamesp
     | SynModuleOrNamespaceKind.NamedModule ->
         // Strip the common prefix from the longId; what remains becomes the nested module name
         let remainingId = List.skip prefixLen longId
+
         match remainingId with
-        | [] -> []  // Module name was entirely the prefix; skip
+        | [] -> [] // Module name was entirely the prefix; skip
         | name ->
             let componentInfo =
-                SynComponentInfo(
-                    attribs,
-                    None,
-                    [],
-                    name,
-                    xmlDoc,
-                    false,
-                    accessibility,
-                    range
-                )
-            let nestedModuleTrivia : SynModuleDeclNestedModuleTrivia = {
-                ModuleKeyword = None
-                EqualsRange = None
-            }
-            [ SynModuleDecl.NestedModule(componentInfo, false, decls, false, range, nestedModuleTrivia) ]
+                SynComponentInfo(attribs, None, [], name, xmlDoc, false, accessibility, range)
+
+            let nestedModuleTrivia: SynModuleDeclNestedModuleTrivia =
+                {
+                    ModuleKeyword = None
+                    EqualsRange = None
+                }
+
+            [
+                SynModuleDecl.NestedModule(componentInfo, false, decls, false, range, nestedModuleTrivia)
+            ]
 
     | SynModuleOrNamespaceKind.DeclaredNamespace ->
         // If the namespace matches the common prefix exactly, splice its decls
@@ -96,6 +102,7 @@ let private rewriteAsNestedDecls (prefix: LongIdent) (modOrNs: SynModuleOrNamesp
         // file declares `namespace Fantomas.Core.Extras`), wrap the decls in a nested
         // module with the remaining segments as the name.
         let remainingId = List.skip prefixLen longId
+
         match remainingId with
         | [] ->
             // Namespace == prefix; splice decls directly
@@ -104,11 +111,16 @@ let private rewriteAsNestedDecls (prefix: LongIdent) (modOrNs: SynModuleOrNamesp
             // Wrap in a nested module representing the namespace tail
             let componentInfo =
                 SynComponentInfo(attribs, None, [], extra, xmlDoc, false, accessibility, range)
-            let nestedModuleTrivia : SynModuleDeclNestedModuleTrivia = {
-                ModuleKeyword = None
-                EqualsRange = None
-            }
-            [ SynModuleDecl.NestedModule(componentInfo, false, decls, false, range, nestedModuleTrivia) ]
+
+            let nestedModuleTrivia: SynModuleDeclNestedModuleTrivia =
+                {
+                    ModuleKeyword = None
+                    EqualsRange = None
+                }
+
+            [
+                SynModuleDecl.NestedModule(componentInfo, false, decls, false, range, nestedModuleTrivia)
+            ]
 
     | _ ->
         // AnonModule / GlobalNamespace — splice decls directly
@@ -120,7 +132,7 @@ let private rewriteAsNestedDecls (prefix: LongIdent) (modOrNs: SynModuleOrNamesp
 let synthesizeCycleGroupImpl (groupId: int) (files: ParsedImplFileInput list) : ParsedImplFileInput =
     match files with
     | [] -> failwith "synthesizeCycleGroupImpl: empty file list"
-    | [ single ] -> single  // Single-file group is just that file
+    | [ single ] -> single // Single-file group is just that file
     | _ ->
         let firstFile = List.head files
         let (ParsedImplFileInput(_, isScript, _, _, _, _, trivia, _)) = firstFile
@@ -162,14 +174,15 @@ let synthesizeCycleGroupImpl (groupId: int) (files: ParsedImplFileInput list) : 
         // `namespace rec FsCheck`, the second file's `open` statements end
         // up after the first file's let bindings → FS3200. Hoist all opens
         // to the top of the synthesised namespace, then concat the rest.
-        let allRewritten =
-            allTopLevels |> List.collect (rewriteAsNestedDecls prefix)
+        let allRewritten = allTopLevels |> List.collect (rewriteAsNestedDecls prefix)
+
         let opens, others =
             allRewritten
             |> List.partition (fun d ->
                 match d with
                 | SynModuleDecl.Open _ -> true
                 | _ -> false)
+
         let nestedDecls = opens @ others
 
         let mergedContent =
@@ -178,16 +191,19 @@ let synthesizeCycleGroupImpl (groupId: int) (files: ParsedImplFileInput list) : 
                     SynModuleOrNamespaceKind.GlobalNamespace, []
                 else
                     SynModuleOrNamespaceKind.DeclaredNamespace, prefix
-            let nsTrivia : SynModuleOrNamespaceTrivia = {
-                LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Namespace mergedRange
-            }
+
+            let nsTrivia: SynModuleOrNamespaceTrivia =
+                {
+                    LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Namespace mergedRange
+                }
+
             SynModuleOrNamespace(
                 longId,
-                true,  // isRecursive — KEY for mutual recursion
+                true, // isRecursive — KEY for mutual recursion
                 kind,
                 nestedDecls,
                 PreXmlDoc.Empty,
-                [],  // attribs
+                [], // attribs
                 None, // accessibility
                 mergedRange,
                 nsTrivia
@@ -195,8 +211,7 @@ let synthesizeCycleGroupImpl (groupId: int) (files: ParsedImplFileInput list) : 
 
         let isLastCompiland, isExe =
             files
-            |> List.fold (fun (last, exe) (ParsedImplFileInput(flags = (l, e))) ->
-                (last || l), (exe || e)) (false, false)
+            |> List.fold (fun (last, exe) (ParsedImplFileInput(flags = (l, e))) -> (last || l), (exe || e)) (false, false)
 
         let allIdentifiers =
             files
@@ -220,18 +235,19 @@ let synthesizeCycleGroupImpl (groupId: int) (files: ParsedImplFileInput list) : 
             | null -> None
             | "" -> None
             | v -> Some v
+
         match debugPathOpt with
         | Some p ->
             use w = System.IO.File.AppendText(p)
             w.WriteLine(sprintf "=== Synthesized cycle group %d ===" groupId)
             w.WriteLine(sprintf "  prefix: %s" (prefix |> List.map (fun i -> i.idText) |> String.concat "."))
             w.WriteLine(sprintf "  files: %d, top-level decls: %d" files.Length nestedDecls.Length)
+
             for d in nestedDecls do
                 match d with
                 | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = lid)) ->
                     w.WriteLine(sprintf "    nested module: %s" (lid |> List.map (fun i -> i.idText) |> String.concat "."))
-                | _ ->
-                    w.WriteLine(sprintf "    other decl: %A" d)
+                | _ -> w.WriteLine(sprintf "    other decl: %A" d)
         | None -> ()
 
         result
@@ -269,23 +285,10 @@ let synthesizeCycleGroupSig (groupId: int) (files: ParsedSigFileInput list) : Pa
             files
             |> List.fold (fun acc (ParsedSigFileInput(identifiers = ids)) -> Set.union acc ids) Set.empty
 
-        ParsedSigFileInput(
-            syntheticFileName,
-            firstQualName,
-            allHashDirectives,
-            recursiveContents,
-            trivia,
-            allIdentifiers
-        )
-
+        ParsedSigFileInput(syntheticFileName, firstQualName, allHashDirectives, recursiveContents, trivia, allIdentifiers)
 
 /// High-level entry point: apply --file-order-auto+ behavior to a list of parsed inputs.
-let applyAutoFileOrder
-    (g: TcGlobals)
-    (amap: ImportMap)
-    (tcEnv: TcEnv)
-    (inputs: ParsedInput list)
-    : ParsedInput list * TcEnv =
+let applyAutoFileOrder (g: TcGlobals) (amap: ImportMap) (tcEnv: TcEnv) (inputs: ParsedInput list) : ParsedInput list * TcEnv =
 
     if List.isEmpty inputs then
         (inputs, tcEnv)
@@ -300,18 +303,26 @@ let applyAutoFileOrder
 
         // Step 2: compute dependency-ordered compilation units
         let units = computeCompilationUnits fileDecls
+
         if not (isNull (System.Environment.GetEnvironmentVariable "FSHARP_FILE_ORDER_AUTO_TRACE")) then
             eprintfn "[file-order-auto] units (%d):" units.Length
+
             for u in units do
                 match u with
                 | SingleFile i -> eprintfn "  Single %s" ((fileDecls.[i].FileName |> System.IO.Path.GetFileName |> string))
                 | CycleGroup is ->
-                    let names = is |> List.map (fun i -> (fileDecls.[i].FileName |> System.IO.Path.GetFileName |> string)) |> String.concat ", "
+                    let names =
+                        is
+                        |> List.map (fun i -> (fileDecls.[i].FileName |> System.IO.Path.GetFileName |> string))
+                        |> String.concat ", "
+
                     eprintfn "  CycleGroup [%s]" names
+
         let inputsArray = inputs |> List.toArray
 
         // Step 3: process each unit (single files pass through, cycle groups synthesize)
         let mutable nextGroupId = 0
+
         let processedInputs =
             units
             |> Array.toList
@@ -323,7 +334,8 @@ let applyAutoFileOrder
                     // Cycle groups containing .fsi files fall back to original order
                     // (sig/impl pairing complications — see Track 03 plan).
                     let hasSigFile =
-                        groupFiles |> List.exists (fun f ->
+                        groupFiles
+                        |> List.exists (fun f ->
                             match f with
                             | ParsedInput.SigFile _ -> true
                             | _ -> false)
@@ -340,33 +352,52 @@ let applyAutoFileOrder
                             cs |> List.map (fun (SynModuleOrNamespace(longId = lid; kind = k)) -> lid, k)
                         | ParsedInput.SigFile(ParsedSigFileInput(contents = cs)) ->
                             cs |> List.map (fun (SynModuleOrNamespaceSig(longId = lid; kind = k)) -> lid, k)
+
                     let allLongIds = groupFiles |> List.collect topLevelLongIds
                     let prefix = allLongIds |> List.map fst |> commonPrefix
+
                     let wouldWrapANamespace =
-                        allLongIds |> List.exists (fun (lid, kind) ->
-                            kind = SynModuleOrNamespaceKind.DeclaredNamespace
-                            && lid.Length > prefix.Length)
+                        allLongIds
+                        |> List.exists (fun (lid, kind) -> kind = SynModuleOrNamespaceKind.DeclaredNamespace && lid.Length > prefix.Length)
+
                     if hasSigFile || wouldWrapANamespace then
                         groupFiles
                     else
                         let impls =
-                            groupFiles |> List.choose (fun f ->
+                            groupFiles
+                            |> List.choose (fun f ->
                                 match f with
                                 | ParsedInput.ImplFile i -> Some i
                                 | _ -> None)
+
                         let groupId = nextGroupId
                         nextGroupId <- nextGroupId + 1
-                        if impls.IsEmpty then []
-                        else [ ParsedInput.ImplFile(synthesizeCycleGroupImpl groupId impls) ])
+
+                        if impls.IsEmpty then
+                            []
+                        else
+                            [ ParsedInput.ImplFile(synthesizeCycleGroupImpl groupId impls) ])
 
         // Step 4: fix up IsLastCompiland on the actual last file
         let reorderedInputs =
             let lastIdx = processedInputs.Length - 1
-            processedInputs |> List.mapi (fun i input ->
+
+            processedInputs
+            |> List.mapi (fun i input ->
                 match input with
-                | ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (_, isExe), trivia, idents)) ->
+                | ParsedInput.ImplFile(ParsedImplFileInput(fileName,
+                                                           isScript,
+                                                           qualName,
+                                                           hashDirectives,
+                                                           contents,
+                                                           (_, isExe),
+                                                           trivia,
+                                                           idents)) ->
                     let isLast = (i = lastIdx)
-                    ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (isLast, isExe), trivia, idents))
+
+                    ParsedInput.ImplFile(
+                        ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, contents, (isLast, isExe), trivia, idents)
+                    )
                 | sigFile -> sigFile)
 
         (reorderedInputs, tcEnvPrepopulated)
@@ -374,7 +405,8 @@ let applyAutoFileOrder
 /// Level-A-only reorder for FCS. Returns just the dependency-ordered
 /// file names; cycle groups remain in original position.
 let computeReorderedFileNames (inputs: (ParsedInput * string) list) : string list =
-    if List.isEmpty inputs then []
+    if List.isEmpty inputs then
+        []
     else
         // Collect FileDeclarations from each parsed input.
         // Mirrors runEnterPhase: enrich Opens/IdentifierRefs from FileContentMapping
@@ -384,8 +416,14 @@ let computeReorderedFileNames (inputs: (ParsedInput * string) list) : string lis
             |> List.toArray
             |> Array.mapi (fun idx (input, fileName) ->
                 let fd = collectFileDeclarations idx fileName input
-                let fileInProject : FileInProject =
-                    { Idx = idx; FileName = fileName; ParsedInput = input }
+
+                let fileInProject: FileInProject =
+                    {
+                        Idx = idx
+                        FileName = fileName
+                        ParsedInput = input
+                    }
+
                 let fileContentEntries = FileContentMapping.mkFileContent fileInProject
 
                 let opensSet = System.Collections.Generic.HashSet<string>()
@@ -393,21 +431,25 @@ let computeReorderedFileNames (inputs: (ParsedInput * string) list) : string lis
                 let extraOpens = ResizeArray<LongIdent>()
                 let identRefs = ResizeArray<LongIdent>()
 
-                let toIdents (parts: string list) = parts |> List.map (fun s -> Ident(s, range0))
+                let toIdents (parts: string list) =
+                    parts |> List.map (fun s -> Ident(s, range0))
 
                 let rec collectRefs (entry: FileContentEntry) =
                     match entry with
                     | FileContentEntry.OpenStatement path ->
                         let key = String.concat "." path
+
                         if path.Length > 0 && opensSet.Add(key) then
                             extraOpens.Add(toIdents path)
                     | FileContentEntry.PrefixedIdentifier path ->
                         let key = String.concat "." path
+
                         if path.Length > 0 && refsSet.Add(key) then
                             identRefs.Add(toIdents path)
                     | FileContentEntry.TopLevelNamespace(_, nested)
                     | FileContentEntry.NestedModule(_, nested) ->
-                        for n in nested do collectRefs n
+                        for n in nested do
+                            collectRefs n
                     | _ -> ()
 
                 for entry in fileContentEntries do
@@ -415,7 +457,8 @@ let computeReorderedFileNames (inputs: (ParsedInput * string) list) : string lis
 
                 { fd with
                     Opens = fd.Opens @ List.ofSeq extraOpens
-                    IdentifierRefs = List.ofSeq identRefs })
+                    IdentifierRefs = List.ofSeq identRefs
+                })
 
         // Compute compilation units (Level A only — we'll keep cycle groups in place)
         let units = computeCompilationUnits parsedArray

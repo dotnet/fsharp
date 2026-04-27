@@ -70,7 +70,7 @@ val runEnterPhase:
     amap: Import.ImportMap ->
     tcEnv: CheckBasics.TcEnv ->
     parsedInputs: (string * ParsedInput) array ->
-    CheckBasics.TcEnv * FileDeclarations array
+        CheckBasics.TcEnv * FileDeclarations array
 
 /// Compute the dependency-ordered file indices from FileDeclarations.
 /// Returns file indices in topological order (dependencies before dependents).
