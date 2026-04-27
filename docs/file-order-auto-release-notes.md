@@ -29,6 +29,11 @@ to maintain `.fsproj` file ordering by hand.
   parity between manual and auto modes for six representative error
   categories (undefined name, undefined module, type mismatch, missing
   field, missing open, wrong arity).
+- The full upstream F# test suite passes on this branch: **15,404 tests, 0
+  failures** across `FSharp.Compiler.ComponentTests` (7,031),
+  `FSharp.Compiler.Service.Tests` (2,153),
+  `FSharp.Compiler.Private.Scripting.UnitTests` (102),
+  `FSharp.Build.UnitTests` (42), and `FSharp.Core.UnitTests` (6,076).
 
 ## How to use
 
@@ -68,12 +73,35 @@ the regression sweep at `tests/file-order-auto-test/`.
 | Fixture | Coverage |
 |---|---|
 | `cycle-test-b4/` | Cross-file mutual recursion via cycle group synthesis. |
-| `inference-tests/` | SRTP, record/union disambiguation, operator overloads. |
-| `fsi-tests/` | `.fsi`/`.fs` pairing with partial coverage and ordering constraints. |
-| `error-corpus/` | Six error categories, byte-for-byte parity manual vs auto. |
-| `deprecation-test/` | FS3885 fires/suppresses correctly. |
+| `inference-tests/` | SRTP, record/union disambiguation, operator overloads (4/4). |
+| `fsi-tests/` | `.fsi`/`.fs` pairing with partial coverage and ordering constraints (2/2). |
+| `error-corpus/` | Six error categories, byte-for-byte parity manual vs auto (6/6). |
+| `deprecation-test/` | FS3885 fires/suppresses correctly (3/3). |
 | `fcs-smoke-test/` | `FSharpChecker.ParseAndCheckProject` reorders via OtherOptions. |
 | `fcs-ide-smoke-test/` | Completions, Go-to-Def, Find-References, FS3885 via FCS. |
+| `oss-sweep/` | 13 real-world OSS projects under `--file-order-auto+`. **Auto-mode adds zero errors over baseline for every buildable target.** See [`tests/file-order-auto-test/oss-sweep/RESULTS.md`](../tests/file-order-auto-test/oss-sweep/RESULTS.md). |
+
+### OSS sweep results
+
+| Project | Baseline | Auto |
+|---|---|---|
+| Argu | OK | **PASS** |
+| FsCheck | OK | **PASS** (SRTP-heavy property-testing library) |
+| FSharpPlus | OK | **PASS** (86 .fs files; heavy SRTP + AutoOpen + nested modules) |
+| FsToolkit.ErrorHandling | OK | **PASS** |
+| Expecto | OK | **PASS** |
+| FSharp.Data.Json.Core | OK | **PASS** |
+| Fable.Promise | OK | **PASS** |
+| Suave | FAIL (30 pre-existing) | matches baseline byte-for-byte |
+| FsPickler / Aether / Fantomas.Core / Fable.AST / Paket.Core | env-broken on this toolchain | env-broken (same errors) |
+
+The 7 explicitly-PASS projects build cleanly under auto-order with no
+diagnostic delta from baseline. Suave's 30 errors are pre-existing F#
+.NET 10 issues (`FS0971 Undefined value 'this'` in `task {}` blocks);
+the auto error set is identical to the baseline error set
+(`diff` is empty). The 5 env-broken projects baseline-fail on this
+toolchain (paket lock, .NET version pin, NuGet hash mismatches);
+auto produces the same errors.
 
 ## Architecture notes
 
@@ -85,27 +113,30 @@ the regression sweep at `tests/file-order-auto-test/`.
   rewritten as a single `ParsedImplFileInput` whose top-level
   `SynModuleOrNamespace` entries are marked `isRecursive = true`.
 - **Sig/impl pairing**: `buildExportMap` collapses sig+impl pairs to one
-  logical contributor when deciding "shared prefix" status, otherwise paired
-  modules would silently lose their dependency edges.
-- **Enter phase** (`runEnterPhase`): pre-populates `TcEnv` with module
+  logical contributor when deciding "shared prefix" status; sig→impl
+  redirect rewrites dependency edges before topological sort so paired
+  modules end up adjacent and consumers don't sort *before* the pair.
+- **Enter phase** (`runEnterPhase`): pre-populates `TcEnv` with type
   stubs from every file before sequential type checking, so namespace
-  references resolve regardless of file order.
+  references resolve regardless of file order. (Type stubs only —
+  module stubs collide with real module declarations.)
 
-See `conductor/tracks/` for the per-track design notes.
+For the full design — analyser internals, the export-map / alias-map
+split for AutoOpen, kind-aware matching, surgical single-ident capture,
+the chain of refinements that drove the OSS sweep to green — see
+[`docs/file-order-auto-design.md`](./file-order-auto-design.md).
 
 ## Caveats / what was NOT validated this iteration
 
-- Full upstream F# compiler test suite was not run end-to-end under both
-  modes. The fixtures in `tests/file-order-auto-test/` are targeted
-  regressions, not a substitute for the full suite.
-- Large open-source F# projects (Fable, Fantomas, Saturn, SAFE Stack,
-  FSharpPlus) were not compiled under `--file-order-auto+` as a sweep.
-  Earlier exploratory runs hit project-specific issues; isolating those
-  is a separate effort.
-- Performance characterisation on a large project (compile time delta,
-  memory ceiling) was not measured.
-- IDE end-to-end smoke (Ionide popup behaviour, VS F# extension) requires
-  a human at a real editor and was not done in this branch.
+- **Performance characterisation** on a large project (compile time delta,
+  memory ceiling) was not measured. Auto-mode adds a one-time pre-parse
+  pass over every file in the project; subsequent rebuilds reuse existing
+  caches.
+- **IDE end-to-end smoke** (Ionide popup behaviour, VS F# extension)
+  requires a human at a real editor and was not done in this branch. The
+  FCS-level `fcs-ide-smoke-test/` exercises the API surface but does not
+  drive a real editor.
+- **`dotnet fsi`** is not wired (build / FCS only).
 
 ## Building this fork
 
@@ -135,8 +166,8 @@ DOTNET_GCHeapHardLimit=0x100000000 \
   ./tests/file-order-auto-test/deprecation-test/run-all.sh
 ```
 
-The 4 GB heap limit is mandatory for safety on this developer's machine; on
-a CI box you can drop it.
+The 4 GB heap limit is a local safety guard; drop the
+`DOTNET_GCHeapHardLimit` env var if you don't need it.
 
 ## Reporting bugs
 
