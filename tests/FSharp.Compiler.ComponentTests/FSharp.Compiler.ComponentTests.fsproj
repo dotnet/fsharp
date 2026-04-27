@@ -485,6 +485,7 @@
     <Compile Include="Signatures\MemberTests.fs" />
     <Compile Include="StaticLinking\StaticLinking.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
+    <Compile Include="FSharpChecker\FileOrderAutoIncremental.fs" />
     <Compile Include="FSharpChecker\ProjectSnapshot.fs" />
     <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
