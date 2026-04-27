@@ -16,7 +16,7 @@ ImplFile
                             Range = (2,2--2,15) }]
                         Range = (2,0--2,17) }], None, [], [CFoo],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,9)),
+                     false, None, (3,5--3,9), None),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor

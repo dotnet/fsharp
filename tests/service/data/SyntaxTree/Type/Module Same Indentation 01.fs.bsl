@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [A],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,6)),
+                     false, None, (4,5--4,6), None),
                   Simple
                     (Union
                        (None,
@@ -45,7 +45,7 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [B],
                  PreXmlDoc ((8,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (8,0--8,8)), false,
+                 None, (8,0--8,8), None), false,
               [Let
                  (false,
                   [SynBinding
@@ -67,7 +67,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [C],
                      PreXmlDoc ((11,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (11,5--11,6)),
+                     false, None, (11,5--11,6), None),
                   Simple
                     (Record
                        (None,

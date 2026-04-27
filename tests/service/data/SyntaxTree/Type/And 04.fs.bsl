@@ -8,7 +8,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [A],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,6)),
+                     false, None, (3,5--3,6), None),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([int], [], [None])),
@@ -20,7 +20,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [],
                      PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (6,0--6,0)),
+                     false, None, (6,0--6,0), None),
                   Simple (None (6,0--6,0), (6,0--6,0)), [], None, (6,0--6,0),
                   { LeadingKeyword = And (5,0--5,3)
                     EqualsRange = None

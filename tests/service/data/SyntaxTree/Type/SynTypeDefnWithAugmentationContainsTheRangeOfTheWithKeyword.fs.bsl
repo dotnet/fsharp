@@ -12,7 +12,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [Int32],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,10)),
+                     false, None, (2,5--2,10), None),
                   ObjectModel (Augmentation (2,11--2,15), [], (2,5--3,21)),
                   [Member
                      (SynBinding

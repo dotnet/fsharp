@@ -8,7 +8,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [T],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,6)),
+                     false, None, (3,5--3,6), None),
                   ObjectModel
                     (Unspecified,
                      [Interface
@@ -22,7 +22,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [T2],
                      PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (6,5--6,7)),
+                     false, None, (6,5--6,7), None),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([int], [], [None])),

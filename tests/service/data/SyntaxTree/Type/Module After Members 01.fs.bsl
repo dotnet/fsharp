@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [ClassWithMembers],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,21)),
+                     false, None, (4,5--4,21), None),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
@@ -83,7 +83,7 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [InvalidModule],
                  PreXmlDoc ((8,4), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (8,4--8,24)), false,
+                 None, (8,4--8,24), None), false,
               [Let
                  (false,
                   [SynBinding

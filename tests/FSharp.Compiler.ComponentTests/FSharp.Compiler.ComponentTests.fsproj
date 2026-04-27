@@ -55,6 +55,7 @@
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs" />
+    <Compile Include="Conformance\Members\CheckEntityDefnEdgeCases.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MemberDefinitions.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />
@@ -141,6 +142,7 @@
     <Compile Include="Conformance\LexicalAnalysis\IdentifiersAndKeywords.fs" />
     <Compile Include="Conformance\LexicalAnalysis\IdentifierReplacements.fs" />
     <Compile Include="Conformance\LexicalAnalysis\ConditionalCompilation.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\PreprocessorElif.fs" />
     <Compile Include="Conformance\LexicalFiltering\HashLight\HashLight.fs" />
     <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication\HighPrecedenceApplication.fs" />
     <Compile Include="Conformance\LexicalFiltering\OffsideExceptions\OffsideExceptions.fs" />
@@ -171,6 +173,7 @@
     <Compile Include="Conformance\Types\TypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
+    <Compile Include="Conformance\Types\TypeConstraints\ExtensionConstraints\ExtensionConstraintsTests.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionTypes.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionStructTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic\Basic.fs" />

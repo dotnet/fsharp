@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [ClassWithDo],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,16)),
+                     false, None, (4,5--4,16), None),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
@@ -45,7 +45,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [InternalType],
                      PreXmlDoc ((8,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (8,9--8,21)),
+                     false, None, (8,9--8,21), None),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([int], [], [None])),
@@ -57,7 +57,7 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [InternalModule],
                  PreXmlDoc ((10,4), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (10,4--10,25)), false,
+                 None, (10,4--10,25), None), false,
               [Let
                  (false,
                   [SynBinding

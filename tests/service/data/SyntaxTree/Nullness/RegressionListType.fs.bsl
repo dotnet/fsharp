@@ -15,7 +15,7 @@ ImplFile
                                { AmpersandRanges = [] })], [], (1,9--1,13))), [],
                      [List],
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (1,5--1,9)),
+                     true, None, (1,5--1,9), None),
                   Simple
                     (Union
                        (None,

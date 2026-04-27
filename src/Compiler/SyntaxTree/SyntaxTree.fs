@@ -1390,7 +1390,8 @@ type SynComponentInfo =
         xmlDoc: PreXmlDoc *
         preferPostfix: bool *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        synType: SynType option
 
     member this.Range =
         match this with

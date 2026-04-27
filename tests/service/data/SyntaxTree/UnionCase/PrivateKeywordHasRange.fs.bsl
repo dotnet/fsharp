@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [Currency],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,13)),
+                     false, None, (2,5--2,13), None),
                   Simple
                     (Union
                        (Some (Private (7,4--7,11)),

@@ -8,7 +8,7 @@ SigFile
              (SynComponentInfo
                 ([], None, [], [X],
                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (4,0--4,8)), false,
+                 None, (4,0--4,8), None), false,
               [Val
                  (SynValSig
                     ([], SynIdent (bar, None), SynValTyparDecls (None, true),

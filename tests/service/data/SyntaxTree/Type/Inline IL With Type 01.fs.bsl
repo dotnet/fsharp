@@ -37,21 +37,16 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([],
-                     Some
-                       (PrefixList
-                          ([SynTyparDecl
-                              ([], SynTypar (T, None, false), [],
-                               { AmpersandRanges = [] })], (4,27--4,31))), [],
-                     [x],
+                    ([], None, [], [],
                      PreXmlDoc ((4,22), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,32--4,33)),
-                  Simple (None (4,32--4,33), (4,32--4,33)), [], None,
-                  (4,32--4,33), { LeadingKeyword = Type (4,22--4,26)
+                     false, None, (4,28--4,30),
+                     Some (Var (SynTypar (T, None, false), (4,28--4,30)))),
+                  Simple (None (4,28--4,30), (4,28--4,30)), [], None,
+                  (4,28--4,30), { LeadingKeyword = Type (4,22--4,26)
                                   EqualsRange = None
-                                  WithKeyword = None })], (4,22--4,33))],
+                                  WithKeyword = None })], (4,22--4,30))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (2,0--4,33), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
+          (2,0--4,30), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,62)] }, set []))
@@ -60,4 +55,4 @@ ImplFile
 (4,4)-(4,5) parse error Unmatched '('
 (4,22)-(4,26) parse error Unexpected keyword 'type' in binding. Expected incomplete structured construct at or before this point or other token.
 (3,0)-(3,3) parse error Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.
-(4,34)-(4,35) parse error Unexpected symbol ':' in type definition. Expected '=' or other token.
+(4,32)-(4,33) parse error Unexpected identifier in type definition. Expected '=' or other token.

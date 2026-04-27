@@ -13,6 +13,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
@@ -426,6 +427,9 @@ type cenv =
       
       emitTailcalls: bool
       
+      /// Fallback trait context for resolving extension method constraints during optimization
+      traitCtxt: ITraitContext option
+
       /// cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
       casApplied: Dictionary<Stamp, bool>
 
@@ -466,7 +470,10 @@ type IncrementalOptimizationEnv =
 
       methEnv: MethodEnv
 
-      globalModuleInfos: LayeredMap<string, LazyModuleInfo>   
+      globalModuleInfos: LayeredMap<string, LazyModuleInfo>
+
+      /// Referenced CCUs collected via BindCcu, used for cross-assembly extension member resolution
+      referencedCcus: CcuThunk list
     }
 
     static member Empty = 
@@ -478,7 +485,8 @@ type IncrementalOptimizationEnv =
           disableMethodSplitting = false
           localExternalVals = LayeredMap.Empty 
           globalModuleInfos = LayeredMap.Empty 
-          methEnv = { pipelineCount = 0 } }
+          methEnv = { pipelineCount = 0 }
+          referencedCcus = [] }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -619,7 +627,9 @@ let BindTyparsToUnknown (tps: Typar list) env =
     List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
-    { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
+    { env with
+        globalModuleInfos = env.globalModuleInfos.Add(ccu.AssemblyName, mval)
+        referencedCcus = ccu :: env.referencedCcus }
 
 /// Lookup information about values 
 let GetInfoForLocalValue cenv env (v: Val) m = 
@@ -3016,8 +3026,18 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
     let g = cenv.g
 
+    // If the trait context is missing (e.g. from inlined FSharp.Core operators) and we have
+    // a fallback context from the current compilation unit, create a new trait info with it.
+    let traitInfoForResolution =
+        match traitInfo.TraitContext, cenv.traitCtxt with
+        | None, Some tc when g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions ->
+            let (TTrait(a, b, c, d, e, f, _, _)) = traitInfo
+            TTrait(a, b, c, d, e, f, ref None, Some tc)
+        | _ -> 
+            traitInfo
+
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
-    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfo args with
+    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfoForResolution args with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
 
@@ -4390,7 +4410,13 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
     env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment,  emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls: CheckedImplFile) =
+    let traitCtxt =
+        if tcGlobals.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            Some(ConstraintSolver.CreateImplFileTraitContext tcGlobals [mimpls.Contents] optEnv.referencedCcus :> ITraitContext)
+        else
+            None
+
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -4400,6 +4426,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           optimizing=true
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
+          traitCtxt=traitCtxt
           casApplied=Dictionary<Stamp, bool>() 
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig

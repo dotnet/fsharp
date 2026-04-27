@@ -9,7 +9,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [X],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,6)),
+                     false, None, (4,5--4,6), None),
                   ObjectModel
                     (Unspecified,
                      [Member
@@ -40,7 +40,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [Y],
                      PreXmlDoc ((11,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (11,5--11,6)),
+                     false, None, (11,5--11,6), None),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([int], [], [None])),
@@ -53,7 +53,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [Z],
                      PreXmlDoc ((14,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (14,5--14,6)),
+                     false, None, (14,5--14,6), None),
                   Simple (None (14,5--15,32), (14,5--15,32)),
                   [Member
                      (SynValSig

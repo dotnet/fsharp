@@ -12,7 +12,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [Teq],
                      PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (5,5--5,8)),
+                     false, None, (5,5--5,8), None),
                   ObjectModel (Class, [], (5,11--5,20)), [], None, (4,0--5,20),
                   { LeadingKeyword = Type (5,0--5,4)
                     EqualsRange = Some (5,9--5,10)

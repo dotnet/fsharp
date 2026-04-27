@@ -8,7 +8,7 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [A],
                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (3,0--3,8)), false, [], false, (3,0--3,8),
+                 None, (3,0--3,8), None), false, [], false, (3,0--3,8),
               { ModuleKeyword = Some (3,0--3,6)
                 EqualsRange = None });
            Expr (Const (Unit, (5,0--5,2)), (5,0--5,2))],

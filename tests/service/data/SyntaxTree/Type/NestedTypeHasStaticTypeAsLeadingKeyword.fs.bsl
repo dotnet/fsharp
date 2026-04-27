@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [A],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,6)),
+                     false, None, (2,5--2,6), None),
                   ObjectModel
                     (Unspecified,
                      [NestedType
@@ -17,7 +17,7 @@ ImplFile
                            (SynComponentInfo
                               ([], None, [], [B],
                                PreXmlDoc ((3,16), FSharp.Compiler.Xml.XmlDocCollector),
-                               false, None, (3,16--3,17)),
+                               false, None, (3,16--3,17), None),
                             ObjectModel (Class, [], (4,20--5,23)), [], None,
                             (3,16--5,23),
                             { LeadingKeyword =

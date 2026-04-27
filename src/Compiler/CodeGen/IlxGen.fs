@@ -5686,7 +5686,16 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         assert not generateWitnesses
 
         let exprOpt =
-            CommitOperationResult(ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
+            match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs with
+            | OkResult(warns, res) ->
+                ReportWarnings warns
+                res
+            | ErrorResult(warns, _) ->
+                ReportWarnings warns
+                // Resolution may fail for generic inline code with unsolved constraints
+                // (e.g. rigid typars). The NotSupportedException stub below is emitted as
+                // fallback IL; inline functions resolve constraints at each call site.
+                None
 
         match exprOpt with
         | None ->
@@ -7520,8 +7529,18 @@ and ExprRequiresWitness cenv m expr =
 
     match expr with
     | Expr.Op(TOp.TraitCall(traitInfo), _, _, _) ->
-        ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo
-        |> CommitOperationResult
+        match ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo with
+        | OkResult(warns, res) ->
+            ReportWarnings warns
+            res
+        | ErrorResult(warns, _) ->
+            ReportWarnings warns
+            // Constraint resolution failed. This means either:
+            // - All support types are concrete but resolution still failed (shouldn't happen —
+            //   type-checking should have caught it), or
+            // - Support types contain unsolved typars so we genuinely don't know.
+            // Either way, return false → don't use witness path → fall back to dynamic invocation.
+            false
     | _ -> false
 
 /// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.

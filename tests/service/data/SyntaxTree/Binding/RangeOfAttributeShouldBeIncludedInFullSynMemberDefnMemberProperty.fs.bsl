@@ -12,7 +12,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [Bird],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,9)),
+                     false, None, (2,5--2,9), None),
                   ObjectModel
                     (Unspecified,
                      [GetSetMember

@@ -8,7 +8,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [S],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,6)),
+                     false, None, (3,5--3,6), None),
                   ObjectModel
                     (Struct,
                      [ValField

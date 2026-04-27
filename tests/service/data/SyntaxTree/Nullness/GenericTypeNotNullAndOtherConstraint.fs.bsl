@@ -21,7 +21,7 @@ ImplFile
                               (SynTypar (T, None, false), (1,32--1,43))],
                            (1,6--1,44))), [], [C],
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (1,5--1,6)),
+                     true, None, (1,5--1,6), None),
                   ObjectModel (Class, [], (1,47--1,56)), [], None, (1,5--1,56),
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,45--1,46)

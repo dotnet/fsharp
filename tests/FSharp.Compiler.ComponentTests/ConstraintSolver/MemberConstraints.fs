@@ -239,3 +239,23 @@ let inline inverse m =
             """
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension binary operator does not report duplicate candidates`` () =
+        // Regression test: binary operators with same support type (e.g., list<_>) should not report duplicates
+        FSharp """
+open FSharp.Core.CompilerServices
+
+type List<'t> with
+    static member (<*>) (f: list<'T -> 'U>, x: list<'T>) : list<'U> =
+        let mutable coll = ListCollector<'U> ()
+        f |> List.iter (fun f ->
+            x |> List.iter (fun x ->
+                coll.Add (f x)))
+        coll.Close ()
+
+let result = [(+)] <*> [1;10] <*> [2;3]
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed

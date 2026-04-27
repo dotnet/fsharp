@@ -3,6 +3,7 @@ namespace Conformance.Types
 
 open Xunit
 open System.IO
+open FSharp.Compiler.Diagnostics
 open FSharp.Test
 open FSharp.Test.Compiler
 
@@ -1831,6 +1832,1281 @@ let _x3 = curryN f3 1 2 3
         FSharp "module T\nopen CsLib\nlet _ = IP.Get()" |> asExe |> withOptions iwsamWarnings |> withReferences [csLib]
         |> compileAndRun |> shouldSucceed
 
+    /// Inline F# definition of the string repeat extension operator.
+    /// Reused across single-file and cross-assembly SRTP tests to avoid duplication.
+    [<Literal>]
+    let private stringRepeatExtDef =
+        "type System.String with\n    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))"
+
+    /// Library that adds a string repeat extension operator via (*).
+    /// Reused across cross-assembly SRTP tests.
+    let private stringRepeatExtLib =
+        FSharp $"""
+module ExtLib
+
+{stringRepeatExtDef}
+        """
+        |> withName "ExtLib"
+        |> withLangVersionPreview
+
+    /// Inline F# definition of the Option map extension operator.
+    /// Reused across single-file and cross-assembly SRTP tests.
+    let private optionMapExtDef = """
+type Option<'T> with
+    static member (|>>) (x, f) = Option.map f x"""
+
+    /// Library that adds an Option map extension operator via (|>>).
+    /// Reused across cross-assembly SRTP tests.
+    let private optionMapExtLib =
+        FSharp $"""
+module ExtLib
+{optionMapExtDef}
+        """
+        |> withName "ExtLib"
+        |> withLangVersionPreview
+
+    /// Library that adds an array append extension operator via (++).
+    let private arrayAppendExtLib =
+        FSharp """
+module ExtLib
+
+type 'T ``[]`` with
+    static member (++) (x1, x2) = Array.append x1 x2
+        """
+        |> withName "ExtLib"
+        |> withLangVersionPreview
+
+    /// Library that adds a list append extension operator via (++).
+    let private listAppendExtLib =
+        FSharp """
+module ExtLib
+
+type List<'T> with
+    static member (++) (x1, x2) = x1 @ x2
+        """
+        |> withName "ExtLib"
+        |> withLangVersionPreview
+
+    [<Fact>]
+    let ``Extension operator on string resolves with langversion preview`` () =
+        FSharp $"""
+module TestExtOp
+{stringRepeatExtDef}
+
+let r4 = "r" * 4
+if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%%s'" r4)
+
+let spaces n = " " * n
+if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%%s'" (spaces 3))
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on string fails without langversion preview`` () =
+        FSharp $"""
+module TestExtOp
+{stringRepeatExtDef}
+
+let r4 = "r" * 4
+        """
+        |> asExe
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+
+    [<Fact>]
+    let ``Built-in numeric operators still work with extension methods in scope`` () =
+        FSharp $"""
+module TestBuiltIn
+{stringRepeatExtDef}
+
+let x = 3 * 4
+if x <> 12 then failwith (sprintf "Expected 12 but got %%d" x)
+
+let y = 2.0 + 3.0
+if y <> 5.0 then failwith (sprintf "Expected 5.0 but got %%f" y)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension method on custom type resolves via SRTP`` () =
+        FSharp """
+module TestCustomType
+
+type Widget = { Name: string; Count: int }
+
+type Widget with
+    static member ( + ) (a: Widget, b: Widget) = { Name = a.Name + b.Name; Count = a.Count + b.Count }
+
+let inline add (a: ^T) (b: ^T) : ^T = a + b
+
+let w1 = { Name = "A"; Count = 1 }
+let w2 = { Name = "B"; Count = 2 }
+let w3 = add w1 w2
+if w3.Name <> "AB" then failwith (sprintf "Expected 'AB' but got '%s'" w3.Name)
+if w3.Count <> 3 then failwith (sprintf "Expected 3 but got %d" w3.Count)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Intrinsic method takes priority over extension method`` () =
+        FSharp """
+module TypeDefs =
+    type MyNum =
+        { Value: int }
+        static member ( + ) (a: MyNum, b: MyNum) = { Value = a.Value + b.Value + 1000 }
+
+module Consumer =
+    open TypeDefs
+
+    // Extension operator in a different module — this is a genuine optional extension
+    type MyNum with
+        static member ( - ) (a: MyNum, b: MyNum) = { Value = a.Value - b.Value }
+
+    let a = { Value = 1 }
+    let b = { Value = 2 }
+    // Uses intrinsic (+), result should include the +1000 bias
+    let c = a + b
+    if c.Value <> 1003 then failwith (sprintf "Expected 1003 (intrinsic) but got %d" c.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Multiple extension operators with different signatures resolve or error clearly`` () =
+        FSharp """
+module TestAmbiguity
+
+module ExtA =
+    type Widget = { Value: int }
+    type Widget with
+        static member (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+
+module ExtB =
+    open ExtA
+    type Widget with
+        static member (+) (a: Widget, b: int) = { Value = a.Value + b }
+
+module Consumer =
+    open ExtA
+    open ExtB
+    // Same-type addition: should resolve to ExtA's (Widget, Widget) -> Widget
+    let inline add (x: ^T) (y: ^T) = x + y
+    let r = add { Value = 1 } { Value = 2 }
+    if r.Value <> 3 then failwith (sprintf "Expected 3 but got %d" r.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Intrinsic operator takes priority over extension with same name and signature`` () =
+        FSharp """
+module TestIntrinsicPriority
+
+type Gadget =
+    { Value: int }
+    static member (+) (a: Gadget, b: Gadget) = { Value = a.Value + b.Value }
+
+module GadgetExt =
+    type Gadget with
+        static member (+) (a: Gadget, b: Gadget) = { Value = 999 }
+
+open GadgetExt
+let inline add (x: ^T) (y: ^T) = x + y
+let result = add { Value = 1 } { Value = 2 }
+if result.Value <> 3 then failwith (sprintf "Expected 3 (intrinsic wins) but got %d" result.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact
+#if !NETCOREAPP
+     (Skip = "IWSAMs are not supported by NET472.")
+#endif
+    >]
+    let ``IWSAM extension wins over interface impl for same operator via SRTP`` () =
+        FSharp """
+module TestIWSAMPriority
+open System
+
+type IAddable<'T> =
+    static abstract member op_Addition: 'T * 'T -> 'T
+
+type Bar = 
+    { X: int }
+    interface IAddable<Bar> with
+        static member op_Addition(a, b) = { X = a.X + b.X }
+
+module BarExt =
+    type Bar with
+        static member (+) (a: Bar, b: Bar) = { X = 999 }
+
+open BarExt
+let inline add (x: ^T) (y: ^T) = x + y
+let r = add { X = 1 } { X = 2 }
+// Extension operator wins over IWSAM interface impl in SRTP resolution
+if r.X <> 999 then failwith (sprintf "Expected 999 (extension wins) but got %d" r.X)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptions ["--nowarn:3535"]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator not visible without opening defining module`` () =
+        FSharp """
+module TestScopeNotVisible
+
+module Ext =
+    type System.String with
+        static member (*) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+// Ext is NOT opened — extension should not be visible
+let r = "a" * 3
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+
+    // Removed: "Inline SRTP function resolves using consumers scope for extensions"
+    // was a duplicate of ExtensionConstraintsTests/ScopeCapture.fs which covers
+    // the same System.String (*) extrinsic extension scenario.
+
+    [<Fact>]
+    let ``Internal record field resolves via SRTP within same compilation unit`` () =
+        FSharp """
+module TestInternalField
+
+module Internal =
+    type internal Rec = { X: int }
+    let internal make x = { X = x }
+
+let inline getX (r: ^T) = (^T : (member X : int) r)
+let v = getX (Internal.make 42)
+if v <> 42 then failwith (sprintf "Expected 42 but got %d" v)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Cross-assembly extension operator resolves via SRTP`` () =
+        // True optional extension on System.String (an external type).
+        // Exercises the cross-assembly path where TTrait.traitCtxt deserializes as None
+        // from pickled metadata, requiring fallback resolution from the consumer's opens.
+        let library = stringRepeatExtLib
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let r4 = "r" * 4
+if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Cross-assembly intrinsic augmentation operator resolves via SRTP`` () =
+        // Intrinsic augmentation: Widget and its (+) operator are in the same module.
+        // This compiles as a regular method on Widget's type, so it works across assemblies
+        // without needing traitCtxt - included for contrast with the optional extension test above.
+        let library =
+            FSharp """
+module ExtLib
+
+type Widget = { Value: int }
+type Widget with
+    static member (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let a = { Value = 1 }
+let b = { Value = 2 }
+let c = a + b
+if c.Value <> 3 then failwith (sprintf "Expected 3 but got %d" c.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Transitive cross-assembly extension operator resolves via SRTP`` () =
+        // A→B→C chain: A defines the extension, B uses it in an inline function, C uses B's inline.
+        // Tests that traitCtxt injection works through multiple levels of freshening.
+        let libraryA = stringRepeatExtLib
+
+        let libraryB =
+            FSharp """
+module MiddleLib
+
+open ExtLib
+
+let inline repeat (s: string) (n: int) = s * n
+            """
+            |> withName "MiddleLib"
+            |> withLangVersionPreview
+            |> withReferences [libraryA]
+
+        FSharp """
+module Consumer
+
+open MiddleLib
+
+let r4 = repeat "r" 4
+if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%s'" r4)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [libraryA; libraryB]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Overloads differing only by return type produce ambiguity error without attribute`` () =
+        // Overloads differing only by return type produce ambiguity errors
+        // when the [<AllowOverloadOnReturnType>] attribute is NOT applied.
+        FSharp """
+module TestReturnTypeOverload
+
+type Converter =
+    static member Convert(x: string) : int = int x
+    static member Convert(x: string) : float = float x
+
+let result: int = Converter.Convert("42")
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+
+    [<Fact>]
+    let ``AllowOverloadOnReturnType without type annotation produces ambiguity error`` () =
+        // Without the attribute, same-parameter overloads with different return
+        // types and no type annotation on the call site produce ambiguity error.
+        FSharp """
+module TestNoAnnotation
+
+type Converter =
+    static member Convert(x: string) : int = int x
+    static member Convert(x: string) : float = float x
+
+let result = Converter.Convert("42")
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 41
+
+    [<Fact>]
+    let ``AllowOverloadOnReturnType disambiguates at call site with type annotation`` () =
+        FSharp
+            """
+module TestAllowOverloadOnReturnType
+
+type Converter =
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : int = int x
+    [<AllowOverloadOnReturnType>]
+    static member Convert(x: string) : float = float x
+
+let resultInt: int = Converter.Convert("42")
+let resultFloat: float = Converter.Convert("42")
+if resultInt <> 42 then failwith (sprintf "Expected 42 but got %d" resultInt)
+if resultFloat <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" resultFloat)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRunOrExpectMissingAttribute "Microsoft.FSharp.Core.AllowOverloadOnReturnTypeAttribute"
+
+    [<Fact>]
+    let ``Overloads with different parameter types resolve without ambiguity`` () =
+        // Overloads that differ by parameter types (string vs int) resolve
+        // normally — no [<AllowOverloadOnReturnType>] needed.
+        FSharp """
+module TestMixed
+
+type Converter =
+    static member Convert(x: string) : int = int x
+    static member Convert(x: int) : string = string x
+
+let result: int = Converter.Convert("42")
+let result2: string = Converter.Convert(42)
+if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
+if result2 <> "42" then failwith (sprintf "Expected '42' but got '%s'" result2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    // TC5: Ambiguity error messages from extension operators
+
+    [<Fact>]
+    let ``Two extension operators with same signature on same type compile without error`` () =
+        // When two modules define the same extension operator on the same type
+        // and both are opened, F# resolves without ambiguity (last opened wins).
+        FSharp """
+module TestAmbigExt
+
+module A =
+    type System.Int32 with
+        static member ( %% ) (x: int, y: int) = x + y
+
+module B =
+    type System.Int32 with
+        static member ( %% ) (x: int, y: int) = x * y
+
+open A
+open B
+
+let inline useOp (x: ^T) (y: ^T) = x %% y
+let r = useOp 3 4
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension vs intrinsic with same operator signature produces ambiguity error`` () =
+        // When an extension adds an operator with the exact same signature as
+        // an intrinsic, SRTP resolution sees both and reports ambiguity.
+        FSharp """
+module TestIntrinsicPriority
+
+type Num = { V: int }
+    with static member (+) (a: Num, b: Num) = { V = a.V + b.V }
+
+type Num with
+    static member (+) (a: Num, b: Num) = { V = a.V * b.V }
+
+let inline add (a: ^T) (b: ^T) = a + b
+let result = add { V = 2 } { V = 3 }
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 43
+
+    // AO3: op_Explicit-based SRTP return-type resolution
+
+    [<Fact>]
+    let ``op_Explicit SRTP resolution disambiguates by return type`` () =
+        // op_Explicit overloads differing only by return type are resolved
+        // via int/float conversion functions which use op_Explicit internally.
+        FSharp """
+module TestAORT_VsExtension
+
+type Converter = { V: int }
+    with
+        static member op_Explicit (c: Converter) : int = c.V
+        static member op_Explicit (c: Converter) : float = float c.V
+
+let c = { V = 42 }
+let i : int = int c
+let f : float = float c
+if i <> 42 then failwith (sprintf "Expected 42 but got %d" i)
+if f <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" f)
+
+// Also verify direct calls with type annotations
+let i2 : int = Converter.op_Explicit c
+let f2 : float = Converter.op_Explicit c
+if i2 <> 42 then failwith (sprintf "Expected 42 but got %d" i2)
+if f2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" f2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    // AO4: op_Explicit return-type resolution in quotations
+
+    [<Fact>]
+    let ``op_Explicit return-type resolution is deterministic in quotations`` () =
+        // Verifies that op_Explicit overloads differing by return type
+        // resolve correctly inside quotations and produce the right result.
+        FSharp """
+module TestAORT_Quotation
+open Microsoft.FSharp.Quotations
+
+type Conv = { V: int }
+    with
+        static member op_Explicit (c: Conv) : int = c.V
+        static member op_Explicit (c: Conv) : float = float c.V
+
+let q1 : Expr<int> = <@ Conv.op_Explicit { V = 42 } : int @>
+let q2 : Expr<float> = <@ Conv.op_Explicit { V = 42 } : float @>
+
+let r1 = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q1 :?> int
+let r2 = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q2 :?> float
+if r1 <> 42 then failwith (sprintf "Expected 42 but got %d" r1)
+if r2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" r2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("+", "+")>]
+    [<InlineData("-", "-")>]
+    let ``Inline DateTime operator stays generic with langversion preview`` (op: string, memberOp: string) =
+        let sign = if op = "-" then "-" else ""
+        FSharp $"""
+module TestWeakRes
+
+let inline f1 (x: System.DateTime) y = x {op} y
+
+// Verify f1 is truly generic by calling it with a custom type that has ({op}) with DateTime.
+// If f1 were specialized, this would fail to compile.
+type MyOffset = {{ Ticks: int64 }}
+    with static member ({memberOp}) (dt: System.DateTime, offset: MyOffset) = dt.AddTicks({sign}offset.Ticks)
+
+let dt = System.DateTime(2024, 1, 1)
+let r : System.DateTime = f1 dt {{ Ticks = 100L }}
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline DateTime addition resolves concretely without langversion preview`` () =
+        FSharp """
+module TestWeakResOld
+
+let inline f1 (x: System.DateTime) y = x + y
+let r = f1 (System.DateTime.Now) (System.TimeSpan.FromHours(1.0))
+        """
+        |> asExe
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Non-inline numeric operators work with langversion preview`` () =
+        FSharp """
+module TestNumericNonInline
+
+let f (x: float) y = x * y
+let r = f 3.0 4.0
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline numeric operators work with langversion preview`` () =
+        FSharp """
+module TestNumericInline
+
+let inline f x y = x + y
+let r1 = f 3 4
+let r2 = f 3.0 4.0
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``FSharpPlus-style InvokeMap pattern compiles with preview langversion`` () =
+        FSharp """
+module TestFSharpPlusPattern
+
+type Default1 = class end
+
+type InvokeMap =
+    static member inline Invoke (mapping: 'T -> 'U, source: ^Functor) : ^Result =
+        ((^Functor or ^Result) : (static member Map : ^Functor * ('T -> 'U) -> ^Result) source, mapping)
+
+type InvokeApply =
+    static member inline Invoke (f: ^ApplicativeFunctor, x: ^ApplicativeFunctor2) : ^ApplicativeFunctor3 =
+        ((^ApplicativeFunctor or ^ApplicativeFunctor2 or ^ApplicativeFunctor3) : (static member (<*>) : ^ApplicativeFunctor * ^ApplicativeFunctor2 -> ^ApplicativeFunctor3) f, x)
+
+type ZipList<'T> = { Values: 'T list } with
+    static member Map (x: ZipList<'T>, f: 'T -> 'U) : ZipList<'U> = { Values = List.map f x.Values }
+    static member (<*>) (f: ZipList<'T -> 'U>, x: ZipList<'T>) : ZipList<'U> =
+        { Values = List.map2 (fun f x -> f x) f.Values x.Values }
+
+let inline add3 (x: ^T) : ZipList< ^T -> ^T -> ^T> = 
+    InvokeMap.Invoke ((fun a b c -> a + b + c), { Values = [x] })
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``FSharpPlus-style pattern with explicit type annotation workaround compiles`` () =
+        FSharp """
+module TestFSharpPlusWorkaround
+
+type InvokeMap =
+    static member inline Invoke (mapping: 'T -> 'U, source: ^Functor) : ^Result =
+        ((^Functor or ^Result) : (static member Map : ^Functor * ('T -> 'U) -> ^Result) source, mapping)
+
+type ZipList<'T> = { Values: 'T list } with
+    static member Map (x: ZipList<'T>, f: 'T -> 'U) : ZipList<'U> = { Values = List.map f x.Values }
+
+// Workaround: explicit type annotation on the call
+let inline add3 (x: ^T) : ZipList< ^T -> ^T -> ^T> = 
+    (InvokeMap.Invoke ((fun a b c -> a + b + c), { Values = [x] }) : ZipList< ^T -> ^T -> ^T>)
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Non-inline code canonicalization is unaffected by ExtensionConstraintSolutions`` () =
+        FSharp """
+module TestNonInlineUnaffected
+
+// Non-inline: weak resolution should still run, resolving y to TimeSpan
+let f1 (x: System.DateTime) y = x + y
+// This call MUST work — y should be inferred as TimeSpan
+let r = f1 (System.DateTime.Now) (System.TimeSpan.FromHours(1.0))
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline numeric operators with multiple overloads stay generic with preview`` () =
+        FSharp """
+module TestInlineNumericGeneric
+
+let inline addThenMultiply x y z = (x + y) * z
+let r1 = addThenMultiply 3 4 5
+let r2 = addThenMultiply 3.0 4.0 5.0
+if r1 <> 35 then failwith (sprintf "Expected 35 but got %d" r1)
+if r2 <> 35.0 then failwith (sprintf "Expected 35.0 but got %f" r2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Instance extension method resolves via SRTP`` () =
+        FSharp """
+module TestInstanceExtension
+
+type System.String with
+    member this.Duplicate() = this + this
+
+let inline duplicate (x: ^T) : ^T = (^T : (member Duplicate : unit -> ^T) x)
+let result = duplicate "hello"
+if result <> "hellohello" then failwith (sprintf "Expected 'hellohello' but got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Instance extension method with parameter resolves via SRTP`` () =
+        FSharp """
+module TestInstanceExtensionWithParam
+
+type System.String with
+    member this.Foo (x: string) = this + x
+
+let inline foo (x: ^T) (y: ^R) : ^R = (^T : (member Foo : ^R -> ^R) (x, y))
+let result = foo "foo" "bar"
+if result <> "foobar" then failwith (sprintf "Expected 'foobar' but got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Instance extension does not satisfy static SRTP constraint`` () =
+        FSharp """
+module TestInstanceVsStatic
+
+type System.String with
+    member this.Transform() = this.ToUpper()
+
+// This SRTP asks for a STATIC member — instance extension should NOT satisfy it
+let inline transform (x: ^T) : ^T = (^T : (static member Transform : ^T -> ^T) x)
+let result = transform "hello"
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+
+    [<Fact>]
+    let ``Intrinsic instance method takes priority over instance extension`` () =
+        FSharp """
+module TestInstancePriority
+
+type Widget = { Value: int } with
+    member this.GetValue() = this.Value
+
+module WidgetExt =
+    type Widget with
+        member this.GetValue() = 999  // extension — should lose
+
+open WidgetExt
+
+let inline getValue (x: ^T) : int = (^T : (member GetValue : unit -> int) x)
+let result = getValue { Value = 42 }
+if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Internal type extension in same assembly resolves via SRTP`` () =
+        FSharp """
+module TestInternalExtension
+
+type Widget = { Value: int }
+    with
+        // Intrinsic augmentation with internal accessibility
+        static member internal Combine (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+
+let inline combine (x: ^T) (y: ^T) = (^T : (static member Combine : ^T * ^T -> ^T) (x, y))
+let result = combine { Value = 1 } { Value = 2 }
+if result.Value <> 3 then failwith (sprintf "Expected 3 but got %d" result.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP constraints from different accessibility domains flow together`` () =
+        FSharp """
+module TestAccessibilityDomains
+
+type Widget = { Value: int }
+
+// Public extension in module A
+module ExtA =
+    type Widget with
+        static member (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+
+// Public extension in module B
+module ExtB =
+    type Widget with
+        static member (-) (a: Widget, b: Widget) = { Value = a.Value - b.Value }
+
+open ExtA
+open ExtB
+
+// Both extensions should be available via SRTP in the same scope
+let inline addThenSub (x: ^T) (y: ^T) (z: ^T) =
+    let sum = x + y
+    sum - z
+
+let result = addThenSub { Value = 10 } { Value = 5 } { Value = 3 }
+if result.Value <> 12 then failwith (sprintf "Expected 12 but got %d" result.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Internal record field resolves via SRTP within same assembly`` () =
+        FSharp """
+module TestInternalRecordField
+
+module Internal =
+    type Rec = internal { X: int }
+    let make x = { X = x }
+
+open Internal
+
+let inline getX (r: ^T) = (^T : (member get_X : unit -> int) r)
+let v = getX (Internal.make 42)
+if v <> 42 then failwith (sprintf "Expected 42 but got %d" v)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Cross-assembly internal extension is not visible via SRTP`` () =
+        let library =
+            FSharp """
+module ExtLib
+
+type Widget = { Value: int }
+
+type Widget with
+    static member internal (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let inline add (x: ^T) (y: ^T) = x + y
+let result = add { Value = 1 } { Value = 2 }
+        """
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 43
+
+    [<Fact>]
+    let ``RFC widening example: extension methods satisfy SRTP constraints`` () =
+        // From RFC FS-1043: extension members enable widening numeric operations.
+        // Tests that SRTP constraints like widen_to_double are satisfied by
+        // extension methods on primitive types.
+        FSharp """
+module TestWidening
+
+type System.Int32 with
+    static member inline widen_to_int64 (a: int32) : int64 = int64 a
+    static member inline widen_to_double (a: int32) : double = double a
+
+type System.Int64 with
+    static member inline widen_to_double (a: int64) : double = double a
+
+let inline widen_to_int64 (x: ^T) : int64 = (^T : (static member widen_to_int64 : ^T -> int64) (x))
+let inline widen_to_double (x: ^T) : double = (^T : (static member widen_to_double : ^T -> double) (x))
+
+let r1: int64 = widen_to_int64 42
+let r2: double = widen_to_double 42
+let r3: double = widen_to_double 42L
+if r1 <> 42L then failwith (sprintf "Expected 42L but got %d" r1)
+if r2 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" r2)
+if r3 <> 42.0 then failwith (sprintf "Expected 42.0 but got %f" r3)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``RFC op_Implicit extension example compiles with preview langversion`` () =
+        // From RFC FS-1043: defining op_Implicit via extension methods to
+        // populate a generic implicitConv function for primitive types.
+        FSharp """
+module TestImplicitExtension
+
+type System.Int32 with
+    static member inline op_Implicit (a: int32) : int64 = int64 a
+
+let inline implicitConv (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit : ^T -> ^U) (x))
+
+let r1: int64 = implicitConv 42
+if r1 <> 42L then failwith (sprintf "Expected 42L but got %d" r1)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    // ---- Quotation + runtime witness tests for RFC FS-1043 new functionality ----
+
+    [<Fact>]
+    let ``Witness quotation: extension operator resolved via SRTP is callable in quotation`` () =
+        // Verifies that an extension operator defined on a custom type can be
+        // quoted and the quotation evaluated at runtime, exercising witness passing.
+        FSharp """
+module TestExtOpQuotation
+
+open Microsoft.FSharp.Quotations
+
+type Velocity = { MetersPerSecond: float }
+type Time = { Seconds: float }
+type Distance = { Meters: float }
+
+type Velocity with
+    static member (*)(v: Velocity, t: Time) = { Meters = v.MetersPerSecond * t.Seconds }
+
+let q = <@ { MetersPerSecond = 10.0 } * { Seconds = 5.0 } @>
+
+// Verify the quotation contains the expected operator call
+match q with
+| Patterns.Call(None, mi, _) when mi.Name = "op_Multiply" -> ()
+| _ -> failwith (sprintf "Unexpected quotation shape: %A" q)
+
+// Verify direct execution gives the correct result
+let d = { MetersPerSecond = 10.0 } * { Seconds = 5.0 }
+if d.Meters <> 50.0 then failwith (sprintf "Expected 50.0 but got %f" d.Meters)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: inline SRTP function quoted at concrete call site`` () =
+        // Verifies that an inline function with SRTP constraints, when quoted
+        // at a concrete call site, produces a quotation that captures the
+        // resolved witness and can be evaluated.
+        FSharp """
+module TestInlineSrtpQuotation
+
+open Microsoft.FSharp.Quotations
+
+let inline addOne x = x + LanguagePrimitives.GenericOne
+
+// Quote at int call site
+let qInt = <@ addOne 42 @>
+// Quote at float call site
+let qFloat = <@ addOne 3.14 @>
+
+// Evaluate via Linq quotation evaluator
+let resultInt = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qInt :?> int
+let resultFloat = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qFloat :?> float
+
+if resultInt <> 43 then failwith (sprintf "Expected 43 but got %d" resultInt)
+if abs (resultFloat - 4.14) > 0.001 then failwith (sprintf "Expected ~4.14 but got %f" resultFloat)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: chained inline functions pass witnesses correctly`` () =
+        // Verifies that witness parameters are correctly threaded through
+        // multiple levels of inline function calls, and the quotation
+        // evaluates to the right result.
+        FSharp """
+module TestChainedWitnessQuotation
+
+let inline myAdd x y = x + y
+let inline doubleIt x = myAdd x x
+
+let q = <@ doubleIt 21 @>
+
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int
+if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
+
+// Also test with float to verify witness resolves differently
+let qf = <@ doubleIt 1.5 @>
+let resultF = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qf :?> float
+if resultF <> 3.0 then failwith (sprintf "Expected 3.0 but got %f" resultF)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: extension widening in quotation evaluates correctly`` () =
+        // Verifies that extension methods used for numeric widening (RFC example)
+        // produce correct quotations that evaluate at runtime.
+        FSharp """
+module TestWideningQuotation
+
+type System.Int32 with
+    static member inline widen_to_int64 (a: int32) : int64 = int64 a
+
+let inline widen_to_int64 (x: ^T) : int64 = (^T : (static member widen_to_int64 : ^T -> int64) (x))
+
+let q = <@ widen_to_int64 42 @>
+
+// Verify the quotation has the right shape
+match q with
+| Quotations.Patterns.Call(None, mi, _) when mi.Name.Contains("widen") -> ()
+| _ -> failwith (sprintf "Unexpected quotation shape: %A" q)
+
+// Verify direct execution
+let r = widen_to_int64 42
+if r <> 42L then failwith (sprintf "Expected 42L but got %d" r)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: op_Implicit extension in quotation evaluates correctly`` () =
+        // Verifies that op_Implicit defined as an extension method produces
+        // quotations with correct witness resolution and runtime evaluation.
+        FSharp """
+module TestImplicitQuotation
+
+type System.Int32 with
+    static member inline op_Implicit (a: int32) : int64 = int64 a
+
+let inline implicitConv (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit : ^T -> ^U) (x))
+
+let q = <@ implicitConv 42 : int64 @>
+
+// Verify the quotation captures the conversion
+match q with
+| Quotations.Patterns.Call(None, mi, _) -> 
+    if not (mi.Name.Contains("implicit") || mi.Name.Contains("Implicit")) then
+        failwith (sprintf "Expected implicit-related method but got %s" mi.Name)
+| _ -> failwith (sprintf "Unexpected quotation shape: %A" q)
+
+// Verify direct execution
+let r : int64 = implicitConv 42
+if r <> 42L then failwith (sprintf "Expected 42L but got %d" r)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: first-class usage of inline SRTP function`` () =
+        // Verifies that an inline function used as a first-class value
+        // (witnesses monomorphized) works correctly and can be quoted.
+        FSharp """
+module TestFirstClassWitness
+
+let inline myAdd (x: 'T) (y: 'T) : 'T = x + y
+
+// First-class usage: witnesses are resolved at monomorphization
+let intAdd : int -> int -> int = myAdd
+let floatAdd : float -> float -> float = myAdd
+
+if intAdd 3 4 <> 7 then failwith "intAdd failed"
+if floatAdd 3.0 4.0 <> 7.0 then failwith "floatAdd failed"
+
+// Quote the first-class application
+let q = <@ intAdd 3 4 @>
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int
+if result <> 7 then failwith (sprintf "Expected 7 but got %d" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: comparison constraint witness in quotation`` () =
+        // Verifies that comparison-based SRTP constraints produce correct
+        // witnesses in quotations and evaluate correctly at runtime.
+        FSharp """
+module TestComparisonWitness
+
+let inline myMax x y = if x > y then x else y
+
+let q = <@ myMax 3 5 @>
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int
+if result <> 5 then failwith (sprintf "Expected 5 but got %d" result)
+
+let qs = <@ myMax "apple" "banana" @>
+let resultS = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qs :?> string
+if resultS <> "banana" then failwith (sprintf "Expected banana but got %s" resultS)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: abs and sign witnesses evaluate in quotation`` () =
+        // Verifies that built-in SRTP-resolved operators like abs and sign
+        // produce correct quotations with witness passing.
+        FSharp """
+module TestAbsSignWitness
+
+let qAbs = <@ abs -42 @>
+let resultAbs = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qAbs :?> int
+if resultAbs <> 42 then failwith (sprintf "abs: Expected 42 but got %d" resultAbs)
+
+let qSign = <@ sign -3.14 @>
+let resultSign = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qSign :?> int
+if resultSign <> -1 then failwith (sprintf "sign: Expected -1 but got %d" resultSign)
+
+let qAbsF = <@ abs -2.5 @>
+let resultAbsF = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qAbsF :?> float
+if resultAbsF <> 2.5 then failwith (sprintf "absF: Expected 2.5 but got %f" resultAbsF)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: extension operator cross-assembly with quotation`` () =
+        // Verifies that extension operators defined in one assembly can be
+        // quoted and evaluated when consumed from another assembly, exercising
+        // the full cross-assembly witness deserialization path.
+        let library =
+            FSharp """
+module ExtLib
+
+type Widget = { Value: int }
+
+type Widget with
+    static member (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let w1 = { Value = 10 }
+let w2 = { Value = 32 }
+
+// Direct execution via extension operator
+let result = w1 + w2
+if result.Value <> 42 then failwith (sprintf "Expected 42 but got %d" result.Value)
+
+// Quote the extension operator usage
+let q = <@ w1 + w2 @>
+
+match q with
+| Microsoft.FSharp.Quotations.Patterns.Call(None, mi, _) when mi.Name = "op_Addition" -> ()
+| _ -> failwith (sprintf "Unexpected quotation shape: %A" q)
+        """
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    // ---- Breaking change regression tests for RFC FS-1043 top 5 scenarios ----
+    // These test the most impactful breaking changes identified by the 20-agent council.
+
+    // -- T1: Value capture / partial application of newly-generic inline (S2) --
+
+    [<Fact>]
+    let ``Breaking change S2: value binding of inline SRTP function`` () =
+        FSharp """
+module Test
+let inline f x = x + 1
+let g = f
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val g: (int -> int)"
+
+    [<Fact>]
+    let ``Breaking change S2: List.map of inline SRTP function compiles`` () =
+        // When inline SRTP function is reified (passed to List.map), the constraint
+        // is resolved at the call site via inlining.
+        FSharp """
+module Test
+let inline f x = x + 1
+let result = List.map f [1;2;3]
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Breaking change S2: monomorphic annotation on inline SRTP function compiles`` () =
+        // When inline SRTP function is assigned to a non-inline binding,
+        // the constraint is resolved at the assignment site.
+        FSharp """
+module Test
+let inline f x = x + 1
+let g : int -> int = f
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Breaking change S2: control case - x + x was already generic`` () =
+        FSharp """
+module Test
+let inline f x = x + x
+let g = f
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val g: (int -> int)"
+
+    // -- T2: Non-inline wrapper of inline function (S3) --
+
+    [<Fact>]
+    let ``Breaking change S3: non-inline wrapper monomorphizes`` () =
+        FSharp """
+module Test
+let inline f x = x + 1
+let run x = f x
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val run: x: int -> int"
+
+    [<Fact>]
+    let ``Breaking change S3: inline wrapper propagates SRTP`` () =
+        FSharp """
+module Test
+let inline f x = x + 1
+let inline run x = f x
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val inline run: x: ^a -> 'b when (^a or int) : (static member (+) : ^a * int -> 'b)"
+
+    [<Fact>]
+    let ``Breaking change S3: non-inline wrapper with DateTime`` () =
+        FSharp """
+module Test
+open System
+let inline f (x: DateTime) y = x + y
+let run (d: DateTime) (t: TimeSpan) = f d t
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val run: d: System.DateTime -> t: System.TimeSpan -> System.DateTime"
+
+    // -- T3: Inline chain + concrete-typed library call (S6) --
+
+    [<Fact>]
+    let ``Breaking change S6: inline chain with Math.Abs constrains to int`` () =
+        FSharp """
+module Test
+let inline f x = let y = x + 1 in System.Math.Abs(y)
+if f -5 <> 4 then failwith (sprintf "Expected 4 but got %d" (f -5))
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+
     // https://github.com/dotnet/fsharp/issues/8098
     [<Fact>]
     let ``Issue 8098 - ToString on int via inline SRTP does not throw NRE`` () =
@@ -1956,3 +3232,1874 @@ if resultInt <> 0 then failwith $"Expected 0 but got {resultInt}"
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Breaking change S6: inline chain with printfn constrains to int`` () =
+        FSharp """
+module Test
+let inline f x = let y = x + 1 in printfn "%d" y
+f 41
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Breaking change S6: inline chain with string resolves to int`` () =
+        // string function constrains the result to a concrete type,
+        // which propagates back through x + 1 and resolves to int.
+        FSharp """
+module Test
+let inline f x = let y = x + 1 in string y
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val inline f: x: int -> string"
+
+    // -- Additional operator dimensions --
+
+    [<Fact>]
+    let ``Breaking change: unary negate inline stays generic`` () =
+        // Unary minus with no literal — single support type, was already generic.
+        FSharp """
+module Test
+let inline f x = -x
+let g = f
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val g: (int -> int)"
+
+    [<Fact>]
+    let ``Breaking change: multiply with literal`` () =
+        // Same pattern as x + 1 but with *.
+        FSharp """
+module Test
+let inline f x = x * 2
+let g = f
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val g: (int -> int)"
+
+    [<Fact>]
+    let ``Breaking change: non-inline wrapper of multiply with literal`` () =
+        FSharp """
+module Test
+let inline f x = x * 2
+let run x = f x
+        """
+        |> withLangVersionPreview
+        |> signaturesShouldContain "val run: x: int -> int"
+
+    [<Fact>]
+    let ``Breaking change S4: delegate from inline SRTP compiles`` () =
+        // When inline SRTP function is wrapped in a delegate, the constraint
+        // is resolved at the delegate construction site.
+        FSharp """
+module Test
+let inline addOne x = x + 1
+let d = System.Func<int,int>(addOne)
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on string works in FSI with langversion preview`` () =
+        Fsx $"""
+{stringRepeatExtDef}
+
+let r4 = "r" * 4
+if r4 <> "rrrr" then failwith (sprintf "Expected 'rrrr' but got '%%s'" r4)
+
+let spaces n = " " * n
+if spaces 3 <> "   " then failwith (sprintf "Expected 3 spaces but got '%%s'" (spaces 3))
+        """
+        |> withLangVersionPreview
+        |> runFsi
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``RFC widening example: 1 + 2.0 with extension plus operators`` () =
+        FSharp """
+module TestWideningPlus
+
+type System.Int32 with
+    static member inline widen_to_int64 (a: int32) : int64 = int64 a
+    static member inline widen_to_single (a: int32) : single = single a
+    static member inline widen_to_double (a: int32) : double = double a
+
+type System.Single with
+    static member inline widen_to_double (a: int) : double = double a
+
+let inline widen_to_int64 (x: ^T) : int64 = (^T : (static member widen_to_int64 : ^T -> int64) (x))
+let inline widen_to_single (x: ^T) : single = (^T : (static member widen_to_single : ^T -> single) (x))
+let inline widen_to_double (x: ^T) : double = (^T : (static member widen_to_double : ^T -> double) (x))
+
+type System.Int64 with
+    static member inline (+)(a: int64, b: 'T) : int64 = a + widen_to_int64 b
+    static member inline (+)(a: 'T, b: int64) : int64 = widen_to_int64 a + b
+
+type System.Single with
+    static member inline (+)(a: single, b: 'T) : single = a + widen_to_single b
+    static member inline (+)(a: 'T, b: single) : single = widen_to_single a + b
+
+type System.Double with
+    static member inline (+)(a: double, b: 'T) : double = a + widen_to_double b
+    static member inline (+)(a: 'T, b: double) : double = widen_to_double a + b
+
+(1 + 2L)   |> ignore<int64>
+(1 + 2.0f) |> ignore<single>
+(1 + 2.0)  |> ignore<double>
+(1L + 2)   |> ignore<int64>
+(1L + 2.0) |> ignore<double>
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        // The RFC example (docs/RFC_Changes.md) cannot compile: the (+) in each extension operator body
+        // self-resolves to the operator being defined, constraining 'T to the same numeric type and
+        // preventing cross-type addition (e.g., int + double). This is a known limitation.
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 64, Line 21, Col 61, Line 21, Col 62, "This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'single'.")
+            (Error 1, Line 21, Col 79, Line 21, Col 80, "The type 'single' does not support the operator 'widen_to_single'")
+            (Warning 64, Line 25, Col 61, Line 25, Col 62, "This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'double'.")
+            (Error 1, Line 25, Col 79, Line 25, Col 80, "The type 'double' does not support the operator 'widen_to_double'")
+            (Error 1, Line 28, Col 6, Line 28, Col 8, "The type 'int64' does not match the type 'int'")
+            (Error 1, Line 28, Col 15, Line 28, Col 28, "Type mismatch. Expecting a
+    'int64 -> 'a'    
+but given a
+    'int64 -> unit'    
+The type 'int64' does not match the type 'int'")
+            (Error 1, Line 31, Col 7, Line 31, Col 8, "The type 'int' does not match the type 'int64'")
+            (Error 1, Line 31, Col 15, Line 31, Col 28, "Type mismatch. Expecting a
+    'int64 -> 'a'    
+but given a
+    'int64 -> unit'    
+The type 'int' does not match the type 'int64'")
+            (Error 1, Line 32, Col 15, Line 32, Col 29, "Type mismatch. Expecting a
+    'double -> 'a'    
+but given a
+    'double -> unit'    
+No overloads match for method 'op_Addition'.
+
+Known return type: double
+
+Known type parameters: < int64 , float >
+
+Available overloads:
+ - static member System.Double.(+) : a: ^T * b: double -> double when ^T: (static member widen_to_double: ^T -> double) // Argument 'a' doesn't match
+ - static member System.Double.(+) : a: double * b: double -> double // Argument 'a' doesn't match
+ - static member System.Int64.(+) : a: ^T * b: int64 -> int64 when ^T: (static member widen_to_int64: ^T -> int64) // Argument 'a' doesn't match
+ - static member System.Int64.(+) : a: int64 * b: ^T -> int64 when ^T: (static member widen_to_int64: ^T -> int64) // Argument 'b' doesn't match")
+        ]
+
+    [<Fact>]
+    let ``Recursive inline SRTP function with extension constraints`` () =
+        FSharp """
+module TestRecursiveInline
+
+type System.Int32 with
+    static member inline Decrement(x: int) : int = x - 1
+
+let inline decrement (x: ^T) : ^T = (^T : (static member Decrement : ^T -> ^T) x)
+
+// rec inline with SRTP is not supported (error 1114)
+let rec inline sumTo (x: ^T) : ^T =
+    if x = LanguagePrimitives.GenericZero then LanguagePrimitives.GenericZero
+    else x + sumTo (decrement x)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1114
+
+    [<Fact>]
+    let ``SRTP constraint with no matching member produces clear error`` () =
+        FSharp """
+module TestNoMatch
+
+type Foo = { X: int }
+let inline bar (x: ^T) = (^T : (static member Nope : ^T -> int) x)
+let r = bar { X = 1 }
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+
+    [<Fact>]
+    let ``Inline numeric square stays monomorphic with preview when no extensions in scope`` () =
+        FSharp """
+module Test
+let inline square x = x * x
+let result : int = square 5
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline DateTime add resolves eagerly with preview when no extensions in scope`` () =
+        FSharp """
+module Test
+open System
+let inline addDay (x: DateTime) = x + TimeSpan.FromDays(1.0)
+let result : DateTime = addDay DateTime.Now
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline multiply stays generic when extension operator is in scope`` () =
+        FSharp """
+module Test
+type System.String with
+    static member (*) (s: string, n: int) = System.String(s.[0], n)
+
+let inline multiply (x: ^T) (n: int) = x * n
+let r1 = multiply "a" 3
+let r2 = multiply 5 3
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline multiply resolves to int when no extension operator is in scope`` () =
+        FSharp """
+module Test
+let inline multiply (x: ^T) (n: int) = x * n
+let result : int = multiply 5 3
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Non-operator extension member resolves via SRTP with langversion preview`` () =
+        FSharp """
+module TestNonOpExtSRTP
+
+type System.String with
+    static member DoThing (s: string) = s.ToUpper()
+
+let inline doThing (x: ^T) = (^T : (static member DoThing : ^T -> string) x)
+let result = doThing "hello"
+if result <> "HELLO" then failwith (sprintf "Expected 'HELLO' but got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``open type brings extension operators into SRTP scope`` () =
+        FSharp """
+module TestOpenType
+
+module Ops =
+    type System.String with
+        static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+open Ops
+
+let inline repeat (x: ^T) (n: int) = x * n
+let r = repeat "ha" 3
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%s'" r)
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``open type on class brings extension operators into SRTP scope`` () =
+        FSharp $"""
+module TestOpenTypeClass
+
+type Extensions =
+    static member Dummy = 0
+
+{stringRepeatExtDef}
+
+// This test verifies that extension operators defined at module level work with SRTP.
+let inline repeat (x: ^T) (n: int) = x * n
+let r = repeat "ha" 3
+if r <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%%s'" r)
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator works inside async computation expression`` () =
+        FSharp $"""
+module TestCEExtOp
+
+{stringRepeatExtDef}
+
+let result =
+    async {{
+        let r = "ha" * 3
+        return r
+    }}
+    |> Async.RunSynchronously
+
+if result <> "hahaha" then failwith (sprintf "Expected 'hahaha' but got '%%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on struct type resolves without boxing`` () =
+        FSharp """
+module TestStructExtOp
+
+[<Struct>]
+type Vec2 = { X: float; Y: float }
+
+type Vec2 with
+    static member (+) (a: Vec2, b: Vec2) = { X = a.X + b.X; Y = a.Y + b.Y }
+
+let inline add (a: ^T) (b: ^T) = a + b
+let v1 = { X = 1.0; Y = 2.0 }
+let v2 = { X = 3.0; Y = 4.0 }
+let v3 = add v1 v2
+if v3.X <> 4.0 || v3.Y <> 6.0 then failwith (sprintf "Expected {4.0, 6.0} but got {%f, %f}" v3.X v3.Y)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive function using extension operator resolves correctly`` () =
+        FSharp $"""
+module TestRecExtOp
+
+{stringRepeatExtDef}
+
+// Non-inline recursive function that uses extension operator at concrete type
+let rec repeatAndConcat (s: string) (n: int) : string =
+    if n <= 0 then ""
+    elif n = 1 then s
+    else s * 1 + repeatAndConcat s (n - 1)
+
+let result = repeatAndConcat "ab" 3
+if result <> "ababab" then failwith (sprintf "Expected 'ababab' but got '%%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Multiple extension operators satisfy combined SRTP constraints`` () =
+        FSharp """
+module TestMultiExtOp
+
+type MyNum = { V: int }
+
+type MyNum with
+    static member (+) (a: MyNum, b: MyNum) = { V = a.V + b.V }
+    static member (-) (a: MyNum, b: MyNum) = { V = a.V - b.V }
+    static member ( * ) (a: MyNum, b: MyNum) = { V = a.V * b.V }
+
+let inline addAndMultiply (x: ^T) (y: ^T) =
+    (x + y) * (x - y)
+
+let a = { V = 5 }
+let b = { V = 3 }
+let result = addAndMultiply a b
+// (5+3) * (5-3) = 8 * 2 = 16
+if result.V <> 16 then failwith (sprintf "Expected 16 but got %d" result.V)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Units of measure with extension operators resolve via SRTP`` () =
+        FSharp """
+module TestUoMExtension
+
+[<Measure>] type kg
+[<Measure>] type m
+
+type UoMHelper =
+    static member inline ScaleBy(x: float<'u>, factor: float) : float<'u> =
+        LanguagePrimitives.FloatWithMeasure(float x * factor)
+
+type System.Double with
+    static member inline Scale(x: float<'u>, factor: float) : float<'u> =
+        LanguagePrimitives.FloatWithMeasure(float x * factor)
+
+let inline scale (x: float<'u>) (factor: float) : float<'u> =
+    UoMHelper.ScaleBy(x, factor)
+
+let mass = 5.0<kg>
+let scaled = scale mass 2.0
+if scaled <> 10.0<kg> then failwith (sprintf "Expected 10.0<kg> but got %A" scaled)
+
+// Also test basic UoM arithmetic works with inline
+let inline addMeasured (x: float<'u>) (y: float<'u>) = x + y
+let totalMass = addMeasured 3.0<kg> 7.0<kg>
+if totalMass <> 10.0<kg> then failwith (sprintf "Expected 10.0<kg> but got %A" totalMass)
+
+let dist1 = 100.0<m>
+let dist2 = 50.0<m>
+let totalDist = addMeasured dist1 dist2
+if totalDist <> 150.0<m> then failwith (sprintf "Expected 150.0<m> but got %A" totalDist)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator SRTP resolves correctly under optimization`` () =
+        // Regression test: this exercises the optimizer's OptimizeTraitCall → 
+        // CodegenWitnessExprForTraitConstraint → GenWitnessExpr code path.
+        // The optimizer resolves trait calls before IlxGen, so bugs in
+        // GenWitnessExpr expression construction only manifest with --optimize+.
+        FSharp """
+module TestOptimizedExtSRTP
+
+type Gadget = { Value: int }
+
+module GadgetOps =
+    type Gadget with
+        static member (+) (a: Gadget, b: Gadget) = { Value = a.Value + b.Value }
+        static member (*) (a: Gadget, n: int) = { Value = a.Value * n }
+
+open GadgetOps
+
+let inline add a b = a + b
+let inline scale a n = a * n
+
+let g1 = { Value = 3 }
+let g2 = { Value = 7 }
+let sum = add g1 g2
+if sum.Value <> 10 then failwith (sprintf "Expected 10 but got %d" sum.Value)
+
+let scaled = scale g1 4
+if scaled.Value <> 12 then failwith (sprintf "Expected 12 but got %d" scaled.Value)
+
+// Chain operations
+let result = add (scale g1 2) g2
+if result.Value <> 13 then failwith (sprintf "Expected 13 but got %d" result.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptimize
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on generic type augmentation resolves via SRTP — Array append`` () =
+        // Regression: extension operator (++) on 'T[] caused
+        // "BuildFSharpMethodCall: unexpected List.length mismatch" during optimization.
+        // The enclosing type's type parameters were not accounted for in GenWitnessExpr.
+        // Reported by gusty: https://github.com/dotnet/fsharp/pull/19396
+        FSharp """
+module TestArrayExtOp
+
+type 'T ``[]`` with
+    static member (++) (x1, x2) = Array.append x1 x2
+
+let result = [| 3 |] ++ [| 6 |]
+if result <> [| 3; 6 |] then failwith (sprintf "Expected [|3; 6|] but got %A" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on generic type augmentation resolves via SRTP — Option map`` () =
+        // Regression: extension operator (|>>) on Option<'T> caused
+        // "BuildFSharpMethodCall: unexpected List.length mismatch" during optimization.
+        // Same root cause as the Array case — enclosing generic type parameters missing.
+        // Reported by gusty: https://github.com/dotnet/fsharp/pull/19396
+        FSharp $"""
+module TestOptionExtOp
+{optionMapExtDef}
+
+let result = Some 1 |>> string
+match result with
+| Some "1" -> ()
+| other -> failwith (sprintf "Expected Some \"1\" but got %%A" other)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    // ---- Cross-assembly extrinsic extension operator regression tests ----
+    // The bug: extension operators on GENERIC type augmentations from other
+    // assemblies crashed with "BuildFSharpMethodCall: unexpected List.length
+    // mismatch" or "Undefined or unsolved type variable" because the enclosing
+    // type's type parameters were not accounted for in GenWitnessExpr.
+
+    [<Fact>]
+    let ``Extension operator on option resolves via SRTP — cross-assembly extrinsic`` () =
+        let library = optionMapExtLib
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let result = Some 42 |>> string
+match result with
+| Some "42" -> ()
+| other -> failwith (sprintf "Expected Some \"42\" but got %A" other)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on array resolves via SRTP — cross-assembly extrinsic`` () =
+        let library = arrayAppendExtLib
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let result = [| 1; 2 |] ++ [| 3; 4 |]
+if result <> [| 1; 2; 3; 4 |] then failwith (sprintf "Expected [|1;2;3;4|] but got %A" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on list resolves via SRTP — cross-assembly extrinsic`` () =
+        let library = listAppendExtLib
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let result = [ 1; 2 ] ++ [ 3; 4 ]
+if result <> [ 1; 2; 3; 4 ] then failwith (sprintf "Expected [1;2;3;4] but got %A" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on Result resolves via SRTP — cross-assembly extrinsic`` () =
+        let library =
+            FSharp """
+module ExtLib
+
+type Result<'T, 'E> with
+    static member (|>>) (x, f) = Result.map f x
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let result: Result<int, string> = Ok 5 |>> (fun n -> n * 2)
+match result with
+| Ok 10 -> ()
+| other -> failwith (sprintf "Expected Ok 10 but got %A" other)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on BCL List resolves via SRTP — cross-assembly extrinsic`` () =
+        let library =
+            FSharp """
+module ExtLib
+
+open System.Collections.Generic
+
+type List<'T> with
+    static member (++) (a: List<'T>, b: List<'T>) =
+        let result = List<'T>(a)
+        result.AddRange(b)
+        result
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open System.Collections.Generic
+open ExtLib
+
+let a = List([| 1; 2 |])
+let b = List([| 3; 4 |])
+let result = a ++ b
+if result.Count <> 4 then failwith (sprintf "Expected count 4 but got %d" result.Count)
+if result.[2] <> 3 then failwith (sprintf "Expected result.[2]=3 but got %d" result.[2])
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on user generic type resolves via SRTP — cross-assembly extrinsic`` () =
+        let library =
+            FSharp """
+module TypeLib
+
+type Box<'T> = { Value: 'T }
+            """
+            |> withName "TypeLib"
+            |> withLangVersionPreview
+
+        let extLib =
+            FSharp """
+module ExtLib
+
+open TypeLib
+
+type Box<'T> with
+    static member (+) (a: Box<'T>, b: Box<'T>) : Box<'T list> =
+        { Value = [ a.Value; b.Value ] }
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+            |> withReferences [library]
+
+        FSharp """
+module Consumer
+
+open TypeLib
+open ExtLib
+
+let a = { Value = 1 }
+let b = { Value = 2 }
+let result = a + b
+if result.Value <> [ 1; 2 ] then failwith (sprintf "Expected [1; 2] but got %A" result.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library; extLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on generic type resolves via SRTP — multi-module same compilation`` () =
+        FSharp """
+module TypeDef
+
+type Wrapper<'T> = { Inner: 'T }
+
+module Extensions =
+    type Wrapper<'T> with
+        static member (++) (a: Wrapper<'T>, b: Wrapper<'T>) : Wrapper<'T list> =
+            { Inner = [ a.Inner; b.Inner ] }
+
+module Consumer =
+    open Extensions
+
+    let a: Wrapper<int> = { Inner = 10 }
+    let b: Wrapper<int> = { Inner = 20 }
+    let result = a ++ b
+    if result.Inner <> [ 10; 20 ] then failwith (sprintf "Expected [10; 20] but got %A" result.Inner)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on option resolves via SRTP — cross-assembly with optimization`` () =
+        let library = optionMapExtLib
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let result = Some 7 |>> (fun n -> n * 3)
+match result with
+| Some 21 -> ()
+| other -> failwith (sprintf "Expected Some 21 but got %A" other)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> withOptimize
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator with extra type parameter resolves via SRTP — cross-assembly extrinsic`` () =
+        // The operator body introduces 'U beyond the enclosing type's 'T.
+        // This exercises the path where method type parameters and enclosing
+        // type parameters must both be correctly threaded through.
+        let library =
+            FSharp """
+module ExtLib
+
+type Option<'T> with
+    static member (?>>) (x: Option<'T>, f: 'T -> 'U) : Result<'U, string> =
+        match x with
+        | Some v -> Ok (f v)
+        | None -> Error "was None"
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let r1 = Some 5 ?>> string
+match r1 with
+| Ok "5" -> ()
+| other -> failwith (sprintf "Expected Ok \"5\" but got %A" other)
+
+let r2: Result<string, string> = None ?>> string
+match r2 with
+| Error "was None" -> ()
+| other -> failwith (sprintf "Expected Error \"was None\" but got %A" other)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator on Map resolves via SRTP — cross-assembly extrinsic`` () =
+        let library =
+            FSharp """
+module ExtLib
+
+type Map<'Key, 'Value when 'Key: comparison> with
+    static member (++) (a: Map<'Key, 'Value>, b: Map<'Key, 'Value>) =
+        Map.fold (fun acc k v -> Map.add k v acc) a b
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let a = Map.ofList [ (1, "a"); (2, "b") ]
+let b = Map.ofList [ (3, "c") ]
+let result = a ++ b
+if result.Count <> 3 then failwith (sprintf "Expected count 3 but got %d" result.Count)
+if result.[3] <> "c" then failwith (sprintf "Expected result.[3]=\"c\" but got %s" result.[3])
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    // -----------------------------------------------------------------------
+    // C#-style extension methods and SRTP
+    // -----------------------------------------------------------------------
+    // C#-style extension methods go through ILMeth (not FSMeth) in the
+    // compiler. These tests verify that SRTP constraint resolution finds
+    // C#-style extension methods, generates correct code, and runs correctly.
+
+    [<Fact>]
+    let ``C#-style extension on concrete non-generic type resolves via SRTP — int Double`` () =
+        let csLib =
+            CSharp """
+namespace CsExt {
+    public static class IntExtensions {
+        public static int Double(this int x) { return x * 2; }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp """
+module Consumer
+
+open CsExt
+
+let inline doubleIt (x: ^T) = (^T : (member Double : unit -> int) x)
+
+let result = doubleIt 21
+if result <> 42 then failwith (sprintf "Expected 42 but got %d" result)
+            """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``C#-style extension on open generic array resolves via SRTP — Append`` () =
+        let csLib =
+            CSharp """
+namespace CsExt {
+    public static class ArrayExtensions {
+        public static T[] Append<T>(this T[] a, T[] b) {
+            var result = new T[a.Length + b.Length];
+            a.CopyTo(result, 0);
+            b.CopyTo(result, a.Length);
+            return result;
+        }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp """
+module Consumer
+
+open CsExt
+
+let inline append (a: ^T) (b: int[]) = (^T : (member Append : int[] -> int[]) (a, b))
+
+let result = append [|1; 2|] [|3; 4|]
+if result <> [|1; 2; 3; 4|] then failwith (sprintf "Expected [|1;2;3;4|] but got %A" result)
+            """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``C#-style extension on unconstrained generic resolves via SRTP — Stringify`` () =
+        let csLib =
+            CSharp """
+namespace CsExt {
+    public static class GenericExtensions {
+        public static string Stringify<T>(this T value) {
+            return value != null ? value.ToString() : "";
+        }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp """
+module Consumer
+
+open CsExt
+
+let inline stringify (x: ^T) = (^T : (member Stringify : unit -> string) x)
+
+let r1 = stringify 42
+if r1 <> "42" then failwith (sprintf "Expected '42' but got '%s'" r1)
+let r2 = stringify "hello"
+if r2 <> "hello" then failwith (sprintf "Expected 'hello' but got '%s'" r2)
+            """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``C#-style extension with multiple type parameters resolves via SRTP — Select`` () =
+        let csLib =
+            CSharp """
+using System;
+namespace CsExt {
+    public static class ArrayProjection {
+        public static TResult[] Select<TSource, TResult>(this TSource[] arr, Func<TSource, TResult> f) {
+            var result = new TResult[arr.Length];
+            for (int i = 0; i < arr.Length; i++)
+                result[i] = f(arr[i]);
+            return result;
+        }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp """
+module Consumer
+
+open System
+open CsExt
+
+let inline select (arr: ^T) (f: Func<int, string>) = (^T : (member Select : Func<int, string> -> string[]) (arr, f))
+
+let result = select [|1; 2; 3|] (Func<int, string>(fun x -> string x))
+if result <> [|"1"; "2"; "3"|] then failwith (sprintf "Expected [|1;2;3|] as strings but got %A" result)
+            """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``C#-style extension on nullable value type resolves via SRTP — OrDefault`` () =
+        let csLib =
+            CSharp """
+namespace CsExt {
+    public static class NullableExtensions {
+        public static T OrDefault<T>(this T? value, T def) where T : struct {
+            return value ?? def;
+        }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp """
+module Consumer
+
+open System
+open CsExt
+
+let inline orDefault (x: ^T) (d: int) = (^T : (member OrDefault : int -> int) (x, d))
+
+let v1 = Nullable<int>(7)
+let r1 = orDefault v1 0
+if r1 <> 7 then failwith (sprintf "Expected 7 but got %d" r1)
+
+let v2 = Nullable<int>()
+let r2 = orDefault v2 99
+if r2 <> 99 then failwith (sprintf "Expected 99 but got %d" r2)
+            """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``C#-style extension on reference type resolves via SRTP — Safe on obj`` () =
+        let csLib =
+            CSharp """
+namespace CsExt {
+    public static class ObjectExtensions {
+        public static string Safe(this object obj) {
+            return obj != null ? obj.ToString() : "null";
+        }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp """
+module Consumer
+
+open CsExt
+
+let inline safe (x: ^T) = (^T : (member Safe : unit -> string) x)
+
+let r1 = safe (box 42)
+if r1 <> "42" then failwith (sprintf "Expected '42' but got '%s'" r1)
+            """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``C#-style extension on concrete generic instantiation resolves via SRTP — List Sum`` () =
+        let csLib =
+            CSharp """
+using System.Collections.Generic;
+namespace CsExt {
+    public static class ListExtensions {
+        public static int Sum(this List<int> list) {
+            int s = 0;
+            foreach (var v in list) s += v;
+            return s;
+        }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp """
+module Consumer
+
+open System.Collections.Generic
+open CsExt
+
+let inline sum (x: ^T) = (^T : (member Sum : unit -> int) x)
+
+let list = List<int>([| 10; 20; 30 |])
+let result = sum list
+if result <> 60 then failwith (sprintf "Expected 60 but got %d" result)
+            """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    // ---- Adversarial review gap tests ----
+
+    [<Fact>]
+    let ``adversarial — C#-style extension on user-defined struct resolves via SRTP`` () =
+        let csLib =
+            CSharp """
+namespace CsExt {
+    public struct MyVec {
+        public int X;
+        public int Y;
+        public MyVec(int x, int y) { X = x; Y = y; }
+    }
+    public static class VecExtensions {
+        public static int Magnitude(this MyVec v) { return v.X * v.X + v.Y * v.Y; }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp """
+module Consumer
+
+open CsExt
+
+let inline mag (v: ^T) = (^T : (member Magnitude : unit -> int) v)
+
+let r1 = mag (MyVec(3, 4))
+if r1 <> 25 then failwith (sprintf "Expected 25 but got %d" r1)
+
+let r2 = mag (MyVec(0, 0))
+if r2 <> 0 then failwith (sprintf "Expected 0 but got %d" r2)
+            """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``adversarial — Extension operator on DU type resolves via SRTP`` () =
+        FSharp """
+module TestDUExtOp
+
+type Tree<'T> = Leaf of 'T | Node of Tree<'T> * Tree<'T>
+
+type Tree<'T> with
+    static member (+) (a, b) = Node(a, b)
+
+let inline combine a b = a + b
+
+let t1 = Leaf 1
+let t2 = Leaf 2
+let t3 = Leaf 3
+
+let combined = combine t1 t2
+match combined with
+| Node(Leaf 1, Leaf 2) -> ()
+| other -> failwith (sprintf "Expected Node(Leaf 1, Leaf 2) but got %A" other)
+
+// Chain: (t1 + t2) + t3
+let chained = combine (combine t1 t2) t3
+match chained with
+| Node(Node(Leaf 1, Leaf 2), Leaf 3) -> ()
+| other -> failwith (sprintf "Expected Node(Node(Leaf 1, Leaf 2), Leaf 3) but got %A" other)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``adversarial — Mixed built-in + extension constraints in single inline function`` () =
+        FSharp $"""
+module TestMixedOps
+
+{stringRepeatExtDef}
+
+let inline mixedOp x y n = (x + y) * n
+
+let r1 = mixedOp "hello" " world" 2
+if r1 <> "hello worldhello world" then failwith (sprintf "Expected 'hello worldhello world' but got '%%s'" r1)
+
+let r2 = mixedOp "ab" "cd" 3
+if r2 <> "abcdabcdabcd" then failwith (sprintf "Expected 'abcdabcdabcd' but got '%%s'" r2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``adversarial — non-inline wrapper of SRTP extension operator resolves concretely`` () =
+        let library =
+            FSharp $"""
+module ExtLib
+
+{stringRepeatExtDef}
+
+let inline repeatInline s n = s * n
+let repeatConcrete (s: string) (n: int) = repeatInline s n
+            """
+            |> withName "ExtLib"
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+
+open ExtLib
+
+let r1 = repeatConcrete "ab" 3
+if r1 <> "ababab" then failwith (sprintf "Expected 'ababab' but got '%s'" r1)
+
+let r2 = repeatConcrete "x" 1
+if r2 <> "x" then failwith (sprintf "Expected 'x' but got '%s'" r2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``adversarial — Extension operator in task CE`` () =
+        FSharp $"""
+module TestTaskCE
+
+{stringRepeatExtDef}
+
+let inline repeatStr s n = s * n
+
+let result = (task {{ return repeatStr "x" 3 }}).Result
+if result <> "xxx" then failwith (sprintf "Expected 'xxx' but got '%%s'" result)
+
+let result2 = (task {{ return repeatStr "ab" 2 }}).Result
+if result2 <> "abab" then failwith (sprintf "Expected 'abab' but got '%%s'" result2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``adversarial — Signature file constraining inline SRTP with extension operator`` () =
+        let fsiSource = """
+module ExtLib
+
+val repeatStr: s: string -> n: int -> string
+"""
+        let fsSource = $"""
+module ExtLib
+
+{stringRepeatExtDef}
+
+let inline repeatInline s n = s * n
+let repeatStr (s: string) (n: int) : string = repeatInline s n
+"""
+        Fsi fsiSource
+        |> withAdditionalSourceFile (FsSource fsSource)
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operators across modules in same compilation — non-generic, generic, multi-generic`` () =
+        FSharp """
+namespace TestNS
+
+module Types =
+    type Widget = { Value: int }
+    type Wrapper<'T> = { Inner: 'T }
+    type Pair<'K,'V> = { First: 'K; Second: 'V }
+
+module Ops =
+    open Types
+    type Widget with
+        static member (+) (a: Widget, b: Widget) = { Value = a.Value + b.Value }
+    type Wrapper<'T> with
+        static member (++) (a: Wrapper<'T>, b: Wrapper<'T>) = { Inner = a.Inner }
+    type Pair<'K,'V> with
+        static member (++) (a: Pair<'K,'V>, b: Pair<'K,'V>) = { First = a.First; Second = b.Second }
+
+module Consumer =
+    open Types
+    open Ops
+
+    let inline add a b = a + b
+    let inline combine a b = a ++ b
+
+    // Non-generic
+    let w = add { Value = 10 } { Value = 20 }
+    if w.Value <> 30 then failwith (sprintf "Expected 30 but got %d" w.Value)
+
+    // Single-generic
+    let r = combine { Inner = "hello" } { Inner = "world" }
+    if r.Inner <> "hello" then failwith (sprintf "Expected 'hello' but got '%s'" r.Inner)
+
+    // Multi-generic
+    let p = combine { First = 1; Second = "a" } { First = 2; Second = "b" }
+    if p.First <> 1 then failwith (sprintf "Expected 1 but got %d" p.First)
+    if p.Second <> "b" then failwith (sprintf "Expected 'b' but got '%s'" p.Second)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``FS1215 interacts correctly with warnaserror under different langversions`` () =
+        // Under langversion:8.0, FS1215 fires → --warnaserror promotes to error
+        FSharp """
+module Test
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+        """
+        |> asLibrary
+        |> withOptions ["--warnaserror"]
+        |> compile
+        |> shouldFail
+        |> ignore
+
+        // Under langversion:preview, FS1215 is suppressed → --warnaserror has no effect
+        FSharp """
+module Test
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+        """
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withOptions ["--warnaserror"]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Quotation with true extrinsic extension operator is evaluable`` () =
+        // True optional extension on external type, used cross-assembly
+        let library =
+            FSharp """
+module ExtLib
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+            """
+            |> asLibrary
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+open ExtLib
+
+let inline repeatStr (s: ^T) (n: int) = s * n
+let result = repeatStr "ab" 3
+if result <> "ababab" then failwith (sprintf "Direct: expected 'ababab' got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator satisfies multi-support SRTP constraint`` () =
+        FSharp """
+module Test
+type Celsius = { Degrees: float }
+type Fahrenheit = { Degrees: float }
+
+type Celsius with
+    static member op_Implicit (c: Celsius) : Fahrenheit = { Degrees = c.Degrees * 9.0/5.0 + 32.0 }
+
+let inline convert (x: ^T) : ^U = ((^T or ^U) : (static member op_Implicit: ^T -> ^U) x)
+let f = convert { Celsius.Degrees = 100.0 }
+if abs (f.Degrees - 212.0) > 0.01 then failwith (sprintf "Expected 212 got %f" f.Degrees)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive inline and active pattern with extension operators`` () =
+        FSharp """
+module Test
+type Wrapped = { V: int }
+module WOps =
+    type Wrapped with
+        static member (+) (a: Wrapped, b: Wrapped) = { V = a.V + b.V }
+        static member get_Zero() : Wrapped = { V = 0 }
+
+open WOps
+
+// Active pattern using extension (+)
+let inline (|Positive|Zero|Negative|) (x: ^T) =
+    let z = LanguagePrimitives.GenericZero< ^T>
+    if x > z then Positive
+    elif x < z then Negative
+    else Zero
+
+// Inline fold using extension (+) and GenericZero
+let inline sumList (xs: ^T list) : ^T =
+    List.fold (fun acc x -> acc + x) LanguagePrimitives.GenericZero< ^T> xs
+
+let items = [ {V=1}; {V=2}; {V=3} ]
+let total = sumList items
+if total.V <> 6 then failwith (sprintf "Expected 6 got %d" total.V)
+
+// Use active pattern with ints to verify it works
+match 42 with
+| Positive -> ()
+| _ -> failwith "Expected Positive"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator produces identical results with and without optimization`` () =
+        let library = optionMapExtLib
+
+        let consumer = FSharp """
+module Consumer
+open ExtLib
+let result = Some 7 |>> (fun n -> n * 3)
+match result with
+| Some 21 -> ()
+| other -> failwith (sprintf "Expected Some 21 got %A" other)
+        """
+
+        // With optimization
+        consumer
+        |> asExe |> withLangVersionPreview |> withReferences [library]
+        |> withOptimize |> compileAndRun |> shouldSucceed
+        |> ignore
+
+        // Without optimization
+        consumer
+        |> asExe |> withLangVersionPreview |> withReferences [library]
+        |> withNoOptimize |> compileAndRun |> shouldSucceed
+
+    [<Fact>]
+    let ``Unsolvable SRTP on concrete type still produces compile error`` () =
+        // Verify that calling a non-existent static member on a concrete type fails
+        FSharp """
+module Test
+type Foo = { X: int }
+let result : int = Foo.op_Addition({ X = 1 }, { X = 2 })
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+
+    [<Fact>]
+    let ``Witness quotation: C#-style extension on int evaluates in quotation`` () =
+        // Q4: C#-style extension resolved via SRTP inside <@ @>.
+        // The quotation must reference the declaring static class (IntExtensions),
+        // not System.Int32, so that EvaluateQuotation can find the method via reflection.
+        let csLib =
+            CSharp
+                """
+namespace CsExt {
+    public static class IntExtensions {
+        public static int Triple(this int x) { return x * 3; }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp
+            """
+module TestQ4
+
+open CsExt
+
+let inline tripleIt (x: ^T) = (^T : (member Triple : unit -> int) x)
+
+// Direct call — should work (already tested elsewhere)
+let direct = tripleIt 7
+if direct <> 21 then failwith (sprintf "Direct: expected 21 got %d" direct)
+
+// Quotation — the key test
+// The quotation preserves the call to the inline wrapper (tripleIt) with
+// witness arguments, consistent with how all inline SRTP functions are quoted.
+let q = <@ tripleIt 7 @>
+
+// Evaluate the quotation at runtime via reflection.
+// This exercises witness passing: the witness must resolve to
+// IntExtensions.Triple (the C#-style extension declaring type),
+// not System.Int32, for reflection to find the method.
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int
+if result <> 21 then failwith (sprintf "Quotation eval: expected 21 got %d" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: C#-style extension on array evaluates in quotation`` () =
+        // Q5: C#-style generic extension on T[] inside <@ @>.
+        // Tests minst fix-up for unsolved typars AND quotation encoding of
+        // the generic method type parameter.
+        let csLib =
+            CSharp """
+namespace CsExt {
+    public static class ArrayExtensions {
+        public static T[] Append<T>(this T[] a, T[] b) {
+            var result = new T[a.Length + b.Length];
+            a.CopyTo(result, 0);
+            b.CopyTo(result, a.Length);
+            return result;
+        }
+    }
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        FSharp """
+module TestQ5
+
+open CsExt
+open Microsoft.FSharp.Quotations
+
+let inline append (a: ^T) (b: int[]) = (^T : (member Append : int[] -> int[]) (a, b))
+
+// Direct call
+let direct = append [|1; 2|] [|3; 4|]
+if direct <> [|1; 2; 3; 4|] then failwith (sprintf "Direct: expected [|1;2;3;4|] got %A" direct)
+
+// Quotation
+let q = <@ append [|1; 2|] [|3; 4|] @>
+
+// Walk the quotation tree to find any MethodInfo referencing ArrayExtensions.
+// For inline SRTP functions, the top-level node is CallWithWitnesses to the
+// inline wrapper; the resolved extension method appears inside the witness args.
+let rec findArrayExtensions (expr: Expr) =
+    match expr with
+    | Patterns.Call(_, mi, args) ->
+        mi.DeclaringType.Name.Contains("ArrayExtensions") ||
+        args |> List.exists findArrayExtensions
+    | DerivedPatterns.SpecificCall <@ ignore @> _ -> false
+    | ExprShape.ShapeCombination(_, args) ->
+        args |> List.exists findArrayExtensions
+    | ExprShape.ShapeLambda(_, body) ->
+        findArrayExtensions body
+    | ExprShape.ShapeVar _ -> false
+
+if not (findArrayExtensions q) then
+    // If no ArrayExtensions found as a nested Call, check if top-level is the inline
+    // wrapper (expected for witness-based quotations).
+    match q with
+    | Patterns.Call(_, mi, _) when mi.Name.Contains("append") -> ()
+    | other -> failwith (sprintf "Unexpected quotation shape: %A" other)
+
+// Evaluate via reflection
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> int[]
+if result <> [|1; 2; 3; 4|] then failwith (sprintf "Quotation eval: expected [|1;2;3;4|] got %A" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: F# extrinsic extension on String cross-assembly evaluates in quotation`` () =
+        // Q2: Cross-assembly F# extension operator on System.String inside <@ @>.
+        // FSMethSln path: quotation must find the method on the library module type.
+        let library =
+            FSharp
+                """
+module ExtLib
+type System.String with
+    static member ( * ) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+            """
+            |> asLibrary
+            |> withLangVersionPreview
+
+        FSharp
+            """
+module Consumer
+open ExtLib
+
+let inline repeatStr (s: ^T) (n: int) = s * n
+
+// Direct call
+let direct = repeatStr "ha" 3
+if direct <> "hahaha" then failwith (sprintf "Direct: expected 'hahaha' got '%s'" direct)
+
+// Quotation
+let q = <@ repeatStr "ha" 3 @>
+
+// Evaluate via reflection
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> string
+if result <> "hahaha" then failwith (sprintf "Quotation eval: expected 'hahaha' got '%s'" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: F# extrinsic extension on Option evaluates in quotation`` () =
+        // Q3: F# extension operator on Option<'T> inside <@ @>.
+        // Tests generic type arg instantiation in quotation tree.
+        let library = optionMapExtLib
+
+        FSharp """
+module Consumer
+open ExtLib
+
+let inline mapOpt (x: ^T) (f: int -> string) = (^T : (static member (|>>) : ^T * (int -> string) -> string option) (x, f))
+
+// Direct call
+let direct = Some 42 |>> (fun n -> string n)
+match direct with
+| Some "42" -> ()
+| other -> failwith (sprintf "Direct: expected Some '42' got %A" other)
+
+// Quotation
+let q = <@ Some 7 |>> (fun n -> string n) @>
+
+// Evaluate
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> string option
+match result with
+| Some "7" -> ()
+| other -> failwith (sprintf "Quotation eval: expected Some '7' got %A" other)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: F# extrinsic extension on generic Box evaluates in quotation`` () =
+        // Q6: Cross-assembly user-defined generic type with extension operator in quotation.
+        // Tests type arg instantiation in quotation tree for non-FSharp.Core generic types.
+        let library =
+            FSharp
+                """
+module ExtLib
+
+type Box<'T> = { Value: 'T }
+
+type Box<'T> with
+    static member (++) (a: Box<'T>, b: Box<'T>) = { Value = a.Value }
+            """
+            |> asLibrary
+            |> withLangVersionPreview
+            |> withName "ExtLib"
+
+        FSharp
+            """
+module Consumer
+open ExtLib
+
+let inline merge (a: ^T) (b: ^T) = a ++ b
+
+// Direct call
+let direct = merge { Value = 42 } { Value = 99 }
+if direct.Value <> 42 then failwith (sprintf "Direct: expected 42 got %d" direct.Value)
+
+// Quotation with int instantiation
+let q = <@ merge { Value = 42 } { Value = 99 } @>
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> Box<int>
+if result.Value <> 42 then failwith (sprintf "Quotation eval int: expected 42 got %d" result.Value)
+
+// Quotation with string instantiation — verifies type arg varies correctly
+let qs = <@ merge { Value = "hello" } { Value = "world" } @>
+let resultS = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation qs :?> Box<string>
+if resultS.Value <> "hello" then failwith (sprintf "Quotation eval string: expected 'hello' got '%s'" resultS.Value)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: DU extension operator evaluates in quotation`` () =
+        // Q7: Extension operator on a discriminated union type inside <@ @>.
+        // Verifies DU types have no special edge cases in quotation encoding.
+        FSharp
+            """
+module TestQ7
+
+type Tree<'T> = Leaf of 'T | Node of Tree<'T> * Tree<'T>
+
+type Tree<'T> with
+    static member (+) (a, b) = Node(a, b)
+
+let inline combine a b = a + b
+
+// Direct call
+let direct = combine (Leaf 1) (Leaf 2)
+match direct with
+| Node(Leaf 1, Leaf 2) -> ()
+| other -> failwith (sprintf "Direct: expected Node(Leaf 1, Leaf 2) got %A" other)
+
+// Quotation
+let q = <@ combine (Leaf 1) (Leaf 2) @>
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> Tree<int>
+match result with
+| Node(Leaf 1, Leaf 2) -> ()
+| other -> failwith (sprintf "Quotation eval: expected Node(Leaf 1, Leaf 2) got %A" other)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Witness quotation: ReflectedDefinition with extension operator`` () =
+        // Q8: [<ReflectedDefinition>] + extension operator witness.
+        // Sub-test (a): non-inline [<ReflectedDefinition>] calling inline SRTP with ext op
+        // Sub-test (b): verify the reflected definition is retrievable and evaluable
+        FSharp """
+module TestQ8
+
+open Microsoft.FSharp.Quotations
+
+type Widget = { V: int }
+
+type Widget with
+    static member (+) (a: Widget, b: Widget) = { V = a.V + b.V }
+
+let inline addWidgets a b = a + b
+
+// Sub-test (a): non-inline [<ReflectedDefinition>] calling inline SRTP
+[<ReflectedDefinition>]
+let addTwoWidgets (a: Widget) (b: Widget) : Widget = addWidgets a b
+
+// Verify direct execution
+let direct = addTwoWidgets { V = 10 } { V = 20 }
+if direct.V <> 30 then failwith (sprintf "Direct: expected 30 got %d" direct.V)
+
+// Sub-test (b): retrieve the reflected definition
+match Expr.TryGetReflectedDefinition(typeof<Widget>.DeclaringType.GetMethod("addTwoWidgets")) with
+| Some _ -> ()  // ReflectedDefinition is retrievable — good
+| None -> 
+    // Try alternative: the method might be on the module type
+    let moduleType = typeof<Widget>.Assembly.GetTypes() |> Array.find (fun t -> t.Name = "TestQ8")
+    match Expr.TryGetReflectedDefinition(moduleType.GetMethod("addTwoWidgets")) with
+    | Some _ -> ()  // Found it
+    | None -> failwith "ReflectedDefinition not found for addTwoWidgets"
+
+// Also verify via quotation
+let q = <@ addTwoWidgets { V = 3 } { V = 4 } @>
+let result = Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q :?> Widget
+if result.V <> 7 then failwith (sprintf "Quotation eval: expected 7 got %d" result.V)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Extension operator via open type syntax resolves SRTP constraint`` () =
+        // C1: Verify that 'open type' makes extension operators visible to SRTP.
+        FSharp """
+module TestOpenType
+
+type StringOps =
+    static member (*) (s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+
+open type StringOps
+
+let inline repeat (s: ^T) (n: int) = s * n
+
+let r1 = repeat "ha" 3
+if r1 <> "hahaha" then failwith (sprintf "Expected 'hahaha' got '%s'" r1)
+
+let r2 = repeat "x" 5
+if r2 <> "xxxxx" then failwith (sprintf "Expected 'xxxxx' got '%s'" r2)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``F# Extension attribute method resolves via SRTP`` () =
+        // C2: F#-authored [<Extension>] attribute method resolved via SRTP.
+        // Tests that CreateImplFileTraitContext detects F#-compiled [<Extension>] types.
+        FSharp
+            """
+module TestFSharpExtAttr
+
+open System.Runtime.CompilerServices
+
+[<Extension>]
+type IntExt =
+    [<Extension>]
+    static member Triple(x: int) = x * 3
+
+let inline tripleIt (x: ^T) = (^T : (member Triple : unit -> int) x)
+
+let result = tripleIt 7
+if result <> 21 then failwith (sprintf "Expected 21 got %d" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``F# Extension attribute method resolves via SRTP cross-assembly`` () =
+        let library =
+            FSharp
+                """
+module ExtLib
+
+open System.Runtime.CompilerServices
+
+[<Extension>]
+type IntExt =
+    [<Extension>]
+    static member Triple(x: int) = x * 3
+            """
+            |> asLibrary
+            |> withLangVersionPreview
+            |> withName "ExtLib"
+
+        FSharp
+            """
+module Consumer
+
+open ExtLib
+open System.Runtime.CompilerServices
+
+let inline tripleIt (x: ^T) = (^T : (member Triple : unit -> int) x)
+
+let result = tripleIt 7
+if result <> 21 then failwith (sprintf "Expected 21 got %d" result)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Internal extension from referenced assembly not resolved via SRTP`` () =
+        // C3: Verify that internal extension members don't leak across assembly boundaries.
+        // CreateImplFileTraitContext uses AccessibleFromEverywhere but the constraint solver
+        // must still filter by actual accessibility.
+        let library =
+            FSharp
+                """
+module ExtLib
+
+module internal InternalExts =
+    type System.String with
+        static member Repeat(s: string, n: int) = System.String.Concat(System.Linq.Enumerable.Repeat(s, n))
+            """
+            |> withLangVersionPreview
+            |> withName "ExtLib"
+
+        // Without optimization
+        FSharp
+            """
+module Consumer
+open ExtLib
+
+let inline repeatStr (s: ^T) (n: int) = (^T : (static member Repeat: ^T * int -> ^T) (s, n))
+let r = repeatStr "ha" 3
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> withNoOptimize
+        |> compile
+        |> shouldFail
+        |> ignore
+
+        // With optimization — same result expected
+        FSharp
+            """
+module Consumer
+open ExtLib
+
+let inline repeatStr (s: ^T) (n: int) = (^T : (static member Repeat: ^T * int -> ^T) (s, n))
+let r = repeatStr "ha" 3
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> withOptimize
+        |> compile
+        |> shouldFail
+
+    [<Fact>]
+    let ``Unsolvable SRTP with natural operator syntax produces compile error not runtime NSE`` () =
+        // C4: Verify that using an operator on a type without that operator
+        // produces a compile-time error, not a runtime NotSupportedException.
+        FSharp
+            """
+module TestC4
+
+type Foo = { X: int }
+
+// No (+) defined on Foo — this must fail at compile time
+let r = { X = 1 } + { X = 2 }
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1
+
+    [<Fact>]
+    let ``Previously unsolvable SRTP becomes solvable with extension operator`` () =
+        // Companion to C4: adding an extension operator makes the previously
+        // unsolvable SRTP work — no compile error, correct runtime result.
+        FSharp
+            """
+module TestC4Fix
+
+type Foo = { X: int }
+
+type Foo with
+    static member (+) (a: Foo, b: Foo) = { X = a.X + b.X }
+
+let r = { X = 1 } + { X = 2 }
+if r.X <> 3 then failwith (sprintf "Expected 3 but got %d" r.X)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed

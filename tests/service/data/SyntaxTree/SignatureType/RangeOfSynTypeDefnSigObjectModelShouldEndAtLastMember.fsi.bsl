@@ -10,7 +10,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [MyRecord],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,13)),
+                     false, None, (3,5--3,13), None),
                   ObjectModel (Class, [], (4,4--5,7)),
                   [Member
                      (SynValSig

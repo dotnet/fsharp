@@ -20,7 +20,7 @@ ImplFile
                                { AmpersandRanges = [] })], [], (5,8--5,16))), [],
                      [Teq],
                      PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (5,5--5,8)),
+                     true, None, (5,5--5,8), None),
                   Simple (None (5,5--5,8), (5,5--5,8)), [], None, (4,0--5,8),
                   { LeadingKeyword = Type (5,0--5,4)
                     EqualsRange = None

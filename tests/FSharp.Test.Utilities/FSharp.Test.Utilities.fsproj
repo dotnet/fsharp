@@ -41,6 +41,7 @@
     <Compile Include="FileInlineDataAttribute.fs" />
     <Compile Include="ReflectionHelper.fs" />
     <Compile Include="SurfaceArea.fs" />
+    <Compile Include="XunitHelpers.fs" />
     <Compile Include="XunitSetup.fs" />
   </ItemGroup>
 

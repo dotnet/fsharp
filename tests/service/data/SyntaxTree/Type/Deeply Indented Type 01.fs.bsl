@@ -8,18 +8,18 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [InnerModule],
                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (4,0--4,18)), false,
+                 None, (4,0--4,18), None), false,
               [NestedModule
                  (SynComponentInfo
                     ([], None, [], [DeeplyNested],
                      PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (5,4--5,23)), false,
+                     false, None, (5,4--5,23), None), false,
                   [Types
                      ([SynTypeDefn
                          (SynComponentInfo
                             ([], None, [], [IndentedType],
                              PreXmlDoc ((6,8), FSharp.Compiler.Xml.XmlDocCollector),
-                             false, None, (6,13--6,25)),
+                             false, None, (6,13--6,25), None),
                           Simple (None (6,13--6,27), (6,13--6,27)), [], None,
                           (6,13--6,27), { LeadingKeyword = Type (6,8--6,12)
                                           EqualsRange = Some (6,26--6,27)
@@ -29,7 +29,7 @@ ImplFile
                          (SynComponentInfo
                             ([], None, [], [NestedType],
                              PreXmlDoc ((7,12), FSharp.Compiler.Xml.XmlDocCollector),
-                             false, None, (7,17--7,27)),
+                             false, None, (7,17--7,27), None),
                           Simple
                             (TypeAbbrev
                                (Ok, LongIdent (SynLongIdent ([int], [], [None])),
@@ -41,7 +41,7 @@ ImplFile
                      (SynComponentInfo
                         ([], None, [], [NestedModule],
                          PreXmlDoc ((8,12), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (8,12--8,31)), false,
+                         false, None, (8,12--8,31), None), false,
                       [Let
                          (false,
                           [SynBinding

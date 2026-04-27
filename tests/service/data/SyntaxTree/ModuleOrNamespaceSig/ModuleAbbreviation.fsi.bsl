@@ -15,13 +15,13 @@ SigFile
              (SynComponentInfo
                 ([], None, [], [Bar],
                  PreXmlDoc ((8,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (8,0--8,10)), false,
+                 None, (8,0--8,10), None), false,
               [Types
                  ([SynTypeDefnSig
                      (SynComponentInfo
                         ([], None, [], [a],
                          PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (9,9--9,10)),
+                         false, None, (9,9--9,10), None),
                       Simple
                         (Union
                            (None,

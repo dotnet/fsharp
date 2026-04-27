@@ -7,13 +7,13 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [M],
                  PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (6,0--6,8)), false,
+                 None, (6,0--6,8), None), false,
               [Types
                  ([SynTypeDefn
                      (SynComponentInfo
                         ([], None, [], [],
                          PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (7,9--7,10)),
+                         false, None, (7,9--7,10), None),
                       ObjectModel
                         (Class,
                          [Member

@@ -8,7 +8,7 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [A],
                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (1,0--1,8)), false,
+                 None, (1,0--1,8), None), false,
               [Let
                  (false,
                   [SynBinding

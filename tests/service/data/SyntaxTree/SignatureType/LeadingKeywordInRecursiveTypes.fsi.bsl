@@ -9,7 +9,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [A],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,6)),
+                     false, None, (2,5--2,6), None),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([obj], [], [None])),
@@ -21,7 +21,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [B],
                      PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,4--3,5)),
+                     false, None, (3,4--3,5), None),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([int], [], [None])),

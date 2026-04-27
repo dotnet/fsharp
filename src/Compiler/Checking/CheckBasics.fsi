@@ -9,6 +9,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Collections
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.Infos
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
@@ -140,6 +141,11 @@ type TcEnv =
     member NameEnv: NameResolutionEnv
 
     member AccessRights: AccessorDomain
+
+    /// Makes this environment available in a form that can be stored into a trait during solving.
+    member TraitContext: ITraitContext option
+
+    interface ITraitContext<AccessorDomain, MethInfo, InfoReader>
 
 /// Represents the current environment of type variables that have implicit scope
 /// (i.e. are without explicit declaration).

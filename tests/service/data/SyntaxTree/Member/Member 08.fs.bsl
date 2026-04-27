@@ -17,7 +17,7 @@ ImplFile
                                { AmpersandRanges = [] })], [], (3,17--3,30))),
                      [], [INumericNorm],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (3,5--3,17)),
+                     true, None, (3,5--3,17), None),
                   ObjectModel
                     (Unspecified,
                      [Interface

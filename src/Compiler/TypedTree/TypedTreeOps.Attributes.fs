@@ -1668,7 +1668,7 @@ module internal DebugPrint =
 
     and auxTraitL env (ttrait: TraitConstraintInfo) =
 #if DEBUG
-        let (TTrait(tys, nm, memFlags, argTys, retTy, _, _)) = ttrait
+        let (TTrait(tys, nm, memFlags, argTys, retTy, _, _, _)) = ttrait
 
         match global_g with
         | None -> wordL (tagText "<no global g>")

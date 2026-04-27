@@ -33,7 +33,7 @@ SigFile
              (SynComponentInfo
                 ([], None, [], [Tuple],
                  PreXmlDoc ((11,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (11,0--11,12)), false,
+                 None, (11,0--11,12), None), false,
               [Types
                  ([SynTypeDefnSig
                      (SynComponentInfo
@@ -54,7 +54,7 @@ SigFile
                                    { AmpersandRanges = [] })], [],
                                (13,14--13,31))), [], [Tuple],
                          PreXmlDoc ((13,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         true, None, (13,9--13,14)),
+                         true, None, (13,9--13,14), None),
                       ObjectModel
                         (Unspecified,
                          [Interface
@@ -226,7 +226,7 @@ SigFile
              (SynComponentInfo
                 ([], None, [], [Choice],
                  PreXmlDoc ((24,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (24,0--24,13)), false,
+                 None, (24,0--24,13), None), false,
               [Types
                  ([SynTypeDefnSig
                      (SynComponentInfo
@@ -282,7 +282,7 @@ SigFile
                                    { AmpersandRanges = [] })], [],
                                (29,15--29,40))), [], [Choice],
                          PreXmlDoc ((27,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         true, None, (29,9--29,15)),
+                         true, None, (29,9--29,15), None),
                       Simple
                         (Union
                            (None,
@@ -392,7 +392,7 @@ SigFile
                         Range = (46,2--46,10) }]
                     Range = (46,0--46,12) }], None, [], [Operators],
                  PreXmlDoc ((46,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (47,0--47,16)), false,
+                 None, (47,0--47,16), None), false,
               [Types
                  ([SynTypeDefnSig
                      (SynComponentInfo
@@ -404,7 +404,7 @@ SigFile
                                    { AmpersandRanges = [] })], [],
                                (49,16--49,20))), [], [[,]],
                          PreXmlDoc ((49,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         true, None, (49,9--49,16)),
+                         true, None, (49,9--49,16), None),
                       Simple (None (49,9--61,26), (49,9--61,26)),
                       [Member
                          (SynValSig

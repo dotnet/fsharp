@@ -9,7 +9,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [Y],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,6)),
+                     false, None, (4,5--4,6), None),
                   ObjectModel
                     (Unspecified,
                      [Member

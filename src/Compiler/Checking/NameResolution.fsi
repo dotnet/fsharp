@@ -233,6 +233,9 @@ type NameResolutionEnv =
         /// Other extension members unindexed by type
         eUnindexedExtensionMembers: ExtensionMember list
 
+        /// Static operator methods from 'open type' declarations, available for SRTP resolution
+        eOpenedTypeOperators: NameMultiMap<MethInfo>
+
         /// Typars (always available by unqualified names). Further typars can be
         /// in the tpenv, a structure folded through each top-level definition.
         eTypars: NameMap<Typar>
@@ -726,13 +729,18 @@ val NewInferenceTypes: TcGlobals -> 'T list -> TType list
 /// each and ensure that the constraints on the new type variables are adjusted.
 ///
 /// Returns the inference type variables as a list of types.
-val FreshenTypars: g: TcGlobals -> range -> Typars -> TType list
+val FreshenTypars: g: TcGlobals -> traitCtxt: ITraitContext option -> range -> Typars -> TType list
 
 /// Given a method, which may be generic, make new inference type variables for
 /// its generic parameters, and ensure that the constraints the new type variables are adjusted.
 ///
 /// Returns the inference type variables as a list of types.
-val FreshenMethInfo: range -> MethInfo -> TType list
+val FreshenMethInfo: g: TcGlobals -> traitCtxt: ITraitContext option -> range -> MethInfo -> TType list
+
+/// Select extension method infos that are relevant to solving a trait constraint.
+val SelectExtensionMethInfosForTrait:
+    traitInfo: TraitConstraintInfo * m: range * nenv: NameResolutionEnv * infoReader: InfoReader ->
+        (TType * MethInfo) list
 
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
@@ -743,6 +751,7 @@ val FreshenMethInfo: range -> MethInfo -> TType list
 ///   3. the inference type variables as a list of types.
 val FreshenAndFixupTypars:
     g: TcGlobals ->
+    traitCtxt: ITraitContext option ->
     m: range ->
     rigid: TyparRigidity ->
     fctps: Typars ->
@@ -757,7 +766,12 @@ val FreshenAndFixupTypars:
 ///   1. the new type parameters
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
-val FreshenTypeInst: g: TcGlobals -> m: range -> tpsorig: Typar list -> Typar list * TyparInstantiation * TTypes
+val FreshenTypeInst:
+    g: TcGlobals ->
+    traitCtxt: ITraitContext option ->
+    m: range ->
+    tpsorig: Typar list ->
+        Typar list * TyparInstantiation * TTypes
 
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace:

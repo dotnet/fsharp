@@ -1033,7 +1033,14 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m staticTyOpt ob
 
 /// Build an expression node that is a call to a .NET method. 
 let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst direct args = 
-    let isStruct = isStructTy g minfo.ApparentEnclosingType
+    // For C#-style extension methods, the declaring type is the static helper class
+    // (a reference type), not the apparent/extended type. Use the declaring type for
+    // isStruct to avoid emitting value-type boxity for a reference-type method spec.
+    let isStruct =
+        if minfo.IsILExtensionMethod then
+            false
+        else
+            isStructTy g minfo.ApparentEnclosingType
     let ctor = minfo.IsConstructor
     if minfo.IsClassConstructor then 
         error (InternalError (minfo.ILName+": cannot call a class constructor", m))
@@ -1085,7 +1092,22 @@ let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
     let vExpr = Expr.Val (vref, valUseFlags, m)
     let vExprTy = vref.Type
     let tpsorig, tau =  vref.GeneralizedType
-    let vtinst = argsOfAppTy g ty @ minst
+    let vtinst =
+        if vref.IsExtensionMember then
+            // For extension members, FormalMethodTypars includes the enclosing type's
+            // type parameters (AnalyzeTypeOfMemberVal treats all typars as method typars).
+            // The minst from the trait solution contains fresh type variables for all of them,
+            // but the enclosing type's type parameters may not be solved through trait matching
+            // (the trait solver constrains method-level typars, not enclosing-type typars).
+            // Use argsOfAppTy to get the concrete enclosing type args, then append
+            // the remaining method-specific type args from minst.
+            let parentTyArgs = argsOfAppTy g ty
+            if List.length minst < parentTyArgs.Length then
+                error(InternalError("BuildFSharpMethodCall: minst shorter than enclosing type args for extension member", m))
+            else
+                parentTyArgs @ List.skip parentTyArgs.Length minst
+        else
+            argsOfAppTy g ty @ minst
     if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch", m))
     let expr = mkTyAppExpr m (vExpr, vExprTy) vtinst
     let exprTy = instType (mkTyparInst tpsorig vtinst) tau
@@ -2184,14 +2206,56 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             match sln with 
             | ILMethSln(origTy, extOpt, mref, minst, staticTyOpt) ->
                 let metadataTy = convertToTypeWithMetadataIfPossible g origTy
-                let tcref = tcrefOfAppTy g metadataTy
-                let mdef = resolveILMethodRef tcref.ILTyconRawMetadata mref
+                // ILMethSln minst: strip typar indirections. For C#-style extensions,
+                // unsolved typars from 'this' param (dropped by GetParamTypes) are
+                // resolved via origTy and IL first-param type variable analysis.
+                let minst =
+                    let hasUnsolved = minst |> List.exists (fun ty -> match stripTyEqnsAndMeasureEqns g ty with TType_var(tp, _) -> not tp.IsSolved | _ -> false)
+                    if hasUnsolved && extOpt.IsSome then
+                        // Unsolved typars arise when GetParamTypes drops the 'this' parameter
+                        // for C#-style extensions, preventing CanMemberSigsMatchUpToCheck from
+                        // constraining method type parameters that appear only in the 'this'
+                        // parameter (e.g., T in Stringify<T>(this T value)).
+                        //
+                        // Only substitute typars that actually appear in the method's first
+                        // parameter (the 'this' parameter in IL). Typars in other parameters
+                        // should already be solved; if not, leave them as-is.
+                        let thisParamTyVarIndices =
+                            match mref.ArgTypes with
+                            | firstArgTy :: _ ->
+                                // Collect type variable indices used in the 'this' parameter type.
+                                // IL type variables are referenced by index (!!0, !!1, etc.)
+                                let rec collectTyVarIndices acc ilTy =
+                                    match ilTy with
+                                    | ILType.TypeVar idx -> Set.add (int idx) acc
+                                    | ILType.Array(_, elTy) -> collectTyVarIndices acc elTy
+                                    | ILType.Boxed tspec | ILType.Value tspec ->
+                                        tspec.GenericArgs |> List.fold collectTyVarIndices acc
+                                    | ILType.Byref innerTy | ILType.Ptr innerTy ->
+                                        collectTyVarIndices acc innerTy
+                                    | _ -> acc
+                                collectTyVarIndices Set.empty firstArgTy
+                            | [] -> Set.empty
+                        minst |> List.mapi (fun i ty ->
+                            match stripTyEqnsAndMeasureEqns g ty with
+                            | TType_var(tp, _) when not tp.IsSolved && Set.contains i thisParamTyVarIndices ->
+                                origTy
+                            | other -> other)
+                    else
+                        minst |> List.map (stripTyEqnsAndMeasureEqns g)
                 let ilMethInfo =
-                    match extOpt with 
-                    | None -> MethInfo.CreateILMeth(amap, m, origTy, mdef)
-                    | Some ilActualTypeRef -> 
-                        let actualTyconRef = ImportILTypeRef amap m ilActualTypeRef 
-                        MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
+                    match extOpt with
+                    | None ->
+                        let tcref = tcrefOfAppTy g metadataTy
+                        let mdef = resolveILMethodRef tcref.ILTyconRawMetadata mref
+                        MethInfo.CreateILMeth(amap, m, origTy, mdef)
+                    | Some ilActualTypeRef ->
+                        // For C#-style extension methods, the method lives in a static helper
+                        // class (ilActualTypeRef), not on the apparent/extended type (origTy).
+                        // Resolve the method reference against the declaring type's metadata.
+                        let actualTyconRef = ImportILTypeRef amap m ilActualTypeRef
+                        let mdef = resolveILMethodRef actualTyconRef.ILTyconRawMetadata mref
+                        MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, Some 0UL, mdef)
                 Choice1Of5 (ilMethInfo, minst, staticTyOpt)
 
             | FSMethSln(ty, vref, minst, staticTyOpt) ->
@@ -2231,6 +2295,24 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                     | argExprs -> None, argExprs
                 else None, argExprs
 
+            // C#-style extensions: strip address-taking from receiver (static IL call expects by-value arg)
+            let receiverArgOpt =
+                if not minfo.IsCSharpStyleExtensionMember then receiverArgOpt
+                else
+                    match receiverArgOpt with
+                    | Some (Expr.Op(TOp.LValueOp(LAddrOf _, vref), _, [], m2)) ->
+                        Some (Expr.Val(vref, NormalValUse, m2))
+                    | Some (Expr.Let(TBind(tmp, innerExpr, _), Expr.Op(TOp.LValueOp(LAddrOf _, vref2), _, [], _), _, _))
+                        when valRefEq g (mkLocalValRef tmp) vref2 ->
+                        Some innerExpr
+                    | Some receiver when isByrefTy g (tyOfExpr g receiver) ->
+                        // General fallback for other byref forms: bind the byref to a
+                        // compiler-generated local, then dereference via LByrefGet to
+                        // convert byref<T> → T for the static extension method call.
+                        let tmp, _ = mkCompGenLocal m "csExtReceiver" (tyOfExpr g receiver)
+                        Some (mkCompGenLet m tmp receiver (mkAddrGet m (mkLocalValRef tmp)))
+                    | _ -> receiverArgOpt
+
             // For methods taking no arguments, 'argExprs' will be a single unit expression here
             let argExprs = 
                  match argTypes, argExprs with
@@ -2244,7 +2326,9 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         // Fix bug 1281 / issue #8098: If the receiver needs its address taken for a
         // constrained call, go do that and re-resolve via TraitCall with the byref receiver.
+        // Skip for C#-style extension methods: they are static in IL and take the receiver by value.
         let needsAddrTaken =
+            not minfo.IsCSharpStyleExtensionMember &&
             minfo.IsInstance &&
             (minfo.IsStruct || (ComputeConstrainedCallInfo g amap m staticTyOpt argExprs minfo).IsSome)
 

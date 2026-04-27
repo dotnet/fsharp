@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [CompilerStateCache],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, Some (Internal (2,5--2,13)), (2,14--2,32)),
+                     false, Some (Internal (2,5--2,13)), (2,14--2,32), None),
                   ObjectModel
                     (Class,
                      [ImplicitCtor

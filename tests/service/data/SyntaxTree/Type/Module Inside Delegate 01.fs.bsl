@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [MyDelegate],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,15)),
+                     false, None, (4,5--4,15), None),
                   ObjectModel
                     (Delegate
                        (Fun
@@ -67,7 +67,7 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [InvalidModule],
                  PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (5,4--5,24)), false,
+                 None, (5,4--5,24), None), false,
               [Let
                  (false,
                   [SynBinding

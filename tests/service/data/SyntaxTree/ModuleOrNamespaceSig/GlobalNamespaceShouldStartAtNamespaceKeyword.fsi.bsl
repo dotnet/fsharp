@@ -9,7 +9,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [Bar],
                      PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (6,5--6,8)),
+                     false, None, (6,5--6,8), None),
                   Simple
                     (Union
                        (None,

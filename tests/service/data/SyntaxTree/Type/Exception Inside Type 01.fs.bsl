@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [A],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,6)),
+                     false, None, (4,5--4,6), None),
                   Simple (None (4,5--4,6), (4,5--4,6)), [], None, (4,5--4,6),
                   { LeadingKeyword = Type (4,0--4,4)
                     EqualsRange = None

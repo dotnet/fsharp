@@ -14,7 +14,7 @@ SigFile
                                     Range = (4,2--4,5) }]
                     Range = (4,0--4,7) }], None, [], [Nested],
                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (5,0--5,13)), false,
+                 None, (5,0--5,13), None), false,
               [Val
                  (SynValSig
                     ([], SynIdent (x, None), SynValTyparDecls (None, true),

@@ -22,7 +22,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [U],
                      PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (5,5--5,6)),
+                     false, None, (5,5--5,6), None),
                   Simple
                     (Union
                        (None,

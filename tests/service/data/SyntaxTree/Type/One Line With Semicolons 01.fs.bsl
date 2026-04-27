@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [A],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,6)),
+                     false, None, (4,5--4,6), None),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([A], [], [None])),
@@ -22,7 +22,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [B],
                      PreXmlDoc ((4,12), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,17--4,18)),
+                     false, None, (4,17--4,18), None),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([A], [], [None])),
@@ -34,7 +34,7 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [C],
                  PreXmlDoc ((4,24), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (4,24--4,32)), false,
+                 None, (4,24--4,32), None), false,
               [Expr (Const (Unit, (4,35--4,37)), (4,35--4,37))], false,
               (4,24--4,37), { ModuleKeyword = Some (4,24--4,30)
                               EqualsRange = Some (4,33--4,34) });
@@ -71,7 +71,7 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [G],
                  PreXmlDoc ((4,94), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (4,94--4,102)), false,
+                 None, (4,94--4,102), None), false,
               [ModuleAbbrev (H, [E], (4,105--4,117))], false, (4,94--4,117),
               { ModuleKeyword = Some (4,94--4,100)
                 EqualsRange = Some (4,103--4,104) })],

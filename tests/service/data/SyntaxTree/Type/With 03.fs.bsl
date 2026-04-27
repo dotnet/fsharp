@@ -8,7 +8,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [T],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,6)),
+                     false, None, (3,5--3,6), None),
                   ObjectModel (Augmentation (3,7--3,11), [], (3,5--3,11)), [],
                   None, (3,5--3,11), { LeadingKeyword = Type (3,0--3,4)
                                        EqualsRange = None

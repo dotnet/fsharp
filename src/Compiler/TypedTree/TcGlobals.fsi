@@ -310,6 +310,8 @@ type internal TcGlobals =
 
     member attrib_AutoOpenAttribute: BuiltinAttribInfo
 
+    member attrib_AllowOverloadOnReturnTypeAttribute: BuiltinAttribInfo
+
     member attrib_ComparisonConditionalOnAttribute: BuiltinAttribInfo
 
     member attrib_CompilationArgumentCountsAttribute: BuiltinAttribInfo

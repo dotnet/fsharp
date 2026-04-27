@@ -12,7 +12,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [Person],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,11)),
+                     false, None, (3,5--3,11), None),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor

@@ -44,7 +44,7 @@ ImplFile
                                { AmpersandRanges = [(3,46--3,47)] })], [],
                            (3,6--3,57))), [], [C],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (3,5--3,6)),
+                     true, None, (3,5--3,6), None),
                   ObjectModel
                     (Unspecified,
                      [Member

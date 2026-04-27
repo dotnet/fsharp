@@ -8,7 +8,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [T],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,6)),
+                     false, None, (3,5--3,6), None),
                   Simple (None (3,5--3,6), (3,5--3,6)),
                   [ImplicitCtor
                      (None, [], Const (Unit, (3,6--3,8)), Some this,

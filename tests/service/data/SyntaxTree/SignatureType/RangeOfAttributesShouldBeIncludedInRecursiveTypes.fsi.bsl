@@ -9,7 +9,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [Foo],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,8)),
+                     false, None, (4,5--4,8), None),
                   Simple
                     (Union
                        (None,
@@ -32,7 +32,7 @@ SigFile
                             Range = (7,6--7,20) }]
                         Range = (7,4--7,22) }], None, [], [Bang],
                      PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (7,23--7,27)),
+                     false, None, (7,23--7,27), None),
                   Simple
                     (Record
                        (Some (Internal (8,4--8,12)),

@@ -8,18 +8,18 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [Level2],
                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (4,0--4,13)), false,
+                 None, (4,0--4,13), None), false,
               [NestedModule
                  (SynComponentInfo
                     ([], None, [], [Level3],
                      PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (5,4--5,17)), false,
+                     false, None, (5,4--5,17), None), false,
                   [Types
                      ([SynTypeDefn
                          (SynComponentInfo
                             ([], None, [], [MyType],
                              PreXmlDoc ((6,8), FSharp.Compiler.Xml.XmlDocCollector),
-                             false, None, (6,13--6,19)),
+                             false, None, (6,13--6,19), None),
                           Simple
                             (Union
                                (None,
@@ -36,7 +36,7 @@ ImplFile
                      (SynComponentInfo
                         ([], None, [], [InvalidModule],
                          PreXmlDoc ((8,12), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (8,12--8,32)), false,
+                         false, None, (8,12--8,32), None), false,
                       [Let
                          (false,
                           [SynBinding

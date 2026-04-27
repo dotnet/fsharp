@@ -29,7 +29,7 @@ ImplFile
              (SynComponentInfo
                 ([], None, [], [SynExprAppLocationsImpl],
                  PreXmlDoc ((12,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 Some (Internal (12,7--12,15)), (12,0--12,39)), false,
+                 Some (Internal (12,7--12,15)), (12,0--12,39), None), false,
               [Let
                  (false,
                   [SynBinding

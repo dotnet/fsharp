@@ -8,7 +8,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [T],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,6)),
+                     false, None, (3,5--3,6), None),
                   ObjectModel
                     (Unspecified,
                      [Inherit (FromParseError (4,11--4,11), (4,4--4,11));

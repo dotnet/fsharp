@@ -1519,7 +1519,8 @@ type SynComponentInfo =
         xmlDoc: PreXmlDoc *
         preferPostfix: bool *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        synType: SynType option
 
     /// Gets the syntax range of this construct
     member Range: range

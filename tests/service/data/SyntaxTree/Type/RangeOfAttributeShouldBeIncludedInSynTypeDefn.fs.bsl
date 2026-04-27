@@ -15,7 +15,7 @@ ImplFile
                             Range = (2,2--2,5) }]
                         Range = (2,0--2,7) }], None, [], [Bar],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,8)),
+                     false, None, (3,5--3,8), None),
                   ObjectModel (Class, [], (4,4--5,7)), [], None, (2,0--5,7),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,9--3,10)

@@ -20,7 +20,7 @@ ImplFile
                                { ColonRange = (1,33--1,34)
                                  NotRange = (1,35--1,38) })], (1,6--1,44))), [],
                      [C], PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (1,5--1,6)),
+                     true, None, (1,5--1,6), None),
                   ObjectModel (Class, [], (1,47--1,56)), [], None, (1,5--1,56),
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,45--1,46)

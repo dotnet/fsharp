@@ -947,7 +947,7 @@ module ParsedInput =
             | _ -> None
 
         and walkComponentInfo isModule compInfo =
-            let (SynComponentInfo(Attributes attrs, TyparsAndConstraints(typars, cs1), cs2, _, _, _, _, r)) =
+            let (SynComponentInfo(Attributes attrs, TyparsAndConstraints(typars, cs1), cs2, _, _, _, _, r, _)) =
                 compInfo
 
             let constraints = cs1 @ cs2
@@ -2286,7 +2286,7 @@ module ParsedInput =
             | _ -> ()
 
         and walkComponentInfo isTypeExtensionOrAlias compInfo =
-            let (SynComponentInfo(Attributes attrs, TyparsAndConstraints(typars, cs1), cs2, longIdent, _, _, _, _)) =
+            let (SynComponentInfo(Attributes attrs, TyparsAndConstraints(typars, cs1), cs2, longIdent, _, _, _, _, _)) =
                 compInfo
 
             let constraints = cs1 @ cs2

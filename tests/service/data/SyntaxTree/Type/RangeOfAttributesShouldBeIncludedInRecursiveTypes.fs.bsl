@@ -29,7 +29,7 @@ ImplFile
                                { AmpersandRanges = [] })], [], (3,8--3,22))), [],
                      [Foo],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (3,5--3,8)),
+                     true, None, (3,5--3,8), None),
                   Simple
                     (Union
                        (None,
@@ -83,7 +83,7 @@ ImplFile
                                { AmpersandRanges = [] })], [], (6,41--6,55))),
                      [], [Bar],
                      PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (6,38--6,41)),
+                     true, None, (6,38--6,41), None),
                   Simple
                     (Record
                        (Some (Internal (7,4--7,12)),

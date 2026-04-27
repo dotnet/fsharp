@@ -10,7 +10,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [Bear],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,9)),
+                     false, None, (4,5--4,9), None),
                   Simple
                     (Enum
                        ([SynEnumCase

@@ -9,7 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [Foo],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,8)),
+                     false, None, (2,5--2,8), None),
                   Simple
                     (Enum
                        ([SynEnumCase
