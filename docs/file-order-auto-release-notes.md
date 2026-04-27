@@ -67,19 +67,16 @@ off the `and` keyword.
 
 ## Test coverage on this branch
 
-Every fixture below runs against the locally-built compiler and is part of
-the regression sweep at `tests/file-order-auto-test/`.
+The bulk of the regression coverage now lives in the upstream
+ComponentTests harness, opted into via `|> withFileOrderAuto`.
 
-| Fixture | Coverage |
-|---|---|
-| `cycle-test-b4/` | Cross-file mutual recursion via cycle group synthesis. |
-| `inference-tests/` | SRTP, record/union disambiguation, operator overloads (4/4). |
-| `fsi-tests/` | `.fsi`/`.fs` pairing with partial coverage and ordering constraints (2/2). |
-| `error-corpus/` | Six error categories, byte-for-byte parity manual vs auto (6/6). |
-| `deprecation-test/` | FS3887 fires/suppresses correctly (3/3). |
-| `fcs-smoke-test/` | `FSharpChecker.ParseAndCheckProject` reorders via OtherOptions. |
-| `fcs-ide-smoke-test/` | Completions, Go-to-Def, Find-References, FS3887 via FCS. |
-| `oss-sweep/` | 13 real-world OSS projects under `--file-order-auto+`. **Auto-mode adds zero errors over baseline for every buildable target.** See [`tests/file-order-auto-test/oss-sweep/RESULTS.md`](../tests/file-order-auto-test/oss-sweep/RESULTS.md). |
+| Test surface | Location | Coverage |
+|---|---|---|
+| `TypeChecks.FileOrderAutoTests` | `tests/FSharp.Compiler.ComponentTests/TypeChecks/FileOrderAuto/FileOrderAutoTests.fs` | 13 [<Fact>]s: misordered files, cross-file mutual recursion (cycle synthesis), `.fsi`/`.fs` pairing, record/union/SRTP/operator-overload inference, manual mode unchanged, FS3887 fires/silent, three diagnostic-parity cases (FS0039/FS0001/FS0003). |
+| `tests/file-order-auto-test/end-to-end/run.sh` | shell | Scaffolds a fresh `dotnet new` F# project, scrambles file order, sets `<FSharpAutoFileOrder>true</FSharpAutoFileOrder>`, builds + runs the exe — exercises the MSBuild → fsc plumbing the ComponentTests harness can't reach. |
+| `tests/file-order-auto-test/self-host-test.sh` | shell | Compiles the F# compiler itself with randomly-shuffled `<Compile Include>` order — strongest available "real workload" stress for the analyser. |
+| `tests/file-order-auto-test/fcs-smoke-test/` & `fcs-ide-smoke-test/` | shell + .fs | FCS API smoke tests (`ParseAndCheckProject`, IDE features). Slated to migrate to the SyntheticProject / TransparentCompiler harness for incremental-compilation coverage. |
+| `tests/file-order-auto-test/oss-sweep/` | RESULTS.md | 13 real-world OSS F# projects under `--file-order-auto+`. **Auto-mode adds zero errors over baseline for every buildable target.** See [`tests/file-order-auto-test/oss-sweep/RESULTS.md`](../tests/file-order-auto-test/oss-sweep/RESULTS.md). |
 
 ### OSS sweep results
 
@@ -146,24 +143,23 @@ Standard repo build:
 ./build.sh -c Release
 ```
 
-Run the focused test suite:
+Run the file-order-auto ComponentTests:
 
 ```bash
 PATH=$(pwd)/.dotnet:$PATH DOTNET_ROOT=$(pwd)/.dotnet \
 DOTNET_GCHeapHardLimit=0x100000000 \
-  ./tests/file-order-auto-test/inference-tests/run-all.sh
+  dotnet artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll \
+  --filter-class TypeChecks.FileOrderAutoTests
+```
+
+Optional shell-driven smokes (out-of-process integration):
+
+```bash
+PATH=$(pwd)/.dotnet:$PATH DOTNET_ROOT=$(pwd)/.dotnet \
+  ./tests/file-order-auto-test/end-to-end/run.sh
 
 PATH=$(pwd)/.dotnet:$PATH DOTNET_ROOT=$(pwd)/.dotnet \
-DOTNET_GCHeapHardLimit=0x100000000 \
-  ./tests/file-order-auto-test/fsi-tests/run-all.sh
-
-PATH=$(pwd)/.dotnet:$PATH DOTNET_ROOT=$(pwd)/.dotnet \
-DOTNET_GCHeapHardLimit=0x100000000 \
-  ./tests/file-order-auto-test/error-corpus/diff-errors.sh
-
-PATH=$(pwd)/.dotnet:$PATH DOTNET_ROOT=$(pwd)/.dotnet \
-DOTNET_GCHeapHardLimit=0x100000000 \
-  ./tests/file-order-auto-test/deprecation-test/run-all.sh
+  ./tests/file-order-auto-test/self-host-test.sh
 ```
 
 The 4 GB heap limit is a local safety guard; drop the
