@@ -66,6 +66,21 @@ type CharAttribute(name: string, value: char) =
     member _.Value = value
     new([<Optional>] value: char) = CharAttribute("", value)
 
+// Enum types with different underlying types
+type MyIntEnum = A = 0 | B = 1
+
+type MyByteEnum = A = 0uy | B = 1uy
+
+type EnumIntAttribute(name: string, value: MyIntEnum) =
+    inherit Attribute()
+    member _.Value = value
+    new([<Optional>] value: MyIntEnum) = EnumIntAttribute("", value)
+
+type EnumByteAttribute(name: string, value: MyByteEnum) =
+    inherit Attribute()
+    member _.Value = value
+    new([<Optional>] value: MyByteEnum) = EnumByteAttribute("", value)
+
 [<Bool>]
 type T1() = class end
 
@@ -102,6 +117,12 @@ type T11() = class end
 [<UInt64>]
 type T12() = class end
 
+[<EnumInt>]
+type T13() = class end
+
+[<EnumByte>]
+type T14() = class end
+
 // Verify default values at runtime via reflection
 let inline getAttr<'a when 'a :> Attribute> (t: Type) = t.GetCustomAttributes(typeof<'a>, false).[0] :?> 'a
 
@@ -123,5 +144,7 @@ let main _ =
     check "uint16" (getAttr<UInt16Attribute>(typeof<T10>)).Value 0us
     check "uint32" (getAttr<UInt32Attribute>(typeof<T11>)).Value 0u
     check "uint64" (getAttr<UInt64Attribute>(typeof<T12>)).Value 0UL
+    check "enum_int" (getAttr<EnumIntAttribute>(typeof<T13>)).Value MyIntEnum.A
+    check "enum_byte" (getAttr<EnumByteAttribute>(typeof<T14>)).Value MyByteEnum.A
     0
 

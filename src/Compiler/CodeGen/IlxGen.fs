@@ -10307,7 +10307,7 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
     | Expr.Const(Const.Zero, _, _), ILType.Array _ -> ILAttribElem.Null
 
     // Detect standard constants
-    | Expr.Const(c, m, _), _ ->
+    | Expr.Const(c, m, ty), _ ->
         let tynm = ilArgTy.TypeSpec.Name
         let isobj = (tynm = "System.Object")
 
@@ -10346,6 +10346,10 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
         | Const.Zero when tynm = "System.Single" -> ILAttribElem.Single 0.0f
         | Const.Zero when tynm = "System.Double" -> ILAttribElem.Double 0.0
         | Const.Zero when tynm = "System.Char" -> ILAttribElem.Char '\000'
+        | Const.Zero when isEnumTy g ty ->
+            let underlyingTy = underlyingTypeOfEnumTy g ty
+            let underlyingIlTy = GenType amap m eenv.tyenv underlyingTy
+            GenAttribArg amap g eenv (Expr.Const(Const.Zero, m, underlyingTy)) underlyingIlTy
         | Const.String i when isobj || tynm = "System.String" -> ILAttribElem.String(Some i)
         | _ -> error (InternalError("The type '" + tynm + "' may not be used as a custom attribute value", m))
 
