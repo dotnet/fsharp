@@ -425,7 +425,7 @@
     
     .maxstack  8
     IL_0000:  ldarga.s   x
-    IL_0002:  callvirt   instance string MyTestModule/Myassembly::ToString()
+    IL_0002:  call       instance string MyTestModule/Myassembly::ToString()
     IL_0007:  ret
   } 
 

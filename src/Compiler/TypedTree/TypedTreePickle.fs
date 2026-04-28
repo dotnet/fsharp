@@ -2591,7 +2591,7 @@ let fill_u_constraints, u_constraints = u_hole ()
 let fill_u_Vals, u_Vals = u_hole ()
 
 let p_ArgReprInfo (x: ArgReprInfo) st =
-    p_attribs x.Attribs st
+    p_attribs (x.Attribs.AsList()) st
     p_option p_ident x.Name st
 
 let p_TyparReprInfo (TyparReprInfo(a, b)) st =
@@ -2611,7 +2611,7 @@ let u_ArgReprInfo st =
     | [], None -> ValReprInfo.unnamedTopArg1
     | _ ->
         {
-            Attribs = a
+            Attribs = WellKnownValAttribs.Create(a)
             Name = b
             OtherRange = None
         }
@@ -2799,7 +2799,7 @@ and p_entity_spec_data (x: Entity) st =
     p_option p_pubpath x.entity_pubpath st
     p_access x.Accessibility st
     p_access x.TypeReprAccessibility st
-    p_attribs x.entity_attribs st
+    p_attribs (x.entity_attribs.AsList()) st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_ty x.TypeAbbrev st
     p_tcaug x.entity_tycon_tcaug st
@@ -2875,7 +2875,18 @@ and p_attribkind x st =
 and p_attrib (Attrib(a, b, c, d, e, _targets, f)) st = // AttributeTargets are not preserved
     p_tup6 (p_tcref "attrib") p_attribkind (p_list p_attrib_expr) (p_list p_attrib_arg) p_bool p_dummy_range (a, b, c, d, e, f) st
 
-and p_attrib_expr (AttribExpr(e1, e2)) st = p_tup2 p_expr p_expr (e1, e2) st
+and p_attrib_expr (AttribExpr(e1, e2)) st =
+    // Normalize Expr.Val back to Expr.Const before pickling.
+    // The literal name recovery (Expr.Val in source field) is an in-memory optimization
+    // for signature generation display. We must not change the pickle format, because
+    // old compilers reading Expr.Val in this position would show degraded attribute display.
+    let e1 =
+        match e1 with
+        | Expr.Val(vref, _, m) when vref.LiteralValue.IsSome ->
+            Expr.Const(vref.LiteralValue.Value, m, vref.Type)
+        | _ -> e1
+
+    p_tup2 p_expr p_expr (e1, e2) st
 
 and p_attrib_arg (AttribNamedArg(a, b, c, d)) st =
     p_tup4 p_string p_ty p_bool p_attrib_expr (a, b, c, d) st
@@ -3145,7 +3156,7 @@ and u_entity_spec_data st : Entity =
         entity_logical_name = x2a
         entity_range = x2c
         entity_pubpath = x3
-        entity_attribs = x6
+        entity_attribs = WellKnownEntityAttribs.Create(x6)
         entity_tycon_repr = x7
         entity_tycon_tcaug = x9
         entity_flags = EntityFlags x11
@@ -3313,7 +3324,7 @@ and u_ValData st =
                         val_member_info = x8
                         val_declaring_entity = x13b
                         val_xmldocsig = x12
-                        val_attribs = x9
+                        val_attribs = WellKnownValAttribs.Create(x9)
                     }
     }
 

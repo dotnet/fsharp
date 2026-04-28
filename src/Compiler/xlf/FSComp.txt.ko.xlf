@@ -1868,8 +1868,8 @@
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
-        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
-        <target state="translated">'{0}' 형식은 '{1}' 필드, 생성자 또는 멤버를 정의하지 않습니다.</target>
+        <source>The type '{0}' does not define a field, constructor, or member named '{1}'.</source>
+        <target state="new">The type '{0}' does not have a field, property, or member named '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -2263,8 +2263,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tastNamespaceAndModuleWithSameNameInAssembly">
-        <source>A namespace and a module named '{0}' both occur in two parts of this assembly</source>
-        <target state="translated">이 어셈블리의 두 부분에서 '{0}'(이)라는 네임스페이스와 모듈이 모두 발생합니다.</target>
+        <source>The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</source>
+        <target state="new">이 어셈블리의 두 부분에서 '{0}'(이)라는 네임스페이스와 모듈이 모두 발생합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastTwoModulesWithSameNameInAssembly">
@@ -3368,13 +3368,13 @@
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenFunction">
-        <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function.</source>
-        <target state="translated">'{0}' 연산자를 지원하는 형식이 필요하지만 함수 형식이 지정되었습니다. 함수에 대한 인수가 없을 수 있습니다.</target>
+        <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
+        <target state="new">'{0}' 연산자를 지원하는 형식이 필요하지만 함수 형식이 지정되었습니다. 함수에 대한 인수가 없을 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">
-        <source>Expecting a type supporting the operator '{0}' but given a tuple type</source>
-        <target state="translated">'{0}' 연산자를 지원하는 형식이 필요한데 튜플 형식을 지정했습니다.</target>
+        <source>Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
+        <target state="new">'{0}' 연산자를 지원하는 형식이 필요한데 튜플 형식을 지정했습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
@@ -4023,8 +4023,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsSuccessiveArgsShouldBeSpacedOrTupled">
-        <source>Successive arguments should be separated by spaces or tupled, and arguments involving function or method applications should be parenthesized</source>
-        <target state="translated">연속된 인수는 공백으로 구분하거나 튜플해야 하며 함수 또는 메서드 적용과 관련된 인수는 괄호로 묶어야 합니다.</target>
+        <source>This argument expression needs parentheses. Expressions involving function or method calls must be parenthesized when passed as arguments, e.g. 'printfn \"%s\" (arg.Trim())'.</source>
+        <target state="new">This argument expression needs parentheses. Expressions involving function or method calls must be parenthesized when passed as arguments, e.g. 'printfn \"%s\" (arg.Trim())'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnmatchedBracket">
@@ -4353,8 +4353,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNotSufficientlyGenericBecauseOfScope">
-        <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope.</source>
-        <target state="translated">이 코드는 충분히 일반적이지 않습니다. 형식 변수 {0}을(를) 일반화하면 범위를 벗어나게 되므로 일반화할 수 없습니다.</target>
+        <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</source>
+        <target state="new">이 코드는 충분히 일반적이지 않습니다. 형식 변수 {0}을(를) 일반화하면 범위를 벗어나게 되므로 일반화할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyRequiresExplicitTypeParameters">
@@ -7623,8 +7623,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
-        <source>No static parameter exists with name '{0}'</source>
-        <target state="translated">이름이 '{0}'인 정적 매개 변수가 없습니다.</target>
+        <source>No static parameter exists with name '{0}'. Available parameters: {1}.</source>
+        <target state="new">No static parameter exists with name '{0}'. Available parameters: {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="etStaticParameterAlreadyHasValue">
@@ -8697,6 +8697,11 @@
         <target state="translated">이 값은 함수가 아니며 적용할 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="notAFunctionWithType">
+        <source>This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</source>
+        <target state="new">This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
         <target state="translated">이 값은 함수가 아니며 적용할 수 없습니다. '{0}.[index]'를 통해 인덱서에 액세스하려고 했습니까?</target>
@@ -8952,14 +8957,24 @@
         <target state="translated">종속성 관리자 확장 {0}을(를) 로드할 수 없습니다. 메시지: {1}</target>
         <note />
       </trans-unit>
-        <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+      <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
           <source>Warn when a function value is used as an interpolated string argument</source>
           <target state="new">Warn when a function value is used as an interpolated string argument</target>
           <note />
         </trans-unit>
-        <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+      <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
           <source>This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</source>
           <target state="new">This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</target>
+          <note />
+        </trans-unit>
+        <trans-unit id="parsLetBangCannotBeLastInCE">
+          <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
+          <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
+          <note />
+        </trans-unit>
+        <trans-unit id="tcListLiteralWithSingleTupleElement">
+          <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
+          <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
           <note />
         </trans-unit>
     </body>

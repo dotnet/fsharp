@@ -1868,8 +1868,8 @@
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
-        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
-        <target state="translated">Typ {0} nedefinuje pole, konstruktor ani člen {1}.</target>
+        <source>The type '{0}' does not define a field, constructor, or member named '{1}'.</source>
+        <target state="new">The type '{0}' does not have a field, property, or member named '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -2263,8 +2263,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tastNamespaceAndModuleWithSameNameInAssembly">
-        <source>A namespace and a module named '{0}' both occur in two parts of this assembly</source>
-        <target state="translated">Obor názvů a modul s názvem {0} se oba vyskytují ve dvou částech tohoto sestavení.</target>
+        <source>The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</source>
+        <target state="new">Obor názvů a modul s názvem {0} se oba vyskytují ve dvou částech tohoto sestavení.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastTwoModulesWithSameNameInAssembly">
@@ -3368,13 +3368,13 @@
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenFunction">
-        <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function.</source>
-        <target state="translated">Očekává se typ podporující operátor {0}, ale předává se typ funkce. Možná, že u funkce chybí argument.</target>
+        <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
+        <target state="new">Očekává se typ podporující operátor {0}, ale předává se typ funkce. Možná, že u funkce chybí argument.</target>
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">
-        <source>Expecting a type supporting the operator '{0}' but given a tuple type</source>
-        <target state="translated">Očekává se typ podporující operátor {0}, ale předává se typ řazené kolekce členů.</target>
+        <source>Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
+        <target state="new">Očekává se typ podporující operátor {0}, ale předává se typ řazené kolekce členů.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
@@ -4023,8 +4023,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsSuccessiveArgsShouldBeSpacedOrTupled">
-        <source>Successive arguments should be separated by spaces or tupled, and arguments involving function or method applications should be parenthesized</source>
-        <target state="translated">Po sobě jdoucí argumenty by měly být oddělené mezerami nebo by měly být řazenou kolekcí členů a argumenty zahrnující použití funkcí nebo metod by měly být v závorkách.</target>
+        <source>This argument expression needs parentheses. Expressions involving function or method calls must be parenthesized when passed as arguments, e.g. 'printfn \"%s\" (arg.Trim())'.</source>
+        <target state="new">This argument expression needs parentheses. Expressions involving function or method calls must be parenthesized when passed as arguments, e.g. 'printfn \"%s\" (arg.Trim())'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnmatchedBracket">
@@ -4353,8 +4353,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNotSufficientlyGenericBecauseOfScope">
-        <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope.</source>
-        <target state="translated">Tento kód není dostatečně obecný. Proměnná typu {0} se nedá zobecnit, protože by se tak dostala mimo svůj definiční obor.</target>
+        <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</source>
+        <target state="new">Tento kód není dostatečně obecný. Proměnná typu {0} se nedá zobecnit, protože by se tak dostala mimo svůj definiční obor.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyRequiresExplicitTypeParameters">
@@ -7623,8 +7623,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
-        <source>No static parameter exists with name '{0}'</source>
-        <target state="translated">Neexistuje žádný statický parametr s názvem {0}.</target>
+        <source>No static parameter exists with name '{0}'. Available parameters: {1}.</source>
+        <target state="new">No static parameter exists with name '{0}'. Available parameters: {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="etStaticParameterAlreadyHasValue">
@@ -8697,6 +8697,11 @@
         <target state="translated">Tato hodnota není funkcí a nedá se použít.</target>
         <note />
       </trans-unit>
+      <trans-unit id="notAFunctionWithType">
+        <source>This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</source>
+        <target state="new">This value is not a function and cannot be applied. It has type '{0}', which does not accept arguments.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
         <target state="translated">Tato hodnota není funkcí a nedá se použít. Nechtěli jste získat k indexeru přístup přes {0}.[index]?</target>
@@ -8952,14 +8957,24 @@
         <target state="translated">Rozšíření správce závislostí {0} nešlo načíst. Zpráva: {1}</target>
         <note />
       </trans-unit>
-        <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+      <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
           <source>Warn when a function value is used as an interpolated string argument</source>
           <target state="new">Warn when a function value is used as an interpolated string argument</target>
           <note />
         </trans-unit>
-        <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+      <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
           <source>This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</source>
           <target state="new">This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</target>
+          <note />
+        </trans-unit>
+        <trans-unit id="parsLetBangCannotBeLastInCE">
+          <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
+          <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
+          <note />
+        </trans-unit>
+        <trans-unit id="tcListLiteralWithSingleTupleElement">
+          <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
+          <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
           <note />
         </trans-unit>
     </body>

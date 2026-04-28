@@ -1,6 +1,6 @@
 ---
 name: fsharp-diagnostics
-description: "After modifying any F# file, use this to get quick parse errors and typecheck warnings+errors. Also finds symbol references and inferred type hints."
+description: "Always invoke after editing .fs files. Provides fast parse/typecheck feedback without a full dotnet build. Prefer this over dotnet build for iterative changes. Also finds symbol references and inferred type hints."
 ---
 
 # F# Diagnostics

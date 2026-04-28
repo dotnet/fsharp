@@ -5,6 +5,7 @@ trigger:
     - main
     - dev16.1
     - feature/*
+    - feature*
     - release/*
   paths:
     include:
@@ -31,6 +32,7 @@ pr:
     - main
     - dev16.1
     - feature/*
+    - feature*
     - release/*
   paths:
     include:
@@ -162,6 +164,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check code formatting (run 'dotnet fantomas .' to fix)
+          - script: ./eng/common/dotnet.sh fsi eng/tests/TestSplit.fsx --validate
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Validate test projects are registered in TestSplit.fsx
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -226,7 +232,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:FSharpLangVersion=preview
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -236,7 +242,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -262,7 +268,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testCoreclr -configuration Release
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -270,10 +276,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsNoRealsig_testCoreclr
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
 
@@ -282,7 +288,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -309,7 +315,7 @@ stages:
             env:
               FSharp_CacheEvictionImmediate: true
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -317,10 +323,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsNoRealsig_testDesktop
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
             continueOnError: true
@@ -328,7 +334,7 @@ stages:
             displayName: Publish Build BinLog
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -354,7 +360,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -364,7 +370,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -390,7 +396,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -400,7 +406,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -457,7 +463,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build and Test $(_testKind) $(transparentCompiler)
@@ -465,10 +471,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsCompressedMetadata $(_testKind) $(transparentCompiler)
               mergeTestResults: true
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
             condition: succeededOrFailed()
@@ -477,7 +483,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: Windows $(_configuration) $(_testKind) $(transparentCompiler) test binlogs
                 ArtifactType: Container
                 parallel: true
@@ -510,8 +516,16 @@ stages:
             continueOnError: true
             condition: failed()
 
-          # Windows With Compressed Metadata Desktop
+          # Windows With Compressed Metadata Desktop (split into 3 batches)
         - job: WindowsCompressedMetadata_Desktop
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
+              Batch3:
+                batchNumber: 3
           variables:
           - name: XUNIT_LOGS
             value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
@@ -523,65 +537,20 @@ stages:
           timeoutInMinutes: 120
 
           steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop
-            env:
-              FSharp_CacheEvictionImmediate: true
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build / Test
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'VSTest'
-              testRunTitle: WindowsCompressedMetadata testDesktop
-              mergeTestResults: true
-              testResultsFiles: '*.trx'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            continueOnError: true
-            condition: succeededOrFailed()
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish BinLog
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows testDesktop binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop process dumps'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: always()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktopBatch $(batchNumber)
+              buildEnv:
+                FSharp_CacheEvictionImmediate: true
+                DOTNET_DbgEnableMiniDump: 1
+                DOTNET_DbgMiniDumpType: 2
+                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+                NativeToolsOnMachine: true
+              testRunTitlePrefix: 'WindowsCompressedMetadata testDesktop'
+              artifactNamePrefix: 'Windows testDesktop'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
+              publishDumps: true
 
         # Mock official build
         - job: MockOfficial
@@ -611,9 +580,9 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'VSTest'
+              testResultsFormat: 'XUnit'
               testRunTitle: Linux
-              testResultsFiles: '*.trx'
+              testResultsFiles: '*.xml'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
@@ -638,8 +607,14 @@ stages:
             continueOnError: true
             condition: failed()
 
-        # MacOS
+        # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: MacOS
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
           pool:
             vmImage: macos-latest
           timeoutInMinutes: 120
@@ -647,41 +622,15 @@ stages:
           - name: _SignType
             value: Test
           steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            env:
-              COMPlus_DefaultStackSize: 1000000
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'VSTest'
-              testResultsFiles: '*.trx'
-              testRunTitle: MacOS
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'MacOS $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Mac'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber)
+              buildEnv:
+                COMPlus_DefaultStackSize: 1000000
+              testRunTitlePrefix: 'MacOS'
+              artifactNamePrefix: 'MacOS'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
 
         # End to end build
         - job: EndToEndBuildTests
@@ -761,9 +710,9 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
             condition: always()
 
@@ -780,9 +729,9 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
             condition: always()
 
@@ -798,26 +747,10 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
-            condition: always()
-
-        # Build and run fast benchmarks
-        - job: Benchmarks
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          variables:
-          - name: _BuildConfig
-            value: Release
-          steps:
-          - checkout: self
-            clean: true
-          - script: eng\CIBuild.cmd -configuration $(_BuildConfig) -testBenchmarks
-            displayName: Smoke test fast benchmarks
-            continueOnError: true
             condition: always()
 
         # Test trimming on Windows
@@ -914,7 +847,11 @@ stages:
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
           buildScript: dotnet msbuild build.proj -t:Build;Test -bl
-          displayName: FsharpPlus_NET10_Test
+          displayName: FsharpPlus_NET10_Test_Debug
+        - repo: fsprojects/FSharpPlus
+          commit: 2648efe
+          buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
+          displayName: FsharpPlus_NET10_Test_Release
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
           buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
@@ -926,30 +863,38 @@ stages:
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
         - repo: TheAngryByrd/IcedTasks
-          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
           buildScript: dotnet build IcedTasks.sln -bl
           displayName: IcedTasks_Build
         - repo: TheAngryByrd/IcedTasks
-          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
           buildScript: dotnet test IcedTasks.sln -bl
-          displayName: IcedTasks_Test
+          displayName: IcedTasks_Test_Debug
+        - repo: TheAngryByrd/IcedTasks
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
+          buildScript: dotnet test IcedTasks.sln -c Release -bl
+          displayName: IcedTasks_Test_Release
         - repo: demystifyfp/FsToolkit.ErrorHandling
-          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          commit: a7119caabe329817bee49d7094610c45db7725c1
           buildScript: dotnet build FsToolkit.ErrorHandling.sln -bl
           displayName: FsToolkit_ErrorHandling_Build
         - repo: demystifyfp/FsToolkit.ErrorHandling
-          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          commit: a7119caabe329817bee49d7094610c45db7725c1
           buildScript: dotnet test FsToolkit.ErrorHandling.sln -bl
-          displayName: FsToolkit_ErrorHandling_Test
+          displayName: FsToolkit_ErrorHandling_Test_Debug
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: a7119caabe329817bee49d7094610c45db7725c1
+          buildScript: dotnet test FsToolkit.ErrorHandling.sln -c Release -bl
+          displayName: FsToolkit_ErrorHandling_Test_Release
         - repo: opentk/opentk
-          commit: 60c20cca65a7df6e8335e8d6060d91b30909fbea
+          commit: d4b1b18be03859dc066298ee191f6efa521e7e28
           buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release -bl:build_1.binlog ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release -bl:build_2.binlog
           displayName: OpenTK_FSharp_Build
         - repo: bryanedds/Prime
-          commit: 8d55f4e8e1d76e42f5fb3c9ba69eb79fe695e9fa
+          commit: 6ddc28d46f81447eacb241b96e16ce693b210c96
           buildScript: dotnet build Prime.sln --configuration Release
           displayName: Prime_Build
         - repo: bryanedds/Nu
-          commit: b35cbe02029e0e33d72a4846816cf22714eb3aac
+          commit: b321cb41a0bea0dab6b4509f895e6cd4d024e9e5
           buildScript: dotnet build Nu.sln --configuration Release
           displayName: Nu_Build

@@ -49,9 +49,10 @@ type AsyncType() =
     [<VolatileField>]
     let mutable spinloop = true
         
-    let waitASec (t:Task) =
-        let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
-        Assert.True(result, "Task did not finish after waiting for a second.")
+    // Use a generous timeout to avoid flaky failures on loaded CI machines where the thread pool may be saturated.
+    let waitForCompletion (t: Task) =
+        let result = t.Wait(TimeSpan.FromSeconds(30.0))
+        Assert.True(result, "Task did not finish after waiting for 30 seconds.")
 
     [<Fact>]
     member _.AsyncRunSynchronouslyReusesThreadPoolThread() =
@@ -154,33 +155,41 @@ type AsyncType() =
         let s = "Hello tasks!"
         let a = async { return s }
         let t : Task<string> = Async.StartAsTask a
-        waitASec t
+        waitForCompletion t
         Assert.True (t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
     [<Fact>]
     member _.StartAsTaskCancellation () =
         let cts = new CancellationTokenSource()
+        let asyncStarted = new ManualResetEventSlim(false)
         let doSpinloop () = while spinloop do ()
         let a = async {
+            asyncStarted.Set()
             cts.CancelAfter (100)
             doSpinloop()
         }
 
         let t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
+
+        // Wait for the async body to actually start executing before checking timing.
+        // Use a generous timeout to avoid flaky failures on loaded CI machines where the thread pool may be saturated.
+        Assert.True(asyncStarted.Wait(30_000), "Async body did not start within 30 seconds")
+
         // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
-            let result = t.Wait(300)
+            let result = t.Wait(1000)
             Assert.False (result)
         with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
         spinloop <- false
 
         try
-            waitASec t
+            let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=5))
+            Assert.True(result, "Task did not finish after waiting for 5 seconds.")
         with :? AggregateException as a ->
             match a.InnerException with
-            | :? TaskCanceledException as t -> ()
+            | :? TaskCanceledException -> ()
             | _ -> reraise()
 
         Assert.True (t.IsCompleted, "Task is not completed")
@@ -204,7 +213,7 @@ type AsyncType() =
         innerTcs.SetResult ()
 
         try
-            waitASec tcs.Task
+            waitForCompletion tcs.Task
         with :? AggregateException as a ->
             match a.InnerException with
             | :? TaskCanceledException -> ()
@@ -238,7 +247,7 @@ type AsyncType() =
         let t = Async.StartAsTask a
         let mutable exceptionThrown = false
         try
-            // waitASec t
+            // waitForCompletion t
             t.Wait()
         with
             e -> exceptionThrown <- true
@@ -247,14 +256,17 @@ type AsyncType() =
 
     [<Fact>]
     member _.CancellationPropagatesToTask () =
+        let ewh = new ManualResetEvent(false)
         let a = async {
+                ewh.Set() |> Assert.True
                 while true do ()
             }
         let t = Async.StartAsTask a
+        ewh.WaitOne() |> Assert.True
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
-            waitASec t
+            waitForCompletion t
         with e -> exceptionThrown <- true
         Assert.True (exceptionThrown)
         Assert.True(t.IsCanceled)
@@ -288,7 +300,7 @@ type AsyncType() =
         let s = "Hello tasks!"
         let a = async { return s }
         let t : Task<string> = Async.StartImmediateAsTask a
-        waitASec t
+        waitForCompletion t
         Assert.True (t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
@@ -297,7 +309,7 @@ type AsyncType() =
         let s = "Hello tasks!"
         let a = async { return s }
         let t = Async.StartImmediateAsTask a
-        waitASec t
+        waitForCompletion t
         Assert.True (t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 

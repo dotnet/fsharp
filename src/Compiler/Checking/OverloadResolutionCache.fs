@@ -83,12 +83,12 @@ let tryGetTypeStructureForOverloadCache (g: TcGlobals) (ty: TType) : TypeStructu
     let ty = stripTyEqns g ty
 
     match tryGetTypeStructureOfStrippedType ty with
-    | ValueSome(Stable tokens) -> ValueSome(Stable tokens)
-    | ValueSome(Unstable tokens) ->
+    | ValueSome(Stable(h, tokens)) -> ValueSome(Stable(h, tokens))
+    | ValueSome(Unstable(h, tokens)) ->
         if hasUnsolvedTokens tokens then
             ValueNone
         else
-            ValueSome(Stable tokens)
+            ValueSome(Stable(h, tokens))
     | ValueSome PossiblyInfinite -> ValueNone
     | ValueNone -> ValueNone
 
@@ -162,8 +162,12 @@ let tryComputeOverloadCacheKey
                     | Some retTy ->
                         match tryGetTypeStructureForOverloadCache g retTy with
                         | ValueSome ts -> ValueSome ts
-                        | ValueNone -> if anyHasOutArgs then ValueNone else ValueSome(Stable [||])
-                    | None -> ValueSome(Stable [||])
+                        | ValueNone ->
+                            if anyHasOutArgs then
+                                ValueNone
+                            else
+                                ValueSome(Stable(0, [||]))
+                    | None -> ValueSome(Stable(0, [||]))
 
                 match retTyStructure with
                 | ValueNone -> ValueNone

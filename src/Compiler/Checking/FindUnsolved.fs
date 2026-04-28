@@ -243,7 +243,7 @@ and accValReprInfo cenv env (ValReprInfo(_, args, ret)) =
 
 /// Walk an argument representation info, collecting type variables
 and accArgReprInfo cenv env (argInfo: ArgReprInfo) =
-    accAttribs cenv env argInfo.Attribs
+    accAttribs cenv env (argInfo.Attribs.AsList())
 
 /// Walk a value, collecting type variables
 and accVal cenv env v =

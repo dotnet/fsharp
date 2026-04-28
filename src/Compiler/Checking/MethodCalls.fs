@@ -918,7 +918,14 @@ let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad noEagerConst
         CalledArgMatchesType(adjustedCalledArgTy, noEagerConstraintApplication)  
         
 let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr>) ad =
-    let noEagerConstraintApplication = MethInfoHasAttribute g m g.attrib_NoEagerConstraintApplicationAttribute meth.Method
+    let noEagerConstraintApplication =
+        MethInfoHasWellKnownAttributeSpec
+            g
+            m
+            { ILFlag = WellKnownILAttributes.NoEagerConstraintApplicationAttribute
+              ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
+              AttribInfo = g.attrib_NoEagerConstraintApplicationAttribute }
+            meth.Method
 
     // The logic associated with NoEagerConstraintApplicationAttribute is part of the
     // Tasks and Resumable Code RFC
@@ -1231,10 +1238,16 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
             let vExpr, vExprTy = tcVal vref valUseFlags (minfo.DeclaringTypeInst @ minst) m
             BuildFSharpMethodApp g m vref vExpr vExprTy allArgs
 
-        | MethInfoWithModifiedReturnType(mi,retTy) ->
-            let expr, exprTy = BuildMethodCall tcVal g amap isMutable m isProp mi valUseFlags minst objArgs args staticTyOpt
-            let expr = mkCoerceExpr(expr, retTy, m, exprTy)
+        | MethInfoWithModifiedReturnType(ILMeth(_, ilMethInfo, _), retTy) ->
+            // Build the inner call directly, without re-invoking TakeObjAddrForMethodCall.
+            let expr, exprTy =
+                BuildILMethInfoCall g amap m isProp ilMethInfo valUseFlags minst direct allArgs
+
+            let expr = mkCoerceExpr (expr, retTy, m, exprTy)
             expr, retTy
+
+        | MethInfoWithModifiedReturnType _ ->
+            failwith "MethInfoWithModifiedReturnType: unexpected inner method kind"
 
         // Build a 'call' to a struct default constructor 
         | DefaultStructCtor (g, ty) -> 
@@ -2229,9 +2242,13 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             | Some r -> r :: convertedArgs
             | None -> convertedArgs
 
-        // Fix bug 1281: If we resolve to an instance method on a struct and we haven't yet taken 
-        // the address of the object then go do that 
-        if minfo.IsStruct && minfo.IsInstance then 
+        // Fix bug 1281 / issue #8098: If the receiver needs its address taken for a
+        // constrained call, go do that and re-resolve via TraitCall with the byref receiver.
+        let needsAddrTaken =
+            minfo.IsInstance &&
+            (minfo.IsStruct || (ComputeConstrainedCallInfo g amap m staticTyOpt argExprs minfo).IsSome)
+
+        if needsAddrTaken then 
             match argExprs with
             | h :: t when not (isByrefTy g (tyOfExpr g h)) ->
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 

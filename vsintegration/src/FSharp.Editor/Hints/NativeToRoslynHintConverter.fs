@@ -33,9 +33,7 @@ module NativeToRoslynHintConverter =
             }
             |> CancellableTask.start ct
 
-        cancellableTask {
-            let span = rangeToSpan hint.Range sourceText
-            let displayParts = hint.Parts |> Seq.map nativeToRoslynText
+        let span = rangeToSpan hint.Range sourceText
+        let displayParts = hint.Parts |> Seq.map nativeToRoslynText
 
-            return FSharpInlineHint(span, displayParts.ToImmutableArray(), getDescriptionAsync)
-        }
+        FSharpInlineHint(span, displayParts.ToImmutableArray(), getDescriptionAsync)

@@ -39,7 +39,7 @@ module HintService =
         let hints = getHints sourceText parseResults hintKinds symbolUses symbol
         Seq.concat hints
 
-    let getHintsForDocument sourceText (document: Document) hintKinds userOpName =
+    let getHintsForDocument (sourceText: SourceText) (document: Document) hintKinds (textSpan: TextSpan) userOpName =
         cancellableTask {
             if isSignatureFile document.FilePath then
                 return List.empty
@@ -75,3 +75,8 @@ module HintService =
 
                     return nativeHints
         }
+        |> CancellableTask.map (
+            List.filter (fun hint ->
+                let hintSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, hint.Range)
+                textSpan.IntersectsWith hintSpan)
+        )

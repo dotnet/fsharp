@@ -11,7 +11,7 @@ neg04.fs(22,8,22,17): typecheck error FS0912: This declaration element is not pe
 
 neg04.fs(26,8,26,17): typecheck error FS0912: This declaration element is not permitted in an augmentation
 
-neg04.fs(32,8,32,11): typecheck error FS0039: The type 'Double' does not define the field, constructor or member 'Nan'. Maybe you want one of the following:
+neg04.fs(32,8,32,11): typecheck error FS0039: The type 'Double' does not define a field, constructor, or member named 'Nan'. Maybe you want one of the following:
    IsNaN
 
 neg04.fs(46,69,46,94): typecheck error FS0001: Type mismatch. Expecting a tuple of length 4 of type
@@ -59,12 +59,12 @@ neg04.fs(76,10,76,12): typecheck error FS0663: This type parameter has been used
 
 neg04.fs(81,58,81,61): typecheck error FS0001: This expression was expected to have type
     'int'    
-but here has type
+but is a tuple of type
     'int * int'    
 
 neg04.fs(83,39,83,46): typecheck error FS0752: The operator 'expr.[idx]' has been used on an object of indeterminate type based on information prior to this program point. Consider adding further type constraints
 
-neg04.fs(85,47,85,52): typecheck error FS0039: The type 'Int32' does not define the field, constructor or member 'Item'.
+neg04.fs(85,47,85,52): typecheck error FS0039: The type 'Int32' does not define a field, constructor, or member named 'Item'.
 
 neg04.fs(87,73,87,78): typecheck error FS0752: The operator 'expr.[idx]' has been used on an object of indeterminate type based on information prior to this program point. Consider adding further type constraints
 

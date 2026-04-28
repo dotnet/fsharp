@@ -338,6 +338,13 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         if sm_verbose then printfn "expanding defns and reducing %A..." expr
         //if sm_verbose then printfn "checking %A for possible resumable code application..." expr
         match expr with
+        // Reduce helper-local 'if __useResumableCode then ... else ...' after inlining,
+        // but preserve real nested state machines so their own lowering can still choose
+        // the dynamic fallback if static compilation fails.
+        | IfUseResumableStateMachinesExpr g (thenExpr, _) when Option.isNone (IsStateMachineExpr g thenExpr) ->
+            if sm_verbose then printfn "reducing helper-local 'if __useResumableCode ...' to static branch"
+            Some (remake thenExpr)
+
         // defn --> [expand_code]
         | Expr.Val (defnRef, _, _) when env.ResumableCodeDefns.ContainsVal defnRef.Deref ->
             let defn = env.ResumableCodeDefns[defnRef.Deref]
@@ -372,22 +379,13 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
     // Repeated top-down rewrite
     let makeRewriteEnv (env: env) = 
         { PreIntercept = Some (fun cont e ->
-            match e with
-            // Don't recurse into nested state machine expressions - they will be
-            // processed by their own LowerStateMachineExpr during codegen.
-            // This prevents modification of the nested machine's internal
-            // 'if __useResumableCode' patterns which select its dynamic fallback.
-            | _ when Option.isSome (IsStateMachineExpr g e) -> Some e
-            // Eliminate 'if __useResumableCode' - nested state machines are already
-            // guarded above, so any remaining occurrences at this level are from
-            // beta-reduced inline helpers and should take the static branch.
-            | IfUseResumableStateMachinesExpr g (thenExpr, _) -> Some (cont thenExpr)
-            | _ ->
-            match TryReduceExpr env e [] id with Some e2 -> Some (cont e2) | None -> None)
+            match TryReduceExpr env e [] id with
+            | Some e2 -> Some (cont e2)
+            | None -> None)
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
           RewriteQuotations=true 
-          StackGuard = StackGuard("LowerStateMachineStackGuardDepth") }
+          StackGuard = StackGuard("LowerStateMachineStackGuard") }
 
     let ConvertStateMachineLeafExpression (env: env) expr = 
         if sm_verbose then printfn "ConvertStateMachineLeafExpression for %A..." expr

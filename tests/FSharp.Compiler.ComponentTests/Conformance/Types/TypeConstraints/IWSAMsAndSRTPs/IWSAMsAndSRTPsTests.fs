@@ -1831,3 +1831,128 @@ let _x3 = curryN f3 1 2 3
         FSharp "module T\nopen CsLib\nlet _ = IP.Get()" |> asExe |> withOptions iwsamWarnings |> withReferences [csLib]
         |> compileAndRun |> shouldSucceed
 
+    // https://github.com/dotnet/fsharp/issues/8098
+    [<Fact>]
+    let ``Issue 8098 - ToString on int via inline SRTP does not throw NRE`` () =
+        FSharp """
+module Test
+
+let inline toString (x: ^a) = (^a : (member ToString : unit -> string) x)
+
+[<EntryPoint>]
+let main _ =
+    let s = toString 123
+    if s <> "123" then failwith (sprintf "Expected '123' but got '%s'" s)
+    0
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/8098
+    [<Fact>]
+    let ``Issue 8098 - GetHashCode on int via inline SRTP does not throw NRE`` () =
+        FSharp """
+module Test
+
+let inline getHash (x: ^a) = (^a : (member GetHashCode : unit -> int) x)
+
+[<EntryPoint>]
+let main _ =
+    let h = getHash 42
+    if h <> 42 then failwith (sprintf "Expected 42 but got %d" h)
+    0
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/8098
+    [<Fact>]
+    let ``Issue 8098 - ToString on custom struct via inline SRTP does not throw NRE`` () =
+        FSharp """
+module Test
+
+[<Struct>]
+type MyPoint = { X: int; Y: int }
+
+let inline toString (x: ^a) = (^a : (member ToString : unit -> string) x)
+
+[<EntryPoint>]
+let main _ =
+    let p = { X = 1; Y = 2 }
+    let s = toString p
+    if s = null then failwith "Got null"
+    0
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/8098
+    [<Fact>]
+    let ``Issue 8098 - ToString on reference type via inline SRTP still works`` () =
+        FSharp """
+module Test
+
+let inline toString (x: ^a) = (^a : (member ToString : unit -> string) x)
+
+[<EntryPoint>]
+let main _ =
+    let s = toString "hello"
+    if s <> "hello" then failwith (sprintf "Expected 'hello' but got '%s'" s)
+    0
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/8098
+    [<Fact>]
+    let ``Issue 8098 - ToString on struct without override via inline SRTP does not throw NRE`` () =
+        FSharp """
+module Test
+
+[<Struct>]
+type EmptyStruct =
+    val X: int
+    new(x) = { X = x }
+    // No ToString override — inherits Object.ToString()
+
+let inline toString (x: ^a) = (^a : (member ToString : unit -> string) x)
+
+[<EntryPoint>]
+let main _ =
+    let s = toString (EmptyStruct(42))
+    if s = null then failwith "Got null"
+    0
+        """
+        |> asExe
+        |> compileExeAndRun
+        
+    // https://github.com/dotnet/fsharp/issues/15987
+    [<Fact>]
+    let ``Issue 15987 - SRTP overload resolution returns correct value for typed argument`` () =
+        FSharp """
+module Test
+
+type A = A with
+    static member ($) (A, a: float  ) = 0.0
+    static member ($) (A, a: decimal) = 0M
+    static member ($) (A, a: 't     ) = 0
+
+let inline call x = ($) A x
+
+// Verify correct overload is selected: float argument should use the float overload
+let resultFloat: float = call 42.0
+let resultDecimal: decimal = call 42M
+let resultInt: int = call 42
+
+if resultFloat <> 0.0 then failwith $"Expected 0.0 but got {resultFloat}"
+if resultDecimal <> 0M then failwith $"Expected 0M but got {resultDecimal}"
+if resultInt <> 0 then failwith $"Expected 0 but got {resultInt}"
+"""
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
