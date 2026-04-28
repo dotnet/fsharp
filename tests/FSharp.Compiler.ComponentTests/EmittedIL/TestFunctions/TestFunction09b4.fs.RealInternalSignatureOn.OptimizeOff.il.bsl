@@ -36,6 +36,7 @@
   .method public static !!a  Null<class a>() cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.LiteralAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
     
     .maxstack  3
     .locals init (!!a V_0)
@@ -111,7 +112,6 @@
   } 
 
 } 
-
 
 
 

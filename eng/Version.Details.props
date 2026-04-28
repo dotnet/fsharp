@@ -6,7 +6,7 @@ This file should be imported by eng/Versions.props
 <Project>
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
-    <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26220.5</MicrosoftDotNetArcadeSdkPackageVersion>
+    <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26222.2</MicrosoftDotNetArcadeSdkPackageVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildPackageVersion>18.6.3</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>18.6.3</MicrosoftBuildFrameworkPackageVersion>
@@ -19,14 +19,14 @@ This file should be imported by eng/Versions.props
     <optimizationwindows_ntx64MIBCRuntimePackageVersion>1.0.0-prerelease.26180.1</optimizationwindows_ntx64MIBCRuntimePackageVersion>
     <optimizationwindows_ntx86MIBCRuntimePackageVersion>1.0.0-prerelease.26180.1</optimizationwindows_ntx86MIBCRuntimePackageVersion>
     <!-- dotnet-roslyn dependencies -->
-    <MicrosoftCodeAnalysisPackageVersion>5.7.0-1.26221.8</MicrosoftCodeAnalysisPackageVersion>
-    <MicrosoftCodeAnalysisCompilersPackageVersion>5.7.0-1.26221.8</MicrosoftCodeAnalysisCompilersPackageVersion>
-    <MicrosoftCodeAnalysisCSharpPackageVersion>5.7.0-1.26221.8</MicrosoftCodeAnalysisCSharpPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.7.0-1.26221.8</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.7.0-1.26221.8</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.7.0-1.26221.8</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
-    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.7.0-1.26221.8</MicrosoftCodeAnalysisFeaturesPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.7.0-1.26221.8</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <MicrosoftCodeAnalysisPackageVersion>5.7.0-1.26226.5</MicrosoftCodeAnalysisPackageVersion>
+    <MicrosoftCodeAnalysisCompilersPackageVersion>5.7.0-1.26226.5</MicrosoftCodeAnalysisCompilersPackageVersion>
+    <MicrosoftCodeAnalysisCSharpPackageVersion>5.7.0-1.26226.5</MicrosoftCodeAnalysisCSharpPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.7.0-1.26226.5</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.7.0-1.26226.5</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.7.0-1.26226.5</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
+    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.7.0-1.26226.5</MicrosoftCodeAnalysisFeaturesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.7.0-1.26226.5</MicrosoftVisualStudioLanguageServicesPackageVersion>
     <!-- dotnet-runtime dependencies -->
     <SystemCollectionsImmutablePackageVersion>10.0.2</SystemCollectionsImmutablePackageVersion>
     <SystemCompositionPackageVersion>10.0.2</SystemCompositionPackageVersion>
