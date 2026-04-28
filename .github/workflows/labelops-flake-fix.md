@@ -77,8 +77,8 @@ You fix proven flaky tests. You were dispatched by `labelops-pr-maintenance` aft
 5. **Don't quarantine a test that was introduced by the originating PR or any open PR in `affected_prs`.** That would defeat the PR's purpose — `noop` + comment instead.
 6. **If unsure, `noop`.** Better to skip than guess.
 7. **Prefix comments with `🤖 *LabelOps Flake — <subtopic>.*`**
-8. **Fix co-located tests.** If investigation reveals the same root cause affects other tests, fix them all in the same PR.
-9. **Small product-code fixes are allowed** when the root cause lives outside `tests/`. Keep changes minimal and non-invasive. If the product fix is non-trivial, quarantine instead and document the root cause in the tracking issue.
+8. **Fix co-located tests.** If the same root cause affects other tests, fix them all.
+9. **Small product-code fixes are allowed** when the root cause lives outside `tests/`. Keep changes minimal. If non-trivial, quarantine instead.
 
 ## Step 0 — Validate inputs
 
@@ -117,17 +117,11 @@ Before proceeding: check if the originating PR introduced/modified this test (`g
 
 ## Step 3 — Fix
 
-**Look for co-located tests.** If the root cause (e.g., shared timeout, shared temp directory, shared static state) affects other tests in the same file or module, fix them all.
+If the root cause affects other tests in the same area, fix them all in the same PR.
 
-**Option A — Determinism fix** (preferred):
-- Fix the root cause. This may be in test code or in small, obvious product code (e.g., a missing lock, a non-deterministic iteration order).
-- Re-run the 20-iteration loop. Require `0/20` failures.
-- PR title: `[LabelOps Flake] Fix <short name> determinism`
+**Option A — Determinism fix** (preferred): fix the root cause. Re-run the 20-iteration loop, require `0/20`. Title: `[LabelOps Flake] Fix <short name> determinism`
 
-**Option B — Quarantine** (when fix is non-trivial):
-- Create a tracking issue with evidence (PR numbers, build IDs, reproduction stats, likely root cause).
-- Add skip marker: `[<Fact(Skip = "Flaky, tracked in #NNN")>]` or equivalent.
-- PR title: `[LabelOps Flake] Quarantine <short name>`
+**Option B — Quarantine** (when fix is non-trivial): create a tracking issue with evidence, add skip marker referencing the issue. Title: `[LabelOps Flake] Quarantine <short name>`
 
 ## Step 4 — Open PR
 

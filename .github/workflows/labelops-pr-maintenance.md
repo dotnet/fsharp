@@ -100,16 +100,11 @@ Use the **`pr-build-status`** skill. Collect ALL errors from ALL platforms first
 
 1. **All healthy** → proceed to Step 4.
 
-2. **Fixable** — small, non-invasive fixes. This includes test fixes AND small product-code fixes when the root cause is clear and the change is mechanical (missing includes, typos, format, missing `open`, `.xlf` sync, obvious one-liner bugs). Reproduce locally, fix, verify build + tests, push, comment.
-   - Exclude: `.bsl` baseline auto-accepts (can mask regressions), release-notes reordering, public API changes.
+2. **Fixable** — you can fix it within ≤3 attempts and ≤500 LOC. Reproduce locally, fix, verify build + tests, push, comment. Don't auto-accept `.bsl` baselines (can mask regressions) or change public API surface.
 
-3. **Proven flake** — invoke `flaky-test-detector`. Needs ≥3 distinct unrelated PRs.
-   - <3 PRs → insufficient evidence, `noop` this run.
-   - ≥3 PRs AND test not introduced by this PR → check for existing `[LabelOps Flake]` PR, then dispatch `labelops-flake-fix` with `failing_test`, `affected_prs`, `originating_pr`.
+3. **Proven flake** — invoke `flaky-test-detector`. Needs ≥3 distinct unrelated PRs. If insufficient evidence, `noop`. If proven and test not introduced by this PR → check for existing `[LabelOps Flake]` PR, then dispatch `labelops-flake-fix`.
 
-4. **Can't fix** (≤3 attempts or ≤500 LOC budget exceeded, non-local scope) → reproduce locally, add `AI-needs-CI-fix-input` label, post escalation with:
-   - What's failing, minimal repro, exact error, up to 3 options.
-   - End comment with `<!-- labelops:ci-escalation:<headRefOid> -->`.
+4. **Can't fix** → reproduce locally, add `AI-needs-CI-fix-input` label, post escalation with what's failing, minimal repro, and options. End comment with `<!-- labelops:ci-escalation:<headRefOid> -->`.
 
 **If Step 3 pushed → stop this PR for this run.** CI restarts; next run sees fresh status.
 

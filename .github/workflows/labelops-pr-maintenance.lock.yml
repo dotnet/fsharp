@@ -423,7 +423,7 @@ jobs:
                         "type": "string"
                       },
                       "failing_test": {
-                        "description": "Fully qualified test name (e.g. FSharp.Compiler.Tests.Foo.Bar)",
+                        "description": "Fully qualified test name or display name (e.g. FSharp.Compiler.Tests.Foo.Bar or ``backtick name``)",
                         "type": "string"
                       },
                       "originating_pr": {
