@@ -27,6 +27,8 @@ tools:
   bash: true
 
 safe-outputs:
+  noop:
+    report-as-issue: false
   create-pull-request:
     draft: false
     title-prefix: "[Auto Update] "
