@@ -77,6 +77,7 @@
     <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBangBindings.fs" />
+	<Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindingsAndExtensionMembers.fs" />
     <Compile Include="Conformance\Constraints\Unmanaged.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
@@ -86,6 +87,7 @@
     <Compile Include="Conformance\Expressions\ApplicationExpressions\Ctor.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ComputationExpressions\ComputationExpressions.fs" />
+	<Compile Include="Conformance\Expressions\ComputationExpressions\CEExtensionMethodCapture.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\StructObjectExpression.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
@@ -294,6 +296,8 @@
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />
+    <Compile Include="ErrorMessages\OperatorTests.fs" />
+    <Compile Include="ErrorMessages\CommaSemicolonListTests.fs" />
     <Compile Include="ErrorMessages\ConstructorTests.fs" />
     <Compile Include="ErrorMessages\DontSuggestTests.fs" />
     <Compile Include="ErrorMessages\DuplicateExtensionMemberTests.fs" />
@@ -311,6 +315,8 @@
     <Compile Include="ErrorMessages\UpcastDowncastTests.fs" />
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />
+    <Compile Include="ErrorMessages\SuccessiveArgTests.fs" />
+    <Compile Include="ErrorMessages\StaticParameterFormattingTests.fs" />
     <Compile Include="ErrorMessages\ConfusingTypeName.fs" />
     <Compile Include="ErrorMessages\FS0988AtEndOfFile.fs" />
     <Compile Include="ErrorMessages\Repro1548.fs" />
