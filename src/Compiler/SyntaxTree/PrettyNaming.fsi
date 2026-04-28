@@ -126,7 +126,7 @@ val internal ConvertLogicalNameToDisplayName: name: string -> string
 val ConvertValLogicalNameToDisplayNameCore: opName: string -> string
 
 /// Escape active pattern case names that need backticks for display/signatures.
-val EscapeActivePatternCases: opName: string -> string
+val internal EscapeActivePatternCases: opName: string -> string
 
 /// Take a core display name for a value (e.g. op_Addition or PropertyName) and convert it to display text
 ///     Foo                   --> Foo
