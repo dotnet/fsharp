@@ -1508,3 +1508,94 @@ let result = 1 -.- 2
         let rangeLength = range.EndColumn - range.StartColumn
 
         Assert.Equal(3, rangeLength)
+
+module TupleTypeExtensions =
+    /// Verifies that GetAllUsesOfAllSymbolsInFile returns only symbols from the original source,
+    /// not synthetic AST nodes created for tuple type extensions like 'type ('T1 * 'T2) with ...'.
+    [<Fact>]
+    let ``Tuple type extension symbols match original source`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.Swap() = (snd this, fst this)
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // Get all symbol ranges - none should have synthetic ranges
+        let symbolRanges =
+            allSymbolUses
+            |> List.map (fun su -> su.Symbol.DisplayName, su.Range)
+
+        // Verify no symbols are reported from synthetic ranges
+        for (name, range) in symbolRanges do
+            Assert.False(range.IsSynthetic, $"Symbol '{name}' has synthetic range {range}")
+
+    [<Fact>]
+    let ``Struct tuple type extension symbols match original source`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type struct ('T1 * 'T2) with
+    member this.Swap() = struct (snd this, fst this)
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // Verify no symbols are reported from synthetic ranges
+        for symbolUse in allSymbolUses do
+            Assert.False(symbolUse.Range.IsSynthetic, $"Symbol '{symbolUse.Symbol.DisplayName}' has synthetic range {symbolUse.Range}")
+
+    [<Fact>]
+    let ``Tuple type extension does not leak tuple type symbol`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.First = fst this
+"""
+
+        let typeSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.filter (fun su -> su.Symbol :? FSharpEntity)
+            |> Seq.map (fun su -> su.Symbol.DisplayName, su.Range.StartLine, su.Range.StartColumn)
+            |> Seq.toList
+
+        // The only type entity should be 'Test' module, not a synthetic tuple type
+        let tupleSymbols =
+            typeSymbolUses
+            |> List.filter (fun (name, _, _) -> name.Contains("*") || name.Contains("Tuple"))
+
+        Assert.True(List.isEmpty tupleSymbols, $"Found unexpected tuple type symbols: {tupleSymbols}")
+
+    [<Fact>]
+    let ``Multiple tuple type extensions symbols are all non-synthetic`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.Swap() = (snd this, fst this)
+
+type struct ('A * 'B * 'C) with
+    member this.First = let (a, _, _) = this in a
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // All symbols should come from non-synthetic source locations
+        let syntheticSymbols =
+            allSymbolUses
+            |> List.filter (fun su -> su.Range.IsSynthetic)
+            |> List.map (fun su -> su.Symbol.DisplayName)
+
+        Assert.True(List.isEmpty syntheticSymbols, $"Found symbols with synthetic ranges: {syntheticSymbols}")
+

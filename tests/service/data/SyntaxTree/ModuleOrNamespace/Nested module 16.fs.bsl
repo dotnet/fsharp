@@ -6,9 +6,9 @@ ImplFile
          ([Ns], false, DeclaredNamespace,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [A],
+                ([], None, [], Some (LongIdent (SynLongIdent ([A], [], []))),
                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (3,0--3,8), None), false, [], false, (3,0--3,8),
+                 None, (3,0--3,8)), false, [], false, (3,0--3,8),
               { ModuleKeyword = Some (3,0--3,6)
                 EqualsRange = None })], PreXmlDocEmpty, [], None, (1,0--3,8),
           { LeadingKeyword = Namespace (1,0--1,9) })], (true, true),

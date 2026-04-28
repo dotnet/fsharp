@@ -7,9 +7,10 @@ SigFile
           [Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [A],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([A], [], [None]))),
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,6), None),
+                     false, None, (2,5--2,6)),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([obj], [], [None])),
@@ -19,9 +20,10 @@ SigFile
                     WithKeyword = None });
                SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [B],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([B], [], [None]))),
                      PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,4--3,5), None),
+                     false, None, (3,4--3,5)),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([int], [], [None])),

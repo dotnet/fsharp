@@ -6,9 +6,9 @@ ImplFile
          ([Module], false, NamedModule,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [],
+                ([], None, [], Some (LongIdent (SynLongIdent ([], [], []))),
                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (3,0--5,0), None), false, [], false, (3,0--5,0),
+                 None, (3,0--5,0)), false, [], false, (3,0--5,0),
               { ModuleKeyword = Some (3,0--3,6)
                 EqualsRange = None }); Expr (Ident A, (5,0--5,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

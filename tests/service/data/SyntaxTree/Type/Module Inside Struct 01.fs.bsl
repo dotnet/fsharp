@@ -7,9 +7,10 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [MyStruct],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([MyStruct], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,13), None),
+                     false, None, (4,5--4,13)),
                   ObjectModel (Struct, [], (5,4--5,10)), [], None, (4,5--5,10),
                   { LeadingKeyword = Type (4,0--4,4)
                     EqualsRange = Some (4,14--4,15)

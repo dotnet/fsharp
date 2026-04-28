@@ -7,9 +7,10 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [X],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([X], [], [None]))),
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,6), None),
+                     false, None, (3,5--3,6)),
                   ObjectModel
                     (Class,
                      [ImplicitCtor
@@ -39,9 +40,10 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [Y],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Y], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,6), None),
+                     false, None, (4,5--4,6)),
                   ObjectModel
                     (Class,
                      [ImplicitCtor
@@ -75,9 +77,10 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [Z],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Z], [], [None]))),
                      PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (5,5--5,6), None),
+                     false, None, (5,5--5,6)),
                   ObjectModel
                     (Class,
                      [ImplicitCtor
@@ -157,9 +160,10 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [Unit],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Unit], [], [None]))),
                      PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (6,5--6,9), None),
+                     false, None, (6,5--6,9)),
                   ObjectModel
                     (Class,
                      [ImplicitCtor

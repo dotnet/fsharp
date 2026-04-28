@@ -27,9 +27,9 @@ ImplFile
                             SynTyparDecl
                               ([], SynTypar (a, None, false), [],
                                { AmpersandRanges = [] })], [], (3,8--3,22))), [],
-                     [Foo],
+                     Some (LongIdent (SynLongIdent ([Foo], [], [None]))),
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (3,5--3,8), None),
+                     true, None, (3,5--3,8)),
                   Simple
                     (Union
                        (None,
@@ -81,9 +81,9 @@ ImplFile
                             SynTyparDecl
                               ([], SynTypar (a, None, false), [],
                                { AmpersandRanges = [] })], [], (6,41--6,55))),
-                     [], [Bar],
+                     [], Some (LongIdent (SynLongIdent ([Bar], [], [None]))),
                      PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (6,38--6,41), None),
+                     true, None, (6,38--6,41)),
                   Simple
                     (Record
                        (Some (Internal (7,4--7,12)),

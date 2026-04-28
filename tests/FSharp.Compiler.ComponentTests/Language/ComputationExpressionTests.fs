@@ -175,7 +175,7 @@ let x = lb {1; 2;()}
         """
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 10, Col 18, Line 10, Col 20, "The type 'ListBuilder' does not define the field, constructor or member 'Zero'.")
+        |> withSingleDiagnostic (Error 39, Line 10, Col 18, Line 10, Col 20, "The type 'ListBuilder' does not define a field, constructor, or member named 'Zero'.")
         |> ignore
 
     [<Fact>]
@@ -2327,6 +2327,79 @@ let result = query { for x in data1 do join (y, name) in data2 on (x = y); selec
         |> withSingleDiagnostic (Warning 1182, Line line1, Col col1, Line line2, Col col2, msg)
         |> ignore
 
+    [<Fact>]
+    let ``let! at end of computation expression gives specific error``() =
+        FSharp """
+module ComputationExpressionTests
+let foo() =
+    async {
+        let! result = async { return 0 }
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 10, Line 6, Col 5, Line 6, Col 6, "Unexpected symbol '}' in expression")
+            (Error 3885, Line 5, Col 9, Line 5, Col 13, "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
+        ]
+
+    [<Fact>]
+    let ``use! at end of computation expression gives specific error``() =
+        FSharp """
+module ComputationExpressionTests
+let foo() =
+    async {
+        use! result = async { return null : System.IDisposable }
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 10, Line 6, Col 5, Line 6, Col 6, "Unexpected symbol '}' in expression")
+            (Error 3885, Line 5, Col 9, Line 5, Col 13, "'use!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
+        ]
+
+    [<Fact>]
+    let ``let! and! at end of computation expression gives specific error``() =
+        FSharp """
+module ComputationExpressionTests
+
+type Builder() =
+    member _.Bind(x, f) = f x
+    member _.MergeSources(x, y) = (x, y)
+    member _.BindReturn(x, f) = f x
+    member _.Return(x) = x
+    member _.Zero() = ()
+
+let builder = Builder()
+
+let foo() =
+    builder {
+        let! x = 1
+        and! y = 2
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 10, Line 17, Col 5, Line 17, Col 6, "Unexpected symbol '}' in expression")
+            (Error 3885, Line 15, Col 9, Line 15, Col 13, "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
+        ]
+
+    [<Fact>]
+    let ``match! at end of computation expression is allowed``() =
+        FSharp """
+module ComputationExpressionTests
+let foo() =
+    async {
+        match! async { return 0 } with
+        | 0 -> return 1
+        | _ -> return 2
+    }
+        """
+        |> typecheck
+        |> shouldSucceed
+        
     // https://github.com/dotnet/fsharp/issues/19456
     [<Fact>]
     let ``Issue 19456 - let bang nested in plain let binding inside task CE should raise FS0750`` () =

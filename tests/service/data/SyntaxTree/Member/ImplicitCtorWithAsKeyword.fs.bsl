@@ -7,9 +7,12 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [CompilerStateCache],
+                    ([], None, [],
+                     Some
+                       (LongIdent
+                          (SynLongIdent ([CompilerStateCache], [], [None]))),
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, Some (Internal (2,5--2,13)), (2,14--2,32), None),
+                     false, Some (Internal (2,5--2,13)), (2,14--2,32)),
                   ObjectModel
                     (Class,
                      [ImplicitCtor

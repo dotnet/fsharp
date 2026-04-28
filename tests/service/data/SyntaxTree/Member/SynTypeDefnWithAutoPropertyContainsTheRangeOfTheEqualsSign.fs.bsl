@@ -10,9 +10,10 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [Person],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Person], [], [None]))),
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (3,5--3,11), None),
+                     false, None, (3,5--3,11)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor

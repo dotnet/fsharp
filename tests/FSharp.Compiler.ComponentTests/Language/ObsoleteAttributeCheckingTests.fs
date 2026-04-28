@@ -1604,7 +1604,7 @@ let f (x: IFirst) = x.F()
         |> withDiagnostics [
             (Error 101, Line 9, Col 11, Line 9, Col 17, "This construct is deprecated. Use G instead")
             (Error 101, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
-            (Error 72, Line 13, Col 21, Line 13, Col 24, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 13, Col 21, Line 13, Col 24, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.")
         ]
 
     [<Fact>]

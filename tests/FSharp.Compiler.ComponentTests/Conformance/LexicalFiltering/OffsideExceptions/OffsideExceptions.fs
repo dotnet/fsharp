@@ -27,7 +27,7 @@ module OffsideExceptions =
         |> getCompilation 
         |> asFsx
         |> withLangVersion80
-        |> withOptions ["--nowarn:25"] // Incomplete pattern matches on this expression.
+        |> withOptions ["--nowarn:25"; "--nowarn:3886"] // Incomplete pattern matches on this expression.
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -38,6 +38,7 @@ module OffsideExceptions =
         |> getCompilation 
         |> asFsx
         |> withLangVersion80
+        |> withOptions ["--nowarn:3886"]
         |> typecheck
         |> verifyBaseline
 

@@ -6,9 +6,9 @@ ImplFile
          ([X], false, DeclaredNamespace,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [Y],
+                ([], None, [], Some (LongIdent (SynLongIdent ([Y], [], []))),
                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (3,0--3,8), None), false,
+                 None, (3,0--3,8)), false,
               [Let
                  (false,
                   [SynBinding

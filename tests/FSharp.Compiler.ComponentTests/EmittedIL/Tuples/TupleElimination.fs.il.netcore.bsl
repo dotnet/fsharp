@@ -5,11 +5,6 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern System.Collections
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 9:0:0:0
-}
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -127,7 +122,7 @@
     
     .maxstack  5
     .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc V_0,
-             class [System.Collections]System.Collections.Generic.Dictionary`2<int32,int32> V_1,
+             class [runtime]System.Collections.Generic.Dictionary`2<int32,int32> V_1,
              class [runtime]System.Tuple`2<bool,int32> V_2,
              int32 V_3,
              int32 V_4,
@@ -144,12 +139,12 @@
              class [runtime]System.Tuple`2<bool,int64> V_15)
     IL_0000:  ldsfld     class assembly/p@5 assembly/p@5::@_instance
     IL_0005:  stloc.0
-    IL_0006:  newobj     instance void class [System.Collections]System.Collections.Generic.Dictionary`2<int32,int32>::.ctor()
+    IL_0006:  newobj     instance void class [runtime]System.Collections.Generic.Dictionary`2<int32,int32>::.ctor()
     IL_000b:  stloc.1
     IL_000c:  ldloc.1
     IL_000d:  ldc.i4.1
     IL_000e:  ldloca.s   V_3
-    IL_0010:  callvirt   instance bool class [System.Collections]System.Collections.Generic.Dictionary`2<int32,int32>::TryGetValue(!0,
+    IL_0010:  callvirt   instance bool class [runtime]System.Collections.Generic.Dictionary`2<int32,int32>::TryGetValue(!0,
                                                                                                                                    !1&)
     IL_0015:  ldloc.3
     IL_0016:  newobj     instance void class [runtime]System.Tuple`2<bool,int32>::.ctor(!0,
@@ -227,6 +222,7 @@
        extends [runtime]System.Object
 {
 } 
+
 
 
 

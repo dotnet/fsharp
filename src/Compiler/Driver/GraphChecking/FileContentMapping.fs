@@ -60,7 +60,9 @@ let visitSynModuleDecl (decl: SynModuleDecl) : FileContentEntry list =
         | SynModuleDecl.Open(target = SynOpenDeclTarget.Type(typeName, _)) -> yield! visitSynType typeName
         | SynModuleDecl.Attributes(attributes, _) -> yield! List.collect visitSynAttributeList attributes
         | SynModuleDecl.Expr(expr, _) -> yield! visitSynExpr expr
-        | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ]; attributes = attributes); decls = decls) ->
+        | SynModuleDecl.NestedModule(moduleInfo = compInfo; decls = decls) when compInfo.LongIdent.Length = 1 ->
+            let ident = compInfo.LongIdent.Head
+            let (SynComponentInfo(attributes = attributes)) = compInfo
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleDecl decls)
         | SynModuleDecl.NestedModule _ -> () // A nested module cannot have multiple identifiers. This will already be a parse error, but we could be working with recovered syntax tree
@@ -84,7 +86,9 @@ let visitSynModuleSigDecl (md: SynModuleSigDecl) =
         | SynModuleSigDecl.Open(target = SynOpenDeclTarget.ModuleOrNamespace(longId, _)) ->
             yield FileContentEntry.OpenStatement(synLongIdentToPath false longId)
         | SynModuleSigDecl.Open(target = SynOpenDeclTarget.Type(typeName, _)) -> yield! visitSynType typeName
-        | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ]; attributes = attributes); moduleDecls = decls) ->
+        | SynModuleSigDecl.NestedModule(moduleInfo = compInfo; moduleDecls = decls) when compInfo.LongIdent.Length = 1 ->
+            let ident = compInfo.LongIdent.Head
+            let (SynComponentInfo(attributes = attributes)) = compInfo
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleSigDecl decls)
         | SynModuleSigDecl.NestedModule _ -> () // A nested module cannot have multiple identifiers. This will already be a parse error, but we could be working with recovered syntax tree
@@ -112,12 +116,12 @@ let visitSynUnionCase (SynUnionCase(attributes = attributes; caseType = caseType
 
 let visitSynEnumCase (SynEnumCase(attributes = attributes)) = visitSynAttributes attributes
 
-let visitSynTypeDefn
-    (SynTypeDefn(
-        typeInfo = SynComponentInfo(attributes = attributes; longId = longId; typeParams = typeParams; constraints = constraints)
-        typeRepr = typeRepr
-        members = members))
-    : FileContentEntry list =
+let visitSynTypeDefn (SynTypeDefn(typeInfo = typeInfo; typeRepr = typeRepr; members = members)) : FileContentEntry list =
+    let (SynComponentInfo(attributes = attributes; typeParams = typeParams; constraints = constraints)) =
+        typeInfo
+
+    let longId = typeInfo.LongIdent
+
     [
         yield! visitSynAttributes attributes
         yield! collectFromOption visitSynTyparDecls typeParams
@@ -153,12 +157,12 @@ let visitSynTypeDefn
         yield! List.collect visitSynMemberDefn members
     ]
 
-let visitSynTypeDefnSig
-    (SynTypeDefnSig(
-        typeInfo = SynComponentInfo(attributes = attributes; longId = longId; typeParams = typeParams; constraints = constraints)
-        typeRepr = typeRepr
-        members = members))
-    =
+let visitSynTypeDefnSig (SynTypeDefnSig(typeInfo = typeInfo; typeRepr = typeRepr; members = members)) =
+    let (SynComponentInfo(attributes = attributes; typeParams = typeParams; constraints = constraints)) =
+        typeInfo
+
+    let longId = typeInfo.LongIdent
+
     [
         yield! visitSynAttributes attributes
         yield! collectFromOption visitSynTyparDecls typeParams

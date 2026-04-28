@@ -13,15 +13,16 @@ SigFile
                  (4,5--4,16)), (4,0--4,16)); ModuleAbbrev (A, [B], (6,0--6,12));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [Bar],
+                ([], None, [], Some (LongIdent (SynLongIdent ([Bar], [], []))),
                  PreXmlDoc ((8,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (8,0--8,10), None), false,
+                 None, (8,0--8,10)), false,
               [Types
                  ([SynTypeDefnSig
                      (SynComponentInfo
-                        ([], None, [], [a],
+                        ([], None, [],
+                         Some (LongIdent (SynLongIdent ([a], [], [None]))),
                          PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (9,9--9,10), None),
+                         false, None, (9,9--9,10)),
                       Simple
                         (Union
                            (None,

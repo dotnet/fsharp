@@ -1515,15 +1515,17 @@ type SynComponentInfo =
         attributes: SynAttributes *
         typeParams: SynTyparDecls option *
         constraints: SynTypeConstraint list *
-        longId: LongIdent *
+        synType: SynType option *
         xmlDoc: PreXmlDoc *
         preferPostfix: bool *
         accessibility: SynAccess option *
-        range: range *
-        synType: SynType option
+        range: range
 
     /// Gets the syntax range of this construct
     member Range: range
+
+    /// Gets the long identifier from a SynType.LongIdent, or empty list for other types
+    member LongIdent: LongIdent
 
 /// Represents one or two access modifier(s) in a property signature
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

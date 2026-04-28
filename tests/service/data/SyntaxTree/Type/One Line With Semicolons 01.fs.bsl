@@ -7,9 +7,10 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [A],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([A], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,6), None),
+                     false, None, (4,5--4,6)),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([A], [], [None])),
@@ -20,9 +21,10 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [B],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([B], [], [None]))),
                      PreXmlDoc ((4,12), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,17--4,18), None),
+                     false, None, (4,17--4,18)),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([A], [], [None])),
@@ -32,9 +34,9 @@ ImplFile
                     WithKeyword = None })], (4,12--4,22));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [C],
+                ([], None, [], Some (LongIdent (SynLongIdent ([C], [], []))),
                  PreXmlDoc ((4,24), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (4,24--4,32), None), false,
+                 None, (4,24--4,32)), false,
               [Expr (Const (Unit, (4,35--4,37)), (4,35--4,37))], false,
               (4,24--4,37), { ModuleKeyword = Some (4,24--4,30)
                               EqualsRange = Some (4,33--4,34) });
@@ -69,9 +71,9 @@ ImplFile
               (4,81--4,92));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [G],
+                ([], None, [], Some (LongIdent (SynLongIdent ([G], [], []))),
                  PreXmlDoc ((4,94), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (4,94--4,102), None), false,
+                 None, (4,94--4,102)), false,
               [ModuleAbbrev (H, [E], (4,105--4,117))], false, (4,94--4,117),
               { ModuleKeyword = Some (4,94--4,100)
                 EqualsRange = Some (4,103--4,104) })],

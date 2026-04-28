@@ -37,16 +37,19 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [],
+                    ([], None, [],
+                     Some
+                       (Paren
+                          (Var (SynTypar (T, None, false), (4,28--4,30)),
+                           (4,27--4,31))),
                      PreXmlDoc ((4,22), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,28--4,30),
-                     Some (Var (SynTypar (T, None, false), (4,28--4,30)))),
-                  Simple (None (4,28--4,30), (4,28--4,30)), [], None,
-                  (4,28--4,30), { LeadingKeyword = Type (4,22--4,26)
+                     false, None, (4,27--4,31)),
+                  Simple (None (4,27--4,31), (4,27--4,31)), [], None,
+                  (4,27--4,31), { LeadingKeyword = Type (4,22--4,26)
                                   EqualsRange = None
-                                  WithKeyword = None })], (4,22--4,30))],
+                                  WithKeyword = None })], (4,22--4,31))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (2,0--4,30), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
+          (2,0--4,31), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,62)] }, set []))

@@ -948,8 +948,8 @@ module Structure =
         and parseTypeDefnSig typeDefn =
             let (SynTypeDefnSig(typeInfo = typeInfo; typeRepr = objectModel; members = memberSigs)) = typeDefn
 
-            let (SynComponentInfo(attributes = attribs; typeParams = TyparDecls typeArgs; longId = longId; range = r)) =
-                typeInfo
+            let (SynComponentInfo(attributes = attribs; typeParams = TyparDecls typeArgs; range = r)) = typeInfo
+            let longId = typeInfo.LongIdent
 
             parseAttributes attribs
 

@@ -7,9 +7,10 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [DU],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([DU], [], [None]))),
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (1,5--1,7), None),
+                     false, None, (1,5--1,7)),
                   Simple
                     (Union
                        (None,

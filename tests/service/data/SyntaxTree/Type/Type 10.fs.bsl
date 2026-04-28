@@ -5,15 +5,15 @@ ImplFile
          ([N], false, DeclaredNamespace,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [M],
+                ([], None, [], Some (LongIdent (SynLongIdent ([M], [], []))),
                  PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (6,0--6,8), None), false,
+                 None, (6,0--6,8)), false,
               [Types
                  ([SynTypeDefn
                      (SynComponentInfo
-                        ([], None, [], [],
+                        ([], None, [], None,
                          PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (7,9--7,10), None),
+                         false, None, (7,9--7,10)),
                       ObjectModel
                         (Class,
                          [Member

@@ -8,9 +8,10 @@ SigFile
           [Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [FooType],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([FooType], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,12), None),
+                     false, None, (4,5--4,12)),
                   ObjectModel
                     (Unspecified,
                      [Member

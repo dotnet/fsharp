@@ -10,9 +10,10 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [Bird],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Bird], [], [None]))),
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,9), None),
+                     false, None, (2,5--2,9)),
                   ObjectModel
                     (Unspecified,
                      [GetSetMember

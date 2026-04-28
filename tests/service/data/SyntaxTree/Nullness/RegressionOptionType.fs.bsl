@@ -13,9 +13,9 @@ ImplFile
                           ([SynTyparDecl
                               ([], SynTypar (T, None, false), [],
                                { AmpersandRanges = [] })], [], (1,11--1,15))),
-                     [], [Option],
+                     [], Some (LongIdent (SynLongIdent ([Option], [], [None]))),
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (1,5--1,11), None),
+                     true, None, (1,5--1,11)),
                   Simple
                     (Union
                        (None,

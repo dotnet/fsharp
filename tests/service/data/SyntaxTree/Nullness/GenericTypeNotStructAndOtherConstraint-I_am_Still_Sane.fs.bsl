@@ -20,9 +20,10 @@ ImplFile
                               (SynTypar (T, None, false), (1,15--1,29));
                             WhereTyparIsEquatable
                               (SynTypar (T, None, false), (1,34--1,45))],
-                           (1,6--1,46))), [], [C],
+                           (1,6--1,46))), [],
+                     Some (LongIdent (SynLongIdent ([C], [], [None]))),
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (1,5--1,6), None),
+                     true, None, (1,5--1,6)),
                   ObjectModel (Class, [], (1,49--1,58)), [], None, (1,5--1,58),
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,47--1,48)

@@ -27,9 +27,11 @@ ImplFile
                  (10,5--10,33)), (10,0--10,33));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [SynExprAppLocationsImpl],
+                ([], None, [],
+                 Some
+                   (LongIdent (SynLongIdent ([SynExprAppLocationsImpl], [], []))),
                  PreXmlDoc ((12,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 Some (Internal (12,7--12,15)), (12,0--12,39), None), false,
+                 Some (Internal (12,7--12,15)), (12,0--12,39)), false,
               [Let
                  (false,
                   [SynBinding

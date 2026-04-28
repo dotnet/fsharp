@@ -42,9 +42,10 @@ ImplFile
                                           (3,53--3,55))], [], Some (3,55--3,56),
                                       false, (3,49--3,56)), (3,48--3,56))],
                                { AmpersandRanges = [(3,46--3,47)] })], [],
-                           (3,6--3,57))), [], [C],
+                           (3,6--3,57))), [],
+                     Some (LongIdent (SynLongIdent ([C], [], [None]))),
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (3,5--3,6), None),
+                     true, None, (3,5--3,6)),
                   ObjectModel
                     (Unspecified,
                      [Member

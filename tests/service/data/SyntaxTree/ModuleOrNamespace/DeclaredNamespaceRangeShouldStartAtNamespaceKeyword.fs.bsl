@@ -18,9 +18,9 @@ ImplFile
                             SynTyparDecl
                               ([], SynTypar (b, None, false), [],
                                { AmpersandRanges = [] })], [], (5,8--5,16))), [],
-                     [Teq],
+                     Some (LongIdent (SynLongIdent ([Teq], [], [None]))),
                      PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (5,5--5,8), None),
+                     true, None, (5,5--5,8)),
                   Simple (None (5,5--5,8), (5,5--5,8)), [], None, (4,0--5,8),
                   { LeadingKeyword = Type (5,0--5,4)
                     EqualsRange = None

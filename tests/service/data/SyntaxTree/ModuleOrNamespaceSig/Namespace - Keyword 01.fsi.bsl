@@ -6,9 +6,9 @@ SigFile
          ([Foo], false, DeclaredNamespace,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [Bar],
+                ([], None, [], Some (LongIdent (SynLongIdent ([Bar], [], []))),
                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (3,0--3,10), None), false,
+                 None, (3,0--3,10)), false,
               [Val
                  (SynValSig
                     ([], SynIdent (a, None), SynValTyparDecls (None, true),

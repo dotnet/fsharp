@@ -15,9 +15,10 @@ ImplFile
                                { AmpersandRanges = [] })],
                            [WhereTyparSupportsNull
                               (SynTypar (T, None, false), (1,15--1,23))],
-                           (1,6--1,24))), [], [C],
+                           (1,6--1,24))), [],
+                     Some (LongIdent (SynLongIdent ([C], [], [None]))),
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     true, None, (1,5--1,6), None),
+                     true, None, (1,5--1,6)),
                   ObjectModel (Class, [], (1,27--1,36)), [], None, (1,5--1,36),
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,25--1,26)

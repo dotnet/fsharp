@@ -9,9 +9,10 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [T],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([T], [], [None]))),
                      PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (5,5--5,6), None),
+                     false, None, (5,5--5,6)),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([int], [], [None])),

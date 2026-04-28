@@ -947,7 +947,7 @@ module ParsedInput =
             | _ -> None
 
         and walkComponentInfo isModule compInfo =
-            let (SynComponentInfo(Attributes attrs, TyparsAndConstraints(typars, cs1), cs2, _, _, _, _, r, _)) =
+            let (SynComponentInfo(Attributes attrs, TyparsAndConstraints(typars, cs1), cs2, _, _, _, _, r)) =
                 compInfo
 
             let constraints = cs1 @ cs2
@@ -1499,7 +1499,8 @@ module ParsedInput =
                         // detect records usage in constructor
                         match path with
                         | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
-                            typeInfo = SynComponentInfo(longId = [ id ]))) :: _ -> RecordContext.Constructor(id.idText)
+                            typeInfo = compInfo)) :: _ when compInfo.LongIdent.Length = 1 ->
+                            RecordContext.Constructor(compInfo.LongIdent.Head.idText)
 
                         | SyntaxNode.SynExpr(SynExpr.Record(None, _, fields, _)) :: _ ->
                             let isFirstField =
@@ -1564,10 +1565,11 @@ module ParsedInput =
 
                     let overrideContext path (mOverride: range) hasThis isStatic isMember =
                         match path with
-                        | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
-                            typeInfo = SynComponentInfo(longId = [ enclosingType ]); trivia = { LeadingKeyword = keyword })) :: _ when
-                            not isMember
+                        | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = compInfo; trivia = { LeadingKeyword = keyword })) :: _ when
+                            not isMember && compInfo.LongIdent.Length = 1
                             ->
+                            let enclosingType = compInfo.LongIdent.Head
+
                             Some(
                                 CompletionContext.MethodOverride(
                                     MethodOverrideCompletionContext.Class,
@@ -1579,9 +1581,11 @@ module ParsedInput =
                                 )
                             )
                         | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty) as enclosingDefn) :: SyntaxNode.SynTypeDefn(SynTypeDefn(
-                            typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _
+                            typeInfo = compInfo)) :: _
                         | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty) as enclosingDefn) :: SyntaxNode.SynTypeDefn(SynTypeDefn(
-                            typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ ->
+                            typeInfo = compInfo)) :: _ when compInfo.LongIdent.Length = 1 ->
+                            let enclosingType = compInfo.LongIdent.Head
+
                             let ty =
                                 match ty with
                                 | SynType.App(typeName = ty) -> ty
@@ -1781,7 +1785,10 @@ module ParsedInput =
 
                     // module Namespace.Top
                     // module Nested
-                    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ])) when rangeContainsPos ident.idRange pos ->
+                    | SynModuleDecl.NestedModule(moduleInfo = compInfo) when
+                        compInfo.LongIdent.Length = 1
+                        && rangeContainsPos compInfo.LongIdent.Head.idRange pos
+                        ->
                         Some CompletionContext.Invalid
 
                     | _ -> defaultTraverse decl
@@ -2286,7 +2293,7 @@ module ParsedInput =
             | _ -> ()
 
         and walkComponentInfo isTypeExtensionOrAlias compInfo =
-            let (SynComponentInfo(Attributes attrs, TyparsAndConstraints(typars, cs1), cs2, longIdent, _, _, _, _, _)) =
+            let (SynComponentInfo(Attributes attrs, TyparsAndConstraints(typars, cs1), cs2, _, _, _, _, _)) =
                 compInfo
 
             let constraints = cs1 @ cs2
@@ -2295,7 +2302,7 @@ module ParsedInput =
             List.iter walkTypeConstraint constraints
 
             if isTypeExtensionOrAlias then
-                addLongIdent longIdent
+                addLongIdent compInfo.LongIdent
 
         and walkTypeDefnRepr inp =
             match inp with
@@ -2466,8 +2473,8 @@ module ParsedInput =
         and walkSynModuleDecl (parent: LongIdent) (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace parent fragment
-            | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = ident); decls = decls; range = range; trivia = trivia) ->
-
+            | SynModuleDecl.NestedModule(moduleInfo = compInfo; decls = decls; range = range; trivia = trivia) ->
+                let ident = compInfo.LongIdent
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
 

@@ -7,10 +7,13 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [],
+                    ([], None, [],
+                     Some
+                       (Paren
+                          (Var (SynTypar (T1, None, false), (1,6--1,9)),
+                           (1,5--1,10))),
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (1,6--1,9),
-                     Some (Var (SynTypar (T1, None, false), (1,6--1,9)))),
+                     false, None, (1,5--1,10)),
                   ObjectModel (Augmentation (1,11--1,15), [], (1,5--2,23)),
                   [Member
                      (SynBinding

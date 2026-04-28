@@ -82,7 +82,7 @@ module MemberDefinitions_NamedArguments =
         |> withDiagnostics [
             (Error 39, Line 8, Col 47, Line 8, Col 51, "The value or constructor 'arg1' is not defined.")
             (Error 39, Line 8, Col 54, Line 8, Col 58, "The value or constructor 'arg2' is not defined.")
-            (Error 3, Line 12, Col 1, Line 12, Col 8, "This value is not a function and cannot be applied.")
+            (Error 3, Line 12, Col 1, Line 12, Col 8, "This value is not a function and cannot be applied. It has type '(int * int)', which does not accept arguments.")
         ]
 
     // SOURCE=genericNamedParams.fs		# genericNamedParams.fs

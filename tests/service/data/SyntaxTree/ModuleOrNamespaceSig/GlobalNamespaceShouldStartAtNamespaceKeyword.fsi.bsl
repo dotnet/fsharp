@@ -7,9 +7,10 @@ SigFile
           [Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [Bar],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Bar], [], [None]))),
                      PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (6,5--6,8), None),
+                     false, None, (6,5--6,8)),
                   Simple
                     (Union
                        (None,

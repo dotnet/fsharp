@@ -6,25 +6,32 @@ ImplFile
          ([Root], false, NamedModule,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [Level1],
+                ([], None, [],
+                 Some (LongIdent (SynLongIdent ([Level1], [], []))),
                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (4,0--4,13), None), false,
+                 None, (4,0--4,13)), false,
               [NestedModule
                  (SynComponentInfo
-                    ([], None, [], [Level2],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Level2], [], []))),
                      PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (5,4--5,17), None), false,
+                     false, None, (5,4--5,17)), false,
                   [NestedModule
                      (SynComponentInfo
-                        ([], None, [], [Level3],
+                        ([], None, [],
+                         Some (LongIdent (SynLongIdent ([Level3], [], []))),
                          PreXmlDoc ((6,8), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (6,8--6,21), None), false,
+                         false, None, (6,8--6,21)), false,
                       [Types
                          ([SynTypeDefn
                              (SynComponentInfo
-                                ([], None, [], [TypeWithInvalidModule],
+                                ([], None, [],
+                                 Some
+                                   (LongIdent
+                                      (SynLongIdent
+                                         ([TypeWithInvalidModule], [], [None]))),
                                  PreXmlDoc ((7,12), FSharp.Compiler.Xml.XmlDocCollector),
-                                 false, None, (7,17--7,38), None),
+                                 false, None, (7,17--7,38)),
                               Simple (None (7,17--7,40), (7,17--7,40)), [], None,
                               (7,17--7,40), { LeadingKeyword = Type (7,12--7,16)
                                               EqualsRange = Some (7,39--7,40)
@@ -32,9 +39,12 @@ ImplFile
                           (7,12--7,40));
                        NestedModule
                          (SynComponentInfo
-                            ([], None, [], [InvalidModule],
+                            ([], None, [],
+                             Some
+                               (LongIdent
+                                  (SynLongIdent ([InvalidModule], [], []))),
                              PreXmlDoc ((8,16), FSharp.Compiler.Xml.XmlDocCollector),
-                             false, None, (8,16--8,36), None), false,
+                             false, None, (8,16--8,36)), false,
                           [Let
                              (false,
                               [SynBinding

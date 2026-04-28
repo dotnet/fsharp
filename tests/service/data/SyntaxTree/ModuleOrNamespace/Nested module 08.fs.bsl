@@ -6,16 +6,16 @@ ImplFile
          ([Module], false, NamedModule,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [A],
+                ([], None, [], Some (LongIdent (SynLongIdent ([A], [], []))),
                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (3,0--3,8), None), false,
+                 None, (3,0--3,8)), false,
               [NestedModule
                  (SynComponentInfo
-                    ([], None, [], [B],
+                    ([], None, [], Some (LongIdent (SynLongIdent ([B], [], []))),
                      PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,4--4,12), None), false, [], false,
-                  (4,4--4,12), { ModuleKeyword = Some (4,4--4,10)
-                                 EqualsRange = None });
+                     false, None, (4,4--4,12)), false, [], false, (4,4--4,12),
+                  { ModuleKeyword = Some (4,4--4,10)
+                    EqualsRange = None });
                Expr (Const (Int32 2, (6,4--6,5)), (6,4--6,5))], false,
               (3,0--6,5), { ModuleKeyword = Some (3,0--3,6)
                             EqualsRange = Some (3,9--3,10) })],

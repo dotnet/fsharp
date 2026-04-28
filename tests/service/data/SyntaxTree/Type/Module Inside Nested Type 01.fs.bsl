@@ -6,20 +6,24 @@ ImplFile
          ([Level1], false, NamedModule,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [Level2],
+                ([], None, [],
+                 Some (LongIdent (SynLongIdent ([Level2], [], []))),
                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), false,
-                 None, (4,0--4,13), None), false,
+                 None, (4,0--4,13)), false,
               [NestedModule
                  (SynComponentInfo
-                    ([], None, [], [Level3],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Level3], [], []))),
                      PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (5,4--5,17), None), false,
+                     false, None, (5,4--5,17)), false,
                   [Types
                      ([SynTypeDefn
                          (SynComponentInfo
-                            ([], None, [], [MyType],
+                            ([], None, [],
+                             Some
+                               (LongIdent (SynLongIdent ([MyType], [], [None]))),
                              PreXmlDoc ((6,8), FSharp.Compiler.Xml.XmlDocCollector),
-                             false, None, (6,13--6,19), None),
+                             false, None, (6,13--6,19)),
                           Simple
                             (Union
                                (None,
@@ -34,9 +38,11 @@ ImplFile
                                           WithKeyword = None })], (6,8--7,15));
                    NestedModule
                      (SynComponentInfo
-                        ([], None, [], [InvalidModule],
+                        ([], None, [],
+                         Some
+                           (LongIdent (SynLongIdent ([InvalidModule], [], []))),
                          PreXmlDoc ((8,12), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (8,12--8,32), None), false,
+                         false, None, (8,12--8,32)), false,
                       [Let
                          (false,
                           [SynBinding

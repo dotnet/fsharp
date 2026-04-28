@@ -7,17 +7,19 @@ SigFile
           [Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [A],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([A], [], [None]))),
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,6), None),
+                     false, None, (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [NestedType
                         (SynTypeDefnSig
                            (SynComponentInfo
-                              ([], None, [], [B],
+                              ([], None, [],
+                               Some (LongIdent (SynLongIdent ([B], [], [None]))),
                                PreXmlDoc ((3,16), FSharp.Compiler.Xml.XmlDocCollector),
-                               false, None, (3,16--3,17), None),
+                               false, None, (3,16--3,17)),
                             ObjectModel (Class, [], (4,20--5,23)), [],
                             (3,16--5,23),
                             { LeadingKeyword =
