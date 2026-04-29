@@ -11,12 +11,9 @@
     <NoDefaultExcludes>true</NoDefaultExcludes>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <_ArcadeSdkMSBuildProjectDir>$([System.IO.Path]::GetDirectoryName('$(ArcadeSdkBuildTasksAssembly)'))\..\</_ArcadeSdkMSBuildProjectDir>
-    <_BuildReleasePackagesTargets>$(_ArcadeSdkMSBuildProjectDir)BuildReleasePackages.targets</_BuildReleasePackagesTargets>
-  </PropertyGroup>
-
-  <Import Project="$(_BuildReleasePackagesTargets)" />
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.NuGetRepack.Tasks" Version="$(MicrosoftDotnetNuGetRepackTasksVersion)" PrivateAssets="all" />
+  </ItemGroup>
 
   <ItemGroup>
     <NuspecProperty Include="fSharpCorePreviewPackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" />
