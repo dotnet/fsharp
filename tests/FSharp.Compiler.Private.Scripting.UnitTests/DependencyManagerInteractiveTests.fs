@@ -238,15 +238,16 @@ type DependencyManagerInteractiveTests() =
             Assert.True((result1.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
 
         // Netstandard gets fewer dependencies than desktop, because desktop framework doesn't contain assemblies like System.Memory
-        // Those assemblies must be delivered by nuget for desktop apps
+        // Those assemblies must be delivered by nuget for desktop apps.
+        // In .NET 11+, Microsoft.Extensions.* assemblies are part of the shared framework.
+        // The conflict resolution returns framework ref pack paths instead of NuGet cache paths,
+        // and framework assemblies have no NuGet package roots.
         let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, TestFramework.productTfm)
         Assert.Equal(true, result2.Success)
         Assert.Equal(2, result2.Resolutions |> Seq.length)
-        let expected = "/netcoreapp3.1/"
-        Assert.True((result2.Resolutions |> Seq.head).Contains(expected))
+        Assert.True((result2.Resolutions |> Seq.head).Contains("Microsoft.Extensions.Configuration.Abstractions"))
         Assert.Equal(1, result2.SourceFiles |> Seq.length)
-        Assert.Equal(2, result2.Roots |> Seq.length)
-        Assert.True((result2.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
+        Assert.Equal(0, result2.Roots |> Seq.length)
         ()
 
 /// Native dll resolution is not implemented on desktop

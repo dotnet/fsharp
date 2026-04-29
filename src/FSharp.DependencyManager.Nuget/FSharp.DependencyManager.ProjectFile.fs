@@ -52,7 +52,7 @@ $(POUND_R)
     <RuntimeIdentifier>$(RUNTIMEIDENTIFIER)</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
     <DisableFSharpCorePreviewCheck>true</DisableFSharpCorePreviewCheck>     <!-- Disable preview FSharp.Core current DotNet Sdks    -->
-    <EnablePackagePruning>false</EnablePackagePruning>                      <!-- Don't prune packages that are part of the shared framework -->
+    <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>          <!-- Don't prune packages that are part of the shared framework -->
 
     <!-- Disable automagic FSharp.Core resolution when not using with FSharp scripts -->
     <DisableImplicitFSharpCoreReference Condition="'$(SCRIPTEXTENSION)' != '.fsx'">true</DisableImplicitFSharpCoreReference>
@@ -115,6 +115,7 @@ $(PACKAGEREFERENCES)
 
       <PropertyGroup>
         <__Conflicts>@(__ConflictsList, ';');</__Conflicts>
+        <_CopyLocalNames>;@(__InteractiveReferencedAssembliesCopyLocal->'%(Filename)', ';');</_CopyLocalNames>
       </PropertyGroup>
 
       <ItemGroup>
@@ -138,6 +139,19 @@ $(PACKAGEREFERENCES)
             <IsNotImplementationReference>$([System.String]::Copy('%(__InteractiveReferencedAssembliesCopyLocal.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
             <NuGetPackageId>%(__InteractiveReferencedAssembliesCopyLocal.NuGetPackageId)</NuGetPackageId>
             <NuGetPackageVersion>%(__InteractiveReferencedAssembliesCopyLocal.NuGetPackageVersion)</NuGetPackageVersion>
+        </InteractiveResolvedFile>
+
+        <!-- When a NuGet package's assemblies are superseded by the shared framework (e.g.,
+             Microsoft.Extensions.* in .NET 11+), they appear in ReferencePath from the framework
+             ref pack but not in RuntimeCopyLocalItems. Mark these framework-provided conflict
+             winners as runtime-loadable so FSI can discover them via #r "nuget:..." resolution.
+             The CopyLocal guard ensures this only activates when the framework provides the assembly
+             at runtime, preserving existing behavior for packages with real runtime assets. -->
+        <InteractiveResolvedFile Update="@(InteractiveResolvedFile)"
+                                 Condition="'%(InteractiveResolvedFile.NuGetPackageId)' == 'Microsoft.NETCore.App.Ref'
+                                            and '%(InteractiveResolvedFile.AssetType)' == ''
+                                            and $([System.String]::new('$(_CopyLocalNames)').IndexOf($([System.String]::new(';%(InteractiveResolvedFile.Filename);')), System.StringComparison.OrdinalIgnoreCase)) &lt; 0">
+            <AssetType>runtime</AssetType>
         </InteractiveResolvedFile>
         
         <InteractiveResolvedFile Update="*">
