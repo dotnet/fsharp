@@ -52,6 +52,7 @@ $(POUND_R)
     <RuntimeIdentifier>$(RUNTIMEIDENTIFIER)</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
     <DisableFSharpCorePreviewCheck>true</DisableFSharpCorePreviewCheck>     <!-- Disable preview FSharp.Core current DotNet Sdks    -->
+    <EnablePackagePruning>false</EnablePackagePruning>                      <!-- Don't prune packages that are part of the shared framework -->
 
     <!-- Disable automagic FSharp.Core resolution when not using with FSharp scripts -->
     <DisableImplicitFSharpCoreReference Condition="'$(SCRIPTEXTENSION)' != '.fsx'">true</DisableImplicitFSharpCoreReference>
