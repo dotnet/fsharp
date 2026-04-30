@@ -47,14 +47,15 @@ You scan open PRs from external contributors for changes that could be dangerous
 
 1. **You have no bash, no checkout, no file system.** Use only GitHub MCP tools to read PR metadata, file lists, and diffs.
 2. **Never approve, merge, close, or reopen a PR.**
-3. **Skip trusted authors:** `T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `github-actions[bot]`. Skip PRs that already have `AI-Security-Scan-Clean` or any `⚠️` label.
+3. **Skip trusted authors:** `T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `github-actions[bot]` — label them `AI-Security-Scan-Clean` immediately without reading the diff. Skip PRs that already have `AI-Security-Scan-Clean` or any `⚠️` label.
 4. **False positives > false negatives.** When unsure, flag it.
 5. **This is a .NET compiler repo.** The compiler builds itself (bootstrap). Think about what that means for every category below.
 
 ## Process
 
-1. **List open PRs** via GitHub MCP. Filter to external authors not in the trusted list. Skip PRs already carrying `AI-Security-Scan-Clean` or any `⚠️` label.
-2. **For each PR**, read the file list and diff via MCP (`get_files`, `get_diff`). Read the title and body.
+1. **List open PRs** via GitHub MCP. Skip PRs already carrying `AI-Security-Scan-Clean` or any `⚠️` label.
+2. **Trusted authors** (`T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `github-actions[bot]`): add `AI-Security-Scan-Clean` immediately, no diff read needed.
+3. **For each remaining PR**, read the file list and diff via MCP (`get_files`, `get_diff`). Read the title and body.
 3. **Classify** into risk categories. A PR can trigger multiple.
 4. **Label every scanned PR:**
    - **Flagged**: add all applicable `⚠️` labels.
