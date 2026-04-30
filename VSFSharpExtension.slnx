@@ -14,6 +14,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj" />
+    <Project Path="tests/FSharp.Compiler.LanguageServer.IntegrationTests/FSharp.Compiler.LanguageServer.IntegrationTests.csproj" />
   </Folder>
   <Project Path="buildtools/Misc/Misc.csproj" />
 </Solution>
