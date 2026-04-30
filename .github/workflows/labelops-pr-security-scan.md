@@ -1,9 +1,9 @@
 ---
 description: |
   Scans open PRs from external contributors for security-sensitive changes.
-  Runs hourly. Reads the diff, classifies risk, adds warning labels so
-  maintainers know before building/testing locally or in Copilot. Text-only
-  analysis — never checks out or builds the PR code.
+  Runs hourly. Text-only — reads diffs via GitHub API, never checks out
+  or builds PR code. Adds warning labels so maintainers know before
+  building locally or loading into Copilot.
 
 on:
   schedule: every 1h
@@ -20,9 +20,8 @@ network:
 
 tools:
   github:
-    toolsets: [default, pull_requests]
+    toolsets: [pull_requests]
     min-integrity: none
-  bash: true
 
 safe-outputs:
   noop:
@@ -46,73 +45,36 @@ safe-outputs:
 
 # LabelOps — PR Security Scan
 
-You scan open PRs from external contributors for changes that could be dangerous to build, test, or load into an AI coding agent. You **never** check out or execute any code — you only read the diff as text and classify risk.
+You scan open PRs from external contributors for changes that could be dangerous to build, test, or load into an AI coding agent. You read PR diffs as text via the GitHub API. You have no shell, no file system, no checkout. Your only tools are the GitHub `pull_requests` MCP toolset and safe-outputs for labeling.
 
-## Hard rules
+## Rules
 
-1. **Never check out, build, or run any code from the PR.** Text analysis only.
-2. **Never modify `.github/**`.**
-3. **Never merge, approve, close, or reopen a PR.**
-4. **Skip PRs from trusted authors:** `T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `github-actions[bot]`. Also skip any PR already carrying any `⚠️` or `AI-Security-Scan-Clean` label from a previous scan.
-5. **One comment per PR per scan.** Use `hide-older-comments: true` to collapse stale ones.
-6. **Prefix comments with `🤖 *LabelOps Security Scan.*`**
-7. **If unsure about a category, flag it.** False positives are acceptable; false negatives are not.
-8. **Never skip a PR just because it looks big.** Large diffs need scanning the most.
+1. **You have no bash, no checkout, no file system.** Use only GitHub MCP tools to read PR metadata, file lists, and diffs.
+2. **Never approve, merge, close, or reopen a PR.**
+3. **Skip trusted authors:** `T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `github-actions[bot]`. Skip PRs already carrying any `⚠️` or `AI-Security-Scan-Clean` label.
+4. **False positives > false negatives.** When unsure, flag it.
+5. **Prefix comments with `🤖 *LabelOps Security Scan.*`**
+6. **This is a .NET compiler repo.** The compiler builds itself (bootstrap). Think about what that means for every category below.
 
-## Step 1 — Select PRs
+## Process
 
-```bash
-gh pr list --repo dotnet/fsharp --state open --limit 100 \
-  --json number,title,author,labels,headRepository,isDraft,body,additions,deletions \
-  > /tmp/scan-candidates.json
-```
+1. **List open PRs** via GitHub MCP. Filter to external authors not in the trusted list, no existing scan labels.
+2. **For each PR**, read the file list and diff via MCP (`get_files`, `get_diff`). Read the title and body.
+3. **Classify** into risk categories. A PR can trigger multiple.
+4. **Label** with all applicable `⚠️` labels. If any found, post one comment summarizing. If clean, add `AI-Security-Scan-Clean`.
 
-Filter: keep only PRs where the author is NOT in the trusted list, AND the PR does not already have any `⚠️` or `AI-Security-Scan-Clean` label. Skip drafts. Process all matching PRs (this is fast — text-only).
+## Risk categories
 
-## Step 2 — For each PR, read the diff
+**⚠️ Affects-Build-Infra** — modifies files that execute during build. Building this PR runs the contributor's code on your machine.
 
-```bash
-gh pr diff <number> --repo dotnet/fsharp
-```
+**⚠️ Affects-Compiler-Output** — modifies IL emission, code generation, or typed tree serialization. Compiled binaries could behave unexpectedly.
 
-Also read `gh pr view <number> --json title,body,files` to get the title, description, and file list.
+**⚠️ Affects-Bootstrap** — modifies the compiler bootstrap chain. The compiler builds itself — a compromised bootstrap produces a compromised compiler that compiles everything else.
 
-## Step 3 — Classify
+**⚠️ Prompt-Injection-Risk** — modifies AI agent instructions, skills, or workflow definitions.
 
-Read the diff carefully. For each risk category below, determine if the PR triggers it. A PR can trigger multiple categories.
+**⚠️ Package-Supply-Chain** — adds or changes NuGet package references, feeds, or SDK versions.
 
-### Risk categories
+**⚠️ Scope-Review-Needed** — the diff clearly does more than what the title and description claim.
 
-**⚠️ Affects-Build-Infra** — PR modifies files that execute during `dotnet build` or `./build.sh`. This means building the PR runs the contributor's code on your machine.
-- `.props`, `.targets`, `Directory.Build.*`, `NuGet.config`, `global.json`, `eng/**`, `proto.proj`, `.fsproj`/`.csproj` changes that add `<Exec>`, `<UsingTask>`, or custom tasks, shell scripts (`.sh`, `.cmd`, `.ps1`, `.bat`, `.py`), `buildtools/**`
-
-**⚠️ Affects-Compiler-Output** — PR modifies the code generation or IL emission pipeline. Compiled binaries from this branch could behave differently than expected.
-- `src/Compiler/AbstractIL/ilwrite*`, `src/Compiler/CodeGen/**`, `src/Compiler/AbstractIL/ilreflect*`, `src/Compiler/TypedTree/TypedTreePickle*`, `src/FSharp.Build/**`
-
-**⚠️ Affects-Bootstrap** — PR modifies the compiler bootstrap chain. The compiler builds itself — changes here can make the bootstrap produce a compromised compiler that then compiles everything else.
-- `proto.proj`, bootstrap-related conditions (`BUILDING_USING_DOTNET`, `Configuration==Proto`), `buildtools/fslex/**`, `buildtools/fsyacc/**`, `FSharpBuild.Directory.Build.*`
-
-**⚠️ Prompt-Injection-Risk** — PR modifies AI agent instructions, skills, or workflow definitions. Could alter how Copilot or agentic workflows behave.
-- `.github/copilot-instructions.md`, `.github/instructions/**`, `.github/skills/**`, `.github/workflows/**`
-
-**⚠️ Package-Supply-Chain** — PR adds/changes NuGet package references or feeds.
-- `NuGet.config`, `Directory.Packages.props`, `eng/Versions.props`, `eng/Version.Details.*`, new `<PackageReference>` entries
-
-**⚠️ Scope-Review-Needed** — PR clearly does more than what the title and description claim. Use your judgment: read the title/body, then read the diff. If there are significant changes in areas not mentioned or implied by the PR description, flag it.
-
-**AI-Security-Scan-Clean** — PR touches only safe areas (source code, tests, docs) with no risk indicators. Apply this so future scans skip it.
-
-## Step 4 — Label and comment
-
-For each PR:
-- Add all applicable `⚠️` labels via `add-labels`.
-- If any `⚠️` label was added, post one comment summarizing what was found:
-  ```
-  🤖 *LabelOps Security Scan.* This PR from an external contributor touches security-sensitive areas:
-
-  - **<category>**: <brief explanation of what was found>
-  - **<category>**: <brief explanation>
-
-  Maintainers: review these areas before building locally or approving CI runs.
-  ```
-- If no risk was found, add `AI-Security-Scan-Clean` (no comment needed).
+**AI-Security-Scan-Clean** — no risk indicators found.
