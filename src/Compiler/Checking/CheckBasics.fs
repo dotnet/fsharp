@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.CheckBasics
 
@@ -58,7 +58,8 @@ type ExplicitTyparInfo =
     | ExplicitTyparInfo of
         rigidCopyOfDeclaredTypars: Typars *
         declaredTypars: Typars *
-        infer: bool
+        infer: bool *
+        hasExplicitTyparDecls: bool
 
 type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
 
@@ -350,7 +351,7 @@ type TcFileState =
 
         let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
-        // traitCtxtNone: NameResolver construction — trait context flows separately through TcEnv during actual resolution (audited for RFC FS-1043)
+        // traitCtxtNone: NameResolver construction � trait context flows separately through TcEnv during actual resolution (audited for RFC FS-1043)
         let instantiationGenerator m tpsorig = FreshenTypars g traitCtxtNone m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g

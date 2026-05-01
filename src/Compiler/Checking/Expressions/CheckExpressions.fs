@@ -301,8 +301,8 @@ type OverridesOK =
     | WarnOnOverrides
     | ErrorOnOverrides
 
-let permitInferTypars = ExplicitTyparInfo ([], [], true)
-let dontInferTypars = ExplicitTyparInfo ([], [], false)
+let permitInferTypars = ExplicitTyparInfo ([], [], true, false)
+let dontInferTypars = ExplicitTyparInfo ([], [], false, false)
 
 let noArgOrRetAttribs = ArgAndRetAttribs ([], [])
 
@@ -1659,7 +1659,7 @@ let GeneralizeVal (cenv: cenv) denv enclosingDeclaredTypars generalizedTyparsFor
     let g = cenv.g
 
     let (PrelimVal1(id, explicitTyparInfo, ty, prelimValReprInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, argAttribs, vis, isCompGen)) = prelimVal
-    let (ExplicitTyparInfo(_rigidCopyOfDeclaredTypars, declaredTypars, _)) = explicitTyparInfo
+    let (ExplicitTyparInfo(_rigidCopyOfDeclaredTypars, declaredTypars, _, _)) = explicitTyparInfo
 
     let m = id.idRange
 
@@ -4056,7 +4056,7 @@ type RecursiveBindingInfo =
     member x.EnclosingDeclaredTypars = let (RecursiveBindingInfo(_, _, enclosingDeclaredTypars, _, _, _, _, _, _, _, _, _, _, _)) = x in enclosingDeclaredTypars
     member x.Val = let (RecursiveBindingInfo(_, _, _, _, vspec, _, _, _, _, _, _, _, _, _)) = x in vspec
     member x.ExplicitTyparInfo = let (RecursiveBindingInfo(_, _, _, _, _, explicitTyparInfo, _, _, _, _, _, _, _, _)) = x in explicitTyparInfo
-    member x.DeclaredTypars = let (ExplicitTyparInfo(_, declaredTypars, _)) = x.ExplicitTyparInfo in declaredTypars
+    member x.DeclaredTypars = let (ExplicitTyparInfo(_, declaredTypars, _, _)) = x.ExplicitTyparInfo in declaredTypars
     member x.Index = let (RecursiveBindingInfo(i, _, _, _, _, _, _, _, _, _, _, _, _, _)) = x in i
     member x.ContainerInfo = let (RecursiveBindingInfo(_, c, _, _, _, _, _, _, _, _, _, _, _, _)) = x in c
     member x.DeclKind = let (RecursiveBindingInfo(_, _, _, _, _, _, _, _, _, _, _, _, _, declKind)) = x in declKind
@@ -4082,7 +4082,7 @@ type PostSpecialValsRecursiveBinding =
 
 let CanInferExtraGeneralizedTyparsForRecBinding (pgrbind: PreGeneralizationRecursiveBinding) =
     let explicitTyparInfo = pgrbind.RecBindingInfo.ExplicitTyparInfo
-    let (ExplicitTyparInfo(_, _, canInferTypars)) = explicitTyparInfo
+    let (ExplicitTyparInfo(_, _, canInferTypars, _)) = explicitTyparInfo
     let memFlagsOpt = pgrbind.RecBindingInfo.Val.MemberInfo |> Option.map (fun memInfo -> memInfo.MemberFlags)
     let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (pgrbind.RecBindingInfo.ContainerInfo.ParentRef, canInferTypars, memFlagsOpt)
     canInferTypars
@@ -7219,7 +7219,7 @@ and TcObjectExprBinding (cenv: cenv) (env: TcEnv) implTy tpenv (absSlotInfo, bin
         | _ ->
             mkFunTy cenv.g implTy (NewInferenceType cenv.g)
 
-    let CheckedBindingInfo(inlineFlag, bindingAttribs, _, _, ExplicitTyparInfo(_, declaredTypars, _), nameToPrelimValSchemeMap, rhsExpr, _, _, m, _, _, _, _), tpenv =
+    let CheckedBindingInfo(inlineFlag, bindingAttribs, _, _, ExplicitTyparInfo(_, declaredTypars, _, _), nameToPrelimValSchemeMap, rhsExpr, _, _, m, _, _, _, _), tpenv =
         let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv bind
         TcNormalizedBinding ObjectExpressionOverrideBinding cenv env tpenv bindingTy None NoSafeInitInfo ([], explicitTyparInfo) bind
 
@@ -11164,7 +11164,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and
-and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars, (ExplicitTyparInfo(_, declaredTypars, _) as explicitTyparInfo)) bind =
+and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars, (ExplicitTyparInfo(_, declaredTypars, _canInferTypars, hasExplicitTyparDecls) as explicitTyparInfo)) bind =
 
     let g = cenv.g
 
@@ -11316,7 +11316,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         if isMutable && not (isNil spatsL) then errorR(Error(FSComp.SR.tcMutableValuesSyntax(), mBinding))
 
         let isInline =
-            if isInline && isNil spatsL && isNil declaredTypars then
+            if isInline && isNil spatsL && isNil declaredTypars && not hasExplicitTyparDecls then
                 errorR(Error(FSComp.SR.tcOnlyFunctionsCanBeInline(), mBinding))
                 false
             else
@@ -11503,10 +11503,13 @@ and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
 
     else hasLiteralAttr, None
 
-and TcBindingTyparDecls alwaysRigid cenv env tpenv (ValTyparDecls(synTypars, synTyparConstraints, infer)) =
+and TcBindingTyparDecls alwaysRigid cenv env tpenv (SynValTyparDecls(typarDecls, _canInfer) as synValTyparDecls) =
+    let (ValTyparDecls(synTypars, synTyparConstraints, infer)) = synValTyparDecls
     let declaredTypars = TcTyparDecls cenv env synTypars
     let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
     let tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envinner tpenv synTyparConstraints
+
+    let hasExplicitTyparDecls = Option.isSome typarDecls
 
     let rigidCopyOfDeclaredTypars =
         if alwaysRigid then
@@ -11520,7 +11523,7 @@ and TcBindingTyparDecls alwaysRigid cenv env tpenv (ValTyparDecls(synTypars, syn
             declaredTypars |> List.iter (fun tp -> tp.SetRigidity TyparRigidity.WillBeRigid)
             rigidCopyOfDeclaredTypars
 
-    ExplicitTyparInfo(rigidCopyOfDeclaredTypars, declaredTypars, infer), tpenv
+    ExplicitTyparInfo(rigidCopyOfDeclaredTypars, declaredTypars, infer, hasExplicitTyparDecls), tpenv
 
 and TcNonrecBindingTyparDecls cenv env tpenv bind =
     let (NormalizedBinding(_, _, _, _, _, _, synTyparDecls, _, _, _, _, _)) = bind
@@ -11842,7 +11845,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
                     let (CheckedBindingInfo(inlineFlag, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) =
                         tbinfo
 
-                    let (ExplicitTyparInfo(_, declaredTypars, _)) = explicitTyparInfo
+                    let (ExplicitTyparInfo(_, declaredTypars, _, _)) = explicitTyparInfo
                     let maxInferredTypars = (freeInTypeLeftToRight g false tauTy)
                     let allTypars = declaredTypars @ maxInferredTypars
 
@@ -11865,7 +11868,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
     ((id, env, tpenv), checkedBinds) ||> List.fold (fun (buildExpr, env, tpenv) tbinfo ->
         let (CheckedBindingInfo(inlineFlag, attrs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExpr, _, tauTy, m, debugPoint, _, literalValue, isFixed)) = tbinfo
         let enclosingDeclaredTypars = []
-        let (ExplicitTyparInfo(_, declaredTypars, canInferTypars)) = explicitTyparInfo
+        let (ExplicitTyparInfo(_, declaredTypars, canInferTypars, hasExplicitTyparDecls)) = explicitTyparInfo
         let allDeclaredTypars = enclosingDeclaredTypars @ declaredTypars
         let generalizedTypars, prelimValSchemes2 =
             let canInferTypars = GeneralizationHelpers. ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, canInferTypars, None)
@@ -11879,7 +11882,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
                    let freeInEnv = lazyFreeInEnv.Force()
                    let canConstrain = GeneralizationHelpers.CanGeneralizeConstrainedTyparsForDecl declKind
                    GeneralizationHelpers.ComputeAndGeneralizeGenericTypars
-                       (cenv, denv, m, freeInEnv, canInferTypars, canConstrain, inlineFlag, Some rhsExpr, allDeclaredTypars, maxInferredTypars, tauTy, false)
+                       (cenv, denv, m, freeInEnv, canInferTypars, canConstrain, inlineFlag, (if hasExplicitTyparDecls then None else Some rhsExpr), allDeclaredTypars, maxInferredTypars, tauTy, false)
 
             let prelimValSchemes2 = GeneralizeVals cenv denv enclosingDeclaredTypars generalizedTypars nameToPrelimValSchemeMap
 
@@ -12305,12 +12308,12 @@ and AnalyzeRecursiveStaticMemberOrValDecl
            let envinner = AddDeclaredTypars CheckForDuplicateTypars enclosingDeclaredTypars envinner
            let envinner = MakeInnerEnvForTyconRef envinner tcref isExtrinsic
 
-           let (ExplicitTyparInfo(_, declaredTypars, infer)) = explicitTyparInfo
+           let (ExplicitTyparInfo(_, declaredTypars, infer, hasExplicitTyparDecls)) = explicitTyparInfo
 
            let optInferredImplSlotTys, declaredTypars =
-               ApplyAbstractSlotInference cenv envinner None (ty, mBinding, synTyparDecls, declaredTypars, id, tcrefObjTy, renaming, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
+                ApplyAbstractSlotInference cenv envinner None (ty, mBinding, synTyparDecls, declaredTypars, id, tcrefObjTy, renaming, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
 
-           let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer)
+           let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer, hasExplicitTyparDecls)
 
            let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, bindingAttribs, optInferredImplSlotTys, memberFlags, valSynInfo, id, false)
 
@@ -12397,7 +12400,7 @@ and AnalyzeRecursiveInstanceMemberDecl
 
     let g = cenv.g
     let vis = CombineVisibilityAttribs vis1 vis2 mBinding
-    let (ExplicitTyparInfo(_, declaredTypars, infer)) = explicitTyparInfo
+    let (ExplicitTyparInfo(_, declaredTypars, infer, hasExplicitTyparDecls)) = explicitTyparInfo
     match tcrefContainerInfo, memberFlagsOpt with
      // Normal instance members.
      | Some(MemberOrValContainerInfo(tcref, intfSlotTyOpt, baseValOpt, _safeInitInfo, declaredTyconTypars)), Some memberFlags ->
@@ -12434,7 +12437,7 @@ and AnalyzeRecursiveInstanceMemberDecl
              ApplyAbstractSlotInference cenv envinner baseValOpt (argsAndRetTy, mBinding, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
 
          // Update the ExplicitTyparInfo to reflect the declaredTypars inferred from the abstract slot
-         let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer)
+         let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer, hasExplicitTyparDecls)
 
          // baseValOpt is the 'base' variable associated with the inherited portion of a class
          // It is declared once on the 'inheritedTys clause, but a fresh binding is made for
@@ -12555,7 +12558,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
 
     // Typecheck the typar decls, if any
     let explicitTyparInfo, tpenv = TcBindingTyparDecls false cenv env tpenv synTyparDecls
-    let (ExplicitTyparInfo(_, declaredTypars, _)) = explicitTyparInfo
+    let (ExplicitTyparInfo(_, declaredTypars, _, _)) = explicitTyparInfo
     let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
 
     // OK, analyze the declaration and return lots of information about it
@@ -12928,7 +12931,7 @@ and TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv (pgr
     let rbinfo = pgrbind.RecBindingInfo
     let vspec = rbinfo.Val
     let (CheckedBindingInfo(inlineFlag, _, _, _, _, _, expr, _, _, m, _, _, _, _)) = pgrbind.CheckedBinding
-    let (ExplicitTyparInfo(rigidCopyOfDeclaredTypars, declaredTypars, _)) = rbinfo.ExplicitTyparInfo
+    let (ExplicitTyparInfo(rigidCopyOfDeclaredTypars, declaredTypars, _, _)) = rbinfo.ExplicitTyparInfo
     let allDeclaredTypars = rbinfo.EnclosingDeclaredTypars @ declaredTypars
 
     // The declared typars were not marked rigid to allow equi-recursive type inference to unify
@@ -13251,7 +13254,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
         let allDeclaredTypars = enclosingDeclaredTypars @ declaredTypars
 
-        let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, synCanInferTypars)
+        let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, synCanInferTypars, false)
 
         let generalizedTypars =
             GeneralizationHelpers.ComputeAndGeneralizeGenericTypars(cenv, denv, id.idRange,
