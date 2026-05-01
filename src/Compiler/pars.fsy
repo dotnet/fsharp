@@ -2558,10 +2558,6 @@ tyconNameAndTyparDecls:
   | opt_access atomType
       { None, false, $1, Some $2 }
 
-  /* Recovery: type ('T1) or type ('T1) with ... - single type in parens, not a valid tuple */
-  | opt_access LPAREN appTypeCanBeNullable rparen
-      { None, false, $1, Some $3 }
-
   /* Recovery: type ('T1 *) or type ('T1 *) with ... - trailing star, missing second type */
   | opt_access LPAREN appTypeCanBeNullable STAR rparen
       { let mStar = rhs parseState 4
