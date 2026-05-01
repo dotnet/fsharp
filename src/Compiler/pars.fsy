@@ -2615,6 +2615,9 @@ explicitValTyparDeclsCore:
   | typarDeclList COMMA DOT_DOT
       { (List.rev $1, true) }
 
+  | DOT_DOT
+      { ([], true) }
+
   | typarDeclList
       { (List.rev $1, false) }
 
