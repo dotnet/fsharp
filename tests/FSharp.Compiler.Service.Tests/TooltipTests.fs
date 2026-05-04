@@ -388,6 +388,17 @@ let assertAndGetSingleToolTipText items =
     let text,_xml,_remarks = assertAndExtractTooltip items
     text
 
+let getMainDescriptionTags (ToolTipText(items)) =
+    match items with
+    | ToolTipElement.Group [ singleElement ] :: _ -> singleElement.MainDescription
+    | _ -> failwith $"Expected single group in tooltip, got {items}"
+
+let assertNameTagInTooltip expectedTag expectedName (tooltip: ToolTipText) =
+    let tags = getMainDescriptionTags tooltip
+    let found = tags |> Array.exists (fun t -> t.Tag = expectedTag && t.Text = expectedName)
+    let desc = tags |> Array.map (fun t -> sprintf "(%A, %s)" t.Tag t.Text) |> String.concat ", "
+    Assert.True(found, sprintf "Expected tag %A with text '%s' in tooltip, but found: %s" expectedTag expectedName desc)
+
 let normalize (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 
 [<Fact>]
@@ -602,3 +613,242 @@ let normaliz{caret}e' x = x + 1
 """
 
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Normalize with a prime"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Instance method should be tagged as Method in tooltip`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Metho{caret}d() = ()
+"""
+    |> assertNameTagInTooltip TextTag.Method "Method"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Instance method with parameters should be tagged as Method in tooltip`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Ad{caret}d(a: int, b: int) = a + b
+"""
+    |> assertNameTagInTooltip TextTag.Method "Add"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Static method should be tagged as Method in tooltip`` () =
+    Checker.getTooltip """
+type T() =
+    static member Creat{caret}e() = T()
+"""
+    |> assertNameTagInTooltip TextTag.Method "Create"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Property-like member should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e = 42
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Auto property should be tagged as Property`` () =
+    Checker.getTooltip """
+namespace Foo
+
+type Bar() =
+    member val Fo{caret}o = "bla" with get, set
+"""
+    |> assertNameTagInTooltip TextTag.Property "Foo"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Ite{caret}m with get(i: int) = i
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with getter and setter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable data = [| 0; 1; 2 |]
+    member x.Ite{caret}m
+        with get(i: int) = data.[i]
+        and set (i: int) (v: int) = data.[i] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Property with explicit getter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e with get() = 42
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Static property should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    static member Defaul{caret}t = T()
+"""
+    |> assertNameTagInTooltip TextTag.Property "Default"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e with get(key: string) = key
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter and setter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string, int>
+    member x.Valu{caret}e
+        with get(key: string) = store.[key]
+        and set (key: string) (v: int) = store <- store.Add(key, v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with setter only (1 arg) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable data = [| 0 |]
+    member x.Ite{caret}m
+        with set (i: int) (v: int) = data.[i] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with getter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Ite{caret}m with get (i: int, j: int) = i + j
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with setter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let store = System.Collections.Generic.Dictionary<int * int, int>()
+    member x.Ite{caret}m
+        with set (i: int, j: int) (v: int) = store[(i, j)] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with getter and setter (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let store = System.Collections.Generic.Dictionary<int * int, int>()
+    member x.Ite{caret}m
+        with get (i: int, j: int) = store[(i, j)]
+        and set (i: int, j: int) (v: int) = store[(i, j)] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with setter only (1 arg) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string, int>
+    member x.Valu{caret}e
+        with set (key: string) (v: int) = store <- store.Add(key, v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e with get (a: string, b: string) = a + b
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with setter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string * string, int>
+    member x.Valu{caret}e
+        with set (a: string, b: string) (v: int) = store <- store.Add((a, b), v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter and setter (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string * string, int>
+    member x.Valu{caret}e
+        with get (a: string, b: string) = store[(a, b)]
+        and set (a: string, b: string) (v: int) = store <- store.Add((a, b), v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// =========================================================================
+// Tooltip display correctness for signature generation changes
+// =========================================================================
+
+// Backticked active pattern case names are already tested in
+// Signatures.TypeTests.fs via the roundtrip test.
+// Testing tooltip resolution for backticked identifiers with spaces
+// is not feasible due to QuickParse limitations.
+
+// SRTP inline function shows type params in tooltip
+[<Fact>]
+let ``Tooltip shows type params for SRTP inline function`` () =
+    Checker.getTooltip """
+module Foo
+let inline a{caret}dd (x: ^T) (y: ^T) : ^T = x + y
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text ->
+        // Tooltip shows 'T form (not ^T) with requires clause
+        Assert.Contains("'T", text)
+        Assert.Contains("requires", text)
+
+// Single-case struct DU tooltip shows without leading bar
+[<Fact>]
+let ``Tooltip shows single-case struct DU without bar`` () =
+    Checker.getTooltip """
+module Foo
+[<Struct>]
+type U{caret}0 = U0
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text ->
+        Assert.Contains("U0", text)
+
+// Inline function type param names are properly displayed in tooltip
+[<Fact>]
+let ``Tooltip shows inline function type params properly`` () =
+    Checker.getTooltip """
+module Foo
+let inline fo{caret}o< ^T> (x: ^T) = x
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text ->
+        // Type param appears in tooltip
+        Assert.Contains("'T", text)

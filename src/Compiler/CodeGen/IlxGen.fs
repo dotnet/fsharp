@@ -9863,8 +9863,14 @@ and GenMethodForBinding
                         | _ -> ilAttrsThatGoOnPrimaryItem
                     | _ -> ilAttrsThatGoOnPrimaryItem
 
+                let compilationMappingAttrs =
+                    [
+                        if v.MemberInfo.IsNone && curriedArgInfos.IsEmpty then
+                            mkCompilationMappingAttr g (int SourceConstructFlags.Value)
+                    ]
+
                 let ilCustomAttrs =
-                    mkILCustomAttrs (ilAttrs @ sourceNameAttribs @ ilAttrsCompilerGenerated)
+                    mkILCustomAttrs (ilAttrs @ compilationMappingAttrs @ sourceNameAttribs @ ilAttrsCompilerGenerated)
 
                 let mdef = mdef.With(customAttrs = ilCustomAttrs)
                 mdef
