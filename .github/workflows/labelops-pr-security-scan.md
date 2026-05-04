@@ -54,7 +54,7 @@ You read PR diffs as text via the GitHub API. You have no shell, no file system,
 1. **You have no bash, no checkout, no file system.** Use only GitHub MCP tools to read PR metadata, file lists, and diffs.
 2. **Never approve, merge, close, or reopen a PR.**
 3. **Skip PRs that already have `AI-Tooling-Check-Clean` or any `⚠️` label.**
-4. **Trusted authors** (`T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `github-actions[bot]`) — label `AI-Tooling-Check-Clean` immediately without reading the diff.
+4. **Trusted authors** (`T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `copilot-swe-agent`, `github-actions`, `github-actions[bot]`) — label `AI-Tooling-Check-Clean` immediately without reading the diff.
 5. **False positives > false negatives.** When unsure, flag it.
 
 ## Process

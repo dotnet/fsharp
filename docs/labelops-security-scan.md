@@ -12,7 +12,7 @@
 | **`AI-Tooling-Check-Clean`** | Scanned — PR touches only regular source/test/doc files. |
 | **One or more `⚠️ Affects-*`** | Scanned — PR touches files in those phases. Review with care. |
 
-Trusted authors (`T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `copilot`, `github-actions[bot]`) get `AI-Tooling-Check-Clean` immediately without diff analysis.
+Trusted authors (`T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `copilot`, `copilot-swe-agent`, `github-actions`, `github-actions[bot]`) get `AI-Tooling-Check-Clean` immediately without diff analysis.
 
 ## Labels
 
