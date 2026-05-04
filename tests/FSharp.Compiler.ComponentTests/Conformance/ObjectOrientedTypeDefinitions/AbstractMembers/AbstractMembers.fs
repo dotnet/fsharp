@@ -291,3 +291,174 @@ let x4 = new TestLib.B<string>()
         |> compile
         |> shouldFail
         |> withErrorCode 759
+
+    // Regression tests for https://github.com/dotnet/fsharp/issues/7776
+
+    /// C# 'abstract override' re-abstracts a virtual method from a base class.
+    /// F# classes inheriting from such a class must provide an implementation.
+    let private csLibWithAbstractOverride =
+        CSharp """
+namespace CSharpLib
+{
+    public abstract class AbstractClass
+    {
+        public abstract override string ToString();
+    }
+
+    public abstract class AbstractClassWithCustomMethod
+    {
+        public virtual int GetValue() => 42;
+    }
+
+    public abstract class ReAbstractCustomMethod : AbstractClassWithCustomMethod
+    {
+        public abstract override int GetValue();
+    }
+
+    public class BaseWithVirtualProperty
+    {
+        public virtual int Value => 42;
+    }
+
+    public abstract class ReAbstractProperty : BaseWithVirtualProperty
+    {
+        public abstract override int Value { get; }
+    }
+}
+"""
+        |> withName "CSharpAbstractOverrideLib"
+
+    // https://github.com/dotnet/fsharp/issues/7776
+    [<Fact>]
+    let ``Abstract override ToString - missing implementation should error`` () =
+        FSharp """
+module Test
+
+open CSharpLib
+
+type T() =
+    inherit AbstractClass()
+"""
+        |> asLibrary
+        |> withReferences [csLibWithAbstractOverride]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 365
+
+    // https://github.com/dotnet/fsharp/issues/7776
+    [<Fact>]
+    let ``Abstract override ToString - with implementation should succeed`` () =
+        FSharp """
+module Test
+
+open CSharpLib
+
+type T() =
+    inherit AbstractClass()
+    override _.ToString() = "T"
+"""
+        |> asLibrary
+        |> withReferences [csLibWithAbstractOverride]
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/7776
+    [<Fact>]
+    let ``Abstract override custom method - missing implementation should error`` () =
+        FSharp """
+module Test
+
+open CSharpLib
+
+type T() =
+    inherit ReAbstractCustomMethod()
+"""
+        |> asLibrary
+        |> withReferences [csLibWithAbstractOverride]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 365
+
+    // https://github.com/dotnet/fsharp/issues/7776
+    [<Fact>]
+    let ``Abstract override custom method - with implementation should succeed`` () =
+        FSharp """
+module Test
+
+open CSharpLib
+
+type T() =
+    inherit ReAbstractCustomMethod()
+    override _.GetValue() = 100
+"""
+        |> asLibrary
+        |> withReferences [csLibWithAbstractOverride]
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/7776
+    [<Fact>]
+    let ``Abstract override - F# abstract subclass should be allowed`` () =
+        FSharp """
+module Test
+
+open CSharpLib
+
+[<AbstractClass>]
+type T() =
+    inherit AbstractClass()
+"""
+        |> asLibrary
+        |> withReferences [csLibWithAbstractOverride]
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/7776
+    [<Fact>]
+    let ``Abstract override ToString - object expression must implement`` () =
+        FSharp """
+module Test
+
+open CSharpLib
+
+let x = { new AbstractClass() with
+            override _.ToString() = "obj" }
+"""
+        |> asLibrary
+        |> withReferences [csLibWithAbstractOverride]
+        |> compile
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/7776
+    [<Fact>]
+    let ``Abstract override property - missing implementation should error`` () =
+        FSharp """
+module Test
+
+open CSharpLib
+
+type T() =
+    inherit ReAbstractProperty()
+"""
+        |> asLibrary
+        |> withReferences [csLibWithAbstractOverride]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 365
+
+    // https://github.com/dotnet/fsharp/issues/7776
+    [<Fact>]
+    let ``Abstract override property - with implementation should succeed`` () =
+        FSharp """
+module Test
+
+open CSharpLib
+
+type T() =
+    inherit ReAbstractProperty()
+    override _.Value = 100
+"""
+        |> asLibrary
+        |> withReferences [csLibWithAbstractOverride]
+        |> compile
+        |> shouldSucceed
