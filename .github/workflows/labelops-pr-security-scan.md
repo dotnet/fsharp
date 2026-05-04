@@ -33,7 +33,6 @@ safe-outputs:
     - "⚠️ Affects-Compiler-Output"
     - "⚠️ Affects-Bootstrap"
     - "⚠️ Affects-Restore"
-    - "⚠️ Affects-Test-Infra"
     - "⚠️ Affects-Design-Time"
     - "⚠️ Affects-Agent-Config"
     - "⚠️ Scope-Review-Needed"
@@ -98,14 +97,6 @@ PR modifies the compiler bootstrap chain (PROTO → new compiler → everything 
 PR modifies the IL emission or code generation pipeline. Compiled binaries could behave differently.
 
 **Trigger on:** `src/Compiler/AbstractIL/ilwrite*`, `src/Compiler/CodeGen/**`, `src/Compiler/AbstractIL/ilreflect*`, `src/Compiler/TypedTree/TypedTreePickle*`, `src/FSharp.Build/**`.
-
-### ⚠️ Affects-Test-Infra
-
-PR modifies test infrastructure that executes external processes or controls how tests are discovered and run.
-
-**Trigger on:** `tests/FSharp.Test.Utilities/TestFramework.fs`, `tests/FSharp.Test.Utilities/ProjectGeneration.fs`, `tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj`, `tests/EndToEndBuildTests/**`, `*.runsettings`.
-
-**Does NOT trigger on:** other files in `tests/FSharp.Test.Utilities/` (test DSL helpers like `Compiler.fs`, `CompilerAssert.fs`, `Assert.fs`, `SurfaceArea.fs` — these are test authoring utilities, not execution infrastructure). Regular test case files in `tests/FSharp.Compiler.ComponentTests/**` or test input `.fsx` files in `tests/fsharp/`.
 
 ### ⚠️ Affects-Design-Time
 
