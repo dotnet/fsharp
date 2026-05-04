@@ -10307,7 +10307,7 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
     | Expr.Const(Const.Zero, _, _), ILType.Array _ -> ILAttribElem.Null
 
     // Detect standard constants
-    | Expr.Const(c, m, _), _ ->
+    | Expr.Const(c, m, ty), _ ->
         let tynm = ilArgTy.TypeSpec.Name
         let isobj = (tynm = "System.Object")
 
@@ -10334,6 +10334,22 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
         | Const.Zero when isobj -> ILAttribElem.Null
         | Const.Zero when tynm = "System.String" -> ILAttribElem.String None
         | Const.Zero when tynm = "System.Type" -> ILAttribElem.Type None
+        | Const.Zero when tynm = "System.Boolean" -> ILAttribElem.Bool false
+        | Const.Zero when tynm = "System.SByte" -> ILAttribElem.SByte 0y
+        | Const.Zero when tynm = "System.Int16" -> ILAttribElem.Int16 0s
+        | Const.Zero when tynm = "System.Int32" -> ILAttribElem.Int32 0
+        | Const.Zero when tynm = "System.Int64" -> ILAttribElem.Int64 0L
+        | Const.Zero when tynm = "System.Byte" -> ILAttribElem.Byte 0uy
+        | Const.Zero when tynm = "System.UInt16" -> ILAttribElem.UInt16 0us
+        | Const.Zero when tynm = "System.UInt32" -> ILAttribElem.UInt32 0u
+        | Const.Zero when tynm = "System.UInt64" -> ILAttribElem.UInt64 0UL
+        | Const.Zero when tynm = "System.Single" -> ILAttribElem.Single 0.0f
+        | Const.Zero when tynm = "System.Double" -> ILAttribElem.Double 0.0
+        | Const.Zero when tynm = "System.Char" -> ILAttribElem.Char '\000'
+        | Const.Zero when isEnumTy g ty ->
+            let underlyingTy = underlyingTypeOfEnumTy g ty
+            let underlyingIlTy = GenType amap m eenv.tyenv underlyingTy
+            GenAttribArg amap g eenv (Expr.Const(Const.Zero, m, underlyingTy)) underlyingIlTy
         | Const.String i when isobj || tynm = "System.String" -> ILAttribElem.String(Some i)
         | _ -> error (InternalError("The type '" + tynm + "' may not be used as a custom attribute value", m))
 
