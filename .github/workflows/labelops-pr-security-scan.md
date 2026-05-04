@@ -34,6 +34,7 @@ safe-outputs:
     - "⚠️ Affects-Bootstrap"
     - "⚠️ Affects-Restore"
     - "⚠️ Affects-Design-Time"
+    - "⚠️ Affects-Test-Tooling"
     - "⚠️ Affects-Agent-Config"
     - "⚠️ Scope-Review-Needed"
     max: 30
@@ -97,6 +98,14 @@ PR modifies the compiler bootstrap chain (PROTO → new compiler → everything 
 PR modifies the IL emission or code generation pipeline. Compiled binaries could behave differently.
 
 **Trigger on:** `src/Compiler/AbstractIL/ilwrite*`, `src/Compiler/CodeGen/**`, `src/Compiler/AbstractIL/ilreflect*`, `src/Compiler/TypedTree/TypedTreePickle*`, `src/FSharp.Build/**`.
+
+### ⚠️ Affects-Test-Tooling
+
+PR modifies test build configuration, test runner setup, or test infrastructure that spawns external processes.
+
+**Trigger on:** `tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj`, `tests/FSharp.Test.Utilities/TestFramework.fs`, `tests/FSharp.Test.Utilities/ProjectGeneration.fs`, `tests/EndToEndBuildTests/**`, `*.runsettings`.
+
+**Does NOT trigger on:** adding/changing test helper methods (`Compiler.fs`, `CompilerAssert.fs`, `Assert.fs`, `SurfaceArea.fs`, `XunitHelpers.fs`). These are test authoring utilities — they don't control what gets executed.
 
 ### ⚠️ Affects-Design-Time
 
