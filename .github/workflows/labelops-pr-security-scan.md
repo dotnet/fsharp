@@ -141,6 +141,14 @@ The diff clearly does more than what the title and description claim.
 
 ---
 
+## State machine
+
+| What you see on a PR | What it means |
+|---|---|
+| **No label** | Scan hasn't run yet. Treat as unscanned. |
+| **`AI-Tooling-Check-Clean`** | Scanned — nothing interesting. Trusted author, non-fork, or clean diff. |
+| **One or more `⚠️ Affects-*`** | Scanned — PR touches those phases. Review with care. |
+
 ## Why this workflow is safe
 
 - **Least privilege** — only `pull_requests` MCP + `add-labels`. *Ref: [OWASP LLM06](https://genai.owasp.org/llm-top-10/)*
@@ -148,3 +156,40 @@ The diff clearly does more than what the title and description claim.
 - **Prompt injection resilience** — even if diff contains SAGE-class injection patterns targeting this agent, the agent has no dangerous tools. Worst case: a wrong label. *Ref: [OpenAI Agent Safety](https://developers.openai.com/api/docs/guides/agent-builder-safety)*
 - **Safe outputs** — fixed label allowlist, no free-form text. *Ref: [GitHub Blog](https://github.blog/ai-and-ml/generative-ai/under-the-hood-security-architecture-of-github-agentic-workflows/)*
 - **Network** — egress `github` only. *Ref: [Anthropic Computer Use](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool)*
+
+## Methodology
+
+| Source | What it covers |
+|--------|---------------|
+| [Microsoft — MSBuild Security Best Practices](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-security-best-practices) | Build infra, NuGet package execution, parent-folder imports |
+| [MITRE ATT&CK T1127.001](https://attack.mitre.org/techniques/T1127/001/) | MSBuild inline task code execution |
+| [OWASP LLM Top 10 2025](https://genai.owasp.org/llm-top-10/) | Prompt injection (LLM01), excessive agency (LLM06) |
+| [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) | Tool abuse, goal hijacking, supply chain attacks |
+| [GitHub — Security Architecture of Agentic Workflows](https://github.blog/ai-and-ml/generative-ai/under-the-hood-security-architecture-of-github-agentic-workflows/) | Safe outputs, agent isolation, zero-secret agents |
+| [OpenAI — Safety in Building Agents](https://developers.openai.com/api/docs/guides/agent-builder-safety) | Structured outputs, prompt injection via tool calls |
+| [Anthropic — Computer Use Security](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool) | Network egress control, filesystem isolation |
+| [Peli's Agent Factory — Security Workflows](https://github.github.com/gh-aw/blog/2026-01-13-meet-the-workflows-security-compliance/) | Daily malicious code scan pattern |
+| [Gen Digital SAGE — Prompt Injection Rules](https://github.com/gendigitalinc/sage/blob/main/threats/prompt-injection.yaml) | 9-family prompt injection heuristic taxonomy (CLT-PI-001–081) |
+
+## Setup (one-time label creation)
+
+```bash
+gh label create "AI-Tooling-Check-Clean" --repo dotnet/fsharp --color 0e8a16 \
+  --description "Tooling check: no interesting infrastructure files touched"
+gh label create "⚠️ Affects-Build-Infra" --repo dotnet/fsharp --color d93f0b \
+  --description "Tooling check: PR touches build infrastructure"
+gh label create "⚠️ Affects-Restore" --repo dotnet/fsharp --color d93f0b \
+  --description "Tooling check: PR touches NuGet packages or feeds"
+gh label create "⚠️ Affects-Bootstrap" --repo dotnet/fsharp --color b60205 \
+  --description "Tooling check: PR touches compiler bootstrap chain"
+gh label create "⚠️ Affects-Compiler-Output" --repo dotnet/fsharp --color d93f0b \
+  --description "Tooling check: PR touches IL emission or codegen"
+gh label create "⚠️ Affects-Test-Infra" --repo dotnet/fsharp --color d93f0b \
+  --description "Tooling check: PR touches test framework infrastructure"
+gh label create "⚠️ Affects-Design-Time" --repo dotnet/fsharp --color d93f0b \
+  --description "Tooling check: PR touches type providers or dependency manager"
+gh label create "⚠️ Prompt-Injection-Risk" --repo dotnet/fsharp --color d93f0b \
+  --description "Tooling check: PR modifies AI agent instructions or contains injection patterns"
+gh label create "⚠️ Scope-Review-Needed" --repo dotnet/fsharp --color fbca04 \
+  --description "Tooling check: PR scope exceeds title/description"
+```
