@@ -101,11 +101,11 @@ PR modifies the IL emission or code generation pipeline. Compiled binaries could
 
 ### ⚠️ Affects-Test-Infra
 
-PR modifies test infrastructure (not test cases — just the framework that runs them).
+PR modifies test infrastructure that executes external processes or controls how tests are discovered and run.
 
-**Trigger on:** `tests/FSharp.Test.Utilities/**`, `tests/EndToEndBuildTests/**`, `*.runsettings`.
+**Trigger on:** `tests/FSharp.Test.Utilities/TestFramework.fs`, `tests/FSharp.Test.Utilities/ProjectGeneration.fs`, `tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj`, `tests/EndToEndBuildTests/**`, `*.runsettings`.
 
-**Does NOT trigger on:** regular test case files in `tests/FSharp.Compiler.ComponentTests/**`, test input `.fsx` files in `tests/fsharp/`.
+**Does NOT trigger on:** other files in `tests/FSharp.Test.Utilities/` (test DSL helpers like `Compiler.fs`, `CompilerAssert.fs`, `Assert.fs`, `SurfaceArea.fs` — these are test authoring utilities, not execution infrastructure). Regular test case files in `tests/FSharp.Compiler.ComponentTests/**` or test input `.fsx` files in `tests/fsharp/`.
 
 ### ⚠️ Affects-Design-Time
 
