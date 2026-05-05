@@ -94,6 +94,19 @@ module N.M
 ()
 """; errors = Map["9.0", [Err(3350, 6); Warn(20, 3)]; "10.0", [Warn(20, 3); Warn(20, 7)]]}
 
+let private warn42ScopedTest = {source = """
+module N.M
+
+type T =
+    | A : int -> T
+#nowarn "42"
+type U =
+    | B : int -> U
+#warnon "42"
+type V =
+    | C : int -> V
+"""; errors = Map["10.0", [Warn(42, 5); Warn(42, 11)]]}
+
 let mkProjectOptionsAndChecker langVersion =
     let options = createProjectOptions [onOffTest.source] [$"--langversion:{langVersion}"]
     let checker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
@@ -122,6 +135,13 @@ let ParseAndCheckProjectTest langVersion =
     let options, checker = mkProjectOptionsAndChecker langVersion
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
     checkDiagnostics onOffTest.errors[langVersion] (Array.toList wholeProjectResults.Diagnostics)
+
+[<Fact>]
+let ``Warn42 directives are scoped in language version 10`` () =
+    let options = createProjectOptions [warn42ScopedTest.source] ["--langversion:10.0"]
+    let checker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
+    checkDiagnostics warn42ScopedTest.errors["10.0"] (Array.toList wholeProjectResults.Diagnostics)
     
 [<InlineData("9.0")>]
 [<InlineData("10.0")>]
