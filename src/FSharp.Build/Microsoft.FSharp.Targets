@@ -362,6 +362,7 @@ this file.
               DefineConstants="$(DefineConstants)"
               DelaySign="$(DelaySign)"
               Deterministic="$(Deterministic)"
+              FileOrderAuto="$(FSharpAutoFileOrder)"
               DisabledWarnings="$(NoWarn)"
               DocumentationFile="$(DocumentationFile)"
               DotnetFscCompilerPath="$(DotnetFscCompilerPath)"

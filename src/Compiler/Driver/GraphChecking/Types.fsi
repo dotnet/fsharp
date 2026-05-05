@@ -67,6 +67,13 @@ type internal FileContentEntry =
     /// Any identifier that has more than one piece (LongIdent or SynLongIdent) in it.
     /// The last part of the identifier should not be included.
     | PrefixedIdentifier of path: LongIdentifier
+    /// The full LongIdent of an identifier reference, with the trailing
+    /// segment preserved. Used by --file-order-auto+ to key dependencies on
+    /// the trailing segment (e.g. a `let` or member name) rather than its
+    /// containing module. Single-ident captures at function-application
+    /// heads also flow through this entry. Graph-based resolution ignores
+    /// this entry.
+    | FullPathIdentifier of path: LongIdent
     /// Being explicit about nested modules allows for easier reasoning what namespaces (paths) are open.
     /// For example we can limit the scope of an `OpenStatement` to symbols defined inside the nested module.
     | NestedModule of name: string * nestedContent: FileContentEntry list

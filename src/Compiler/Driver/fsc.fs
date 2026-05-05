@@ -31,6 +31,8 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.SymbolCollection
+open FSharp.Compiler.CycleGroupProcessing
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
@@ -148,6 +150,21 @@ let TypeCheck
 
         let tcInitialState =
             GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
+
+        // When --file-order-auto is enabled, apply the reordering+synthesis pipeline.
+        // EXCEPTION: skip when compiling FSharp.Core (its primitive types conflict
+        // with our stubs).
+        let tcInitialState, inputs =
+            if tcConfig.fileOrderAuto && not tcConfig.compilingFSharpCore then
+                let amap = tcImports.GetImportMap()
+
+                let reorderedInputs, tcEnvPrepopulated =
+                    CycleGroupProcessing.applyAutoFileOrder tcGlobals amap tcInitialState.TcEnvFromSignatures inputs
+
+                let tcState = tcInitialState.NextStateAfterIncrementalFragment tcEnvPrepopulated
+                (tcState, reorderedInputs)
+            else
+                (tcInitialState, inputs)
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 

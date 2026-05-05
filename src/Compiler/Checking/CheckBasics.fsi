@@ -267,6 +267,9 @@ type TcFileState =
 
         isInternalTestSpanStackReferring: bool
 
+        /// Is --file-order-auto+ active? Used to emit deprecation warnings for `and` keyword.
+        fileOrderAuto: bool
+
         diagnosticOptions: FSharpDiagnosticOptions
 
         /// A cache for ArgReprInfos which get created multiple times for the same values
@@ -329,6 +332,7 @@ type TcFileState =
         tcSink: TcResultsSink *
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
+        fileOrderAuto: bool *
         diagnosticOptions: FSharpDiagnosticOptions *
         tcPat:
             (WarnOnUpperFlag

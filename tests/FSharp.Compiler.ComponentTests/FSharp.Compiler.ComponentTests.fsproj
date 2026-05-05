@@ -395,6 +395,7 @@
     <Compile Include="TypeChecks\Graph\CompilationFromCmdlineArgsTests.fs" />
     <Compile Include="TypeChecks\Graph\TypedTreeGraph.fs" />
     <Compile Include="TypeChecks\Graph\GraphProcessingTests.fs" />
+    <Compile Include="TypeChecks\FileOrderAuto\FileOrderAutoTests.fs" />
     <Compile Include="TypeChecks\TyparNameTests.fs" />
     <Compile Include="TypeChecks\CheckTypeTests.fs" />
     <Compile Include="TypeChecks\PropertyShadowingTests.fs" />
@@ -486,6 +487,7 @@
     <Compile Include="Signatures\MemberTests.fs" />
     <Compile Include="StaticLinking\StaticLinking.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
+    <Compile Include="FSharpChecker\FileOrderAutoIncremental.fs" />
     <Compile Include="FSharpChecker\ProjectSnapshot.fs" />
     <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />

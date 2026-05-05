@@ -30,6 +30,13 @@ let private (|PrefixedIdentifier|_|) value e =
         if combined = value then Some() else None
     | _ -> None
 
+let private (|FullPathIdentifier|_|) value e =
+    match e with
+    | FileContentEntry.FullPathIdentifier path ->
+        let combined = path |> List.map (fun (i: FSharp.Compiler.Syntax.Ident) -> i.idText) |> String.concat "."
+        if combined = value then Some() else None
+    | _ -> None
+
 let private (|NestedModule|_|) value e =
     match e with
     | FileContentEntry.NestedModule(name, nestedContent) -> if name = value then Some(nestedContent) else None
@@ -88,7 +95,7 @@ let fn (a: A.B.CType) = ()
 """
 
     match content with
-    | [ TopLevelNamespace "X.Y" [ PrefixedIdentifier "A.B" ] ] -> ()
+    | [ TopLevelNamespace "X.Y" [ PrefixedIdentifier "A.B"; FullPathIdentifier "A.B.CType" ] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
 [<Fact>]
@@ -104,7 +111,7 @@ module Z =
 """
 
     match content with
-    | [ TopLevelNamespace "X" [ NestedModule "Z" [] ] ] -> ()
+    | [ TopLevelNamespace "X" [ NestedModule "Z" [ FullPathIdentifier "int" ] ] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
 [<Fact>]
@@ -119,7 +126,7 @@ module B = C
 """
 
     match content with
-    | [ TopLevelNamespace "" [ PrefixedIdentifier "C" ] ] -> ()
+    | [ TopLevelNamespace "" [ PrefixedIdentifier "C"; FullPathIdentifier "C" ] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
 

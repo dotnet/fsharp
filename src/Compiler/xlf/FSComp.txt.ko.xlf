@@ -42,6 +42,11 @@
         <target state="translated">형식이 [&lt;Sealed&gt;] 및 [&lt;AbstractClass&gt;] 특성을 모두 사용하는 경우 정적임을 의미합니다. 추가 생성자는 허용되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAndKeywordDeprecatedWithFileOrderAuto">
+        <source>The 'and' keyword for mutually recursive types is unnecessary when using --file-order-auto. Consider placing types in separate declarations. This keyword may be removed in a future version.</source>
+        <target state="new">The 'and' keyword for mutually recursive types is unnecessary when using --file-order-auto. Consider placing types in separate declarations. This keyword may be removed in a future version.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkAttributeAliased">
         <source>{0} should not be aliased.</source>
         <target state="new">{0} should not be aliased.</target>
@@ -1025,6 +1030,11 @@
       <trans-unit id="optsDisableLanguageFeature">
         <source>Disable a specific language feature by name.</source>
         <target state="new">Disable a specific language feature by name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsFileOrderAuto">
+        <source>Automatically determine file compilation order from dependency analysis ({0} by default)</source>
+        <target state="new">Automatically determine file compilation order from dependency analysis ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">

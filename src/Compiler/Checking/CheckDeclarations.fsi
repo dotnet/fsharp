@@ -55,6 +55,7 @@ val CheckOneImplFile:
     ConditionalDefines option *
     TcResultsSink *
     bool *
+    bool *
     TcEnv *
     ModuleOrNamespaceType option *
     ParsedImplFileInput *
@@ -68,6 +69,7 @@ val CheckOneSigFile:
     (unit -> bool) *
     ConditionalDefines option *
     TcResultsSink *
+    bool *
     bool *
     FSharpDiagnosticOptions ->
         TcEnv ->

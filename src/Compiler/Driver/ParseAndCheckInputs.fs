@@ -1247,6 +1247,7 @@ let CheckOneInput
                          conditionalDefines,
                          tcSink,
                          tcConfig.internalTestSpanStackReferring,
+                         tcConfig.fileOrderAuto,
                          tcConfig.diagnosticsOptions)
                         tcState.tcsTcSigEnv
                         file
@@ -1297,6 +1298,7 @@ let CheckOneInput
                         conditionalDefines,
                         tcSink,
                         tcConfig.internalTestSpanStackReferring,
+                        tcConfig.fileOrderAuto,
                         tcState.tcsTcImplEnv,
                         rootSigOpt,
                         file,
@@ -1464,6 +1466,7 @@ let CheckOneInputWithCallback
                          conditionalDefines,
                          tcSink,
                          tcConfig.internalTestSpanStackReferring,
+                         tcConfig.fileOrderAuto,
                          tcConfig.diagnosticsOptions)
                         tcState.tcsTcSigEnv
                         file
@@ -1518,6 +1521,7 @@ let CheckOneInputWithCallback
                         conditionalDefines,
                         tcSink,
                         tcConfig.internalTestSpanStackReferring,
+                        tcConfig.fileOrderAuto,
                         tcState.tcsTcImplEnv,
                         rootSigOpt,
                         file,

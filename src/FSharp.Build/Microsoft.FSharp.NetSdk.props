@@ -58,6 +58,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <WarningsAsErrors Condition="'$(_BinaryFormatterObsoleteAsError)' == 'true'">$(WarningsAsErrors);SYSLIB0011</WarningsAsErrors>
   </PropertyGroup>
 
+  <!-- Auto file ordering: when true, the compiler determines compilation order from dependency analysis -->
+  <PropertyGroup>
+    <FSharpAutoFileOrder Condition="'$(FSharpAutoFileOrder)' == ''">false</FSharpAutoFileOrder>
+  </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols Condition="'$(DebugSymbols)' == '' ">true</DebugSymbols>
     <Optimize Condition="'$(Optimize)' == '' ">false</Optimize>

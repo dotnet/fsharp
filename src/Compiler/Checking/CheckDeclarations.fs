@@ -5200,13 +5200,18 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
         ((true, true, attrs), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk, attrs) def -> 
             match ElimSynModuleDeclExpr def with
 
-              | SynModuleDecl.Types (typeDefs, _) -> 
+              | SynModuleDecl.Types (typeDefs, _) ->
+                  // Emit deprecation warning when 'and' keyword is used with --file-order-auto
+                  if cenv.fileOrderAuto && typeDefs.Length > 1 then
+                      for td in typeDefs.Tail do
+                          let (SynTypeDefn(typeInfo = SynComponentInfo(range = m))) = td
+                          warning(Error(FSComp.SR.chkAndKeywordDeprecatedWithFileOrderAuto(), m))
                   let decls = typeDefs |> List.map MutRecShape.Tycon
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) -> 
-                  let binds = 
-                      if isNamespace then 
+              | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) ->
+                  let binds =
+                      if isNamespace then
                           CheckLetOrDoInNamespace binds m; []
                       else
                           if isRecursive then [MutRecShape.Lets binds]
@@ -5290,6 +5295,11 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.Types (typeDefs, m) ->
           let typeDefs = typeDefs |> List.filter (function SynTypeDefn(typeInfo = SynComponentInfo(longId = [])) -> false | _ -> true)
+          if cenv.fileOrderAuto && typeDefs.Length > 1 then
+              typeDefs.Tail
+              |> List.iter (fun td ->
+                  let (SynTypeDefn(typeInfo = SynComponentInfo(range = mTd))) = td
+                  warning(Error(FSComp.SR.chkAndKeywordDeprecatedWithFileOrderAuto(), mTd)))
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
           let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns false
@@ -5765,8 +5775,8 @@ let MakeInitialEnv env =
 
 /// Check an entire implementation file
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
-let CheckOneImplFile 
-       // checkForErrors: A function to help us stop reporting cascading errors 
+let CheckOneImplFile
+       // checkForErrors: A function to help us stop reporting cascading errors
        (g, amap,
         thisCcu,
         openDecls0,
@@ -5774,6 +5784,7 @@ let CheckOneImplFile
         conditionalDefines,
         tcSink,
         isInternalTestSpanStackReferring,
+        fileOrderAuto,
         env,
         rootSigOpt: ModuleOrNamespaceType option,
         synImplFile,
@@ -5795,6 +5806,7 @@ let CheckOneImplFile
                 tcSink,
                 LightweightTcValForUsingInBuildMethodCall g,
                 isInternalTestSpanStackReferring,
+                fileOrderAuto,
                 diagnosticOptions,
                 tcPat=TcPat,
                 tcSimplePats=TcSimplePats,
@@ -5926,7 +5938,7 @@ let CheckOneImplFile
 
 
 /// Check an entire signature file
-let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring, diagnosticOptions) tcEnv (sigFile: ParsedSigFileInput) =
+let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring, fileOrderAuto, diagnosticOptions) tcEnv (sigFile: ParsedSigFileInput) =
  cancellable {     
     use _ =
         Activity.start "CheckDeclarations.CheckOneSigFile"
@@ -5940,6 +5952,7 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
             tcSink,
             LightweightTcValForUsingInBuildMethodCall g,
             isInternalTestSpanStackReferring,
+            fileOrderAuto,
             diagnosticOptions,
             tcPat=TcPat,
             tcSimplePats=TcSimplePats,

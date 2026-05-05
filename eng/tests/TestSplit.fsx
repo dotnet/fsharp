@@ -66,6 +66,7 @@ let excludedPrefixes =
       "tests/service/data/"         // test data projects consumed by other tests
       "tests/projects/"             // test helper projects (e.g. CompilerCompat)
       "tests/fsharp/core/"          // legacy test data
+      "tests/file-order-auto-test/"  // --file-order-auto+ regression fixtures, run via shell scripts
     ]
 
 // Individual projects excluded by exact path.
