@@ -98,6 +98,8 @@ Use your judgment. The descriptions below explain what each category **means** �
 
 PR modifies anything that could execute code during `dotnet build`, `dotnet restore`, or any build/CI script. MSBuild is extensible — project files, property files, target files, inline tasks, NuGet package assets, response files, SDK configuration, and scripts in any language can all run code at build time. If a file participates in the build process in any way, flag it.
 
+**Exception:** adding `<Compile Include>` entries to test `.fsproj` files is routine (every PR that adds a test file does this) and is NOT Build-Infra. Only flag `.fsproj` changes that add targets, tasks, package references, properties, or other structural MSBuild changes.
+
 *Ref: [Microsoft — MSBuild Security Best Practices](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-security-best-practices) — "unknown build logic should be assumed to be capable of executing arbitrary code"; [MITRE ATT&CK T1127.001](https://attack.mitre.org/techniques/T1127/001/)*
 
 ### ⚠️ Affects-Restore
