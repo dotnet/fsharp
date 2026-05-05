@@ -322,6 +322,48 @@ module LetUseBangTests =
                 "This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.")
         ]
 
+[<Fact>]
+let ``Computation expression method lookup uses builder members, not top-level values`` () =
+    FSharp """
+    let Return x = x
+
+    type Builder() =
+        member _.Bind(x, f) = f x
+
+    let builder = Builder()
+
+    let _ =
+        builder {
+            return 1
+        }
+    """
+    |> asExe
+    |> compile
+    |> shouldFail
+    |> withErrorCode 708
+    |> withDiagnosticMessageMatches "'Return' method"
+
+[<Fact>]
+let ``Missing Delay on builder gives FS0708`` () =
+    FSharp """
+    type Builder() =
+        member _.While(guard, body) = ()
+        member _.Zero() = ()
+
+    let builder = Builder()
+
+    let _ =
+        builder {
+            while false do
+                ()
+        }
+    """
+    |> asExe
+    |> compile
+    |> shouldFail
+    |> withErrorCode 708
+    |> withDiagnosticMessageMatches "'Delay' method"
+
 // https://github.com/dotnet/fsharp/issues/3783
 [<Fact>]
 let ``Issue 3783 - Mutually recursive computation expression should not raise NullReferenceException`` () =

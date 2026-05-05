@@ -47,6 +47,7 @@ type ComputationExpressionContext<'a> =
         cenv: TcFileState
         env: TcEnv
         tpenv: UnscopedTyparEnv
+        tryFindBuilderMethod: string -> MethInfo list
         customOperationMethodsIndexedByKeyword:
             IDictionary<string, list<string * bool * bool * bool * bool * bool * bool * option<string> * MethInfo>>
         customOperationMethodsIndexedByMethodName:
@@ -177,11 +178,6 @@ let transferVarSpaceReferences (expr: Expr) =
         if anyReferenced then
             for v in vals do
                 v.SetHasBeenReferenced()
-
-let hasMethInfo nm cenv env mBuilderVal ad builderTy =
-    match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
-    | [] -> false
-    | _ -> true
 
 let getCustomOperationMethods (cenv: TcFileState) (env: TcEnv) ad mBuilderVal builderTy =
     let allMethInfos =
@@ -999,7 +995,8 @@ let inline addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>
     )
 
 let tryFindBuilderMethod (ceenv: ComputationExpressionContext<_>) (m: range) (methodName: string) =
-    TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult ceenv.cenv ceenv.env m ceenv.ad methodName ceenv.builderTy
+    let _ = m
+    ceenv.tryFindBuilderMethod methodName
 
 let hasBuilderMethod ceenv m methodName =
     tryFindBuilderMethod ceenv m methodName |> isNil |> not
@@ -2958,6 +2955,26 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let builderValName = CompilerGeneratedName "builder"
     let mBuilderVal = interpExpr.Range
+    let builderMethodCache = Dictionary<string, MethInfo list>()
+
+    let tryFindBuilderMethodByName methodName =
+        match builderMethodCache.TryGetValue(methodName) with
+        | true, methInfos -> methInfos
+        | false, _ ->
+            let methInfos =
+                TryFindIntrinsicOrExtensionMethInfo
+                    ResultCollectionSettings.AllResults
+                    cenv
+                    env
+                    mBuilderVal
+                    ad
+                    methodName
+                    builderTy
+
+            builderMethodCache[methodName] <- methInfos
+            methInfos
+
+    let hasBuilderMethodByName methodName = tryFindBuilderMethodByName methodName |> isNil |> not
 
     // Give bespoke error messages for the FSharp.Core "query" builder
     let isQuery =
@@ -2971,11 +2988,10 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             valRefEq cenv.g vref cenv.g.query_value_vref
         | _ -> false
 
-    let sourceMethInfo =
-        TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Source" builderTy
+    let sourceMethInfo = tryFindBuilderMethodByName "Source"
 
     /// Decide if the builder is an auto-quote builder
-    let isAutoQuote = hasMethInfo "Quote" cenv env mBuilderVal ad builderTy
+    let isAutoQuote = hasBuilderMethodByName "Quote"
 
     let customOperationMethods =
         getCustomOperationMethods cenv env ad mBuilderVal builderTy
@@ -3014,9 +3030,9 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
     // positions as 'yield'.  'yield!' may be present in the computation expression.
     let enableImplicitYield =
         cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
-        && (hasMethInfo "Yield" cenv env mBuilderVal ad builderTy
-            && hasMethInfo "Combine" cenv env mBuilderVal ad builderTy
-            && hasMethInfo "Delay" cenv env mBuilderVal ad builderTy
+        && (hasBuilderMethodByName "Yield"
+            && hasBuilderMethodByName "Combine"
+            && hasBuilderMethodByName "Delay"
             && YieldFree cenv comp)
 
     let origComp = comp
@@ -3026,6 +3042,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             cenv = cenv
             env = env
             tpenv = tpenv
+            tryFindBuilderMethod = tryFindBuilderMethodByName
             customOperationMethodsIndexedByKeyword = customOperationMethodsIndexedByKeyword
             customOperationMethodsIndexedByMethodName = customOperationMethodsIndexedByMethodName
             sourceMethInfo = sourceMethInfo
