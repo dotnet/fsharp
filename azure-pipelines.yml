@@ -1,71 +1,249 @@
-# F# 15.9 servicing — public PR validation pipeline
-# Pattern B (Roslyn-style, no Arcade). Models the public-PR half of Roslyn 15.9.x.
-# Build-only (no setup, no signing, no insertion). Skips swix to keep PR validation cheap.
-
-trigger: none
-
-pr:
+# CI and PR triggers
+trigger:
   branches:
     include:
-      - release/dev15.9.x
+    - release/dev15.9.x
   paths:
+    include:
+    - '*'
     exclude:
-      - INTERNAL.md
-      - plan.md
-      - '**/*.md'
-      - .gitignore
-
-resources:
-  - repo: self
+    - .github/*
+    - docs/*
+    - .vscode/*
+    - .devcontainer/*
+    - tests/scripts/*
+    - attributions.md
+    - CODE_OF_CONDUCT.md
+    - DEVGUIDE.md
+    - INTERNAL.md
+    - Language-Version-History.md
+    - License.txt
+    - README.md
+    - release-notes.md
+    - TESTGUIDE.md
 
 variables:
-  - name: BuildPlatform
-    value: 'Any CPU'
-  - name: BuildConfiguration
-    value: Debug
+  # Release branch for F#
+  # The future "product" gets developed in main, so should be main in main.
+  # When servicing branch gets created, this should maintain the mapping between F# servicing and VS servicing branches
+  - name: FSharpReleaseBranchName
+    value: release/dev15.9.x
+  # VS Insertion branch name (NOT the same as F# branch)
+  # ( for main we insert into VS main and for all *previous* releases we insert into corresponding VS release),
+  - name: VSInsertionTargetBranchName
+    value: rel/d15.9
+  - name: _TeamName
+    value: FSharp
   - name: TeamName
     value: FSharp
-  - name: PoolName
-    value: NetCore-Public
-  - name: Vs2017QueueName
-    value: windows.vs2017.amd64.open
+  - name: _BuildConfig
+    value: Release
+  - name: _SignType
+    value: Real
+  - name: _PublishUsingPipelines
+    value: "true"
+  - name: VisualStudioDropName
+    value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - name: Codeql.Enabled
+    value: "true"
+  - group: DotNet-FSharp-SDLValidation-Params
+  - template: /eng/common/templates-official/variables/pool-providers.yml@self
 
-jobs:
-  - job: BuildWindows
-    displayName: 'PR build on Windows VS 2017 (compiler-only smoke)'
-    timeoutInMinutes: 120
-    pool:
-      name: $(PoolName)
-      demands: ImageOverride -equals $(Vs2017QueueName)
-    steps:
-      - task: NuGetToolInstaller@1
-        displayName: 'Use NuGet 6.2.4'
-        inputs:
-          versionSpec: 6.2.4
-      - task: NuGetAuthenticate@1
-      - task: UseDotNet@2
-        displayName: 'Use modern .NET Core SDK (host only)'
-        inputs:
-          packageType: sdk
-          useGlobalJson: true
-          workingDirectory: '$(Build.SourcesDirectory)'
-      # PR validation runs the L1 smoke (compiler-only, no setup, no signing).
-      # FSC_BUILD_SETUP=0 skips the Swix/setup pass to keep PRs fast.
-      - script: build.cmd net40 $(BuildConfiguration)
-        displayName: 'L1 smoke: build.cmd net40 (compiler only)'
-        env:
-          FSC_BUILD_SETUP: 0
-      # Verify fsc.exe was built and prints help (G1 exit criterion #3)
-      - powershell: |
-          $fsc = Join-Path '$(Build.SourcesDirectory)' '$(BuildConfiguration)\net40\bin\fsc.exe'
-          if (-not (Test-Path $fsc)) { throw "fsc.exe not produced at $fsc" }
-          & $fsc --help | Select-Object -First 5
-          Write-Host "G1 exit criterion #3 OK: fsc.exe built and prints help"
-        displayName: 'G1 verify: fsc.exe smoke'
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish build logs (on failure)'
-        inputs:
-          PathtoPublish: '$(Build.SourcesDirectory)\$(BuildConfiguration)\net40\bin'
-          ArtifactName: 'PR build logs'
-          publishLocation: Container
-        condition: failed()
+resources:
+  repositories:
+  - repository: MicroBuildTemplate
+    type: git
+    name: 1ESPipelineTemplates/MicroBuildTemplate
+    ref: refs/tags/release
+
+extends:
+  template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
+  parameters:
+    featureFlags:
+      autoBaseline: true
+    sdl:
+      binskim:
+        enabled: true
+      policheck:
+        enabled: true
+      sbom:
+        enabled: false # VS SBOM is generated with other steps
+        justificationForDisabling: 'SBOM for F# is generated via build process. Will be migrated at later date.'
+      tsa:
+        enabled: true
+        configFile: '$(Build.SourcesDirectory)/eng/TSAConfig.gdntsa'
+      sourceAnalysisPool:
+        name: NetCore1ESPool-Svc-Internal
+        image: 1es-windows-2022
+        os: windows
+    stages:
+    - stage: build
+      displayName: Build
+      jobs:
+      #-------------------------------------------------------------------------------------------------------------------#
+      #                                                  Signed build                                                     #
+      #-------------------------------------------------------------------------------------------------------------------#
+      # Localization: we only run it for main
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+        - template: /eng/common/templates-official/job/onelocbuild.yml@self
+          parameters:
+            MirrorRepo: fsharp
+            MirrorBranch: $(FSharpReleaseBranchName)
+            LclSource: lclFilesfromPackage
+            LclPackageId: 'LCL-JUNO-PROD-FSHARP'
+      - template: /eng/common/templates-official/jobs/jobs.yml@self
+        parameters:
+          enableMicrobuild: true
+          enablePublishBuildArtifacts: true
+          enablePublishTestResults: false
+          enablePublishBuildAssets: true
+          enablePublishUsingPipelines: $(_PublishUsingPipelines)
+          enableSourceBuild: true
+          sourceBuildParameters:
+            platforms:
+            - name: 'Managed'
+              container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
+              buildArguments: '--source-build'
+          enableTelemetry: true
+          helixRepo: dotnet/fsharp
+          jobs:
+          - job: Full_Signed
+            pool:
+              name: NetCore1ESPool-Svc-Internal
+              image: windows.vs2026preview.scout.amd64
+            timeoutInMinutes: 300
+            templateContext:
+              mb:
+                signing:
+                  enabled: true
+                  signWithProd: true
+                  feedSource: https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json
+                  signType: $(_SignType)
+                  zipSources: false
+
+            variables:
+            - group: DotNet-Symbol-Server-Pats
+            - group: DotNet-DevDiv-Insertion-Workflow-Variables
+            - name: _SignType
+              value: Real
+            steps:
+            - checkout: self
+              clean: true
+            - template: /eng/restore-internal-tools.yml
+            - script: eng\CIBuild.cmd
+                      -configuration $(_BuildConfig)
+                      -prepareMachine
+                      -testAllButIntegrationAndAot
+                      -officialSkipTests $(SkipTests)
+                      /p:SignType=$(_SignType)
+                      /p:DotNetSignType=$(_SignType)
+                      /p:MicroBuild_SigningEnabled=true
+                      /p:TeamName=$(_TeamName)
+                      /p:DotNetPublishUsingPipelines=$(_PublishUsingPipelines)
+                      /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
+                      /p:VisualStudioDropName=$(VisualStudioDropName)
+                      /p:GenerateSbom=true
+              env:
+                  NativeToolsOnMachine: true
+                  FSHARP_CACHE_OVERRIDE: 256
+                  FSharp_CacheEvictionImmediate: true
+            - task: PublishTestResults@2
+              displayName: Publish Test Results
+              inputs:
+                testResultsFormat: 'XUnit'
+                testResultsFiles: '*.xml'
+                searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+              continueOnError: true
+              condition: ne(variables['SkipTests'], 'true')
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Test Logs
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_BuildConfig)'
+                artifactName: 'Test Logs'
+                publishLocation: Container
+              continueOnError: true
+              condition: ne(variables['SkipTests'], 'true')
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact Packages
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\packages\$(_BuildConfig)'
+                artifactName: 'Packages'
+              condition: succeeded()
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact VSSetup
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+                artifactName: 'VSSetup'
+              condition: succeeded()
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact Nightly
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix'
+                artifactName: 'Nightly'
+              condition: succeeded()
+            - task: 1ES.PublishPipelineArtifact@1
+              displayName: Publish Artifact Symbols
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
+                artifactName: 'NativeSymbols'
+              condition: succeeded()
+            - task: AzureCLI@2
+              displayName: Get DevDiv Drop Access Token
+              inputs:
+                azureSubscription: 'dnceng-devdiv-drop-rw-code-rw-wif'
+                scriptType: pscore
+                scriptLocation: inlineScript
+                inlineScript: |
+                  $token = az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv
+                  Write-Host "##vso[task.setvariable variable=DevDivDropAccessToken;issecret=true]$token"
+              condition: succeeded()
+            - task: 1ES.MicroBuildVstsDrop@1
+              displayName: Upload VSTS Drop
+              inputs:
+                dropName: $(VisualStudioDropName)
+                dropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
+                dropRetentionDays: 90
+                accessToken: $(DevDivDropAccessToken)
+                dropServiceUri: 'https://devdiv.artifacts.visualstudio.com'
+                vsDropServiceUri: 'https://vsdrop.corp.microsoft.com/file/v1'
+              condition: succeeded()
+
+    #---------------------------------------------------------------------------------------------------------------------#
+    #                                                    Post Build                                                       #
+    #---------------------------------------------------------------------------------------------------------------------#
+    - template: eng/common/templates-official/post-build/post-build.yml@self
+      parameters:
+        publishingInfraVersion: 3
+        # Symbol validation is not entirely reliable as of yet, so should be turned off until https://github.com/dotnet/arcade/issues/2871 is resolved.
+        enableSymbolValidation: false
+        # SourceLink improperly looks for generated files.  See https://github.com/dotnet/arcade/issues/3069
+        enableSourceLinkValidation: false
+        # Enable SDL validation, passing through values from the 'DotNet-FSharp-SDLValidation-Params' group.
+        SDLValidationParameters:
+          enable: true
+          params: >-
+            -SourceToolsList @("policheck","credscan")
+            -ArtifactToolsList @("binskim")
+            -BinskimAdditionalRunConfigParams @("IgnorePdbLoadError < True","Recurse < True")
+            -TsaInstanceURL $(_TsaInstanceURL)
+            -TsaProjectName $(_TsaProjectName)
+            -TsaNotificationEmail $(_TsaNotificationEmail)
+            -TsaCodebaseAdmin $(_TsaCodebaseAdmin)
+            -TsaBugAreaPath $(_TsaBugAreaPath)
+            -TsaIterationPath $(_TsaIterationPath)
+            -TsaRepositoryName "FSharp"
+            -TsaCodebaseName "FSharp-GitHub"
+            -TsaPublish $True
+            -PoliCheckAdditionalRunConfigParams @("UserExclusionPath < $(Build.SourcesDirectory)/eng/policheck_exclusions.xml")
+
+    #---------------------------------------------------------------------------------------------------------------------#
+    #                                                   VS Insertion                                                      #
+    #---------------------------------------------------------------------------------------------------------------------#
+    - template: eng/release/insert-into-vs.yml@self
+      parameters:
+        componentBranchName: refs/heads/${{ variables.FSharpReleaseBranchName }}
+        insertTargetBranch: ${{ variables.VSInsertionTargetBranchName }}
+        insertTeamEmail: fsharpteam@microsoft.com
+        insertTeamName: 'F#'
+        completeInsertion: 'auto'
+

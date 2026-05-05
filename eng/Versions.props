@@ -1,0 +1,52 @@
+<Project>
+  <Import Project="Version.Details.props" />
+
+  <PropertyGroup>
+    <UsingToolNuGetRepack>false</UsingToolNuGetRepack>
+    <UsingToolSymbolUploader>true</UsingToolSymbolUploader>
+    <UsingToolVSSDK>true</UsingToolVSSDK>
+    <UsingToolXUnit>false</UsingToolXUnit>
+  </PropertyGroup>
+
+  <!-- F# 15.9 frozen versions. Verified from build/targets/AssemblyVersions.props at the tag. -->
+  <PropertyGroup>
+    <PreReleaseVersionLabel>servicing</PreReleaseVersionLabel>
+
+    <!-- F# components -->
+    <FSMajorVersion>4</FSMajorVersion>
+    <FSMinorVersion>5</FSMinorVersion>
+    <FSBuildVersion>2</FSBuildVersion>
+    <FSRevisionVersion>0</FSRevisionVersion>
+    <FSCoreVersion>4.5.0.0</FSCoreVersion>
+    <FSCorePackageVersion>4.5.3</FSCorePackageVersion>
+
+    <!-- VS / Tools versions -->
+    <FSToolsMajorVersion>10</FSToolsMajorVersion>
+    <FSToolsMinorVersion>2</FSToolsMinorVersion>
+    <FSToolsBuildVersion>3</FSToolsBuildVersion>
+    <FSToolsRevisionVersion>0</FSToolsRevisionVersion>
+    <FSProductVersion>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion).$(FSToolsRevisionVersion)</FSProductVersion>
+
+    <VSMajorVersion>15</VSMajorVersion>
+    <VSMinorVersion>9</VSMinorVersion>
+    <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
+    <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
+    <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
+  </PropertyGroup>
+
+  <!-- Restore feeds -->
+  <PropertyGroup>
+    <RestoreSources Condition="'$(DotNetBuildOffline)' != 'true'">
+      $(RestoreSources);
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/myget-legacy/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk-archived/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl-archived/nuget/v3/index.json;
+      https://api.nuget.org/v3/index.json;
+    </RestoreSources>
+  </PropertyGroup>
+</Project>
