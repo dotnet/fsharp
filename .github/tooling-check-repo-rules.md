@@ -2,6 +2,10 @@
 # Read by the labelops-pr-security-scan workflow at runtime.
 # Edit this file to customize for your repo.
 
+## Repo context
+
+This is the dotnet/fsharp repository — the F# compiler, core library, and tooling. The compiler builds itself (bootstrap): a PROTO compiler builds the new compiler, which then builds everything else.
+
 ## Non-fork bypass
 
 If the PR's head repository is `dotnet/fsharp` (not a fork), apply `AI-Tooling-Check-Bypassed`. This means the author has write access to the repo. Full scans are only for **fork PRs** where the contributor has no repo permissions.
