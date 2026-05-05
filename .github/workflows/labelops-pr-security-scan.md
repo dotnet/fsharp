@@ -54,68 +54,45 @@ You read PR diffs as text via the GitHub API. You have no shell, no file system,
 1. **You have no bash, no checkout, no file system.** Use only GitHub MCP tools to read PR metadata, file lists, and diffs.
 2. **Never approve, merge, close, or reopen a PR.**
 3. **Skip PRs that already have `AI-Tooling-Check-Clean` or any `⚠️` label.**
-4. **Trusted authors** (`T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `copilot-swe-agent`, `github-actions`, `github-actions[bot]`) — label `AI-Tooling-Check-Clean` immediately without reading the diff.
-5. **False positives > false negatives.** When unsure, flag it.
-6. **Quick bypass for non-fork PRs.** If the PR's head repository is `dotnet/fsharp` (not a fork), it was pushed by someone with write access — apply `AI-Tooling-Check-Clean` without full diff analysis. The full scan is most important for **fork PRs** where the contributor has no repo permissions.
+4. **Trusted authors and non-fork bypass** are defined in `.github/instructions/tooling-check-repo-rules.md`. Read that file for the trusted author list and non-fork bypass policy. If the file doesn't exist, only apply generic categories below.
+5. **False positives > false negatives** for scanned fork PRs. When unsure, flag it.
 
 ## Process
 
 1. **List open PRs** via GitHub MCP. Skip PRs already carrying any tooling-check label.
-2. **Trusted authors** → `AI-Tooling-Check-Clean` immediately.
-3. **Non-fork PRs** (head repo is `dotnet/fsharp`) → `AI-Tooling-Check-Clean` immediately. These were pushed by someone with write access.
+2. **Read `.github/instructions/tooling-check-repo-rules.md`** from the repo (via `get_file_contents` or from the PR's base branch). This gives you trusted authors, non-fork bypass rules, and repo-specific categories.
+3. **Trusted authors / non-fork PRs** → `AI-Tooling-Check-Clean` immediately per the repo rules.
 4. **For each remaining PR** (fork PRs from untrusted authors), read the file list and diff via MCP (`get_files`, `get_diff`). Read the title and body.
-4. **Classify** into categories. A PR can trigger multiple.
-5. **Label:**
+5. **Classify** using generic categories below PLUS any repo-specific categories from the rules file. A PR can trigger multiple.
+6. **Label:**
    - Flagged → add all applicable `⚠️` labels
    - Clean → add `AI-Tooling-Check-Clean`
 
 ## Categories
 
-### ⚠️ Affects-Build-Infra
+The categories below are split into **generic** (any .NET/MSBuild repo) and **repo-specific** (loaded from `.github/instructions/tooling-check-repo-rules.md` if it exists). Generic categories are built into this workflow. Repo-specific categories are maintained separately so this workflow can be reused across repos.
 
-PR modifies files that execute during `dotnet build`, `dotnet restore`, or `./build.sh`.
+### Generic categories (any .NET repo)
+
+#### ⚠️ Affects-Build-Infra
+
+PR modifies files that execute during `dotnet build`, `dotnet restore`, or build scripts.
 
 **Trigger on:** `.props`, `.targets`, `Directory.Build.*`, `<UsingTask>`, `<Exec Command>`, scripts (`.sh`, `.cmd`, `.ps1`, `.bat`, `.py`), `eng/**`, `buildtools/**`, `global.json`, `NuGet.config`, `*.rsp` response files.
 
 *Ref: [Microsoft — MSBuild Security Best Practices](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-security-best-practices); [MITRE ATT&CK T1127.001](https://attack.mitre.org/techniques/T1127/001/)*
 
-### ⚠️ Affects-Restore
+#### ⚠️ Affects-Restore
 
 PR modifies NuGet package references, feeds, version pinning, or dependency resolution.
 
-**Trigger on:** `NuGet.config`, `Directory.Packages.props`, `eng/Versions.props`, `eng/Version.Details.*`, new `<PackageReference>` entries, `src/FSharp.DependencyManager.Nuget/**`, `<IncludeAssets>` containing `build` or `analyzers`.
+**Trigger on:** `NuGet.config`, `Directory.Packages.props`, `eng/Versions.props`, `eng/Version.Details.*`, new `<PackageReference>` entries, `<IncludeAssets>` containing `build` or `analyzers`.
 
 *Ref: [Microsoft — MSBuild Security Best Practices](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-security-best-practices): "Build logic can be automatically extended by NuGet packages."*
 
-### ⚠️ Affects-Bootstrap
+#### ⚠️ Affects-Agent-Config
 
-PR modifies the compiler bootstrap chain (PROTO → new compiler → everything else).
-
-**Trigger on:** `proto.proj`, `FSharpBuild.Directory.Build.*`, `buildtools/fslex/**`, `buildtools/fsyacc/**`, files referencing `Configuration==Proto` or `BUILDING_USING_DOTNET` or `ProtoOutputPath`.
-
-### ⚠️ Affects-Compiler-Output
-
-PR modifies the IL emission or code generation pipeline. Compiled binaries could behave differently.
-
-**Trigger on:** `src/Compiler/AbstractIL/ilwrite*`, `src/Compiler/CodeGen/**`, `src/Compiler/AbstractIL/ilreflect*`, `src/Compiler/TypedTree/TypedTreePickle*`, `src/FSharp.Build/**`.
-
-### ⚠️ Affects-Test-Tooling
-
-PR modifies test build configuration, test runner setup, or test infrastructure that spawns external processes.
-
-**Trigger on:** `tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj`, `tests/FSharp.Test.Utilities/TestFramework.fs`, `tests/FSharp.Test.Utilities/ProjectGeneration.fs`, `tests/EndToEndBuildTests/**`, `*.runsettings`.
-
-**Does NOT trigger on:** adding/changing test helper methods (`Compiler.fs`, `CompilerAssert.fs`, `Assert.fs`, `SurfaceArea.fs`, `XunitHelpers.fs`). These are test authoring utilities — they don't control what gets executed.
-
-### ⚠️ Affects-Design-Time
-
-PR modifies type provider infrastructure, dependency manager, or IDE integration that executes code at design time.
-
-**Trigger on:** `src/Compiler/TypedTree/TypeProviders.fs`, `src/FSharp.DependencyManager.Nuget/**`, `vsintegration/tests/MockTypeProviders/**`.
-
-### ⚠️ Affects-Agent-Config
-
-PR modifies AI agent instructions, skills, or workflow definitions. Changes how Copilot and agentic workflows behave on this repo.
+PR modifies AI agent instructions, skills, or workflow definitions.
 
 **Trigger on files:** `.github/copilot-instructions.md`, `.github/instructions/**`, `.github/skills/**`, `.github/workflows/**`.
 
@@ -135,11 +112,13 @@ PR modifies AI agent instructions, skills, or workflow definitions. Changes how 
 
 Note: trusted-author PRs editing `.github/workflows/` are normal maintenance, not attacks. The label means "this PR changes agent behavior" — review what changed.
 
-### ⚠️ Scope-Review-Needed
+#### ⚠️ Scope-Review-Needed
 
 The diff clearly does more than what the title and description claim.
 
-*Ref: [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html): "Goal Hijacking."*
+### Repo-specific categories
+
+These are defined in `.github/instructions/tooling-check-repo-rules.md`. If that file exists, read it and apply its additional categories alongside the generic ones above. If it does not exist, only use the generic categories.
 
 ---
 
@@ -153,25 +132,21 @@ The diff clearly does more than what the title and description claim.
 
 ## Why this workflow is safe
 
-- **Least privilege** — only `pull_requests` MCP + `add-labels`. *Ref: [OWASP LLM06](https://genai.owasp.org/llm-top-10/)*
-- **Isolation** — no bash, no checkout, no file system. *Ref: [GitHub Security Architecture](https://github.blog/ai-and-ml/generative-ai/under-the-hood-security-architecture-of-github-agentic-workflows/)*
-- **Prompt injection resilience** — even if diff contains SAGE-class injection patterns targeting this agent, the agent has no dangerous tools. Worst case: a wrong label. *Ref: [OpenAI Agent Safety](https://developers.openai.com/api/docs/guides/agent-builder-safety)*
-- **Safe outputs** — fixed label allowlist, no free-form text. *Ref: [GitHub Blog](https://github.blog/ai-and-ml/generative-ai/under-the-hood-security-architecture-of-github-agentic-workflows/)*
-- **Network** — egress `github` only. *Ref: [Anthropic Computer Use](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool)*
+These properties come from the gh-aw platform configuration in the frontmatter above:
+
+- **Minimal privilege** — only `pull_requests` MCP (read) + `add-labels` (write). No other side effects.
+- **No shell, no checkout, no file system** — the agent cannot execute code from the PR it is scanning.
+- **Prompt injection resilience** — even if a PR diff contains injection patterns targeting this agent, the only possible side effect is a wrong label from a fixed allowlist.
+- **Network** — egress restricted to `defaults` + `github` allowlist.
 
 ## Methodology
 
-| Source | What it covers |
-|--------|---------------|
-| [Microsoft — MSBuild Security Best Practices](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-security-best-practices) | Build infra, NuGet package execution, parent-folder imports |
-| [MITRE ATT&CK T1127.001](https://attack.mitre.org/techniques/T1127/001/) | MSBuild inline task code execution |
-| [OWASP LLM Top 10 2025](https://genai.owasp.org/llm-top-10/) | Prompt injection (LLM01), excessive agency (LLM06) |
-| [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) | Tool abuse, goal hijacking, supply chain attacks |
-| [GitHub — Security Architecture of Agentic Workflows](https://github.blog/ai-and-ml/generative-ai/under-the-hood-security-architecture-of-github-agentic-workflows/) | Safe outputs, agent isolation, zero-secret agents |
-| [OpenAI — Safety in Building Agents](https://developers.openai.com/api/docs/guides/agent-builder-safety) | Structured outputs, prompt injection via tool calls |
-| [Anthropic — Computer Use Security](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool) | Network egress control, filesystem isolation |
-| [Peli's Agent Factory — Security Workflows](https://github.github.com/gh-aw/blog/2026-01-13-meet-the-workflows-security-compliance/) | Daily malicious code scan pattern |
-| [Gen Digital SAGE — Prompt Injection Rules](https://github.com/gendigitalinc/sage/blob/main/threats/prompt-injection.yaml) | 9-family prompt injection heuristic taxonomy (CLT-PI-001–081) |
+| Source | How it's used |
+|--------|--------------|
+| [Microsoft — MSBuild Security Best Practices](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-security-best-practices) | Drives Affects-Build-Infra and Affects-Restore categories: `.props`/`.targets` auto-import, NuGet `build`/`analyzers` assets, `<UsingTask>`/`<Exec>` |
+| [MITRE ATT&CK T1127.001](https://attack.mitre.org/techniques/T1127/001/) | Drives `<UsingTask TaskFactory="CodeTaskFactory">` detection in Affects-Build-Infra |
+| [OWASP LLM Top 10 2025 — LLM01](https://genai.owasp.org/llm-top-10/) | Threat model for this workflow: agent reads untrusted PR diffs (indirect prompt injection surface) |
+| [Gen Digital SAGE](https://github.com/gendigitalinc/sage/blob/main/threats/prompt-injection.yaml) | All 9 prompt injection pattern families in Affects-Agent-Config are from SAGE CLT-PI-001–081 |
 
 ## Setup (one-time label creation)
 
