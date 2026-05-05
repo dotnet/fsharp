@@ -1,0 +1,8 @@
+{
+  "//": "F# 15.9 servicing branch — modern host SDK pinned to match Roslyn dev15.9.x.",
+  "//": "DO NOT remove init-tools.cmd, BuildToolsVersion.txt, DotnetCLIVersion.txt, DotnetCLIToolsVersion.txt — those install the legacy CLIs (1.0.0-preview3-003886 + 2.1.300-rtm-008707) needed for project.json restore. SDK 2.1.526 cannot restore project.json. See Constraint 11 in plan.md.",
+  "sdk": {
+    "version": "2.1.526",
+    "rollForward": "minor"
+  }
+}
