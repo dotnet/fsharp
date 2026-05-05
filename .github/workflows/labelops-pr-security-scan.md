@@ -40,10 +40,10 @@ safe-outputs:
     - "⚠️ Affects-Test-Tooling"
     - "⚠️ Affects-Agent-Config"
     - "⚠️ Scope-Review-Needed"
-    max: 30
+    max: 10
     target: "*"
   add-comment:
-    max: 10
+    max: 1
     target: "*"
     hide-older-comments: true
 ---
