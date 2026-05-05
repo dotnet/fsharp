@@ -3155,7 +3155,7 @@ let BuildDisposableCleanup (cenv: cenv) env m (v: Val) =
     v.SetHasBeenReferenced()
 
     let disposeMethod =
-        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "Dispose" g.system_IDisposable_ty with
+        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Dispose" g.system_IDisposable_ty with
         | [x] -> x
         | _ -> error(InternalError(FSComp.SR.tcCouldNotFindIDisposable(), m))
 
