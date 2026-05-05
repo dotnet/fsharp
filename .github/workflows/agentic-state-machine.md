@@ -2,8 +2,8 @@
 description: |
   Reads all agentic workflow .md files in this repo, extracts the
   state machine (triggers, labels, actions, handovers between workflows),
-  and renders a human-readable diagram in .github/workflows/docs/state-machine.md.
-  Runs weekly. Updates the diagram via PR.
+  and renders human-readable Mermaid diagrams in .github/workflows/docs/state-machine.md.
+  Runs weekly. Only updates if workflow sources changed. Opens a PR.
 
 on:
   schedule: every 7d
@@ -40,69 +40,111 @@ safe-outputs:
 # Agentic State Machine — Diagram Generator
 
 <role>
-You read all agentic workflow `.md` files in this repo, extract the inherent state machine they collectively define, and render it as a Mermaid diagram in `.github/workflows/docs/state-machine.md`.
+You read all agentic workflow `.md` files in this repo, extract the state machine they collectively define, and render it as Mermaid diagrams in `.github/workflows/docs/state-machine.md`. You produce diagrams that a human can read on one screen and immediately understand.
 </role>
 
 <context>
-This repo uses GitHub Agentic Workflows (gh-aw). Each `.md` file in `.github/workflows/` defines an agent with triggers, rules, safe-outputs, and interactions with GitHub objects (issues, PRs, labels, comments). Together, these workflows form an implicit state machine — but no single document shows the full picture. Humans need a diagram.
+This repo uses GitHub Agentic Workflows (gh-aw). Each `.md` file in `.github/workflows/` defines an agent with triggers, rules, safe-outputs, and interactions with GitHub objects. Together they form an implicit state machine — but no single document shows the full picture.
+
+The output must be useful to a maintainer who has never read any workflow file. They should be able to look at the diagrams and understand: what happens to an issue after it's opened? What happens to a PR from a fork? Which workflows talk to each other? Which labels mean what?
 </context>
 
 <rules>
-1. Read ALL `.md` files in `.github/workflows/` (excluding this one and the `docs/` subfolder).
-2. For each workflow, extract:
-   - **Triggers**: schedule, workflow_dispatch, slash_command, reaction, dispatch from other workflows
-   - **Inputs**: what GitHub objects it reads (issues, PRs, labels, comments, check runs)
-   - **Outputs / safe-outputs**: what it can write (labels, comments, PRs, issues, dispatches)
-   - **Label operations**: which labels it reads (as conditions), adds, or removes
-   - **Handovers**: does it dispatch another workflow? Does it create PRs that another workflow processes?
-   - **Conditions**: what filters determine which items it processes (label presence, author, fork status, draft status)
-3. Also read `.github/tooling-check-repo-rules.md` if it exists — it may define additional label semantics.
-4. Synthesize everything into one coherent state machine covering the full lifecycle of:
-   - **Issues**: opened → triaged → regression-tested → closed
-   - **PRs**: opened → scanned → labeled → maintained → merged
-   - **Labels**: which workflow applies them, what they gate, which workflow reads them
-   - **Handovers**: workflow A dispatches workflow B, or workflow A creates a PR that workflow B maintains
+1. Read ALL `.md` files in `.github/workflows/` (skip this file and the `docs/` subfolder).
+2. Also read `.github/tooling-check-repo-rules.md` if it exists.
+3. Check if `.github/workflows/docs/state-machine.md` already exists. If it does, read it and compare the workflow source file list + their sizes against what's listed at the bottom of the existing file (a `<!-- sources: ... -->` marker). If nothing changed, emit `noop` and exit — no update needed.
+4. Produce clear, screen-wide diagrams. Split by dimension — do NOT cram everything into one diagram.
 </rules>
 
 <process>
-1. List all `.md` files in `.github/workflows/` via bash.
-2. Read each one. Extract the frontmatter (triggers, safe-outputs, tools) and the body (rules, process, label logic).
-3. Build a mental model of the full state machine.
-4. Write `.github/workflows/docs/state-machine.md` with:
+1. List `.md` files in `.github/workflows/` via bash. Read each one.
+2. For each workflow, extract:
+   - Triggers (schedule, workflow_dispatch, slash_command, reaction, dispatch-from-other)
+   - What it reads (issues, PRs, labels, comments, check runs, files)
+   - What it writes (safe-outputs: labels, comments, PRs, issues, dispatches)
+   - Label operations (which labels it checks as conditions, adds, or removes)
+   - Handovers (dispatches to other workflows, creates PRs that other workflows process)
+   - Filters (author, fork status, draft status, label presence, head SHA)
+3. Write `.github/workflows/docs/state-machine.md` with these sections:
 
-   a. A **summary table** of all workflows:
-      | Workflow | Trigger | Reads | Writes | Key Labels |
-   
-   b. A **Mermaid diagram** showing the full lifecycle:
-      - Nodes = states (issue opened, PR opened, PR scanned, PR labeled, etc.)
-      - Edges = transitions (triggered by schedule, label added, dispatch, etc.)
-      - Label each edge with the workflow that performs it
-      - Show handovers between workflows clearly
-   
-   c. A **label dictionary** — every label used across all workflows:
-      | Label | Applied by | Read by | Meaning |
-   
-   d. A **handover map** — which workflows interact:
-      | From | To | Mechanism |
+### Section 1: Workflow Overview Table
 
-5. Open a PR with the updated diagram via `create-pull-request`.
+| Workflow | Trigger | Reads | Writes | Key Labels |
+
+### Section 2: Issue Lifecycle Diagram
+
+A `stateDiagram-v2` showing what happens to issues from creation to resolution. Use composite states for issue types (regression, feature, bug). Show which workflow handles each transition.
+
+### Section 3: PR Lifecycle Diagram
+
+A `stateDiagram-v2` with composite states for PR types:
+- Fork PRs (scanned, labeled, maintained)
+- Non-fork PRs (bypassed)
+- Regression-test PRs (created by automation)
+
+Show: opened → scanned → labeled → CI-maintained → conflict-resolved → merged. Label each edge with the workflow that performs it.
+
+### Section 4: Label Dictionary
+
+| Label | Applied by | Read/checked by | Meaning |
+
+Group by: workflow labels, status labels, category labels.
+
+### Section 5: Handover Map
+
+| From workflow | To workflow | Mechanism | When |
+
+Show dispatch-workflow, PR-creation, label-gating relationships.
+
+### Section 6: Source Fingerprint
+
+At the bottom, emit an HTML comment listing the source files and their sizes:
+```
+<!-- sources: aw-auto-update.md:1234 regression-pr-shepherd.md:5678 repo-assist.md:9012 -->
+```
+This is used by rule 3 to detect when re-generation is needed.
+
+4. Open a PR with the updated file via `create-pull-request`.
 </process>
 
+<diagram-guidelines>
+Use Mermaid `stateDiagram-v2` for lifecycle diagrams. Key techniques:
+
+- **Composite states** for dimensions: `state "Fork PRs" as ForkPR { ... }`
+- **Choice nodes** for decision points: `state check <<choice>>`
+- **Notes** for context: `note right of PRScanned: tooling-check workflow`
+- **Direction**: use `direction LR` for wide diagrams that fill the screen
+- **Styling**: use `classDef` to color-code by workflow (e.g., blue = repo-assist, orange = labelops)
+- **Keep it readable**: max ~15 states per diagram. If more, split into sub-diagrams.
+- **Label edges** with the workflow name and trigger: `PROpened --> PRScanned: tooling-check (hourly)`
+
+For the label dictionary and handover map, use markdown tables — not diagrams.
+</diagram-guidelines>
+
 <example>
-The Mermaid diagram should look something like:
+Example of a well-structured Issue Lifecycle diagram:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> IssueOpened: issue created
-    IssueOpened --> IssueTriage: repo-assist (schedule)
-    IssueTriage --> RegressionPR: repo-assist creates PR
+    direction LR
     
-    [*] --> PROpened: PR created (fork)
-    PROpened --> PRScanned: tooling-check (schedule)
-    PRScanned --> PRLabeled: labels applied
-    PRLabeled --> PRMaintained: labelops (schedule)
-    PRMaintained --> PRMerged: human merge
+    [*] --> Opened: issue created
+    
+    state "Triage" as Triage {
+        Opened --> Classified: repo-assist (12h schedule)
+        Classified --> RegressionDetected: contains repro steps
+        Classified --> NeedsInfo: insufficient info
+    }
+    
+    state "Regression Path" as Regression {
+        RegressionDetected --> TestPRCreated: repo-assist creates PR
+        TestPRCreated --> TestPRGreen: CI passes
+        TestPRGreen --> FixPRCreated: regression-pr-shepherd
+    }
+    
+    NeedsInfo --> [*]: closed (stale)
+    FixPRCreated --> [*]: fix merged, issue closed
 ```
 
-Adapt to the actual workflows found. Include ALL workflows, ALL labels, ALL transitions.
+Adapt to the actual workflows found. This is just a structural example.
 </example>
