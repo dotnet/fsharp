@@ -54,27 +54,25 @@ You read PR diffs as text via the GitHub API. You have no shell, no file system,
 1. **You have no bash, no checkout, no file system.** Use only GitHub MCP tools to read PR metadata, file lists, and diffs.
 2. **Never approve, merge, close, or reopen a PR.**
 3. **Skip PRs that already have `AI-Tooling-Check-Clean` or any `⚠️` label.**
-4. **Trusted authors and non-fork bypass** are defined in `.github/instructions/tooling-check-repo-rules.md`. Read that file for the trusted author list and non-fork bypass policy. If the file doesn't exist, only apply generic categories below.
-5. **False positives > false negatives** for scanned fork PRs. When unsure, flag it.
+4. **Trusted authors** (`T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `copilot-swe-agent`, `github-actions`, `github-actions[bot]`) — label `AI-Tooling-Check-Clean` immediately without reading the diff.
+5. **Non-fork bypass.** If the PR's head repository is `dotnet/fsharp` (not a fork), apply `AI-Tooling-Check-Clean` without full diff analysis. The full scan is for **fork PRs** where the contributor has no repo permissions.
+6. **False positives > false negatives** for scanned fork PRs. When unsure, flag it.
 
 ## Process
 
 1. **List open PRs** via GitHub MCP. Skip PRs already carrying any tooling-check label.
-2. **Read `.github/instructions/tooling-check-repo-rules.md`** from the repo (via `get_file_contents` or from the PR's base branch). This gives you trusted authors, non-fork bypass rules, and repo-specific categories.
-3. **Trusted authors / non-fork PRs** → `AI-Tooling-Check-Clean` immediately per the repo rules.
-4. **For each remaining PR** (fork PRs from untrusted authors), read the file list and diff via MCP (`get_files`, `get_diff`). Read the title and body.
-5. **Classify** using generic categories below PLUS any repo-specific categories from the rules file. A PR can trigger multiple.
-6. **Label:**
+2. **Trusted authors / non-fork PRs** → `AI-Tooling-Check-Clean` immediately.
+3. **For each remaining PR** (fork PRs from untrusted authors), read the file list and diff via MCP (`get_files`, `get_diff`). Read the title and body.
+4. **Classify** into categories. A PR can trigger multiple.
+5. **Label:**
    - Flagged → add all applicable `⚠️` labels
    - Clean → add `AI-Tooling-Check-Clean`
 
 ## Categories
 
-The categories below are split into **generic** (any .NET/MSBuild repo) and **repo-specific** (loaded from `.github/instructions/tooling-check-repo-rules.md` if it exists). Generic categories are built into this workflow. Repo-specific categories are maintained separately so this workflow can be reused across repos.
+<!-- GENERIC: These apply to any .NET/MSBuild repo. -->
 
-### Generic categories (any .NET repo)
-
-#### ⚠️ Affects-Build-Infra
+### ⚠️ Affects-Build-Infra
 
 PR modifies files that execute during `dotnet build`, `dotnet restore`, or build scripts.
 
@@ -116,9 +114,34 @@ Note: trusted-author PRs editing `.github/workflows/` are normal maintenance, no
 
 The diff clearly does more than what the title and description claim.
 
-### Repo-specific categories
+<!-- REPO-SPECIFIC: Edit the categories below for your repo. -->
+<!-- When adopting this workflow in another repo, replace or remove these. -->
 
-These are defined in `.github/instructions/tooling-check-repo-rules.md`. If that file exists, read it and apply its additional categories alongside the generic ones above. If it does not exist, only use the generic categories.
+### ⚠️ Affects-Bootstrap
+
+PR modifies the F# compiler bootstrap chain. The compiler builds itself: PROTO compiler → new compiler → everything else.
+
+**Trigger on:** `proto.proj`, `FSharpBuild.Directory.Build.*`, `buildtools/fslex/**`, `buildtools/fsyacc/**`, files referencing `Configuration==Proto` or `BUILDING_USING_DOTNET` or `ProtoOutputPath`.
+
+### ⚠️ Affects-Compiler-Output
+
+PR modifies the IL emission or code generation pipeline. Compiled binaries could behave differently than source review suggests.
+
+**Trigger on:** `src/Compiler/AbstractIL/ilwrite*`, `src/Compiler/CodeGen/**`, `src/Compiler/AbstractIL/ilreflect*`, `src/Compiler/TypedTree/TypedTreePickle*`, `src/FSharp.Build/**`.
+
+### ⚠️ Affects-Design-Time
+
+PR modifies type provider infrastructure, the `#r "nuget:..."` dependency manager, or IDE integration that executes code at design time.
+
+**Trigger on:** `src/Compiler/TypedTree/TypeProviders.fs`, `src/FSharp.DependencyManager.Nuget/**`, `vsintegration/tests/MockTypeProviders/**`.
+
+### ⚠️ Affects-Test-Tooling
+
+PR modifies test build configuration or test infrastructure that spawns external processes.
+
+**Trigger on:** `tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj`, `tests/FSharp.Test.Utilities/TestFramework.fs`, `tests/FSharp.Test.Utilities/ProjectGeneration.fs`, `tests/EndToEndBuildTests/**`, `*.runsettings`.
+
+**Does NOT trigger on:** test helper methods (`Compiler.fs`, `CompilerAssert.fs`, `Assert.fs`, `SurfaceArea.fs`).
 
 ---
 
