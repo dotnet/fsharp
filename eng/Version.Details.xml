@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- F# 15.9 servicing - closed branch, no inbound code flow.
+     Arcade SDK pin must match global.json msbuild-sdks. -->
+<Dependencies>
+  <ToolsetDependencies>
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.26222.2">
+      <Uri>https://github.com/dotnet/arcade</Uri>
+      <Sha>0000000000000000000000000000000000000000</Sha>
+    </Dependency>
+  </ToolsetDependencies>
+</Dependencies>

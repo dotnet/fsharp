@@ -1,0 +1,426 @@
+#!/usr/bin/env bash
+# Copyright (c) .NET Foundation and contributors. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+# Stop script if unbound variable found (use ${var:-} if intentional)
+set -u
+
+usage()
+{
+  echo "Common settings:"
+  echo "  --configuration <value>        Build configuration: 'Debug' or 'Release' (short: -c)"
+  echo "  --verbosity <value>            Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic] (short: -v)"
+  echo "  --binaryLog                    Create MSBuild binary log (short: -bl)"
+  echo ""
+  echo "Actions:"
+  echo "  --bootstrap                    Force the build of the bootstrap compiler"
+  echo "  --restore                      Restore projects required to build (short: -r)"
+  echo "  --norestore                    Don't restore projects required to build"
+  echo "  --build                        Build all projects (short: -b)"
+  echo "  --rebuild                      Rebuild all projects"
+  echo "  --pack                         Build nuget packages"
+  echo "  --publish                      Publish build artifacts"
+  echo "  --sign                         Sign build artifacts"
+  echo "  --help                         Print help and exit"
+  echo ""
+  echo "Test actions:"
+  echo "  --testcoreclr                  Run unit tests on .NET Core (short: --test, -t)"
+  echo "  --testCompilerComponentTests   Run FSharp.Compiler.ComponentTests on .NET Core"
+  echo "  --testScripting                Run FSharp.Private.ScriptingTests on .NET Core"
+  echo ""
+  echo "Advanced settings:"
+  echo "  --ci                           Building in CI"
+  echo "  --docker                       Run in a docker container if applicable"
+  echo "  --skipAnalyzers                Do not run analyzers during build operations"
+  echo "  --skipBuild                    Do not run the build"
+  echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
+  echo "  --sourceBuild                  Build the repository in source-only mode."
+  echo "  --productBuild                 Build the repository in product-build mode."
+  echo "  --fromVMR                      Set when building from within the VMR"
+  echo "  --buildnorealsig               Build product with realsig- (default use realsig+ where necessary)"
+  echo "  --tfm                          Override the default target framework"
+  echo "  --warnNotAsError <codes>       Suppress specific warnings from being treated as errors (semi-colon delimited)"
+  echo ""
+  echo "Command line arguments starting with '/p:' are passed through to MSBuild."
+}
+
+source="${BASH_SOURCE[0]}"
+
+# resolve $source until the file is no longer a symlink
+while [[ -h "$source" ]]; do
+  scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
+  source="$(readlink "$source")"
+  # if $source was a relative symlink, we need to resolve it relative to the path where the
+  # symlink file was located
+  [[ $source != /* ]] && source="$scriptroot/$source"
+done
+scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
+
+restore=false
+build=false
+rebuild=false
+pack=false
+publish=false
+sign=false
+test_core_clr=false
+test_core_clr_batch=""
+test_compilercomponent_tests=false
+test_benchmarks=false
+test_scripting=false
+configuration="Debug"
+verbosity='minimal'
+binary_log=false
+force_bootstrap=false
+ci=false
+skip_analyzers=false
+skip_build=false
+prepare_machine=false
+source_build=false
+product_build=false
+from_vmr=false
+buildnorealsig=true
+properties=""
+warn_not_as_error=""
+docker=false
+args=""
+
+# TFM will be resolved after InitializeDotNetCli ensures the SDK is available.
+# Can be overridden via --tfm argument.
+tfm=""
+
+BuildCategory=""
+BuildMessage=""
+
+if [[ $# = 0 ]]
+then
+  usage
+  exit 1
+fi
+
+while [[ $# > 0 ]]; do
+  opt="$(echo "$1" | awk '{print tolower($0)}')"
+  case "$opt" in
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --configuration|-c)
+      configuration=$2
+      args="$args $1"
+      shift
+      ;;
+    --verbosity|-v)
+      verbosity=$2
+      args="$args $1"
+      shift
+      ;;
+    --binarylog|-bl)
+      binary_log=true
+      ;;
+    --bootstrap)
+      force_bootstrap=true
+      ;;
+    --restore|-r)
+      restore=true
+      ;;
+    --norestore)
+      restore=false
+      ;;
+    --build|-b)
+      build=true
+      ;;
+    --rebuild)
+      rebuild=true
+      ;;
+    --pack)
+      pack=true
+      ;;
+    --publish)
+      publish=true
+      ;;
+    --sign)
+      sign=true
+      ;;
+    --testcoreclr|--test|-t)
+      test_core_clr=true
+      ;;
+    --testcoreclrbatch)
+      test_core_clr=true
+      test_core_clr_batch=$2
+      shift
+      ;;
+    --testcompilercomponenttests)
+      test_compilercomponent_tests=true
+      ;;
+    --testscripting)
+      test_scripting=true
+      ;;
+    --ci)
+      ci=true
+      ;;
+    --skipanalyzers)
+      skip_analyzers=true
+      ;;
+    --skipbuild)
+      skip_build=true
+      ;;
+    --preparemachine)
+      prepare_machine=true
+      ;;
+    --docker)
+      docker=true
+      ;;
+    --sourcebuild|--source-build|-sb)
+      source_build=true
+      product_build=true
+      ;;
+    --productbuild|--product-build|-pb)
+      product_build=true
+      ;;
+    --fromvmr|--from-vmr)
+      from_vmr=true
+      ;;
+    --buildnorealsig)
+      buildnorealsig=true
+      ;;
+    --tfm)
+      tfm=$2
+      shift
+      ;;
+    --warnnotaserror)
+      warn_not_as_error=$2
+      shift
+      ;;
+    /p:*)
+      properties+=("$1")
+      ;;
+    *)
+      echo "Invalid argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+  args="$args $1"
+  shift
+done
+
+# Import Arcade functions
+. "$scriptroot/common/tools.sh"
+
+function Test() {
+  BuildCategory="Test"
+  BuildMessage="Error running tests"
+  testproject=""
+  targetframework=""
+  extraargs=""
+  while [[ $# > 0 ]]; do
+    opt="$(echo "$1" | awk '{print tolower($0)}')"
+    case "$opt" in
+      --testproject)
+        testproject=$2
+        shift
+        ;;
+      --targetframework)
+        targetframework=$2
+        shift
+        ;;
+      --extraargs)
+        extraargs=$2
+        shift
+        ;;
+      *)
+        echo "Invalid argument: $1"
+        exit 1
+        ;;
+    esac
+    shift
+  done
+
+  if [[ "$testproject" == "" || "$targetframework" == "" ]]; then
+    echo "--testproject and --targetframework must be specified"
+    exit 1
+  fi
+
+  projectname=$(basename -- "$testproject")
+  projectname="${projectname%.*}"
+  testresultsdir="$artifacts_dir/TestResults/$configuration"
+
+  # MTP requires --solution flag for .sln/.slnx files
+  if [[ "$testproject" == *.sln ]] || [[ "$testproject" == *.slnx ]]; then
+    testtarget="--solution"
+  else
+    testtarget="--project"
+  fi
+
+  # Xunit XML report via XunitXml.TestLogger with CI-friendly filenames
+  jobname="${SYSTEM_JOBNAME:-local}"
+  xunitlogfilename="{assembly}.{framework}.${jobname}.xml"
+  reportargs="--report-spekt-xunit --report-spekt-xunit-filename $xunitlogfilename"
+
+  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" $reportargs --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full $extraargs)
+
+  "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
+}
+
+function BuildSolution {
+  BUILDING_USING_DOTNET=false
+  BuildCategory="Build"
+  BuildMessage="Error preparing build"
+
+  InitializeToolset
+  local toolset_build_proj=$_InitializeToolset
+
+  local bl=""
+  if [[ "$binary_log" = true ]]; then
+    bl="/bl:\"$log_dir/Build.binlog\""
+  fi
+
+  local projects="$repo_root/FSharp.slnx"
+  if [[ "$product_build" = true ]]; then
+    projects="$repo_root/src/Microsoft.FSharp.Compiler/Microsoft.FSharp.Compiler.fsproj"
+  fi
+
+  echo "$projects:"
+
+  # https://github.com/dotnet/roslyn/issues/23736
+  local enable_analyzers=!$skip_analyzers
+  UNAME="$(uname)"
+  if [[ "$UNAME" == "Darwin" ]]; then
+    enable_analyzers=false
+  fi
+
+  # NuGet often exceeds the limit of open files on Mac and Linux
+  # https://github.com/NuGet/Home/issues/2163
+  if [[ "$UNAME" == "Darwin" || "$UNAME" == "Linux" ]]; then
+    ulimit -n 6500
+  fi
+
+  local quiet_restore=""
+  if [[ "$ci" != true ]]; then
+    quiet_restore=true
+  fi
+
+  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
+  node_reuse=false
+
+  # build bootstrap tools
+  # source_build=In source build proto does no work, except cause sourcebuild in wrapper to build
+  bootstrap_dir=$artifacts_dir/Bootstrap
+  if [[ "$force_bootstrap" == true ]]; then
+    rm -fr $bootstrap_dir
+  fi
+  if [ ! -f "$bootstrap_dir/fslex/fslex.dll" ]; then
+    local bltools=""
+    if [[ "$bl" != "" ]]; then
+      bltools=$bl+".proto.binlog"
+    fi
+
+    local blrestore=""
+    if [[ "$source_build" != "true" ]]; then
+      blrestore="/restore"
+    fi
+
+    BuildMessage="Error building tools"
+    local args=("publish" "$repo_root/proto.proj" "$blrestore" "$bltools" "/p:Configuration=Proto" "/p:DotNetBuild=$product_build" "/p:DotNetBuildSourceOnly=$source_build" "/p:DotNetBuildFromVMR=$from_vmr" ${properties[@]+"${properties[@]}"})
+    echo $args
+    "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
+  fi
+
+  if [[ "$skip_build" != true ]]; then
+    # do real build
+    BuildMessage="Error building solution"
+
+    local msbuild_warn_not_as_error=""
+    if [[ "$warn_not_as_error" != "" && "$warn_as_error" == true ]]; then
+      msbuild_warn_not_as_error="/warnNotAsError:$warn_not_as_error"
+    fi
+
+    MSBuild $toolset_build_proj \
+      $bl \
+      /p:Configuration=$configuration \
+      /p:Projects="$projects" \
+      /p:RepoRoot="$repo_root" \
+      /p:Restore=$restore \
+      /p:Build=$build \
+      /p:Rebuild=$rebuild \
+      /p:Pack=$pack \
+      /p:Publish=$publish \
+      /p:Sign=$sign \
+      /p:UseRoslynAnalyzers=$enable_analyzers \
+      /p:ContinuousIntegrationBuild=$ci \
+      /p:QuietRestore=$quiet_restore \
+      /p:QuietRestoreBinaryLog="$binary_log" \
+      /p:BuildNoRealsig=$buildnorealsig \
+      /p:DotNetBuild=$product_build \
+      /p:DotNetBuildSourceOnly=$source_build \
+      /p:DotNetBuildFromVMR=$from_vmr \
+      ${properties[@]+"${properties[@]}"} \
+      $msbuild_warn_not_as_error
+  fi
+}
+
+function TrapAndReportError {
+  local exit_code=$?
+  if [[ ! $exit_code == 0 ]]; then
+    Write-PipelineTelemetryError -category $BuildCategory "$BuildMessage (exit code '$exit_code')."
+    ExitWithExitCode $exit_code
+  fi
+}
+
+# allow early termination to report the appropriate build failure reason
+trap TrapAndReportError EXIT
+
+InitializeDotNetCli $restore
+
+# Resolve product TFM from centralized source of truth if not overridden via --tfm
+if [[ "$tfm" == "" ]]; then
+  tfm=$("$DOTNET_INSTALL_DIR/dotnet" msbuild "$scriptroot/TargetFrameworks.props" -getProperty:FSharpNetCoreProductTargetFramework 2>/dev/null | tr -d '[:space:]')
+fi
+
+BuildSolution
+
+if [[ "$test_core_clr" == true ]]; then
+  coreclrtestframework=$tfm
+
+  if [[ "$test_core_clr_batch" != "" ]]; then
+    # Run batched: use TestSplit.fsx to get the commands for this batch
+    splitOutput=$("$DOTNET_INSTALL_DIR/dotnet" fsi "$scriptroot/tests/TestSplit.fsx" "$test_core_clr_batch" coreclr)
+    fsi_exit=$?
+    if [[ $fsi_exit -ne 0 ]]; then
+      echo "TestSplit.fsx failed with exit code $fsi_exit"
+      ExitWithExitCode 1
+    fi
+    matchCount=0
+    while IFS= read -r line; do
+      [[ "$line" =~ ^dotnet\ test ]] || continue
+      # Extract project path and extra filter args from each line
+      project=$(echo "$line" | sed 's/^dotnet test //' | sed 's/ --no-build.*//')
+      filterargs=$(echo "$line" | sed 's/^dotnet test [^ ]* --no-build -c Release *//')
+      Test --testproject "$repo_root/$project" --targetframework $coreclrtestframework --extraargs "$filterargs"
+      matchCount=$((matchCount + 1))
+    done <<< "$splitOutput"
+    if [[ $matchCount -eq 0 ]]; then
+      echo "No test commands parsed from TestSplit.fsx output"
+      ExitWithExitCode 1
+    fi
+  else
+    # Run all tests without batching
+    Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
+  fi
+fi
+
+if [[ "$test_compilercomponent_tests" == true ]]; then
+  coreclrtestframework=$tfm
+  Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
+fi
+
+if [[ "$test_scripting" == true ]]; then
+  coreclrtestframework=$tfm
+  Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
+fi
+
+ExitWithExitCode 0

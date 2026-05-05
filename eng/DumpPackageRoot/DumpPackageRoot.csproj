@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Used as a diagnostic tool to view the state of the NuGet package cache as it existed immediately after a restore/build. -->
+
+  <PropertyGroup>
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageRootFiles Include="$(NuGetPackageRoot)/**" />
+  </ItemGroup>
+
+  <Target Name="_DumpPackageRootDirectoryListing"
+          AfterTargets="Build">
+    <PropertyGroup>
+      <PackageRootArtifactDirectory>$(ArtifactsDir)NugetPackageRootContents</PackageRootArtifactDirectory>
+      <PackageRootContentsFile>$(PackageRootArtifactDirectory)/package_contents.txt</PackageRootContentsFile>
+    </PropertyGroup>
+    <MakeDir Directories="$(PackageRootArtifactDirectory)" Condition="!Exists('$(PackageRootArtifactDirectory)')" />
+    <WriteLinesToFile File="$(PackageRootContentsFile)" Lines="@(PackageRootFiles)" />
+  </Target>
+</Project>

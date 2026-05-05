@@ -1,0 +1,11 @@
+<Project>
+
+  <ItemGroup>
+    <FileSignInfo Include="Nerdbank.Streams.dll" CertificateName="None" />
+    <FileSignInfo Include="Newtonsoft.Json.dll" CertificateName="None" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <UseDotNetCertificate>true</UseDotNetCertificate>
+  </PropertyGroup>
+</Project>
