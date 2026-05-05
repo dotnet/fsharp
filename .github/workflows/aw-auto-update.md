@@ -27,16 +27,32 @@ tools:
   bash: true
 
 safe-outputs:
+  noop:
+    report-as-issue: false
   create-pull-request:
     draft: false
     title-prefix: "[Auto Update] "
     labels: [automation]
     max: 1
+    allowed-files:
+      - ".github/workflows/*.md"
+      - ".github/workflows/*.lock.yml"
+      - ".github/workflows/shared/**"
+      - ".github/aw/**"
+      - ".github/agents/**"
+    protected-files: fallback-to-issue
   push-to-pull-request-branch:
     target: "*"
     title-prefix: "[Auto Update] "
     labels: [automation]
     max: 1
+    allowed-files:
+      - ".github/workflows/*.md"
+      - ".github/workflows/*.lock.yml"
+      - ".github/workflows/shared/**"
+      - ".github/aw/**"
+      - ".github/agents/**"
+    protected-files: fallback-to-issue
 ---
 
 # Agentic Workflow Auto-Update
