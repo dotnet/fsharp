@@ -224,6 +224,37 @@ if sum <> 16 then
         |> shouldSucceed
 
     [<Fact>]
+    let ``A sequence expression yield! preserves order and continues after delegation``() =
+        Fsx """
+let mutable events = []
+
+let delegated() =
+    seq {
+        events <- "delegated-start" :: events
+        yield 1
+        yield 2
+        events <- "delegated-end" :: events
+    }
+
+let res =
+    seq {
+        yield 0
+        yield! delegated()
+        yield 3
+    }
+    |> Seq.toList
+
+if res <> [0; 1; 2; 3] then
+    failwith $"Unexpected result: %A{res}"
+
+let observed = List.rev events
+if observed <> [ "delegated-start"; "delegated-end" ] then
+    failwith $"Unexpected events: %A{observed}"
+        """
+        |> runCode
+        |> shouldSucceed
+
+    [<Fact>]
     let ``A sequence expression can fail later in try/with and still get caught``() =
         Fsx """
 let sum =

@@ -454,6 +454,78 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 23, Col 9, Line 23, Col 13, "This control construct may only be used if the computation expression builder defines a 'Using' method")
         ]
+
+    [<Fact>]
+    let ``use! routes through Using and disposes on success and failure`` () =
+        Fsx """
+open System
+open System.Collections.Generic
+
+type TrackingDisposable(events: ResizeArray<string>, name: string) =
+    interface IDisposable with
+        member _.Dispose() = events.Add($"dispose:{name}")
+
+type Builder(events: ResizeArray<string>) =
+    member _.Bind(value, continuation) =
+        events.Add("bind")
+        continuation value
+
+    member _.Using(resource: #IDisposable, body) =
+        events.Add("using-enter")
+        try body resource
+        finally
+            events.Add("using-exit")
+            resource.Dispose()
+
+    member _.Return value = value
+
+let run shouldThrow =
+    let events = ResizeArray<string>()
+    let builder = Builder(events)
+
+    let outcome =
+        try
+            builder {
+                use! resource = new TrackingDisposable(events, "r1")
+                let value =
+                    if shouldThrow then
+                        raise (InvalidOperationException("boom"))
+                    else
+                        42
+                return value
+            }
+            |> box
+            |> Choice1Of2
+        with ex ->
+            Choice2Of2 ex.Message
+
+    (outcome, events |> Seq.toList)
+
+let success, successEvents = run false
+match success with
+| Choice1Of2 boxed ->
+    if unbox<int> boxed <> 42 then
+        failwith "Unexpected success value."
+| Choice2Of2 message ->
+    failwith $"Unexpected failure: {message}"
+
+if successEvents <> [ "bind"; "using-enter"; "using-exit"; "dispose:r1" ] then
+    failwith $"Unexpected success events: %A{successEvents}"
+
+let failure, failureEvents = run true
+match failure with
+| Choice1Of2 _ ->
+    failwith "Expected an exception."
+| Choice2Of2 message ->
+    if message <> "boom" then
+        failwith $"Unexpected failure message: {message}"
+
+if failureEvents <> [ "bind"; "using-enter"; "using-exit"; "dispose:r1" ] then
+    failwith $"Unexpected failure events: %A{failureEvents}"
+        """
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
     
     [<Fact>]
     let ``do! expressions may not be used in queries`` () =
