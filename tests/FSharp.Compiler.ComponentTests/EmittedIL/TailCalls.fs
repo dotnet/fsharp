@@ -12,6 +12,36 @@ module ``Tail Calls`` =
         opts |> ignoreWarnings |> withOptions ["-g"; "--optimize-"; "--tailcalls+"] |> compile
 
     [<Fact>]
+    let ``Computation expression final Run is tailcalled`` () =
+        FSharp
+            """
+module TailCallCE
+
+type B() =
+    member _.Delay(f: unit -> int) = f()
+    member _.Run(x: int) = x
+    member _.Return(x: int) = x
+    member _.ReturnFrom(x: int) = x
+
+let b = B()
+
+let rec loop n =
+    b {
+        if n = 0 then
+            return 0
+        else
+            return! loop (n - 1)
+    }
+            """
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> verifyILContains [
+            "IL_0014:  tail."
+            "callvirt   instance int32 TailCallCE/B::Run(int32)"
+        ]
+        |> shouldSucceed
+
+    [<Fact>]
     let ``TailCall 01``() =
         FSharp """
 module TailCall01
@@ -306,4 +336,3 @@ let main _ =
         |> run
         |> shouldSucceed
         |> verifyOutput "value = 42\n"
-

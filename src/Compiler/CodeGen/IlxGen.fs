@@ -4513,7 +4513,14 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 if isNil laterArgs && not isSelfInit then
                     let isDllImport = IsValRefIsDllImport g vref
                     let hasByrefArg = mspec.FormalArgTypes |> List.exists IsILTypeByref
-                    let makesNoCriticalTailcalls = vref.MakesNoCriticalTailcalls
+                    // CE final method calls (Delay/Quote/Run) are intentionally in tail position and
+                    // should remain eligible for tailcall emission even if the callee is otherwise
+                    // marked as not making critical tailcalls.
+                    let makesNoCriticalTailcalls =
+                        if m.NotedSourceConstruct = NotedSourceConstruct.DelayOrQuoteOrRun then
+                            false
+                        else
+                            vref.MakesNoCriticalTailcalls
                     let hasStructObjArg = (boxity = AsValue) && takesInstanceArg
 
                     CanTailcall(
@@ -5592,7 +5599,13 @@ and GenILCall
 
     let boxity = (if valu then AsValue else AsObject)
     let mustGenerateUnitAfterCall = isNil returnTys
-    let makesNoCriticalTailcalls = (newobj || not virt) // Don't tailcall for 'newobj', or 'call' to IL code
+    // Keep the default conservative behavior for IL 'call', except for CE-final calls
+    // (Delay/Quote/Run), where not tailcalling can lead to stack growth in recursive CEs.
+    let makesNoCriticalTailcalls =
+        if m.NotedSourceConstruct = NotedSourceConstruct.DelayOrQuoteOrRun then
+            false
+        else
+            (newobj || not virt) // Don't tailcall for 'newobj', or 'call' to IL code
     let hasStructObjArg = valu && ilMethRef.CallingConv.IsInstance
 
     let tail =
