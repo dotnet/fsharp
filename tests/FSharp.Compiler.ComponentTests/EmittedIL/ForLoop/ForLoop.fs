@@ -222,3 +222,135 @@ module ForLoop =
         compilation
         |> getCompilation
         |> verifyCompilation
+
+    [<Fact>]
+    let ``ForEach over arrays uses index-based IL`` () =
+        let result =
+            FSharp """
+module Test
+
+let sumArray (xs: int[]) =
+    let mutable acc = 0
+    for x in xs do
+        acc <- acc + x
+    acc
+"""
+            |> asLibrary
+            |> withOptimize
+            |> compile
+            |> shouldSucceed
+            |> verifyILContains [
+                "ldelem.i4"
+                "ldlen"
+            ]
+            |> shouldSucceed
+
+        result |> verifyILNotPresent [
+            "GetEnumerator()"
+        ]
+
+    [<Fact>]
+    let ``ForEach over lists uses list traversal IL`` () =
+        let result =
+            FSharp """
+module Test
+
+let sumList (xs: int list) =
+    let mutable acc = 0
+    for x in xs do
+        acc <- acc + x
+    acc
+"""
+            |> asLibrary
+            |> withOptimize
+            |> compile
+            |> shouldSucceed
+            |> verifyILContains [
+                "FSharpList`1<int32>::get_TailOrNull()"
+                "FSharpList`1<int32>::get_HeadOrDefault()"
+            ]
+            |> shouldSucceed
+
+        result |> verifyILNotPresent [
+            "GetEnumerator()"
+        ]
+
+    [<Fact>]
+    let ``ForEach over ranges uses integer loop IL`` () =
+        let result =
+            FSharp """
+module Test
+
+let sumRange start finish =
+    let mutable acc = 0
+    for x in start .. finish do
+        acc <- acc + x
+    acc
+"""
+            |> asLibrary
+            |> withOptimize
+            |> compile
+            |> shouldSucceed
+            |> verifyILContains [
+                "ldc.i4.1"
+                "add"
+            ]
+            |> shouldSucceed
+
+        result |> verifyILNotPresent [
+            "GetEnumerator()"
+        ]
+
+    [<Fact>]
+    let ``ForEach over sequences uses enumerator IL`` () =
+        FSharp """
+module Test
+
+let sumSeq (xs: int seq) =
+    let mutable acc = 0
+    for x in xs do
+        acc <- acc + x
+    acc
+"""
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILContains [
+            "System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()"
+            "System.Collections.IEnumerator::MoveNext()"
+            "System.IDisposable::Dispose()"
+        ]
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ForEach over custom IEnumerable uses interface enumerator IL`` () =
+        FSharp """
+module Test
+
+open System.Collections
+open System.Collections.Generic
+
+type CustomEnumerable(items: int[]) =
+    interface IEnumerable<int> with
+        member _.GetEnumerator() = (items :> IEnumerable<int>).GetEnumerator()
+
+    interface IEnumerable with
+        member _.GetEnumerator() = (items :> IEnumerable).GetEnumerator()
+
+let sumCustom (xs: CustomEnumerable) =
+    let mutable acc = 0
+    for x in xs do
+        acc <- acc + x
+    acc
+"""
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILContains [
+            "System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()"
+            "System.Collections.IEnumerator::MoveNext()"
+            "System.IDisposable::Dispose()"
+        ]
+        |> shouldSucceed
