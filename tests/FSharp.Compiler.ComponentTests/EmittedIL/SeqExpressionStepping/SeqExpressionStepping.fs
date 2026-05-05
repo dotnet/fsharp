@@ -68,3 +68,10 @@ module SeqExpressionStepping =
         |> getCompilation
         |> verifyCompilation
 #endif
+
+    // SOURCE=SeqExpressionSteppingTest08.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd SeqExpressionSteppingTest8.exe"	# SeqExpressionSteppingTest8.fs -
+    [<Theory; FileInlineData("SeqExpressionSteppingTest08.fs", Realsig=BooleanOptions.Both)>]
+    let ``SeqExpressionSteppingTest08_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation

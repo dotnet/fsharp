@@ -74,3 +74,12 @@ let intArr1 = [| yield! seq {1..100}
                  yield! seq {1..100} |]
 
 Array.ofSeq (seq {1..10})
+
+let implicitYieldValues = seq { 1; 2; 3 }
+let doubledWithForArrow xs = seq { for x in xs -> x * 2 }
+
+if implicitYieldValues |> Seq.toList <> [1; 2; 3] then
+    failwith "Unexpected sequence literal result"
+
+if doubledWithForArrow [1; 2; 3] |> Seq.toList <> [2; 4; 6] then
+    failwith "Unexpected for-arrow sequence result"
