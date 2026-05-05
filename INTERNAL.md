@@ -119,3 +119,5 @@ Per-package audit saved to `Q:\source\fsharp\refs\fsharp-15.9-package-inventory.
 ## Status (running log — append, do not edit)
 
 - 2026-05-05: Branch created from tag SHA. C1 feed audit baseline committed (103 unique packages). C5 verified (14 locales × all components). C11 swixproj driver chain documented (build-everything.proj → fsharp-setup-build.proj for IDE/Dependencies/Vsix.Resources; build-insertion.proj for SDK/Compiler/Compiler.Resources; vsmanproj for merge). global.json, eng/TSAConfig.gdntsa, eng/config/guardian/.gdnsuppress added.
+
+- 2026-05-05 (cont): NuGet.Config fixed (added nuget.org per package availability probe). Authored scripts/{verify-vsix-targets.ps1, compare-insertion-vs-rtm.ps1, local-validate.ps1, LOCAL_VALIDATION.md}. Package availability probe saved at refs/fsharp-15.9-package-availability.csv: 16/20 critical packages on nuget.org, 4 require authenticated dnceng feeds (Microsoft.DotNet.BuildTools 1.0.27-prerelease-01001-04, RoslynTools.SignTool 1.0.0-beta2-dev3, MicroBuild.Plugins.SwixBuild 1.0.147, Microsoft.CodeAnalysis 2.9.0-beta8-63208-01) - resolution deferred to first NuGetAuthenticate@1 run in B11 preflight.
