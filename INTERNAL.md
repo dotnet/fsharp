@@ -123,3 +123,28 @@ Per-package audit saved to `Q:\source\fsharp\refs\fsharp-15.9-package-inventory.
 - 2026-05-05 (cont): NuGet.Config fixed (added nuget.org per package availability probe). Authored scripts/{verify-vsix-targets.ps1, compare-insertion-vs-rtm.ps1, local-validate.ps1, LOCAL_VALIDATION.md}. Package availability probe saved at refs/fsharp-15.9-package-availability.csv: 16/20 critical packages on nuget.org, 4 require authenticated dnceng feeds (Microsoft.DotNet.BuildTools 1.0.27-prerelease-01001-04, RoslynTools.SignTool 1.0.0-beta2-dev3, MicroBuild.Plugins.SwixBuild 1.0.147, Microsoft.CodeAnalysis 2.9.0-beta8-63208-01) - resolution deferred to first NuGetAuthenticate@1 run in B11 preflight.
 
 - 2026-05-05 (cont, after Copilot crash): PIVOTED from Roslyn-style standalone yaml to F# main eng/ infra port. Pipeline 499 expects Arcade infrastructure (eng/common/, etc.); the Roslyn-style approach would have required cloning a separate dnceng pipeline (which user does not have access to). Keeping pipeline 499 means our azure-pipelines.yml is auto-detected on its release/* trigger. 227 files committed (commit 9cfaa4a9a): full eng/* port from main, root project files, NuGet.config, global.json, all overrides for 15.9 (FSharpReleaseBranchName=release/dev15.9.x, VSInsertionTargetBranchName=rel/d15.9, F# 4.5.0.0 versions, Arcade pin = 10.0.0-beta.26222.2 matching global.json msbuild-sdks). B10 build.cmd patch retained.
+
+## Session 2 (2026-05-05 cont'd, after pivot to pipeline 499)
+
+### G1 attempt #1 results
+
+Ran `Build.cmd -configuration Debug`. Arcade SDK 10.0.0-beta.26222.2 successfully restored from dotnet-eng feed. Then 4 failure classes surfaced — all expected legacy-vs-modern infra mismatches:
+
+1. **eng/Build.ps1 hardcoded `VisualFSharp.slnx` and `FSharp.slnx`** — modern slnx format. 15.9 has only `.sln`. Patched eng/Build.ps1 to use `.sln`.
+
+2. **`eng/restore/optimizationData.targets` missing** — Directory.Build.targets imports it from F# main convention. Imported from main.
+
+3. **`packages/XliffTasks.0.2.0-beta-000081/build/XliffTasks.props` not found** — `src/FSharpSource.Settings.targets:226` imports XliffTasks via the legacy `packages/` path. 15.9 source uses packages.config style restore which Arcade's solution-level restore does not invoke. **TODO**: either (a) add a legacy-packages-restore step to the pipeline (similar to what 15.9 `init-tools.cmd` did) before main solution restore, or (b) modify the FSharpSource.Settings.targets import to be conditional on file existence + fall back to a no-op.
+
+4. **`Proto/net40/bin/Microsoft.FSharp.Targets` not found** — circular: vsintegration/tests/MockTypeProviders depend on the proto compiler output, but proto compiler is built later in the pipeline. Symptom of (3) — once XliffTasks loads, proto compiler builds first, then this resolves.
+
+### Next steps (next session)
+
+- Solve (3): the cleanest path is to restore `packages.config`-style packages BEFORE Arcade solution restore. Look at how F# `release/dev17.x` branches handle the transition (they had to bridge this same gap).
+- Re-run G1, expect proto compiler to build successfully, and Microsoft.FSharp.Targets to materialize.
+- Patches retained: eng/Build.ps1 (slnx -> sln), Build.cmd untouched (case-collision result; same content as before since main's Build.cmd is identical to legacy build.cmd shim).
+
+### Files modified after pivot commit
+
+- `eng/Build.ps1`: `slnx` -> `sln` (3 instances)
+- `eng/restore/optimizationData.targets`: imported from main
