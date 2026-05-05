@@ -42,6 +42,10 @@ safe-outputs:
     - "⚠️ Scope-Review-Needed"
     max: 30
     target: "*"
+  add-comment:
+    max: 10
+    target: "*"
+    hide-older-comments: true
 ---
 
 # PR Tooling Safety Check
@@ -71,6 +75,18 @@ You read PR diffs as text via the GitHub API. You have no shell, no file system,
 5. **Label:**
    - Flagged → add all applicable `⚠️` labels
    - Clean → add `AI-Tooling-Check-Scanned-Clean`
+6. **Comment when flagged.** If any `⚠️` label was added, post one short comment on the PR. No prose — just the facts:
+   ```
+   🔍 Tooling Safety Check — <label1>, <label2>
+   <one line per label: which file(s) triggered it and why>
+   ```
+   Example:
+   ```
+   🔍 Tooling Safety Check — Affects-Build-Infra, Affects-Restore
+   Build-Infra: modifies eng/targets/Packaging.targets (MSBuild target)
+   Restore: adds PackageReference with build assets in src/Foo/Foo.fsproj
+   ```
+   No comment for clean or bypassed PRs. `hide-older-comments: true` collapses stale comments from previous scans.
 
 ## Categories
 
