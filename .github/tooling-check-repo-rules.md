@@ -2,22 +2,11 @@
 # Read by the labelops-pr-security-scan workflow at runtime.
 # Edit this file to customize for your repo.
 
-## Trusted authors
-
-Apply `AI-Tooling-Check-Bypassed` without reading the diff:
-- T-Gro
-- abonie
-- dotnet-bot
-- dotnet-maestro
-- dotnet-maestro[bot]
-- copilot
-- copilot-swe-agent
-- github-actions
-- github-actions[bot]
-
 ## Non-fork bypass
 
-If the PR's head repository is `dotnet/fsharp` (not a fork), apply `AI-Tooling-Check-Bypassed`. Full scans are for fork PRs where the contributor has no repo permissions.
+If the PR's head repository is `dotnet/fsharp` (not a fork), apply `AI-Tooling-Check-Bypassed`. This means the author has write access to the repo. Full scans are only for **fork PRs** where the contributor has no repo permissions.
+
+Compare the `headRepository.owner.login` and `headRepository.name` fields from the GitHub API — not the author's username, not the PR title/body.
 
 ## Repo-specific categories
 
