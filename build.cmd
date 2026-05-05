@@ -211,7 +211,11 @@ if /i "%ARG%" == "microbuild" (
     set BUILD_CORECLR=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
-    set BUILD_NUGET=1
+    REM B10 (15.9 servicing): NUPKG production explicitly disabled. Per Constraint 4 in plan.md,
+    REM F# 15.9 servicing produces VSIX-only insertion payload. FSharp.Core 4.5.2 already shipped
+    REM to nuget.org in Oct 2018; no republish. To re-enable nupkg production for any reason,
+    REM remove the comment marker below AND remove the `REM ` prefix from the line.
+    REM set BUILD_NUGET=1
     set BUILD_MICROBUILD=1
 
     set TEST_NET40_COMPILERUNIT_SUITE=1
