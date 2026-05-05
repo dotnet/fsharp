@@ -164,12 +164,22 @@ These properties come from the gh-aw platform configuration in the frontmatter a
 
 ## Methodology
 
+**What drives the categories:**
+
 | Source | How it's used |
 |--------|--------------|
-| [Microsoft — MSBuild Security Best Practices](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-security-best-practices) | Drives Affects-Build-Infra and Affects-Restore categories: `.props`/`.targets` auto-import, NuGet `build`/`analyzers` assets, `<UsingTask>`/`<Exec>` |
+| [Microsoft — MSBuild Security Best Practices](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-security-best-practices) | Drives Affects-Build-Infra and Affects-Restore: `.props`/`.targets` auto-import, NuGet `build`/`analyzers` assets, `<UsingTask>`/`<Exec>` |
 | [MITRE ATT&CK T1127.001](https://attack.mitre.org/techniques/T1127/001/) | Drives `<UsingTask TaskFactory="CodeTaskFactory">` detection in Affects-Build-Infra |
-| [OWASP LLM Top 10 2025 — LLM01](https://genai.owasp.org/llm-top-10/) | Threat model for this workflow: agent reads untrusted PR diffs (indirect prompt injection surface) |
 | [Gen Digital SAGE](https://github.com/gendigitalinc/sage/blob/main/threats/prompt-injection.yaml) | All 9 prompt injection pattern families in Affects-Agent-Config are from SAGE CLT-PI-001–081 |
+
+**Threat model for the scanner itself:**
+
+| Source | What risk it addresses |
+|--------|----------------------|
+| [OWASP LLM Top 10 — LLM01](https://genai.owasp.org/llm-top-10/) | This agent reads untrusted PR diffs — an indirect prompt injection surface. Mitigated by having no dangerous tools. |
+| [OWASP LLM Top 10 — LLM06](https://genai.owasp.org/llm-top-10/) | Excessive agency risk. Mitigated: agent exposes only `pull_requests` (read) + `add-labels` (fixed allowlist). |
+| [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) | Covers goal hijacking (→ Scope-Review-Needed), tool abuse, and cascading failures. Acknowledged risks: wrong labels could influence maintainer behavior or downstream automation. |
+| [OpenAI — Safety in Building Agents](https://developers.openai.com/api/docs/guides/agent-builder-safety) | Recommends structured outputs over free-form text to limit injection. gh-aw provides this via `safe-outputs` with a fixed label allowlist. |
 
 ## Setup (one-time label creation)
 
