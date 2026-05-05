@@ -9,7 +9,37 @@ open FSharp.Test.Compiler
 module SequenceIteration =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/SequenceIteration)
-    
+
+    let verifyCompileAndRun compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:3370"]
+        |> compileExeAndRun
+
+    [<Theory; FileInlineData("IEnumerableIteration01.fs")>]
+    let ``IEnumerableIteration01_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asFsx
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("IEnumerableIterationGenericDisposal01.fs")>]
+    let ``IEnumerableIterationGenericDisposal01_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asFsx
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("E_BadIEnumerable01.fs")>]
+    let ``E_BadIEnumerable01_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asFsx
+        |> typecheck
+        |> shouldFail
+
     [<Theory; FileInlineData("W_IncompleteMatchFor01.fs")>]
     let ``W_IncompleteMatchFor01_fs`` compilation =
         compilation
@@ -26,4 +56,3 @@ module SequenceIteration =
             (Warning 25, Line 22, Col 9, Line 22, Col 17, "Incomplete pattern matches on this expression. For example, the value 'None' may indicate a case not covered by the pattern(s).")
             (Warning 25, Line 27, Col 20, Line 27, Col 28, "Incomplete pattern matches on this expression. For example, the value 'None' may indicate a case not covered by the pattern(s).")
         ]
-
