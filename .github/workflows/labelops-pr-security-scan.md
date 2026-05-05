@@ -28,7 +28,8 @@ safe-outputs:
     report-as-issue: false
   add-labels:
     allowed:
-    - "AI-Tooling-Check-Clean"
+    - "AI-Tooling-Check-Scanned-Clean"
+    - "AI-Tooling-Check-Bypassed"
     - "⚠️ Affects-Build-Infra"
     - "⚠️ Affects-Compiler-Output"
     - "⚠️ Affects-Bootstrap"
@@ -53,20 +54,20 @@ You read PR diffs as text via the GitHub API. You have no shell, no file system,
 
 1. **You have no bash, no checkout, no file system.** Use only GitHub MCP tools to read PR metadata, file lists, and diffs.
 2. **Never approve, merge, close, or reopen a PR.**
-3. **Skip PRs that already have `AI-Tooling-Check-Clean` or any `⚠️` label.**
-4. **Trusted authors** (`T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `copilot-swe-agent`, `github-actions`, `github-actions[bot]`) — label `AI-Tooling-Check-Clean` immediately without reading the diff.
-5. **Non-fork bypass.** If the PR's head repository is `dotnet/fsharp` (not a fork), apply `AI-Tooling-Check-Clean` without full diff analysis. The full scan is for **fork PRs** where the contributor has no repo permissions.
+3. **Stale-label check.** Skip a PR only if it already has a tooling-check label (`AI-Tooling-Check-*` or any `⚠️ Affects-*`) AND the PR's current `headRefOid` has not changed since the label was applied. If the PR has new commits (head SHA changed), it needs re-scanning — ignore existing labels and re-classify from scratch.
+4. **Trusted authors** (`T-Gro`, `abonie`, `dotnet-bot`, `dotnet-maestro`, `dotnet-maestro[bot]`, `copilot`, `copilot-swe-agent`, `github-actions`, `github-actions[bot]`) — label `AI-Tooling-Check-Bypassed` immediately without reading the diff.
+5. **Non-fork bypass.** If the PR's head repository is `dotnet/fsharp` (not a fork), apply `AI-Tooling-Check-Bypassed` without full diff analysis. The full scan is for **fork PRs** where the contributor has no repo permissions.
 6. **False positives > false negatives** for scanned fork PRs. When unsure, flag it.
 
 ## Process
 
-1. **List open PRs** via GitHub MCP. Skip PRs already carrying any tooling-check label.
-2. **Trusted authors / non-fork PRs** → `AI-Tooling-Check-Clean` immediately.
+1. **List open PRs** via GitHub MCP. For each PR, check if it already has a tooling-check label. If yes, compare the PR's current `headRefOid` against when the label was last applied — if the head changed, the PR needs re-scanning.
+2. **Trusted authors / non-fork PRs** → `AI-Tooling-Check-Bypassed` immediately.
 3. **For each remaining PR** (fork PRs from untrusted authors), read the file list and diff via MCP (`get_files`, `get_diff`). Read the title and body.
 4. **Classify** into categories. A PR can trigger multiple.
 5. **Label:**
    - Flagged → add all applicable `⚠️` labels
-   - Clean → add `AI-Tooling-Check-Clean`
+   - Clean → add `AI-Tooling-Check-Scanned-Clean`
 
 ## Categories
 
@@ -150,8 +151,11 @@ PR modifies test build configuration or test infrastructure that spawns external
 | What you see on a PR | What it means |
 |---|---|
 | **No label** | Scan hasn't run yet. Treat as unscanned. |
-| **`AI-Tooling-Check-Clean`** | Scanned — nothing interesting. Trusted author, non-fork, or clean diff. |
-| **One or more `⚠️ Affects-*`** | Scanned — PR touches those phases. Review with care. |
+| **`AI-Tooling-Check-Bypassed`** | Trusted author or non-fork PR. Not diff-analyzed. |
+| **`AI-Tooling-Check-Scanned-Clean`** | Diff was analyzed — no interesting infrastructure files found. |
+| **One or more `⚠️ Affects-*`** | Diff was analyzed — PR touches those phases. Review with care. |
+
+Labels are re-evaluated when the PR's head SHA changes (new commits pushed).
 
 ## Why this workflow is safe
 
@@ -184,8 +188,10 @@ These properties come from the gh-aw platform configuration in the frontmatter a
 ## Setup (one-time label creation)
 
 ```bash
-gh label create "AI-Tooling-Check-Clean" --repo dotnet/fsharp --color 0e8a16 \
-  --description "Tooling check: no interesting infrastructure files touched"
+gh label create "AI-Tooling-Check-Scanned-Clean" --repo dotnet/fsharp --color 0e8a16 \
+  --description "Tooling check: diff analyzed, no interesting infrastructure files"
+gh label create "AI-Tooling-Check-Bypassed" --repo dotnet/fsharp --color c5def5 \
+  --description "Tooling check: trusted author or non-fork, not diff-analyzed"
 gh label create "⚠️ Affects-Build-Infra" --repo dotnet/fsharp --color d93f0b \
   --description "Tooling check: PR touches build infrastructure"
 gh label create "⚠️ Affects-Restore" --repo dotnet/fsharp --color d93f0b \
@@ -194,12 +200,12 @@ gh label create "⚠️ Affects-Bootstrap" --repo dotnet/fsharp --color b60205 \
   --description "Tooling check: PR touches compiler bootstrap chain"
 gh label create "⚠️ Affects-Compiler-Output" --repo dotnet/fsharp --color d93f0b \
   --description "Tooling check: PR touches IL emission or codegen"
-gh label create "⚠️ Affects-Test-Infra" --repo dotnet/fsharp --color d93f0b \
-  --description "Tooling check: PR touches test framework infrastructure"
 gh label create "⚠️ Affects-Design-Time" --repo dotnet/fsharp --color d93f0b \
   --description "Tooling check: PR touches type providers or dependency manager"
-gh label create "⚠️ Prompt-Injection-Risk" --repo dotnet/fsharp --color d93f0b \
-  --description "Tooling check: PR modifies AI agent instructions or contains injection patterns"
+gh label create "⚠️ Affects-Test-Tooling" --repo dotnet/fsharp --color d93f0b \
+  --description "Tooling check: PR touches test framework infrastructure"
+gh label create "⚠️ Affects-Agent-Config" --repo dotnet/fsharp --color d93f0b \
+  --description "Tooling check: PR modifies AI agent instructions or workflows"
 gh label create "⚠️ Scope-Review-Needed" --repo dotnet/fsharp --color fbca04 \
   --description "Tooling check: PR scope exceeds title/description"
 ```
