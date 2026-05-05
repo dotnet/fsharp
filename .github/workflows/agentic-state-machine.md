@@ -52,8 +52,8 @@ The output must be useful to a maintainer who has never read any workflow file. 
 <rules>
 1. Read ALL `.md` files in `.github/workflows/` (skip this file and the `docs/` subfolder).
 2. Also read `.github/tooling-check-repo-rules.md` if it exists.
-3. Check if `.github/workflows/docs/state-machine.md` already exists. If it does, read it and compare the workflow source file list + their sizes against what's listed at the bottom of the existing file (a `<!-- sources: ... -->` marker). If nothing changed, emit `noop` and exit — no update needed.
-4. Produce clear, screen-wide diagrams. Split by dimension — do NOT cram everything into one diagram.
+3. Check if `.github/workflows/docs/state-machine.md` already exists. If it does, read it and compare the workflow source file list + their sizes against the `<!-- sources: ... -->` marker at the bottom. If nothing changed, emit `noop` and exit. If sources changed, read the existing file — use it as a starting point, update only the sections affected by the change. Produce a minimal diff.
+4. Produce clear, screen-wide diagrams. Split by dimension. Every transition must show which actor performs it.
 </rules>
 
 <process>
@@ -65,38 +65,49 @@ The output must be useful to a maintainer who has never read any workflow file. 
    - Label operations (which labels it checks as conditions, adds, or removes)
    - Handovers (dispatches to other workflows, creates PRs that other workflows process)
    - Filters (author, fork status, draft status, label presence, head SHA)
-3. Write `.github/workflows/docs/state-machine.md` with these sections:
+3. If `.github/workflows/docs/state-machine.md` already exists, read it. Use it as a starting point — update incrementally rather than rewriting from scratch. This keeps diffs small and reviewable. Only rewrite sections where the underlying workflow changed.
+4. Write or update `.github/workflows/docs/state-machine.md` with these sections:
 
 ### Section 1: Workflow Overview Table
 
 | Workflow | Trigger | Reads | Writes | Key Labels |
 
-### Section 2: Issue Lifecycle Diagram
+### Section 2: Actors
 
-A `stateDiagram-v2` showing what happens to issues from creation to resolution. Use composite states for issue types (regression, feature, bug). Show which workflow handles each transition.
+Define the actors that appear in the diagrams. Every edge and node should make clear WHO does it:
 
-### Section 3: PR Lifecycle Diagram
+- **👤 Human contributor** — opens issues, creates fork PRs, pushes commits, writes PR descriptions
+- **👤 Human maintainer** — reviews PRs, applies labels manually, merges, closes issues, runs workflow_dispatch
+- **🤖 Agent: \<workflow-name\>** — each agentic workflow is a named agent (e.g., 🤖 repo-assist, 🤖 regression-pr-shepherd)
+- **⚙️ CI** — GitHub Actions CI pipeline: runs builds, tests, produces check statuses (success/failure/pending). CI is not an agent but is a critical actor — it produces the signals that agents react to.
+- **⏰ Scheduler** — cron trigger that initiates agent runs
+
+### Section 3: Issue Lifecycle Diagram
+
+A `stateDiagram-v2` showing what happens to issues from creation to resolution. Use composite states for issue types (regression, feature, bug). Show which actor handles each transition. Include CI check results where relevant.
+
+### Section 4: PR Lifecycle Diagram
 
 A `stateDiagram-v2` with composite states for PR types:
-- Fork PRs (scanned, labeled, maintained)
-- Non-fork PRs (bypassed)
-- Regression-test PRs (created by automation)
+- **Fork PRs** (scanned → labeled → CI runs → maintained → merged)
+- **Non-fork PRs** (bypassed scan → CI runs → merged)
+- **Regression-test PRs** (created by 🤖 repo-assist → CI validates → 🤖 regression-pr-shepherd maintains)
 
-Show: opened → scanned → labeled → CI-maintained → conflict-resolved → merged. Label each edge with the workflow that performs it.
+Show the full cycle including CI: opened → scanned → CI runs → CI passes/fails → agent reacts → human merges. Label each edge with the actor (👤/🤖/⚙️/⏰).
 
-### Section 4: Label Dictionary
+### Section 5: Label Dictionary
 
-| Label | Applied by | Read/checked by | Meaning |
+| Label | Applied by (actor) | Read/checked by (actor) | Meaning |
 
-Group by: workflow labels, status labels, category labels.
+Group by: scan labels, maintenance labels, status labels.
 
-### Section 5: Handover Map
+### Section 6: Handover Map
 
-| From workflow | To workflow | Mechanism | When |
+| From (actor) | To (actor) | Mechanism | When |
 
-Show dispatch-workflow, PR-creation, label-gating relationships.
+Include human → agent handovers (e.g., maintainer applies label → agent starts processing) and agent → agent handovers (dispatch-workflow, PR-creation, label-gating).
 
-### Section 6: Source Fingerprint
+### Section 7: Source Fingerprint
 
 At the bottom, emit an HTML comment listing the source files and their sizes:
 ```
@@ -112,39 +123,51 @@ Use Mermaid `stateDiagram-v2` for lifecycle diagrams. Key techniques:
 
 - **Composite states** for dimensions: `state "Fork PRs" as ForkPR { ... }`
 - **Choice nodes** for decision points: `state check <<choice>>`
-- **Notes** for context: `note right of PRScanned: tooling-check workflow`
+- **Notes** for context: `note right of PRScanned: 🤖 tooling-check`
 - **Direction**: use `direction LR` for wide diagrams that fill the screen
-- **Styling**: use `classDef` to color-code by workflow (e.g., blue = repo-assist, orange = labelops)
 - **Keep it readable**: max ~15 states per diagram. If more, split into sub-diagrams.
-- **Label edges** with the workflow name and trigger: `PROpened --> PRScanned: tooling-check (hourly)`
+- **Actor prefixes on edges**: always show who performs the transition:
+  - `👤 contributor opens` / `👤 maintainer merges` / `👤 maintainer applies label`
+  - `🤖 repo-assist (12h)` / `🤖 tooling-check (1h)` / `🤖 regression-pr-shepherd (4h)`
+  - `⚙️ CI passes` / `⚙️ CI fails`
+  - `⏰ schedule triggers`
+- **CI is always present**: every PR goes through CI. Show CI check results as states or transitions — never skip the build/test step.
 
 For the label dictionary and handover map, use markdown tables — not diagrams.
 </diagram-guidelines>
 
 <example>
-Example of a well-structured Issue Lifecycle diagram:
+Example of a well-structured PR Lifecycle diagram with actors:
 
 ```mermaid
 stateDiagram-v2
     direction LR
     
-    [*] --> Opened: issue created
+    [*] --> Opened: 👤 contributor pushes fork PR
     
-    state "Triage" as Triage {
-        Opened --> Classified: repo-assist (12h schedule)
-        Classified --> RegressionDetected: contains repro steps
-        Classified --> NeedsInfo: insufficient info
+    state "Tooling Scan" as Scan {
+        Opened --> Scanned: 🤖 tooling-check (⏰ 1h)
+        Scanned --> Labeled: 🤖 applies ⚠️ labels
+        Scanned --> Clean: 🤖 applies Scanned-Clean
     }
     
-    state "Regression Path" as Regression {
-        RegressionDetected --> TestPRCreated: repo-assist creates PR
-        TestPRCreated --> TestPRGreen: CI passes
-        TestPRGreen --> FixPRCreated: regression-pr-shepherd
+    state "CI" as CI {
+        Labeled --> CIRunning: ⚙️ CI triggered by push
+        Clean --> CIRunning: ⚙️ CI triggered by push
+        CIRunning --> CIPassed: ⚙️ all checks green
+        CIRunning --> CIFailed: ⚙️ check failed
     }
     
-    NeedsInfo --> [*]: closed (stale)
-    FixPRCreated --> [*]: fix merged, issue closed
+    state "Maintenance" as Maint {
+        CIFailed --> CIFixed: 🤖 labelops (⏰ 3h) small fix
+        CIFailed --> Escalated: 🤖 labelops adds AI-needs-CI-fix-input
+        CIFailed --> FlakeDispatched: 🤖 labelops dispatches flake-fix
+    }
+    
+    CIPassed --> Reviewed: 👤 maintainer reviews
+    CIFixed --> CIRunning: ⚙️ CI re-triggered
+    Reviewed --> [*]: 👤 maintainer merges
 ```
 
-Adapt to the actual workflows found. This is just a structural example.
+Adapt to the actual workflows found. This is just a structural example showing actors.
 </example>
