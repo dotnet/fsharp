@@ -787,6 +787,11 @@
         <target state="translated">Der „if“-Ausdruck muss ein Tupel mit der Länge {0} vom Typ\n    {1}    \nzurückgeben, um die Kontexttypanforderungen zu erfüllen. Derzeit wird ein Tupel mit der Länge {2} vom Typ\n    {3}    \nzurückgegeben.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilCustomAttrInvalidArrayElemType">
+        <source>The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</source>
+        <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">Unbekannter Debugpunkt „{0}“. Die verfügbaren Debugpunkte sind „{1}“.</target>
