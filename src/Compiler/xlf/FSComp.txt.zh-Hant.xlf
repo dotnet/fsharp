@@ -787,6 +787,11 @@
         <target state="translated">'if' 運算式必須傳回類型為\n    {1}    \n的元組長度{0}，才能滿足內容類型需求。目前傳回的是類型為\n    {3}    \n的元組長度 {2}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilCustomAttrInvalidArrayElemType">
+        <source>The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</source>
+        <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">未知的偵錯點 '{0}'。可用的偵錯點為 '{1}'。</target>
