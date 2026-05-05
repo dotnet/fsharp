@@ -566,17 +566,17 @@ try {
         $originalSignValue = $sign
         $originalPublishValue = $publish
         if ($msbuildEngine -eq "dotnet") {
-            # Building FSharp.slnx and VisualFSharp.slnx with .NET Core MSBuild
+            # Building FSharp.sln and VisualFSharp.sln with .NET Core MSBuild
             # don't produce any artifacts to sign. Skip signing in this case.
             $sign = $False
         }
         if ($noVisualStudio) {
-            BuildSolution "FSharp.slnx" $False
+            BuildSolution "FSharp.sln" $False
         }
         else {
             # vsixes do not count as publishing artifacts from Arcade perspective, and arcade publish.proj is failing when it encounters 0 items to publish.
             $publish = $False
-            BuildSolution "VisualFSharp.slnx" $False
+            BuildSolution "VisualFSharp.sln" $False
         }
         $sign = $originalSignValue
         $publish = $originalPublishValue
@@ -597,7 +597,7 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:coreclrTargetFramework
+        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework
     }
 
     if ($testDesktop) {
@@ -619,7 +619,7 @@ try {
             }
             if ($matchCount -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
         } else {
-            TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:desktopTargetFramework
+            TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
         }
     }
 
