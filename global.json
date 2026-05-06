@@ -4,5 +4,9 @@
   "sdk": {
     "version": "2.1.526",
     "rollForward": "minor"
+  },
+  "//-msbuild-sdks": "Required by VS 2017 NuGetSdkResolver to find Microsoft.NET.Sdk. Without this, vsintegration .csproj files (Vsix, ItemTemplates, PEVerify) fail with 'The NuGetSdkResolver did not resolve this SDK because there was no version specified'. The version string here matches what dnceng myget-legacy hosts.",
+  "msbuild-sdks": {
+    "Microsoft.NET.Sdk": "2.1.300"
   }
 }

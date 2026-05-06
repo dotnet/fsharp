@@ -300,3 +300,90 @@ end attempted in Session 2 (which had unbounded layered failures).
   - Internal symbol publish (TeamServices)
 - **L6 (VS insertion)**: draft PR in DevDiv `rel/d15.9` via Insertion.* variables
   in pipeline. DevDiv DDRITs gate the merge.
+
+## Session 5 (2026-05-06, G4 microbuild attempt — partial blocker honest report)
+
+### G4 ran further but hit 24 errors
+
+Started detached background `build.cmd microbuild release /p:PB_SIGNTYPE=test /p:PB_SKIPTESTS=true`.
+Build.cmd reached the vsintegration build phase before failing with two distinct error classes:
+
+#### Class 1: MSB4247 "Could not load SDK Resolver"
+
+VS 2017 install is missing the NuGet SDK Resolver DLL at:
+`C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\NuGet\Microsoft.Build.NuGetSdkResolver.dll`
+
+But the ORPHAN XML manifest exists at:
+`C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\SdkResolvers\Microsoft.Build.NuGetSdkResolver\Microsoft.Build.NuGetSdkResolver.xml`
+
+The user's VS 2017 install was apparently done WITHOUT the "NuGet package manager" component.
+
+**Workaround applied (requires admin elevation, applied via UAC prompt)**:
+1. Renamed orphan XML to `.xml.bak.f15.9` (one-time)
+2. Removed empty resolver folder `...SdkResolvers\Microsoft.Build.NuGetSdkResolver\`
+3. `global.json` extended with `msbuild-sdks: { Microsoft.NET.Sdk: 2.1.300 }` so MSBuild's DefaultSdkResolver finds the SDK via `MSBuildSDKsPath` env var fallback
+
+⚠️ **WARNING**: VS 2017 install state is now non-pristine on this dev box. Pipeline 499 image will NOT have these admin-applied changes. Two options for CI:
+- (a) Pipeline image rebuild with full VS 2017 component selection
+- (b) Have azure-pipelines-official.yml first step apply the same admin-elevated cleanup
+
+#### Class 2: error MSB4019 Microsoft.CSharp.Core.targets not found
+
+`C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\Roslyn\Microsoft.CSharp.Core.targets` not found. VS 2017 also missing the C# Roslyn integration component. Same-pattern issue as Class 1.
+
+**Workaround applied**: NONE yet. Each fix reveals more missing components (NuGet → C# Roslyn → likely more after that). This is a rabbit hole on the user's incomplete VS 2017 install.
+
+### Strategic decision: STOP local microbuild, escalate to CI
+
+Local microbuild on this dev box is **blocked** due to incomplete VS 2017 install. Continuing to patch missing components is unbounded work. The pipeline 499 1ES agent image (`windows.vs2017.amd64` per plan §3) supposedly has a complete VS 2017 install. Validating microbuild needs CI.
+
+### What G4 DID prove on this dev box (positive)
+
+- `build.cmd microbuild release` correctly invokes init-tools.cmd which downloads:
+  - `dotnet 1.0.0-preview3-003886` (the legacy CLI host)
+  - `dotnet 2.1.300-rtm-008707` (the legacy CLI tools)
+  - `Microsoft.DotNet.BuildTools 1.0.27-prerelease-01001-04` (from dnceng myget-legacy mirror, NOT dead myget.org)
+- MicroBuild.Core 0.2.0 + MicroBuild.Core.Sentinel 1.0.0 packages restore successfully
+- Proto + real F# compiler chain builds in microbuild mode same as in debug mode
+- The legacy net40 fsproj projects all build (FSharp.Core, FSharp.Build, FSharp.Compiler.Private, Fsc, Fsi, FsiAnyCpu)
+
+### What G4 DID NOT validate
+
+- Signing chain (test cert): never reached
+- VSIX creation (swixproj files): never reached
+- Insertion .vsman generation: never reached
+- TestSign step output integrity: never reached
+- Any vsintegration projects (Vsix\VisualFSharpFull, ItemTemplates, etc.): all failed
+
+### Updated honest blocker table
+
+| Blocker | Class | Resolution path | Owner |
+|---|---|---|---|
+| VS 2017 install missing NuGet workload | LOCAL ENV | re-run installer with NuGet workload OR pipeline 499 has it | User locally / pipeline image team |
+| VS 2017 install missing C# Roslyn workload | LOCAL ENV | same as above | same |
+| VS 2017 install probably missing other components | LOCAL ENV | UNKNOWN how many | discovered as more attempts run |
+| `Microsoft.Build.NuGetSdkResolver.dll` orphan manifest | LOCAL ENV | applied admin workaround on this dev box | non-portable; pipeline must replicate |
+| Pipeline 499 yaml shape unknown for our branch | CI | I cannot inspect 499 admin config | requires admin/owner I do not have |
+| FSharp.Core.UnitTests/MicrosoftTestingPlatformEntryPoint.fs FS0222 | TEST | Modern Microsoft.Testing.Platform pkg got injected; may need to PB_SKIPTESTS=true env var (not /p:) | I can fix |
+| FSharp.Core nupkg suppression in microbuild path | UNKNOWN | B10 patch removed in Pattern B; build_microbuild may try | unknown until G4 reaches that phase |
+
+### Files modified Session 5
+
+- `global.json`: added `msbuild-sdks` section
+- (admin/local-only): VS 2017 install bin paths altered
+
+### Real next steps
+
+The honest path forward:
+
+1. ✅ Commit `global.json` change to branch
+2. Document the admin-applied workarounds in INTERNAL.md (this section)
+3. Accept that G4 (full microbuild) **cannot complete locally** on this dev box without further VS 2017 component installation by user
+4. Ship the branch state + Pattern B yaml — pipeline 499 (or whoever runs it) is the ONLY way to validate the rest
+
+User asked questions in plan §0 still pending:
+- (1) G5/L6 contradiction (VS insertion needs DevDiv access)
+- (2) F# 15.9 RTM insertion archive path
+- (3) Pipeline 499 trigger semantics for unknown branches
+
+Without these, additional engineering on this side cannot be confidently called "done".
