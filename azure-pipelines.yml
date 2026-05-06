@@ -123,6 +123,15 @@ extends:
                   artifactType: container
                   sbomEnabled: false
             steps:
+              - task: PowerShell@2
+                displayName: 'Pre-create artifact log dirs (1ES PT auto-publish expects them)'
+                inputs:
+                  targetType: 'inline'
+                  script: |
+                    New-Item -ItemType Directory -Path "$(Build.SourcesDirectory)\artifacts\log\Release" -Force | Out-Null
+                    New-Item -ItemType Directory -Path "$(Build.SourcesDirectory)\artifacts\TestResults\Release" -Force | Out-Null
+                    New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)\artifacts\log\Release" -Force | Out-Null
+                    Write-Host "Pre-created artifact directories so 1ES PT post-build publish steps don't fail"
               - task: NuGetToolInstaller@1
                 displayName: 'Use NuGet 6.2.4'
                 inputs:
@@ -165,6 +174,33 @@ extends:
                   PB_SIGNTYPE: ${{ parameters.SignType }}
                   PB_SKIPTESTS: ${{ parameters.SkipTests }}
                   PB_OfficialBuildId: $(Build.BuildNumber)
+              - task: PowerShell@2
+                displayName: 'Mirror legacy log paths into artifacts/log/Release for 1ES PT post-build'
+                condition: succeededOrFailed()
+                inputs:
+                  targetType: 'inline'
+                  script: |
+                    $cfg = "$(BuildConfiguration)"
+                    $cfgDir = if ($cfg -ieq 'release') { "Release" } else { "Debug" }
+                    $srcRoot = "$(Build.SourcesDirectory)"
+                    $logSrc = Join-Path $srcRoot "$cfgDir"
+                    $logDst = Join-Path $srcRoot "artifacts\log\Release"
+                    $tstSrc = Join-Path $srcRoot "tests\TestResults"
+                    $tstDst = Join-Path $srcRoot "artifacts\TestResults\Release"
+                    New-Item -ItemType Directory -Path $logDst -Force | Out-Null
+                    New-Item -ItemType Directory -Path $tstDst -Force | Out-Null
+                    # mirror legacy build/binlogs into artifacts/log/Release so 1ES PT auto-publish finds something
+                    if (Test-Path $logSrc) {
+                      Get-ChildItem $logSrc -Recurse -Include "*.binlog","*.log","*.txt" -ErrorAction SilentlyContinue |
+                        ForEach-Object {
+                          $rel = $_.FullName.Substring($logSrc.Length).TrimStart('\','/')
+                          $tgt = Join-Path $logDst $rel
+                          New-Item -ItemType Directory -Path (Split-Path $tgt) -Force -ErrorAction SilentlyContinue | Out-Null
+                          Copy-Item -Path $_.FullName -Destination $tgt -Force -ErrorAction SilentlyContinue
+                        }
+                    }
+                    if (Test-Path $tstSrc) { Copy-Item -Path "$tstSrc\*" -Destination $tstDst -Recurse -Force -ErrorAction SilentlyContinue }
+                    Write-Host "Mirrored logs/results from legacy F# 15.9 paths into artifacts/log+TestResults/Release"
               - task: PublishTestResults@2
                 displayName: Publish NUnit Test Results
                 inputs:
