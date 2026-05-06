@@ -206,3 +206,97 @@ The current arcade-pivoted branch state is in a debug-but-no-build state that ca
 - `packages/Microsoft.NETFramework.ReferenceAssemblies.net45.1.0.3/` (uncommitted; not needed if `packages.config` adds this dep)
 - `g2-proto.log` (gitignored)
 - No source file changes
+
+## Session 4 (2026-05-05 cont'd, BREAKTHROUGH — Pattern B works)
+
+### Strategic correction
+
+User asked: "which arcade did 16.11 use? Does Arcade not have multiple versions / channels?"
+
+Investigation revealed F# release/dev16.11 uses Arcade 6.0.0-beta.25204.8 (.NET 6 era).
+But 16.11 SOURCE has been MODERNIZED — no init-tools.cmd, no packages.config,
+no src/fsharp-proto-build.proj, no FSharpSource.Settings.targets. FSharp.Core.fsproj
+uses Microsoft.NET.Sdk. The 16.11 revival required massive product source modernization
+to match Arcade conventions.
+
+For 15.9 + Constraint 3 (no product source changes), there IS NO Arcade SDK channel
+that natively supports the legacy source layout. Roslyn release/dev15.9.x ships using
+NO Arcade — global.json SDK 2.1.526 + standalone azure-pipelines-official.yml + custom
+Build.cmd. This is exactly Pattern B.
+
+### Reverted Arcade pivot (commits 9cfaa4a9a, 48cf1c81e, 0f75d09c6)
+
+Created revert commit a3d96d1e5 returning tree to b5e7932ba state (Pattern B yaml +
+scripts intact, INTERNAL.md Sessions 1-3 preserved). Cleanup commit 5b0a4df21
+removed 18059 accidentally-committed .tools/ NuGet cache files (gitignore was missing).
+
+### Pattern B G1 GREEN — local breakthrough (commit bb86560dc)
+
+After reverting Arcade pivot, made 5 small infra-only patches and achieved
+`build.cmd net40 debug` exit code 0:
+
+1. **build.cmd vswhere arg**: `-latest -prerelease` → `-version 15 -latest`
+   Old form picked VS 18 IntPreview when also installed; explicit version 15 forces
+   VS 2017 selection.
+
+2. **build.cmd VS150COMNTOOLS fallback**: Modern VsDevCmd.bat no longer sets
+   VS150COMNTOOLS for VS 2017. Set it explicitly from VS_INSTALLATION_PATH after
+   VsDevCmd call. Required because legacy downstream logic (lines 581-612) uses it
+   to find devenv.exe + MSBuild.exe.
+
+3. **Directory.Build.targets (NEW root file)**: imports
+   Microsoft.NETFramework.ReferenceAssemblies.net45 targets so v4.5 ref assemblies
+   are found via NuGet pkg (VS 2017 install no longer includes them by default).
+   PLUS provides an inline-task shim for `GetReferenceNearestTargetFrameworkTask`.
+   `NuGet.targets` is no longer in MSBuild 15 standalone install (it migrated to
+   `dotnet` SDK / NuGet.exe), so legacy fsproj cross-targeting check otherwise
+   fails MSB4036. The shim is a passthrough — single-TFM = no transform needed.
+
+4. **packages.config**: added `Microsoft.NETFramework.ReferenceAssemblies.net45 1.0.3`
+   so step 3 has a real package to import.
+
+5. **NuGet.Config restored** from b5e7932ba (was lost in the revert due to Windows
+   case-insensitive filesystem collision between `NuGet.Config` (uppercase, Pattern B
+   work) and `NuGet.config` (lowercase, original 15.9 file)).
+
+### Verified locally — G1, G2, G3 all GREEN
+
+**G1 (Local build, plan §7 L1)**: ✅
+- `build.cmd net40 debug` exit code 0
+- Build succeeded. 0 Error(s).
+
+**G2 (Bootstrap, plan §7 L2)**: ✅
+- `Proto\net40\bin\fsc.exe` exists
+- `Debug\net40\bin\fsc.exe` exists
+- `Debug\net40\bin\FSharp.Core.dll` AssemblyVersion = `4.5.0.0` (matches FSCoreVersion exactly)
+- All proto + real binaries present (fsc.exe, fsi.exe, FSharp.Compiler.Private.dll, FSharp.Build.dll)
+- `fsc.exe` self-reports `Microsoft (R) F# Compiler version 10.2.3 for F# 4.5`
+
+**G3 (Functional smoke, plan §7 L3)**: ✅
+- L3.1 FSI sanity: prints version, exits 0
+- L3.2 FSC produces runnable PE: `hello.exe` prints "hello from F# 15.9"
+- L3.3 Records + Discriminated Unions: full F# semantics work in fsi.exe
+
+### Time investment to G1-G3 green
+
+~6 hours of investigation/iteration across Session 3 and Session 4. The G1 path
+(Pattern B + 5 patches) is significantly less work than the Arcade-on-15.9 dead
+end attempted in Session 2 (which had unbounded layered failures).
+
+### What remains (in priority order)
+
+- **G4 (Test-signed local, plan §7 L4)**: `build.cmd microbuild release` with
+  PB_SIGNTYPE=test PB_SKIPTESTS=true. Produces signed VSIXes + .vsman insertion
+  shape. Requires B10 patch verification (no nupkg leakage — assertions in
+  scripts/local-validate.ps1).
+- **G5 (Insertion integrity, plan §7 L4 step 4.4)**: compare produced
+  Release\insertion against locally-cached 15.9 RTM archive (F1 mirror task).
+- **G6 (VS extension load, plan §7 L4b)**: install produced VSIXes in clean
+  VS 2017 experimental hive; verify ActivityLog has zero F# package errors.
+- **L5 (AzDO signed build)**: trigger pipeline 499 / new pipeline def with the
+  azure-pipelines-official.yml committed in this branch. Requires:
+  - Cert mapping verification (`Microsoft` → `Microsoft400` ESRP modern)
+  - SDL gates (CodeQL, PoliCheck, BinSkim, CredScan) — defaults via 1ES template
+  - Internal symbol publish (TeamServices)
+- **L6 (VS insertion)**: draft PR in DevDiv `rel/d15.9` via Insertion.* variables
+  in pipeline. DevDiv DDRITs gate the merge.
