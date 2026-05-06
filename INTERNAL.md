@@ -631,3 +631,67 @@ re-introduce the issue.
 
 Pipeline 499 build 2968555 was triggered manually on stale commit 0f75d09c. Source-Build (Linux) job failed (15.9 had no source-build, will be gone in next run on Pattern B yaml). Full_Signed still in-progress. AzDO mirror at 0f75d09c — pushing this comment to retry mirror so latest commits sync.
 
+
+## Session 5e (2026-05-06 15:00) — Mirror divergence (issue #19696) resolved via -s ours merge
+
+### Cause
+
+My fix for #19694 (force-pushing rewritten history without .tools/) created
+a new problem: GitHub branch SHA chain diverged from AzDO mirror chain.
+- AzDO had: ...0f75d09c (last commit before disaster)
+- GitHub had: ce23d4f422... (rewritten clean chain after force-push)
+
+dnceng-bot mirror is fast-forward only → cannot reconcile divergent chains
+→ filed #19696 ("unexpected commits in the target branch").
+
+### Fix applied: -s ours merge
+
+\\\powershell
+git merge --allow-unrelated-histories -s ours 0f75d09c -m "..."
+git push origin release/dev15.9.x
+\\\
+
+The `-s ours` strategy:
+- Creates a merge commit with two parents
+- First parent = current GitHub HEAD (rewritten chain)
+- Second parent = AzDO mirror tip 0f75d09c
+- Working-tree content = first parent's content EXACTLY (second parent's
+  content is entirely discarded)
+
+Result:
+- `0f75d09c` is now an ancestor of GitHub HEAD → mirror can fast-forward
+- `a3d96d1e5` (the .tools/ disaster commit) is NOT an ancestor → won't
+  be sent to AzDO secret-scan
+- Working tree = my latest Pattern B work, untouched
+- All my engineering changes preserved (.vsconfig, Directory.Build.targets,
+  modernized certs, log-mirror steps, build.cmd fixes)
+
+### Lessons learned
+
+1. **Force-push to mirrored branches is dangerous.** Even after fixing the
+   blob issue, the SHA divergence creates a separate fast-forward problem
+   that's NOT auto-resolved.
+2. **The right pattern**: when force-pushing to a mirrored branch, also
+   re-merge the mirror's tip via -s ours to keep ancestry intact.
+3. **Disaster commits with secret-scan-flagged blobs** should ideally be
+   avoided in the first place by ensuring .gitignore is right BEFORE the
+   first commit can pick up problematic paths.
+
+### Build 2968555 (commit 0f75d09c) failure analysis
+
+Pipeline 499 was manually triggered against commit 0f75d09c (AzDO mirror's
+stale tip from yesterday). That commit had F# main's Arcade pivot yaml,
+NOT my Pattern B yaml. Errors observed:
+
+- Source-Build (Linux) job ran and failed (15.9 had no Linux build)
+- Full_Signed failed at 1ES PT post-build steps:
+  - "Cannot find artifacts/log/Release"
+  - "Cannot find artifacts/TestResults/Release"
+  - NuGet Security Analysis: MyGet feed declared (CFS scanner false positive)
+
+Pre-emptive fixes applied to Pattern B yaml:
+- Pre-create artifacts/log/Release + artifacts/TestResults/Release before build
+- Mirror Release/**/*.binlog and tests/TestResults/** into those paths post-build
+
+After mirror catches up to ce23d4f422 and pipeline is re-triggered, the
+Pattern B yaml will run with these fixes and the Source-Build job won't exist.
