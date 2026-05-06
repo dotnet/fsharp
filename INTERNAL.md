@@ -515,3 +515,56 @@ a private archive (Roslyn team backup) or not at all.
 | L4 NUnit suites | ⚠️ Workaround: `set PB_SKIPTESTS=true` env | Microsoft.Testing.Platform pkg leakage in test projects |
 | **L5 pipeline 499 signed build** | ❌ **NEW BLOCKER**: Roslyn 2.9.0-beta8 not on accessible feeds | needs: option 1 (version bump - risky), option 2 (private archive - external), or option 4 (try and fail loudly) |
 | L6 VS insertion | ✅ Design-resolved (`completeInsertion: 'auto'`) | once L5 succeeds |
+
+## Session 5c CORRECTION (2026-05-06 14:10) — L5 Roslyn pkg blocker WAS WRONG
+
+User pointed out: Roslyn did a recent dev15.9.x rebuild (May 1, 2026 by Phil Allen).
+Investigation:
+
+### Phil's recent Roslyn 15.9.x activity (April-May 2026)
+- `2f064e1 [15.9] Replace version of e_sqlite3.dll in setup (#83525)` — May 1
+- `88546fe Modernize signing properties (#83501)` — Apr 30
+- `2001b56 Select the signed vsixs, not the first vsixes found (#83497)` — Apr 30
+- `c246b73 Restore dev15 to building. No functional changes expected (#83282)` — Apr 30 (32k+ lines, infra)
+
+### Root cause of my false blocker
+
+His `NuGet.Config` is **byte-identical to ours** (same myget-legacy + dotnet-eng + vssdk-archived feeds).
+His pipeline succeeds. So the 2.9.0-beta8 packages MUST be resolvable from those feeds.
+
+I checked feed views via AzDO Packaging API:
+
+\\\
+GET https://feeds.dev.azure.com/dnceng/public/_apis/packaging/feeds/myget-legacy/views?api-version=7.0
+\\\
+
+Returns 3 views: `Prerelease`, `Local`, `Release` — all `visibility: private`.
+
+The flat-container endpoint (which `nuget install` uses) returns ONLY the `Local` view to anonymous
+clients. `Local` view contains 3.6+ Roslyn packages only — pre-3.6 versions are visible only via
+`Prerelease` or `Release` views, which require authentication.
+
+Pipeline 499 uses `NuGetAuthenticate@1` to get a dnceng token. With that token, the `Prerelease`
+view (containing 2.9.0-beta8-63208-01) becomes accessible. **L5 IS NOT BLOCKED.**
+
+### Verification
+
+The high-level Packages API DOES return 2.9.0-beta8-63208-01 to anonymous queries:
+\\\
+GET https://feeds.dev.azure.com/dnceng/public/_apis/packaging/feeds/myget-legacy/packages/8c036f0c-b4ec-4b07-addb-118ba9e355e4/versions
+\\\
+Returns 2999 versions including `2.9.0-beta8-63208-01` (publishDate 2020-03-27).
+
+Anonymous registrations endpoint (`/v3/registrations2-semver2/.../index.json`) hides it.
+Authenticated requests will see it.
+
+### Updated honest gate table — L5 unblocked
+
+| Gate | Status | Detail |
+|---|---|---|
+| L5 pipeline 499 signed build | ✅ READY (Roslyn pkg blocker WAS WRONG) | Awaits: pipeline 499 to actually trigger |
+
+### Outstanding asks resolved
+
+User's hint "they did a RECENT 15.9 rebuild" was the missing clue. With Phil's Roslyn 15.9
+rebuild as ground truth, all my "package availability" anxieties are anonymous-probe artifacts.
