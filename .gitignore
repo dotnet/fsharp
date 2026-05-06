@@ -134,3 +134,7 @@ msbuild.binlog
 # Local .NET SDK install cache
 /.dotnet
 
+
+# nuget local cache (must not be committed)
+/.tools/
+*.vbproj.user
