@@ -626,3 +626,8 @@ The current `release/dev15.9.x` `.gitignore` (line ~last) DOES contain:
 \\\
 This was added in the cleanup commit (`5720a341b1` after rewrite). New commits cannot
 re-introduce the issue.
+
+## Session 5e (2026-05-06 14:55) - mirror retry trigger
+
+Pipeline 499 build 2968555 was triggered manually on stale commit 0f75d09c. Source-Build (Linux) job failed (15.9 had no source-build, will be gone in next run on Pattern B yaml). Full_Signed still in-progress. AzDO mirror at 0f75d09c — pushing this comment to retry mirror so latest commits sync.
+
