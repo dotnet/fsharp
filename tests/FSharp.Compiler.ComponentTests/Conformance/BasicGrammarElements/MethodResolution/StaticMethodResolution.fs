@@ -7,10 +7,10 @@ open Xunit
 
 module StaticMethodResolution =
     
-    // So that the compiler doesn't treat an extension method as intrisic
+    // So that the compiler doesn't treat an extension method as intrinsic
     // we place a method to another module.
     [<Fact>]
-    let ``Extension static method is resolved correctly when one or many intrisic candidates are found``() =
+    let ``Extension static method is resolved correctly when one or many intrinsic candidates are found``() =
         Fsx """
 module Extensions =
 
