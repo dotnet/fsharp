@@ -1,7 +1,0 @@
-<Project>
-  <!-- F# 15.9 servicing - no Source-Build / VMR / inbound dependency flow.
-       Arcade version MUST match global.json msbuild-sdks. -->
-  <PropertyGroup>
-    <MicrosoftDotNetArcadeSdkVersion>10.0.0-beta.26222.2</MicrosoftDotNetArcadeSdkVersion>
-  </PropertyGroup>
-</Project>

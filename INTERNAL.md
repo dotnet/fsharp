@@ -148,3 +148,61 @@ Ran `Build.cmd -configuration Debug`. Arcade SDK 10.0.0-beta.26222.2 successfull
 
 - `eng/Build.ps1`: `slnx` -> `sln` (3 instances)
 - `eng/restore/optimizationData.targets`: imported from main
+
+## Session 3 (2026-05-05 cont'd, deep-dive blockers + strategic re-eval)
+
+### Resolved
+- **Blocker (3) XliffTasks**: bypassed by passing `/p:DisableLocalization=true` on Build.cmd cmdline. Per Constraint 3.1 carve-out (vendor RTM .resx, no re-translation), this is acceptable for 15.9 servicing. Both `src/FSharpSource.Settings.targets:226` and `:233` are conditional on `DisableLocalization != 'true'` — both bypassed.
+- **Legacy package restore**: `nuget restore packages.config -PackagesDirectory packages -Source https://api.nuget.org/v3/index.json -Source https://pkgs.dev.azure.com/dnceng/public/_packaging/myget-legacy/...` successfully restored 46 legacy packages including `FSharp.Compiler.Tools.4.1.27` (the LKG netfx F# proto compiler).
+- **.NET 4.5 ref assemblies missing from VS 2017 install**: installed via `Microsoft.NETFramework.ReferenceAssemblies.net45` NuGet pkg + `/p:FrameworkPathOverride=...`.
+
+### G2 attempt with manual proto build (`MSBuild src/fsharp-proto-build.proj`)
+- ✅ FSharp.Core proto compiled successfully: `FSharp.Core -> Q:\source\fsharp\fsharp\Proto\net40\bin\FSharp.Core.dll`
+- ❌ FSharp.Build-proto + Fsc-proto fail with **two new layered errors**:
+  1. `MSB3030 Could not copy "Q:\source\fsharp\fsharp\src\fsharp\FSharp.Core\Q:\source\fsharp\fsharp\src\fsharp\FSharp.Core\..\..\..\Proto\net40\bin\**"` — path doubled. Looks like a relative-path bug in `FSharpBuild.Directory.Build.targets:32` BeforeTargets resolution under MSBuild 15.
+  2. `MSB4036 GetReferenceNearestTargetFrameworkTask not found` — NuGet 4.0+ task missing during cross-targeting reference resolution. Restored at solution-level by `dotnet restore` but not by per-project legacy `nuget restore packages.config`.
+
+### Strategic finding — IMPEDANCE MISMATCH
+
+The current branch state mixes:
+- **F# main's Arcade infra (193 files, eng/, Arcade SDK 10.0.0-beta.26222.2, modern Build.cmd)** — pivoted in to use pipeline 499
+- **F# 15.9's source layout (src/, project.json, packages.config, src/fsharp-proto-build.proj, FSharpSource.Settings.targets, FSharpBuild.Directory.Build.targets)**
+
+These are FUNDAMENTALLY incompatible:
+- F# main's `proto.proj` references projects at `buildtools/fslex`, `src/fsc/fscProject`, `src/fsi/fsiProject` — NONE exist in 15.9 source layout
+- F# main's Arcade Build.ps1 `-bootstrap` checks for `artifacts/Bootstrap/fsc/fsc.exe` — 15.9 produces `Proto/net40/bin/fsc.exe`
+- F# 15.9's project files import `Microsoft.FSharp.Targets` from packages-relative path; Arcade's restore doesn't restore packages.config-style
+- F# 15.9 needs MSBuild 15 (not modern .NET SDK) for many tasks — Arcade uses modern SDK
+
+**Each fix reveals 2-3 more layered issues. After 3 layers in, we're at:**
+1. slnx -> sln (resolved)
+2. optimizationData.targets (resolved)
+3. XliffTasks (resolved via DisableLocalization)
+4. Legacy package restore (resolved via manual nuget restore)
+5. .NET 4.5 ref assemblies (resolved via NuGet pkg)
+6. **MSB3030 path doubling (BLOCKED)**
+7. **MSB4036 NuGet task missing (BLOCKED)**
+
+### What 8 unanimous adversarial reviewers said (5 in R1 + 3 in R3)
+
+Plan v2 explicitly recommended **Pattern B (Roslyn-style standalone pipeline, NO Arcade)**, modeled on `dotnet/roslyn release/dev15.9.x` PR #83282. Reasoning:
+- 15.9 is **pre-Arcade era source** — Arcade does not understand its layout
+- Roslyn 15.9.x **succeeded** with the standalone-pipeline approach
+- F# 15.9 RTM build worked the same way — `build.cmd microbuild` directly invoked legacy MSBuild
+
+**Pivot rationale (user override)**: "Why overcomplicate? Use pipeline 499. F# has insertion process figured out, just doesn't work for 16.x..."
+
+**Empirical refutation**: pipeline 499 is Arcade-driven. To use it, our branch must look like F# main. F# main's eng/ infra cannot drive 15.9's source layout. The "insertion process figured out" applies to F# main era source, not 15.9.
+
+### Decision required from user
+
+The current arcade-pivoted branch state is in a debug-but-no-build state that cannot reach G1 green without ULTIMATE rewriting of either:
+- Option Z1: rewrite F# main's `proto.proj` + Build.ps1 + Directory.Build.* to drive 15.9's source layout (effectively forking Arcade for 15.9 — months of work)
+- Option Z2: rewrite 15.9's source layout to match F# main expectations (violates Constraint 3 — months of product changes)
+- **Option Z3 (RECOMMENDED): revert to Pattern B as planned**. Build standalone `azure-pipelines-official.yml` cloning Roslyn 15.9.x def. Pipeline orchestrates `build.cmd microbuild` (the canonical 15.9 RTM invocation). This IS what 5/5 + 3/3 unanimous adversarial reviewers said.
+
+### Files modified during Session 3 (uncommitted)
+- `packages/` directory: 46 legacy packages restored via `nuget restore packages.config` (uncommitted; will be re-restored from feeds in CI)
+- `packages/Microsoft.NETFramework.ReferenceAssemblies.net45.1.0.3/` (uncommitted; not needed if `packages.config` adds this dep)
+- `g2-proto.log` (gitignored)
+- No source file changes

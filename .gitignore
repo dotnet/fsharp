@@ -134,12 +134,3 @@ msbuild.binlog
 # Local .NET SDK install cache
 /.dotnet
 
-
-# Stray artifacts from local probes
-/FSharp.Core.dll
-*.vbproj.user
-# Local SDK install (Arcade)
-/.dotnet/
-# Tools dir from init-tools.cmd
-/.tools/
-
