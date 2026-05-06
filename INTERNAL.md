@@ -428,3 +428,90 @@ full VS 2017 install per its agent template.)
 - G4 (local microbuild): can be COMPLETELY done locally only after user runs `.vsconfig` install
 - G5 (insertion integrity): verify ACROSS pipeline runs, not against RTM
 - L6 (DevDiv VS PR): still requires DevDiv access — but per user's "assume it works like 16.11", insertion is auto-completed via `completeInsertion: 'auto'` in the yml (16.11 evidence). I can stop manually filing.
+
+## Session 5b additions (autopilot continuation, 2026-05-06 13:15-13:55)
+
+### Additional VALIDATED locally (no admin needed)
+
+**G3a (net40 Release build)**: ✅ DONE LOCALLY
+- Command: `set FSC_BUILD_SETUP=0 ; set BUILDTOOLS_SOURCE=https://pkgs.dev.azure.com/dnceng/public/_packaging/myget-legacy/nuget/v3/index.json ; set PB_SKIPTESTS=true ; set MSBuildSDKsPath=Q:\source\fsharp\fsharp\Tools\dotnet20\sdk\2.1.300-rtm-008707\Sdks ; build.cmd net40 release`
+- Time: 2 min 10 sec
+- `Release\net40\bin\fsc.exe` reports "F# Compiler version 10.2.3 for F# 4.5"
+
+**G2b (coreclr Debug build)**: ✅ DONE LOCALLY
+- Command: same env as G3a, `build.cmd coreclr debug`
+- Time: 2 min 44 sec
+- `Debug\coreclr\bin\FSharp.Core.dll` AssemblyName=FSharp.Core, Version=4.5.0.0, PublicKeyToken=b03f5f7f11d50a3a, Size=3.3 MB
+- Localized resource subdirs (cs/de/en/es/fr/it/ja/ko/pl/...): all built (vendored RTM)
+- This is the netstandard FSharp.Core that ships in VS insertion ✅
+
+**Internal package availability check** (anonymous probe):
+| Package | Version | Available? |
+|---|---|---|
+| `RoslynTools.SignTool` | 1.0.0-beta2-dev3 | ✅ in dnceng myget-legacy |
+| `MicroBuild.Plugins.SwixBuild` | 1.0.147 | ✅ in dnceng myget-legacy |
+| `Microsoft.DotNet.BuildTools` | 1.0.27-prerelease-01001-04 | ✅ in dnceng myget-legacy |
+| `Microsoft.DotNet.BuildTools` | dotnet 1.0.0-preview3 + 2.1.300 SDK | ✅ from dotnet CDN (init-tools.cmd) |
+| **`Microsoft.CodeAnalysis.EditorFeatures`** | **2.9.0-beta8-63208-01** | ❌ **NOT FOUND ANYWHERE** |
+| **Same** (and 4 sibling Microsoft.CodeAnalysis packages) | 2.9.0-beta8 | ❌ Mirror has only 3.6.0-beta1+ |
+
+### NEW STRUCTURAL BLOCKER for L5: Roslyn 2.9.0-beta8 packages
+
+Five packages used by `vsintegration/src/{FSharp.Editor,FSharp.LanguageService,FSharp.UnitTests,Salsa}/*.fsproj`:
+- `Microsoft.CodeAnalysis.EditorFeatures`
+- `Microsoft.CodeAnalysis.EditorFeatures.Text`
+- `Microsoft.CodeAnalysis.EditorFeatures.Wpf`
+- `Microsoft.CodeAnalysis.Workspaces.Common`
+- `Microsoft.VisualStudio.LanguageServices`
+
+All pinned to `RoslynPackageVersion.txt = 2.9.0-beta8-63208-01` (the exact RTM build).
+
+Original 15.9 RTM resolved these from `https://dotnet.myget.org/F/roslyn/` (DEAD).
+dnceng myget-legacy does NOT mirror this version. Mirror starts at Roslyn 3.6 (2020-03-27).
+nuget.org public has only Roslyn 2.x up to 2.8.2.
+
+**Pipeline 499 with NuGetAuthenticate@1 will NOT solve this** — the packages aren't on
+any internal dnceng feed I can probe anonymously, and the pattern of darc-pub-roslyn-* feeds
+suggests Roslyn 2.9 era was BEFORE darc/Maestro adoption — those builds may exist only in
+a private archive (Roslyn team backup) or not at all.
+
+**Resolution options (each with trade-off)**:
+
+1. **Bump RoslynPackageVersion.txt to 3.6.0-beta1-20111-10** (or similar 3.x available on mirror).
+   Risk: 3.x has different Roslyn API surface. `vsintegration/src/FSharp.Editor` etc. may fail
+   to compile. Would require source patches → violates Constraint 3 in spirit.
+
+2. **Locate private archive of Roslyn 2.9.0-beta8 packages**: someone with access to the original
+   Roslyn build server / blob storage downloads them, uploads to a private feed, that feed gets
+   added to NuGet.Config. Out of my hands.
+
+3. **Skip vsintegration projects from build** (temporarily). Compiler binaries (fsc, fsi, FSharp.Core)
+   would still ship — but no VSIXes = no VS insertion = goal not met.
+
+4. **Trigger pipeline 499 anyway and see what feeds it ACTUALLY has access to**: maybe the dnceng/internal
+   feeds have it.
+
+**Recommendation**: option 4 first (cheapest). If pipeline 499 fails, then option 2.
+
+### Other improvements applied in autopilot
+
+- Verified RoslynTools.SignTool 1.0.0-beta2-dev3 IS resolvable from dnceng myget-legacy mirror
+- Verified MicroBuild.Plugins.SwixBuild 1.0.147 IS resolvable
+- Cert names confirmed: `"Microsoft"` (assembly), `"VsixSHA2"` (vsix), `"NuGet"` (nupkgs - we don't ship)
+- Pipeline yaml has NuGetAuthenticate@1 (line 130) and PB_SIGNTYPE/PB_SKIPTESTS env vars (lines 165-166)
+
+### Updated honest gate table
+
+| Gate | Status | Caveats |
+|---|---|---|
+| G1 net40 debug | ✅ DONE | local-validated |
+| G2 bootstrap (proto→real) | ✅ DONE | net40 chain |
+| G2b coreclr debug | ✅ DONE | netstandard FSharp.Core 4.5.0.0 ships in insertion |
+| G3 functional smoke | ✅ DONE | FSI, FSC, hello.exe, records, DUs |
+| G3a net40 release | ✅ DONE | Release config compiler binaries |
+| G4 microbuild + vsintegration | ⚠️ BLOCKED LOCALLY | needs `.vsconfig` install (UAC, user runs once) |
+| G5 insertion integrity | ⏳ Compare across pipeline runs | per user direction |
+| G6 VS extension load | ⏳ After G4 | — |
+| L4 NUnit suites | ⚠️ Workaround: `set PB_SKIPTESTS=true` env | Microsoft.Testing.Platform pkg leakage in test projects |
+| **L5 pipeline 499 signed build** | ❌ **NEW BLOCKER**: Roslyn 2.9.0-beta8 not on accessible feeds | needs: option 1 (version bump - risky), option 2 (private archive - external), or option 4 (try and fail loudly) |
+| L6 VS insertion | ✅ Design-resolved (`completeInsertion: 'auto'`) | once L5 succeeds |
