@@ -386,6 +386,61 @@ let whatIsIt =
         |> runCode
         |> shouldSucceed
 
+    // Regression test for https://github.com/dotnet/fsharp/issues/19660
+    [<Fact>]
+    let ``Handler body executes once when source throws immediately and handler yields nothing``() =
+        Fsx """
+let mutable bodyCount = 0
+let result =
+    seq {
+        try yield (1/0)
+        with _ ->
+            bodyCount <- bodyCount + 1
+            ()
+    } |> Array.ofSeq
+if bodyCount <> 1 then failwith $"bodyCount was {bodyCount}"
+if result <> [||] then failwith $"result was %A{result}"
+        """
+        |> runCode
+        |> shouldSucceed
+
+    // When-guard double-execution is by design (RFC FS-1134 L37-38).
+
+    [<Fact>]
+    let ``When guard in seq try-with - false guard falls through correctly``() =
+        Fsx """
+let mutable guard1Count = 0
+let mutable guard2Count = 0
+let result =
+    seq {
+        try yield (1/0)
+        with
+        | _ when (guard1Count <- guard1Count + 1; false) -> yield 1
+        | _ when (guard2Count <- guard2Count + 1; true) -> yield 99
+    } |> Array.ofSeq
+if guard1Count <> 2 then failwith $"guard1Count was {guard1Count}"
+if guard2Count <> 2 then failwith $"guard2Count was {guard2Count}"
+if result <> [|99|] then failwith $"result was %A{result}"
+        """
+        |> runCode
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``When guard in seq try-with executes twice per iteration in for loop``() =
+        Fsx """
+let mutable guardCount = 0
+let result =
+    seq {
+        for x in [0; 0; 0] do
+            try yield (1/x)
+            with _ when (guardCount <- guardCount + 1; true) -> yield 99
+    } |> Array.ofSeq
+if guardCount <> 6 then failwith $"guardCount was {guardCount}"
+if result <> [|99; 99; 99|] then failwith $"result was %A{result}"
+        """
+        |> runCode
+        |> shouldSucceed
+
     [<Theory>]
     [<InlineData("41","42","43")>]
     [<InlineData("()","42","43")>]
