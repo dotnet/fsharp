@@ -39,13 +39,15 @@ schedules:
     batch: false
 
 variables:
-  - group: DotNet-VSTS-Infra-Access
+  # Variable groups: only those that pipeline 499 has authorized for F# CI.
+  # Authorized list mirrors F# main / 16.11. Roslyn-only groups (DotNet-VSTS-Infra-Access,
+  # AzureDevOps-Artifact-Feeds-Pats, DotNet-FSharp-Insertion-Variables) were dropped after
+  # build 2968573 failed with "Variable group was not found or is not authorized for use."
   - group: DotNet-DevDiv-Insertion-Workflow-Variables
-  - group: AzureDevOps-Artifact-Feeds-Pats
   - group: DotNet-Symbol-Server-Pats
-  # The following two groups are F#-specific clones of Roslyn's analogues (created in A4)
   - group: DotNet-FSharp-SDLValidation-Params
-  - group: DotNet-FSharp-Insertion-Variables
+  # _DevDivDropAccessToken / ArtifactServices.Drop.PAT both come from
+  # dn-bot-devdiv-drop-rw-code-rw which lives in DotNet-DevDiv-Insertion-Workflow-Variables.
   - name: _DevDivDropAccessToken
     value: $(dn-bot-devdiv-drop-rw-code-rw)
   - name: ArtifactServices.Drop.PAT
