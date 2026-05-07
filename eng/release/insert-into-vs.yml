@@ -17,6 +17,9 @@ stages:
       name: NetCore1ESPool-Svc-Internal
       image: windows.vs2026preview.scout.amd64
     variables:
+    - group: DotNet-VSTS-Infra-Access
+    - name: InsertAccessToken
+      value: $(dn-bot-devdiv-build-rw-code-rw-release-rw)
     - name: InsertBuildPolicy
       value: ${{ parameters.insertBuildPolicy }}
     - name: InsertTargetBranch
@@ -67,16 +70,6 @@ stages:
           $autoCompleteStr = if ($autoComplete) { 'true' } else { 'false' }
           Write-Host "Setting InsertAutoComplete to '$autoCompleteStr'"
           Write-Host "##vso[task.setvariable variable=InsertAutoComplete]$autoCompleteStr"
-    - task: AzureCLI@2
-      displayName: 'Get DevDiv Access Token (WIF)'
-      inputs:
-        azureSubscription: 'dnceng-fsharp-vs-insertion-wif'
-        scriptType: 'pscore'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          $token = az account get-access-token --resource "499b84ac-1321-427f-aa17-267ca6975798" --query accessToken -o tsv
-          Write-Host "##vso[task.setvariable variable=InsertAccessToken;issecret=true]$token"
-      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], '${{ parameters.componentBranchName }}'), eq(variables['Build.SourceBranch'], 'refs/heads/${{ parameters.componentBranchName }}')))
     - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@5
       displayName: 'Insert VS Payload'
       inputs:
