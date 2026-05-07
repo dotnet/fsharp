@@ -5,6 +5,6 @@
   "projectName": "DevDiv",
   "areaPath": "DevDiv\\NET Developer Experience\\Languages\\F#",
   "iterationPath": "DevDiv",
-  "notificationAliases": [],
+  "notificationAliases": ["fsharp-team-msft@microsoft.com"],
   "tools": ["credscan","policheck","binskim"]
 }

@@ -76,6 +76,8 @@ variables:
 extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
   parameters:
+    featureFlags:
+      autoBaseline: true
     sdl:
       sourceAnalysisPool:
         name: NetCore1ESPool-Svc-Internal
