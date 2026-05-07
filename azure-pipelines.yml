@@ -72,6 +72,19 @@ variables:
     value: ""
   - name: Codeql.Enabled
     value: true
+  # CFS NuGet check tuning. Without these, the auto-injected
+  # "Secure Supply Chain Analysis" step FAILS the build with
+  # "MyGet feed declared" because dnceng's myget-legacy mirror URL contains
+  # the substring "myget" — required for legacy F# 15.9 packages
+  # (FSharp.Compiler.Tools 4.1.27, Roslyn 2.9, RoslynTools.SignTool 1.0.0-beta2,
+  # MicroBuild.Plugins.SwixBuild 1.0.147, Microsoft.DotNet.BuildTools 1.0.27).
+  # Pattern copied from dotnet/msbuild azure-pipelines (.vsts-dotnet-exp-perf.yml).
+  - name: NugetSecurityAnalysisWarningLevel
+    value: none
+  - name: cfsNugetWarnLevel
+    value: warn
+  - name: nugetMultiFeedWarnLevel
+    value: none
 
 extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate

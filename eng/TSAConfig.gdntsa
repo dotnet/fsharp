@@ -3,8 +3,8 @@
   "codebaseName": "fsharp_release_dev15_9_x",
   "instanceUrl": "https://devdiv.visualstudio.com/",
   "projectName": "DevDiv",
-  "areaPath": "DevDiv\\NET Developer Experience\\Languages\\F#",
+  "areaPath": "DevDiv\\FSharp",
   "iterationPath": "DevDiv",
-  "notificationAliases": ["fsharp-team-msft@microsoft.com"],
+  "notificationAliases": ["fsharp@microsoft.com"],
   "tools": ["credscan","policheck","binskim"]
 }
