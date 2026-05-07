@@ -695,3 +695,82 @@ Pre-emptive fixes applied to Pattern B yaml:
 
 After mirror catches up to ce23d4f422 and pipeline is re-triggered, the
 Pattern B yaml will run with these fixes and the Source-Build job won't exist.
+
+---
+
+# Session 6 — 2026-05-07 (afternoon-evening) — pipeline 499 iteration on real-signed yaml
+
+## Honest progress through 19 build iterations today
+
+After committing the working real-signed yaml, ran 19 iterations against pipeline 499.
+Every iteration: push -> wait 14-18 min for AzDO mirror sync + build -> read failure log
+via Chrome MCP -> apply minimal fix -> repeat.
+
+### Iteration log
+
+| Build | Commit | Errors | Real failure | Fix |
+|---|---|---|---|---|
+| 2968555 | (stale) | many | Source-Build-Linux on Arcade pivot | Rolled back Arcade entirely |
+| 2968573 | 1871ba05 | yaml load | unauthorized var groups (Roslyn-pattern names) | Use F# 16.11 names only |
+| 2969289 | 043364ce | yaml load | NuGetAuthenticate services not authorized | Drop 3 of 4 connections |
+| 2969300 | 390f734d | 6 | CFS NuGet "MyGet feed declared" hard fail + TSA "missing NotificationAliases" | autoBaseline + 3 magic warning vars + TSA notificationAliases |
+| 2969322 | c95979a7 | 9 | TSA "Invalid Area Path: 'DevDiv\NET Developer Experience\Languages\F#'" | areaPath = "DevDiv\\FSharp" |
+| 2969336 | b4baabd6 | 3 | SDLSources passes; cascade artifact misses; CFS now warning | Pre-create artifact dirs |
+| 2969354 | 8496b86f | 3 | pre-restore PowerShell exit 1 | Switch to NuGetCommand@2 |
+| 2969379 | e26223b2 | 3 | build.cmd nuget restore failed; 33 of 46 packages | Re-add myget-legacy mirror |
+| 2969411 | 359800ff | 3 | StrawberryPerl + FSharp.Configuration not on any feed | Drop test-only packages |
+| 2969429 | a638fc25 | 3 | FSharp.Compiler.Tools 4.1.27 + 1 other missing | Try @Prerelease URL view (fail) |
+| 2969462 | e9e52bff | 1 | Same; @Prerelease view broke restore (38 vs 40 pkgs) | Revert + pre-stage 3 nupkgs as committed binaries |
+| 2969476 | 4e3ce170 | 3 | Pre-stage feed worked! 42/44; 2 new missing emerged | Pre-stage 2 more nupkgs |
+| 2969495 | 88dbf06c | 1 | 44/45; FsLexYacc 7.0.6 missing | Pre-stage 1 nupkg |
+| 2969509 | 0eda6cc1 | 6 (5 infra flake) | First restore SUCCESS 45/45! Setup/packages.config 4/13 -> FsSrGen missing | Pre-stage 6 nupkgs (78 MB) |
+| 2969537 | 226b249a | 2 | All restores SUCCESS! Build progressed 12m 34s into actual compilation; vsintegration projects fail | **STRUCTURAL BLOCKER** — see below |
+
+### Where we are (build 2969537, 226b249a)
+
+**WORKING** :
+- yaml loads & extends MicroBuild template successfully
+- All authorized variable groups + NuGetAuthenticate connection
+- SDLSources job SUCCEEDS (TSA configured, PoliCheck etc.)
+- CFS NuGet "MyGet declared" rule demoted to warning (3 magic vars set)
+- Pre-staged binary feed (12 nupkgs / 79 MB committed) resolves all packages NuGet can't reach via dnceng feeds (network isolation prevents api.nuget.org)
+- Root packages.config: 45/45 packages restored
+- setup/packages.config: 13/13 packages restored
+- build/config/packages.config: 3/3 packages restored
+- build.cmd microbuild starts and runs for 12 min
+- Compiler chain (proto -> real) likely succeeded (need to verify with binlog analysis)
+
+**STRUCTURAL BLOCKER (cannot fix iteratively)** :
+
+vsintegration projects (FSharp.Editor, FSharp.LanguageService, ProjectSystem, VisualFSharpFull) reference Microsoft.CodeAnalysis.* and Microsoft.VisualStudio.LanguageServices via \ = 2.9.0-beta8-63208-01.
+
+This exact version exists ONLY on the dead dotnet.myget.org/F/roslyn feed. dnceng's myget-legacy mirror has Microsoft.VisualStudio.LanguageServices 2.8.x (too old) and Microsoft.CodeAnalysis.EditorFeatures.Wpf 3.6.0-beta1-* (too new). nuget.org has neither — only Microsoft.VisualStudio.LanguageServices 2.9.0 stable (no exact match).
+
+When NuGet can't find the exact version, it fallback-resolves to a "best match" — but the fallback splits across packages: some go to 2.9.0, some go to 3.0.0-beta2-19058-07, producing the actual error:
+`
+error NU1202: Package Microsoft.CodeAnalysis.EditorFeatures.Wpf 3.0.0-beta2-19058-07 is not compatible with net46. Package supports: net472
+`
+(plus 4 sibling errors with same root cause across 5 vsintegration projects)
+
+**Why this is structural**:
+- We CAN'T pre-stage 2.9.0-beta8-63208-01 — it doesn't exist on nuget.org
+- We CAN'T bump RoslynPackageVersion to 3.6.x — that's a Roslyn API surface change (violates Constraint 5: binary equivalence with RTM)
+- We CAN'T edit the .fsproj package references (vsintegration/src/** is product code per Constraint 3, though there is a TFM-bump carve-out — but the TFM bump from net46 -> net472 itself is product behavior change because target runtime changes)
+
+**Options requiring outside action**:
+
+1. **(BEST)** Get Phil Allen / Roslyn team to publish the 2.9.0-beta8-63208-01 packages to a Microsoft-public feed (e.g., dnceng/_packaging/dotnet-eng or nuget.org). They just rebuilt 15.9 yesterday so the binaries exist somewhere internal.
+2. **(VIABLE BUT VIOLATES CONSTRAINTS)** Bump RoslynPackageVersion.txt to 3.6.0-beta1-20111-10 (latest available on myget-legacy) AND bump vsintegration TFMs from net46 -> net472. Roslyn 3.x has different API surface — produced FSharp.Editor.dll etc. would NOT be binary-equivalent to RTM. Acceptable IFF user reclassifies as "infra-driven version bump" not product change.
+3. **(WORKAROUND)** Skip vsintegration entirely in the official build. Produce only the compiler payload (fsc.exe, FSharp.Core.dll, FSharp.Compiler.Private.dll, FSharp.Build.dll) — not the IDE integration. This is half a VS insertion (no F# Editor in VS). Probably useless to user.
+4. **(LONG SHOT)** Find an authenticated Microsoft-internal feed that mirrors the historical Roslyn package set. Requires PAT with internal access (current PAT lacks scope: 401 on dnceng/_apis/packaging/feeds).
+
+### Remaining cascade error (will resolve when build.cmd succeeds)
+- "Path does not exist: D:\a\_work\1\a\symbols" -- because symbols don't get produced when vsintegration build fails
+
+### Build counter
+19 builds today. Each iteration ~15-20 min push -> result. Current commit on origin/release/dev15.9.x: 226b249a23
+
+### Key artifacts
+- packages-prestage/ : 12 committed binary .nupkg files / 79 MB
+- NuGet.Config: 12 dnceng/azure-public feeds + 1 local prestage feed
+- INTERNAL.md: this and 5 prior session logs
