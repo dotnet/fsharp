@@ -5,6 +5,7 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
+.assembly extern runtime { }
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -288,7 +289,7 @@
 
     .method private hidebysig newslot virtual final instance int32  Program.ITestInterface.M(int32 x) cil managed
     {
-      .custom instance void [runtime]System.Runtime.InteropServices.PreserveSigAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime.InteropServices]System.Runtime.InteropServices.PreserveSigAttribute::.ctor() = ( 01 00 00 00 ) 
       .override Program/ITestInterface::M
       
       .maxstack  8
@@ -300,6 +301,8 @@
 
   } 
 
+  .field static assembly class Program/ITestInterface a@49
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public static int32  f1(int32 x,
                                   int32 y) cil managed
   {
@@ -324,8 +327,28 @@
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class Program/ITestInterface '<StartupCode$assembly>'.$Program::a@49
+    IL_0000:  ldsfld     class Program/ITestInterface Program::a@49
     IL_0005:  ret
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Program::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Program::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly static void  staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  newobj     instance void Program/a@49::.ctor()
+    IL_0005:  stsfld     class Program/ITestInterface Program::a@49
+    IL_000a:  ret
   } 
 
   .property class Program/ITestInterface a()
@@ -338,8 +361,6 @@
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$Program
        extends [runtime]System.Object
 {
-  .field static assembly class Program/ITestInterface a@49
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -348,13 +369,9 @@
   {
     .entrypoint
     
-    .maxstack  4
-    .locals init (class Program/ITestInterface V_0)
-    IL_0000:  newobj     instance void Program/a@49::.ctor()
-    IL_0005:  dup
-    IL_0006:  stsfld     class Program/ITestInterface '<StartupCode$assembly>'.$Program::a@49
-    IL_000b:  stloc.0
-    IL_000c:  ret
+    .maxstack  8
+    IL_0000:  call       void Program::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 

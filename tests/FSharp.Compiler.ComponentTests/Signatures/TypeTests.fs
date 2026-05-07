@@ -171,7 +171,7 @@ type DataItem<'data> =
     Data: 'data
   }
 
-  static member inline Create: item: ^input -> DataItem<^input> when ^input: (member get_StringValue: unit -> string) and ^input: (member get_FriendlyStringValue: unit -> string)
+  static member inline Create<^input when ^input: (member get_StringValue: unit -> string) and ^input: (member get_FriendlyStringValue: unit -> string)> : item: ^input -> DataItem<^input>
 
   static member Create<'data> : identifier: string * label: string * data: 'data -> DataItem<'data>"""
 
@@ -683,3 +683,95 @@ type A private () =
     |> compile
     |> shouldSucceed
     |> ignore
+
+// =========================================================================
+// Corpus-wide roundtrip sweep failures (1483 standalone .fs files swept).
+// Each test below is a REAL sig-gen bug found in POSITIVE (legit) test code.
+// Negative tests (intentionally broken code) are excluded.
+// =========================================================================
+
+// Sweep: single-case struct DU gets spurious bar (FS0300)
+// Source: tests/fsharp/core/fsfromfsviacs/lib.fs — #19597
+[<Fact>]
+let ``Sweep - single-case struct DU roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+[<Struct>]
+type U0 = U0
+"""
+
+// Sweep: backticked active pattern case names (FS0010) — #19592
+[<Fact>]
+let ``Sweep - backticked active pattern roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+let (|``A B``|) (x:int) = x * 2
+"""
+
+// Sweep: type param with special chars needs backtick escaping (FS0010) — #19595
+[<Fact>]
+let ``Sweep - type param with angle brackets roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+type Foo<'a, 'b>() =
+    member _.Bar<'``c<d>``> (x: '``c<d>``) = x
+"""
+
+// Sweep: SRTP multi-witness constraint lost in generated sig (FS0340)
+// Source: tests/fsharp/typecheck/sigs/pos36-srtp-lib.fs
+[<Fact>]
+let ``Sweep - SRTP multi-witness constraint roundtrips`` () =
+    assertSignatureRoundtrip """
+module Lib
+
+let inline RequireM< ^Witnesses, ^T when (^Witnesses or ^T): (static member M : ^T -> string) > (x: ^T) : string = 
+    ((^Witnesses or ^T): (static member M : ^T -> string) x)
+
+type C(p:int) = 
+    member x.P = p
+
+type Witnesses() =
+    static member M (x: C) : string = sprintf "M(C), x = %d"  x.P
+    static member M (x: int64) : string = sprintf "M(int64), x = %d"  x
+
+type StaticMethods =
+    static member inline M< ^T when (Witnesses or  ^T): (static member M: ^T -> string)>  (x: ^T) : string =
+        RequireM< Witnesses, ^T> (x)
+"""
+
+// Sweep: type application syntax — fixed by SRTP explicit type param change
+// Source: tests/fsharp/typecheck/sigs/pos34.fs
+[<Fact>]
+let ``Sweep - type application in member sig roundtrips`` () =
+    assertSignatureRoundtrip """
+module Pos34
+
+[<Sealed>]
+type Foo<'bar>() =
+    member inline _.Baz<'a> (x: 'a) = x
+"""
+
+// Sweep: multi-case active pattern — fixed by backtick escaping change
+// Source: tests/fsharp/typecheck/sigs/pos16.fs
+[<Fact>]
+let ``Sweep - active pattern in sig roundtrips`` () =
+    assertSignatureRoundtrip """
+module Pos16
+
+let (|A|B|) (x: int) = if x > 0 then A else B
+"""
+
+// Sweep: overloaded member with unit parameter (FS0193) — #19596
+// Roundtrip fails: member M(()) generates sig 'member M: unit -> unit' but
+// conformance checker can't match it when M is overloaded. The sig syntax
+// is correct but the conformance check for unit-parameter overloads is broken.
+[<Fact(Skip = "Sig conformance: member M(()) vs member M: unit -> unit fails when overloaded - FS0193")>]
+let ``Sweep - overloaded member with unit param roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""

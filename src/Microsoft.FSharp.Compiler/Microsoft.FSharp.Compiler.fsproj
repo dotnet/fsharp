@@ -83,11 +83,6 @@
     <Microsoft.DotNet.Tools.UpdatePackageVersionTask Packages="@(_BuiltPackages)" OutputDirectory="$(DependentPackagesDir)Shipping" ExactVersions="true"/>
   </Target>
 
-  <Target Name="PackageReleasePackages" AfterTargets="Pack" Condition="'$(DotNetFinalVersionKind)' == ''">
-    <!-- override sdk PackageReleasePackages to do nothing. -->
-  </Target>
-
-
   <Target Name="PackDependentProjectsCore">
     <PropertyGroup>
       <DependentPackagesDir>$([MSBuild]::NormalizeDirectory( '$(ArtifactsDir)', 'packages', '$(Configuration)', 'Dependency' ))</DependentPackagesDir>
@@ -98,6 +93,10 @@
   <Target Name="PackDependentProjects"
     BeforeTargets="Build"
     DependsOnTargets="PackDependentProjectsCore;PackageReleaseDependentPackages">
+  </Target>
+
+  <Target Name="PackageReleasePackages" AfterTargets="Pack" Condition="'$(DotNetFinalVersionKind)' == ''">
+    <!-- override sdk PackageReleasePackages to do nothing. -->
   </Target>
 
 </Project>

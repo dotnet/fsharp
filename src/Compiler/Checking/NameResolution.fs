@@ -727,8 +727,11 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
     ]
 
 /// Query the available extension methods of a type (including extension methods for inherited types)
-let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter isInstanceFilter m ty =
-    let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
+let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) ad optFilter isInstanceFilter m ty =
+    let amap = infoReader.amap
+
+    let extMemsDangling = SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
+
     if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
         extMemsDangling
     else
@@ -743,6 +746,9 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
                 | _ -> [])
         extMemsDangling @ extMemsFromHierarchy
     |> List.filter (fun minfo ->
+        let isAccesible = IsMethInfoAccessible amap m ad minfo
+
+        isAccesible &&
         match isInstanceFilter with
         | LookupIsInstance.Ambivalent -> true
         | LookupIsInstance.Yes -> minfo.IsInstance
@@ -754,7 +760,35 @@ let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad fi
     if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil intrinsic) then 
         intrinsic
     else
-        intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter LookupIsInstance.Ambivalent m ty
+        intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv ad optFilter LookupIsInstance.Ambivalent m ty
+
+let IsExtensionMethCompatibleWithTy (infoReader: InfoReader) m (ty: TType) (minfo: MethInfo) =
+    let g = infoReader.g
+    let amap = infoReader.amap
+
+    not minfo.IsExtensionMember ||
+    match minfo.GetObjArgTypes(amap, m, []) with
+    | thisTy :: _ ->
+        let ty1 = thisTy |> stripTyEqns g
+        let ty2 = ty |> stripTyEqns g
+
+        match ty1, ty2 with
+        | TType_var (tp1, _), _ ->
+            let coercesToConstraints =
+                tp1.Constraints |> List.choose (function
+                    | TyparConstraint.CoercesTo(targetCTy, _) -> Some targetCTy
+                    | _ -> None)
+            match coercesToConstraints with
+            | [] -> true  // No CoercesTo constraint means it could match anything
+            | constraints ->
+                constraints |> List.exists (fun targetCTy ->
+                    let cTy = targetCTy |> stripTyEqns g
+                    TypeRelations.TypeFeasiblySubsumesType 0 g amap m cTy TypeRelations.CanCoerce ty2)
+        | _, TType_var _ -> true
+        | _ ->
+            TypeRelations.TypeFeasiblySubsumesType 0 g amap m ty1 TypeRelations.CanCoerce ty2
+    | _ -> 
+        true
 
 //-------------------------------------------------------------------------
 // Helpers to do with building environments
@@ -1184,7 +1218,7 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
         [| 
             // Extension methods
             yield! 
-                ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None LookupIsInstance.No m ty
+                ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv ad None LookupIsInstance.No m ty
                 |> ChooseMethInfosForNameEnv g m ty
 
             // Extension properties
@@ -2827,7 +2861,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                             | _ ->
                                 // lookup in-scope extension methods
                                 // to keep in sync with the same expression in `| Some(MethodItem msets) when isLookupExpr` below
-                                match ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty with
+                                match ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv ad optFilter isInstanceFilter m ty with
                                 | [] -> success [resInfo, x, rest]
                                 | methods ->
                                     let extensionMethods = Item.MakeMethGroup(nm, methods)
@@ -2841,7 +2875,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
 
                 // fold the available extension members into the overload resolution
-                let extensionMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
+                let extensionMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv ad optFilter isInstanceFilter m ty
 
                 success [resInfo, Item.MakeMethGroup (nm, minfos@extensionMethInfos), rest]
 
@@ -2860,7 +2894,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
             if not (isNil pinfos) && isLookUpExpr then OneResult(success (resInfo, Item.Property (nm, pinfos, None), rest)) else
 
-            let minfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
+            let minfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv ad optFilter isInstanceFilter m ty
 
             if not (isNil minfos) && isLookUpExpr then
                 success [resInfo, Item.MakeMethGroup (nm, minfos), rest]
@@ -2898,7 +2932,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             for p in ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None LookupIsInstance.Ambivalent ad m ty do
                 addToBuffer p.PropertyName
 
-            for m in ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None LookupIsInstance.Ambivalent m ty do
+            for m in ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv ad None LookupIsInstance.Ambivalent m ty do
                 addToBuffer m.DisplayName
 
             for p in GetIntrinsicPropInfosOfType ncenv.InfoReader None ad AllowMultiIntfInstantiations.No findFlag m ty do
