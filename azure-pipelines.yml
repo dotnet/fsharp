@@ -157,12 +157,6 @@ extends:
                 inputs:
                   nuGetServiceConnections: 'devdiv/dotnet-core-internal-tooling'
               - task: NuGetCommand@2
-                displayName: 'Pre-restore legacy F# 15.9 packages from dnceng mirror (off-config to bypass CFS m-y-get rule)'
-                inputs:
-                  command: custom
-                  arguments: 'restore packages.config -PackagesDirectory packages -ConfigFile NuGet.Config -Source https://pkgs.dev.azure.com/dnceng/public/_packaging/myget-legacy/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json'
-                continueOnError: true
-              - task: NuGetCommand@2
                 inputs:
                   command: custom
                   arguments: 'locals all -clear'
