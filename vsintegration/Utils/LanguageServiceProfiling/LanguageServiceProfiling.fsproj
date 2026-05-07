@@ -8,6 +8,9 @@
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
+    <!-- F# 15.9 revival: avoid MSB3094 caused by duplicate Microsoft.Common.targets import -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

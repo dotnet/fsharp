@@ -14,6 +14,12 @@
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <!-- F# 15.9 revival: F# Proto's Microsoft.FSharp.Targets imports Microsoft.Common.targets,
+         then SDK auto-imports it again -> @(DocFileItem) gets populated twice -> CopyFilesToOutputDirectory
+         hits MSB3094 (SourceFiles 2 != DestinationFiles 1). Disable doc generation since this assembly
+         has no public API XML docs that ship. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
