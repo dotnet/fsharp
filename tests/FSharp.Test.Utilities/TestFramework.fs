@@ -60,8 +60,6 @@ let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: b
 [<RequireQualifiedAccess>]
 module Commands =
 
-    let gate = obj()
-
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
     let executeProcess pathToExe arguments workingDir =

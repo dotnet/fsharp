@@ -101,6 +101,10 @@ val MethInfoIsUnseen: g: TcGlobals -> m: range -> ty: TType -> minfo: MethInfo -
 
 val PropInfoIsUnseen: _m: 'a -> allowObsolete: bool -> pinfo: PropInfo -> bool
 
+val ILFieldInfoIsUnseen: finfo: ILFieldInfo -> bool
+
+val EventInfoIsUnseen: allowObsolete: bool -> einfo: EventInfo -> bool
+
 val CheckEntityAttributes: g: TcGlobals -> tcref: TyconRef -> m: range -> OperationResult<unit>
 
 val CheckUnionCaseAttributes: g: TcGlobals -> x: UnionCaseRef -> m: range -> OperationResult<unit>
