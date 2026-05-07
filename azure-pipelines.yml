@@ -166,6 +166,12 @@ extends:
                   packageType: sdk
                   useGlobalJson: true
                   workingDirectory: '$(Build.SourcesDirectory)'
+              - task: UseDotNet@2
+                displayName: 'Install legacy .NET Core SDK 2.1.300 for F# 15.9 LKG'
+                inputs:
+                  packageType: sdk
+                  version: '2.1.300'
+                  installationPath: '$(Build.SourcesDirectory)\Tools\dotnet20'
               - task: MicroBuildSigningPlugin@4
                 inputs:
                   signType: ${{ parameters.SignType }}
