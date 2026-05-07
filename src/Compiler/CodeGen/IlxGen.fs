@@ -529,6 +529,9 @@ type TypeReprEnv
             // Random value for post-hoc diagnostic analysis on generated tree *
             uint16 666
 
+    /// Check if a type parameter is in the environment
+    member _.ContainsKey(tp: Typar) = reprs.ContainsKey(tp.Stamp)
+
     /// Add an additional type parameter to the environment. If the parameter is a units-of-measure parameter
     /// then it is ignored, since it doesn't correspond to a .NET type parameter.
     member tyenv.AddOne(tp: Typar) =
@@ -708,7 +711,15 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         else
             EraseClosures.mkILTyFuncTy cenv.ilxPubCloEnv
 
-    | TType_var(tp, _) -> mkILTyvarTy tyenv[tp, m]
+    | TType_var(tp, _) ->
+        if tyenv.ContainsKey tp then
+            mkILTyvarTy tyenv[tp, m]
+        else
+            // Unsolved type variable not in the TypeReprEnv — can arise in fsi for inline SRTP
+            // functions where constraint resolution leaves phantom typars unsolved.
+            // Default the typar and generate the type for the default to avoid an ICE.
+            let defaultTy = TypeRelations.ChooseTyparSolution g cenv.amap tp
+            GenTypeAux cenv m tyenv voidOK ptrsOK defaultTy
 
     | TType_measure _ -> g.ilg.typ_Int32
 
