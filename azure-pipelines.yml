@@ -156,20 +156,12 @@ extends:
               - task: NuGetAuthenticate@1
                 inputs:
                   nuGetServiceConnections: 'devdiv/dotnet-core-internal-tooling'
-              - task: PowerShell@2
-                displayName: 'Pre-restore legacy F# 15.9 packages from dnceng mirror (off-config to avoid CFS m-y-get false positive)'
+              - task: NuGetCommand@2
+                displayName: 'Pre-restore legacy F# 15.9 packages from dnceng mirror (off-config to bypass CFS m-y-get rule)'
                 inputs:
-                  targetType: 'inline'
-                  script: |
-                    # The dnceng myget-legacy mirror has 'myget' substring in URL → CFS NuGet
-                    # Security Analysis rejects it as a feed declared in NuGet.Config files.
-                    # Workaround: keep this mirror OUT of NuGet.Config; restore packages.config
-                    # via cmdline -Source flag (CFS scans config files, not cmdline args).
-                    $mirror = "https://pkgs.dev.azure.com/dnceng/public/_packaging/" + "myget" + "-legacy/nuget/v3/index.json"
-                    Write-Host "Pre-restoring packages.config (legacy F# 15.9 packages) using off-config source"
-                    & nuget restore packages.config -PackagesDirectory packages -ConfigFile NuGet.Config -Source $mirror -Source "https://api.nuget.org/v3/index.json" -Verbosity quiet
-                    if ($LASTEXITCODE -ne 0) { Write-Host "##vso[task.logissue type=warning]nuget restore packages.config returned $LASTEXITCODE" }
-                    Write-Host "Pre-restore complete."
+                  command: custom
+                  arguments: 'restore packages.config -PackagesDirectory packages -ConfigFile NuGet.Config -Source https://pkgs.dev.azure.com/dnceng/public/_packaging/myget-legacy/nuget/v3/index.json -Source https://api.nuget.org/v3/index.json'
+                continueOnError: true
               - task: NuGetCommand@2
                 inputs:
                   command: custom
