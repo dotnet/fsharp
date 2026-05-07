@@ -5,6 +5,11 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
+  .ver 2:1:0:0
+}
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -71,27 +76,30 @@
   {
     .entrypoint
     
-    .maxstack  3
-    .locals init (int32 V_0)
-    IL_0000:  call       int32 assembly::get_x()
-    IL_0005:  stloc.0
-    IL_0006:  nop
-    IL_0007:  call       int32 assembly::get_x()
-    IL_000c:  box        [runtime]System.Int32
-    IL_0011:  brfalse.s  IL_0015
+    .maxstack  4
+    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
+    IL_0000:  nop
+    IL_0001:  nop
+    IL_0002:  ldc.i4.5
+    IL_0003:  box        [runtime]System.Int32
+    IL_0008:  brfalse.s  IL_000c
 
-    IL_0013:  br.s       IL_0028
+    IL_000a:  br.s       IL_0026
 
-    IL_0015:  ldstr      "Is null"
-    IL_001a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_001f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0024:  pop
-    IL_0025:  nop
-    IL_0026:  br.s       IL_002a
+    IL_000c:  ldstr      "Is null"
+    IL_0011:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_0016:  stloc.0
+    IL_0017:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+    IL_001c:  ldloc.0
+    IL_001d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0022:  pop
+    IL_0023:  nop
+    IL_0024:  br.s       IL_0028
 
-    IL_0028:  nop
-    IL_0029:  nop
-    IL_002a:  ret
+    IL_0026:  nop
+    IL_0027:  nop
+    IL_0028:  ret
   } 
 
 } 

@@ -3127,6 +3127,7 @@ let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo
 
 let TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: TcEnv) m ad nm ty =
     AllMethInfosOfTypeInScope collectionSettings cenv.infoReader env.NameEnv (Some nm) ad IgnoreOverrides m ty
+    |> List.filter (IsExtensionMethCompatibleWithTy cenv.infoReader m ty)
 
 let TryFindFSharpSignatureInstanceGetterProperty (cenv: cenv) (env: TcEnv) m nm ty (sigTys: TType list) =
     let g = cenv.g
@@ -3155,7 +3156,7 @@ let BuildDisposableCleanup (cenv: cenv) env m (v: Val) =
     v.SetHasBeenReferenced()
 
     let disposeMethod =
-        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "Dispose" g.system_IDisposable_ty with
+        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Dispose" g.system_IDisposable_ty with
         | [x] -> x
         | _ -> error(InternalError(FSComp.SR.tcCouldNotFindIDisposable(), m))
 

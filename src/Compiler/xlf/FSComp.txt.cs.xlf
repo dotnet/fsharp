@@ -792,6 +792,11 @@
         <target state="translated">Výraz if musí vrátit řazenou kolekci členů o délce {0} typu\n    {1}    \nto splňovat požadavky na typ kontextu. Aktuálně vrací řazenou kolekci členů o délce {2} typu\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilCustomAttrInvalidArrayElemType">
+        <source>The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</source>
+        <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">Neznámý bod ladění {0}. Dostupné body ladění jsou {1}.</target>

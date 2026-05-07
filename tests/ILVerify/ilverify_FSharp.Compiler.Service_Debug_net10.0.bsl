@@ -2,7 +2,7 @@
 [IL]: Error [UnmanagedPointer]: : FSharp.Compiler.IO.SafeUnmanagedMemoryStream::.ctor(uint8*, int64, int64, [S.P.CoreLib]System.IO.FileAccess, object)][offset 0x00000001] Unmanaged pointers are not a verifiable type.
 [IL]: Error [UnmanagedPointer]: : FSharp.Compiler.IO.RawByteMemory::.ctor(uint8*, int32, object)][offset 0x00000009] Unmanaged pointers are not a verifiable type.
 [IL]: Error [StackByRef]: : FSharp.Compiler.IO.RawByteMemory::get_Item(int32)][offset 0x0000001E][found Native Int] Expected ByRef on the stack.
-[IL]: Error [StackByRef]: : FSharp.Compiler.IO.RawByteMemory::set_Item(int32, uint8)][offset 0x00000025][found Native Int] Expected ByRef on the stack.
+[IL]: Error [StackByRef]: : FSharp.Compiler.IO.RawByteMemory::set_Item(int32, uint8)][offset 0x0000001F][found Native Int] Expected ByRef on the stack.
 [IL]: Error [ReturnPtrToStack]: : Internal.Utilities.Text.Lexing.LexBuffer`1::get_LexemeView()][offset 0x00000019] Return type is ByRef, TypedReference, ArgHandle, or ArgIterator.
 [IL]: Error [ReturnPtrToStack]: : FSharp.Compiler.CodeAnalysis.ItemKeyStore::ReadKeyString([System.Reflection.Metadata]System.Reflection.Metadata.BlobReader&)][offset 0x00000026] Return type is ByRef, TypedReference, ArgHandle, or ArgIterator.
 [IL]: Error [ReturnPtrToStack]: : FSharp.Compiler.CodeAnalysis.ItemKeyStore::ReadFirstKeyString()][offset 0x00000070] Return type is ByRef, TypedReference, ArgHandle, or ArgIterator.

@@ -792,6 +792,11 @@
         <target state="translated">L'espressione 'if' deve restituire una tupla di lunghezza {0} di tipo\n    {1} \nper soddisfare i requisiti del tipo di contesto. Restituisce attualmente una tupla di lunghezza {2} di tipo\n    {3} \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilCustomAttrInvalidArrayElemType">
+        <source>The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</source>
+        <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">Punto di debug '{0}' sconosciuto. I punti di debug disponibili sono '{1}'.</target>
