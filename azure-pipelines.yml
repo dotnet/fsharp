@@ -140,7 +140,7 @@ extends:
                   versionSpec: 6.2.4
               - task: NuGetAuthenticate@1
                 inputs:
-                  nuGetServiceConnections: 'azure-public/vs-impl, azure-public/vssdk, devdiv/engineering, devdiv/dotnet-core-internal-tooling'
+                  nuGetServiceConnections: 'devdiv/dotnet-core-internal-tooling'
               - task: NuGetCommand@2
                 inputs:
                   command: custom
