@@ -172,6 +172,53 @@ extends:
                   packageType: sdk
                   version: '2.1.300'
                   installationPath: '$(Build.SourcesDirectory)\Tools\dotnet20'
+              - task: PowerShell@2
+                displayName: 'Verify Tools/dotnet20 has full SDK 2.1.300 layout'
+                inputs:
+                  targetType: inline
+                  script: |
+                    $dst = "$(Build.SourcesDirectory)\Tools\dotnet20"
+                    if (Test-Path "$dst\dotnet.exe") {
+                        Write-Host "dotnet.exe at $dst\dotnet.exe present."
+                        if (Test-Path "$dst\shared") {
+                            Write-Host "shared/ present"
+                        } else {
+                            Write-Host "WARNING: shared/ missing -- runtime not in Tools/dotnet20"
+                        }
+                        if (Test-Path "$dst\sdk\2.1.300") {
+                            Write-Host "sdk/2.1.300 present"
+                        } else {
+                            Write-Host "WARNING: sdk/2.1.300 missing"
+                        }
+                        Get-ChildItem $dst | Format-Table -AutoSize
+                    } else {
+                        Write-Host "dotnet.exe MISSING from $dst -- searching alternative locations"
+                        $candidates = @(
+                            "C:\hostedtoolcache\windows\dotnet",
+                            "$env:ProgramFiles\dotnet",
+                            "${env:ProgramFiles(x86)}\dotnet",
+                            "$env:LocalAppData\Microsoft\dotnet",
+                            "$env:Agent_ToolsDirectory\dotnet"
+                        )
+                        foreach ($c in $candidates) {
+                            if (Test-Path "$c\dotnet.exe") {
+                                Write-Host "Found dotnet.exe at: $c"
+                                if (Test-Path "$c\sdk\2.1.300") {
+                                    Write-Host "Has sdk 2.1.300, copying full layout to Tools/dotnet20"
+                                    if (-not (Test-Path $dst)) { New-Item -ItemType Directory -Path $dst -Force | Out-Null }
+                                    xcopy /E /I /Y /Q "$c\*" "$dst\" | Out-Null
+                                    if (Test-Path "$dst\dotnet.exe") {
+                                        Write-Host "Tools/dotnet20 is now populated."
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                        if (-not (Test-Path "$dst\dotnet.exe")) {
+                            Write-Host "##vso[task.logissue type=error]Could not populate Tools/dotnet20. Check log for candidate paths."
+                            exit 1
+                        }
+                    }
               - task: MicroBuildSigningPlugin@4
                 inputs:
                   signType: ${{ parameters.SignType }}
