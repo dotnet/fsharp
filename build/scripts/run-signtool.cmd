@@ -12,26 +12,26 @@ set ConfigFile=
 
 :parsearg
 if "%1" == "" goto doneargs
-set arg=%1
-set argv=%~2
+set "arg=%~1"
+set "argv=%~2"
 
 if /i "%arg%" == "/?" goto help
 if /i "%arg%" == "-h" goto help
 if /i "%arg%" == "--help" goto help
 if /i "%arg%" == "-MSBuild" (
-    set MSBuild=%argv%
+    set "MSBuild=%argv%"
     shift
 )
 if /i "%arg%" == "-SignType" (
-    set SignType=%argv%
+    set "SignType=%argv%"
     shift
 )
 if /i "%arg%" == "-Configuration" (
-    set Configuration=%argv%
+    set "Configuration=%argv%"
     shift
 )
 if /i "%arg%" == "-ConfigFile" (
-    set ConfigFile=%argv%
+    set "ConfigFile=%argv%"
     shift
 )
 
