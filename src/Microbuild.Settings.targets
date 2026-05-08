@@ -3,6 +3,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MicroBuildCoreVersion>0.2.0</MicroBuildCoreVersion>
+    <MicroBuildPluginsSwixBuildVersion>1.0.147</MicroBuildPluginsSwixBuildVersion>
   </PropertyGroup>
   <Import Project="..\packages\MicroBuild.Core.$(MicroBuildCoreVersion)\build\MicroBuild.Core.props" />
 
@@ -10,4 +11,11 @@
   </Target>
 
   <Import Project="..\packages\MicroBuild.Core.$(MicroBuildCoreVersion)\build\MicroBuild.Core.targets" />
+  <!-- F# 15.9 revival: explicitly import SwixBuild plugin from packages dir.
+       MicroBuild.Core's wildcard auto-import via $(MicroBuildPluginDirectory) does not pick up
+       the full SwixBuild content (tools/ folder) when MicroBuildSwixPlugin@4 task installs it
+       at _temp\MicroBuild\Plugins. Direct import from packages\ ensures the Build target is
+       defined for .swixproj files. -->
+  <Import Project="..\packages\MicroBuild.Plugins.SwixBuild.$(MicroBuildPluginsSwixBuildVersion)\build\MicroBuild.Plugins.SwixBuild.targets"
+          Condition="Exists('..\packages\MicroBuild.Plugins.SwixBuild.$(MicroBuildPluginsSwixBuildVersion)\build\MicroBuild.Plugins.SwixBuild.targets') and ('$(MSBuildProjectExtension)' == '.swixproj' or '$(MSBuildProjectExtension)' == '.vsmanproj')" />
 </Project>
