@@ -13,7 +13,7 @@ set ConfigFile=
 :parsearg
 if "%1" == "" goto doneargs
 set arg=%1
-set argv=%2
+set argv=%~2
 
 if /i "%arg%" == "/?" goto help
 if /i "%arg%" == "-h" goto help
