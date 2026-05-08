@@ -44,26 +44,32 @@ if not defined MSBuild echo Location of MSBuild.exe not specified. && goto error
 if not defined ConfigFile echo Configuration file not specified. && goto error
 if not exist "%MSBuild%" echo The specified MSBuild.exe does not exist. && goto error
 
-REM F# 15.9 revival: signtool was restored via packages.config to repo packages\ dir
-REM (PascalCase joined layout), not the PackageReference user-profile layout.
-REM Try repo packages\ first, fall back to user .nuget\packages.
+REM F# 15.9 revival: signtool can be in repo packages\ (packages.config layout: Id.Version\)
+REM OR in user-profile .nuget\packages (also packages.config layout when restored via
+REM -PackagesDirectory %USERPROFILE%\.nuget\packages from packages.config). PackageReference
+REM layout (Id\Version\) is the LAST fallback. Use delayed expansion (!var!) since the
+REM `setlocal enableDelayedExpansion` is already in effect.
 set NUGET_PACKAGES=%scriptdir%..\..\packages
-set _signtoolexe=%NUGET_PACKAGES%\RoslynTools.SignTool.1.0.0-beta2-dev3\tools\SignTool.exe
-if not exist "%_signtoolexe%" (
+set _signtoolexe=!NUGET_PACKAGES!\RoslynTools.SignTool.1.0.0-beta2-dev3\tools\SignTool.exe
+if not exist "!_signtoolexe!" (
+    set NUGET_PACKAGES=%USERPROFILE%\.nuget\packages
+    set _signtoolexe=%USERPROFILE%\.nuget\packages\RoslynTools.SignTool.1.0.0-beta2-dev3\tools\SignTool.exe
+)
+if not exist "!_signtoolexe!" (
     set NUGET_PACKAGES=%USERPROFILE%\.nuget\packages
     set _signtoolexe=%USERPROFILE%\.nuget\packages\RoslynTools.SignTool\1.0.0-beta2-dev3\tools\SignTool.exe
 )
-set SignToolArgs=-msbuildPath %MSBuild% -config "%ConfigFile%" -nugetPackagesPath "%NUGET_PACKAGES%"
+set SignToolArgs=-msbuildPath "%MSBuild%" -config "%ConfigFile%" -nugetPackagesPath "!NUGET_PACKAGES!"
 if /i "%SignType%" == "real" goto runsigntool
 if /i "%SignType%" == "test" set SignToolArgs=%SignToolArgs% -testSign && goto runsigntool
 set SignToolArgs=%SignToolArgs% -test
 
 :runsigntool
 
-if not exist "%_signtoolexe%" echo The signing tool could not be found at location '%_signtoolexe%' && goto error
+if not exist "!_signtoolexe!" echo The signing tool could not be found at location '!_signtoolexe!' && goto error
 set SignToolArgs=%SignToolArgs% "%scriptdir%..\..\%Configuration%"
-echo "%_signtoolexe%" %SignToolArgs%
-     "%_signtoolexe%" %SignToolArgs%
+echo "!_signtoolexe!" %SignToolArgs%
+     "!_signtoolexe!" %SignToolArgs%
 if errorlevel 1 goto error
 goto :EOF
 
