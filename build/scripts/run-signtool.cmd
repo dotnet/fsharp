@@ -44,8 +44,15 @@ if not defined MSBuild echo Location of MSBuild.exe not specified. && goto error
 if not defined ConfigFile echo Configuration file not specified. && goto error
 if not exist "%MSBuild%" echo The specified MSBuild.exe does not exist. && goto error
 
-set NUGET_PACKAGES=%USERPROFILE%\.nuget\packages
-set _signtoolexe=%NUGET_PACKAGES%\RoslynTools.SignTool\1.0.0-beta2-dev3\tools\SignTool.exe
+REM F# 15.9 revival: signtool was restored via packages.config to repo packages\ dir
+REM (PascalCase joined layout), not the PackageReference user-profile layout.
+REM Try repo packages\ first, fall back to user .nuget\packages.
+set NUGET_PACKAGES=%scriptdir%..\..\packages
+set _signtoolexe=%NUGET_PACKAGES%\RoslynTools.SignTool.1.0.0-beta2-dev3\tools\SignTool.exe
+if not exist "%_signtoolexe%" (
+    set NUGET_PACKAGES=%USERPROFILE%\.nuget\packages
+    set _signtoolexe=%USERPROFILE%\.nuget\packages\RoslynTools.SignTool\1.0.0-beta2-dev3\tools\SignTool.exe
+)
 set SignToolArgs=-msbuildPath %MSBuild% -config "%ConfigFile%" -nugetPackagesPath "%NUGET_PACKAGES%"
 if /i "%SignType%" == "real" goto runsigntool
 if /i "%SignType%" == "test" set SignToolArgs=%SignToolArgs% -testSign && goto runsigntool
