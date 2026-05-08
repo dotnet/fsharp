@@ -7,7 +7,7 @@ setlocal
 :: dotnet 2.1.300 SDK from official Microsoft CDN.
 
 set TOOLRUNTIME_DIR=%~dp0Tools
-set BUILD_TOOLS_PATH=%~dp0packages\microsoft.dotnet.buildtools\1.0.27-prerelease-01001-04\lib
+set BUILD_TOOLS_PATH=%~dp0packages\Microsoft.DotNet.BuildTools.1.0.27-prerelease-01001-04\lib
 set DOTNET20_PATH=%TOOLRUNTIME_DIR%\dotnet20
 set DOTNET_SDK_VERSION=2.1.300
 set DOTNET_SDK_URL=https://dotnetcli.azureedge.net/dotnet/Sdk/%DOTNET_SDK_VERSION%/dotnet-sdk-%DOTNET_SDK_VERSION%-win-x64.zip
