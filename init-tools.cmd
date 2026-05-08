@@ -60,6 +60,16 @@ if NOT exist "%DOTNET20_PATH%\dotnet.exe" (
     exit /b 1
 )
 
+:: Step 3: Copy MicroBuild.Core .props/.targets to Tools/ (Build.Common.targets imports them)
+set MICROBUILD_PATH=%~dp0packages\MicroBuild.Core.0.2.0\build
+if exist "%MICROBUILD_PATH%\MicroBuild.Core.targets" (
+    echo Copying MicroBuild.Core targets to %TOOLRUNTIME_DIR%\
+    xcopy /Y /Q "%MICROBUILD_PATH%\*.props" "%TOOLRUNTIME_DIR%\" > nul
+    xcopy /Y /Q "%MICROBUILD_PATH%\*.targets" "%TOOLRUNTIME_DIR%\" > nul
+) else (
+    echo WARNING: MicroBuild.Core.0.2.0 not at %MICROBUILD_PATH%
+)
+
 echo Init-Tools.cmd completed for BuildTools 1.0.27-prerelease-01001-04 + dotnet SDK %DOTNET_SDK_VERSION% > "%TOOLRUNTIME_DIR%\init-tools.completed0"
 echo Tools initialized.
 exit /b 0
