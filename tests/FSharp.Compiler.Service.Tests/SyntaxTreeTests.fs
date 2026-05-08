@@ -124,6 +124,7 @@ let private sanitizeAST (sourceDirectoryValue: string) (ast: ParsedInput) : Pars
 
 let parseSourceCode (name: string, code: string) =
     let location = Path.Combine(RootDirectory, name).Replace("\\", "/")
+    Range.setTestSource location code
 
     let parseResults =
         checker.ParseFile(
@@ -188,7 +189,10 @@ let ParseFile fileName =
     let equals = expected = actual
     let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
 
-    if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" && not equals then
+    let shouldUpdateBaseline =
+        (not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" && not equals)
+
+    if shouldUpdateBaseline then
         File.WriteAllText(bslPath, actual)
     elif not equals then
         File.WriteAllText(actualPath, actual)
