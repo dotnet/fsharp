@@ -1105,7 +1105,7 @@ module LibB
 
 let append s i = s + string i
 """
-                    (set [| 0 |])
+                    Set.empty
                 sourceFile
                     "Run.fsx"
                     """
@@ -1122,7 +1122,7 @@ module ScriptModule =
             let a = inc 41
             append s a
 """
-                    (set [| 1 |])
+                    (set [| 0; 1 |])
                 sourceFile
                     "Independent.fs"
                     """
@@ -1149,6 +1149,24 @@ module AnotherConsumer
 let value = Script.ScriptModule.compute "hi"
 """
                     (set [| 2 |])
+            ]
+        scenario
+            "Loaded script referenced by full path without open"
+            [
+                sourceFile
+                    "A.fsx"
+                    """
+let value = 41
+"""
+                    Set.empty
+                sourceFile
+                    "B.fsx"
+                    """
+#load "A.fsx"
+
+let result = A.value + 1
+"""
+                    (set [| 0 |])
             ]
         scenario
             "Sub-namespace opens parent namespace with types and modules"

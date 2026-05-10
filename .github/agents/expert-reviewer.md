@@ -473,6 +473,49 @@ Execute review in five waves, each building on the previous.
 3. Verify build and packaging correctness.
 4. Confirm all test baselines are updated and explained.
 
+### Wave 5: Deliver Review as Inline Comments
+
+**This wave is mandatory.** Analysis without posting is worthless — the review MUST appear on the PR as posted inline comments at the correct file and line.
+
+1. **Deduplicate first.** Check existing reviews to avoid duplicate content:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq 'length'
+   ```
+   If reviews from automated accounts already exist, skip posting and apply the label only.
+
+2. **Post findings as a review with inline comments** at the best-fitting file and line. Use the GitHub API to create a single review with all comments:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/reviews \
+     --method POST \
+     --field event=COMMENT \
+     --field 'body=Expert AI review — see inline comments for findings.' \
+     --field 'comments=[
+       {"path":"src/Compiler/Checking/CheckDeclarations.fs","line":2750,"body":"**[Test Coverage]** This code path lacks a test. Add a test exercising this branch."},
+       {"path":"src/Compiler/CodeGen/IlxGen.fs","line":1234,"body":"**[IL Emission]** Call `stripTyEqns` before this match to handle type abbreviations."}
+     ]'
+   ```
+   Each comment needs:
+   - `path`: file path relative to repo root (from the diff)
+   - `line`: line number in the **new** version of the file (right side of diff)
+   - `body`: severity tag in `**[Dimension]**` format, the issue, and suggested fix
+
+3. **If no significant issues found**, post an approving review:
+   ```bash
+   gh pr review {number} --repo {owner}/{repo} --approve \
+     --body "Expert AI review: no significant issues found across applicable dimensions."
+   ```
+
+4. **Apply the label and request human review:**
+   ```bash
+   gh pr edit {number} --repo {owner}/{repo} --add-label AI-reviewed --add-reviewer T-Gro
+   ```
+
+**Delivery rules:**
+- At most 10 inline comments — prioritize Behavioral over Quality over Nitpick.
+- Every comment must reference a specific file and line from the diff.
+- Never post duplicate content if reviews already exist on the PR.
+- If the PR is too large to review fully, note skipped areas in the review body.
+
 ## Folder Hotspot Mapping
 
 See the `reviewing-compiler-prs` skill for the dimension selection table mapping files → dimensions.
