@@ -2874,6 +2874,20 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             | Some(MethodItem msets) when isLookUpExpr ->
                 let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
 
+                let isAmbivalent =
+                    minfos
+                    |> List.exists (fun minfo ->
+                        match isInstanceFilter with
+                        | LookupIsInstance.Yes -> not minfo.IsInstance
+                        | LookupIsInstance.No -> minfo.IsInstance
+                        | LookupIsInstance.Ambivalent -> true)
+
+                let isInstanceFilter =
+                    if isAmbivalent then
+                        LookupIsInstance.Ambivalent
+                    else
+                        isInstanceFilter
+
                 // fold the available extension members into the overload resolution
                 let extensionMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv ad optFilter isInstanceFilter m ty
 
@@ -4165,7 +4179,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
 //
 // QUERY (instantiationGenerator cleanup): it would be really nice not to flow instantiationGenerator to here.
 let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Ident) rest (typeNameResInfo: TypeNameResolutionInfo) findFlag maybeArgExpr =
-    let lookupKind = LookupKind.Expr LookupIsInstance.Ambivalent
+    let lookupKind = LookupKind.Expr LookupIsInstance.Yes
     let adhocDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo ty maybeArgExpr)
     match adhocDotSearchAccessible with
     | Exception _ ->
@@ -4184,7 +4198,11 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
                     OneSuccess (ResolutionInfo.Empty, item, rest)
                 | _ -> NoResultsOrUsefulErrors
 
-        dotFieldIdSearch
+        let adhocDotSearchAll () =
+            let lookupKind = LookupKind.Expr LookupIsInstance.Ambivalent
+            ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 1 m AccessibleFromSomeFSharpCode id rest findFlag typeNameResInfo ty None
+
+        dotFieldIdSearch +++ adhocDotSearchAll
         |> AtMostOneResult m
         |> ForceRaise
     | _ ->
