@@ -28,5 +28,6 @@ module Program =
     StaticGeneric.Bar(42) // StaticGeneric is just an ident
     StaticGeneric<int>.Bar(42) // StaticGeneric<int> is an expression
         """
+        |> withOptions ["--nowarn:1125"]
         |> typecheck
         |> shouldSucceed
