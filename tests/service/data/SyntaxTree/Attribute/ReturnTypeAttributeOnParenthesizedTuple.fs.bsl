@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Attribute/ReturnTypeAttributeOnBareTuple.fs", false,
+     ("/root/Attribute/ReturnTypeAttributeOnParenthesizedTuple.fs", false,
       QualifiedNameOfFile M, [],
       [SynModuleOrNamespace
          ([M], false, NamedModule,
@@ -43,30 +43,29 @@ ImplFile
                                None, (4,18--4,27)),
                             Some
                               (SynBindingReturnInfo
-                                 (Tuple
-                                    (false,
-                                     [Type
-                                        (SignatureParameter
-                                           ([{ Attributes =
-                                                [{ TypeName =
-                                                    SynLongIdent
-                                                      ([A], [], [None])
-                                                   ArgExpr =
-                                                    Const (Unit, (5,10--5,11))
-                                                   Target = None
-                                                   AppliesToGetterAndSetter =
-                                                    false
-                                                   Range = (5,10--5,11) }]
-                                               Range = (5,8--5,13) }], false,
-                                            None,
-                                            LongIdent
-                                              (SynLongIdent
-                                                 ([string], [], [None])),
-                                            (5,8--6,14))); Star (6,15--6,16);
-                                      Type
-                                        (LongIdent
-                                           (SynLongIdent ([string], [], [None])))],
-                                     (5,8--6,23)), (5,8--6,23),
+                                 (SignatureParameter
+                                    ([{ Attributes =
+                                         [{ TypeName =
+                                             SynLongIdent ([A], [], [None])
+                                            ArgExpr = Const (Unit, (5,10--5,11))
+                                            Target = None
+                                            AppliesToGetterAndSetter = false
+                                            Range = (5,10--5,11) }]
+                                        Range = (5,8--5,13) }], false, None,
+                                     Paren
+                                       (Tuple
+                                          (false,
+                                           [Type
+                                              (LongIdent
+                                                 (SynLongIdent
+                                                    ([string], [], [None])));
+                                            Star (6,16--6,17);
+                                            Type
+                                              (LongIdent
+                                                 (SynLongIdent
+                                                    ([string], [], [None])))],
+                                           (6,9--6,24)), (6,8--6,25)),
+                                     (5,8--6,25)), (5,8--6,25),
                                   [{ Attributes =
                                       [{ TypeName =
                                           SynLongIdent ([A], [], [None])
@@ -86,31 +85,33 @@ ImplFile
                                      (String ("", Regular, (7,16--7,18)),
                                       (7,16--7,18))], [(7,14--7,15)],
                                   (7,12--7,18)),
-                               Tuple
-                                 (false,
-                                  [Type
-                                     (SignatureParameter
-                                        ([{ Attributes =
-                                             [{ TypeName =
-                                                 SynLongIdent ([A], [], [None])
-                                                ArgExpr =
-                                                 Const (Unit, (5,10--5,11))
-                                                Target = None
-                                                AppliesToGetterAndSetter = false
-                                                Range = (5,10--5,11) }]
-                                            Range = (5,8--5,13) }], false, None,
-                                         LongIdent
-                                           (SynLongIdent ([string], [], [None])),
-                                         (5,8--6,14))); Star (6,15--6,16);
-                                   Type
-                                     (LongIdent
-                                        (SynLongIdent ([string], [], [None])))],
-                                  (5,8--6,23)), (7,12--7,18)), (4,18--4,27),
-                            NoneAtInvisible,
+                               SignatureParameter
+                                 ([{ Attributes =
+                                      [{ TypeName =
+                                          SynLongIdent ([A], [], [None])
+                                         ArgExpr = Const (Unit, (5,10--5,11))
+                                         Target = None
+                                         AppliesToGetterAndSetter = false
+                                         Range = (5,10--5,11) }]
+                                     Range = (5,8--5,13) }], false, None,
+                                  Paren
+                                    (Tuple
+                                       (false,
+                                        [Type
+                                           (LongIdent
+                                              (SynLongIdent
+                                                 ([string], [], [None])));
+                                         Star (6,16--6,17);
+                                         Type
+                                           (LongIdent
+                                              (SynLongIdent
+                                                 ([string], [], [None])))],
+                                        (6,9--6,24)), (6,8--6,25)), (5,8--6,25)),
+                               (7,12--7,18)), (4,18--4,27), NoneAtInvisible,
                             { LeadingKeyword =
                                StaticMember ((4,4--4,10), (4,11--4,17))
                               InlineKeyword = None
-                              EqualsRange = Some (6,24--6,25) }), (4,4--7,18))],
+                              EqualsRange = Some (6,26--6,27) }), (4,4--7,18))],
                      (4,4--7,18)), [], None, (3,5--7,18),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)
