@@ -6044,7 +6044,12 @@ topType:
 
   | topTupleType
      { let ty, rmdata = $1
-       ty, (SynValInfo([], (match rmdata with [md] -> md | _ -> SynInfo.unnamedRetVal))) }
+       let retArgInfo =
+           match rmdata with
+           | [md] -> md
+           | SynArgInfo(attrs, _, _) :: _ when not attrs.IsEmpty -> SynArgInfo(attrs, false, None)
+           | _ -> SynInfo.unnamedRetVal
+       ty, SynValInfo([], retArgInfo) }
 
 topTupleType:
   | topAppType STAR topTupleTypeElements
