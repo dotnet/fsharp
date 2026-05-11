@@ -2553,10 +2553,21 @@ tyconNameAndTyparDecls:
   | opt_access path postfixTyparDecls
       { Some $3, true, $1, Some(SynType.LongIdent($2)) }
 
-  /* Type extension with general type: type (int * int) with ..., type struct (int * int) with ..., type int[] with ..., etc.
+  /* Non-struct tuple type extension: type (int * int) with ...
+     Uses explicit STAR to disambiguate from prefix typar decls ('a,'b) which use COMMA.
      Validation of which types are valid for extension is deferred to CheckDeclarations.fs */
-  | opt_access atomType
-      { None, false, $1, Some $2 }
+  | opt_access LPAREN appTypeCanBeNullable STAR tupleOrQuotTypeElements rparen
+      { let mStar = rhs parseState 4
+        let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
+        let mTuple = rhs2 parseState 2 6
+        None, false, $1, Some (SynType.Paren(SynType.Tuple(false, path, mTuple), mTuple)) }
+
+  /* Struct tuple type extension: type struct (int * int) with ... */
+  | opt_access STRUCT LPAREN appTypeCanBeNullable STAR tupleOrQuotTypeElements rparen
+      { let mStar = rhs parseState 5
+        let path = SynTupleTypeSegment.Type $4 :: SynTupleTypeSegment.Star mStar :: $6
+        let mTuple = rhs2 parseState 1 7
+        None, false, $1, Some (SynType.Tuple(true, path, mTuple)) }
 
   /* Recovery: type ('T1 *) or type ('T1 *) with ... - trailing star, missing second type */
   | opt_access LPAREN appTypeCanBeNullable STAR rparen
@@ -2593,10 +2604,20 @@ typarDeclList:
   | typarDecl { [$1] }
 
 typarDecl:
-  | opt_attributes typar
+  /* Split into attributed/non-attributed alternatives to avoid an epsilon-reduction of opt_attributes
+     that creates a shift/reduce conflict with appTypeCon in tyconNameAndTyparDecls tuple type rules. */
+  | typar
+      { SynTyparDecl([], $1, [], SynTyparDeclTrivia.Zero) }
+
+  | attributes typar
       { SynTyparDecl($1, $2, [], SynTyparDeclTrivia.Zero) }
 
-  | opt_attributes typar AMP intersectionConstraints
+  | typar AMP intersectionConstraints
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (rhs2 parseState 2 3)
+        let constraints, mAmpersands = $3
+        SynTyparDecl([], $1, List.rev constraints, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
+
+  | attributes typar AMP intersectionConstraints
       { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (rhs2 parseState 3 4)
         let constraints, mAmpersands = $4
         SynTyparDecl($1, $2, List.rev constraints, { AmpersandRanges = rhs parseState 3 :: List.rev mAmpersands }) }
