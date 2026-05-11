@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -52,9 +42,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname static int32 
-            op_Addition<a>(!!a _arg1,
-                           valuetype assembly/S _arg2) cil managed
+    .method public specialname static int32 op_Addition<a>(!!a _arg1, valuetype assembly/S _arg2) cil managed
     {
       
       .maxstack  8
@@ -62,9 +50,7 @@
       IL_0001:  ret
     } 
 
-    .method public specialname static int32 
-            op_Multiply<a>(!!a _arg3,
-                           valuetype assembly/S _arg4) cil managed
+    .method public specialname static int32 op_Multiply<a>(!!a _arg3, valuetype assembly/S _arg4) cil managed
     {
       
       .maxstack  8
@@ -72,9 +58,7 @@
       IL_0001:  ret
     } 
 
-    .method public specialname static int32 
-            op_Addition<a>(valuetype assembly/S _arg5,
-                           !!a _arg6) cil managed
+    .method public specialname static int32 op_Addition<a>(valuetype assembly/S _arg5, !!a _arg6) cil managed
     {
       
       .maxstack  8
@@ -82,9 +66,7 @@
       IL_0001:  ret
     } 
 
-    .method public specialname static int32 
-            op_Multiply<a>(valuetype assembly/S _arg7,
-                           !!a _arg8) cil managed
+    .method public specialname static int32 op_Multiply<a>(valuetype assembly/S _arg7, !!a _arg8) cil managed
     {
       
       .maxstack  8

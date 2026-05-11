@@ -2,7 +2,7 @@
 #r @"../test/ComboProvider.dll"
 #endif
 
-module ComboProvider.Tests
+module ComboProviderTests
 
 open ComboProvider.Provided
 open Xunit
@@ -25,4 +25,3 @@ let ``StaticMethod2 returns a null`` () =
 
 let ``MyType supports null`` () =
     Assert.True(MyType("test it") <> null)
-                

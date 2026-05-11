@@ -439,7 +439,10 @@ let ``Cancel running jobs with the same key`` () =
 
     job.Wait()
 
-    let events = eventsWhen events (received Finished)
+    // Wait for all 11 jobs to reach a terminal state (canceled/finished/failed)
+    // before asserting, to avoid snapshot races where some Canceled events
+    // haven't been observed yet when the Finished event arrives.
+    let events = eventsWhen events (fun e -> countOf Canceled e + countOf Finished e + countOf Failed e >= 11)
 
     Assert.Equal(0, events |> countOf Failed)
 

@@ -22,13 +22,13 @@ assert (sizeof<TyparFlags> = 4)
 /// Metadata on values (names of arguments etc.) 
 module ValReprInfo = 
 
-    let unnamedTopArg1: ArgReprInfo = { Attribs = []; Name = None; OtherRange = None }
+    let unnamedTopArg1: ArgReprInfo = { Attribs = WellKnownValAttribs.Empty; Name = None; OtherRange = None }
 
     let unnamedTopArg = [unnamedTopArg1]
 
     let unitArgData: ArgReprInfo list list = [[]]
 
-    let unnamedRetVal: ArgReprInfo = { Attribs = []; Name = None; OtherRange = None }
+    let unnamedRetVal: ArgReprInfo = { Attribs = WellKnownValAttribs.Empty; Name = None; OtherRange = None }
 
     let selfMetadata = unnamedTopArg
 
@@ -36,12 +36,12 @@ module ValReprInfo =
 
     let IsEmpty info =
         match info with
-        | ValReprInfo([], [], { Attribs = []; Name = None; OtherRange = None }) -> true
+        | ValReprInfo([], [], retInfo) when retInfo.Attribs.AsList().IsEmpty && retInfo.Name.IsNone && retInfo.OtherRange.IsNone -> true
         | _ -> false
 
     let InferTyparInfo (tps: Typar list) = tps |> List.map (fun tp -> TyparReprInfo(tp.Id, tp.Kind))
 
-    let InferArgReprInfo (v: Val) : ArgReprInfo = { Attribs = []; Name = Some v.Id; OtherRange = None }
+    let InferArgReprInfo (v: Val) : ArgReprInfo = { Attribs = WellKnownValAttribs.Empty; Name = Some v.Id; OtherRange = None }
 
     let InferArgReprInfos (vs: Val list list) = ValReprInfo([], List.mapSquared InferArgReprInfo vs, unnamedRetVal)
 
@@ -283,6 +283,7 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
     match nullness with
     | Nullness.Known NullnessInfo.WithoutNull -> ty
+    | Nullness.KnownFromConstructor -> ty
     | Nullness.Variable nv when nv.IsFullySolved && nv.TryEvaluate() = ValueSome NullnessInfo.WithoutNull -> ty
     | _ -> 
     match ty with

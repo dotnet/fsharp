@@ -98,32 +98,38 @@ module IfdefStore =
         let startColumn = lexed.Length - lexed.TrimStart().Length
         mkFileIndexRange m.FileIndex (mkPos m.StartLine startColumn) m.End
 
-    let SaveIfHash (lexbuf: Lexbuf, lexed: string, expr: LexerIfdefExpression, range: range) =
+    let private convertIfdefExpression (expr: LexerIfdefExpression) : IfDirectiveExpression =
+        let rec visit (expr: LexerIfdefExpression) : IfDirectiveExpression =
+            match expr with
+            | LexerIfdefExpression.IfdefAnd(l, r) -> IfDirectiveExpression.And(visit l, visit r)
+            | LexerIfdefExpression.IfdefOr(l, r) -> IfDirectiveExpression.Or(visit l, visit r)
+            | LexerIfdefExpression.IfdefNot e -> IfDirectiveExpression.Not(visit e)
+            | LexerIfdefExpression.IfdefId id -> IfDirectiveExpression.Ident id
+
+        visit expr
+
+    let private saveConditionalHash ctor (lexbuf: Lexbuf, lexed: string, expr: LexerIfdefExpression, range: range) =
         let store = getStore lexbuf
-
-        let expr =
-            let rec visit (expr: LexerIfdefExpression) : IfDirectiveExpression =
-                match expr with
-                | LexerIfdefExpression.IfdefAnd(l, r) -> IfDirectiveExpression.And(visit l, visit r)
-                | LexerIfdefExpression.IfdefOr(l, r) -> IfDirectiveExpression.Or(visit l, visit r)
-                | LexerIfdefExpression.IfdefNot e -> IfDirectiveExpression.Not(visit e)
-                | LexerIfdefExpression.IfdefId id -> IfDirectiveExpression.Ident id
-
-            visit expr
-
+        let expr = convertIfdefExpression expr
         let m = mkRangeWithoutLeadingWhitespace lexed range
+        store.Add(ctor (expr, m))
 
-        store.Add(ConditionalDirectiveTrivia.If(expr, m))
+    let SaveIfHash (lexbuf, lexed, expr, range) =
+        saveConditionalHash ConditionalDirectiveTrivia.If (lexbuf, lexed, expr, range)
 
-    let SaveElseHash (lexbuf: Lexbuf, lexed: string, range: range) =
+    let SaveElifHash (lexbuf, lexed, expr, range) =
+        saveConditionalHash ConditionalDirectiveTrivia.Elif (lexbuf, lexed, expr, range)
+
+    let private saveSimpleHash ctor (lexbuf: Lexbuf, lexed: string, range: range) =
         let store = getStore lexbuf
         let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.Else(m))
+        store.Add(ctor m)
 
-    let SaveEndIfHash (lexbuf: Lexbuf, lexed: string, range: range) =
-        let store = getStore lexbuf
-        let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.EndIf(m))
+    let SaveElseHash (lexbuf, lexed, range) =
+        saveSimpleHash ConditionalDirectiveTrivia.Else (lexbuf, lexed, range)
+
+    let SaveEndIfHash (lexbuf, lexed, range) =
+        saveSimpleHash ConditionalDirectiveTrivia.EndIf (lexbuf, lexed, range)
 
     let GetTrivia (lexbuf: Lexbuf) : ConditionalDirectiveTrivia list =
         let store = getStore lexbuf

@@ -286,11 +286,11 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   查找类似 Inline Hints 的本地化字符串。
+        ///   查找类似 Inlay Hints 的本地化字符串。
         /// </summary>
-        public static string Inline_Hints {
+        public static string Inlay_Hints {
             get {
-                return ResourceManager.GetString("Inline_Hints", resourceCulture);
+                return ResourceManager.GetString("Inlay_Hints", resourceCulture);
             }
         }
         
@@ -448,20 +448,20 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   查找类似 Display inline parameter name hints (preview) 的本地化字符串。
+        ///   查找类似 Display inlay parameter name hints (preview) 的本地化字符串。
         /// </summary>
-        public static string Show_Inline_Parameter_Name_Hints {
+        public static string Show_Inlay_Parameter_Name_Hints {
             get {
-                return ResourceManager.GetString("Show_Inline_Parameter_Name_Hints", resourceCulture);
+                return ResourceManager.GetString("Show_Inlay_Parameter_Name_Hints", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   查找类似 Display inline type hints (preview) 的本地化字符串。
+        ///   查找类似 Display inlay type hints (preview) 的本地化字符串。
         /// </summary>
-        public static string Show_Inline_Type_Hints {
+        public static string Show_Inlay_Type_Hints {
             get {
-                return ResourceManager.GetString("Show_Inline_Type_Hints", resourceCulture);
+                return ResourceManager.GetString("Show_Inlay_Type_Hints", resourceCulture);
             }
         }
         

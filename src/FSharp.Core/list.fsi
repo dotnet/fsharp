@@ -1573,7 +1573,8 @@ module List =
 
     /// <summary>Returns the greatest of all elements of the list, compared via Operators.max on the function result.</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
+    /// <remarks>Returns the first maximal element of the list if there are multiple equal maximum elements.
+    /// Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -1632,7 +1633,8 @@ module List =
 
     /// <summary>Returns the lowest of all elements of the list, compared via Operators.min on the function result</summary>
     ///
-    /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
+    /// <remarks>Returns the first minimal element of the list if there are multiple equal minimal elements.
+    /// Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
     /// <param name="projection">The function to transform list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
@@ -1755,6 +1757,32 @@ module List =
     /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Partition")>]
     val partition: predicate:('T -> bool) -> list:'T list -> ('T list * 'T list)
+
+    /// <summary>Splits the collection into two collections, by applying the given partitioning function
+    /// to each element. Returns <c>Choice1Of2</c> elements in the first list and
+    /// <c>Choice2Of2</c> elements in the second list. Element order is preserved in both of the created lists.</summary>
+    ///
+    /// <param name="partitioner">The function to transform and classify each input element into one of two output types.</param>
+    /// <param name="list">The input list.</param>
+    ///
+    /// <returns>A tuple of two lists. The first containing values from <c>Choice1Of2</c> results and the second
+    /// containing values from <c>Choice2Of2</c> results.</returns>
+    ///
+    /// <example id="partitionWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// let evens, odds =
+    ///     inputs |> List.partitionWith (fun x ->
+    ///         if x % 2 = 0 then Choice1Of2 (x * 10)
+    ///         else Choice2Of2 (string x))
+    /// </code>
+    /// Evaluates <c>evens</c> to <c>[20; 40]</c> and <c>odds</c> to <c>["1"; "3"; "5"]</c>.
+    /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
+    [<CompiledName("PartitionWith")>]
+    val inline partitionWith: partitioner: ('T -> Choice<'T1, 'T2>) -> list: 'T list -> 'T1 list * 'T2 list
 
     /// <summary>Applies the given function to successive elements, returning the first
     /// result where function returns <c>Some(x)</c> for some x. If no such

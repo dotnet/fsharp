@@ -780,7 +780,6 @@ type Class1() =
     |> shouldEqual
         [|("LiteralAttribute", (3, 10, 3, 17))
           ("member .ctor", (3, 10, 3, 17))
-          ("member .ctor", (3, 11, 3, 17)) // #14902
           ("val ModuleValue", (3, 20, 3, 31))
           ("val op_Addition", (6, 26, 6, 27))
           ("val ModuleValue", (6, 14, 6, 25))
@@ -792,11 +791,9 @@ type Class1() =
           ("member .ctor", (10, 5, 10, 11))
           ("LiteralAttribute", (11, 10, 11, 17))
           ("member .ctor", (11, 10, 11, 17))
-          ("member .ctor", (11, 11, 11, 17)) // #14902
           ("val ClassValue", (11, 20, 11, 30))
           ("LiteralAttribute", (12, 17, 12, 24))
           ("member .ctor", (12, 17, 12, 24))
-          ("member .ctor", (12, 18, 12, 24)) // #14902
           ("val StaticClassValue", (12, 27, 12, 43))
           ("val ClassValue", (14, 12, 14, 22))
           ("val StaticClassValue", (15, 12, 15, 28))
@@ -1693,7 +1690,7 @@ let ``Test TPProject errors`` () =
          (11, 8, 11, 35, "The static parameter 'pattern1' of the provided type or method 'IsMatch' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'IsMatch<pattern1=...>'.");
          (12, 8, 12, 41, "The static parameter 'pattern1' of the provided type or method 'IsMatch' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'IsMatch<pattern1=...>'.");
          (14, 46, 14, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ");
-         (15, 33, 15, 38, "No static parameter exists with name ''");
+         (15, 33, 15, 38, "No static parameter exists with name ''. Available parameters: pattern1.");
          (16, 40, 16, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ")]
 
 let internal extractToolTipText (ToolTipText(els)) =

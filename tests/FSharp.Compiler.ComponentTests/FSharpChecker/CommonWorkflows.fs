@@ -154,8 +154,7 @@ let GetAllUsesOfAllSymbols() =
             return checkProjectResults.GetAllUsesOfAllSymbols()
         } |> Async.RunSynchronously
 
-    // #14902: Count is 80 due to constructor double registration
-    if result.Length <> 80 then failwith $"Expected 80 symbolUses, got {result.Length}:\n%A{result}"
+    if result.Length <> 79 then failwith $"Expected 79 symbolUses, got {result.Length}:\n%A{result}"
 
 [<Fact>]
 let ``We don't lose subsequent diagnostics when there's error in one file`` () =

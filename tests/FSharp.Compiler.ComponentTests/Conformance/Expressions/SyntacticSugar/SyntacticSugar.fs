@@ -82,7 +82,7 @@ module SyntacticSugar =
         |> verifyCompile
 
     // SOURCE=E_GetSliceNotDef01.fs
-    // <Expects id="FS0039" status="error">The type 'DU' does not define the field, constructor or member 'GetSlice'</Expects>
+    // <Expects id="FS0039" status="error">The type 'DU' does not define a field, constructor, or member named 'GetSlice'</Expects>
     [<Theory; FileInlineData("E_GetSliceNotDef01.fs")>]
     let ``E_GetSliceNotDef01_fs`` compilation =
         compilation
@@ -90,7 +90,7 @@ module SyntacticSugar =
         |> verifyTypecheck
         |> shouldFail
         |> withErrorCode 39
-        |> withDiagnosticMessageMatches "The type 'DU' does not define the field, constructor or member 'GetSlice'"
+        |> withDiagnosticMessageMatches "The type 'DU' does not define a field, constructor, or member named 'GetSlice'"
 
     // SOURCE=E_GetSliceNotDef02.fs
     // <Expects id="FS0501" status="error">...</Expects>

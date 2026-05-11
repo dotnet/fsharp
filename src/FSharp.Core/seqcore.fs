@@ -313,9 +313,9 @@ module RuntimeHelpers =
                         let rec takeOuter() =
                             if outerEnum.MoveNext() then
                                 let ie = outerEnum.Current
-                                // Optimization to detect the statically-allocated empty IEnumerables
+                                // Optimization to detect empty IEnumerables without calling GetEnumerator
                                 match box ie with
-                                | :? EmptyEnumerable<'T> ->
+                                | :? ICollection<'T> as c when c.Count = 0 ->
                                      // This one is empty, just skip, don't call GetEnumerator, try again
                                      takeOuter()
                                 | _ ->
@@ -395,7 +395,8 @@ module RuntimeHelpers =
         let disposeOriginal() =
             if shouldDisposeOriginalAtTheEnd then
                 shouldDisposeOriginalAtTheEnd <- false
-                originalSource.Value.Dispose() 
+                if originalSource.IsValueCreated then
+                    originalSource.Value.Dispose() 
 
         let moveExceptionHandler exn = 
             exceptionalSource <- Some ((exceptionHandler exn).GetEnumerator())

@@ -19,51 +19,23 @@ module FsiCliTests =
     // CLI behavior: FSI prints help and exits - cannot be tested in-process
     // ============================================================================
 
-    /// Migrated from: -?-40
-    /// Original: SOURCE=dummy.fsx PRECMD="$FSI_PIPE >help.txt -? 2>&1"
-    /// CLI Test: FSI -? shorthand help option
-    [<Fact>]
-    let ``fsi help - shorthand -? shows help and exits with 0`` () =
-        let result = runFsiProcess ["-?"]
+    /// Migrated from: -?-40, --help-40, /?-40
+    [<InlineData("-?", "INPUT FILES")>]
+    [<InlineData("--help", "CODE GENERATION")>]
+    [<InlineData("/?", "--reference:")>]
+    [<Theory>]
+    let ``fsi help - flag shows help and exits with 0`` (flag: string, expectedContent: string) =
+        let result = runFsiProcess [flag]
         Assert.Equal(0, result.ExitCode)
-        // Verify key sections from help40.437.1033.bsl baseline
         Assert.Contains("Usage:", result.StdOut)
-        Assert.Contains("INPUT FILES", result.StdOut)
-        Assert.Contains("--use:", result.StdOut)
-
-    /// Migrated from: --help-40
-    /// Original: SOURCE=dummy.fsx PRECMD="$FSI_PIPE >help.txt --help 2>&1"
-    /// CLI Test: FSI --help long form option
-    [<Fact>]
-    let ``fsi help - long form --help shows help and exits with 0`` () =
-        let result = runFsiProcess ["--help"]
-        Assert.Equal(0, result.ExitCode)
-        // Verify key sections from help40.437.1033.bsl baseline
-        Assert.Contains("Usage:", result.StdOut)
-        Assert.Contains("INPUT FILES", result.StdOut)
-        Assert.Contains("CODE GENERATION", result.StdOut)
-
-    /// Migrated from: /?-40
-    /// Original: SOURCE=dummy.fsx PRECMD="$FSI_PIPE >help.txt /? 2>&1"
-    /// CLI Test: FSI /? Windows-style help option
-    [<Fact>]
-    let ``fsi help - Windows-style /? shows help and exits with 0`` () =
-        let result = runFsiProcess ["/?"]
-        Assert.Equal(0, result.ExitCode)
-        // Verify key sections from help40.437.1033.bsl baseline
-        Assert.Contains("Usage:", result.StdOut)
-        Assert.Contains("--reference:", result.StdOut)
+        Assert.Contains(expectedContent, result.StdOut)
 
     /// Migrated from: -? --nologo-40
-    /// Original: SOURCE=dummy.fsx PRECMD="$FSI_PIPE >help.txt --nologo -? 2>&1"
-    /// CLI Test: FSI --nologo -? shows help without banner
     [<Fact>]
     let ``fsi help - nologo -? shows help without copyright banner`` () =
         let result = runFsiProcess ["--nologo"; "-?"]
         Assert.Equal(0, result.ExitCode)
-        // Verify help content from help40-nologo.437.1033.bsl baseline
         Assert.Contains("Usage:", result.StdOut)
-        // With --nologo, should NOT contain copyright header
         Assert.DoesNotContain("Microsoft (R) F# Interactive", result.StdOut)
 
     // ============================================================================
@@ -72,12 +44,10 @@ module FsiCliTests =
     // ============================================================================
 
     /// Migrated from: help baseline documentation (lines 66-67)
-    /// CLI Test: FSI --langversion:? shows available language versions
     [<Fact>]
     let ``fsi help - langversion ? shows available versions and exits with 0`` () =
         let result = runFsiProcess ["--langversion:?"]
         Assert.Equal(0, result.ExitCode)
-        // Should list available language versions
         Assert.Contains("Supported language versions:", result.StdOut)
         Assert.Contains("preview", result.StdOut)
         Assert.Contains("latest", result.StdOut)
@@ -89,24 +59,11 @@ module FsiCliTests =
     //                  tests/fsharpqa/Source/CompilerOptions/fsi/subsystemversion/
     // ============================================================================
 
-    /// Migrated from: E_highentropyva01.fsx
-    /// Original: SOURCE=E_highentropyva01.fsx SCFLAGS="--highentropyva+"
-    /// Expected: //<Expects status="error" id="FS0243">Unrecognized option: '--highentropyva+'</Expects>
-    /// CLI Test: --highentropyva+ is valid for fsc but not fsi
-    [<Fact>]
-    let ``fsi unrecognized option - highentropyva reports FS0243`` () =
-        let result = runFsiProcess ["--highentropyva+"]
-        // FSI should report error for unrecognized option
+    /// Migrated from: E_highentropyva01.fsx, E_subsystemversion01.fsx
+    [<InlineData("--highentropyva+", "Unrecognized option: '--highentropyva+'")>]
+    [<InlineData("--subsystemversion:4.00", "Unrecognized option: '--subsystemversion'")>]
+    [<Theory>]
+    let ``fsi unrecognized option - reports FS0243`` (option: string, expectedError: string) =
+        let result = runFsiProcess [option]
         Assert.NotEqual(0, result.ExitCode)
-        Assert.Contains("Unrecognized option: '--highentropyva+'", result.StdErr)
-
-    /// Migrated from: E_subsystemversion01.fsx
-    /// Original: SOURCE=E_subsystemversion01.fsx SCFLAGS="--subsystemversion:4.00"
-    /// Expected: //<Expects status="error" id="FS0243">Unrecognized option: '--subsystemversion'</Expects>
-    /// CLI Test: --subsystemversion is valid for fsc but not fsi
-    [<Fact>]
-    let ``fsi unrecognized option - subsystemversion reports FS0243`` () =
-        let result = runFsiProcess ["--subsystemversion:4.00"]
-        // FSI should report error for unrecognized option
-        Assert.NotEqual(0, result.ExitCode)
-        Assert.Contains("Unrecognized option: '--subsystemversion'", result.StdErr)
+        Assert.Contains(expectedError, result.StdErr)

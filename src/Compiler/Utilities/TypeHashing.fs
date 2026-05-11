@@ -45,6 +45,11 @@ module internal HashingPrimitives =
 
     let (@@) (h1: Hash) (h2: Hash) = combineHash h1 h2
 
+    /// Maximum number of tokens emitted when generating type structure fingerprints.
+    /// Limits memory usage and prevents infinite type loops.
+    [<Literal>]
+    let MaxTokenCount = 256
+
 [<AutoOpen>]
 module internal HashUtilities =
 
@@ -228,7 +233,7 @@ module rec HashTypes =
     // Hash a single argument, including its name and type
     let private hashArgInfo (g: TcGlobals) (ty, argInfo: ArgReprInfo) =
 
-        let attributesHash = hashAttributeList argInfo.Attribs
+        let attributesHash = hashAttributeList (argInfo.Attribs.AsList())
 
         let nameHash =
             match argInfo.Name with
@@ -402,15 +407,40 @@ module StructuralUtilities =
         | Unsolved of int
         | Rigid of int
 
+    let private hashTokenArray (tokens: TypeToken[]) =
+        let mutable acc = 0
+
+        for t in tokens do
+            acc <- combineHash acc (hash t)
+
+        acc
+
+    [<CustomEquality; NoComparison>]
     type TypeStructure =
-        | Stable of TypeToken[]
+        | Stable of hash: int * tokens: TypeToken[]
         // Unstable means that the type structure of a given TType may change because of constraint solving or Trace.Undo.
-        | Unstable of TypeToken[]
+        | Unstable of hash: int * tokens: TypeToken[]
         | PossiblyInfinite
+
+        override this.GetHashCode() =
+            match this with
+            | Stable(h, _) -> h
+            | Unstable(h, _) -> h ||| 0x40000000
+            | PossiblyInfinite -> 0
+
+        override this.Equals(obj) =
+            match obj with
+            | :? TypeStructure as other ->
+                match this, other with
+                | Stable(h1, a), Stable(h2, b) -> h1 = h2 && a = b
+                | Unstable(h1, a), Unstable(h2, b) -> h1 = h2 && a = b
+                | PossiblyInfinite, PossiblyInfinite -> true
+                | _ -> false
+            | _ -> false
 
     type private GenerationContext() =
         member val TyparMap = System.Collections.Generic.Dictionary<Stamp, int>(4)
-        member val Tokens = ResizeArray<TypeToken>(256)
+        member val Tokens = ResizeArray<TypeToken>(MaxTokenCount)
         member val EmitNullness = false with get, set
         member val Stable = true with get, set
 
@@ -440,7 +470,7 @@ module StructuralUtilities =
 
             let out = ctx.Tokens
 
-            if out.Count < 256 then
+            if out.Count < MaxTokenCount then
                 match n.TryEvaluate() with
                 | ValueSome k -> out.Add(TypeToken.Nullness(encodeNullness k))
                 | ValueNone -> out.Add(TypeToken.NullnessUnsolved)
@@ -448,20 +478,20 @@ module StructuralUtilities =
     let inline private emitStamp (ctx: GenerationContext) (stamp: Stamp) =
         let out = ctx.Tokens
 
-        if out.Count < 256 then
+        if out.Count < MaxTokenCount then
             // Emit low 32 bits first
             let lo = int (stamp &&& 0xFFFFFFFFL)
             out.Add(TypeToken.Stamp lo)
             // If high 32 bits are non-zero, emit them as another token
             let hi64 = stamp >>> 32
 
-            if hi64 <> 0L && out.Count < 256 then
+            if hi64 <> 0L && out.Count < MaxTokenCount then
                 out.Add(TypeToken.Stamp(int hi64))
 
     let rec private emitMeasure (ctx: GenerationContext) (m: Measure) =
         let out = ctx.Tokens
 
-        if out.Count >= 256 then
+        if out.Count >= MaxTokenCount then
             ()
         else
             match m with
@@ -475,21 +505,21 @@ module StructuralUtilities =
             | Measure.RationalPower(m1, r) ->
                 emitMeasure ctx m1
 
-                if out.Count < 256 then
+                if out.Count < MaxTokenCount then
                     out.Add(TypeToken.MeasureNumerator(GetNumerator r))
                     out.Add(TypeToken.MeasureDenominator(GetDenominator r))
 
     let rec private emitTType (ctx: GenerationContext) (ty: TType) =
         let out = ctx.Tokens
 
-        if out.Count >= 256 then
+        if out.Count >= MaxTokenCount then
             ()
         else
             match ty with
             | TType_ucase(u, tinst) ->
                 emitStamp ctx u.TyconRef.Stamp
 
-                if out.Count < 256 then
+                if out.Count < MaxTokenCount then
                     out.Add(TypeToken.UCase(hashText u.CaseName))
 
                 for arg in tinst do
@@ -545,7 +575,7 @@ module StructuralUtilities =
                 match r.Solution with
                 | Some ty -> emitTType ctx ty
                 | None ->
-                    if out.Count < 256 then
+                    if out.Count < MaxTokenCount then
                         if r.Rigidity = TyparRigidity.Rigid then
                             out.Add(TypeToken.Rigid typarId)
                         else
@@ -560,9 +590,16 @@ module StructuralUtilities =
         let out = ctx.Tokens
 
         // If the sequence got too long, just drop it, we could be dealing with an infinite type.
-        if out.Count >= 256 then PossiblyInfinite
-        elif not ctx.Stable then Unstable(out.ToArray())
-        else Stable(out.ToArray())
+        if out.Count >= MaxTokenCount then
+            PossiblyInfinite
+        else
+            let tokens = out.ToArray()
+            let h = hashTokenArray tokens
+
+            if not ctx.Stable then
+                Unstable(h, tokens)
+            else
+                Stable(h, tokens)
 
     // Speed up repeated calls by memoizing results for types that yield a stable structure.
     let private getTypeStructureOfStrippedType =

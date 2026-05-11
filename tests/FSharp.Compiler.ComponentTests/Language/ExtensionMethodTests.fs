@@ -698,8 +698,6 @@ module CompiledExtensions =
 
     [<Fact>]
     let ``Instance extension members for types with same simple name should succeed`` () =
-        // Instance extension members compile with the extended type as the first IL parameter,
-        // so they can never produce duplicate IL signatures even with same simple type name.
         Fsx
             """
 module Compiled
@@ -808,10 +806,6 @@ module CompiledExtensions =
 
     [<Fact>]
     let ``Instance inline extension members on builder types with same simple name should succeed`` () =
-        // Regression test for IcedTasks-like pattern: instance (inline) extension members on
-        // computation expression builder types with the same simple name from different namespaces.
-        // Instance extension members compile with the extended type as the first IL parameter,
-        // so signatures never collide even when the simple type name is the same.
         Fsx
             """
 namespace NsA

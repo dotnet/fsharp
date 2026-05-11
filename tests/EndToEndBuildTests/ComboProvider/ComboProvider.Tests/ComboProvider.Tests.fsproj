@@ -1,21 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <!-- xUnit3 requires test projects to be executable -->
+    <OutputType>Exe</OutputType>
     <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <TargetFramework Condition=" '$(TestTargetFramework)' != '' ">$(TestTargetFramework)</TargetFramework>
     <IsPackable>false</IsPackable>
     <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
-    <UnitTestType>xunit</UnitTestType>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="ComboProvider.Tests.fs" />
-
-    <None Include="xunit.runner.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
 
     <PackageReference Include="ComboProvider" Version="1.0.0" />
   </ItemGroup>

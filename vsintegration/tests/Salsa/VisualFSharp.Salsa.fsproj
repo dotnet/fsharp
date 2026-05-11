@@ -59,7 +59,8 @@
     <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignVersion)" />
     <PackageReference Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="$(MicrosoftInternalVisualStudioShellFrameworkVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
-    <PackageReference Include="XUnit" Version="$(XUnitVersion)" />
+    <PackageReference Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.v3.assert" Version="$(XunitVersion)" />
   </ItemGroup>
 
 </Project>

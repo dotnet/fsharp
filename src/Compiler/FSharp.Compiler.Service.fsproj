@@ -14,6 +14,7 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+	<DefineConstants Condition="$(DotNetBuildUseMonoRuntime) == 'true'">$(DefineConstants);BUILD_USING_MONO</DefineConstants>
 	<Nullable>enable</Nullable>
 	<!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations.
 	     Therefore we want to use the latest BCL APIs from NetCurrent.
@@ -327,14 +328,28 @@
     <Compile Include="TypedTree\QuotationPickler.fs" />
     <Compile Include="TypedTree\CompilerGlobalState.fsi" />
     <Compile Include="TypedTree\CompilerGlobalState.fs" />
+    <Compile Include="TypedTree\WellKnownAttribs.fsi" />
+    <Compile Include="TypedTree\WellKnownAttribs.fs" />
     <Compile Include="TypedTree\TypedTree.fsi" />
     <Compile Include="TypedTree\TypedTree.fs" />
     <Compile Include="TypedTree\TypedTreeBasics.fsi" />
     <Compile Include="TypedTree\TypedTreeBasics.fs" />
     <Compile Include="TypedTree\TcGlobals.fsi" />
     <Compile Include="TypedTree\TcGlobals.fs" />
-    <Compile Include="TypedTree\TypedTreeOps.fsi" />
-    <Compile Include="TypedTree\TypedTreeOps.fs" />
+    <Compile Include="TypedTree\TypedTreeOps.Remap.fsi" />
+    <Compile Include="TypedTree\TypedTreeOps.Remap.fs" />
+    <Compile Include="TypedTree\TypedTreeOps.ExprConstruction.fsi" />
+    <Compile Include="TypedTree\TypedTreeOps.ExprConstruction.fs" />
+    <Compile Include="TypedTree\TypedTreeOps.FreeVars.fsi" />
+    <Compile Include="TypedTree\TypedTreeOps.FreeVars.fs" />
+    <Compile Include="TypedTree\TypedTreeOps.Attributes.fsi" />
+    <Compile Include="TypedTree\TypedTreeOps.Attributes.fs" />
+    <Compile Include="TypedTree\TypedTreeOps.Remapping.fsi" />
+    <Compile Include="TypedTree\TypedTreeOps.Remapping.fs" />
+    <Compile Include="TypedTree\TypedTreeOps.ExprOps.fsi" />
+    <Compile Include="TypedTree\TypedTreeOps.ExprOps.fs" />
+    <Compile Include="TypedTree\TypedTreeOps.Transforms.fsi" />
+    <Compile Include="TypedTree\TypedTreeOps.Transforms.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
@@ -358,6 +373,7 @@
     <Compile Include="Checking\NicePrint.fs" />
     <Compile Include="Checking\AugmentWithHashCompare.fsi" />
     <Compile Include="Checking\AugmentWithHashCompare.fs" />
+    <Compile Include="Checking\RelatedSymbolUse.fs" />
     <Compile Include="Checking\NameResolution.fsi" />
     <Compile Include="Checking\NameResolution.fs" />
     <Compile Include="Checking\SignatureConformance.fsi" />
@@ -368,6 +384,8 @@
     <Compile Include="Checking\MethodCalls.fs" />
     <Compile Include="Checking\PatternMatchCompilation.fsi" />
     <Compile Include="Checking\PatternMatchCompilation.fs" />
+    <Compile Include="Checking\OverloadResolutionCache.fsi" />
+    <Compile Include="Checking\OverloadResolutionCache.fs" />
     <Compile Include="Checking\ConstraintSolver.fsi" />
     <Compile Include="Checking\ConstraintSolver.fs" />
     <Compile Include="Checking\CheckFormatStrings.fsi" />
@@ -419,6 +437,8 @@
     <Compile Include="CodeGen\IlxGenSupport.fs" />
     <Compile Include="CodeGen\EraseClosures.fsi" />
     <Compile Include="CodeGen\EraseClosures.fs" />
+    <Compile Include="CodeGen\EraseUnions.Types.fs" />
+    <Compile Include="CodeGen\EraseUnions.Emit.fs" />
     <Compile Include="CodeGen\EraseUnions.fsi" />
     <Compile Include="CodeGen\EraseUnions.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
