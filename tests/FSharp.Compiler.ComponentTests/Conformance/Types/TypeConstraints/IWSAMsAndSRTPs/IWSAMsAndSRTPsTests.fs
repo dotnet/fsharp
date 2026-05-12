@@ -3079,7 +3079,7 @@ let inline f x = x + 1
 let inline run x = f x
         """
         |> withLangVersionPreview
-        |> signaturesShouldContain "val inline run: x: ^a -> 'b when (^a or int) : (static member (+) : ^a * int -> 'b)"
+        |> signaturesShouldContain "val inline run<^a,'b when (^a or int) : (static member (+) : ^a * int -> 'b)> : x: ^a -> 'b"
 
     [<Fact>]
     let ``Breaking change S3: non-inline wrapper with DateTime`` () =
@@ -3388,10 +3388,10 @@ Known return type: double
 Known type parameters: < int64 , float >
 
 Available overloads:
- - static member System.Double.(+) : a: ^T * b: double -> double when ^T: (static member widen_to_double: ^T -> double) // Argument 'a' doesn't match
  - static member System.Double.(+) : a: double * b: double -> double // Argument 'a' doesn't match
- - static member System.Int64.(+) : a: ^T * b: int64 -> int64 when ^T: (static member widen_to_int64: ^T -> int64) // Argument 'a' doesn't match
- - static member System.Int64.(+) : a: int64 * b: ^T -> int64 when ^T: (static member widen_to_int64: ^T -> int64) // Argument 'b' doesn't match")
+ - static member System.Double.(+)<^T when ^T: (static member widen_to_double: ^T -> double)> : a: ^T * b: double -> double // Argument 'a' doesn't match
+ - static member System.Int64.(+)<^T when ^T: (static member widen_to_int64: ^T -> int64)> : a: ^T * b: int64 -> int64 // Argument 'a' doesn't match
+ - static member System.Int64.(+)<^T when ^T: (static member widen_to_int64: ^T -> int64)> : a: int64 * b: ^T -> int64 // Argument 'b' doesn't match")
         ]
 
     [<Fact>]
