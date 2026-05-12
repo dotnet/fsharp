@@ -174,21 +174,28 @@ extends:
                   version: '2.1.300'
                   installationPath: '$(Build.SourcesDirectory)\Tools\dotnet20'
               - task: PowerShell@2
-                displayName: 'Install Az.Accounts module (required by MicroBuildSigningPlugin@4)'
+                displayName: 'Diagnostic: Az.Accounts module discovery'
                 inputs:
                   targetType: inline
-                  pwsh: true
+                  pwsh: false
                   script: |
-                    $module = Get-Module -ListAvailable Az.Accounts | Sort-Object Version -Descending | Select-Object -First 1
-                    if ($module -and $module.Version -ge '2.7.5') {
-                        Write-Host "Az.Accounts $($module.Version) already installed at $($module.Path)"
+                    Write-Host "=== PSVersion ==="
+                    $PSVersionTable | Format-Table -AutoSize | Out-String
+                    Write-Host "=== PSModulePath ==="
+                    $env:PSModulePath -split ';' | ForEach-Object { Write-Host "  $_" }
+                    Write-Host "=== Az.Accounts available versions ==="
+                    Get-Module -ListAvailable Az.Accounts | Select-Object Name, Version, Path | Format-Table -AutoSize | Out-String
+                    Write-Host "=== MicroBuild Plugins folder ==="
+                    if (Test-Path 'D:\a\_work\_temp\MicroBuild\Plugins') {
+                      Get-ChildItem 'D:\a\_work\_temp\MicroBuild\Plugins' -Directory -ErrorAction SilentlyContinue | Select-Object Name | Format-Table -AutoSize | Out-String
                     } else {
-                        Write-Host "Installing Az.Accounts (current: $(if($module){$module.Version}else{'none'}))"
-                        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-                        Install-Module -Name Az.Accounts -MinimumVersion 2.7.5 -Force -AllowClobber -Scope CurrentUser -Repository PSGallery
-                        $module = Get-Module -ListAvailable Az.Accounts | Sort-Object Version -Descending | Select-Object -First 1
-                        Write-Host "Az.Accounts now: $($module.Version) at $($module.Path)"
+                      Write-Host "  not yet present (plugin installs after this step)"
                     }
+                    Write-Host "=== get-PSRepository ==="
+                    Get-PSRepository -ErrorAction SilentlyContinue | Format-Table | Out-String
+                    Write-Host "=== sample PowerShell module from agent ==="
+                    Get-Module -ListAvailable | Select-Object -First 5 Name, Version | Format-Table -AutoSize | Out-String
+                continueOnError: true
               - task: MicroBuildSigningPlugin@4
                 inputs:
                   signType: ${{ parameters.SignType }}
