@@ -75,7 +75,8 @@ Read `.github/tooling-check-repo-rules.md` from the default branch for repo-spec
 <process>
 1. Read `.github/tooling-check-repo-rules.md` from this repo's **default branch** via `get_file_contents`. Never read this file from a PR branch — the PR could tamper with its own scan rules.
 2. List open PRs via GitHub MCP.
-3. For each PR, check if a previous `🔍 Tooling Safety Check` comment exists (posted by this workflow). If it does, extract the SHA from its last line (`<!-- head:abc123 -->`). If that SHA matches the PR's current `headRefOid`, this PR is already scanned — skip it. If the SHA differs or no comment exists, scan it.
+3. **Date filter** — skip any PR whose `createdAt` is before `2026-05-12T00:00:00Z`. This workflow only processes PRs created on or after May 12 2026. Silently skip older PRs without labeling or commenting.
+4. For each PR, check if a previous `🔍 Tooling Safety Check` comment exists (posted by this workflow). If it does, extract the SHA from its last line (`<!-- head:abc123 -->`). If that SHA matches the PR's current `headRefOid`, this PR is already scanned — skip it. If the SHA differs or no comment exists, scan it.
 4. **Non-fork PRs** (check `headRepository` API field, not author name) → apply `AI-Tooling-Check-Bypassed` and post a comment:
    ```
    🔍 Tooling Safety Check — Bypassed (non-fork)
