@@ -241,7 +241,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 
 /* start with lowest */
 
-%nonassoc prec_atompat_pathop_error
+%nonassoc prec_recover               /* the lowest precedence to use as the last chance recovery */
 %nonassoc prec_args_error            /* less than RPAREN */
 %nonassoc prec_atomexpr_lparen_error /* less than RPAREN */
 
@@ -4335,6 +4335,16 @@ declExpr:
         let trivia = { IfKeyword = mIf; IsElif = false; ThenKeyword = mThen; ElseKeyword = None; IfToThenRange = m }
         SynExpr.IfThenElse($2, arbExpr ("if1", mThen), None, spIfToThen, true, m, trivia) }
 
+  | IF declExpr %prec prec_recover
+      { let mIf = rhs parseState 1
+        errorR (Error(FSComp.SR.parsIncompleteIf (), mIf))
+        let ifExpr = $2
+        let mThen = ifExpr.Range.EndRange
+        let m = unionRanges mIf mThen
+        let spIfToThen = DebugPointAtBinding.Yes m
+        let trivia = { IfKeyword = mIf; IsElif = false; ThenKeyword = mThen; ElseKeyword = None; IfToThenRange = m }
+        SynExpr.IfThenElse($2, arbExpr ("if4", mThen), None, spIfToThen, true, m, trivia) }
+
   | IF recover %prec expr_if
       { errorR (Error(FSComp.SR.parsIncompleteIf (), rhs parseState 1))
         let m = rhs parseState 1
@@ -4698,6 +4708,11 @@ declExpr:
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "&&")
        mkSynInfix mOp $1 "&&" (arbExpr ("declExprInfixAmpAmp", mOp.EndRange)) }
 
+  | declExpr AMP_AMP %prec prec_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "&&")
+       mkSynInfix mOp $1 "&&" (arbExpr ("declExprInfixAmpAmp2", mOp.EndRange)) }
+
   | declExpr INFIX_AMP_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
 
@@ -4713,6 +4728,11 @@ declExpr:
      { let mOp = rhs parseState 2
        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "=")
        mkSynInfix mOp $1 "=" (arbExpr ("declExprInfixEquals", mOp.EndRange)) }
+
+  | declExpr EQUALS %prec prec_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "=")
+       mkSynInfix mOp $1 "=" (arbExpr ("declExprInfixEquals2", mOp.EndRange)) }
 
   | declExpr INFIX_COMPARE_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
@@ -6935,7 +6955,7 @@ pathOp:
      { let ident, trivia = $1
        SynLongIdent([ident], [], [Some trivia]) }
 
-  | ident DOT %prec prec_atompat_pathop_error
+  | ident DOT %prec prec_recover
      { let mDot = rhs parseState 2
        reportParseErrorAt mDot.EndRange (FSComp.SR.parsIdentifierExpected())
        SynLongIdent([$1], [mDot], [None]) }
