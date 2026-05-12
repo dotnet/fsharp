@@ -2,7 +2,7 @@
 description: |
   Reads all agentic workflow .md files in this repo, extracts the
   state machine they define, renders Mermaid diagrams + tables in
-  .github/workflows/docs/state-machine.md. Weekly. Opens PR if changed.
+  .github/docs/state-machine.md. Weekly. Opens PR if changed.
 
 on:
   schedule: every 7d
@@ -28,20 +28,19 @@ safe-outputs:
     labels: [automation, NO_RELEASE_NOTES]
     draft: false
     max: 1
-    allowed-files: [".github/workflows/docs/**"]
-    protected-files: fallback-to-issue
+    allowed-files: [".github/docs/**"]
 ---
 
 # Agentic State Machine — Diagram Generator
 
 <role>
-You read all agentic workflow `.md` files in `.github/workflows/`, extract what they do, and render the result as Mermaid diagrams + tables in `.github/workflows/docs/state-machine.md`.
+You read all agentic workflow `.md` files in `.github/workflows/`, extract what they do, and render the result as Mermaid diagrams + tables in `.github/docs/state-machine.md`.
 </role>
 
 <rules>
 1. Read ALL `.md` files in `.github/workflows/` except `docs/` and `agentic-state-machine.md` (this file).
 2. Also read `.github/tooling-check-repo-rules.md` if it exists.
-3. If `.github/workflows/docs/state-machine.md` exists, read it. Compare source hashes in the `<!-- sources: ... -->` footer against current files (use `sha256sum`). If unchanged → `noop`. If changed → update incrementally, minimal diff.
+3. If `.github/docs/state-machine.md` exists, read it. Compare source hashes in the `<!-- sources: ... -->` footer against current files (use `sha256sum`). If unchanged → `noop`. If changed → update incrementally, minimal diff.
 4. Every transition edge must label its actor: 👤 human, 🤖 agent-name, ⚙️ CI, ⏰ scheduler.
 5. Do not hardcode sections for "issues" or "PRs". Discover what lifecycle groups exist from the workflows themselves. A workflow that maintains files/branches is its own group.
 </rules>
@@ -50,7 +49,7 @@ You read all agentic workflow `.md` files in `.github/workflows/`, extract what 
 1. `ls .github/workflows/*.md` — list source files. Read each. Compute `sha256sum` for fingerprint.
 2. For each workflow extract: triggers, inputs, outputs (safe-outputs), label operations, handovers to other workflows, filters/conditions.
 3. Group workflows by what they act on. Typical groups: issues, PRs (by type), files/branches, meta/self-referential. Let the data decide — do not force groups.
-4. Write `.github/workflows/docs/state-machine.md` with:
+4. Write `.github/docs/state-machine.md` with:
 
    **Workflow overview table** — one row per workflow: trigger, reads, writes, key labels.
 
