@@ -186,18 +186,35 @@ extends:
                   dropName: $(VisualStudio.DropName)
                   AccessToken: '$(System.AccessToken)'
                   feedSource: 'https://pkgs.dev.azure.com/dnceng/_packaging/MicroBuildToolset/nuget/v3/index.json'
+              # F# 15.9 servicing: acquire DevDiv access token via WIF (Missy Messa's pattern from PR #19683)
+              # so devdiv/VS feed (Roslyn 2.10.0-beta2-72429-17) is reachable from NuGet restore.
+              - task: AzureCLI@2
+                displayName: 'Get DevDiv Access Token (WIF) for devdiv/VS feed authentication'
+                inputs:
+                  azureSubscription: 'dnceng-fsharp-vs-insertion-wif'
+                  scriptType: 'pscore'
+                  scriptLocation: 'inlineScript'
+                  inlineScript: |
+                    $token = az account get-access-token --resource "499b84ac-1321-427f-aa17-267ca6975798" --query accessToken -o tsv
+                    Write-Host "##vso[task.setvariable variable=DevDivAccessToken;issecret=true]$token"
               # The single canonical build invocation. F# 15.9's build.cmd microbuild mode
               # already orchestrates: init-tools (legacy SDK install) -> proto-fsc -> real fsc ->
               # FSharp.Core (multi-TFM via project.json + fsproj) -> vsintegration -> setup swixprojs ->
               # vsmanproj merge -> JSON-driven signing via build/scripts/run-signtool.cmd.
               # PB_SIGNTYPE / PB_SKIPTESTS env vars are how build.cmd reads pipeline intent.
               # PB_OfficialBuildId stamps versions.
+              # BUILDTOOLS_SOURCE override directs init-tools.cmd to dnceng myget-legacy mirror
+              # (the original dotnet.myget.org/F/dotnet-buildtools URL is dead).
+              # VSS_NUGET_EXTERNAL_FEED_ENDPOINTS provides credentials for devdiv/VS to NuGet restore
+              # via the Azure Artifacts Credential Provider (already installed by NuGetAuthenticate@1).
               - script: build.cmd microbuild $(BuildConfiguration)
                 displayName: 'build.cmd microbuild (proto -> real -> setup -> sign -> insertion)'
                 env:
                   PB_SIGNTYPE: ${{ parameters.SignType }}
                   PB_SKIPTESTS: ${{ parameters.SkipTests }}
                   PB_OfficialBuildId: $(Build.BuildNumber)
+                  BUILDTOOLS_SOURCE: 'https://pkgs.dev.azure.com/dnceng/public/_packaging/myget-legacy/nuget/v3/index.json'
+                  VSS_NUGET_EXTERNAL_FEED_ENDPOINTS: '{"endpointCredentials":[{"endpoint":"https://pkgs.dev.azure.com/devdiv/_packaging/VS/nuget/v3/index.json","username":"VssSessionToken","password":"$(DevDivAccessToken)"}]}'
               - task: PowerShell@2
                 displayName: 'Mirror legacy log paths into artifacts/log/Release for 1ES PT post-build'
                 condition: succeededOrFailed()
