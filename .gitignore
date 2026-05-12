@@ -138,3 +138,7 @@ msbuild.binlog
 # nuget local cache (must not be committed)
 /.tools/
 *.vbproj.user
+
+/FSharp.Core.dll
+/g4-pid.txt
+

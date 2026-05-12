@@ -736,7 +736,12 @@ if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
 %_ngenexe% install %_nugetexe% /nologo
 
 echo ---------------- Done with package restore, verify buildfrom source ---------------
-if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
+REM F# 15.9 servicing: skip buildfromsource.cmd in CI -- it tries to dotnet pack
+REM FSharp.Compiler.nuget.fsproj which doesn't have pack target wired up cleanly.
+REM Per Constraint 4 (no nupkg production for 15.9 servicing), the netstandard
+REM FSharp.Compiler nupkg is not part of the VS insertion payload.
+REM To re-enable for local testing: set FSC_BUILDFROMSOURCE_VERIFY=1.
+if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" if "%FSC_BUILDFROMSOURCE_VERIFY%" == "1" (
   pushd src
   call buildfromsource.cmd
   @if ERRORLEVEL 1 echo Error: buildfromsource.cmd failed  && goto :failure

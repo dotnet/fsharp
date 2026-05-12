@@ -154,6 +154,7 @@ extends:
                 inputs:
                   versionSpec: 6.2.4
               - task: NuGetAuthenticate@1
+                displayName: 'NuGet authenticate (devdiv + azure-public + dnceng)'
                 inputs:
                   nuGetServiceConnections: 'devdiv/dotnet-core-internal-tooling'
               - task: NuGetCommand@2
@@ -161,11 +162,17 @@ extends:
                   command: custom
                   arguments: 'locals all -clear'
               - task: UseDotNet@2
-                displayName: 'Use modern .NET Core SDK (host only)'
+                displayName: 'Use modern .NET Core SDK (matches global.json)'
                 inputs:
                   packageType: sdk
                   useGlobalJson: true
                   workingDirectory: '$(Build.SourcesDirectory)'
+              - task: UseDotNet@2
+                displayName: 'Install legacy .NET Core SDK 2.1.300 to Tools/dotnet20 (F# 15.9 LKG fsc.exe)'
+                inputs:
+                  packageType: sdk
+                  version: '2.1.300'
+                  installationPath: '$(Build.SourcesDirectory)\Tools\dotnet20'
               - task: MicroBuildSigningPlugin@4
                 inputs:
                   signType: ${{ parameters.SignType }}
