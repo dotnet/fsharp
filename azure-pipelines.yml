@@ -173,6 +173,22 @@ extends:
                   packageType: sdk
                   version: '2.1.300'
                   installationPath: '$(Build.SourcesDirectory)\Tools\dotnet20'
+              - task: PowerShell@2
+                displayName: 'Install Az.Accounts module (required by MicroBuildSigningPlugin@4)'
+                inputs:
+                  targetType: inline
+                  pwsh: true
+                  script: |
+                    $module = Get-Module -ListAvailable Az.Accounts | Sort-Object Version -Descending | Select-Object -First 1
+                    if ($module -and $module.Version -ge '2.7.5') {
+                        Write-Host "Az.Accounts $($module.Version) already installed at $($module.Path)"
+                    } else {
+                        Write-Host "Installing Az.Accounts (current: $(if($module){$module.Version}else{'none'}))"
+                        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+                        Install-Module -Name Az.Accounts -MinimumVersion 2.7.5 -Force -AllowClobber -Scope CurrentUser -Repository PSGallery
+                        $module = Get-Module -ListAvailable Az.Accounts | Sort-Object Version -Descending | Select-Object -First 1
+                        Write-Host "Az.Accounts now: $($module.Version) at $($module.Path)"
+                    }
               - task: MicroBuildSigningPlugin@4
                 inputs:
                   signType: ${{ parameters.SignType }}
