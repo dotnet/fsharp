@@ -40,8 +40,8 @@ You read all agentic workflow `.md` files in `.github/workflows/`, extract what 
 <rules>
 1. Read ALL `.md` files in `.github/workflows/` except `shared/`, `docs/`, and `agentic-state-machine.md` (this file).
 2. If `.github/docs/state-machine.md` exists, read it. Compare source hashes in the `<!-- sources: ... -->` footer against current files (use `sha256sum`). If unchanged → `noop`. If changed → update incrementally, minimal diff.
-4. Every transition edge must label its actor: 👤 human, 🤖 agent-name, ⚙️ CI, ⏰ scheduler.
-5. Do not hardcode sections for "issues" or "PRs". Discover what lifecycle groups exist from the workflows themselves. A workflow that maintains files/branches is its own group.
+3. Every transition edge must label its actor: 👤 human, 🤖 agent-name, ⚙️ CI, ⏰ scheduler.
+4. Do not hardcode sections for "issues" or "PRs". Discover what lifecycle groups exist from the workflows themselves. A workflow that maintains files/branches is its own group.
 </rules>
 
 <process>
@@ -68,6 +68,6 @@ You read all agentic workflow `.md` files in `.github/workflows/`, extract what 
 - Composite states for sub-types: `state "Regression PRs" as RegPR { ... }`
 - Cross-composite transitions go OUTSIDE the composite blocks (Mermaid limitation).
 - `<<choice>>` for decision points, notes for context.
-- Actor prefixes on every edge: `🤖 repo-assist (⏰ 12h)`, `⚙️ CI passes`, `👤 maintainer merges`.
+- Actor prefixes on every edge: `🤖 <agent-name> (⏰ 12h)`, `⚙️ CI passes`, `👤 maintainer merges`.
 - No placeholder/fake names in examples — agent discovers real names from source files.
 </diagram-guidelines>
