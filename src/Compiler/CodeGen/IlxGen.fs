@@ -715,7 +715,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         if tyenv.ContainsKey tp then
             mkILTyvarTy tyenv[tp, m]
         else
-            // Unsolved type variable not in the TypeReprEnv — can arise in fsi for inline SRTP
+            // Unsolved type variable not in the TypeReprEnv — can arise for inline SRTP
             // functions where constraint resolution leaves phantom typars unsolved.
             // Default the typar and generate the type for the default to avoid an ICE.
             let defaultTy = TypeRelations.ChooseTyparSolution g cenv.amap tp
