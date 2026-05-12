@@ -1,0 +1,36 @@
+### TASK: Resolve merge conflicts on PR #19194 by merging `origin/main` INTO the feature branch.
+
+### CRITICAL SAFETY — VIOLATION = CATASTROPHIC
+- WORK ON THE PR FEATURE BRANCH ONLY.
+- **NEVER** check out, commit to, or push to `main`.
+
+### STEPS
+
+1. **Understand the PR** — read description and recent commits to know the PR's intent.
+
+2. **Merge main INTO the feature branch** (not the other way around):
+   ```
+   git fetch origin main
+   git merge origin/main --no-edit
+   ```
+
+3. **Resolve conflicts** — edit conflicted files:
+   - Keep the PR's new functionality where it adds something new.
+   - Accept main's version for unrelated changes (renames, refactors).
+   - Watch for semantic clashes (renamed/moved APIs).
+
+4. **Verify** — `dotnet build` must succeed.
+
+5. **Safety check and push**:
+   ```
+   BRANCH=$(git branch --show-current)
+   if [ "$BRANCH" = "main" ] || [ -z "$BRANCH" ]; then echo "FATAL: wrong branch"; exit 1; fi
+   git add -u
+   git diff --cached --stat
+   git commit -m "Merge main to resolve conflicts"
+   git push origin HEAD
+   ```
+
+### CONSTRAINTS
+- Do NOT force-push. Do NOT rebase. Just merge.
+- Do NOT modify code beyond what's needed to resolve conflicts.

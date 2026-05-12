@@ -303,6 +303,14 @@ module CustomAttributes_Basic =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    // SOURCE=OptionalAttributeArgs.fs						# OptionalAttributeArgs.fs
+    // Regression test for https://github.com/dotnet/fsharp/issues/8353
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OptionalAttributeArgs.fs"|])>]
+    let ``OptionalAttributeArgs_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // SOURCE=W_ReturnType03b.fs          SCFLAGS="--test:ErrorRanges"		# W_ReturnType03b.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_ReturnType03b.fs"|])>]
     let ``W_ReturnType03b_fs`` compilation =
@@ -387,7 +395,7 @@ module CustomAttributes_Basic =
         compilation
         |> verifyCompile
         |> shouldFail
-        |> withSingleDiagnostic (Error 3889, Line 7, Col 6, Line 7, Col 36, "LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.")
+        |> withSingleDiagnostic (Error 3890, Line 7, Col 6, Line 7, Col 36, "LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.")
 
     [<Fact>]
     let ``StructLayoutAttribute has size=1 for struct DUs with no instance fields`` () =

@@ -80,7 +80,7 @@ let main _ =
 
     [<Theory>]
     [<InlineData("let inline f0 (x: ^T) = x",
-                 "val inline f0: x: ^T -> ^T")>]
+                 "val inline f0<^T> : x: ^T -> ^T")>]
 
     [<InlineData("""
                  let inline f0 (x: ^T) = x
@@ -88,16 +88,16 @@ let main _ =
                  "val g0: x: 'T -> 'T")>]
 
     [<InlineData("let inline f1 (x: ^T) = (^T : (static member A: int) ())",
-                 "val inline f1: x: ^T -> int when ^T: (static member A: int)")>]
+                 "val inline f1<^T when ^T: (static member A: int)> : x: ^T -> int")>]
 
     [<InlineData("let inline f2 (x: 'T) = ((^T or int) : (static member A: int) ())",
-                 "val inline f2: x: ^T -> int when (^T or int) : (static member A: int)")>]
+                 "val inline f2<^T when (^T or int) : (static member A: int)> : x: ^T -> int")>]
 
     [<InlineData("let inline f3 (x: 'T) = ((^U or 'T) : (static member A: int) ())",
-                 "val inline f3: x: ^T -> int when (^U or ^T) : (static member A: int)")>]
+                 "val inline f3<^T,^U when (^U or ^T) : (static member A: int)> : x: ^T -> int")>]
 
     [<InlineData("let inline f4 (x: 'T when 'T : (static member A: int) ) = 'T.A",
-                "val inline f4: x: ^T -> int when ^T: (static member A: int)")>]
+                "val inline f4<^T when ^T: (static member A: int)> : x: ^T -> int")>]
 
     [<InlineData("""
              let inline f5 (x: ^T) = printfn "%d" x
@@ -106,11 +106,11 @@ let main _ =
     [<InlineData("""
              let inline f5 (x: ^T) = printfn "%d" x
              let inline h5 (x: 'T) = f5 x""",
-                 "val inline h5: x: ^T -> unit when ^T: (byte|int16|int32|int64|sbyte|uint16|uint32|uint64|nativeint|unativeint)")>]
+                 "val inline h5<^T when ^T: (byte|int16|int32|int64|sbyte|uint16|uint32|uint64|nativeint|unativeint)> : x: ^T -> unit")>]
     [<InlineData("""
              let inline uint32 (value: ^T) = (^T : (static member op_Explicit: ^T -> uint32) (value))
              let inline uint value = uint32 value""",
-                 "val inline uint: value: ^a -> uint32 when ^a: (static member op_Explicit: ^a -> uint32)")>]
+                 "val inline uint<^a when ^a: (static member op_Explicit: ^a -> uint32)> : value: ^a -> uint32")>]
 
     [<InlineData("let checkReflexive f x y = (f x y = - f y x)",
                  "val checkReflexive: f: ('a -> 'a -> int) -> x: 'a -> y: 'a -> bool")>]

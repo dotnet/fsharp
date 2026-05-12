@@ -787,6 +787,11 @@
         <target state="translated">'if' 식은 컨텍스트 유형 요구 사항을 충족하기 위해 형식이\n    {1}    \n이고 길이가 {0}인 튜플을 반환해야 합니다. 해당 식은 현재 형식이     {3}이고 길이가\n    {2}인 튜플을 반환합니다.    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilCustomAttrInvalidArrayElemType">
+        <source>The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</source>
+        <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">알 수 없는 디버그 지점 '{0}'. 사용 가능한 디버그 지점은 '{1}'입니다.</target>
