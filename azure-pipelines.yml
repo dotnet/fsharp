@@ -173,29 +173,63 @@ extends:
                   packageType: sdk
                   version: '2.1.300'
                   installationPath: '$(Build.SourcesDirectory)\Tools\dotnet20'
+              # Workaround for 1ES MicroBuildTemplate@release sha e8c2e3b7 (May 12, 2026):
+              # MicroBuildSigningPlugin@4 v4.101.283 calls 'nuget.exe install Az.Accounts -Prerelease'
+              # WITHOUT a version pin, which pulls broken Az.Accounts 5.4.1-preview from MicroBuildToolset
+              # feed. The unpacked module is missing the .psd1 at the expected path, so:
+              #   (a) the plugin's path-based 'Import-Module D:\...\Az.Accounts' silently fails
+              #   (b) the subsequent Az.KeyVault 6.4.3 (which depends on Az.Accounts >= 2.7.5)
+              #       fails with "This module requires Az.Accounts version 2.7.5 or greater"
+              # Network-isolated agents block PSGallery, so Install-Module isn't an option.
+              # Fix: pre-stage a known-good Az.Accounts 5.3.3 (the version Az.KeyVault 6.4.3 actually
+              # depends on, also present in MicroBuildToolset feed) into a PSModulePath location.
+              # Az.KeyVault's Import-Module Az.Accounts will then resolve via PSModulePath regardless
+              # of the plugin's faulty Az.Accounts.5.4.1-preview install.
+              # Diagnostic evidence: build 2972829 logs/64 (PSModulePath dump) + logs/65 (plugin error).
               - task: PowerShell@2
-                displayName: 'Diagnostic: Az.Accounts module discovery'
+                displayName: 'Pre-install Az.Accounts 5.3.3 to PSModulePath (workaround for MicroBuild Az.Accounts 5.4.1-preview broken)'
                 inputs:
                   targetType: inline
                   pwsh: false
                   script: |
-                    Write-Host "=== PSVersion ==="
-                    $PSVersionTable | Format-Table -AutoSize | Out-String
-                    Write-Host "=== PSModulePath ==="
-                    $env:PSModulePath -split ';' | ForEach-Object { Write-Host "  $_" }
-                    Write-Host "=== Az.Accounts available versions ==="
-                    Get-Module -ListAvailable Az.Accounts | Select-Object Name, Version, Path | Format-Table -AutoSize | Out-String
-                    Write-Host "=== MicroBuild Plugins folder ==="
-                    if (Test-Path 'D:\a\_work\_temp\MicroBuild\Plugins') {
-                      Get-ChildItem 'D:\a\_work\_temp\MicroBuild\Plugins' -Directory -ErrorAction SilentlyContinue | Select-Object Name | Format-Table -AutoSize | Out-String
-                    } else {
-                      Write-Host "  not yet present (plugin installs after this step)"
+                    $ErrorActionPreference = 'Stop'
+                    $tempDir = Join-Path $env:AGENT_TEMPDIRECTORY 'AzModulesPreInstall'
+                    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+                    Write-Host "=== Downloading Az.Accounts 5.3.3 via nuget.exe from MicroBuildToolset feed ==="
+                    & nuget.exe install Az.Accounts -Version 5.3.3 `
+                        -OutputDirectory $tempDir `
+                        -Source 'https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json' `
+                        -NonInteractive -DirectDownload -NoCache
+                    if ($LASTEXITCODE -ne 0) { throw "nuget install Az.Accounts failed with exit $LASTEXITCODE" }
+
+                    $srcDir = Join-Path $tempDir 'Az.Accounts.5.3.3'
+                    if (-not (Test-Path $srcDir)) { throw "Expected $srcDir not found after nuget install" }
+
+                    # PSModulePath layout convention: Modules\Az.Accounts\<Version>\Az.Accounts.psd1
+                    $destBase = Join-Path $env:ProgramFiles 'WindowsPowerShell\Modules\Az.Accounts'
+                    $destDir = Join-Path $destBase '5.3.3'
+                    New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+
+                    Write-Host "=== Reshaping nupkg layout into PSModulePath layout at $destDir ==="
+                    # nupkg contents at root of $srcDir: Az.Accounts.psd1, Az.Accounts.psm1, *.dll, ...
+                    # Skip nupkg metadata files.
+                    Get-ChildItem $srcDir -Force `
+                      | Where-Object { $_.Name -notin @('_rels','package','[Content_Types].xml','.signature.p7s') -and $_.Extension -notin @('.nupkg','.nuspec') } `
+                      | Copy-Item -Destination $destDir -Recurse -Force
+
+                    Write-Host "=== Verifying Az.Accounts is now discoverable ==="
+                    $found = Get-Module -ListAvailable Az.Accounts
+                    $found | Format-Table Name, Version, Path -AutoSize | Out-String | Write-Host
+                    if (-not $found) { throw "Az.Accounts not discoverable after pre-install" }
+
+                    # Probe import to fail fast if the unpacked module is itself bad
+                    try {
+                      Import-Module Az.Accounts -RequiredVersion 5.3.3 -Force -ErrorAction Stop
+                      Write-Host "=== Az.Accounts 5.3.3 imports OK ==="
+                    } catch {
+                      throw "Az.Accounts 5.3.3 import probe failed: $_"
                     }
-                    Write-Host "=== get-PSRepository ==="
-                    Get-PSRepository -ErrorAction SilentlyContinue | Format-Table | Out-String
-                    Write-Host "=== sample PowerShell module from agent ==="
-                    Get-Module -ListAvailable | Select-Object -First 5 Name, Version | Format-Table -AutoSize | Out-String
-                continueOnError: true
               - task: MicroBuildSigningPlugin@4
                 inputs:
                   signType: ${{ parameters.SignType }}
