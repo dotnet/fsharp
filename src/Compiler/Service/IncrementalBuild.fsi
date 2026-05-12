@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
@@ -21,7 +20,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.BuildGraph
 open Internal.Utilities.Collections
 
 type internal FrameworkImportsCacheKey =
@@ -72,7 +70,7 @@ type internal TcInfo =
         latestCcuSigForFile: ModuleOrNamespaceType option
 
         /// Accumulated errors, last file first
-        tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+        tcDiagnosticsRev: PhasedDiagnostic[] list
 
         tcDependencyFiles: string list
 
@@ -80,7 +78,7 @@ type internal TcInfo =
     }
 
     /// Accumulated diagnostics
-    member TcDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+    member TcDiagnostics: PhasedDiagnostic[]
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]
@@ -153,7 +151,7 @@ type internal RawFSharpAssemblyDataBackedByLanguageService =
         outfile: string *
         topAttrs: TopAttribs *
         assemblyName: string *
-        ilAssemRef: FSharp.Compiler.AbstractIL.IL.ILAssemblyRef ->
+        ilAssemRef: IL.ILAssemblyRef ->
             RawFSharpAssemblyDataBackedByLanguageService
 
     interface IRawFSharpAssemblyData
@@ -269,8 +267,7 @@ type internal IncrementalBuilder =
     /// Await the untyped parse results for a particular slot in the vector of parse results.
     ///
     /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-    member GetParseResultsForFile:
-        fileName: string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+    member GetParseResultsForFile: fileName: string -> ParsedInput * range * string * PhasedDiagnostic[]
 
     member NotifyFileChanged: fileName: string * timeStamp: DateTime -> Async<unit>
 

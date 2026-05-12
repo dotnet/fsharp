@@ -173,6 +173,7 @@ type AsyncType() =
         let t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
 
         // Wait for the async body to actually start executing before checking timing.
+        // Use a generous timeout to avoid flaky failures on loaded CI machines where the thread pool may be saturated.
         Assert.True(asyncStarted.Wait(30_000), "Async body did not start within 30 seconds")
 
         // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
@@ -243,10 +244,10 @@ type AsyncType() =
         let a = async {
             do raise (Exception ())
          }
-        use t = Async.StartAsTask a
+        let t = Async.StartAsTask a
         let mutable exceptionThrown = false
         try
-            // waitASec t
+            // waitForCompletion t
             t.Wait()
         with
             e -> exceptionThrown <- true
@@ -281,7 +282,7 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        use t = Async.StartAsTask(a, cancellationToken=token)
+        let t = Async.StartAsTask(a, cancellationToken=token)
 //        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.True
         cts.Cancel()
@@ -318,7 +319,7 @@ type AsyncType() =
         let a = async {
             do raise (Exception ())
          }
-        use t = Async.StartImmediateAsTask a
+        let t = Async.StartImmediateAsTask a
         let mutable exceptionThrown = false
         try
             t.Wait()
@@ -333,7 +334,7 @@ type AsyncType() =
                 while true do
                     do! Async.Sleep 100
             }
-        use t = Async.StartImmediateAsTask a
+        let t = Async.StartImmediateAsTask a
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
@@ -354,7 +355,7 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        use t =
+        let t =
             Async.StartImmediateAsTask(a, cancellationToken=token)
         ewh.WaitOne() |> Assert.True
         cts.Cancel()

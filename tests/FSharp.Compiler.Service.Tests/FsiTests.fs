@@ -1,11 +1,9 @@
 ﻿namespace FSharp.Compiler.Service.Tests
 
 open System
-open System.IO
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Test
 open Xunit
-open System.Threading
 
 type Sentinel () =
     let x = ()

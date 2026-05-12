@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// This component is used by the 'fsharpqa' tests for faster in-memory compilation.  It should be removed and the
+// This component is used for faster in-memory compilation in some tests.  It should be removed and the
 // proper compiler service API used instead.
 
 namespace FSharp.Compiler.CodeAnalysis.Hosted

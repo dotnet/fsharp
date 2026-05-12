@@ -55,7 +55,7 @@ module internal FSharpEnvironment =
 
     val dotnet: string
 
-    val getDotnetHostPath: unit -> string option
+    val getDotnetHostPath: sdkDirOverride: string option -> string option
 
     val getDotnetHostDirectories: unit -> string[]
 

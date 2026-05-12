@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Unions 
 // Union Types
 // Sample from spec
-#light
+
 
 type Message = 
     | Result of string

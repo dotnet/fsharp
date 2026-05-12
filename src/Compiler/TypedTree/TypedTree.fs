@@ -7,8 +7,6 @@ open System
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
-open System.Reflection
-
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -650,7 +648,7 @@ type Entity =
       /// The declared attributes for the type 
       // MUTABILITY; used during creation and remapping of tycons 
       // MUTABILITY; used when propagating signature attributes into the implementation.
-      mutable entity_attribs: Attribs     
+      mutable entity_attribs: WellKnownEntityAttribs     
                 
       /// The declared representation of the type, i.e. record, union, class etc. 
       //
@@ -815,7 +813,9 @@ type Entity =
 
     /// The F#-defined custom attributes of the entity, if any. If the entity is backed by Abstract IL or provided metadata
     /// then this does not include any attributes from those sources.
-    member x.Attribs = x.entity_attribs
+    member x.Attribs = x.entity_attribs.AsList()
+
+    member x.EntityAttribs = x.entity_attribs
 
     /// The XML documentation of the entity, if any. If the entity is backed by provided metadata
     /// then this _does_ include this documentation. If the entity is backed by Abstract IL metadata
@@ -1107,7 +1107,7 @@ type Entity =
 
 
     /// Indicates if the entity is linked to backing data. Only used during unpickling of F# metadata.
-    member x.IsLinked = match box x.entity_attribs with null -> false | _ -> true 
+    member x.IsLinked = not (obj.ReferenceEquals(x.entity_attribs.AsList(), null))
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
     member x.FSharpTyconRepresentationData = 
@@ -1352,7 +1352,26 @@ type Entity =
     member x.HasSignatureFile = x.SigRange <> x.DefinitionRange
 
     /// Set the custom attributes on an F# type definition.
-    member x.SetAttribs attribs = x.entity_attribs <- attribs
+    member x.SetAttribs attribs = x.entity_attribs <- WellKnownEntityAttribs.Create(attribs)
+
+    member x.SetEntityAttribs (attribs: WellKnownEntityAttribs) = x.entity_attribs <- attribs
+
+    /// Check if this entity has a specific well-known attribute, computing and caching flags if needed.
+    member x.HasWellKnownAttribute(flag: WellKnownEntityAttributes, computeFlags: Attribs -> WellKnownEntityAttributes) : bool =
+        let struct (result, wa, changed) = x.EntityAttribs.CheckFlag(flag, computeFlags)
+        if changed then x.SetEntityAttribs(wa)
+        result
+
+    /// Get the computed well-known attribute flags, computing and caching if needed.
+    member x.GetWellKnownEntityFlags(computeFlags: Attribs -> WellKnownEntityAttributes) : WellKnownEntityAttributes =
+        let f = LanguagePrimitives.EnumToValue x.EntityAttribs.Flags
+
+        if f &&& (1uL <<< 63) <> 0uL then
+            let computed = computeFlags (x.EntityAttribs.AsList())
+            x.SetEntityAttribs(WellKnownAttribs(x.EntityAttribs.AsList(), computed))
+            computed
+        else
+            x.EntityAttribs.Flags
 
     /// Sets the structness of a record or union type definition
     member x.SetIsStructRecordOrUnion b = let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
@@ -1538,7 +1557,7 @@ type TILObjectReprData =
 type TProvidedTypeInfo = 
     { 
       /// The parameters given to the provider that provided to this type.
-      ResolutionEnvironment: TypeProviders.ResolutionEnvironment
+      ResolutionEnvironment: ResolutionEnvironment
 
       /// The underlying System.Type (wrapped as a ProvidedType to make sure we don't call random things on
       /// System.Type, and wrapped as Tainted to make sure we track which provider this came from, for reporting
@@ -2189,7 +2208,7 @@ let private (|Public|Internal|Private|) (TAccess p) =
     | _ when List.forall isInternalCompPath p -> Internal 
     | _ -> Private
 
-let getSyntaxAccessForCompPath (TAccess a) = match a with | CompPath(_, sa, _) :: _ -> sa | _ -> TypedTree.SyntaxAccess.Unknown
+let getSyntaxAccessForCompPath (TAccess a) = match a with | CompPath(_, sa, _) :: _ -> sa | _ -> SyntaxAccess.Unknown
 
 let updateSyntaxAccessForCompPath access syntaxAccess =
     match access with
@@ -2213,9 +2232,9 @@ type Accessibility =
 
     member x.AsILMemberAccess () =
         match getSyntaxAccessForCompPath x with
-        | TypedTree.SyntaxAccess.Public -> ILMemberAccess.Public
-        | TypedTree.SyntaxAccess.Internal -> ILMemberAccess.Assembly
-        | TypedTree.SyntaxAccess.Private -> ILMemberAccess.Private
+        | SyntaxAccess.Public -> ILMemberAccess.Public
+        | SyntaxAccess.Internal -> ILMemberAccess.Assembly
+        | SyntaxAccess.Private -> ILMemberAccess.Private
         | _ ->
             if x.IsPublic then ILMemberAccess.Public
             elif x.IsInternal then ILMemberAccess.Assembly
@@ -2229,7 +2248,7 @@ type Accessibility =
 
     override x.ToString() =
         match x with
-        | TAccess (paths) ->
+        | TAccess paths ->
             let mangledTextOfCompPath (CompPath(scoref, _, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
             let scopename =
                 if x.IsPublic then "public"
@@ -2262,6 +2281,9 @@ type TyparOptionalData =
 
       /// Set to true if the typar is contravariant, i.e. declared as <in T> in C#
       mutable typar_is_contravariant: bool
+
+      /// The declared name of the type parameter.
+      mutable typar_declared_name: string option
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2363,10 +2385,10 @@ type Typar =
     member x.SetAttribs attribs = 
         match attribs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = []; typar_is_contravariant = false } when doc.IsEmpty ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = []; typar_is_contravariant = false; typar_declared_name = None } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_attribs <- attribs
-        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false; typar_declared_name = None }
 
     /// Get the XML documentation for the type parameter
     member x.XmlDoc =
@@ -2384,7 +2406,20 @@ type Typar =
     member x.SetILName il_name =
         match x.typar_opt_data with
         | Some optData -> optData.typar_il_name <- il_name
-        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = false }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = false; typar_declared_name = None}
+
+    /// Get the declared name of the type parameter
+    member x.DeclaredName =
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_declared_name
+        | _ -> None
+
+    /// Save the name as the declared name of the type parameter if it is not already set
+    member x.PreserveDeclaredName() =
+        match x.typar_opt_data with
+        | Some optData when optData.typar_declared_name = None -> optData.typar_declared_name <- Some x.Name
+        | None -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = false; typar_declared_name = Some x.Name }
+        | _ -> ()
 
     /// Indicates the display name of a type variable
     member x.DisplayName = if x.Name = "?" then "?"+string x.Stamp else x.Name
@@ -2393,17 +2428,17 @@ type Typar =
     member x.SetConstraints cs =
         match cs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [];typar_is_contravariant = false } when doc.IsEmpty ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [];typar_is_contravariant = false; typar_declared_name = None } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_constraints <- cs
-        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = []; typar_is_contravariant = false }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = []; typar_is_contravariant = false; typar_declared_name = None }
 
     /// Marks the typar as being contravariant
     member x.MarkAsContravariant() = 
         match x.typar_opt_data with
         | Some optData -> optData.typar_is_contravariant <- true
         | _ ->
-            x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = true }
+            x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = true; typar_declared_name = None }
 
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Typar = 
@@ -2425,7 +2460,7 @@ type Typar =
         x.typar_solution <- tg.typar_solution
         match tg.typar_opt_data with
         | Some tg -> 
-            let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs; typar_is_contravariant = tg.typar_is_contravariant }
+            let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs; typar_is_contravariant = tg.typar_is_contravariant; typar_declared_name = tg.typar_declared_name }
             x.typar_opt_data <- Some optData
         | None -> ()
 
@@ -2596,6 +2631,10 @@ type TraitConstraintInfo =
         with get() = (let (TTrait(solution = sln)) = x in sln.Value)
         and set v = (let (TTrait(solution = sln)) = x in sln.Value <- v)
 
+    member x.CloneWithFreshSolution() =
+        let (TTrait(a, b, c, d, e, f, sln)) = x
+        TTrait(a, b, c, d, e, f, ref sln.Value)
+
     member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
 
     member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g)) = x in TTrait(tys, b, c, d, e, f, g))
@@ -2756,7 +2795,7 @@ type ValOptionalData =
 
       /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
       /// these value references after copying a collection of values. 
-      mutable val_attribs: Attribs
+      mutable val_attribs: WellKnownValAttribs
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2799,7 +2838,7 @@ type Val =
           val_member_info = None
           val_declaring_entity = ParentNone
           val_xmldocsig = String.Empty
-          val_attribs = [] }
+          val_attribs = WellKnownValAttribs.Empty }
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange = 
@@ -2968,9 +3007,10 @@ type Val =
     member x.HasBeenReferenced = x.val_flags.HasBeenReferenced
 
     /// Indicates if the backing field for a static value is suppressed.
-    member x.IsCompiledAsStaticPropertyWithoutField = 
-            let hasValueAsStaticProperty = x.Attribs |> List.exists(fun (Attrib(tc, _, _, _, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute")
-            x.val_flags.IsCompiledAsStaticPropertyWithoutField || hasValueAsStaticProperty
+    member x.IsCompiledAsStaticPropertyWithoutField =
+        x.val_flags.IsCompiledAsStaticPropertyWithoutField
+        || (x.ValAttribs: WellKnownValAttribs)
+            .HasWellKnownAttribute(WellKnownValAttributes.ValueAsStaticPropertyAttribute)
 
     /// Indicates if the value is pinned/fixed
     member x.IsFixed = x.val_flags.IsFixed
@@ -3033,8 +3073,14 @@ type Val =
     /// Get the declared attributes for the value
     member x.Attribs = 
         match x.val_opt_data with
-        | Some optData -> optData.val_attribs
+        | Some optData -> optData.val_attribs.AsList()
         | _ -> []
+
+    /// Get the declared attributes wrapper for the value
+    member x.ValAttribs =
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs
+        | _ -> WellKnownValAttribs.Empty
 
     /// Get the declared documentation for the value
     member x.XmlDoc =
@@ -3292,10 +3338,22 @@ type Val =
         | Some optData -> optData.val_declaring_entity <- parent
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_declaring_entity = parent }
 
-    member x.SetAttribs attribs = 
+    member x.SetAttribs (attribs: Attribs) = 
+        let wa = WellKnownValAttribs.Create(attribs)
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs <- wa
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = wa }
+
+    member x.SetValAttribs (attribs: WellKnownValAttribs) =
         match x.val_opt_data with
         | Some optData -> optData.val_attribs <- attribs
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = attribs }
+
+    /// Check if this val has a specific well-known attribute, computing and caching flags if needed.
+    member x.HasWellKnownAttribute(flag: WellKnownValAttributes, computeFlags: Attribs -> WellKnownValAttributes) : bool =
+        let struct (result, waNew, changed) = x.ValAttribs.CheckFlag(flag, computeFlags)
+        if changed then x.SetValAttribs(waNew)
+        result
 
     member x.SetMemberInfo member_info = 
         match x.val_opt_data with
@@ -3696,7 +3754,7 @@ type EntityRef =
     /// or comes from another F# assembly then it does not (because the documentation will get read from 
     /// an XML file).
     member x.XmlDoc =
-        if not (x.Deref.XmlDoc.IsEmpty) then
+        if not x.Deref.XmlDoc.IsEmpty then
                 x.Deref.XmlDoc
         else
             x.Deref.entity_opt_data
@@ -4341,16 +4399,27 @@ type RecdFieldRef =
 type Nullness = 
    | Known of NullnessInfo
    | Variable of NullnessVar
+   /// The value is known to be non-null because it was produced by a constructor call.
+   /// Evaluates as WithoutNull but bypasses AllowNullLiteral warnings for 'not null' constraints.
+   | KnownFromConstructor
+
+   /// Returns Known WithoutNull if KnownFromConstructor, otherwise identity.
+   member n.Normalize() =
+       match n with
+       | KnownFromConstructor -> Known NullnessInfo.WithoutNull
+       | n -> n
 
    member n.Evaluate() = 
        match n with 
        | Known info -> info
        | Variable v -> v.Evaluate()
+       | KnownFromConstructor -> NullnessInfo.WithoutNull
 
    member n.TryEvaluate() = 
        match n with 
        | Known info -> ValueSome info
        | Variable v -> v.TryEvaluate()
+       | KnownFromConstructor -> NullnessInfo.WithoutNull |> ValueSome
 
    override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
 
@@ -4377,6 +4446,7 @@ type NullnessVar() =
         match solution with
         | None -> false
         | Some (Nullness.Known _) -> true
+        | Some (Nullness.KnownFromConstructor) -> true
         | Some (Nullness.Variable v) -> v.IsFullySolved
 
     member nv.Set(nullness) = 
@@ -4600,6 +4670,42 @@ type Measure =
         | Inv(m) -> m.Range
         | One(range= m) -> m
         | RationalPower(measure= ms) -> ms.Range
+
+/// Wraps an Attrib list together with cached WellKnownEntityAttributes flags for O(1) lookup.
+type WellKnownEntityAttribs = WellKnownAttribs<Attrib, WellKnownEntityAttributes>
+
+module WellKnownEntityAttribs =
+    /// Shared singleton for entities with no attributes.
+    let Empty = WellKnownAttribs<Attrib, WellKnownEntityAttributes>([], WellKnownEntityAttributes.None)
+
+    /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
+    let Create(attribs: Attrib list) =
+        if attribs.IsEmpty then
+            Empty
+        else
+            WellKnownAttribs(attribs, WellKnownEntityAttributes.NotComputed)
+
+    /// Create with precomputed flags (used when flags are already known).
+    let CreateWithFlags(attribs: Attrib list, flags: WellKnownEntityAttributes) =
+        WellKnownAttribs(attribs, flags)
+
+/// Wraps an Attrib list together with cached WellKnownValAttributes flags for O(1) lookup.
+type WellKnownValAttribs = WellKnownAttribs<Attrib, WellKnownValAttributes>
+
+module WellKnownValAttribs =
+    /// Shared singleton for vals with no attributes.
+    let Empty = WellKnownAttribs<Attrib, WellKnownValAttributes>([], WellKnownValAttributes.None)
+
+    /// Create from an attribute list. If empty, flags = None. Otherwise NotComputed.
+    let Create(attribs: Attrib list) =
+        if attribs.IsEmpty then
+            Empty
+        else
+            WellKnownAttribs(attribs, WellKnownValAttributes.NotComputed)
+
+    /// Create with precomputed flags (used when flags are already known).
+    let CreateWithFlags(attribs: Attrib list, flags: WellKnownValAttributes) =
+        WellKnownAttribs(attribs, flags)
 
 type Attribs = Attrib list 
 
@@ -4955,7 +5061,7 @@ type ArgReprInfo =
     {
       /// The attributes for the argument
       // MUTABILITY: used when propagating signature attributes into the implementation.
-      mutable Attribs: Attribs 
+      mutable Attribs: WellKnownValAttribs 
 
       /// The name for the argument at this position, if any
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
@@ -5593,14 +5699,14 @@ type NamedDebugPointKey =
 
     override x.Equals(yobj: objnull) = 
         match yobj with 
-        | :? NamedDebugPointKey as y -> Range.equals x.Range y.Range && x.Name = y.Name
+        | :? NamedDebugPointKey as y -> equals x.Range y.Range && x.Name = y.Name
         | _ -> false
 
     interface IComparable with
         member x.CompareTo(yobj: obj) =
            match yobj with 
            | :? NamedDebugPointKey as y ->  
-               let c = Range.rangeOrder.Compare(x.Range, y.Range) 
+               let c = rangeOrder.Compare(x.Range, y.Range) 
                if c <> 0 then c else
                compare x.Name y.Name
            | _ -> -1
@@ -6044,7 +6150,7 @@ type Construct() =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m, objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (ty)), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),
@@ -6106,7 +6212,7 @@ type Construct() =
             entity_logical_name=name
             entity_range=m
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-            entity_attribs=[] // fetched on demand via est.fs API
+            entity_attribs=WellKnownEntityAttribs.Empty // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
@@ -6138,7 +6244,7 @@ type Construct() =
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
-            entity_attribs=attribs
+            entity_attribs=WellKnownEntityAttribs.Create(attribs)
             entity_il_repr_cache = newCache()
             entity_opt_data =
                 match xml, access with
@@ -6185,7 +6291,7 @@ type Construct() =
             typar_opt_data =
                 match attribs with
                 | [] -> None
-                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false  } } 
+                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false; typar_declared_name = None } }
 
     /// Create a new type parameter node for a declared type parameter
     static member NewRigidTypar nm m =
@@ -6207,7 +6313,7 @@ type Construct() =
     static member NewExn cpath (id: Ident) access repr attribs (doc: XmlDoc) = 
         Tycon.New "exnc"
           { entity_stamp = newStamp()
-            entity_attribs = attribs
+            entity_attribs = WellKnownEntityAttribs.Create(attribs)
             entity_logical_name = id.idText
             entity_range = id.idRange
             entity_tycon_tcaug = TyconAugmentation.Create()
@@ -6249,7 +6355,7 @@ type Construct() =
             entity_logical_name=nm
             entity_range=m
             entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordOrUnionType=false)
-            entity_attribs=[] // fixed up after
+            entity_attribs=WellKnownEntityAttribs.Empty // fixed up after
             entity_typars=typars
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()
@@ -6308,7 +6414,7 @@ type Construct() =
                     val_xmldoc = doc
                     val_member_info = specialRepr
                     val_declaring_entity = actualParent
-                    val_attribs = attribs }
+                    val_attribs = WellKnownValAttribs.Create(attribs) }
                 |> Some
 
         let flags = ValFlags(recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal)

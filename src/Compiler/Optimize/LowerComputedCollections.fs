@@ -17,7 +17,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
-open Import
 
 /// Build the 'test and dispose' part of a 'use' statement
 let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
@@ -282,9 +281,21 @@ module List =
             let tailOrNullExpr = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [srcElemTy], IndexTail, mIn)
 
             let body =
+                // Lift the outermost let binding's debug point out of the body so
+                // the sequence point lands on the ldloca (stack-empty) rather than
+                // inside the body argument (stack-non-empty after the collector
+                // address has been pushed).  Only PDB metadata changes—no IL change.
+                let addExpr =
+                    match body with
+                    | Expr.Let(TBind(v, rhs, DebugPointAtBinding.Yes spBind), innerBody, m, flags) ->
+                        let bodyForAdd = Expr.Let(TBind(v, rhs, DebugPointAtBinding.NoneAtInvisible), innerBody, m, flags)
+                        Expr.DebugPoint(DebugPointAtLeafExpr.Yes spBind, mkCallCollectorAdd tcVal g reader mBody collector bodyForAdd)
+                    | _ ->
+                        mkCallCollectorAdd tcVal g reader mIn collector body
+
                 mkInvisibleLet mIn loopVal headOrDefaultExpr
                     (mkSequential mIn
-                        (mkCallCollectorAdd tcVal g reader mIn collector body)
+                        addExpr
                         (mkSequential mIn
                             (mkValSet mIn (mkLocalValRef currentVar) nextExpr)
                             (mkValSet mIn (mkLocalValRef nextVar) tailOrNullExpr)))

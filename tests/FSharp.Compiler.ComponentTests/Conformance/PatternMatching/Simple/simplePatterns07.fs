@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Contains sequence [6; 20; 82]
 let rec containsSeq list =

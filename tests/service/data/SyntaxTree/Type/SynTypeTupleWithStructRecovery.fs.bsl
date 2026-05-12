@@ -31,11 +31,12 @@ ImplFile
                         (2,7--2,24)), (2,27--2,29)), (2,4--2,5), Yes (2,0--2,29),
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
-                    EqualsRange = Some (2,25--2,26) })], (2,0--2,29))],
-          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                    EqualsRange = Some (2,25--2,26) })], (2,0--2,29),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (2,0--3,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))
 
 (2,25)-(2,26) parse error Unexpected symbol '=' in binding. Expected ')' or other token.
 (2,14)-(2,15) parse error Unmatched '('

@@ -46,8 +46,8 @@ module DuplicateOverloadUpToErasure5 =  begin
         member this.Foo (x:System.Tuple<int,int,int,int,int,int,System.Tuple<int>>) = printfn "method 2"
 end
                                 
-module DuplicateOverloadUpToErasure6 =  begin
-
+module NotAnyMoreDuplicateOverloadUpToErasure6 =  begin
+    // This is not the same IL type, not a duplicate
     type SomeClass() =
         
         member this.Foo (x:nativeptr<int>) = printfn "method 1"
@@ -55,8 +55,8 @@ module DuplicateOverloadUpToErasure6 =  begin
         member this.Foo (x:nativeint) =  printfn "method 2"
 end
 
-module DuplicateOverloadUpToErasure7 =  begin
-
+module NotAnyMoreDuplicateOverloadUpToErasure7 =  begin
+    // This is not the same IL type, not a duplicate
     type SomeClass() =
         
         member this.Foo (x:(int*int)*int*(int*nativeptr<int>)*int*int) = printfn "method 1"

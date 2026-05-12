@@ -4,7 +4,7 @@
 // when single module declared inside namespace
 
 
-#light
+
 namespace MyNamespace1
 
 module MyModule1 =

@@ -5,7 +5,6 @@ module internal FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Library
 open FSharp.Compiler.CheckBasics
-open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Import
 open FSharp.Compiler.Syntax

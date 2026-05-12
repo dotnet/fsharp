@@ -89,7 +89,7 @@ let rec morphILTypeRefsInILType f x =
 and tspec_tref2tref f (tspec: ILTypeSpec) =
     mkILTySpec (f tspec.TypeRef, List.map (morphILTypeRefsInILType f) tspec.GenericArgs)
 
-let rec ty_scoref2scoref_tyvar2ty ((_fscope, fTyvar) as fs) ty =
+let rec ty_scoref2scoref_tyvar2ty (_fscope, fTyvar as fs) ty =
     match ty with
     | ILType.Ptr elemTy -> ILType.Ptr(ty_scoref2scoref_tyvar2ty fs elemTy)
     | ILType.FunctionPointer callsig -> ILType.FunctionPointer(callsig_scoref2scoref_tyvar2ty fs callsig)
@@ -259,7 +259,7 @@ let morphILFieldDefs f (fdefs: ILFieldDefs) =
 let morphILTypeDefs isInKnownSet f (tdefs: ILTypeDefs) =
     let filtered (tdefs: ILTypeDef array) =
         // The key ensures that items in the Known Set are not duplicated everything else may be.
-        let mkKey (i, (td: ILTypeDef)) =
+        let mkKey (i, td: ILTypeDef) =
             if isInKnownSet td.Name then
                 struct (0, td.Name)
             else

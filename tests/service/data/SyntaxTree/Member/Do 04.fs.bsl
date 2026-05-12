@@ -23,7 +23,7 @@ ImplFile
                              NoneAtDo, { LeadingKeyword = Do (5,4--5,6)
                                          InlineKeyword = None
                                          EqualsRange = None })], false, false,
-                         (5,4--5,6));
+                         (5,4--5,6), { InKeyword = None });
                       LetBindings
                         ([SynBinding
                             (None, Do, false, false, [], PreXmlDocEmpty,
@@ -34,11 +34,11 @@ ImplFile
                              Const (Unit, (7,7--7,9)), (7,4--7,9), NoneAtDo,
                              { LeadingKeyword = Do (7,4--7,6)
                                InlineKeyword = None
-                               EqualsRange = None })], false, false, (7,4--7,9))],
-                     (5,4--7,9)), [], None, (3,5--7,9),
-                  { LeadingKeyword = Type (3,0--3,4)
-                    EqualsRange = Some (3,7--3,8)
-                    WithKeyword = None })], (3,0--7,9))],
+                               EqualsRange = None })], false, false, (7,4--7,9),
+                         { InKeyword = None })], (5,4--7,9)), [], None,
+                  (3,5--7,9), { LeadingKeyword = Type (3,0--3,4)
+                                EqualsRange = Some (3,7--3,8)
+                                WithKeyword = None })], (3,0--7,9))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,9), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
@@ -47,4 +47,4 @@ ImplFile
 
 (7,4)-(7,6) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (5:5). Try indenting this further.
 To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-(7,4)-(7,6) parse error Expecting expression
+(5,6)-(5,6) parse error Expecting expression

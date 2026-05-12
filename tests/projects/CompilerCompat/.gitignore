@@ -1,0 +1,6 @@
+# Ignore test-generated files
+global.json
+commandline.txt
+**/*BuildInfo.fs
+StandardOutput.txt
+StandardError.txt

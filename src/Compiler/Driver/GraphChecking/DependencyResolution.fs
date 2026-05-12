@@ -206,6 +206,7 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
         if file.Idx = 0 then
             // First file cannot have any dependencies.
             Array.empty
+
         else
             let fileContent = fileContents[file.Idx]
 
@@ -235,11 +236,19 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
                 | None -> Array.empty
                 | Some sigIdx -> Array.singleton sigIdx
 
+            // Add a link from signature files to their implementation files, if the implementation file comes before the signature file.
+            // This allows us to emit FS0238 (implementation already given).
+            let implementationGivenBeforeSignature =
+                match filePairs.TryGetOutOfOrderImplementationIndex file.Idx with
+                | None -> Array.empty
+                | Some idx -> Array.singleton idx
+
             let allDependencies =
                 [|
                     yield! depsResult.FoundDependencies
                     yield! ghostDependencies
                     yield! signatureDependency
+                    yield! implementationGivenBeforeSignature
                 |]
                 |> Array.distinct
 

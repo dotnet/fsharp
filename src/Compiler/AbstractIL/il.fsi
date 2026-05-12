@@ -111,7 +111,7 @@ type ILAssemblyRef =
 
     member EqualsIgnoringVersion: ILAssemblyRef -> bool
 
-    interface System.IComparable
+    interface IComparable
 
 [<Sealed>]
 type ILModuleRef =
@@ -123,7 +123,7 @@ type ILModuleRef =
 
     member Hash: byte[] option
 
-    interface System.IComparable
+    interface IComparable
 
 // Scope references
 [<StructuralEquality; StructuralComparison; RequireQualifiedAccess>]
@@ -239,7 +239,7 @@ type ILTypeRef =
 
     override ToString: unit -> string
 
-    interface System.IComparable
+    interface IComparable
 
 /// Type specs and types.
 [<Sealed>]
@@ -267,7 +267,7 @@ type ILTypeSpec =
 
     member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
 
-    interface System.IComparable
+    interface IComparable
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILType =
@@ -371,7 +371,7 @@ type ILMethodRef =
 
     member GetCallingSignature: unit -> ILCallingSignature
 
-    interface System.IComparable
+    interface IComparable
 
 /// Formal identities of fields.
 [<StructuralEquality; StructuralComparison>]
@@ -403,7 +403,7 @@ type ILMethodSpec =
 
     member FormalReturnType: ILType
 
-    interface System.IComparable
+    interface IComparable
 
 /// Field specs.  The data given for a ldfld, stfld etc. instruction.
 [<StructuralEquality; StructuralComparison>]
@@ -878,15 +878,45 @@ type ILAttributes =
 
     static member internal Empty: ILAttributes
 
-/// Represents the efficiency-oriented storage of ILAttributes in another item.
-[<NoEquality; NoComparison>]
-type ILAttributesStored =
-    /// Computed by ilread.fs based on metadata index
-    | Reader of (int32 -> ILAttribute[])
-    /// Already computed
-    | Given of ILAttributes
+[<Flags>]
+type WellKnownILAttributes =
+    | None = 0u
+    | IsReadOnlyAttribute = (1u <<< 0)
+    | IsUnmanagedAttribute = (1u <<< 1)
+    | IsByRefLikeAttribute = (1u <<< 2)
+    | ExtensionAttribute = (1u <<< 3)
+    | NullableAttribute = (1u <<< 4)
+    | ParamArrayAttribute = (1u <<< 5)
+    | AllowNullLiteralAttribute = (1u <<< 6)
+    | ReflectedDefinitionAttribute = (1u <<< 7)
+    | AutoOpenAttribute = (1u <<< 8)
+    | InternalsVisibleToAttribute = (1u <<< 9)
+    | CallerMemberNameAttribute = (1u <<< 10)
+    | CallerFilePathAttribute = (1u <<< 11)
+    | CallerLineNumberAttribute = (1u <<< 12)
+    | IDispatchConstantAttribute = (1u <<< 13)
+    | IUnknownConstantAttribute = (1u <<< 14)
+    | RequiresLocationAttribute = (1u <<< 15)
+    | SetsRequiredMembersAttribute = (1u <<< 16)
+    | NoEagerConstraintApplicationAttribute = (1u <<< 17)
+    | DefaultMemberAttribute = (1u <<< 18)
+    | ObsoleteAttribute = (1u <<< 19)
+    | CompilerFeatureRequiredAttribute = (1u <<< 20)
+    | ExperimentalAttribute = (1u <<< 21)
+    | RequiredMemberAttribute = (1u <<< 22)
+    | NullableContextAttribute = (1u <<< 23)
+    | AttributeUsageAttribute = (1u <<< 24)
+    | NotComputed = (1u <<< 31)
 
-    member GetCustomAttrs: int32 -> ILAttributes
+/// Represents the efficiency-oriented storage of ILAttributes in another item.
+[<Sealed; NoEquality; NoComparison>]
+type ILAttributesStored =
+    member CustomAttrs: ILAttributes
+
+    member HasWellKnownAttribute: flag: WellKnownILAttributes * compute: (ILAttributes -> WellKnownILAttributes) -> bool
+
+    static member CreateReader: idx: int32 * f: (int32 -> ILAttribute[]) -> ILAttributesStored
+    static member CreateGiven: attrs: ILAttributes -> ILAttributesStored
 
 /// Method parameters and return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -2066,6 +2096,7 @@ val internal mkILFormalNamedTy: ILBoxity -> ILTypeRef -> ILGenericParameterDef l
 val internal mkILFormalTypars: ILType list -> ILGenericParameterDefs
 val internal mkILFormalGenericArgs: int -> ILGenericParameterDefs -> ILGenericArgsList
 val internal mkILSimpleTypar: string -> ILGenericParameterDef
+val internal stripILGenericParamConstraints: ILGenericParameterDef -> ILGenericParameterDef
 
 /// Make custom attributes.
 val internal mkILCustomAttribMethRef:
@@ -2490,7 +2521,7 @@ type internal ILPropertyRef =
     static member Create: ILTypeRef * string -> ILPropertyRef
     member DeclaringTypeRef: ILTypeRef
     member Name: string
-    interface System.IComparable
+    interface IComparable
 
 type ILReferences =
     { AssemblyReferences: ILAssemblyRef[]

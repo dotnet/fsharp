@@ -299,7 +299,7 @@ module Observable =
     /// The sample evaluates to: <c>1, 2, 3</c>
     /// </example>
     [<CompiledName("Subscribe")>]
-    val subscribe: callback: ('T -> unit) -> source: IObservable<'T> -> System.IDisposable
+    val subscribe: callback: ('T -> unit) -> source: IObservable<'T> -> IDisposable
 
     /// <summary>Returns a new observable that triggers on the second and subsequent triggerings of the input observable.
     /// The Nth triggering of the input observable passes the arguments from the N-1th and Nth triggering as

@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #LetBindings #TypeTests 
-#light
+
 
 // Tests for sizeof<'a> type function
 

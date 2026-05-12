@@ -97,7 +97,7 @@ ImplFile
                       Yes (9,8--9,23), { LeadingKeyword = Let (9,8--9,11)
                                          InlineKeyword = None
                                          EqualsRange = Some (9,19--9,20) })],
-                  (9,8--9,23))], false, (8,4--9,23),
+                  (9,8--9,23), { InKeyword = None })], false, (8,4--9,23),
               { ModuleKeyword = Some (8,4--8,10)
                 EqualsRange = Some (8,25--8,26) })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

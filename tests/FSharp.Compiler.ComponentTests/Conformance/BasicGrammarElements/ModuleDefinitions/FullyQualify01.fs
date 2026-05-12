@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Modules 
-#light
+
 
 // Verify ability to fully qualify module identifiers
 

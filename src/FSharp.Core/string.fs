@@ -41,7 +41,7 @@ module String =
         | _ -> String.Join(sep, strings)
 
     [<CompiledName("Iterate")>]
-    let iter (action: (char -> unit)) (str: string) =
+    let iter (action: char -> unit) (str: string) =
         if not (String.IsNullOrEmpty str) then
             for i = 0 to str.Length - 1 do
                 action str.[i]
@@ -66,7 +66,7 @@ module String =
                 result.[i] <- mapping c
                 i <- i + 1
 
-            new String(result)
+            String(result)
 
     [<CompiledName("MapIndexed")>]
     let mapi (mapping: int -> char -> char) (str: string) =
@@ -84,7 +84,7 @@ module String =
                 result.[i] <- f.Invoke(i, result.[i])
                 i <- i + 1
 
-            new String(result)
+            String(result)
 
     [<CompiledName("Filter")>]
     let filter (predicate: char -> bool) (str: string) =
@@ -150,7 +150,7 @@ module String =
             String.Empty
 
         elif len = 1 then
-            new String(str.[0], count)
+            String(str.[0], count)
 
         elif count <= 4 then
             match count with
@@ -178,7 +178,7 @@ module String =
 
             // finally, copy the remain half, or less-then half
             Array.Copy(target, 0, target, i, target.Length - i)
-            new String(target)
+            String(target)
 
     [<CompiledName("ForAll")>]
     let forall predicate (str: string) =

@@ -1,5 +1,5 @@
 // #NoMT #CodeGen #Interop 
-#light
+
 
 // Verify delegates are generated correctly
 

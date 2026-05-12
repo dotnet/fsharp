@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Import 
-#light
+
 
 // Open a namespace in System.dll
 open System.Collections.Specialized

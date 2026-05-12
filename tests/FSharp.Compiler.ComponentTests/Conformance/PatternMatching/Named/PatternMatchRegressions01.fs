@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #ActivePatterns 
-#light  
+
 
 // FSB 1103, bad code generation for active patterns from fswebtools example
 

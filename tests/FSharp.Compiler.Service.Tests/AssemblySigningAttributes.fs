@@ -2,7 +2,6 @@
 
 namespace FSharp.Compiler.Service.Tests
 
-open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 

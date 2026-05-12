@@ -598,10 +598,9 @@ type public Provider(config: TypeProviderConfig) =
                 elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticDecimalParameter") then 
                     <@@ (%%(parameterExpressions.[1]) : decimal) @@>                     
                 elif syntheticMethodBase.Name = "CallIntrinsics" then 
-                     <@@ [ ((true & false) |> box);
+                     <@@ [
                            ((true && false) |> box);
                            ((true || false) |> box);
-                           ((true or false) |> box);
                            ((compare true false) |> box);
                            ((true = false) |> box);
                            ((3 +? System.Nullable 4) |> box);  // should be inlined by the compiler

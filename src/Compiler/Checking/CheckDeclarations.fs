@@ -309,7 +309,7 @@ let AddRootModuleOrNamespaceRefs g amap m env modrefs =
 
 /// Adjust the TcEnv to make more things 'InternalsVisibleTo'
 let addInternalsAccessibility env (ccu: CcuThunk) =
-    let compPath = CompPath (ccu.ILScopeRef, TypedTree.SyntaxAccess.Unknown, [])    
+    let compPath = CompPath (ccu.ILScopeRef, SyntaxAccess.Unknown, [])    
     let eInternalsVisibleCompPaths = compPath :: env.eInternalsVisibleCompPaths
     { env with 
         eAccessRights = ComputeAccessRights env.eAccessPath eInternalsVisibleCompPaths env.eFamilyType // update this computed field
@@ -415,8 +415,6 @@ let private CheckDuplicatesAbstractMethodParamsSig (typeSpecs:  SynTypeDefnSig l
         | _ -> ()
         
 module TcRecdUnionAndEnumDeclarations =
-    open CheckExpressionsOps
-
     let CombineReprAccess parent vis = 
         match parent with 
         | ParentNone -> vis 
@@ -436,10 +434,12 @@ module TcRecdUnionAndEnumDeclarations =
         let attrsForProperty = (List.map snd attrsForProperty) 
         let attrsForField = (List.map snd attrsForField)
         let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
-        let zeroInit = HasFSharpAttribute g g.attrib_DefaultValueAttribute attrsForField
-        let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute attrsForField
+        let fieldFlags = computeValWellKnownFlags g attrsForField
+        let zeroInit = hasFlag fieldFlags (WellKnownValAttributes.DefaultValueAttribute_True ||| WellKnownValAttributes.DefaultValueAttribute_False)
+        let isVolatile = hasFlag fieldFlags WellKnownValAttributes.VolatileFieldAttribute
         
-        let isThreadStatic = isThreadOrContextStatic g attrsForField
+        let isThreadStatic =
+            hasFlag fieldFlags (WellKnownValAttributes.ThreadStaticAttribute ||| WellKnownValAttributes.ContextStaticAttribute)
         if isThreadStatic && (not zeroInit || not isStatic) then 
             errorR(Error(FSComp.SR.tcThreadStaticAndContextStaticMustBeStatic(), m))
 
@@ -732,11 +732,11 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
         // Allow "open Foo" for "Microsoft.Foo" from FSharp.Core
 
     modrefs |> List.iter (fun (_, modref, _) ->
-       if modref.IsModule && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute modref.Attribs then 
+       if modref.IsModule && EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute modref.Deref then 
            errorR(Error(FSComp.SR.tcModuleRequiresQualifiedAccess(fullDisplayTextOfModRef modref), m)))
 
     // Bug FSharp 1.0 3133: 'open Lexing'. Skip this warning if we successfully resolved to at least a module name
-    if not (modrefs |> List.exists (fun (_, modref, _) -> modref.IsModule && not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute modref.Attribs))) then
+    if not (modrefs |> List.exists (fun (_, modref, _) -> modref.IsModule && not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.RequireQualifiedAccessAttribute modref.Deref))) then
         modrefs |> List.iter (fun (_, modref, _) ->
             if IsPartiallyQualifiedNamespace modref then 
                  errorR(Error(FSComp.SR.tcOpenUsedWithPartiallyQualifiedPath(fullDisplayTextOfModRef modref), m)))
@@ -1110,7 +1110,7 @@ module MutRecBindingChecking =
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
                             [Phase2AInherit (ty, arg, baseValOpt, m); Phase2AIncrClassCtorJustAfterSuperInit], innerState
 
-                        | Some (SynMemberDefn.LetBindings (letBinds, isStatic, isRec, m)), _ ->
+                        | Some (SynMemberDefn.LetBindings (bindings = letBinds; isStatic = isStatic; isRecursive = isRec; range = m)), _ ->
                             match tcref.TypeOrMeasureKind, isStatic with 
                             | TyparKind.Measure, false -> errorR(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) 
                             | _ -> ()
@@ -1180,7 +1180,7 @@ module MutRecBindingChecking =
                           TyconBindingPhase2A.Phase2AMember {
                             SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = Get_OrSet_Ident & setIdent)))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vSet)
-                          } when Range.equals getIdent.idRange setIdent.idRange ->
+                          } when equals getIdent.idRange setIdent.idRange ->
                             match  vGet.ApparentEnclosingEntity with
                             | ParentNone -> ()
                             | Parent parentRef ->
@@ -1408,7 +1408,7 @@ module MutRecBindingChecking =
 
                             // Check to see that local bindings and members don't have the same name and check some other adhoc conditions
                             for bind in binds do
-                                if not isStatic && HasFSharpAttributeOpt g g.attrib_DllImportAttribute bind.Var.Attribs then 
+                                if not isStatic && ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute bind.Var then 
                                     errorR(Error(FSComp.SR.tcDllImportNotAllowed(), bind.Var.Range))
                                     
                                 let nm = bind.Var.DisplayName
@@ -2087,7 +2087,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
               let (MutRecDefnsPhase2DataForTycon(tyconOpt, _x, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
               
               // If a tye uses both [<Sealed>] and [<AbstractClass>] attributes it means it is a static class.
-              let isStaticClass = HasFSharpAttribute g g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
+              let isStaticClass = EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute_True tcref.Deref && EntityHasWellKnownAttribute g WellKnownEntityAttributes.AbstractClassAttribute tcref.Deref
               if isStaticClass && g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
                   ReportErrorOnStaticClass synMembers
                   match tyconOpt with
@@ -2177,7 +2177,7 @@ module TyconConstraintInference =
                                 ExistsSameHeadTypeInHierarchy g cenv.amap range0 ty g.mk_IStructuralComparable_ty)
                             &&
                             // Check it isn't ruled out by the user
-                            not (HasFSharpAttribute g g.attrib_NoComparisonAttribute tcref.Attribs)
+                            not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoComparisonAttribute tcref.Deref)
                             &&
                             // Check the structural dependencies
                             (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> 
@@ -2194,16 +2194,15 @@ module TyconConstraintInference =
 
                    if cenv.g.compilingFSharpCore && 
                       AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithCompare g tycon && 
-                      not (HasFSharpAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs) && 
-                      not (HasFSharpAttribute g g.attrib_NoComparisonAttribute tycon.Attribs) then 
+                      not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructuralComparisonAttribute tycon) && 
+                      not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoComparisonAttribute tycon) then 
                        errorR(Error(FSComp.SR.tcFSharpCoreRequiresExplicit(), tycon.Range)) 
 
                    let res = (structuralTypes |> List.forall (fst >> checkIfFieldTypeSupportsComparison tycon))
 
                    // If the type was excluded, say why
                    if not res then 
-                       match TryFindFSharpBoolAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs with
-                       | Some true -> 
+                       if EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructuralComparisonAttribute tycon then
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
@@ -2213,10 +2212,7 @@ module TyconConstraintInference =
                                    errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
                                else 
                                    errorR(Error(FSComp.SR.tcStructuralComparisonNotSatisfied2(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
-                       | Some false -> 
-                           ()
-                       
-                       | None -> 
+                       else
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
@@ -2301,7 +2297,7 @@ module TyconConstraintInference =
                                 true) 
                              &&
                              // Check it isn't ruled out by the user
-                             not (HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs)
+                             not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tcref.Deref)
                              &&
                              // Check the structural dependencies
                              (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> 
@@ -2319,8 +2315,8 @@ module TyconConstraintInference =
 
                    if cenv.g.compilingFSharpCore && 
                       AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon && 
-                      not (HasFSharpAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs) && 
-                      not (HasFSharpAttribute g g.attrib_NoEqualityAttribute tycon.Attribs) then 
+                      not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructuralEqualityAttribute tycon) && 
+                      not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tycon) then 
                        errorR(Error(FSComp.SR.tcFSharpCoreRequiresExplicit(), tycon.Range)) 
 
                    // Remove structural types with incomparable elements from the assumedTycons
@@ -2328,8 +2324,7 @@ module TyconConstraintInference =
 
                    // If the type was excluded, say why
                    if not res then 
-                       match TryFindFSharpBoolAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs with
-                       | Some true -> 
+                       if EntityHasWellKnownAttribute g WellKnownEntityAttributes.StructuralEqualityAttribute tycon then
                            if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon then 
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
@@ -2340,11 +2335,7 @@ module TyconConstraintInference =
                                        errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied1(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
                                    else 
                                        errorR(Error(FSComp.SR.tcStructuralEqualityNotSatisfied2(tycon.DisplayName, NicePrint.prettyStringOfTy denv ty), tycon.Range)) 
-                           else
-                               ()
-                       | Some false -> 
-                           ()
-                       | None -> 
+                       else
                            if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon then 
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
@@ -2559,12 +2550,13 @@ module EstablishTypeDefinitionCores =
             else typars.Length
         mkSynId id.idRange (if erasedArity = 0 then id.idText else id.idText + "`" + string erasedArity)
  
-    let private GetTyconAttribs g attrs = 
-        let hasClassAttr = HasFSharpAttribute g g.attrib_ClassAttribute attrs
-        let hasAbstractClassAttr = HasFSharpAttribute g g.attrib_AbstractClassAttribute attrs
-        let hasInterfaceAttr = HasFSharpAttribute g g.attrib_InterfaceAttribute attrs
-        let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
-        let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
+    let private GetTyconAttribs g attrs =
+        let flags = computeEntityWellKnownFlags g attrs
+        let hasClassAttr = hasFlag flags WellKnownEntityAttributes.ClassAttribute
+        let hasAbstractClassAttr = hasFlag flags WellKnownEntityAttributes.AbstractClassAttribute
+        let hasInterfaceAttr = hasFlag flags WellKnownEntityAttributes.InterfaceAttribute
+        let hasStructAttr = hasFlag flags WellKnownEntityAttributes.StructAttribute
+        let hasMeasureAttr = hasFlag flags WellKnownEntityAttributes.MeasureAttribute
         (hasClassAttr, hasAbstractClassAttr, hasInterfaceAttr, hasStructAttr, hasMeasureAttr)
 
     //-------------------------------------------------------------------------
@@ -2705,7 +2697,7 @@ module EstablishTypeDefinitionCores =
                 try
                     let (SynTyparDecl (attributes = Attributes synAttrs)) = synTypar
                     let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
-                    HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
+                    attribsHaveEntityFlag cenv.g WellKnownEntityAttributes.MeasureAttribute attrs
                 with _ -> false))
 
     let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
@@ -2862,12 +2854,13 @@ module EstablishTypeDefinitionCores =
         // 'Check' the attributes. We return the results to avoid having to re-check them in all other phases. 
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
-        let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
-        let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
-        let hasCLIMutable = HasFSharpAttribute g g.attrib_CLIMutableAttribute attrs
-        let hasAllowNullLiteralAttr = HasFSharpAttribute g g.attrib_AllowNullLiteralAttribute attrs
-        let hasSealedAttr = HasFSharpAttribute g g.attrib_SealedAttribute attrs
-        let structLayoutAttr = HasFSharpAttribute g g.attrib_StructLayoutAttribute attrs
+        let entityFlags = computeEntityWellKnownFlags g attrs
+        let hasMeasureAttr = hasFlag entityFlags WellKnownEntityAttributes.MeasureAttribute
+        let hasStructAttr = hasFlag entityFlags WellKnownEntityAttributes.StructAttribute
+        let hasCLIMutable = hasFlag entityFlags WellKnownEntityAttributes.CLIMutableAttribute
+        let hasAllowNullLiteralAttr = hasFlag entityFlags WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+        let hasSealedAttr = hasFlag entityFlags WellKnownEntityAttributes.SealedAttribute_True
+        let structLayoutAttr = hasFlag entityFlags WellKnownEntityAttributes.StructLayoutAttribute
 
         // We want to keep these special attributes treatment and avoid having two errors for the same attribute.
         let reportAttributeTargetsErrors =
@@ -2880,19 +2873,30 @@ module EstablishTypeDefinitionCores =
         let noCLIMutableAttributeCheck() =
             if hasCLIMutable then errorR (Error(FSComp.SR.tcThisTypeMayNotHaveACLIMutableAttribute(), m))
 
+        // Check attribute targets for error reporting only — results are discarded.
+        // Suspend the sink to avoid duplicate symbol entries from re-resolving attribute constructors.
+        let checkAttributeTargetsErrors attrTarget =
+            if reportAttributeTargetsErrors then
+                use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner attrTarget synAttrs |> ignore
+
         let isStructRecordOrUnionType = 
             match synTyconRepr with
             | SynTypeDefnSimpleRepr.Record _ 
             | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) _
             | SynTypeDefnSimpleRepr.Union _ ->
-                HasFSharpAttribute g g.attrib_StructAttribute attrs
+                hasStructAttr
             | _ -> 
                 false
 
         tycon.SetIsStructRecordOrUnion isStructRecordOrUnionType
 
         // Set the compiled name, if any
-        tycon.SetCompiledName (TryFindFSharpStringAttribute g g.attrib_CompiledNameAttribute attrs)
+        tycon.SetCompiledName(
+            match attrs with
+            | EntityAttribString g WellKnownEntityAttributes.CompiledNameAttribute s -> Some s
+            | _ -> None
+        )
 
         if hasMeasureAttr then 
             tycon.SetTypeOrMeasureKind TyparKind.Measure
@@ -2917,11 +2921,7 @@ module EstablishTypeDefinitionCores =
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Union, attrs, [], [], inSig, true, m) |> ignore
                 
-                if reportAttributeTargetsErrors then
-                    if hasStructAttr then
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
-                    else
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
+                checkAttributeTargetsErrors (if hasStructAttr then AttributeTargets.Struct else AttributeTargets.Class)
 
                 // Note: the table of union cases is initially empty
                 Construct.MakeUnionRepr []
@@ -2942,11 +2942,7 @@ module EstablishTypeDefinitionCores =
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Record, attrs, [], [], inSig, true, m) |> ignore
                 
-                if reportAttributeTargetsErrors then
-                    if hasStructAttr then
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
-                    else
-                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
+                checkAttributeTargetsErrors (if hasStructAttr then AttributeTargets.Struct else AttributeTargets.Class)
 
                 // Note: the table of record fields is initially empty
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpRecord)
@@ -2961,20 +2957,16 @@ module EstablishTypeDefinitionCores =
                     let kind = 
                         match kind with
                         | SynTypeDefnKind.Class ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Class
                             TFSharpClass
                         | SynTypeDefnKind.Interface ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Interface synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Interface
                             TFSharpInterface
                         | SynTypeDefnKind.Delegate _ ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Delegate synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Delegate
                             TFSharpDelegate (MakeSlotSig("Invoke", g.unit_ty, [], [], [], None))
                         | SynTypeDefnKind.Struct ->
-                            if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                            checkAttributeTargetsErrors AttributeTargets.Struct
                             TFSharpStruct 
                         | _ -> error(InternalError("should have inferred tycon kind", m))
 
@@ -2982,8 +2974,7 @@ module EstablishTypeDefinitionCores =
 
             | SynTypeDefnSimpleRepr.Enum _ ->
                 noCLIMutableAttributeCheck()
-                if reportAttributeTargetsErrors then
-                    TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Enum synAttrs |> ignore
+                checkAttributeTargetsErrors AttributeTargets.Enum
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpEnum)
 
         // OK, now fill in the (partially computed) type representation
@@ -3201,8 +3192,8 @@ module EstablishTypeDefinitionCores =
             let id = tycon.Id
             let thisTyconRef = mkLocalTyconRef tycon
 
-            let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
-            let hasMeasureableAttr = HasFSharpAttribute g g.attrib_MeasureableAttribute attrs
+            let hasMeasureAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureAttribute attrs
+            let hasMeasureableAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureableAttribute attrs
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
 
@@ -3241,14 +3232,14 @@ module EstablishTypeDefinitionCores =
                     // Give a warning if `AutoOpenAttribute` or `StructAttribute` is being aliased.
                     // If the user were to alias the `Microsoft.FSharp.Core.AutoOpenAttribute` type, it would not be detected by the project graph dependency resolution algorithm.
 
-                    let inline checkAttributeAliased ty (tycon: Tycon) (attrib: BuiltinAttribInfo) =
+                    let inline checkAttributeAliased ty (tycon: Tycon) (fullName: string) =
                         match stripTyEqns g ty with
                         | AppTy g (tcref, _) when not tcref.IsErased ->
                             match tcref.CompiledRepresentation with
                             | CompiledTypeRepr.ILAsmOpen _ -> ()
                             | CompiledTypeRepr.ILAsmNamed _ ->
-                                if tcref.CompiledRepresentationForNamedType.FullName = attrib.TypeRef.FullName then
-                                    warning(Error(FSComp.SR.chkAttributeAliased(attrib.TypeRef.FullName), tycon.Id.idRange))
+                                if tcref.CompiledRepresentationForNamedType.FullName = fullName then
+                                    warning(Error(FSComp.SR.chkAttributeAliased(fullName), tycon.Id.idRange))
                         | _ -> ()
 
                     // Check for attributes in unit-of-measure declarations
@@ -3258,8 +3249,8 @@ module EstablishTypeDefinitionCores =
                     | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
                     | _ -> ()
                         
-                    checkAttributeAliased ty tycon g.attrib_AutoOpenAttribute
-                    checkAttributeAliased ty tycon g.attrib_StructAttribute
+                    checkAttributeAliased ty tycon "Microsoft.FSharp.Core.AutoOpenAttribute"
+                    checkAttributeAliased ty tycon "Microsoft.FSharp.Core.StructAttribute"
 
                     if not firstPass then
                         let ftyvs = freeInTypeLeftToRight g false ty
@@ -3296,7 +3287,7 @@ module EstablishTypeDefinitionCores =
                 let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
 
                 if firstPass then 
-                    tycon.entity_attribs <- attrs
+                    tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
 
                 let implementedTys, inheritedTys = 
                     match synTyconRepr with 
@@ -3404,26 +3395,34 @@ module EstablishTypeDefinitionCores =
             let innerParent = Parent thisTyconRef
             let thisTyInst, thisTy = generalizeTyconRef g thisTyconRef
 
-            let hasAbstractAttr = HasFSharpAttribute g g.attrib_AbstractClassAttribute attrs
-            let hasSealedAttr = 
+            let entityFlags = computeEntityWellKnownFlags g attrs
+            let hasAbstractAttr = hasFlag entityFlags WellKnownEntityAttributes.AbstractClassAttribute
+            let hasSealedAttr =
                 // The special case is needed for 'unit' because the 'Sealed' attribute is not yet available when this type is defined.
-                if g.compilingFSharpCore && id.idText = "Unit" then 
+                if g.compilingFSharpCore && id.idText = "Unit" then
                     Some true
+                elif hasFlag entityFlags WellKnownEntityAttributes.SealedAttribute_True then
+                    Some true
+                elif hasFlag entityFlags WellKnownEntityAttributes.SealedAttribute_False then
+                    Some false
                 else
-                    TryFindFSharpBoolAttribute g g.attrib_SealedAttribute attrs
-            let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
+                    None
+            let hasMeasureAttr = hasFlag entityFlags WellKnownEntityAttributes.MeasureAttribute
             
             // REVIEW: for hasMeasureableAttr we need to be stricter about checking these
             // are only used on exactly the right kinds of type definitions and not in conjunction with other attributes.
-            let hasMeasureableAttr = HasFSharpAttribute g g.attrib_MeasureableAttribute attrs
+            let hasMeasureableAttr = hasFlag entityFlags WellKnownEntityAttributes.MeasureableAttribute
             
-            let structLayoutAttr = TryFindFSharpInt32Attribute g g.attrib_StructLayoutAttribute attrs
-            let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute g g.attrib_AllowNullLiteralAttribute attrs = Some true
+            let structLayoutAttr =
+                match attrs with
+                | EntityAttribInt g WellKnownEntityAttributes.StructLayoutAttribute v -> Some v
+                | _ -> None
+            let hasAllowNullLiteralAttr = hasFlag entityFlags WellKnownEntityAttributes.AllowNullLiteralAttribute_True
 
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
 
-            tycon.entity_attribs <- attrs
+            tycon.entity_attribs <- WellKnownEntityAttribs.CreateWithFlags(attrs, entityFlags)
             let noAbstractClassAttributeCheck() = 
                 if hasAbstractAttr then errorR (Error(FSComp.SR.tcOnlyClassesCanHaveAbstract(), m))
                 
@@ -3546,7 +3545,7 @@ module EstablishTypeDefinitionCores =
                     structLayoutAttributeCheck false
                     noAllowNullLiteralAttributeCheck()
 
-                    let hasRQAAttribute = HasFSharpAttribute cenv.g cenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                    let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
                     TcRecdUnionAndEnumDeclarations.CheckUnionCaseName cenv unionCaseName hasRQAAttribute
                     let unionCase = Construct.NewUnionCase unionCaseName [] thisTy [] XmlDoc.Empty tycon.Accessibility
                     writeFakeUnionCtorsToSink [ unionCase ]
@@ -3578,7 +3577,7 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
 
-                    let hasRQAAttribute = HasFSharpAttribute cenv.g cenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
+                    let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
                     multiCaseUnionStructCheck unionCases
 
@@ -3717,17 +3716,27 @@ module EstablishTypeDefinitionCores =
                                   let fparams =
                                       curriedArgInfos.Head
                                       |> List.map (fun (ty, argInfo: ArgReprInfo) ->
+                                            // Handle type wrapping for optional parameters
+                                            // The ?param syntax provides unwrapped type (e.g., int) with OptionalArgumentAttribute
+                                            // and needs wrapping to int option.
+                                            // Explicit [<OptionalArgument>] path: string option already has wrapped type.
                                             let ty =
-                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
-                                                  match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
-                                                  | Some (Attrib(range=m)) ->
-                                                      checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
-                                                      mkValueOptionTy g ty
-                                                  | _ ->
-                                                      mkOptionTy g ty            
+                                              if ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptionalArgumentAttribute argInfo then
+                                                  if isOptionTy g ty || isValueOptionTy g ty then
+                                                      ty
+                                                  else
+                                                      match argInfo.Attribs.AsList() with
+                                                      | ValAttrib g WellKnownValAttributes.StructAttribute (Attrib(range=m)) ->
+                                                          checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
+                                                          mkValueOptionTy g ty
+                                                      | _ ->
+                                                          mkOptionTy g ty            
                                               else ty
 
-                                            MakeSlotParam(ty, argInfo)) 
+                                            // Extract parameter attributes including optional and caller info flags
+                                            // This ensures delegates have proper metadata for optional parameters
+                                            let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (ty, argInfo)
+                                            TSlotParam(Option.map textOfId argInfo.Name, ty, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs.AsList())) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
@@ -3792,7 +3801,7 @@ module EstablishTypeDefinitionCores =
                 errorR(Error(FSComp.SR.tcInvalidUseNullAsTrueValue(), m))
                 
             // validate ConditionalAttribute, should it be applied (it's only valid on a type if the type is an attribute type)
-            match attrs |> List.tryFind (IsMatchingFSharpAttribute g g.attrib_ConditionalAttribute) with
+            match tryFindValAttribByFlag g WellKnownValAttributes.ConditionalAttribute attrs with
             | Some _ ->
                 if not(ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkWoNullAppTy g.tcref_System_Attribute [])) g cenv.amap m AllowMultiIntfInstantiations.Yes thisTy) then
                     errorR(Error(FSComp.SR.tcConditionalAttributeUsage(), m))
@@ -3961,8 +3970,12 @@ module EstablishTypeDefinitionCores =
 
             // collect edges from the fields of a given struct type.
             and accStructFields includeStaticFields ty (structTycon: Tycon) tinst (doneTypes, acc) =
-                if List.exists (typeEquiv g ty) doneTypes then
+                if
                     // This type (type instance) has been seen before, so no need to collect the same edges again (and avoid loops!)
+                    List.exists (typeEquiv g ty) doneTypes
+                    // This tycon is the outer tycon with a lifted generic argument, e.g., `'a list`.
+                    || not (isNil doneTypes) && tryTcrefOfAppTy g ty |> ValueOption.bind _.TryDeref |> ValueOption.exists ((===) tycon)
+                then
                     doneTypes, acc 
                 else
                     // Only collect once from each type instance.
@@ -4165,7 +4178,7 @@ module EstablishTypeDefinitionCores =
                 let tyconOpt, fixupFinalAttrs = 
                     match tyconAndAttrsOpt with
                     | None -> None, (fun () -> ())
-                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.entity_attribs <- getFinalAttrs())
+                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs()))
 
                 (origInfo, tyconOpt, fixupFinalAttrs, info))
                 
@@ -4176,7 +4189,7 @@ module EstablishTypeDefinitionCores =
         // Generate the union augmentation values for all tycons.
         let withBaseValsAndSafeInitInfosAndUnionValues =
             (envMutRecPrelim, withBaseValsAndSafeInitInfos) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt, fixupFinalAttrs, info) -> 
-                let (tyconCore, _, _) = origInfo
+                let tyconCore, _, _ = origInfo
                 let (MutRecDefnsPhase1DataForTycon (isAtOriginalTyconDefn=isAtOriginalTyconDefn)) = tyconCore
                 let vspecs =
                     match tyconOpt with 
@@ -4215,18 +4228,7 @@ module TcDeclarations =
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
             let tcref =
                 match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
-                | Result res ->
-                    // Update resolved type parameters with the names from the source.
-                    let _, tcref, _ = res
-                    if tcref.TyparsNoRange.Length = synTypars.Length then
-                        (tcref.TyparsNoRange, synTypars)
-                        ||> List.zip
-                        |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (typar = tp)) ->
-                            let (SynTypar(ident = untypedIdent; staticReq = sr)) = tp
-                            if typar.StaticReq = sr then
-                                typar.SetIdent(untypedIdent)
-                        )
-
+                | Result (_, tcref, _) ->
                     tcref
 
                 | Exception exn ->
@@ -4268,13 +4270,19 @@ module TcDeclarations =
             let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
 
+            let checkTyparsForExtension () =
+                if g.checkNullness then
+                    typarsAEquivWithAddedNotNullConstraintsAllowed g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars
+                else
+                    typarsAEquiv g TypeEquivEnv.EmptyIgnoreNulls reqTypars declaredTypars
+
             if tcref.TypeAbbrev.IsSome then
                 ExtrinsicExtensionBinding, tcref, declaredTypars
             elif isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
+                if not (checkTyparsForExtension()) then
                     warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
                 IntrinsicExtensionBinding, tcref, reqTypars
@@ -4283,7 +4291,7 @@ module TcDeclarations =
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(), tcref.Range))
                 if nReqTypars <> synTypars.Length then 
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
+                if not (checkTyparsForExtension()) then
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 ExtrinsicExtensionBinding, tcref, declaredTypars
 
@@ -4410,7 +4418,7 @@ module TcDeclarations =
                 // Only the keep the field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
                 let mLetPortion = synExpr.Range
-                let fldId = ident (CompilerGeneratedName id.idText, mLetPortion)
+                let fldId = ident (CompilerGeneratedName id.idText, mLetPortion.MakeSynthetic())
                 let headPat = SynPat.LongIdent (SynLongIdent([fldId], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [], None, mLetPortion)
                 let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                 let isMutable = 
@@ -4421,7 +4429,7 @@ module TcDeclarations =
                 let attribs = mkAttributeList attribs mWholeAutoProp
                 let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, synExpr, synExpr.Range, [], attribs, None, SynBindingTrivia.Zero)
 
-                [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
+                [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp, SynMemberDefnLetBindingsTrivia.Zero))]
 
             | SynMemberDefn.Interface (members=Some membs) -> membs |> List.collect preAutoProps
             | SynMemberDefn.LetBindings _
@@ -4438,7 +4446,7 @@ module TcDeclarations =
                 let mMemberPortion = id.idRange
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
-                let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
+                let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion.MakeSynthetic())
                 let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
                 let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                 let memberFlags = { memberFlags with GetterOrSetterIsCompilerGenerated = true }
@@ -4467,7 +4475,7 @@ module TcDeclarations =
                     | SynMemberKind.PropertySet 
                     | SynMemberKind.PropertyGetSet -> 
                         let setter = 
-                            let vId = ident("v", mMemberPortion)
+                            let vId = ident("v", mMemberPortion.MakeSynthetic())
                             let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                             let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                             let binding = mkSynBinding (xmlDoc, headPat) (setterAccess, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
@@ -4806,7 +4814,7 @@ module TcDeclarations =
                     match extensionAttributeOnVals, typeEntity with
                     | Some extensionAttribute, Some typeEntity ->
                         if Option.isNone (tryFindExtensionAttribute g typeEntity.Attribs) then
-                            typeEntity.entity_attribs <- extensionAttribute :: typeEntity.Attribs
+                            typeEntity.entity_attribs <- typeEntity.EntityAttribs.Add(extensionAttribute, WellKnownEntityAttributes.ExtensionAttribute)
                     | _ -> ()
 
                     vals, env
@@ -5122,7 +5130,7 @@ let ElimSynModuleDeclExpr bind =
     match bind with 
     | SynModuleDecl.Expr (expr, m) -> 
         let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, DebugPointAtBinding.NoneAtDo, SynBindingTrivia.Zero)
-        SynModuleDecl.Let(false, [bind2], m)
+        SynModuleDecl.Let(false, [bind2], m, SynModuleDeclLetTrivia.Zero)
     | _ -> bind
 
 let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env = 
@@ -5196,12 +5204,12 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   let decls = typeDefs |> List.map MutRecShape.Tycon
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Let (letrec, binds, m) -> 
+              | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) -> 
                   let binds = 
                       if isNamespace then 
                           CheckLetOrDoInNamespace binds m; []
                       else
-                          if letrec then [MutRecShape.Lets binds]
+                          if isRecursive then [MutRecShape.Lets binds]
                           else List.map (List.singleton >> MutRecShape.Lets) binds
                   binds, (false, false, attrs)
 
@@ -5281,7 +5289,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               return ([defn], [], []), env, env
 
       | SynModuleDecl.Types (typeDefs, m) ->
-          let typeDefs = typeDefs |> List.filter (function (SynTypeDefn(typeInfo = SynComponentInfo(longId = []))) -> false | _ -> true)
+          let typeDefs = typeDefs |> List.filter (function SynTypeDefn(typeInfo = SynComponentInfo(longId = [])) -> false | _ -> true)
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
           let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns false
@@ -5301,7 +5309,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               | _ -> [ TMDefOpens openDecls ]
           return (defns, [], []), env, env
 
-      | SynModuleDecl.Let (letrec, binds, m) -> 
+      | SynModuleDecl.Let (isRecursive = isRecursive; bindings = binds; range = m) -> 
 
           match parent with
           | ParentNone ->
@@ -5310,7 +5318,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           | Parent parentModule -> 
               let containerInfo = ModuleOrNamespaceContainerInfo parentModule
-              if letrec then 
+              if isRecursive then 
                 let scopem = unionRanges m scopem
                 let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(containerInfo, NoNewSlots, ModuleOrMemberBinding, bind))
                 let binds, env, _ = TcLetrecBindings WarnOnOverrides cenv env tpenv (binds, m, scopem)
@@ -5671,10 +5679,13 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m moduleContents extraAttribs =
                     // the defaults will be propagated to the new type variable. 
                     ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
 
-        // OK, now apply defaults for any unsolved TyparStaticReq.HeadType 
+        // OK, now apply defaults for any unsolved TyparStaticReq.HeadType or typars with SRTP (MayResolveMember) constraints
+        // Note: We also check for MayResolveMember constraints because some SRTP typars may not have StaticReq set
+        // (this can happen when the typar is involved in an SRTP constraint but isn't the "head type" itself)
         unsolved |> List.iter (fun tp ->     
             if not tp.IsSolved then 
-                if (tp.StaticReq <> TyparStaticReq.None) then
+                let hasSRTPConstraint = tp.Constraints |> List.exists (function TyparConstraint.MayResolveMember _ -> true | _ -> false)
+                if (tp.StaticReq <> TyparStaticReq.None) || hasSRTPConstraint then
                     ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
     with RecoverableException exn ->
         errorRecovery exn m
@@ -5889,7 +5900,7 @@ let CheckOneImplFile
 
         // Warn on version attributes.
         topAttrs.assemblyAttrs |> List.iter (function
-           | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String version, range, _), _) ], _, _, _, _) ->
+           | Attrib(tref, _, [ AttribExpr(_, Expr.Const (Const.String version, range, _)) ], _, _, _, _) ->
                 let attrName = tref.CompiledRepresentationForNamedType.FullName
                 let isValid() =
                     try parseILVersion version |> ignore; true

@@ -439,7 +439,10 @@ let ``Cancel running jobs with the same key`` () =
 
     job.Wait()
 
-    let events = eventsWhen events (received Finished)
+    // Wait for all 11 jobs to reach a terminal state (canceled/finished/failed)
+    // before asserting, to avoid snapshot races where some Canceled events
+    // haven't been observed yet when the Finished event arrives.
+    let events = eventsWhen events (fun e -> countOf Canceled e + countOf Finished e + countOf Failed e >= 11)
 
     Assert.Equal(0, events |> countOf Failed)
 
@@ -520,7 +523,7 @@ let ``Preserve thread static diagnostics`` () =
 
     Assert.Equal<(int * int) list>([4, 100], diagnosticCounts)
 
-    let diagnosticMessages = results |> Seq.map snd |> Seq.map (Array.map (fun (d, _) -> d.Exception.Message) >> Array.toList) |> Set
+    let diagnosticMessages = results |> Seq.map snd |> Seq.map (Array.map _.Exception.Message >> Array.toList) |> Set
 
     Assert.Equal<Set<_>>(Set [["task error"; "job2 error 1"; "job1 error"; "job2 error 2"; ]], diagnosticMessages)
 
@@ -550,7 +553,7 @@ let ``Preserve thread static diagnostics already completed job`` () =
         let! _ = cache.Get(key, job "1" )
         let! _ = cache.Get(key, job "2" )
 
-        let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
+        let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map _.Exception.Message |> Array.toList
 
         Assert.Equal<_ list>(["job 1 error"; "job 1 error"], diagnosticMessages)
 
@@ -582,7 +585,7 @@ let ``We get diagnostics from the job that failed`` () =
 
         do! cache.Get(key, job ) |> Async.Catch |> Async.Ignore
 
-        let messages = logger.Diagnostics |> List.map fst |> List.map _.Exception.Message
+        let messages = logger.Diagnostics |> List.map _.Exception.Message
 
         Assert.Equal<_ list>(["job error"], messages)
     }

@@ -226,7 +226,7 @@ module MainModuleBuilder =
                 {
                     ScopeRef = ILScopeRef.Assembly systemNumericsAssemblyRef
                     Name = t
-                    Attributes = enum<TypeAttributes> (0x00200000) ||| TypeAttributes.Public
+                    Attributes = enum<TypeAttributes> 0x00200000 ||| TypeAttributes.Public
                     Nested = mkILNestedExportedTypes []
                     CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
                     MetadataIndex = NoMetadataIdx
@@ -598,8 +598,8 @@ module MainModuleBuilder =
 
             // don't embed a manifest if target is not an exe, if manifest is specifically excluded, if another native resource is being included, or if running on mono
             elif
-                not (tcConfig.target.IsExe)
-                || not (tcConfig.includewin32manifest)
+                not tcConfig.target.IsExe
+                || not tcConfig.includewin32manifest
                 || not (String.IsNullOrEmpty(tcConfig.win32res))
             then
                 ""
@@ -629,10 +629,10 @@ module MainModuleBuilder =
                         [|
                             yield! ResFileFormat.ResFileHeader()
                             yield!
-                                (ManifestResourceFormat.VS_MANIFEST_RESOURCE(
-                                    (FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes()),
+                                ManifestResourceFormat.VS_MANIFEST_RESOURCE(
+                                    FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes(),
                                     tcConfig.target = CompilerTarget.Dll
-                                ))
+                                )
                         |]
                 if
                     String.IsNullOrEmpty(tcConfig.win32res)

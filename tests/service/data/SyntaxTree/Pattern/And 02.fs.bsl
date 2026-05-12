@@ -50,7 +50,8 @@ ImplFile
                                     WithKeyword = (4,12--4,16) }), (3,4--3,7),
                   NoneAtLet, { LeadingKeyword = Let (3,0--3,3)
                                InlineKeyword = None
-                               EqualsRange = Some (3,8--3,9) })], (3,0--6,13))],
+                               EqualsRange = Some (3,8--3,9) })], (3,0--6,13),
+              { InKeyword = None })],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,13), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

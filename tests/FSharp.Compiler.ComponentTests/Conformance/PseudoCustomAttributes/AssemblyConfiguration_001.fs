@@ -3,7 +3,7 @@
 // See FSHARP1.0:832,1674,1675 and 2290
 // Attribute under test:  AssemblyConfiguration
 
-#light
+
 
 open System
 open System.Reflection;

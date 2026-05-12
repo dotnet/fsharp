@@ -160,105 +160,105 @@ module Nullable =
     [<CompiledName("ToUInt8")>]
     let inline uint8 (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.byte value.Value)
+            Nullable(byte value.Value)
         else
             Nullable()
 
     [<CompiledName("ToInt8")>]
     let inline int8 (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.sbyte value.Value)
+            Nullable(sbyte value.Value)
         else
             Nullable()
 
     [<CompiledName("ToByte")>]
     let inline byte (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.byte value.Value)
+            Nullable(byte value.Value)
         else
             Nullable()
 
     [<CompiledName("ToSByte")>]
     let inline sbyte (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.sbyte value.Value)
+            Nullable(sbyte value.Value)
         else
             Nullable()
 
     [<CompiledName("ToInt16")>]
     let inline int16 (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.int16 value.Value)
+            Nullable(int16 value.Value)
         else
             Nullable()
 
     [<CompiledName("ToUInt16")>]
     let inline uint16 (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.uint16 value.Value)
+            Nullable(uint16 value.Value)
         else
             Nullable()
 
     [<CompiledName("ToInt")>]
     let inline int (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.int value.Value)
+            Nullable(int value.Value)
         else
             Nullable()
 
     [<CompiledName("ToUInt")>]
     let inline uint (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.uint value.Value)
+            Nullable(uint value.Value)
         else
             Nullable()
 
     [<CompiledName("ToEnum")>]
     let inline enum (value: Nullable<int32>) =
         if value.HasValue then
-            Nullable(Operators.enum value.Value)
+            Nullable(enum value.Value)
         else
             Nullable()
 
     [<CompiledName("ToInt32")>]
     let inline int32 (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.int32 value.Value)
+            Nullable(int32 value.Value)
         else
             Nullable()
 
     [<CompiledName("ToUInt32")>]
     let inline uint32 (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.uint32 value.Value)
+            Nullable(uint32 value.Value)
         else
             Nullable()
 
     [<CompiledName("ToInt64")>]
     let inline int64 (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.int64 value.Value)
+            Nullable(int64 value.Value)
         else
             Nullable()
 
     [<CompiledName("ToUInt64")>]
     let inline uint64 (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.uint64 value.Value)
+            Nullable(uint64 value.Value)
         else
             Nullable()
 
     [<CompiledName("ToFloat32")>]
     let inline float32 (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.float32 value.Value)
+            Nullable(float32 value.Value)
         else
             Nullable()
 
     [<CompiledName("ToFloat")>]
     let inline float (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.float value.Value)
+            Nullable(float value.Value)
         else
             Nullable()
 
@@ -279,27 +279,27 @@ module Nullable =
     [<CompiledName("ToIntPtr")>]
     let inline nativeint (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.nativeint value.Value)
+            Nullable(nativeint value.Value)
         else
             Nullable()
 
     [<CompiledName("ToUIntPtr")>]
     let inline unativeint (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.unativeint value.Value)
+            Nullable(unativeint value.Value)
         else
             Nullable()
 
     [<CompiledName("ToDecimal")>]
     let inline decimal (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.decimal value.Value)
+            Nullable(decimal value.Value)
         else
             Nullable()
 
     [<CompiledName("ToChar")>]
     let inline char (value: Nullable<_>) =
         if value.HasValue then
-            Nullable(Operators.char value.Value)
+            Nullable(char value.Value)
         else
             Nullable()

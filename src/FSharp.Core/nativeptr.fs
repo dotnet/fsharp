@@ -3,14 +3,6 @@
 namespace Microsoft.FSharp.NativeInterop
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Primitives.Basics
-open Microsoft.FSharp.Core.Operators
-
-open System
-open System.Diagnostics
-open System.Runtime.InteropServices
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

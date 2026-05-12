@@ -70,19 +70,19 @@ module SetTree =
         let t2h = height t2
 
         if t2h > t1h + tolerance then // right is heavier than left
-            let t2' = asNode (t2)
+            let t2' = asNode t2
             // one of the nodes must have height > height t1 + 1
             if height t2'.Left > t1h + 1 then // balance left: combination
-                let t2l = asNode (t2'.Left)
+                let t2l = asNode t2'.Left
                 mk (mk t1 v t2l.Left) t2l.Key (mk t2l.Right t2'.Key t2'.Right)
             else // rotate left
                 mk (mk t1 v t2'.Left) t2.Key t2'.Right
         else if t1h > t2h + tolerance then // left is heavier than right
-            let t1' = asNode (t1)
+            let t1' = asNode t1
             // one of the nodes must have height > height t2 + 1
             if height t1'.Right > t2h + 1 then
                 // balance right: combination
-                let t1r = asNode (t1'.Right)
+                let t1r = asNode t1'.Right
                 mk (mk t1'.Left t1.Key t1r.Left) t1r.Key (mk t1r.Right v t2)
             else
                 mk t1'.Left t1'.Key (mk t1'.Right v t2)
@@ -766,19 +766,19 @@ module MapTree =
         let t2h = height t2
 
         if t2h > t1h + 2 then (* right is heavier than left *)
-            let t2' = asNode (t2)
+            let t2' = asNode t2
             (* one of the nodes must have height > height t1 + 1 *)
             if height t2'.Left > t1h + 1 then (* balance left: combination *)
-                let t2l = asNode (t2'.Left)
+                let t2l = asNode t2'.Left
                 mk (mk t1 k v t2l.Left) t2l.Key t2l.Value (mk t2l.Right t2'.Key t2'.Value t2'.Right)
             else (* rotate left *)
                 mk (mk t1 k v t2'.Left) t2'.Key t2'.Value t2'.Right
         else if t1h > t2h + 2 then (* left is heavier than right *)
-            let t1' = asNode (t1)
+            let t1' = asNode t1
             (* one of the nodes must have height > height t2 + 1 *)
             if height t1'.Right > t2h + 1 then
                 (* balance right: combination *)
-                let t1r = asNode (t1'.Right)
+                let t1r = asNode t1'.Right
                 mk (mk t1'.Left t1'.Key t1'.Value t1r.Left) t1r.Key t1r.Value (mk t1r.Right k v t2)
             else
                 mk t1'.Left t1'.Key t1'.Value (mk t1'.Right k v t2)

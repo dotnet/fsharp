@@ -31,8 +31,8 @@ ImplFile
                   (1,4--1,5), NoneAtLet, { LeadingKeyword = Let (1,0--1,3)
                                            InlineKeyword = None
                                            EqualsRange = Some (1,6--1,7) })],
-              (1,0--1,25))], PreXmlDocEmpty, [], None, (1,0--1,25),
-          { LeadingKeyword = None })], (true, true),
+              (1,0--1,25), { InKeyword = None })], PreXmlDocEmpty, [], None,
+          (1,0--1,25), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

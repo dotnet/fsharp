@@ -102,7 +102,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 else
                     walkBinding expr2 workingRange
 
-            | SynExpr.LetOrUse(bindings = bindings; body = bodyExpr) ->
+            | SynExpr.LetOrUse({ Bindings = bindings; Body = bodyExpr }) ->
                 let potentialNestedRange =
                     bindings
                     |> List.tryFind (fun binding -> rangeContainsPos binding.RangeOfBindingWithRhs pos)
@@ -525,7 +525,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         match expr with
                         | SynExpr.ArbitraryAfterError _
                         | SynExpr.LongIdent _
-                        | SynExpr.DotLambda _
                         | SynExpr.LibraryOnlyILAssembly _
                         | SynExpr.LibraryOnlyStaticOptimization _
                         | SynExpr.Null _
@@ -697,7 +696,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExprOpt true whenExpr
                                 yield! walkExpr true tgtExpr
 
-                        | SynExpr.LetOrUse(bindings = binds; body = bodyExpr) ->
+                        | SynExpr.LetOrUse({ Bindings = binds; Body = bodyExpr }) ->
                             yield! walkBinds binds
                             yield! walkExpr true bodyExpr
 
@@ -762,6 +761,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield! walkExpr false e2
                             yield! walkExpr false e3
 
+                        | SynExpr.DotLambda(_, m, _) -> yield! checkRange m
+
                 ]
 
             // Process a class declaration or F# type declaration
@@ -790,7 +791,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 else
                     [
                         match memb with
-                        | SynMemberDefn.LetBindings(binds, _, _, _) -> yield! walkBinds binds
+                        | SynMemberDefn.LetBindings(bindings = binds) -> yield! walkBinds binds
                         | SynMemberDefn.AutoProperty(synExpr = synExpr) -> yield! walkExpr true synExpr
                         | SynMemberDefn.ImplicitCtor(range = m) -> yield! checkRange m
                         | SynMemberDefn.Member(bind, _) -> yield! walkBind bind
@@ -820,7 +821,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             let rec walkDecl decl =
                 [
                     match decl with
-                    | SynModuleDecl.Let(_, binds, m) when isMatchRange m -> yield! walkBinds binds
+                    | SynModuleDecl.Let(bindings = binds; range = m) when isMatchRange m -> yield! walkBinds binds
                     | SynModuleDecl.Expr(expr, m) when isMatchRange m -> yield! walkExpr true expr
                     | SynModuleDecl.ModuleAbbrev _ -> ()
                     | SynModuleDecl.NestedModule(decls = decls; range = m) when isMatchRange m ->

@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:1600
 // New tiebreaker for method overloading
 // Rule #2: ParamArray: normal form vs expanded form
-#light
+
 
 module M3 = 
     type C() = class

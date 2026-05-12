@@ -94,7 +94,7 @@ module internal SymbolHelpers =
         | Item.Value vref  | Item.CustomBuilder (_, vref) -> Some (rangeOfValRef preferFlag vref)
         | Item.UnionCase(ucinfo, _)     -> Some (rangeOfUnionCaseInfo preferFlag ucinfo)
         | Item.ActivePatternCase apref -> Some (rangeOfValRef preferFlag apref.ActivePatternVal)
-        | Item.ExnCase tcref           -> Some tcref.Range
+        | Item.ExnCase tcref           -> Some (rangeOfEntityRef preferFlag tcref)
         | Item.AnonRecdField (_,_,_,m) -> Some m
         | Item.RecdField rfinfo        -> Some (rangeOfRecdFieldInfo preferFlag rfinfo)
         | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> Some (rangeOfRecdField preferFlag (ucref.FieldByIndex(fieldIndex)))
@@ -238,7 +238,7 @@ module internal SymbolHelpers =
             // Drop the first 'seq<T>' argument representing the computation space
             let argInfos = if argInfos.IsEmpty then [] else argInfos.Tail
             [ for ty, argInfo in argInfos do
-                  let isPP = HasFSharpAttribute g g.attrib_ProjectionParameterAttribute argInfo.Attribs
+                  let isPP = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ProjectionParameterAttribute argInfo
                   // Strip the tuple space type of the type of projection parameters
                   let ty = if isPP && isFunTy g ty then rangeOfFunTy g ty else ty
                   yield ParamNameAndType(argInfo.Name, ty) ]
@@ -374,7 +374,7 @@ module internal SymbolHelpers =
               match item  with
               | Item.Trait _ -> true
               | Item.Types(_, _ :: _) -> true
-              | Item.ILField(_) -> true
+              | Item.ILField _ -> true
               | Item.RecdField _ -> true
               | Item.SetterArg _ -> true
               | Item.TypeVar _ -> true
@@ -808,7 +808,7 @@ module internal SymbolHelpers =
                 let typeString = minfo.DeclaringTyconRef |> ticksAndArgCountTextOfTyconRef
                 let paramString =
                     let nGenericParams = minfo.RawMetadata.GenericParams.Length
-                    if nGenericParams > 0 then "``"+(nGenericParams.ToString()) else ""
+                    if nGenericParams > 0 then "``"+nGenericParams.ToString() else ""
                 sprintf "%s.%s%s" typeString minfo.RawMetadata.Name paramString |> Some
 
             | MethInfoWithModifiedReturnType(mi,_) -> getKeywordForMethInfo mi

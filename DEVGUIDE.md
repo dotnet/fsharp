@@ -66,12 +66,12 @@ build.cmd -test -c Release
 After you build the first time you can open and use this solution in Visual Studio:
 
 ```shell
-.\VisualFSharp.sln
+.\VisualFSharp.slnx
 ```
 
 If you don't have everything installed yet, you'll get prompted by Visual Studio to install a few more things. This is because we use a `.vsconfig` file that specifies all our dependencies.
 
-If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
+If you are just developing the core compiler and library then building ``FSharp.slnx`` will be enough.
 
 We recommend installing the latest Visual Studio preview and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
@@ -84,7 +84,7 @@ You'll need to pass an additional flag to the build script:
 build.cmd -noVisualStudio
 ```
 
-You can open `FSharp.sln` in your editor of choice.
+You can open `FSharp.slnx` in your editor of choice.
 
 ## Developing on Linux or macOS
 
@@ -100,7 +100,50 @@ Running tests:
 ./build.sh --test
 ```
 
-You can then open `FSharp.sln` in your editor of choice.
+You can then open `FSharp.slnx` in your editor of choice.
+
+## Working with non-released .NET SDKs
+
+This repository may require a non-released version of the .NET SDK, as specified in the `global.json` file. When the required SDK version is not publicly available through normal channels, you may encounter an error when running `dotnet build` directly:
+
+```
+The .NET SDK could not be found, please run ./eng/common/dotnet.sh.
+```
+
+### Setting up the correct SDK
+
+Before using plain `dotnet build` commands, you need to install the required SDK version locally:
+
+**On Linux/macOS:**
+```shell
+./eng/common/dotnet.sh
+```
+
+**On Windows:**
+```shell
+.\eng\common\dotnet.cmd
+```
+
+This downloads and installs the correct SDK version to a local `.dotnet` directory in the repository root.
+
+### Using dotnet commands with the local SDK
+
+After running the setup script once to install the SDK, you can use regular `dotnet` commands normally:
+
+1. **One-time SDK installation**:
+   ```shell
+   # Linux/macOS
+   ./eng/common/dotnet.sh
+   
+   # Windows
+   .\eng\common\dotnet.cmd
+   ```
+
+2. **Regular dotnet commands** (after SDK installation):
+   ```shell
+   dotnet build FSharp.Compiler.Service.slnx
+   dotnet test tests/FSharp.Compiler.Service.Tests/
+   ```
 
 ## Testing from the command line
 
@@ -115,7 +158,6 @@ You can find all test options as separate flags. For example `build -testAll`:
   -testDesktop              Run tests against full .NET Framework
   -testCoreClr              Run tests against CoreCLR
   -testFSharpCore           Run FSharpCore unit tests
-  -testFSharpQA             Run F# Cambridge tests
   -testScripting            Run Scripting tests
   -testVs                   Run F# editor unit tests
 ```
@@ -187,7 +229,7 @@ Or if you are on Linux:
 ## Updating baselines in tests
 
 Some tests use "baseline" (.bsl) files.  There is sometimes a way to update these baselines en-masse in your local build,
-useful when some change affects many baselines.  For example, in the `fsharpqa` and `FSharp.Compiler.ComponentTests` tests the baselines
+useful when some change affects many baselines.  For example, in the `FSharp.Compiler.ComponentTests` tests the baselines
 are updated using scripts or utilities that allow the following environment variable to be set:
 
 Windows:
@@ -272,10 +314,10 @@ it will start it many times at the same time, and execute in parallel.
 
 ```bash
 $env:TEST_UPDATE_BSL=1
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" /p:BUILDING_USING_DOTNET=true
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" /p:BUILDING_USING_DOTNET=true
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
-dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" -c Release /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -- --filter-class "*SurfaceAreaTest*" -c Release /p:BUILDING_USING_DOTNET=true
 ```
 
 ### Updating ILVerify baselines
@@ -380,23 +422,15 @@ Use the `Debug` configuration to test your changes locally. It is the default. D
 
 ### Benchmarking
 
-Existing compiler benchmarks can be found in `tests\benchmarks\`. The folder contains READMEs describing specific benchmark projects as well as guidelines for creating new benchmarks. There is also `FSharp.Benchmarks.sln` solution containing all the benchmark project and their dependencies.
+Existing compiler benchmarks can be found in `tests\benchmarks\`. The folder contains READMEs describing specific benchmark projects as well as guidelines for creating new benchmarks.
 
-To exercise the benchmarking infrastructure locally, run:
+To run benchmarks locally, build the benchmark projects individually in Release configuration, e.g.:
 
-(Windows)
 ```cmd
-build.cmd -configuration Release -testBenchmarks
+dotnet run -c Release --project tests/benchmarks/FCSBenchmarks/CompilerServiceBenchmarks/FSharp.Compiler.Benchmarks.fsproj
 ```
 
-(Linux/Mac)
-```shell
-./build.sh --configuration Release --testBenchmarks
-```
-
-This is executed in CI as well. It does the following:
-- builds all the benchmarking projects
-- does smoke testing for fast benchmarks (executes them once to check they don't fail in the runtime)
+See the READMEs in `tests\benchmarks\` for details on each benchmark suite and how to interpret results.
 
 ### Benchmarking and profiling the compiler
 

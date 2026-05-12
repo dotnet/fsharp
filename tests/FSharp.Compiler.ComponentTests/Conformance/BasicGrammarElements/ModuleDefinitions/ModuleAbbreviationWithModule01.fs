@@ -3,7 +3,7 @@
 // Module abbreviation:
 // Trying to abbreviate a module is ok
 //<Expects status="success"></Expects>
-#light
+
 
 // Module abbreviations
 module AbbreviateModule = 

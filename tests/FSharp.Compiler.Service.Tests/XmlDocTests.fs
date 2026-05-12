@@ -93,7 +93,7 @@ let (|Members|MemberSigs|) = function
 let (|Decls|LetBindings|ValSig|LetOrUse|) = function
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Let(bindings = [SynBinding(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])])) ->
+                SynModuleDecl.Let(bindings = [SynBinding(expr = SynExpr.LetOrUse({ Range = range; Bindings = bindings }))])])])) ->
         LetOrUse(range, bindings)
 
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
@@ -103,7 +103,7 @@ let (|Decls|LetBindings|ValSig|LetOrUse|) = function
 
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Expr(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])) ->
+                SynModuleDecl.Expr(expr = SynExpr.LetOrUse({ Range = range; Bindings = bindings }))])])) ->
         LetBindings(range, bindings)
 
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
@@ -184,6 +184,18 @@ let checkSignatureAndImplementation code checkResultsAction parseResultsAction =
 
     checkCode getParseAndCheckResults
     checkCode getParseAndCheckResultsOfSignatureFile
+
+let checkSignatureAndImplementationWithWarnOn3879 code checkResultsAction parseResultsAction =
+    let checkCode getResultsFunc =
+        let parseResults, checkResults = getResultsFunc code
+        checkResultsAction checkResults
+        parseResultsAction parseResults
+
+    checkCode (fun code -> getParseAndCheckResultsWithOptions [| "--warnon:3879" |] code)
+    // For signature files
+    let parseResults, checkResults = parseAndCheckScriptWithOptions ("Test.fsi", code, [| "--warnon:3879" |])
+    checkResultsAction checkResults
+    parseResultsAction parseResults
 
 let checkParsingErrors expected (parseResults: FSharpParseFileResults) =
     parseResults.Diagnostics |> Array.map (fun x ->
@@ -391,7 +403,7 @@ and B = class end
 
 [<Fact>]
 let ``types 03 - xml doc after 'and'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 type A = class end
@@ -404,7 +416,10 @@ and ///B1
         (checkXml "B" [|"B1"; "B2"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Information 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|
+                Warning 3879, Line 5, Col 4, Line 5, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+                Information 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."
+            |]
 
             match parseResults.ParseTree with
             | Types(range, [_; TypeRange(typeRange2, synComponentRange2)])
@@ -417,7 +432,7 @@ and ///B1
 
 [<Fact>]
 let ``types 04 - xml doc before/after 'and'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 type A = class end
@@ -428,7 +443,10 @@ and ///B2
         (checkXml "B" [|"B1"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|
+                Warning 3879, Line 6, Col 4, Line 6, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+                Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."
+            |]
 
             match parseResults.ParseTree with
             | Types(range, [_; TypeRange(typeRange2, synComponentRange2)])
@@ -441,7 +459,7 @@ and ///B2
 
 [<Fact>]
 let ``types 05 - attributes after 'type'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 ///A1
@@ -451,7 +469,10 @@ type ///A2
         (checkXml "A" [|"A1"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Information 3520, Line 5, Col 5, Line 5, Col 10, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|
+                Warning 3879, Line 5, Col 5, Line 5, Col 8, "XML documentation comments should be the first non-whitespace text on a line."
+                Information 3520, Line 5, Col 5, Line 5, Col 10, "XML comment is not placed on a valid language element."
+            |]
 
             match parseResults.ParseTree with
             | Types(range, [TypeRange(typeRange, synComponentRange)])
@@ -510,7 +531,7 @@ and B = int -> int
 
 [<Fact>]
 let ``let bindings 01 - allowed positions``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 ///f1
 let ///f2
     rec ///f3
@@ -523,6 +544,9 @@ let ///f2
 
     parseResults
     |> checkParsingErrors [|
+        Warning 3879, Line 3, Col 4, Line 3, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Warning 3879, Line 4, Col 8, Line 4, Col 11, "XML documentation comments should be the first non-whitespace text on a line."
+        Warning 3879, Line 5, Col 15, Line 5, Col 18, "XML documentation comments should be the first non-whitespace text on a line."
         Information 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."
         Information 3520, Line 4, Col 8, Line 4, Col 13, "XML comment is not placed on a valid language element."
         Information 3520, Line 5, Col 15, Line 5, Col 20, "XML comment is not placed on a valid language element."
@@ -587,7 +611,7 @@ let y = x
     match parseResults.ParseTree with
     | Decls([SynModuleDecl.Let(range = range1; bindings = [binding1])
              SynModuleDecl.Let(range = range2; bindings = [binding2])]) ->
-        assertRange (2, 0) (6, 9) range1
+        assertRange (2, 0) (6, 12) range1
         assertRange (2, 0) (6, 9) binding1.RangeOfBindingWithRhs
         assertRange (8, 0) (12, 9) range2
         assertRange (8, 0) (12, 9) binding2.RangeOfBindingWithRhs
@@ -596,7 +620,7 @@ let y = x
 
 [<Fact>]
 let ``let bindings 03 - 'let in' with attributes after 'let'``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 let ///X
     [<Attr>] x = 3 in print x
 """
@@ -604,7 +628,10 @@ let ///X
     |> checkXml "x" [||]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 2, Col 4, Line 2, Col 8, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 2, Col 4, Line 2, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 2, Col 4, Line 2, Col 8, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | LetBindings(range, [binding]) ->
@@ -679,7 +706,7 @@ let x = 5
 
 [<Fact>]
 let ``let bindings 07 - attribute after 'let'``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 ///X1
 let ///X2
     [<Literal>] x = 5
@@ -688,7 +715,10 @@ let ///X2
     |> checkXml "x" [|"X1"|]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 3, Col 4, Line 3, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | LetBindings(range, [binding]) ->
@@ -721,7 +751,7 @@ and g x = f x
 
 [<Fact>]
 let ``let bindings 09 - xml doc after 'and'``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 let rec f x = g x
 and ///G1
     ///G2
@@ -733,7 +763,10 @@ and ///G1
     |> checkXml "g" [|"G1"; "G2"|]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 3, Col 4, Line 3, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | LetBindings(range, [binding1; binding2]) ->
@@ -745,7 +778,7 @@ and ///G1
 
 [<Fact>]
 let ``let bindings 10 - xml doc before/after 'and'``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 let rec f x = g x
 ///G1
 and ///G2
@@ -755,7 +788,10 @@ and ///G2
     |> checkXml "g" [|"G1"|]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 4, Col 4, Line 4, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 4, Col 4, Line 4, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 4, Col 4, Line 4, Col 9, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | LetBindings(range, [binding1; binding2]) ->
@@ -807,7 +843,7 @@ type A =
 
 [<Fact>]
 let ``type members 02``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 type A =
     member x.A() = ///B1
         ()
@@ -823,6 +859,7 @@ type A =
 
     parseResults
     |> checkParsingErrors [|
+        Warning 3879, Line 3, Col 19, Line 3, Col 22, "XML documentation comments should be the first non-whitespace text on a line."
         Information 3520, Line 3, Col 19, Line 3, Col 24, "XML comment is not placed on a valid language element."
         Information 3520, Line 9, Col 4, Line 9, Col 9, "XML comment is not placed on a valid language element."
     |]
@@ -862,7 +899,7 @@ type A =
 
 [<Fact>]
 let ``type members 04 - property accessors``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 type B =
     ///A1
     ///A2
@@ -883,6 +920,7 @@ type B =
 
     parseResults
     |> checkParsingErrors [|
+        Warning 3879, Line 5, Col 11, Line 5, Col 14, "XML documentation comments should be the first non-whitespace text on a line."
         Information 3520, Line 5, Col 11, Line 5, Col 16, "XML comment is not placed on a valid language element."
         Information 3520, Line 7, Col 16, Line 7, Col 22, "XML comment is not placed on a valid language element."
         Information 3520, Line 9, Col 16, Line 9, Col 22, "XML comment is not placed on a valid language element."
@@ -921,7 +959,7 @@ type A() =
 
 [<Fact>]
 let ``type members 06 - implicit ctor``(): unit =
-    let parseResults, checkResults = getParseAndCheckResults """
+    let parseResults, checkResults = getParseAndCheckResultsWithOptions [| "--warnon:3879" |] """
 type A ///CTOR1
        ///CTOR2
        [<Attr>]
@@ -935,7 +973,10 @@ type A ///CTOR1
        ]
 
     parseResults
-    |> checkParsingErrors [|Information 3520, Line 5, Col 7, Line 5, Col 15, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|
+        Warning 3879, Line 2, Col 7, Line 2, Col 10, "XML documentation comments should be the first non-whitespace text on a line."
+        Information 3520, Line 5, Col 7, Line 5, Col 15, "XML comment is not placed on a valid language element."
+    |]
 
     match parseResults.ParseTree with
     | Members([SynMemberDefn.ImplicitCtor(range = range)]) ->
@@ -1041,7 +1082,7 @@ module
 
 [<Fact>]
 let ``module 02 - attributes after 'module'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 ///M1
 module ///M2
        [<Attr>]
@@ -1051,6 +1092,7 @@ module ///M2
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
+                Warning 3879, Line 3, Col 7, Line 3, Col 10, "XML documentation comments should be the first non-whitespace text on a line."
                 Information 3520, Line 3, Col 7, Line 3, Col 12, "XML comment is not placed on a valid language element."
             |]
 
@@ -1211,7 +1253,7 @@ extern void E()
 
 [<Fact>]
 let ``exception 01 - allowed positions``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 ///E1
@@ -1225,6 +1267,7 @@ exception ///E4
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
+                Warning 3879, Line 8, Col 10, Line 8, Col 13, "XML documentation comments should be the first non-whitespace text on a line."
                 Information 3520, Line 7, Col 0, Line 7, Col 5, "XML comment is not placed on a valid language element."
                 Information 3520, Line 8, Col 10, Line 8, Col 15, "XML comment is not placed on a valid language element."
             |]
@@ -1237,7 +1280,7 @@ exception ///E4
 
 [<Fact>]
 let ``exception 02 - attribute after 'exception'``(): unit =
-    checkSignatureAndImplementation """
+    checkSignatureAndImplementationWithWarnOn3879 """
 module Test
 
 exception ///E
@@ -1247,7 +1290,10 @@ exception ///E
         (checkXml "E" [||])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Information 3520, Line 4, Col 10, Line 4, Col 14, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|
+                Warning 3879, Line 4, Col 10, Line 4, Col 13, "XML documentation comments should be the first non-whitespace text on a line."
+                Information 3520, Line 4, Col 10, Line 4, Col 14, "XML comment is not placed on a valid language element."
+            |]
 
             match parseResults.ParseTree with
             | Exception(exnRange, exnDefnRange, exnDefnReprRange) ->
@@ -1583,3 +1629,39 @@ type Class2() =
     parseResults |> checkParsingErrors [||]
     checkResults |> checkXmlSymbols [ Parameter "MyRather.MyDeep.MyNamespace.Class1.X", [|"x"|] ]
     checkResults |> checkXmlSymbols [ Parameter "MyRather.MyDeep.MyNamespace.Class1", [|"class1"|] ]
+
+[<Fact>]
+let ``Discriminated Union - triple slash after case definition should warn``(): unit =
+    checkSignatureAndImplementationWithWarnOn3879 """
+module Test
+
+type MyDU =
+    | CaseA of int /// This should trigger FS3879
+    | CaseB /// This should also trigger FS3879
+    /// This is correct
+    | CaseC
+"""
+        (fun _ -> ())
+        (fun parseResults ->
+            parseResults |>
+            checkParsingErrors [|
+                Warning 3879, Line 5, Col 19, Line 5, Col 22, "XML documentation comments should be the first non-whitespace text on a line."
+                Warning 3879, Line 6, Col 12, Line 6, Col 15, "XML documentation comments should be the first non-whitespace text on a line."
+            |])
+
+[<Fact>]
+let ``XML doc after opening brace should not warn``(): unit =
+    checkSignatureAndImplementation """
+module Test
+
+type MyType = {
+    /// This is valid XML documentation for the field
+    Field1: int
+    /// Another valid documentation
+    Field2: string
+}
+"""
+        (fun _ -> ())
+        (fun parseResults ->
+            parseResults |>
+            checkParsingErrors [||])

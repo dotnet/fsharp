@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Verify error cases for restrictions on active pattern parameters.
 

@@ -363,7 +363,7 @@ val BuildMethodCall:
     tcVal: (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
     g: TcGlobals ->
     amap: ImportMap ->
-    isMutable: TypedTreeOps.Mutates ->
+    isMutable: Mutates ->
     m: range ->
     isProp: bool ->
     minfo: MethInfo ->
@@ -477,9 +477,9 @@ val MethInfoChecks:
     minfo: MethInfo ->
         unit
 
-exception FieldNotMutable of TypedTreeOps.DisplayEnv * RecdFieldRef * range
+exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
 
-val CheckRecdFieldMutation: m: range -> denv: TypedTreeOps.DisplayEnv -> rfinfo: RecdFieldInfo -> unit
+val CheckRecdFieldMutation: m: range -> denv: DisplayEnv -> rfinfo: RecdFieldInfo -> unit
 
 /// Generate a witness for the given (solved) constraint.  Five possibilities are taken
 /// into account.
@@ -517,7 +517,7 @@ module ProvidedMethodCalls =
         amap: ImportMap *
         mi: Tainted<ProvidedMethodBase> *
         objArgs: Expr list *
-        mut: TypedTreeOps.Mutates *
+        mut: Mutates *
         isProp: bool *
         isSuperInit: ValUseFlag *
         allArgs: Exprs *

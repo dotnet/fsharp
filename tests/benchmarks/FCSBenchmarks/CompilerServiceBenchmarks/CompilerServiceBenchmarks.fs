@@ -84,7 +84,6 @@ type CompilerServiceBenchmarks() =
             LangVersionText = "default"
             IsInteractive = false
             ApplyLineDirectives = false
-            IndentationAwareSyntax = None
             StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false

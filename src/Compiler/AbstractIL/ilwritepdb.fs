@@ -7,19 +7,15 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.IO
 open System.IO.Compression
-open System.Reflection
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Security.Cryptography
 open System.Text
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Support
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
-open FSharp.Compiler.Text.Range
 
 type BlobBuildingStream() =
     inherit Stream()
@@ -232,13 +228,13 @@ let pdbMagicNumber = 0x4244504dL
 let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLength: int64) (compressedStream: MemoryStream) =
     let iddPdbBuffer =
         let buffer =
-            Array.zeroCreate (sizeof<int32> + sizeof<int32> + int (compressedStream.Length))
+            Array.zeroCreate (sizeof<int32> + sizeof<int32> + int compressedStream.Length)
 
         let offset, size = (0, sizeof<int32>) // Magic Number dword: 0x4244504dL
         Buffer.BlockCopy(i32AsBytes (int pdbMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>) // Uncompressed size
         Buffer.BlockCopy(i32AsBytes (int uncompressedLength), 0, buffer, offset, size)
-        let offset, size = (offset + size, int (compressedStream.Length)) // Uncompressed size
+        let offset, size = (offset + size, int compressedStream.Length) // Uncompressed size
         Buffer.BlockCopy(compressedStream.ToArray(), 0, buffer, offset, size)
         buffer
 
@@ -325,7 +321,7 @@ let sortMethods info =
 
 let getRowCounts tableRowCounts =
     let builder = ImmutableArray.CreateBuilder<int>(tableRowCounts |> Array.length)
-    tableRowCounts |> Seq.iter (builder.Add)
+    tableRowCounts |> Seq.iter builder.Add
     builder.MoveToImmutable()
 
 let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
@@ -343,9 +339,12 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
 type PortablePdbGenerator
     (embedAllSource: bool, embedSourceList: string list, sourceLink: string, checksumAlgorithm, info: PdbData, pathMap: PathMap) =
 
-    let docs = info.Documents
+    // Deterministic: build the Document table in a stable order by mapped file path,
+    // but preserve the original-document-index -> handle mapping by filename.
+    let originalDocFiles = info.Documents |> Array.map (fun d -> d.File)
 
-    // The metadata to wite to the PortablePDB (Roslyn = _debugMetadataOpt)
+    let docsSorted =
+        info.Documents |> Array.sortBy (fun d -> PathMap.apply pathMap d.File)
 
     let metadata = MetadataBuilder()
 
@@ -418,15 +417,16 @@ type PortablePdbGenerator
 
             Some(builder.ToImmutableArray())
 
+    // Build Document table in deterministic order
     let documentIndex =
-        let mutable index = Dictionary<string, DocumentHandle>(docs.Length)
+        let mutable index = Dictionary<string, DocumentHandle>(docsSorted.Length)
 
-        let docLength = docs.Length + if String.IsNullOrEmpty sourceLink then 1 else 0
+        let docLength =
+            docsSorted.Length + (if String.IsNullOrWhiteSpace sourceLink then 0 else 1)
 
         metadata.SetCapacity(TableIndex.Document, docLength)
 
-        for doc in docs do
-            // For F# Interactive, file name 'stdin' gets generated for interactive inputs
+        for doc in docsSorted do
             let handle =
                 match checkSum doc.File checksumAlgorithm with
                 | Some(hashAlg, checkSum) ->
@@ -466,7 +466,7 @@ type PortablePdbGenerator
             fs.CopyTo ms
 
             metadata.AddCustomDebugInformation(
-                ModuleDefinitionHandle.op_Implicit (EntityHandle.ModuleDefinition),
+                ModuleDefinitionHandle.op_Implicit EntityHandle.ModuleDefinition,
                 metadata.GetOrAddGuid sourceLinkId,
                 metadata.GetOrAddBlob(ms.ToArray())
             )
@@ -476,16 +476,17 @@ type PortablePdbGenerator
 
     let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
 
+    // IMPORTANT: map original document index -> filename -> handle
     let getDocumentHandle d =
-        if docs.Length = 0 || d < 0 || d > docs.Length then
+        if info.Documents.Length = 0 || d < 0 || d >= info.Documents.Length then
             Unchecked.defaultof<DocumentHandle>
         else
-            match documentIndex.TryGetValue(docs[d].File) with
+            match documentIndex.TryGetValue(originalDocFiles[d]) with
             | false, _ -> Unchecked.defaultof<DocumentHandle>
             | true, h -> h
 
     let moduleImportScopeHandle = MetadataTokens.ImportScopeHandle(1)
-    let importScopesTable = new Dictionary<PdbImports, ImportScopeHandle>()
+    let importScopesTable = Dictionary<PdbImports, ImportScopeHandle>()
 
     let serializeImport (writer: BlobBuilder) (import: PdbImport) =
         match import with
@@ -561,16 +562,25 @@ type PortablePdbGenerator
     //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
 
     let serializeImportsBlob (imports: PdbImport[]) =
-        let writer = new BlobBuilder()
+        let writer = BlobBuilder()
 
-        for import in imports do
+        let importsSorted =
+            imports
+            |> Array.sortWith (fun a b ->
+                match a, b with
+                | ImportType t1, ImportType t2 -> compare t1 t2
+                | ImportNamespace n1, ImportNamespace n2 -> compare n1 n2
+                | ImportType _, ImportNamespace _ -> -1
+                | ImportNamespace _, ImportType _ -> 1)
+
+        for import in importsSorted do
             serializeImport writer import
 
         metadata.GetOrAddBlob(writer)
 
     // Define the empty global imports scope for the whole assembly,it gets index #1 (the first entry in the table)
     let defineModuleImportScope () =
-        let writer = new BlobBuilder()
+        let writer = BlobBuilder()
         let blob = metadata.GetOrAddBlob writer
 
         let rid =
@@ -640,7 +650,8 @@ type PortablePdbGenerator
             )
             |> ignore
 
-            for localVariable in scope.Locals do
+            // Deterministic: write locals by stable index
+            for localVariable in scope.Locals |> Array.sortBy (fun l -> l.Index) do
                 lastLocalVariableHandle <-
                     metadata.AddLocalVariable(
                         LocalVariableAttributes.None,
@@ -653,7 +664,7 @@ type PortablePdbGenerator
             let sps =
                 match minfo.DebugRange with
                 | None -> Array.empty
-                | Some _ -> minfo.DebugPoints
+                | Some _ -> minfo.DebugPoints |> Array.sortWith SequencePoint.orderByOffset
 
             let builder = BlobBuilder()
             builder.WriteCompressedInteger(minfo.LocalSignatureToken)
@@ -994,7 +1005,7 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
                                 yield (scope.EndOffset, scope.EndOffset)
                             |]
 
-                        for ((_, a), (b, _)) in Array.pairwise gaps do
+                        for (_, a), (b, _) in Array.pairwise gaps do
                             if a < b then
                                 yield
                                     { scope with
@@ -1023,11 +1034,7 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
 //     adding the text " (shadowed)" to the names of those with name conflicts.
 let unshadowScopes rootScope =
     // Avoid stack overflow when writing linearly nested scopes
-    let UnshadowScopesStackGuardDepth =
-        GetEnvInteger "FSHARP_ILPdb_UnshadowScopes_StackGuardDepth" 100
-
-    let stackGuard =
-        StackGuard(UnshadowScopesStackGuardDepth, "ILPdbWriter.unshadowScopes")
+    let stackGuard = StackGuard("ILPdbWriter.unshadowScopes")
 
     let result, _ = pushShadowedLocals stackGuard [||] rootScope
     result

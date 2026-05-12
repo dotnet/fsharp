@@ -1,5 +1,5 @@
 // #Conformance #LexFilter #Exceptions 
-#light
+
 
 [<AutoOpen>]
 type IProvideTestFunctionX =

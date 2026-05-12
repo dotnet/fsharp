@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Verify a match failure exception is thrown if a match is not found.
 

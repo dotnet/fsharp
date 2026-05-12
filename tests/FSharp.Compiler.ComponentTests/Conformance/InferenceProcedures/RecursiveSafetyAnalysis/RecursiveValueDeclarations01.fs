@@ -2,7 +2,7 @@
 // FSharp1.0:4821
 // Copying of "when" bindings is losing a recursive fixup point (was: ICE on code with mutually recursive functions used in pattern matching guards?)
 
-#light
+
 
 type Foo = 
     | CSt of int*int*Foo

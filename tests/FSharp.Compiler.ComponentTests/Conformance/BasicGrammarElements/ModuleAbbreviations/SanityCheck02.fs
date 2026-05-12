@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #Modules 
-#light
+
 
 module ``Some Crazy Identifier !@#`` = Microsoft.FSharp.Collections.List
 

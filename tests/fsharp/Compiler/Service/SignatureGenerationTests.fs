@@ -18,7 +18,7 @@ module SignatureGenerationTests =
     let sigShouldBe (expected: string) src =
         let text =
             FSharp src
-            |> withLangVersion50
+            |> withLangVersion80
             |> typecheckResults
             |> sigText
 

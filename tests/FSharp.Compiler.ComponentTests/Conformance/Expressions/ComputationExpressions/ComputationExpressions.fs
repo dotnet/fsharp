@@ -66,7 +66,7 @@ module EmptyBodied =
             |> compile
             |> shouldFail
             |> withErrorCode 3
-            |> withErrorMessage "This value is not a function and cannot be applied."
+            |> withErrorMessage "This value is not a function and cannot be applied. It has type 'AsyncBuilder', which does not accept arguments."
 
         [<Fact>]
         let ``task { } does not compile`` () =
@@ -80,7 +80,7 @@ module EmptyBodied =
             |> compile
             |> shouldFail
             |> withErrorCode 3
-            |> withErrorMessage "This value is not a function and cannot be applied."
+            |> withErrorMessage "This value is not a function and cannot be applied. It has type 'TaskBuilder', which does not accept arguments."
 
         [<Fact>]
         let ``builder { } does not compile`` () =
@@ -99,7 +99,7 @@ module EmptyBodied =
             |> compile
             |> shouldFail
             |> withErrorCode 3
-            |> withErrorMessage "This value is not a function and cannot be applied."
+            |> withErrorMessage "This value is not a function and cannot be applied. It has type 'Builder', which does not accept arguments."
 
         [<Fact>]
         let ``builder { () } and no Zero: FS0708`` () =
@@ -261,3 +261,106 @@ module EmptyBodied =
             |> shouldFail
             |> withErrorCode 789
             |> withErrorMessage "'{ }' is not a valid expression. Records must include at least one field. Empty sequences are specified by using Seq.empty or an empty list '[]'."
+
+module LetUseBangTests =
+
+    [<Fact>]
+    let ``let! isn't allowed outside of Computation Expression`` () =
+        FSharp """
+        let test =
+            let! a = 1 + 1
+            ()
+        """
+        |> asExe
+        |> compile
+        |> withErrorCode 750
+        |> withErrorMessage "This construct may only be used within computation expressions"
+
+    [<Fact>]
+    let ``use! isn't allowed outside of Computation Expression`` () =
+        FSharp """
+        open System
+
+        let test =
+            use! a = 
+                { new IDisposable with 
+                    member this.Dispose() = () 
+                }
+            ()
+        """
+        |> asExe
+        |> compile
+        |> withErrorCode 750
+        |> withErrorMessage "This construct may only be used within computation expressions"
+
+    [<Fact>]
+    let ``let! with and! aren't allowed outside of Computation Expression`` () =
+        FSharp """
+        let test =
+            let! a = 1 + 1
+            and! b = 1 + 1
+            ()
+        """
+        |> asExe
+        |> compile
+        |> withErrorCode 750
+        |> withErrorMessage "This construct may only be used within computation expressions"
+
+    [<Fact>]
+    let ``When let! is outside of Computation Expression, the analysis lasts`` () =
+        FSharp """
+        let test =
+            let! a = 1 + 1
+            return! 0
+        """
+        |> asExe
+        |> compile
+        |> withDiagnostics [
+            (Error 750, Line 3, Col 13, Line 3, Col 17, 
+                "This construct may only be used within computation expressions");
+            (Error 748, Line 4, Col 13, Line 4, Col 20, 
+                "This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.")
+        ]
+
+// https://github.com/dotnet/fsharp/issues/3783
+[<Fact>]
+let ``Issue 3783 - Mutually recursive computation expression should not raise NullReferenceException`` () =
+    FSharp """
+#nowarn "40"
+#nowarn "21"
+
+let x () =
+    let rec a = seq {
+        yield 0
+        yield! b () }
+    and b () = seq {
+        yield 1
+        yield! a }
+    Seq.take 10 a |> Seq.toList
+
+type A () =
+    let test =
+        let rec a = seq {
+            yield 0
+            yield! b () }
+        and b () = seq {
+            yield 1
+            yield! a }
+        Seq.take 10 a |> Seq.toList
+    member _.Test = test
+
+[<EntryPoint>]
+let main _ =
+    let result1 = x ()
+    if result1 <> [0; 1; 0; 1; 0; 1; 0; 1; 0; 1] then
+        failwithf "Function variant failed: %A" result1
+
+    let a = A()
+    if a.Test <> [0; 1; 0; 1; 0; 1; 0; 1; 0; 1] then
+        failwithf "Type constructor variant failed: %A" a.Test
+
+    0
+    """
+    |> asExe
+    |> compileExeAndRun
+    |> shouldSucceed

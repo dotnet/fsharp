@@ -21,7 +21,7 @@ module internal Md5StringHasher =
 
         Array.append sbytes bytes
         |> computeHash
-        |> System.BitConverter.ToString
+        |> BitConverter.ToString
         |> (fun x -> x.Replace("-", ""))
 
     let addString (s: string) (s2: string) =
@@ -39,7 +39,7 @@ module internal Md5StringHasher =
     let addBool (b: bool) (s: string) =
         b |> BitConverter.GetBytes |> addBytes <| s
 
-    let addDateTime (dt: System.DateTime) (s: string) = dt.Ticks.ToString() |> addString <| s
+    let addDateTime (dt: DateTime) (s: string) = dt.Ticks.ToString() |> addString <| s
 
 module internal Md5Hasher =
 
@@ -77,10 +77,10 @@ module internal Md5Hasher =
     let addBool (b: bool) (s: byte array) =
         b |> BitConverter.GetBytes |> addBytes <| s
 
-    let addDateTime (dt: System.DateTime) (s: byte array) =
+    let addDateTime (dt: DateTime) (s: byte array) =
         dt.Ticks |> BitConverter.GetBytes |> addBytes <| s
 
-    let addDateTimes (dts: System.DateTime seq) (s: byte array) = s |> addSeq dts addDateTime
+    let addDateTimes (dts: DateTime seq) (s: byte array) = s |> addSeq dts addDateTime
 
     let addInt (i: int) (s: byte array) =
         i |> BitConverter.GetBytes |> addBytes <| s
@@ -89,4 +89,4 @@ module internal Md5Hasher =
 
     let addBooleans (items: bool seq) (s: byte array) = addSeq items addBool s
 
-    let toString (bytes: byte array) = bytes |> System.BitConverter.ToString
+    let toString (bytes: byte array) = bytes |> BitConverter.ToString

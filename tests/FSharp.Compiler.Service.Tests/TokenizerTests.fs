@@ -1,4 +1,5 @@
-﻿module FSharp.Compiler.Service.Tests.TokenizerTests
+﻿#nowarn "57" // FSharpLexer.Tokenize is experimental
+module FSharp.Compiler.Service.Tests.TokenizerTests
 
 open FSharp.Compiler.Tokenization
 open FSharp.Test
@@ -206,6 +207,52 @@ let ``Tokenizer test - single-line nested string interpolation``() =
         actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
 [<Fact>]
+let ``Tokenizer test - elif directive produces HASH_ELIF token``() =
+    let defines = ["DEBUG"]
+    let sourceTok = FSharpSourceTokenizer(defines, Some "C:\\test.fsx", None, None)
+    let lines =
+        [| "#if DEBUG"
+           "let x = 1"
+           "#elif RELEASE"
+           "let x = 2"
+           "#endif" |]
+    let state = ref FSharpTokenizerLexState.Initial
+    let allTokens =
+        [ for line in lines do
+            let tokenizer = sourceTok.CreateLineTokenizer(line)
+            let lineTokens = parseLine(line, state, tokenizer) |> List.ofSeq
+            yield lineTokens ]
+
+    // Line 0: #if DEBUG → HASH_IF keyword
+    let line0Names = allTokens.[0] |> List.map (fun (_, tok) -> tok.TokenName)
+    Assert.Contains("HASH_IF", line0Names)
+
+    // Line 1: let x = 1 → active code, should have LET token
+    let line1Names = allTokens.[1] |> List.map (fun (_, tok) -> tok.TokenName)
+    Assert.Contains("LET", line1Names)
+
+    // Line 2: #elif RELEASE → split into HASH_IF + WHITESPACE + IDENT by processHashIfLine
+    let line2Names = allTokens.[2] |> List.map (fun (_, tok) -> tok.TokenName)
+    Assert.Contains("HASH_IF", line2Names)
+
+    // Line 3: let x = 2 → should be INACTIVECODE (since DEBUG is defined, #elif branch is skipped)
+    let line3Names = allTokens.[3] |> List.map (fun (_, tok) -> tok.TokenName)
+    Assert.Contains("INACTIVECODE", line3Names)
+
+[<Fact>]
+let ``FSharpLexer.Tokenize produces HashElif token kind``() =
+    let source = """#if DEBUG
+let x = 1
+#elif RELEASE
+let x = 2
+#endif"""
+    let tokens = ResizeArray<FSharpToken>()
+    let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.SkipTrivia
+    FSharpLexer.Tokenize(FSharp.Compiler.Text.SourceText.ofString source, tokens.Add, langVersion = "preview", conditionalDefines = ["DEBUG"], flags = flags)
+    let hasHashElif = tokens |> Seq.exists (fun t -> t.Kind = FSharpTokenKind.HashElif)
+    Assert.True(hasHashElif, "Expected at least one token with Kind = FSharpTokenKind.HashElif")
+
+[<Fact>]
 let ``Unfinished idents``() =
     let tokenizedLines =
       tokenizeLines
@@ -223,3 +270,26 @@ let ``Unfinished idents``() =
          ["IDENT", "```"]]
 
     actual |> Assert.shouldBe expected
+
+[<Fact>]
+let ``Tokenizer test - optional parameters with question mark``() =
+    let tokenizedLines =
+      tokenizeLines
+        [| "member _.memb(?optional:string) = optional" |]
+
+    let actual =
+        [ for lineNo, lineToks in tokenizedLines do
+            yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
+    
+    let expected =
+        [(0,
+          [("MEMBER", "member"); ("WHITESPACE", " "); ("UNDERSCORE", "_"); ("DOT", ".");
+           ("IDENT", "memb"); ("LPAREN", "("); ("QMARK", "?");
+           ("IDENT", "optional"); ("COLON", ":"); ("IDENT", "string");
+           ("RPAREN", ")"); ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("IDENT", "optional")])]
+    
+    if actual <> expected then
+        printfn "actual   = %A" actual
+        printfn "expected = %A" expected
+        actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)

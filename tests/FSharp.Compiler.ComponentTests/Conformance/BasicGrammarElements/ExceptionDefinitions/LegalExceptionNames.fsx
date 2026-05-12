@@ -2,7 +2,7 @@
 // Exception types
 // Legal exception names should compile successfully
 
-#light
+
 
 exception MyException
 exception MyOtherException

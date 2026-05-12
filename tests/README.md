@@ -11,7 +11,7 @@
 
 ## Goals
 
-* Use one standardized testing framework across all of test projects, and get rid of custom old solutions (FSharpQA and Cambridge suites).
+* Use one standardized testing framework across all test projects ✅
 * Have tests restructured the way, that they are easy to discover.
 * Have tests building and running on all supported platforms (Windows, macOS and Linux) and different frameworks (with exceptions when this is not applicable).
 * Make it easy to run tests using standard .NET instruments (dotnet cli, test explorer, etc.).
@@ -88,13 +88,12 @@ For all new and migrated tests, any common/helper functionality shall be factore
 
 ## Migrating existing tests
 
-Existing FSharpQA and Cambridge need to be migrated to corresponding test projects: component-style tests to the `FSharp.Compiler.ComponentTests` and unittest-style tests - `FSharp.Compiler.Private.Scripting.UnitTests`, `FSharp.Build.UnitTests`, etc.
+All legacy test suites (FSharpQA, Cambridge) have been migrated to xUnit-based test projects.
 
 ## Next steps
 
 * Clean up CompilerAssert.
 * Make PEVerify tests work in netcore/non-windows environment.
-* Start migration of existing (namely, FSharpQA and Cambridge) suites to xUnit-based projects.
 
 ## Open questions:
 

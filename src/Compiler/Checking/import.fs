@@ -6,12 +6,8 @@ module internal FSharp.Compiler.Import
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
-open System.Diagnostics
-
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open Internal.Utilities.TypeHashing
-
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
@@ -24,8 +20,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Caches
-
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 #endif
@@ -44,7 +38,7 @@ type AssemblyLoader =
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
-    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly MaybeNull> -> bool * ProvidedAssemblyStaticLinkingMap option
+    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<(ProvidedAssembly | null)> -> bool * ProvidedAssemblyStaticLinkingMap option
 
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
@@ -214,20 +208,14 @@ module Nullness =
     [<Struct;NoEquality;NoComparison>]
     type AttributesFromIL = AttributesFromIL of metadataIndex:int * attrs:ILAttributesStored
         with
-            member this.Read() =  match this with| AttributesFromIL(idx,attrs) -> attrs.GetCustomAttrs(idx)
+            member this.Read() = match this with | AttributesFromIL(_, attrs) -> attrs.CustomAttrs
             member this.GetNullable(g:TcGlobals) =
-                match g.attrib_NullableAttribute_opt with
-                | None -> ValueNone
-                | Some n ->
-                    TryDecodeILAttribute n.TypeRef (this.Read())
-                    |> tryParseAttributeDataToNullableByteFlags g
+                tryFindILAttribByFlag WellKnownILAttributes.NullableAttribute (this.Read())
+                |> tryParseAttributeDataToNullableByteFlags g
 
             member this.GetNullableContext(g:TcGlobals) =
-                match g.attrib_NullableContextAttribute_opt with
-                | None -> ValueNone
-                | Some n ->
-                    TryDecodeILAttribute n.TypeRef (this.Read())
-                    |> tryParseAttributeDataToNullableByteFlags g
+                tryFindILAttribByFlag WellKnownILAttributes.NullableContextAttribute (this.Read())
+                |> tryParseAttributeDataToNullableByteFlags g
 
     [<Struct;NoEquality;NoComparison>]
     type NullableContextSource =
@@ -250,7 +238,7 @@ module Nullness =
                         |> ValueOption.orElseWith (fun () -> classCtx.GetNullableContext(g)))
                 |> ValueOption.defaultValue arrayWithByte0
             static member Empty =
-                let emptyFromIL = AttributesFromIL(0,Given(ILAttributes.Empty))
+                let emptyFromIL = AttributesFromIL(0,ILAttributesStored.CreateGiven(ILAttributes.Empty))
                 {DirectAttributes = emptyFromIL; Fallback = FromClass(emptyFromIL)}
 
     [<Struct;NoEquality;NoComparison>]
@@ -336,13 +324,13 @@ let rec ImportILTypeWithNullness (env: ImportMap) m tinst (nf:Nullness.NullableF
 
     | ILType.Array(bounds, innerTy) ->
         let n = bounds.Rank
-        let (arrayNullness,nf) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
+        let arrayNullness,nf = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
         let struct(elemTy,nf) = ImportILTypeWithNullness env m tinst nf innerTy
         mkArrayTy env.g n arrayNullness elemTy m, nf
 
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef
-        let (typeRefNullness,nf) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
+        let typeRefNullness,nf = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
         let struct(inst,nullableFlagsLeft) = (nf,tspec.GenericArgs) ||> List.vMapFold (fun nf current -> ImportILTypeWithNullness env m tinst nf current )
 
         ImportTyconRefApp env tcref inst typeRefNullness, nullableFlagsLeft
@@ -370,7 +358,7 @@ let rec ImportILTypeWithNullness (env: ImportMap) m tinst (nf:Nullness.NullableF
             with _ ->
                 error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
 
-        let (typeVarNullness,nf) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
+        let typeVarNullness,nf = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
         addNullnessToTy typeVarNullness ttype, nf
 
 /// Determines if an IL type can be imported as an F# type
@@ -654,7 +642,7 @@ let ImportILGenericParameters amap m scoref tinst (nullableFallback:Nullness.Nul
                     //|  [|2uy|] -> TyparConstraint.SupportsNull(m)
                     | _ -> ()
 
-                  if gp.CustomAttrs |> TryFindILAttribute amap.g.attrib_IsUnmanagedAttribute then
+                  if gp.CustomAttrsStored.HasWellKnownAttribute(amap.g, WellKnownILAttributes.IsUnmanagedAttribute) then
                     TyparConstraint.IsUnmanaged(m)
                   if gp.HasDefaultConstructorConstraint then
                     TyparConstraint.RequiresDefaultConstructor(m)

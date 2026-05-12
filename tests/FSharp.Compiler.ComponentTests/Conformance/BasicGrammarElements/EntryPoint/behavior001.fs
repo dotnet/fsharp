@@ -4,7 +4,7 @@
 // Verify that static initializers are invoked before entering the 'main' function
 //<Expects status="success"></Expects>
 
-#light
+
 
 let static_initializer = 10
  

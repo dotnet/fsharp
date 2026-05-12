@@ -3,7 +3,7 @@
 // Explicit program entry point: [<EntryPoint>]
 //<Expects status="success"></Expects>
 
-#light
+
 
 module M =
  [<EntryPoint>]

@@ -3,6 +3,6 @@
 // closing brace following generic type bracket is syntax error without whitespace (lexed into symbolic token).
 //<Expects status="success"></Expects>
 
-#light
+
 
 type a1 = { x:list<int> }

@@ -1,7 +1,7 @@
 // #Conformance #DeclarationElements #Modules 
 // Use module abbreviation inside a module
 //<Expects status="success"></Expects>
-#light
+
 
 module A =
     module B =

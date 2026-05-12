@@ -1,5 +1,5 @@
 ﻿// #Globalization 
-#light
+
 
 // Note that the first two characters in the string below are not accepted by F#
 // (Or C#, for that matter...)

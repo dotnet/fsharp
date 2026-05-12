@@ -31,8 +31,9 @@ ImplFile
                   None, Const (Int32 42, (1,34--1,36)), (1,4--1,31), NoneAtLet,
                   { LeadingKeyword = Let (1,0--1,3)
                     InlineKeyword = None
-                    EqualsRange = Some (1,32--1,33) })], (1,0--1,36))],
-          PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                    EqualsRange = Some (1,32--1,33) })], (1,0--1,36),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (1,0--2,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

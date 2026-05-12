@@ -13,9 +13,14 @@ neg16.fs(44,10,44,11): typecheck error FS0934: Records, union, abbreviations and
 
 neg16.fs(47,10,47,13): typecheck error FS0934: Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute
 
-neg16.fs(49,7,49,23): typecheck error FS0842: This attribute is not valid for use on this language element
+neg16.fs(49,7,49,23): typecheck error FS0842: This attribute cannot be applied to method, property, field, return value. Valid targets are: class, interface
 
-neg16.fs(52,7,52,23): typecheck error FS0842: This attribute is not valid for use on this language element
+neg16.fs(49,7,49,23): typecheck error FS0842: This attribute cannot be applied to property, field, return value. Valid targets are: class, interface
+
+neg16.fs(52,7,52,23): typecheck error FS0842: This attribute cannot be applied to method, property, field, return value. Valid targets are: class, interface
+
+neg16.fs(52,7,52,23): typecheck error FS0842: This attribute cannot be applied to method, return value. Valid targets are: class, interface
+
 
 neg16.fs(59,8,59,17): typecheck error FS0001: This expression was expected to have type
     'Choice<'a,'b>'    
@@ -120,5 +125,7 @@ neg16.fs(110,16,110,17): typecheck error FS0879: Volatile fields must be marked 
 neg16.fs(113,9,113,11): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
 
 neg16.fs(116,9,116,10): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+
+neg16.fs(119,17,119,18): typecheck error FS0880: Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.
 
 neg16.fs(130,10,130,11): typecheck error FS0935: Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal

@@ -12,17 +12,17 @@ module internal DetailedExceptions =
     /// takes an argument, a formatting string, a param array to splice into the formatting string
     let inline invalidArgFmt (arg:string) (format:string) paramArray =
         let msg = String.Format (format, paramArray)
-        raise (new ArgumentException (msg, arg))
+        raise (ArgumentException(msg, arg))
 
     /// takes an argument, a formatting string, a param array to splice into the formatting string
     let inline invalidArgOutOfRangeFmt (arg:string) (format:string) paramArray =
         let msg = String.Format (format, paramArray)
-        raise (new ArgumentOutOfRangeException (arg, msg))
+        raise (ArgumentOutOfRangeException(arg, msg))
 
     /// takes a formatting string and a param array to splice into the formatting string
     let inline invalidOpFmt (format:string) paramArray =
         let msg = String.Format (format, paramArray)
-        raise (new InvalidOperationException(msg))
+        raise (InvalidOperationException(msg))
 
     /// throws an invalid argument exception and returns the difference between the lists' lengths
     let invalidArgDifferentListLength (arg1:string) (arg2:string) (diff:int) =
@@ -82,8 +82,6 @@ namespace Microsoft.FSharp.Primitives.Basics
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Core.Operators
-open System.Diagnostics.CodeAnalysis
 open System.Collections.Generic
 
 
@@ -442,7 +440,7 @@ module internal List =
         | [] -> []
         | [h] -> f h
         | _ ->
-            let cons = freshConsNoTail (Unchecked.defaultof<'U>)
+            let cons = freshConsNoTail Unchecked.defaultof<'U>
             collectToFreshConsTail f list cons
             cons.Tail
 
@@ -466,7 +464,7 @@ module internal List =
         | _, [] -> []
         | [], _ -> []
         | _ ->
-            let cons = freshConsNoTail (Unchecked.defaultof<'T * 'U>)
+            let cons = freshConsNoTail Unchecked.defaultof<'T * 'U>
             allPairsToFreshConsTail xs ys cons
             cons.Tail
 
@@ -1097,7 +1095,7 @@ module internal Array =
         let places = zeroCreateUnchecked len
         for i = 0 to len - 1 do
             places.[i] <- i
-        System.Array.Sort<_, _>(keys, places, cFast)
+        Array.Sort<_, _>(keys, places, cFast)
         // 'array2' is a copy of the original values
         let array2 = (array.Clone() :?> 'T array)
 
@@ -1197,7 +1195,7 @@ module internal Seq =
             use e = source.GetEnumerator()
             if e.MoveNext() then
                 let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
+                while e.MoveNext() do res <- e.Current
                 ValueSome(res)
             else
                 ValueNone

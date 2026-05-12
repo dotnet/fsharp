@@ -21,7 +21,7 @@ if actual <> expected then failwith $"Expected nameof({{expected}}) to be '{{exp
         """
         Fsx source
         |> asExe
-        |> withLangVersion50
+        |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
         
@@ -37,7 +37,7 @@ if actual <> expected then failwith $"Expected nameof({{expected}}) to be '{{exp
         """
         Fsx source
         |> asExe
-        |> withLangVersion50
+        |> withLangVersionPreview
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
@@ -57,7 +57,7 @@ if actual <> expected then failwith $"Expected nameof({{expected}}) to be '{{exp
         """
         Fsx source
         |> asExe
-        |> withLangVersion50
+        |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
 
@@ -79,7 +79,7 @@ if actual <> expected then failwith $"Expected type to be '{{expected}}', but go
         """
         Fsx source
         |> asExe
-        |> withLangVersion50
+        |> withLangVersionPreview
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed

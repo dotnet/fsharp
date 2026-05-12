@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Verify parameters into active patterns can be anything (as constrained by the pat-param grammar production)
 module OtherModule =

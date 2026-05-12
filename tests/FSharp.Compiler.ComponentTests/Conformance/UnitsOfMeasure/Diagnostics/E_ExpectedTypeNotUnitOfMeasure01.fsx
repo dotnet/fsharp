@@ -4,7 +4,7 @@
 //<Expects id="FS0704" span="(12,11-12,12)" status="error">Expected type, not unit-of-measure</Expects>
 //<Expects id="FS0704" span="(13,17-13,18)" status="error">Expected type, not unit-of-measure</Expects>
 //<Expects id="FS0704" span="(14,49-14,50)" status="error">Expected type, not unit-of-measure</Expects>
-#light
+
  
 [<Measure>] type m
 

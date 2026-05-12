@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #TypeTests 
-#light
+
 
 let listOfWhat (x : 'a list) =
     match box x with

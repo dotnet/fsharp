@@ -252,10 +252,7 @@ type UsingMSBuild()  =
 
     [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
     member public this.``Single.DotNet.StaticMethod``() =
-        let code = 
-                                    ["#light"
-                                     "System.Object.ReferenceEquals("
-                                    ]
+        let code = [ "System.Object.ReferenceEquals(" ]
         let (_, _, file) = this.CreateSingleFileProject(code)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToEndOfMarker(file,"Object.ReferenceEquals(")
@@ -599,7 +596,7 @@ type UsingMSBuild()  =
 (* Tests for Generic parameterinfos -------------------------------------------------------- *)
   
     member private this.TestGenericParameterInfo (testLine, methReq) =
-        let code = [ "#light"; "open System"; "open System.Threading"; ""; testLine ]
+        let code = [ "open System"; "open System.Threading"; ""; testLine ]
         let (_, _, file) = this.CreateSingleFileProject(code)
         MoveCursorToEndOfMarker(file, testLine)
         let methodGroup = GetParameterInfoAtCursor file
@@ -670,7 +667,7 @@ type UsingMSBuild()  =
         let cursorPrefix, testLines = this.ExtractLineInfo testLine
 
         let code = 
-                      [ "#light"
+                      [
                         "open System"
                         "open System.Threading"
                         "open System.Collections.Generic"; ""] @ testLines
@@ -684,7 +681,7 @@ type UsingMSBuild()  =
     member public this.TestParameterInfoLocation (testLine, expectedPos, ?addtlRefAssy : string list) =
         let cursorPrefix, testLines = this.ExtractLineInfo testLine
         let code =
-                      [ "#light"
+                      [
                         "open System"
                         "open System.Threading"
                         "open System.Collections.Generic"; ""] @ testLines

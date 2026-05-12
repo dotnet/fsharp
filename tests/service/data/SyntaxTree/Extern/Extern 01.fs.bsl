@@ -95,10 +95,10 @@ ImplFile
                   (1,0--2,70), NoneAtInvisible,
                   { LeadingKeyword = Extern (2,0--2,6)
                     InlineKeyword = None
-                    EqualsRange = None })], (1,0--2,70))], PreXmlDocEmpty, [],
-          None, (1,0--2,70), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                    EqualsRange = None })], (1,0--2,70), { InKeyword = None })],
+          PreXmlDocEmpty, [], None, (1,0--2,70), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))
 
 (1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'Extern 01' based on the file name 'Extern 01.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

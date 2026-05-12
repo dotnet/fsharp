@@ -125,6 +125,9 @@ val internal ConvertLogicalNameToDisplayName: name: string -> string
 /// If not, the it is likely this should be replaced by ConvertValLogicalNameToDisplayName.
 val ConvertValLogicalNameToDisplayNameCore: opName: string -> string
 
+/// Escape active pattern case names that need backticks for display/signatures.
+val internal EscapeActivePatternCases: opName: string -> string
+
 /// Take a core display name for a value (e.g. op_Addition or PropertyName) and convert it to display text
 ///     Foo                   --> Foo
 ///     +                     --> ``+``
@@ -220,6 +223,17 @@ val internal FSharpModuleSuffix: string = "Module"
 
 [<Literal>]
 val internal MangledGlobalName: string = "`global`"
+
+/// Prefix for union case tester properties (e.g., "get_IsCase" for union case "Case")
+[<Literal>]
+val internal unionCaseTesterPropertyPrefix: string = "get_Is"
+
+/// The length of unionCaseTesterPropertyPrefix
+[<Literal>]
+val internal unionCaseTesterPropertyPrefixLength: int = 6
+
+/// Check if a property name is a union case tester property
+val internal IsUnionCaseTesterPropertyName: name: string -> bool
 
 val internal IllegalCharactersInTypeAndNamespaceNames: char[]
 

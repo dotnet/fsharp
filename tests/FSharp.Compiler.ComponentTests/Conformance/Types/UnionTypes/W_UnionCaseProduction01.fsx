@@ -6,6 +6,6 @@
 //  | id : sig-spec	-- n-ary union case
 
 
-#light
+
 
 type T = | D : int -> T

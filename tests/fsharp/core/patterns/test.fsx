@@ -10,8 +10,6 @@ module Core_patterns
 open System
 open System.Reflection
 
-#light
-
 let failures = ref []
 
 let report_failure (s : string) = 
@@ -888,7 +886,7 @@ module ActivePatternsFromTheHub =
 
     let (|NightTime|_|) (time:System.DateTime) = 
         let hourOfDay = time.TimeOfDay.Hours in 
-        predicate (hourOfDay < 5 or hourOfDay > 19)
+        predicate (hourOfDay < 5 || hourOfDay > 19)
 
     let (|International|_|) cc = 
         predicate (cc <> "")

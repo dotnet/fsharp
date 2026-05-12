@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:3741
 
 
-#light
+
 
 module ``*`` = 
 

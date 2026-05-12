@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #LetBindings 
-#light
+
 
 // Verify no warning when 'do-bindings' do not return unit when in .fsx files
 

@@ -4,7 +4,6 @@ module internal FSharp.Compiler.IlxGen
 
 open System
 open System.IO
-open System.Reflection
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals

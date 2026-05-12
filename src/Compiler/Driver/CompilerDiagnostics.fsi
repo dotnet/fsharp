@@ -7,7 +7,6 @@ open System.Text
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 #if DEBUG
@@ -62,7 +61,7 @@ type PhasedDiagnostic with
     member FormatCore: flattenErrors: bool * suggestNames: bool -> string
 
     /// Compute new severity according to the various diagnostics options
-    member AdjustSeverity: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> FSharpDiagnosticSeverity
+    member AdjustSeverity: FSharpDiagnosticOptions -> FSharpDiagnosticSeverity
 
     /// Output all of a diagnostic to a buffer, including range
     member Output: buf: StringBuilder * tcConfig: TcConfig * severity: FSharpDiagnosticSeverity -> unit

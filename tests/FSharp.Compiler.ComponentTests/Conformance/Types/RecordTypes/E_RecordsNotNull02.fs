@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Records 
-#light
+
 
 
 // Verify additional checks for validating that records cannot be null

@@ -102,7 +102,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpOperators]
         |> compileAndRun
         |> shouldSucceed
@@ -134,7 +134,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -182,7 +182,7 @@ type MyRepeatSequence2() =
         static member Next(other: MyRepeatSequence2) : MyRepeatSequence2 = MyRepeatSequence2.Next(other)
 """
         Fsx fsharpSource
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compile
         |> shouldSucceed
@@ -291,7 +291,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -314,7 +314,7 @@ let main _ = 0
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> compileAndRun
         |> shouldSucceed
 
@@ -336,7 +336,7 @@ let main _ = 0
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> compileAndRun
         |> shouldSucceed
 
@@ -367,11 +367,10 @@ module Test =
         0
 """
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> compileAndRun
         |> shouldSucceed
         |> verifyIL [
-#if Release
             """
 .class public abstract auto ansi sealed Tests.Test
        extends [runtime]System.Object
@@ -488,122 +487,6 @@ module Test =
 
 } 
             """
-#else
-            """
-.class public abstract auto ansi sealed Tests.Test
-       extends [runtime]System.Object
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class interface abstract auto ansi serializable nested public IAdditionOperator`1<T>
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public hidebysig static abstract virtual 
-            !T  op_Addition(!T A_0,
-                            !T A_1) cil managed
-    {
-    } 
-
-  } 
-
-  .class auto ansi serializable nested public C
-         extends [runtime]System.Object
-         implements class Tests.Test/IAdditionOperator`1<class Tests.Test/C>
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .field assembly int32 c
-    .method public specialname rtspecialname 
-            instance void  .ctor(int32 c) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  pop
-      IL_0008:  ldarg.0
-      IL_0009:  ldarg.1
-      IL_000a:  stfld      int32 Tests.Test/C::c
-      IL_000f:  ret
-    } 
-
-    .method public hidebysig specialname 
-            instance int32  get_Value() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Tests.Test/C::c
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig static class Tests.Test/C 
-            'Tests.Test.IAdditionOperator<Tests.Test.C>.op_Addition'(class Tests.Test/C x,
-                                                                     class Tests.Test/C y) cil managed
-    {
-      .override  method !0 class Tests.Test/IAdditionOperator`1<class Tests.Test/C>::op_Addition(!0,
-                                                                                                 !0)
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Tests.Test/C::c
-      IL_0006:  ldarg.1
-      IL_0007:  ldfld      int32 Tests.Test/C::c
-      IL_000c:  add
-      IL_000d:  newobj     instance void Tests.Test/C::.ctor(int32)
-      IL_0012:  ret
-    } 
-
-    .property instance int32 Value()
-    {
-      .get instance int32 Tests.Test/C::get_Value()
-    } 
-  } 
-
-  .method public static !!T  f<(class Tests.Test/IAdditionOperator`1<!!T>) T>(!!T x,
-                                                                              !!T y) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  constrained. !!T
-    IL_0008:  call       !0 class Tests.Test/IAdditionOperator`1<!!T>::op_Addition(!0,
-                                                                                   !0)
-    IL_000d:  ret
-  } 
-
-  .method public static int32  main(string[] _arg1) cil managed
-  {
-    .entrypoint
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  4
-    .locals init (class Tests.Test/C V_0,
-             class Tests.Test/C V_1)
-    IL_0000:  ldc.i4.3
-    IL_0001:  newobj     instance void Tests.Test/C::.ctor(int32)
-    IL_0006:  stloc.0
-    IL_0007:  ldc.i4.4
-    IL_0008:  newobj     instance void Tests.Test/C::.ctor(int32)
-    IL_000d:  stloc.1
-    IL_000e:  ldloc.0
-    IL_000f:  ldloc.1
-    IL_0010:  constrained. Tests.Test/C
-    IL_0016:  call       !0 class Tests.Test/IAdditionOperator`1<class Tests.Test/C>::op_Addition(!0,
-                                                                                                  !0)
-    IL_001b:  ldfld      int32 Tests.Test/C::c
-    IL_0020:  ldc.i4.7
-    IL_0021:  beq.s      IL_002e
-
-    IL_0023:  ldstr      "incorrect value"
-    IL_0028:  call       class [runtime]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
-    IL_002d:  throw
-
-    IL_002e:  ldc.i4.0
-    IL_002f:  ret
-  } 
-            """
-#endif
         ]
 
     [<FactForNETCOREAPP>]
@@ -662,7 +545,7 @@ match echo_srtp<Imp> "a" with
                     let F<'T when 'T :> IFoo<'T>>(x: 'T, y: 'T) =
                         'T.Foo(x, y)
                 """
-                |> withLangVersion70
+                |> withLangVersion80
                 |> withName "FsLibAssembly"
                 |> withOptions ["--nowarn:3535"]
 

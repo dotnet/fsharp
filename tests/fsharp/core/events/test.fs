@@ -1,5 +1,5 @@
 // #Regression #Conformance #Events #Regression #Interop 
-#light
+
 
 module Test
 

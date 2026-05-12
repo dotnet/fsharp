@@ -5,7 +5,7 @@
 // type-defn-elements vertically aligns with the first ‘|’ in the  union-cases
 // Regression test for FSHARP1.0:3707
 //<Expects status="success"></Expects>
-#light
+
 
 (* extra space *) type Message = 
                   | Result of string

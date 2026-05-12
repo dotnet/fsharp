@@ -177,11 +177,11 @@
   <data name="Show_Outlining" xml:space="preserve">
     <value>Show outlining and collapsible nodes for F# code</value>
   </data>
-  <data name="Inline_Hints" xml:space="preserve">
-    <value>Inline Hints</value>
+  <data name="Inlay_Hints" xml:space="preserve">
+    <value>Inlay Hints</value>
   </data>
-  <data name="Show_Inline_Type_Hints" xml:space="preserve">
-    <value>Display inline type hints (preview)</value>
+  <data name="Show_Inlay_Type_Hints" xml:space="preserve">
+    <value>Display inlay type hints (preview)</value>
   </data>
   <data name="Time_until_stale_completion" xml:space="preserve">
     <value>Time until stale results are used (in milliseconds)</value>
@@ -228,8 +228,8 @@
   <data name="Enable_Parallel_Reference_Resolution" xml:space="preserve">
     <value>Enable parallel reference resolution</value>
   </data>
-  <data name="Show_Inline_Parameter_Name_Hints" xml:space="preserve">
-    <value>Display inline parameter name hints (preview)</value>
+  <data name="Show_Inlay_Parameter_Name_Hints" xml:space="preserve">
+    <value>Display inlay parameter name hints (preview)</value>
   </data>
   <data name="Enable_Fast_Find_References" xml:space="preserve">
     <value>Enable fast find references &amp; rename (experimental)</value>

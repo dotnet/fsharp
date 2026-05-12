@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckExpressionsOps
 
+open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.CheckBasics
@@ -198,7 +199,7 @@ let YieldFree (cenv: TcFileState) expr =
 
             | SynExpr.For(doBody = body)
             | SynExpr.TryFinally(tryExpr = body)
-            | SynExpr.LetOrUse(body = body)
+            | SynExpr.LetOrUse({ Body = body })
             | SynExpr.While(doExpr = body)
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
@@ -224,12 +225,12 @@ let YieldFree (cenv: TcFileState) expr =
 
             | SynExpr.For(doBody = body)
             | SynExpr.TryFinally(tryExpr = body)
-            | SynExpr.LetOrUse(body = body)
+            | SynExpr.LetOrUse({ Body = body })
             | SynExpr.While(doExpr = body)
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
 
-            | SynExpr.LetOrUse(isBang = true)
+            | LetOrUse(_, true, _)
             | SynExpr.YieldOrReturnFrom _
             | SynExpr.YieldOrReturn _
             | SynExpr.ImplicitZero _
@@ -389,3 +390,128 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
         mkValueOptionTy g tyarg
     else
         mkOptionTy g tyarg
+
+//-------------------------------------------------------------------------
+// Struct byref capture fix for object expressions
+//-------------------------------------------------------------------------
+
+/// When a struct instance method creates an object expression that captures constructor
+/// parameters, those captures go through 'this' which is a byref. This would create
+/// illegal byref fields in the closure class. This function detects such captures and
+/// extracts them to local bindings before the object expression.
+///
+/// Returns: (shouldTransform, structCaptures, methodParamStamps)
+let AnalyzeObjExprStructCaptures
+    (enclosingStructTyconRefOpt: TyconRef option)
+    (ctorCall: Expr)
+    (overrides: ObjExprMethod list)
+    (extraImpls: (TType * ObjExprMethod list) list)
+    : bool * Val list * Set<Stamp> =
+
+    // Collect free variables from an expression
+    let collectFreeVars expr =
+        (freeInExpr CollectLocals expr).FreeLocals |> Zset.elements
+
+    // Collect all method parameters (bound variables) from object expression methods
+    // These should NOT be treated as struct instance captures
+    let methodParams =
+        [
+            for TObjExprMethod(_, _, _, paramGroups, _, _) in overrides do
+                for paramGroup in paramGroups do
+                    for v in paramGroup do
+                        yield v
+            for (_, methods) in extraImpls do
+                for TObjExprMethod(_, _, _, paramGroups, _, _) in methods do
+                    for paramGroup in paramGroups do
+                        for v in paramGroup do
+                            yield v
+        ]
+        |> List.map (fun v -> v.Stamp)
+        |> Set.ofList
+
+    let allFreeVars =
+        [
+            yield! collectFreeVars ctorCall
+            for TObjExprMethod(_, _, _, _, body, _) in overrides do
+                yield! collectFreeVars body
+            for (_, methods) in extraImpls do
+                for TObjExprMethod(_, _, _, _, body, _) in methods do
+                    yield! collectFreeVars body
+        ]
+        |> List.distinctBy (fun v -> v.Stamp)
+
+    // Filter to struct instance captures:
+    // - We're in a struct context (enclosingStructTyconRefOpt is Some)
+    // - The value is NOT a method parameter of the object expression
+    // - The value is NOT a module binding
+    // - The value is NOT a member or module binding (excludes property getters, etc.)
+    // - The value is NOT a constructor
+    let structCaptures =
+        match enclosingStructTyconRefOpt with
+        | None -> []
+        | Some _ ->
+            allFreeVars
+            |> List.filter (fun v ->
+                not v.IsModuleBinding
+                && not v.IsMemberOrModuleBinding
+                && not (Set.contains v.Stamp methodParams)
+                && v.LogicalName <> ".ctor")
+
+    let shouldTransform = not (List.isEmpty structCaptures)
+    (shouldTransform, structCaptures, methodParams)
+
+/// Transform an object expression to avoid byref captures from struct instance state.
+/// Creates local bindings for captured values and remaps references in the object expression.
+let TransformObjExprForStructByrefCaptures
+    (g: TcGlobals.TcGlobals)
+    (mWholeExpr: Text.range)
+    (structCaptures: Val list)
+    (objtyR: TType)
+    (baseValOpt: Val option)
+    (ctorCall: Expr)
+    (overrides: ObjExprMethod list)
+    (extraImpls: (TType * ObjExprMethod list) list)
+    (realObjTy: TType)
+    : Expr =
+
+    // Create local bindings for each captured value to avoid byref captures
+    let localBindings =
+        structCaptures
+        |> List.map (fun v ->
+            let local, _localExpr =
+                mkCompGenLocal mWholeExpr (v.LogicalName + "$captured") v.Type
+
+            let readExpr = exprForVal mWholeExpr v
+            (v, local, readExpr))
+
+    // Build remap: original val -> local val
+    let remap =
+        localBindings
+        |> List.fold
+            (fun (r: Remap) (orig, local, _) ->
+                { r with
+                    valRemap = r.valRemap.Add orig (mkLocalValRef local)
+                })
+            Remap.Empty
+
+    // Helper to remap an object expression method
+    let remapMethod (TObjExprMethod(slotSig, attrs, mtps, paramGroups, body, range)) =
+        TObjExprMethod(slotSig, attrs, mtps, paramGroups, remapExpr g CloneAll remap body, range)
+
+    // Remap all parts of the object expression
+    let ctorCall' = remapExpr g CloneAll remap ctorCall
+    let overrides' = overrides |> List.map remapMethod
+
+    let extraImpls' =
+        extraImpls |> List.map (fun (ty, ms) -> (ty, ms |> List.map remapMethod))
+
+    // Build the object expression with remapped references
+    let objExpr =
+        mkObjExpr (objtyR, baseValOpt, ctorCall', overrides', extraImpls', mWholeExpr)
+
+    let objExpr = mkCoerceIfNeeded g realObjTy objtyR objExpr
+
+    // Wrap with let bindings: let x$captured = x in ...
+    localBindings
+    |> List.foldBack (fun (_, local, valueExpr) body -> mkLet DebugPointAtBinding.NoneAtInvisible mWholeExpr local valueExpr body)
+    <| objExpr

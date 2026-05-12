@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:4124 - Units of measure: division should be left-associative in both types and constants
 // Regression test for FSHARP1.0:4188 - Type parameters for units of measure parsed inconsistently.
 
-#light
+
 
 [<Measure>] type s
 [<Measure>] type m

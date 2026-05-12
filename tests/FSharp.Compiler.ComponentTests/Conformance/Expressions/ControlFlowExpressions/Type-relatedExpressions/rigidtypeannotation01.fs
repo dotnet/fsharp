@@ -1,5 +1,5 @@
 // #Conformance #TypeRelatedExpressions #TypeAnnotations 
-#light
+
 
 let p = (1 : int)
 

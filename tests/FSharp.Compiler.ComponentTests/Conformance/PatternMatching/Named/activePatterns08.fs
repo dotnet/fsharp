@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Verify able to mix active patterns with 'regular' patterns.
 

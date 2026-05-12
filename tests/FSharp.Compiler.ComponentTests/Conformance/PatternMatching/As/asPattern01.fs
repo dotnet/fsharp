@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 let t1 = (1, 2)
 let (x, y) as asPatResult = t1

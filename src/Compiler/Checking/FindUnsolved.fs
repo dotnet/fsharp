@@ -5,7 +5,6 @@ module internal FSharp.Compiler.FindUnsolved
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text
@@ -16,8 +15,6 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
 type env = | NoEnv
-
-let FindUnsolvedStackGuardDepth = StackGuard.GetDepthOption "FindUnsolved"
 
 /// The environment and collector
 type cenv =
@@ -246,7 +243,7 @@ and accValReprInfo cenv env (ValReprInfo(_, args, ret)) =
 
 /// Walk an argument representation info, collecting type variables
 and accArgReprInfo cenv env (argInfo: ArgReprInfo) =
-    accAttribs cenv env argInfo.Attribs
+    accAttribs cenv env (argInfo.Attribs.AsList())
 
 /// Walk a value, collecting type variables
 and accVal cenv env v =
@@ -318,7 +315,7 @@ let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
           amap=amap
           denv=denv
           unsolved = []
-          stackGuard = StackGuard(FindUnsolvedStackGuardDepth, "UnsolvedTyparsOfModuleDef") }
+          stackGuard = StackGuard("UnsolvedTyparsOfModuleDef") }
     accModuleOrNamespaceDef cenv NoEnv mdef
     accAttribs cenv NoEnv extraAttribs
     List.rev cenv.unsolved

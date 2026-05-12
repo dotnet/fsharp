@@ -101,13 +101,13 @@ type internal FSharpWorkspaceServiceFactory
     let enableFastFindReferences =
         editorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
-    let isInlineParameterNameHintsEnabled =
-        editorOptions.Advanced.IsInlineParameterNameHintsEnabled
+    let isInlayParameterNameHintsEnabled =
+        editorOptions.Advanced.IsInlayParameterNameHintsEnabled
 
-    let isInlineTypeHintsEnabled = editorOptions.Advanced.IsInlineTypeHintsEnabled
+    let isInlayTypeHintsEnabled = editorOptions.Advanced.IsInlayTypeHintsEnabled
 
-    let isInlineReturnTypeHintsEnabled =
-        editorOptions.Advanced.IsInlineReturnTypeHintsEnabled
+    let isInlayReturnTypeHintsEnabled =
+        editorOptions.Advanced.IsInlayReturnTypeHintsEnabled
 
     let enablePartialTypeChecking =
         editorOptions.LanguageServicePerformance.EnablePartialTypeChecking
@@ -139,9 +139,9 @@ type internal FSharpWorkspaceServiceFactory
                     nameof enableParallelReferenceResolution, enableParallelReferenceResolution
                     nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
                     nameof enableFastFindReferences, enableFastFindReferences
-                    nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
-                    nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
-                    nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
+                    nameof isInlayParameterNameHintsEnabled, isInlayParameterNameHintsEnabled
+                    nameof isInlayTypeHintsEnabled, isInlayTypeHintsEnabled
+                    nameof isInlayReturnTypeHintsEnabled, isInlayReturnTypeHintsEnabled
                     nameof enablePartialTypeChecking, enablePartialTypeChecking
                     nameof keepAllBackgroundResolutions, keepAllBackgroundResolutions
                     nameof keepAllBackgroundSymbolUses, keepAllBackgroundSymbolUses
@@ -279,15 +279,11 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsi", 64)>]
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsscript", 64)>]
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsx", 64)>]
-[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".ml", 64)>]
-[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".mli", 64)>]
 [<ProvideEditorFactory(typeof<FSharpEditorFactory>, 101s, CommonPhysicalViewAttributes = Constants.FSharpEditorFactoryPhysicalViewAttributes)>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
-[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
 [<ProvideBraceCompletion(FSharpConstants.FSharpLanguageName)>]
 [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                          strLanguageName = FSharpConstants.FSharpLanguageName,

@@ -89,10 +89,10 @@ type T =
 
 module AttributeConstructorCompletion =
     [<Theory>]
-    [<InlineData ("[<AnAttribute((* marker *)")>]
-    [<InlineData ("[<AnAttribute( (* marker *)")>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute((* marker *)")>]
-    [<InlineData ("[<AnAttribute; AnAttribute((* marker *)")>]
+    [<InlineData "[<AnAttribute((* marker *)">]
+    [<InlineData "[<AnAttribute( (* marker *)">]
+    [<InlineData "[<AnAttribute>][<AnAttribute((* marker *)">]
+    [<InlineData "[<AnAttribute; AnAttribute((* marker *)">]
     let ``incomplete``(lineStr: string) =
         let code = $"""
 {lineStr}
@@ -102,11 +102,11 @@ type T =
         code |> assertCompletionContext (fun x -> match x with Some (CompletionContext.ParameterList _) -> true | _ -> false)
 
     [<Theory>]
-    [<InlineData ("[<AnAttribute((* marker *)>]")>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute((* marker *)>]")>]
-    [<InlineData ("[<AnAttribute; AnAttribute((* marker *)>]")>]
-    [<InlineData ("[<AnAttribute; AnAttribute( (* marker *)>]")>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]")>]
+    [<InlineData "[<AnAttribute((* marker *)>]">]
+    [<InlineData "[<AnAttribute>][<AnAttribute((* marker *)>]">]
+    [<InlineData "[<AnAttribute; AnAttribute((* marker *)>]">]
+    [<InlineData "[<AnAttribute; AnAttribute( (* marker *)>]">]
+    [<InlineData "[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]">]
     let ``complete``(lineStr: string) =
         let code = $"""
 {lineStr}
@@ -146,7 +146,7 @@ let foo8 = ()
     let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
     decls |> List.map (fun decl ->
         match decl with
-        | SynModuleDecl.Let (_, [SynBinding (attributes = attributeLists)], _) ->
+        | SynModuleDecl.Let (bindings = [SynBinding (attributes = attributeLists)]) ->
             attributeLists |> List.map (fun list -> list.Attributes.Length, getRangeCoords list.Range)
         | _ -> failwith "Could not get binding")
     |> shouldEqual

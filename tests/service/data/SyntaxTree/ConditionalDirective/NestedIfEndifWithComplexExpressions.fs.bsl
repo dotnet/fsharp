@@ -15,9 +15,9 @@ ImplFile
                   Const (Unit, (11,4--11,6)), (2,4--2,5), Yes (2,0--11,6),
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
-                    EqualsRange = Some (2,6--2,7) })], (2,0--11,6))],
-          PreXmlDocEmpty, [], None, (2,0--12,0), { LeadingKeyword = None })],
-      (true, true),
+                    EqualsRange = Some (2,6--2,7) })], (2,0--11,6),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (2,0--12,0),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives =
          [If (Not (Ident "DEBUG"), (3,4--3,14));
           If (And (Ident "FOO", Ident "BAR"), (4,8--4,22));

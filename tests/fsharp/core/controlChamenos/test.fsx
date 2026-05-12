@@ -2,7 +2,7 @@
 #if TESTS_AS_APP
 module Core_controlChamenos
 #endif
-#light
+
 
 #nowarn "40" // recursive references
 

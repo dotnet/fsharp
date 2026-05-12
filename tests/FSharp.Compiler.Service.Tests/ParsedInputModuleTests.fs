@@ -75,8 +75,8 @@ let ``tryPick recursive let binding`` () =
         (pos0, parseTree)
         ||> ParsedInput.tryPick (fun _path node ->
             match node with
-            | SyntaxNode.SynExpr(SynExpr.LetOrUse(isRecursive = false)) -> failwith "isRecursive should be true"
-            | SyntaxNode.SynExpr(SynExpr.LetOrUse(isRecursive = true; bindings = bindings)) -> Some bindings
+            | SyntaxNode.SynExpr(SynExpr.LetOrUse({ IsRecursive = false })) -> failwith "isRecursive should be true"
+            | SyntaxNode.SynExpr(SynExpr.LetOrUse({ IsRecursive = true; Bindings = bindings })) -> Some bindings
             | _ -> None)
 
     match bindings with

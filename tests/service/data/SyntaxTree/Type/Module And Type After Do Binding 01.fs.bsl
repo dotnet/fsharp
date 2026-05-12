@@ -31,7 +31,7 @@ ImplFile
                              NoneAtDo, { LeadingKeyword = Do (5,4--5,6)
                                          InlineKeyword = None
                                          EqualsRange = None })], false, false,
-                         (5,4--6,22))], (5,4--6,22)), [],
+                         (5,4--6,22), { InKeyword = None })], (5,4--6,22)), [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (4,16--4,18)), None,
@@ -71,7 +71,7 @@ ImplFile
                       Yes (11,8--11,17), { LeadingKeyword = Let (11,8--11,11)
                                            InlineKeyword = None
                                            EqualsRange = Some (11,14--11,15) })],
-                  (11,8--11,17))], false, (10,4--11,17),
+                  (11,8--11,17), { InKeyword = None })], false, (10,4--11,17),
               { ModuleKeyword = Some (10,4--10,10)
                 EqualsRange = Some (10,26--10,27) });
            Open

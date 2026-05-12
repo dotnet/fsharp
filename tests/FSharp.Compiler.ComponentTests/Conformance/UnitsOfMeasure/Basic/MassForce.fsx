@@ -1,5 +1,5 @@
 // #Conformance #UnitsOfMeasure 
-#light
+
 
 [<Measure>] type kg
 [<Measure>] type m

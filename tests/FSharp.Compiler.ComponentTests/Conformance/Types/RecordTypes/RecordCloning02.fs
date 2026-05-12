@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Records 
-#light
+
 
 // Verify ability to clone records when they are returned from an arbitrary expression
 

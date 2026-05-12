@@ -143,9 +143,9 @@ let parseSourceCode (name: string, code: string) =
 /// Asserts the parsed untyped tree matches the expected baseline.
 ///
 /// To update a baseline:
-///     CMD: set TEST_UPDATE_BSL=1 & dotnet test --filter "ParseFile"
-///     PowerShell: $env:TEST_UPDATE_BSL = "1" ; dotnet test --filter "ParseFile"
-///     Linux/macOS: export TEST_UPDATE_BSL=1 & dotnet test --filter "ParseFile"
+///     CMD: set TEST_UPDATE_BSL=1 & dotnet test -- --filter-method "*ParseFile*"
+///     PowerShell: $env:TEST_UPDATE_BSL = "1" ; dotnet test -- --filter-method "*ParseFile*"
+///     Linux/macOS: export TEST_UPDATE_BSL=1 & dotnet test -- --filter-method "*ParseFile*"
 ///
 /// Assuming your current directory is tests/FSharp.Compiler.Service.Tests
 [<Theory>]

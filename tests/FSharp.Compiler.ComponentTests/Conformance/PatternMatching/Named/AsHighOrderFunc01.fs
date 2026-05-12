@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Verify ability to treat active patterns like higher-order functions
 

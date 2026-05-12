@@ -53,22 +53,6 @@ let t2 x = { x with D.B = "a"; D.C = ""; D.B = "c" ; D.C = "d" }
     ]
 
 [<Fact>]
-let ``Cannot use nested copy-and-update in lang version70``() =
-    FSharp """
-type NestedRecTy = { B: string }
-
-type RecTy = { D: NestedRecTy; E: string option }
-
-let t2 x = { x with D.B = "a" }
-    """
-    |> withLangVersion70
-    |> typecheck
-    |> shouldFail
-    |> withDiagnostics [
-        (Error 3350, Line 6, Col 21, Line 6, Col 24, "Feature 'Nested record field copy-and-update' is not available in F# 7.0. Please use language version 8.0 or greater.")
-    ]
-
-[<Fact>]
 let ``Nested copy-and-update merges same level updates``() =
     FSharp """
 module CopyAndUpdateTests
@@ -480,3 +464,56 @@ if actual <> expected then
     |> withLangVersion80
     |> compileExeAndRun
     |> verifyOutput "once"
+
+[<Fact>]
+let ``N-Nested copy-and-update works when the starting expression is not a simple identifier``() =
+    FSharp """
+module CopyAndUpdateTests
+type SubSubTest = {
+    Z: int
+}
+
+type SubTest = {
+    Y: SubSubTest
+}
+
+type Test = {
+    X: SubTest
+}
+
+let getTest () =
+    { X = { Y = { Z = 0 } } }
+
+[<EntryPoint>]
+let main argv =
+    let a = {
+         getTest () with
+            X.Y.Z = 1 
+    }
+    printfn "%i" a.X.Y.Z |> ignore
+    0
+    """
+    |> typecheck
+    |> shouldSucceed
+    |> verifyOutput "1"
+
+[<Fact>]
+let ``N-Nested, anonymous copy-and-update works when the starting expression is not a simple identifier``() =
+    FSharp """
+module CopyAndUpdateTests
+
+let getTest () =
+    {| X = {| Y = {| Z = 0 |} |} |}
+
+[<EntryPoint>]
+let main argv =
+    let a = {|
+         getTest () with
+            X.Y.Z = 1 
+    |}
+    printfn "%i" a.X.Y.Z |> ignore
+    0
+    """
+    |> typecheck
+    |> shouldSucceed
+    |> verifyOutput "1"

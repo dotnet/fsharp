@@ -2,27 +2,18 @@
 
 module internal FSharp.Compiler.TypeHierarchy
 
-open System
-open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.Import.Nullness
 open FSharp.Compiler.Features
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
-open FSharp.Compiler.Xml
-
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.TypeProviders
 #endif
 
 //-------------------------------------------------------------------------
@@ -383,9 +374,11 @@ let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSou
     // - a `IsReadOnlyAttribute` - it's an inref
     // - a `RequiresLocationAttribute` (in which case it's a `ref readonly`) which we treat as inref,
     // latter is an ad-hoc fix for https://github.com/dotnet/runtime/issues/94317.
+    let (AttributesFromIL(_, storedAttrs)) = nullnessSource.DirectAttributes
+
     if isByrefTy amap.g ty
-       && (TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (nullnessSource.DirectAttributes.Read())
-           || TryFindILAttribute amap.g.attrib_RequiresLocationAttribute (nullnessSource.DirectAttributes.Read())) then
+       && (storedAttrs.HasWellKnownAttribute(amap.g, WellKnownILAttributes.IsReadOnlyAttribute)
+           || storedAttrs.HasWellKnownAttribute(amap.g, WellKnownILAttributes.RequiresLocationAttribute)) then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
     else
         ty
@@ -454,8 +447,8 @@ let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsori
     let n1 = tinst.Length
     let n2 = tpsorig.Length
     let n3 = tps.Length
-    if n0 <> n1 then error(Error((FSComp.SR.tcInvalidTypeArgumentCount(n0, n1)), m))
-    if n2 <> n3 then error(Error((FSComp.SR.tcInvalidTypeArgumentCount(n2, n3)), m))
+    if n0 <> n1 then error(Error(FSComp.SR.tcInvalidTypeArgumentCount(n0, n1), m))
+    if n2 <> n3 then error(Error(FSComp.SR.tcInvalidTypeArgumentCount(n2, n3), m))
 
     // The real code..
     let renaming, tptys = mkTyparToTyparRenaming tpsorig tps

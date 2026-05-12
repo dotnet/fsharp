@@ -190,6 +190,13 @@ let ListExpressionSteppingTest8 () =
             yield x 
         ]
 
+// Test case from https://github.com/dotnet/fsharp/issues/19156
+let ListExpressionSteppingTest9 () =
+    [
+        for i in DateTime.Now.Ticks .. DateTime.Now.Ticks + 1L ->
+            ['a', 1] |> List.where (fun (k, v) -> true)
+    ]
+
 let SeqExpressionSteppingTest1 () = 
     seq { yield 1 }
 
@@ -842,6 +849,7 @@ ListExpressionSteppingTest5()
 ListExpressionSteppingTest6()
 ListExpressionSteppingTest7()
 ListExpressionSteppingTest8()
+ListExpressionSteppingTest9 () |> ignore
 SeqExpressionSteppingTest1()|> Seq.length
 SeqExpressionSteppingTest2()|> Seq.length
 SeqExpressionSteppingTest3()|> Seq.length

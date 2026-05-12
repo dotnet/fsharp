@@ -43,9 +43,7 @@
     .field assembly string NonNullable@
     .field assembly int32 JustSomeInt@
     .field static assembly int32 init@6
-    .method public specialname rtspecialname 
-            instance void  .ctor(string x,
-                                 string y) cil managed
+    .method public specialname rtspecialname instance void  .ctor(string x, string y) cil managed
     {
       .param [1]
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
@@ -168,9 +166,7 @@
       IL_001e:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance void  set_Item(string index,
-                                    string 'value') cil managed
+    .method public hidebysig specialname instance void  set_Item(string index, string 'value') cil managed
     {
       .param [1]
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
@@ -214,7 +210,7 @@
       IL_000c:  ret
     } 
 
-    .method assembly specialname static void staticInitialization@() cil managed
+    .method assembly static void  staticInitialization@() cil managed
     {
       
       .maxstack  8
@@ -269,7 +265,7 @@
     IL_000c:  ret
   } 
 
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  8
@@ -296,6 +292,7 @@
   } 
 
 } 
+
 
 
 

@@ -17,7 +17,6 @@
 namespace FSharp.Core.UnitTests.Control.TasksDynamic
 
 #nowarn "1204" // construct only for use in compiled code
-#nowarn "3511" // state machine not statically compilable - the one in 'Run'
 open System
 open System.Collections
 open System.Collections.Generic
@@ -33,7 +32,9 @@ open System.Runtime.CompilerServices
 type TaskBuilderDynamic() =
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
+    #nowarn 3511
     member _.Run(code) = task.Run(code) // warning 3511 is generated here: state machine not compilable
+    #warnon 3511
 
     member inline _.Delay f = task.Delay(f)
     [<DefaultValue>]
@@ -55,7 +56,9 @@ type TaskBuilderDynamic() =
 type BackgroundTaskBuilderDynamic() =
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
+    #nowarn 3511
     member _.Run(code) = backgroundTask.Run(code) // warning 3511 is generated here: state machine not compilable
+    #warnon 3511
 
     member inline _.Delay f = backgroundTask.Delay(f)
     [<DefaultValue>]
@@ -359,15 +362,17 @@ type Basics() =
     member _.testNonBlocking() =
         printfn "Running testNonBlocking..."
         let allowContinue = new SemaphoreSlim(0)
+        let continueToFinish = new ManualResetEventSlim(false)
         let finished = new ManualResetEventSlim()
         let t =
             taskDynamic {
                 do! allowContinue.WaitAsync()
-                Thread.Sleep(100)
+                continueToFinish.Wait()
                 finished.Set()
             }
         allowContinue.Release() |> ignore
         require (not finished.IsSet) "sleep blocked caller"
+        continueToFinish.Set()
         t.Wait()
 
     [<Fact>]
@@ -994,7 +999,7 @@ type Basics() =
                     try
                         ranInitial.Set()
                         do! Task.Yield()
-                        Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
+                        do! stepOutside.WaitAsync()
                         ranNext.Set()
                     finally
                         ranFinally <- ranFinally + 1
@@ -1002,6 +1007,7 @@ type Basics() =
                 }
             require ranInitial.IsSet "didn't run initial"
             require (not ranNext.IsSet) "ran next too early"
+            stepOutside.Release() |> ignore
             try
                 t.Wait()
                 require false "shouldn't get here"

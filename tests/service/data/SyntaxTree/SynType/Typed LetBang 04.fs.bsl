@@ -11,36 +11,37 @@ ImplFile
                     Tuple
                       (false,
                        [LetOrUse
-                          (false, false, true, false,
-                           [SynBinding
-                              (None, Normal, false, false, [],
-                               PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                               SynValData
-                                 (None,
-                                  SynValInfo ([], SynArgInfo ([], false, None)),
-                                  None),
-                               Named
-                                 (SynIdent (a, None), false, None, (4,8--4,9)),
-                               Some
-                                 (SynBindingReturnInfo
-                                    (LongIdent
-                                       (SynLongIdent ([int], [], [None])),
-                                     (4,11--4,14), [],
-                                     { ColonRange = Some (4,9--4,10) })),
-                               Typed
-                                 (ArbitraryAfterError
-                                    ("localBinding2", (4,14--4,14)),
-                                  LongIdent (SynLongIdent ([int], [], [None])),
-                                  (4,14--4,14)), (4,8--4,9), Yes (4,4--4,14),
-                               { LeadingKeyword = Let (4,4--4,7)
-                                 InlineKeyword = None
-                                 EqualsRange = None })],
-                           ArbitraryAfterError ("declExpr3", (5,15--5,16)),
-                           (4,4--5,16), { LetOrUseKeyword = (4,4--4,7)
-                                          InKeyword = None
-                                          EqualsRange = None }); Ident d],
-                       [(5,15--5,16)], (4,4--5,18)), (3,6--5,47)), (3,0--5,47)),
-              (3,0--5,47))],
+                          { IsRecursive = false
+                            Bindings =
+                             [SynBinding
+                                (None, Normal, false, false, [],
+                                 PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
+                                 SynValData
+                                   (None,
+                                    SynValInfo
+                                      ([], SynArgInfo ([], false, None)), None),
+                                 Named
+                                   (SynIdent (a, None), false, None, (4,8--4,9)),
+                                 Some
+                                   (SynBindingReturnInfo
+                                      (LongIdent
+                                         (SynLongIdent ([int], [], [None])),
+                                       (4,11--4,14), [],
+                                       { ColonRange = Some (4,9--4,10) })),
+                                 Typed
+                                   (ArbitraryAfterError
+                                      ("localBinding2", (4,14--4,14)),
+                                    LongIdent (SynLongIdent ([int], [], [None])),
+                                    (4,14--4,14)), (4,8--4,9), Yes (4,4--4,14),
+                                 { LeadingKeyword = Let (4,4--4,7)
+                                   InlineKeyword = None
+                                   EqualsRange = None })]
+                            Body =
+                             ArbitraryAfterError ("declExpr3", (5,15--5,16))
+                            Range = (4,4--5,16)
+                            Trivia = { InKeyword = None }
+                            IsFromSource = true }; Ident d], [(5,15--5,16)],
+                       (4,4--5,18)), (3,6--5,47)), (3,0--5,47)), (3,0--5,47))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,47), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

@@ -211,7 +211,7 @@ let x = 5.5m
     IL_000c:  ret
   } 
 
-  .method assembly specialname static void staticInitialization@() cil managed
+  .method assembly static void  staticInitialization@() cil managed
   {
     
     .maxstack  8
@@ -270,7 +270,7 @@ let x = 1m + 2m
                                                                                                     int32) = ( 01 00 00 00 00 00 00 00 00 00 00 00 03 00 00 00 
                                                                                                                 00 00 )"""
             """
-.method assembly specialname static void staticInitialization@() cil managed
+.method assembly static void  staticInitialization@() cil managed
 {
 
 .maxstack  8
@@ -382,7 +382,7 @@ let y = 42m
                                                                                                                 00 00 )
 """
             """
-.method assembly specialname static void staticInitialization@() cil managed
+.method assembly static void  staticInitialization@() cil managed
 {
 
 .maxstack  8
@@ -463,12 +463,6 @@ type E =
     | B = 1
     | C = (5 / 3 * 4)
         """
-        |> withLangVersion70
+        |> withLangVersion80
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3350, Line 6, Col 19, Line 6, Col 30, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 8.0 or greater.")
-            (Error 3350, Line 9, Col 23, Line 9, Col 37, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 8.0 or greater.")
-            (Error 3350, Line 12, Col 12, Line 12, Col 19, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 8.0 or greater.")
-            (Error 3350, Line 14, Col 12, Line 14, Col 21, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 8.0 or greater.")
-        ]
+        |> shouldSucceed

@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching 
-#light
+
 
 // Match pattern with 'named pattern'
 type Foo() =

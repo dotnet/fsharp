@@ -89,7 +89,7 @@ let rec pushUnaryArg expr arg =
             x1,
             m1
         )
-    | SynExpr.App(ExprAtomicFlag.Atomic, infix, (SynExpr.App(_) as innerApp), x1, m1) ->
+    | SynExpr.App(ExprAtomicFlag.Atomic, infix, (SynExpr.App _ as innerApp), x1, m1) ->
         SynExpr.App(ExprAtomicFlag.Atomic, infix, (pushUnaryArg innerApp arg), x1, m1)
     | SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range), x1, m1) ->
         SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet((pushUnaryArg synExpr arg), rangeOfDot, synLongIdent, range), x1, m1)
@@ -130,6 +130,14 @@ let inline findSynAttribute (attrName: string) (synAttrs: SynAttributes) =
 let (|SynSingleIdent|_|) x =
     match x with
     | SynLongIdent([ id ], _, _) -> ValueSome id
+    | _ -> ValueNone
+
+/// Active pattern to match any SynExpr.LetOrUse
+/// Returns a tuple of (isBang, isUse, record) allowing matching on both booleans and accessing the full record
+[<return: Struct>]
+let (|LetOrUse|_|) (expr: SynExpr) =
+    match expr with
+    | SynExpr.LetOrUse(letOrUse) -> ValueSome(letOrUse, letOrUse.IsBang, letOrUse.IsUse)
     | _ -> ValueNone
 
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
@@ -447,7 +455,7 @@ let mkSynOperator (opm: range) (oper: string) =
             && ((opm.EndColumn - opm.StartColumn) = (oper.Length - 1))
         then
             // PREFIX_OP token where the ~ was actually absent
-            IdentTrivia.OriginalNotation(string (oper.[1..]))
+            IdentTrivia.OriginalNotation(string oper.[1..])
         else
             IdentTrivia.OriginalNotation oper
 
@@ -498,18 +506,6 @@ let mkSynDotParenSet m a b c = mkSynTrifix m parenSet a b c
 let mkSynDotBrackGet m mDot a b = SynExpr.DotIndexedGet(a, b, mDot, m)
 
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
-
-let mkSynDotParenGet mLhs mDot a b =
-    match b with
-    | SynExpr.Tuple(false, [ _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
-        SynExpr.Const(SynConst.Unit, mLhs)
-
-    | SynExpr.Tuple(false, [ _; _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
-        SynExpr.Const(SynConst.Unit, mLhs)
-
-    | _ -> mkSynInfix mDot a parenGet b
 
 let mkSynUnit m = SynExpr.Const(SynConst.Unit, m)
 
@@ -955,7 +951,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.Match(expr = e; clauses = cl)
         | SynExpr.MatchBang(expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
 
-        | SynExpr.LetOrUse(bindings = bs; body = e) -> walkBinds bs || walkExpr e
+        | SynExpr.LetOrUse({ Bindings = bs; Body = e }) -> walkBinds bs || walkExpr e
 
         | SynExpr.TryWith(tryExpr = e; withCases = cl) -> walkExpr e || walkMatchClauses cl
 
@@ -993,7 +989,7 @@ let rec synExprContainsError inpExpr =
     walkExpr inpExpr
 
 let longIdentToString (ident: SynLongIdent) =
-    System.String.Join(".", ident.LongIdent |> List.map (fun ident -> ident.idText.ToString()))
+    String.Join(".", ident.LongIdent |> List.map (fun ident -> ident.idText.ToString()))
 
 /// The "mock" file name used by fsi.exe when reading from stdin.
 /// Has special treatment, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
@@ -1065,11 +1061,11 @@ let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list)
         (function
         | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
         | ParsedHashDirectiveArgument.Int32(n, m) ->
-            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger (n), m))
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger n, m))
             None
         | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> Some(applyLineDirectivesToSourceIdentifier s v m)
         | ParsedHashDirectiveArgument.Ident(ident, m) ->
-            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (ident.idText), m))
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier ident.idText, m))
             None
         | ParsedHashDirectiveArgument.LongIdent(ident, m) ->
             errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (longIdentToString ident), m))
@@ -1132,11 +1128,7 @@ let (|MultiDimensionArrayType|_|) (t: SynType) =
     | SynType.App(StripParenTypes(SynType.LongIdent(SynLongIdent([ identifier ], _, _))), _, [ elementType ], _, _, true, m) ->
         if System.Text.RegularExpressions.Regex.IsMatch(identifier.idText, "^array\d\d?d$") then
             let rank =
-                identifier.idText
-                |> Seq.filter System.Char.IsDigit
-                |> Seq.toArray
-                |> System.String
-                |> int
+                identifier.idText |> Seq.filter Char.IsDigit |> Seq.toArray |> String |> int
 
             ValueSome(rank, elementType, m)
         else
@@ -1158,7 +1150,7 @@ let (|Get_OrSet_Ident|_|) (ident: Ident) =
     elif ident.idText.StartsWithOrdinal("set_") then ValueSome()
     else ValueNone
 
-let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.LanguageVersion) =
+let getGetterSetterAccess synValSigAccess memberKind (langVersion: LanguageVersion) =
     match synValSigAccess with
     | SynValSigAccess.Single(access) -> access, access
     | SynValSigAccess.GetSet(access, getterAccess, setterAccess) ->
@@ -1169,10 +1161,7 @@ let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.Lang
                 errorR (Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet (), x.Range))
                 None
             | Some x, None ->
-                checkLanguageFeatureAndRecover
-                    langVersion
-                    Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
-                    x.Range
+                checkLanguageFeatureAndRecover langVersion LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
 
                 accessBeforeGetSet
 
@@ -1182,10 +1171,7 @@ let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.Lang
             | _, (None, None) -> access, access
             | None, (Some x, _)
             | None, (_, Some x) ->
-                checkLanguageFeatureAndRecover
-                    langVersion
-                    Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
-                    x.Range
+                checkLanguageFeatureAndRecover langVersion LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
 
                 getterAccess, setterAccess
             | _, (Some x, _)

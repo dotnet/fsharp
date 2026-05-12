@@ -615,19 +615,25 @@ type DefaultFileSystem() as this =
     abstract IsInvalidPathShim: path: string -> bool
 
     default _.IsInvalidPathShim(path: string) =
-        let isInvalidPath (p: string MaybeNull) =
-            if String.IsNullOrEmpty(p) then
-                true
-            else
-                p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+        let isInvalidPath (p: (string | null)) =
+            match p with
+            | Null -> true
+            | NonNull p ->
+                if String.IsNullOrEmpty(p) then
+                    true
+                else
+                    p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
-        let isInvalidFilename (p: string MaybeNull) =
-            if String.IsNullOrEmpty(p) then
-                true
-            else
-                p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+        let isInvalidFilename (p: (string | null)) =
+            match p with
+            | Null -> true
+            | NonNull p ->
+                if String.IsNullOrEmpty(p) then
+                    true
+                else
+                    p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
-        let isInvalidDirectory (d: string MaybeNull) =
+        let isInvalidDirectory (d: (string | null)) =
             match d with
             | Null -> true
             | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
@@ -934,7 +940,7 @@ type internal ByteBuffer =
 
     member inline private buf.CheckDisposed() =
         if buf.isDisposed then
-            raise (ObjectDisposedException(nameof (ByteBuffer)))
+            raise (ObjectDisposedException(nameof ByteBuffer))
 
     member private buf.Ensure newSize =
         let oldBufSize = buf.bbArray.Length

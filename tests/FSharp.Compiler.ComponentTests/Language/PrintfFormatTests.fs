@@ -66,30 +66,3 @@ but here has type
     'int'    "
         }
 
-[<Fact>]
-let ``Non-inline literals cannot be used as printf format in lang version70``() =
-    let csLib = 
-        CSharp """
-public static class Library
-{
-    public const string Version = "1.0.0";
-}"""    |> withName "CsLib"
-
-    FSharp """
-module PrintfFormatTests
-
-[<Literal>]
-let Format = "%s%d%s"
-
-let bad1 = sprintf Format "yup" Format.Length (string Format.Length)
-let ok1 = sprintf "%s" Format
-let bad2 = sprintf Library.Version
-    """
-    |> withLangVersion70
-    |> withReferences [csLib]
-    |> compile
-    |> shouldFail
-    |> withDiagnostics [
-        (Error 3350, Line 7, Col 20, Line 7, Col 26, "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0. Please use language version 8.0 or greater.")
-        (Error 3350, Line 9, Col 20, Line 9, Col 35, "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0. Please use language version 8.0 or greater.")
-    ]

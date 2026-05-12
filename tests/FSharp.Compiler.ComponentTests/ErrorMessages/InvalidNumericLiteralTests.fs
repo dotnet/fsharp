@@ -60,7 +60,7 @@ module ``Numeric Literals`` =
 
     [<Fact>]
     let ``1N is invalid numeric literal in FSI``() =
-            CompilerAssert.RunScriptWithOptions [| "--langversion:5.0"; "--test:ErrorRanges" |]
+            CompilerAssert.RunScriptWithOptions [| "--langversion:8.0"; "--test:ErrorRanges" |]
                 """
 let x = 1N
                 """

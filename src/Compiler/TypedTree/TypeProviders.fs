@@ -22,9 +22,9 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 type TypeProviderDesignation = TypeProviderDesignation of string
-type 'a ProvidedArray= ('a[]) MaybeNull
-module ProvidedArray =
-    let map f (arr:_ ProvidedArray) : _ ProvidedArray = 
+
+module NullableArray =
+    let map f (arr: ('a[] | null)) : ('b[] | null) = 
         match arr with
         | null -> null
         | notNull -> notNull |> Array.map f
@@ -220,7 +220,8 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
         [||]
 
 /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
-let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U | null)) : Tainted<'U> =
+let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U,
+                                                                        f: 'T -> 'U | null) : Tainted<'U> =
     match TryTypeMember<'T, 'U | null>(st, fullName, memberName, m, withNull recover, f) with 
     | Tainted.Null -> 
         errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
@@ -241,7 +242,7 @@ let DisplayNameOfTypeProvider(resolver: Tainted<ITypeProvider>, m: range) =
     resolver.PUntaint((fun tp -> tp.GetType().Name), m)
 
 /// Validate a provided namespace name
-let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp: string MaybeNull) =
+let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp: string | null) =
     match nsp with 
     | Null -> ()
     | NonNull nsp -> 
@@ -362,13 +363,13 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.IsGenericType = x.IsGenericType
 
-    member _.Namespace : string MaybeNull = x.Namespace
+    member _.Namespace : string | null = x.Namespace
 
-    member _.FullName : string MaybeNull = x.FullName
+    member _.FullName : string | null = x.FullName
 
     member _.IsArray = x.IsArray
 
-    member _.Assembly: ProvidedAssembly MaybeNull = x.Assembly |> ProvidedAssembly.Create
+    member _.Assembly: ProvidedAssembly | null = x.Assembly |> ProvidedAssembly.Create
 
     member _.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
 
@@ -401,7 +402,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     /// Type.BaseType can be null when Type is interface or object
     member _.BaseType = x.BaseType |> ProvidedType.Create ctxt
 
-    member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo ProvidedArray = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
+    member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[] | null = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
 
     /// Type.GetElementType can be null if i.e. Type is not array\pointer\byref type
     member _.GetElementType() = x.GetElementType() |> ProvidedType.Create ctxt
@@ -460,26 +461,26 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
         let argTypes = args |> Array.map (fun arg -> arg.RawSystemType)
         ProvidedType.CreateNoContext(x.MakeGenericType(argTypes))
 
-    member _.AsProvidedVar name = ProvidedVar.CreateNonNull ctxt (Quotations.Var(name, x))
+    member _.AsProvidedVar name = ProvidedVar.CreateNonNull ctxt (Var(name, x))
 
-    static member Create ctxt x : ProvidedType MaybeNull = 
+    static member Create ctxt x : ProvidedType | null = 
         match x with 
         | Null -> null 
         | NonNull t -> ProvidedType (t, ctxt)
 
     static member CreateNonNull ctxt x = ProvidedType (x, ctxt)
 
-    static member CreateWithNullCheck ctxt name (x:Type MaybeNull) = 
+    static member CreateWithNullCheck ctxt name (x:Type | null) = 
         match x with
         | null -> nullArg name 
         | t -> ProvidedType (t, ctxt)
 
-    static member CreateArray ctxt (xs:_ ProvidedArray) = 
-        xs |> ProvidedArray.map (ProvidedType.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: Type[] | null) = 
+        xs |> NullableArray.map (ProvidedType.CreateNonNull ctxt)
 
     static member CreateNoContext (x:Type) = ProvidedType.CreateNonNull ProvidedTypeContext.Empty x
 
-    static member Void = ProvidedType.CreateNoContext typeof<System.Void>
+    static member Void = ProvidedType.CreateNoContext typeof<Void>
 
     member _.Handle = x
 
@@ -499,7 +500,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 type IProvidedCustomAttributeProvider =
-    abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string MaybeNull * int * int) option 
+    abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> ((string | null) * int * int) option 
 
     abstract GetXmlDocAttributes : provider: ITypeProvider -> string[]
 
@@ -541,7 +542,7 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
             attributes provider 
             |> Seq.tryFind (findAttrib  typeof<TypeProviderDefinitionLocationAttribute>)  
             |> Option.map (fun a -> 
-                let filePath : string MaybeNull = defaultArg (a.NamedArguments |> Seq.tryPick (function Member "FilePath" (Arg (:? string as v)) -> Some v | _ -> None)) null
+                let filePath : string | null = a.NamedArguments |> Seq.tryPick (function Member "FilePath" (Arg (:? string as v)) -> Some v | _ -> None) |> Option.toObj
                 let line = defaultArg (a.NamedArguments |> Seq.tryPick (function Member "Line" (Arg (:? int as v)) -> Some v | _ -> None)) 0
                 let column = defaultArg (a.NamedArguments |> Seq.tryPick (function Member "Column" (Arg (:? int as v)) -> Some v | _ -> None)) 0
                 (filePath, line, column))
@@ -598,15 +599,15 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
     /// ParameterInfo.ParameterType cannot be null
     member _.ParameterType = ProvidedType.CreateWithNullCheck ctxt "ParameterType" x.ParameterType
     
-    static member Create ctxt (x: ParameterInfo MaybeNull) : ProvidedParameterInfo MaybeNull = 
+    static member Create ctxt (x: ParameterInfo | null) : ProvidedParameterInfo | null = 
         match x with 
         | Null -> null 
         | NonNull x -> ProvidedParameterInfo (x, ctxt)
 
     static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
-    
-    static member CreateArray ctxt (xs: ParameterInfo ProvidedArray) : ProvidedParameterInfo ProvidedArray = 
-        xs |> ProvidedArray.map (ProvidedParameterInfo.CreateNonNull ctxt)
+
+    static member CreateArray ctxt (xs: ParameterInfo[] | null) : ProvidedParameterInfo[] | null = 
+        xs |> NullableArray.map (ProvidedParameterInfo.CreateNonNull ctxt)
     
     interface IProvidedCustomAttributeProvider with 
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider =
@@ -636,7 +637,7 @@ type ProvidedAssembly (x: Assembly) =
 
     member _.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents x
 
-    static member Create (x: Assembly MaybeNull) : ProvidedAssembly MaybeNull = match x with null -> null | t -> ProvidedAssembly (t)
+    static member Create (x: Assembly | null) : ProvidedAssembly | null = match x with null -> null | t -> ProvidedAssembly t
 
     member _.Handle = x
 
@@ -686,7 +687,7 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
     static member TaintedEquals (pt1: Tainted<ProvidedMethodBase>, pt2: Tainted<ProvidedMethodBase>) = 
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
-    member _.GetStaticParametersForMethod(provider: ITypeProvider) : ProvidedParameterInfo ProvidedArray = 
+    member _.GetStaticParametersForMethod(provider: ITypeProvider) : ProvidedParameterInfo[] | null = 
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public 
 
         let staticParams = 
@@ -744,13 +745,13 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
 
     static member CreateNonNull ctxt x = ProvidedFieldInfo (x, ctxt)
 
-    static member Create ctxt x : ProvidedFieldInfo MaybeNull = 
+    static member Create ctxt x : ProvidedFieldInfo | null = 
         match x with 
         | Null -> null 
         | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: FieldInfo ProvidedArray) : ProvidedFieldInfo ProvidedArray = 
-        xs |> ProvidedArray.map (ProvidedFieldInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: FieldInfo[] | null) : ProvidedFieldInfo[] | null = 
+        xs |> NullableArray.map (ProvidedFieldInfo.CreateNonNull ctxt)
 
     member _.IsInitOnly = x.IsInitOnly
 
@@ -794,14 +795,14 @@ type ProvidedMethodInfo (x: MethodInfo, ctxt) =
     static member CreateNonNull ctxt (x: MethodInfo) : ProvidedMethodInfo = 
         ProvidedMethodInfo (x, ctxt)
 
-    static member Create ctxt (x: MethodInfo MaybeNull) : ProvidedMethodInfo MaybeNull = 
+    static member Create ctxt (x: MethodInfo | null) : ProvidedMethodInfo | null = 
         match x with 
         | Null -> null
         | NonNull x -> ProvidedMethodInfo (x, ctxt)
 
 
-    static member CreateArray ctxt (xs: MethodInfo ProvidedArray) : ProvidedMethodInfo ProvidedArray = 
-        xs |> ProvidedArray.map (ProvidedMethodInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: MethodInfo[] | null) : ProvidedMethodInfo[] | null = 
+        xs |> NullableArray.map (ProvidedMethodInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 
@@ -830,13 +831,13 @@ type ProvidedPropertyInfo (x: PropertyInfo, ctxt) =
 
     static member CreateNonNull ctxt x = ProvidedPropertyInfo (x, ctxt)
 
-    static member Create ctxt x : ProvidedPropertyInfo MaybeNull =
+    static member Create ctxt x : ProvidedPropertyInfo | null =
         match x with 
         | Null -> null 
         | NonNull x -> ProvidedPropertyInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: PropertyInfo ProvidedArray) : ProvidedPropertyInfo ProvidedArray = 
-        xs |> ProvidedArray.map (ProvidedPropertyInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: PropertyInfo[] | null) : ProvidedPropertyInfo[] | null = 
+        xs |> NullableArray.map (ProvidedPropertyInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 
@@ -865,13 +866,13 @@ type ProvidedEventInfo (x: EventInfo, ctxt) =
     
     static member CreateNonNull ctxt x = ProvidedEventInfo (x, ctxt)
     
-    static member Create ctxt x : ProvidedEventInfo MaybeNull = 
+    static member Create ctxt x : ProvidedEventInfo | null = 
         match x with 
         | Null -> null 
         | NonNull x -> ProvidedEventInfo (x, ctxt)
     
-    static member CreateArray ctxt (xs: EventInfo ProvidedArray) : ProvidedEventInfo ProvidedArray = 
-        xs |> ProvidedArray.map (ProvidedEventInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: EventInfo[] | null) : ProvidedEventInfo[] | null = 
+        xs |> NullableArray.map (ProvidedEventInfo.CreateNonNull ctxt)
     
     member _.Handle = x
 
@@ -893,13 +894,13 @@ type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
 
     static member CreateNonNull ctxt x = ProvidedConstructorInfo (x, ctxt)
 
-    static member Create ctxt (x: ConstructorInfo MaybeNull) : ProvidedConstructorInfo MaybeNull = 
+    static member Create ctxt (x: ConstructorInfo | null) : ProvidedConstructorInfo | null = 
         match x with 
         | Null -> null 
         | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: ConstructorInfo ProvidedArray) : ProvidedConstructorInfo ProvidedArray = 
-        xs |> ProvidedArray.map (ProvidedConstructorInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: ConstructorInfo[] | null) : ProvidedConstructorInfo[] | null = 
+        xs |> NullableArray.map (ProvidedConstructorInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 
@@ -908,19 +909,19 @@ type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
     override _.GetHashCode() = assert false; x.GetHashCode()
 
 type ProvidedExprType =
-    | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr ProvidedArray
-    | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr ProvidedArray
+    | ProvidedNewArrayExpr of ProvidedType * (ProvidedExpr[] | null)
+    | ProvidedNewObjectExpr of ProvidedConstructorInfo * (ProvidedExpr[] | null)
     | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
-    | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar ProvidedArray * ProvidedExpr
+    | ProvidedNewDelegateExpr of ProvidedType * (ProvidedVar[] | null) * ProvidedExpr
     | ProvidedForIntegerRangeLoopExpr of ProvidedVar * ProvidedExpr * ProvidedExpr * ProvidedExpr
     | ProvidedSequentialExpr of ProvidedExpr * ProvidedExpr
     | ProvidedTryWithExpr of ProvidedExpr * ProvidedVar * ProvidedExpr * ProvidedVar * ProvidedExpr
     | ProvidedTryFinallyExpr of ProvidedExpr * ProvidedExpr
     | ProvidedLambdaExpr of ProvidedVar * ProvidedExpr
-    | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr ProvidedArray 
+    | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * (ProvidedExpr[] | null)
     | ProvidedConstantExpr of objnull * ProvidedType
     | ProvidedDefaultExpr of ProvidedType
-    | ProvidedNewTupleExpr of ProvidedExpr ProvidedArray
+    | ProvidedNewTupleExpr of (ProvidedExpr[] | null)
     | ProvidedTupleGetExpr of ProvidedExpr * int
     | ProvidedTypeAsExpr of ProvidedExpr * ProvidedType
     | ProvidedTypeTestExpr of ProvidedExpr * ProvidedType
@@ -985,7 +986,7 @@ type ProvidedExpr (x: Expr, ctxt) =
         | Patterns.Var v ->
             Some (ProvidedVarExpr (ProvidedVar.CreateNonNull ctxt v))
         | _ -> None
-    static member Create ctxt t : ProvidedExpr MaybeNull = 
+    static member Create ctxt t : ProvidedExpr | null = 
         match box t with 
         | Null -> null 
         | _ -> ProvidedExpr (t, ctxt)
@@ -1024,11 +1025,11 @@ type ProvidedVar (x: Var, ctxt) =
 
 /// Get the provided invoker expression for a particular use of a method.
 let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) = 
-    provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Quotations.Expr.Var p.Handle |]) |> ProvidedExpr.Create methodBase.Context
+    provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Expr.Var p.Handle |]) |> ProvidedExpr.Create methodBase.Context
 
 /// Compute the Name or FullName property of a provided type, reporting appropriate errors
 let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, propertyString) =
-    let name : string MaybeNull = 
+    let name : string | null = 
         try st.PUntaint(proj, m) 
         with :? TypeProviderError as tpe -> 
             let newError = tpe.MapText((fun msg -> FSComp.SR.etProvidedTypeWithNameException(propertyString, msg)), st.TypeProviderDesignation, m)
@@ -1201,7 +1202,7 @@ let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath: s
 /// Resolve a (non-nested) provided type given a full namespace name and a type name. 
 /// May throw an exception which will be turned into an error message by one of the 'Try' function below.
 /// If resolution is successful the type is then validated.
-let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace: string[], typeName) : Tainted<ProvidedType MaybeNull> =
+let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace: string[], typeName) : Tainted<(ProvidedType | null)> =
     let displayName = String.Join(".", moduleOrNamespace)
 
     // Try to find the type in the given provided namespace
@@ -1385,7 +1386,7 @@ let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: str
         | None -> None
 
 /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-let GetPartsOfNamespaceRecover(namespaceName: string MaybeNull) = 
+let GetPartsOfNamespaceRecover(namespaceName: string | null) = 
     match namespaceName with 
     | Null -> [] 
     | NonNull namespaceName -> 
@@ -1393,7 +1394,7 @@ let GetPartsOfNamespaceRecover(namespaceName: string MaybeNull) =
         else splitNamespace namespaceName
 
 /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-let GetProvidedNamespaceAsPath (m, resolver: Tainted<ITypeProvider>, namespaceName:string MaybeNull) =
+let GetProvidedNamespaceAsPath (m, resolver: Tainted<ITypeProvider>, namespaceName: string | null) =
     match namespaceName with 
     | Null -> [] 
     | NonNull namespaceName -> 
@@ -1406,7 +1407,7 @@ let GetFSharpPathToProvidedType (st: Tainted<ProvidedType>, range) =
     // Can't use st.Fullname because it may be like IEnumerable<Something>
     // We want [System;Collections;Generic]
     let namespaceParts = GetPartsOfNamespaceRecover(st.PUntaint((fun st -> st.Namespace), range))
-    let rec walkUpNestedClasses(st: Tainted<ProvidedType MaybeNull>, soFar) =
+    let rec walkUpNestedClasses(st: Tainted<(ProvidedType | null)>, soFar) =
         match st with
         | Tainted.Null -> soFar
         | Tainted.NonNull st -> walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), range), soFar) @ [st.PUntaint((fun st -> st.Name), range)]

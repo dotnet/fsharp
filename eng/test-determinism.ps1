@@ -50,7 +50,7 @@ function Run-Build([string]$rootDir, [string]$increment) {
 
   Write-Host "Cleaning took $($stopWatch.Elapsed)"
 
-  $solution = Join-Path $rootDir "Microsoft.FSharp.Compiler.sln"
+  $solution = Join-Path $rootDir "src\Microsoft.FSharp.Compiler\Microsoft.FSharp.Compiler.fsproj"
 
   if ($logFileName -eq "") {
     $logFileName = [IO.Path]::GetFileNameWithoutExtension($solution)
@@ -404,7 +404,8 @@ try {
 
   $script:bootstrap = $true
   $script:bootstrapConfiguration = "Proto"
-  $script:fsharpNetCoreProductTfm = "net10.0"
+  # Read product TFM from centralized source of truth via MSBuild
+  $script:fsharpNetCoreProductTfm = (& $PSScriptRoot/common/dotnet.ps1 msbuild $PSScriptRoot/TargetFrameworks.props --getProperty:FSharpNetCoreProductTargetFramework).Trim()
   $script:bootstrapTfm = $script:fsharpNetCoreProductTfm
 
   $bootstrapDir = Make-BootstrapBuild

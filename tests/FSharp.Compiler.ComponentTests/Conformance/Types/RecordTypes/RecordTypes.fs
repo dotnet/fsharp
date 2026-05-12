@@ -100,9 +100,9 @@ module RecordTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 39, Line 16, Col 15, Line 16, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 17, Col 1, Line 17, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 17, Col 1, Line 17, Col 25, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.")
             (Error 39, Line 20, Col 15, Line 20, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 21, Col 1, Line 21, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 21, Col 1, Line 21, Col 25, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.")
         ]
 
     // SOURCE=E_MutableFields01.fsx SCFLAGS="--test:ErrorRanges"                                # E_MutableFields01.fsx
@@ -592,3 +592,27 @@ module RecordTypes =
             (Error 668, Line 5, Col 24, Line 5, Col 25, "The field 'A' appears multiple times in this record expression or pattern")
             (Error 668, Line 5, Col 31, Line 5, Col 32, "The field 'B' appears multiple times in this record expression or pattern")
         ]
+
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument`` () =
+        Fsx
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedRecord<'a> = { A : int; B : NestedRecord<'a list> }
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument: signature`` () =
+        Fsi
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedRecord<'a> = { A : int; B : NestedRecord<'a list> }
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")

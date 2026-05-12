@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #LetBindings 
-#light
+
 
 // Verify using patter matching inside let bindings
 

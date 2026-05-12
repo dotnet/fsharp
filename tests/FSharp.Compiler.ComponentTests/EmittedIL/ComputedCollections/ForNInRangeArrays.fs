@@ -1,4 +1,4 @@
-﻿let f0 f = [|for n in 1..10 do f (); yield n|]
+let f0 f = [|for n in 1..10 do f (); yield n|]
 let f00 f g = [|for n in 1..10 do f (); g (); yield n|]
 let f000 f = [|for n in 1..10 do f (); yield n; yield n + 1|]
 let f0000 () = [|for n in 1..10 do yield n|]
@@ -42,3 +42,8 @@ let f29 f g = [|let y = f () in let z = g () in for x in 1..2..10 -> x + y + z|]
 let f30 f g = [|let y = f () in g (); for x in 1..2..10 -> x + y|]
 let f31 f g = [|f (); g (); for x in 1..2..10 -> x|]
 let f32 f g = [|f (); let y = g () in for x in 1..2..10 -> x + y|]
+
+// https://github.com/dotnet/fsharp/issues/19156
+let f33 (start : int) (finish : int) f = [|for _ in start..finish -> id id ()|]
+let f34 (start : int64) (finish : int64) f = [|for _ in start..finish -> id id ()|]
+let f35 (start : uint64) (finish : uint64) f = [|for _ in start..finish -> id id ()|]

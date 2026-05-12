@@ -22,13 +22,13 @@ assert (sizeof<TyparFlags> = 4)
 /// Metadata on values (names of arguments etc.) 
 module ValReprInfo = 
 
-    let unnamedTopArg1: ArgReprInfo = { Attribs = []; Name = None; OtherRange = None }
+    let unnamedTopArg1: ArgReprInfo = { Attribs = WellKnownValAttribs.Empty; Name = None; OtherRange = None }
 
     let unnamedTopArg = [unnamedTopArg1]
 
     let unitArgData: ArgReprInfo list list = [[]]
 
-    let unnamedRetVal: ArgReprInfo = { Attribs = []; Name = None; OtherRange = None }
+    let unnamedRetVal: ArgReprInfo = { Attribs = WellKnownValAttribs.Empty; Name = None; OtherRange = None }
 
     let selfMetadata = unnamedTopArg
 
@@ -36,12 +36,12 @@ module ValReprInfo =
 
     let IsEmpty info =
         match info with
-        | ValReprInfo([], [], { Attribs = []; Name = None; OtherRange = None }) -> true
+        | ValReprInfo([], [], retInfo) when retInfo.Attribs.AsList().IsEmpty && retInfo.Name.IsNone && retInfo.OtherRange.IsNone -> true
         | _ -> false
 
     let InferTyparInfo (tps: Typar list) = tps |> List.map (fun tp -> TyparReprInfo(tp.Id, tp.Kind))
 
-    let InferArgReprInfo (v: Val) : ArgReprInfo = { Attribs = []; Name = Some v.Id; OtherRange = None }
+    let InferArgReprInfo (v: Val) : ArgReprInfo = { Attribs = WellKnownValAttribs.Empty; Name = Some v.Id; OtherRange = None }
 
     let InferArgReprInfos (vs: Val list list) = ValReprInfo([], List.mapSquared InferArgReprInfo vs, unnamedRetVal)
 
@@ -197,7 +197,7 @@ let mkTyparTy (tp:Typar) =
 // For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
 // process of type inference.
 let copyTypar clearStaticReq (tp: Typar) = 
-    let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs; typar_is_contravariant = tg.typar_is_contravariant  })
+    let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs; typar_is_contravariant = tg.typar_is_contravariant; typar_declared_name = tg.typar_declared_name })
     let flags = if clearStaticReq then tp.typar_flags.WithStaticReq(TyparStaticReq.None) else tp.typar_flags
     Typar.New { typar_id = tp.typar_id
                 typar_flags = flags
@@ -283,6 +283,7 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
     match nullness with
     | Nullness.Known NullnessInfo.WithoutNull -> ty
+    | Nullness.KnownFromConstructor -> ty
     | Nullness.Variable nv when nv.IsFullySolved && nv.TryEvaluate() = ValueSome NullnessInfo.WithoutNull -> ty
     | _ -> 
     match ty with
@@ -542,14 +543,14 @@ let compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, SyntaxAccess.Unknow
 let taccessPublic = TAccess []
 let compPathInternal = CompPath(ILScopeRef.Local, SyntaxAccess.Internal, [])
 let taccessInternal = TAccess [compPathInternal]
-let taccessPrivate accessPath = let (CompPath(sc,_, paths)) = accessPath in TAccess [CompPath(sc, TypedTree.SyntaxAccess.Private, paths)]
+let taccessPrivate accessPath = let (CompPath(sc,_, paths)) = accessPath in TAccess [CompPath(sc, SyntaxAccess.Private, paths)]
 
 let combineAccess access1 access2 =
     let (TAccess a1) = access1
     let (TAccess a2) = access2
     let combined =
-        if access1 = taccessPublic then updateSyntaxAccessForCompPath (a1@a2) TypedTree.SyntaxAccess.Public
-        elif access1 = taccessInternal then updateSyntaxAccessForCompPath (a1@a2) TypedTree.SyntaxAccess.Internal
+        if access1 = taccessPublic then updateSyntaxAccessForCompPath (a1@a2) SyntaxAccess.Public
+        elif access1 = taccessInternal then updateSyntaxAccessForCompPath (a1@a2) SyntaxAccess.Internal
         else (a1@a2)
     TAccess combined
 

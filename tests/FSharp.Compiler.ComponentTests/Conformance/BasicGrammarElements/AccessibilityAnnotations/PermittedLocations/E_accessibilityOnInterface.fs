@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #Accessibility 
-#light
+
 
 //<Expects status="error">\(17,14-18,12\): error FS0191: abstract slots always have the same visibility as the enclosing type</Expects>
 //<Expects status="error">\(18,14-19,13\): error FS0191: abstract slots always have the same visibility as the enclosing type</Expects>

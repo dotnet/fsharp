@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #ActivePatterns 
-#light
+
 
 // Verify [<Literal>] values can be used with active patterns
 

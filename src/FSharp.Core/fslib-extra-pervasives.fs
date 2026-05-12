@@ -8,13 +8,10 @@ module ExtraTopLevelOperators =
     open System.Collections.Generic
     open System.IO
     open System.Diagnostics
-    open Microsoft.FSharp
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Linq
-    open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Core.CompilerServices
 
     let inline checkNonNullNullArg argName arg =
@@ -29,7 +26,7 @@ module ExtraTopLevelOperators =
 
     [<CompiledName("CreateSet")>]
     let set elements =
-        Collections.Set.ofSeq elements
+        Set.ofSeq elements
 
     let dummyArray = [||]
 
@@ -132,13 +129,13 @@ module ExtraTopLevelOperators =
 
         interface ICollection<KeyValuePair<'Key, 'T>> with
 
-            member _.Add(_) =
+            member _.Add _ =
                 raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
 
             member _.Clear() =
                 raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
 
-            member _.Remove(_) =
+            member _.Remove _ =
                 raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
 
             member _.Contains(KeyValue(k, v)) =
@@ -147,7 +144,7 @@ module ExtraTopLevelOperators =
             member _.CopyTo(arr, i) =
                 let mutable n = 0
 
-                for (KeyValue(k, v)) in t do
+                for KeyValue(k, v) in t do
                     arr.[i + n] <- KeyValuePair<_, _>(getKey k, v)
                     n <- n + 1
 
@@ -163,7 +160,7 @@ module ExtraTopLevelOperators =
             member _.GetEnumerator() =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
-                let kvps = [| for (KeyValue(k, v)) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
+                let kvps = [| for KeyValue(k, v) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
                 kvps.GetEnumerator()
 
         interface System.Collections.IEnumerable with
@@ -171,7 +168,7 @@ module ExtraTopLevelOperators =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
                 let kvps =
-                    [| for (KeyValue(k, v)) in t -> KeyValuePair(getKey k, v) |] :> System.Collections.IEnumerable
+                    [| for KeyValue(k, v) in t -> KeyValuePair(getKey k, v) |] :> System.Collections.IEnumerable
 
                 kvps.GetEnumerator()
 
@@ -187,7 +184,7 @@ module ExtraTopLevelOperators =
         =
         let t = Dictionary comparer
 
-        for (k, v) in l do
+        for k, v in l do
             t.[makeSafeKey k] <- v
 
         DictImpl(t, makeSafeKey, getKey)
@@ -198,7 +195,7 @@ module ExtraTopLevelOperators =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let dictRefType (l: seq<'Key * 'T>) =
-        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (RuntimeHelpers.StructBox) (fun sb -> sb.Value) l
+        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer RuntimeHelpers.StructBox (fun sb -> sb.Value) l
 
     [<CompiledName("CreateDictionary")>]
     let dict (keyValuePairs: seq<'Key * 'T>) : IDictionary<'Key, 'T> =
@@ -360,24 +357,24 @@ type MeasureOne = class end
 
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false)>]
 type TypeProviderAttribute() =
-    inherit System.Attribute()
+    inherit Attribute()
 
 [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple = false)>]
 type TypeProviderAssemblyAttribute(assemblyName: string) =
-    inherit System.Attribute()
+    inherit Attribute()
     new() = TypeProviderAssemblyAttribute(null)
 
     member _.AssemblyName = assemblyName
 
 [<AttributeUsage(AttributeTargets.All, AllowMultiple = false)>]
 type TypeProviderXmlDocAttribute(commentText: string) =
-    inherit System.Attribute()
+    inherit Attribute()
 
     member _.CommentText = commentText
 
 [<AttributeUsage(AttributeTargets.All, AllowMultiple = false)>]
 type TypeProviderDefinitionLocationAttribute() =
-    inherit System.Attribute()
+    inherit Attribute()
     let mutable filePath: string = null
     let mutable line: int = 0
     let mutable column: int = 0
@@ -400,7 +397,7 @@ type TypeProviderDefinitionLocationAttribute() =
                  ||| AttributeTargets.Delegate,
                  AllowMultiple = false)>]
 type TypeProviderEditorHideMethodsAttribute() =
-    inherit System.Attribute()
+    inherit Attribute()
 
 /// <summary>Additional type attribute flags related to provided types</summary>
 type TypeProviderTypeAttributes =
@@ -415,7 +412,7 @@ type TypeProviderConfig
     let mutable temporaryFolder: string = null
     let mutable isInvalidationSupported: bool = false
     let mutable useResolutionFolderAtRuntime: bool = false
-    let mutable systemRuntimeAssemblyVersion: System.Version = null
+    let mutable systemRuntimeAssemblyVersion: Version = null
 
     new(systemRuntimeContainsType) = TypeProviderConfig(systemRuntimeContainsType, getReferencedAssembliesOption = None)
 
@@ -468,10 +465,10 @@ type IProvidedNamespace =
 
     abstract GetTypes: unit -> Type array
 
-    abstract ResolveTypeName: typeName: string -> (Type | null)
+    abstract ResolveTypeName: typeName: string -> Type | null
 
 type ITypeProvider =
-    inherit System.IDisposable
+    inherit IDisposable
 
     abstract GetNamespaces: unit -> IProvidedNamespace array
 
@@ -483,9 +480,9 @@ type ITypeProvider =
     abstract GetInvokerExpression: syntheticMethodBase: MethodBase * parameters: Expr array -> Expr
 
     [<CLIEvent>]
-    abstract Invalidate: IEvent<System.EventHandler, System.EventArgs>
+    abstract Invalidate: IEvent<EventHandler, EventArgs>
 
-    abstract GetGeneratedAssemblyContents: assembly: System.Reflection.Assembly -> byte array
+    abstract GetGeneratedAssemblyContents: assembly: Assembly -> byte array
 
 type ITypeProvider2 =
     abstract GetStaticParametersForMethod: methodWithoutArguments: MethodBase -> ParameterInfo array

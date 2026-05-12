@@ -115,7 +115,7 @@ type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: b
 
     member _.inbox =
         match inboxStore with
-        | null -> inboxStore <- new System.Collections.Generic.List<'Msg>(1)
+        | null -> inboxStore <- new List<'Msg>(1)
         | _ -> ()
 
         inboxStore
@@ -196,7 +196,7 @@ type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: b
                 savedCont <- None
                 action true |> ignore)
 
-    member x.TryScan((f: 'Msg -> (Async<'T>) option), timeout) : Async<'T option> =
+    member x.TryScan(f: 'Msg -> Async<'T> option, timeout) : Async<'T option> =
         let rec scan timeoutAsync (timeoutCts: CancellationTokenSource) =
             async {
                 match x.ScanArrivals f with
@@ -263,7 +263,7 @@ type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: b
                 return Some res
         }
 
-    member x.Scan((f: 'Msg -> (Async<'T>) option), timeout) =
+    member x.Scan(f: 'Msg -> Async<'T> option, timeout) =
         async {
             let! resOpt = x.TryScan(f, timeout)
 
@@ -333,7 +333,7 @@ type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: b
             | Some res -> return res
         }
 
-    interface System.IDisposable with
+    interface IDisposable with
         member _.Dispose() =
             lock syncRoot (fun () ->
                 if isNotNull inboxStore then
@@ -367,9 +367,9 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
     let mailbox =
         new Mailbox<'Msg>(cancellationSupported, isThrowExceptionAfterDisposed)
 
-    let mutable defaultTimeout = Threading.Timeout.Infinite
+    let mutable defaultTimeout = Timeout.Infinite
     let mutable started = false
-    let errorEvent = new Event<Exception>()
+    let errorEvent = Event<Exception>()
 
     new(body, ?cancellationToken: CancellationToken) =
         match cancellationToken with
@@ -394,7 +394,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
     /// marked as started in this method, be sure to subsequently start the agent after calling this method.
     member private x.PrepareToStart() =
         if started then
-            raise (new InvalidOperationException(SR.GetString(SR.mailboxProcessorAlreadyStarted)))
+            raise (InvalidOperationException(SR.GetString(SR.mailboxProcessorAlreadyStarted)))
         else
             started <- true
 
@@ -419,13 +419,13 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
     member _.Post message =
         mailbox.Post message
 
-    member _.TryPostAndReply(buildMessage: (_ -> 'Msg), ?timeout) : 'Reply option =
+    member _.TryPostAndReply(buildMessage: _ -> 'Msg, ?timeout) : 'Reply option =
         let timeout = defaultArg timeout defaultTimeout
         use resultCell = new ResultCell<_>()
 
         let msg =
             buildMessage (
-                new AsyncReplyChannel<_>(fun reply ->
+                AsyncReplyChannel<_>(fun reply ->
                     // Note the ResultCell may have been disposed if the operation
                     // timed out. In this case RegisterResult drops the result on the floor.
                     resultCell.RegisterResult(reply, reuseThread = false) |> ignore)
@@ -445,7 +445,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
 
         let msg =
             buildMessage (
-                new AsyncReplyChannel<_>(fun reply ->
+                AsyncReplyChannel<_>(fun reply ->
                     // Note the ResultCell may have been disposed if the operation
                     // timed out. In this case RegisterResult drops the result on the floor.
                     resultCell.RegisterResult(reply, reuseThread = false) |> ignore)
@@ -454,7 +454,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
         mailbox.Post msg
 
         match timeout with
-        | Threading.Timeout.Infinite when not cancellationSupported ->
+        | Timeout.Infinite when not cancellationSupported ->
             async {
                 let! result = resultCell.AwaitResult_NoDirectCancelOrTimeout
                 return Some result
@@ -478,7 +478,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
         let timeout = defaultArg timeout defaultTimeout
 
         match timeout with
-        | Threading.Timeout.Infinite when not cancellationSupported ->
+        | Timeout.Infinite when not cancellationSupported ->
             // Nothing to dispose, no wait handles used
             let resultCell = new ResultCell<_>()
 
@@ -506,16 +506,16 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
     member _.TryReceive(?timeout) =
         mailbox.TryReceive(timeout = defaultArg timeout defaultTimeout)
 
-    member _.Scan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
+    member _.Scan(scanner: 'Msg -> Async<'T> option, ?timeout) =
         mailbox.Scan(scanner, timeout = defaultArg timeout defaultTimeout)
 
-    member _.TryScan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
+    member _.TryScan(scanner: 'Msg -> Async<'T> option, ?timeout) =
         mailbox.TryScan(scanner, timeout = defaultArg timeout defaultTimeout)
 
     member x.Dispose() =
         (x :> IDisposable).Dispose()
 
-    interface System.IDisposable with
+    interface IDisposable with
         member _.Dispose() =
             (mailbox :> IDisposable).Dispose()
 

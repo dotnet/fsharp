@@ -23,26 +23,26 @@ type public Fsi() as this =
 
     let mutable capturedArguments: string list = [] // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames: string list = [] // list of individual source filenames, to pass to HostObject Compile()
-    let mutable codePage: string MaybeNull = null
+    let mutable codePage: string | null = null
     let mutable commandLineArgs: ITaskItem list = []
     let mutable defineConstants: ITaskItem[] = [||]
-    let mutable disabledWarnings: string MaybeNull = null
-    let mutable dotnetFsiCompilerPath: string MaybeNull = null
+    let mutable disabledWarnings: string | null = null
+    let mutable dotnetFsiCompilerPath: string | null = null
     let mutable fsiExec = false
-    let mutable langVersion: string MaybeNull = null
+    let mutable langVersion: string | null = null
     let mutable noFramework = false
     let mutable optimize = true
-    let mutable otherFlags: string MaybeNull = null
+    let mutable otherFlags: string | null = null
     let mutable preferredUILang = null
     let mutable provideCommandLineArgs = false
     let mutable references: ITaskItem[] = [||]
-    let mutable referencePath: string MaybeNull = null
+    let mutable referencePath: string | null = null
     let mutable skipCompilerExecution = false
     let mutable sources: ITaskItem[] = [||]
     let mutable loadSources: ITaskItem[] = [||]
     let mutable useSources: ITaskItem[] = [||]
     let mutable tailcalls: bool = true
-    let mutable targetProfile: string MaybeNull = null
+    let mutable targetProfile: string | null = null
 
     let mutable toolPath: string =
         let locationOfThisDll =
@@ -56,10 +56,10 @@ type public Fsi() as this =
         | None -> ""
 
     let mutable treatWarningsAsErrors: bool = false
-    let mutable warningsAsErrors: string MaybeNull = null
-    let mutable warningsNotAsErrors: string MaybeNull = null
-    let mutable warningLevel: string MaybeNull = null
-    let mutable vslcid: string MaybeNull = null
+    let mutable warningsAsErrors: string | null = null
+    let mutable warningsNotAsErrors: string | null = null
+    let mutable warningLevel: string | null = null
+    let mutable vslcid: string | null = null
     let mutable utf8output: bool = false
     let mutable useReflectionFreeCodeGen: bool = false
 

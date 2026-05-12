@@ -288,6 +288,16 @@ type BAttribute() =
 
 let a ([<B>] c: int) : int = 0  """)>]
 
+[<InlineDataAttribute("UnitsOfMeasureChanged",
+(*BEFORE*)"""module MyTest
+[<Measure>] type kg
+[<Measure>] type m
+type MyRecord = { Mass: int<kg> }"""
+(*AFTER*),"""module MyTest
+[<Measure>] type kg
+[<Measure>] type m
+type MyRecord = { Mass: int<m> }""")>]
+
 //TODO add a lot more negative tests - in which cases should hash in fact change
 
 [<Theory>]

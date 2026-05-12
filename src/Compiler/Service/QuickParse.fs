@@ -90,6 +90,14 @@ module QuickParse =
                     && (lineStr[index] = '|' || IsIdentifierPartCharacter lineStr[index])
                     ->
                     Some index
+                // Handle optional parameter syntax: if we're on '?' and the next char is an identifier, use the next position
+                | _ when
+                    (index < lineStr.Length)
+                    && lineStr[index] = '?'
+                    && (index + 1 < lineStr.Length)
+                    && IsIdentifierPartCharacter lineStr[index + 1]
+                    ->
+                    Some(index + 1)
                 | _ -> None // not on a word or '.'
 
             let (|Char|_|) p =
@@ -166,13 +174,13 @@ module QuickParse =
                     let r = searchRight p
                     let ident = lineStr.Substring(l, r - l + 1)
 
-                    if ident.IndexOf('|') <> -1 && not (isValidActivePatternName (ident)) then
+                    if ident.IndexOf('|') <> -1 && not (isValidActivePatternName ident) then
                         None
                     else
                         let pos = r + MagicalAdjustmentConstant
                         Some(ident, pos, false))
 
-    let GetCompleteIdentifierIslandImpl (lineStr: string MaybeNull) (index: int) : (string * int * bool) option =
+    let GetCompleteIdentifierIslandImpl (lineStr: string | null) (index: int) : (string * int * bool) option =
         match lineStr with
         | Null -> None
         | NonNull lineStr -> GetCompleteIdentifierIslandImplAux lineStr index
@@ -200,7 +208,7 @@ module QuickParse =
     /// a call to `DeclItemsForNamesAtPosition` for intellisense. This will
     /// allow us to use find the correct qualified items rather than resorting
     /// to the more expensive and less accurate environment lookup.
-    let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (lineStr: string MaybeNull) (index: int) : (string * int * bool) option =
+    let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (lineStr: string | null) (index: int) : (string * int * bool) option =
         if String.IsNullOrEmpty lineStr then
             None
         else
@@ -229,7 +237,7 @@ module QuickParse =
 
             let rec InLeadingIdentifier (pos, right, (prior, residue)) =
                 let PushName () =
-                    ((lineStr.Substring(pos + 1, right - pos - 1)) :: prior), residue
+                    (lineStr.Substring(pos + 1, right - pos - 1) :: prior), residue
 
                 if pos < 0 then
                     PushName()
@@ -242,10 +250,10 @@ module QuickParse =
 
             let rec InName (pos, startResidue, right) =
                 let NameAndResidue () =
-                    [ lineStr.Substring(pos + 1, startResidue - pos - 1) ], (lineStr.Substring(startResidue + 1, right - startResidue))
+                    [ lineStr.Substring(pos + 1, startResidue - pos - 1) ], lineStr.Substring(startResidue + 1, right - startResidue)
 
                 if pos < 0 then
-                    [ lineStr.Substring(pos + 1, startResidue - pos - 1) ], (lineStr.Substring(startResidue + 1, right - startResidue))
+                    [ lineStr.Substring(pos + 1, startResidue - pos - 1) ], lineStr.Substring(startResidue + 1, right - startResidue)
                 elif IsIdentifierPartCharacter pos then
                     InName(pos - 1, startResidue, right)
                 elif IsDot pos then
@@ -266,7 +274,7 @@ module QuickParse =
             let result = InResidue(index, index)
             result
 
-    let GetPartialLongName (lineStr: string MaybeNull, index: int) =
+    let GetPartialLongName (lineStr: string | null, index: int) =
         match lineStr with
         | Null -> defaultName
         | NonNull lineStr -> GetPartialLongNameAux(lineStr, index)
@@ -421,7 +429,7 @@ module QuickParse =
                     QualifyingIdents = plid
                 }
 
-    let GetPartialLongNameEx (lineStr: string MaybeNull, index: int) : PartialLongName =
+    let GetPartialLongNameEx (lineStr: string | null, index: int) : PartialLongName =
         match lineStr with
         | Null -> PartialLongName.Empty(index)
         | NonNull lineStr -> GetPartialLongNameExAux(lineStr, index)

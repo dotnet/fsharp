@@ -23,12 +23,12 @@ ImplFile
                              { LeadingKeyword =
                                 StaticDo ((3,4--3,10), (3,11--3,13))
                                InlineKeyword = None
-                               EqualsRange = None })], true, false, (3,4--3,16))],
-                     (3,4--3,16)), [], None, (2,5--3,16),
-                  { LeadingKeyword = Type (2,0--2,4)
-                    EqualsRange = Some (2,7--2,8)
-                    WithKeyword = None })], (2,0--3,16))], PreXmlDocEmpty, [],
-          None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                               EqualsRange = None })], true, false, (3,4--3,16),
+                         { InKeyword = None })], (3,4--3,16)), [], None,
+                  (2,5--3,16), { LeadingKeyword = Type (2,0--2,4)
+                                 EqualsRange = Some (2,7--2,8)
+                                 WithKeyword = None })], (2,0--3,16))],
+          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

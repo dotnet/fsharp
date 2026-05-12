@@ -4,7 +4,7 @@
 //<Expects status="success">val it: decimal<M1\.Kg> = -2\.0M</Expects>
 //<Expects status="success">val it: float32<M2\.Kg> = 2\.0f</Expects>
 //<Expects status="success">val it: float<M1\.Kg> = 1\.2</Expects>
-#light
+
 
 module M1 =
   [<Measure>] type Kg

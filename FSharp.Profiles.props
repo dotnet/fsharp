@@ -8,7 +8,7 @@
 
   <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.fsproj' and $(TolerateUnusedBindings) != 'true'">
     <WarningsAsErrors>1182;$(WarningsAsErrors)</WarningsAsErrors>
-    <WarnOn>1182;$(WarnOn)</WarnOn>
+    <WarnOn>1182;3879;$(WarnOn)</WarnOn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.fsproj' and $(TolerateUnusedBindings) == 'true'">

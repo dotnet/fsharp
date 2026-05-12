@@ -63,7 +63,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -94,7 +94,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -125,7 +125,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -151,7 +151,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -176,7 +176,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -204,7 +204,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -231,7 +231,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -259,7 +259,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compile
         |> shouldSucceed
@@ -284,7 +284,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compile
         |> shouldSucceed
@@ -308,7 +308,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -335,7 +335,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -367,7 +367,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -405,7 +405,7 @@ let main _ =
     """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -423,7 +423,7 @@ let main _ =
     """
         FSharp fsharpSource2
         |> asExe
-        |> withLangVersion70
+        |> withLangVersion80
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -442,7 +442,7 @@ type RAIOFS() =
 """
         FSharp fsharpSource
         |> asLibrary
-        |> withLangVersion70
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Warning 202, Line 6, Col 7, Line 6, Col 21, "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.")

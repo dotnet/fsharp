@@ -1,5 +1,5 @@
 ﻿// #Globalization 
-#light
+
 
 module ᠠᠡᠢᠣᠤᠥᠦᠧᠨᠩ
     type ᡦᡧᡨᡩᡪᡫᡬᡭᡮᡯ =

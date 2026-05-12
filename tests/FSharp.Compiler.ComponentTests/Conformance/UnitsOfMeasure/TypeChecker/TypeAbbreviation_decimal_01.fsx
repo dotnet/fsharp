@@ -2,7 +2,7 @@
 // Regression tests for FSHARP1.0:3427 and 3423
 // 
 //<Expects status="success"></Expects>
-#light
+
 
 module WithDecimal =
     [<Measure>] type A

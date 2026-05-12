@@ -3,7 +3,7 @@
 module Core_subtype
 #endif
 
-#light
+
 
 let failures = ref []
 

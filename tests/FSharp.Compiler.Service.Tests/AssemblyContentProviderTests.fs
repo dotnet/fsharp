@@ -1,7 +1,6 @@
 module FSharp.Compiler.Service.Tests.AssemblyContentProviderTests
 
 open System
-open Xunit
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common

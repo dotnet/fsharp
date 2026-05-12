@@ -255,33 +255,14 @@ let keywordsWithDescription: (string * string) list =
 
 let keywordLookup = set (List.map fst keywordsWithDescription)
 
-// Some legacy compat operator names are not encode using op_XYZ and this
-// do not carry sufficient information to distinguish between
-//     let (or) x y = x || y
-//     let ``or`` x y = x || y
-//     let (land) x y = x || y
-//     let ``land`` x y = x || y
-// All are deprecated except 'mod'. All except those two get double-backticks
 let IsUnencodedOpName (name: string) =
     match name with
     | "mod" -> true
     | _ -> false
 
-let IsUnencodedLegacyOpName (name: string) =
-    match name with
-    | "or"
-    | "land"
-    | "lor"
-    | "lsl"
-    | "lsr"
-    | "asr"
-    | "lxor" -> true
-    | _ -> false
-
 let IsIdentifierName (name: string) =
     not (keywordLookup.Contains name)
     && not (IsUnencodedOpName name)
-    && not (IsUnencodedLegacyOpName name)
     && let nameLen = name.Length in
 
        nameLen > 0
@@ -429,7 +410,7 @@ let CompileOpName op =
     match standardOpNames.TryGetValue op with
     | true, x -> x
     | false, _ ->
-        if IsUnencodedOpName op || IsUnencodedLegacyOpName op || IsIdentifierName op then
+        if IsUnencodedOpName op || IsIdentifierName op then
             op
         else
             compileCustomOpName op
@@ -525,6 +506,24 @@ let ConvertValLogicalNameToDisplayNameCore opName =
         else
             opName
 
+/// Escape active pattern case names that need backticks for display/signatures.
+/// E.g. |A B| becomes |``A B``|  (only for display, not for name resolution)
+let EscapeActivePatternCases (opName: string) =
+    if IsActivePatternName opName then
+        let inner = opName.[1 .. opName.Length - 2]
+        let cases = inner.Split('|')
+
+        let escapedCases =
+            cases
+            |> Array.map (fun c ->
+                if c = "_" then c
+                elif not (IsIdentifierName c) then "``" + c + "``"
+                else c)
+
+        "|" + (escapedCases |> String.concat "|") + "|"
+    else
+        opName
+
 let DoesIdentifierNeedBackticks (name: string) : bool =
     not (IsUnencodedOpName name)
     && not (IsIdentifierName name)
@@ -534,8 +533,8 @@ let DoesIdentifierNeedBackticks (name: string) : bool =
 let AddBackticksToIdentifierIfNeeded (name: string) : string =
     if
         DoesIdentifierNeedBackticks name
-        && not (name.StartsWithOrdinal("`"))
-        && not (name.EndsWithOrdinal("`"))
+        && not (name.StartsWithOrdinal("``"))
+        && not (name.EndsWithOrdinal("``"))
     then
         "``" + name + "``"
     else
@@ -557,7 +556,7 @@ let ConvertValLogicalNameToDisplayName isBaseVal name =
     if isBaseVal && name = "base" then
         "base"
     elif IsUnencodedOpName name || IsPossibleOpName name || IsActivePatternName name then
-        let nm = ConvertValLogicalNameToDisplayNameCore name
+        let nm = ConvertValLogicalNameToDisplayNameCore name |> EscapeActivePatternCases
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
         if IsPossibleOpName name && (nm = name) then
             AddBackticksToIdentifierIfNeeded nm
@@ -582,7 +581,7 @@ let ConvertValLogicalNameToDisplayLayout isBaseVal nonOpLayout name =
     if isBaseVal && name = "base" then
         nonOpLayout "base"
     elif IsUnencodedOpName name || IsPossibleOpName name || IsActivePatternName name then
-        let nm = ConvertValLogicalNameToDisplayNameCore name
+        let nm = ConvertValLogicalNameToDisplayNameCore name |> EscapeActivePatternCases
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
         if IsPossibleOpName name && (nm = name) then
             ConvertLogicalNameToDisplayLayout nonOpLayout name
@@ -777,8 +776,6 @@ let IsLogicalOpName (logicalName: string) =
 
 let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName =
     match opName with
-    | "&"
-    | "or"
     | "&&"
     | "||" -> Control
     | "<>"
@@ -948,6 +945,17 @@ let splitAroundQuotationWithCount (text: string) (separator: char) (count: int) 
 [<Literal>]
 let FSharpModuleSuffix = "Module"
 
+/// Prefix for union case tester properties (e.g., "get_IsCase" for union case "Case")
+[<Literal>]
+let unionCaseTesterPropertyPrefix = "get_Is"
+
+/// The length of unionCaseTesterPropertyPrefix
+[<Literal>]
+let unionCaseTesterPropertyPrefixLength = 6 // "get_Is".Length
+
+let IsUnionCaseTesterPropertyName (name: string) =
+    name.StartsWithOrdinal(unionCaseTesterPropertyPrefix)
+
 [<Literal>]
 let MangledGlobalName = "`global`"
 
@@ -1096,7 +1104,7 @@ module CustomOperations =
 let unassignedTyparName = "?"
 
 let FormatAndOtherOverloadsString remainingOverloads =
-    FSComp.SR.typeInfoOtherOverloads (remainingOverloads)
+    FSComp.SR.typeInfoOtherOverloads remainingOverloads
 
 let GetLongNameFromString x = SplitNamesForILPath x
 

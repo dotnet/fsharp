@@ -4,7 +4,7 @@
 // when multiple namespaces with multiple modules declared in source file 
 
 
-#light
+
 namespace MyNamespace1
 
 module MyModule1 =

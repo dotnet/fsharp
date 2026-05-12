@@ -26,7 +26,6 @@ usage()
   echo "Test actions:"
   echo "  --testcoreclr                  Run unit tests on .NET Core (short: --test, -t)"
   echo "  --testCompilerComponentTests   Run FSharp.Compiler.ComponentTests on .NET Core"
-  echo "  --testBenchmarks               Build and Run Benchmark suite"
   echo "  --testScripting                Run FSharp.Private.ScriptingTests on .NET Core"
   echo ""
   echo "Advanced settings:"
@@ -40,6 +39,7 @@ usage()
   echo "  --fromVMR                      Set when building from within the VMR"
   echo "  --buildnorealsig               Build product with realsig- (default use realsig+ where necessary)"
   echo "  --tfm                          Override the default target framework"
+  echo "  --warnNotAsError <codes>       Suppress specific warnings from being treated as errors (semi-colon delimited)"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -63,6 +63,7 @@ pack=false
 publish=false
 sign=false
 test_core_clr=false
+test_core_clr_batch=""
 test_compilercomponent_tests=false
 test_benchmarks=false
 test_scripting=false
@@ -78,12 +79,14 @@ source_build=false
 product_build=false
 from_vmr=false
 buildnorealsig=true
-testbatch=""
 properties=""
+warn_not_as_error=""
 docker=false
 args=""
 
-tfm="net10.0" # This needs to be changed every time it's bumped by arcade/us.
+# TFM will be resolved after InitializeDotNetCli ensures the SDK is available.
+# Can be overridden via --tfm argument.
+tfm=""
 
 BuildCategory=""
 BuildMessage=""
@@ -103,11 +106,6 @@ while [[ $# > 0 ]]; do
       ;;
     --configuration|-c)
       configuration=$2
-      args="$args $1"
-      shift
-      ;;
-    --testbatch)
-      testbatch=$2
       args="$args $1"
       shift
       ;;
@@ -146,11 +144,13 @@ while [[ $# > 0 ]]; do
     --testcoreclr|--test|-t)
       test_core_clr=true
       ;;
+    --testcoreclrbatch)
+      test_core_clr=true
+      test_core_clr_batch=$2
+      shift
+      ;;
     --testcompilercomponenttests)
       test_compilercomponent_tests=true
-      ;;
-      --testbenchmarks)
-      test_benchmarks=true
       ;;
     --testscripting)
       test_scripting=true
@@ -187,6 +187,10 @@ while [[ $# > 0 ]]; do
       tfm=$2
       shift
       ;;
+    --warnnotaserror)
+      warn_not_as_error=$2
+      shift
+      ;;
     /p:*)
       properties+=("$1")
       ;;
@@ -208,6 +212,7 @@ function Test() {
   BuildMessage="Error running tests"
   testproject=""
   targetframework=""
+  extraargs=""
   while [[ $# > 0 ]]; do
     opt="$(echo "$1" | awk '{print tolower($0)}')"
     case "$opt" in
@@ -217,6 +222,10 @@ function Test() {
         ;;
       --targetframework)
         targetframework=$2
+        shift
+        ;;
+      --extraargs)
+        extraargs=$2
         shift
         ;;
       *)
@@ -234,18 +243,23 @@ function Test() {
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  testbatchsuffix=""
-    if [[ "$testbatch" != "" ]]; then
-    testbatchsuffix="_batch$testbatch"
-  fi
-  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$testbatchsuffix.xml"
-  args="test \"$testproject\" --no-build -c $configuration -f $targetframework --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration"
+  testresultsdir="$artifacts_dir/TestResults/$configuration"
 
-  if [[ "$testbatch" != "" ]]; then
-    args="$args --filter batch=$testbatch"
+  # MTP requires --solution flag for .sln/.slnx files
+  if [[ "$testproject" == *.sln ]] || [[ "$testproject" == *.slnx ]]; then
+    testtarget="--solution"
+  else
+    testtarget="--project"
   fi
 
-  "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
+  # Xunit XML report via XunitXml.TestLogger with CI-friendly filenames
+  jobname="${SYSTEM_JOBNAME:-local}"
+  xunitlogfilename="{assembly}.{framework}.${jobname}.xml"
+  reportargs="--report-spekt-xunit --report-spekt-xunit-filename $xunitlogfilename"
+
+  args=(test $testtarget "$testproject" --no-build -c "$configuration" -f "$targetframework" $reportargs --results-directory "$testresultsdir" --hangdump --hangdump-timeout 5m --hangdump-type Full $extraargs)
+
+  "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
 }
 
 function BuildSolution {
@@ -261,9 +275,9 @@ function BuildSolution {
     bl="/bl:\"$log_dir/Build.binlog\""
   fi
 
-  local projects="$repo_root/FSharp.sln"
+  local projects="$repo_root/FSharp.slnx"
   if [[ "$product_build" = true ]]; then
-    projects="$repo_root/Microsoft.FSharp.Compiler.sln"
+    projects="$repo_root/src/Microsoft.FSharp.Compiler/Microsoft.FSharp.Compiler.fsproj"
   fi
 
   echo "$projects:"
@@ -309,12 +323,17 @@ function BuildSolution {
     BuildMessage="Error building tools"
     local args=("publish" "$repo_root/proto.proj" "$blrestore" "$bltools" "/p:Configuration=Proto" "/p:DotNetBuild=$product_build" "/p:DotNetBuildSourceOnly=$source_build" "/p:DotNetBuildFromVMR=$from_vmr" ${properties[@]+"${properties[@]}"})
     echo $args
-    "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}"  #$args || exit $?
+    "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
   fi
 
   if [[ "$skip_build" != true ]]; then
     # do real build
     BuildMessage="Error building solution"
+
+    local msbuild_warn_not_as_error=""
+    if [[ "$warn_not_as_error" != "" && "$warn_as_error" == true ]]; then
+      msbuild_warn_not_as_error="/warnNotAsError:$warn_not_as_error"
+    fi
 
     MSBuild $toolset_build_proj \
       $bl \
@@ -335,7 +354,8 @@ function BuildSolution {
       /p:DotNetBuild=$product_build \
       /p:DotNetBuildSourceOnly=$source_build \
       /p:DotNetBuildFromVMR=$from_vmr \
-      ${properties[@]+"${properties[@]}"}
+      ${properties[@]+"${properties[@]}"} \
+      $msbuild_warn_not_as_error
   fi
 }
 
@@ -352,27 +372,50 @@ trap TrapAndReportError EXIT
 
 InitializeDotNetCli $restore
 
+# Resolve product TFM from centralized source of truth if not overridden via --tfm
+if [[ "$tfm" == "" ]]; then
+  tfm=$("$DOTNET_INSTALL_DIR/dotnet" msbuild "$scriptroot/TargetFrameworks.props" -getProperty:FSharpNetCoreProductTargetFramework 2>/dev/null | tr -d '[:space:]')
+fi
+
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=$tfm
-  Test --testproject "$repo_root/tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
+
+  if [[ "$test_core_clr_batch" != "" ]]; then
+    # Run batched: use TestSplit.fsx to get the commands for this batch
+    splitOutput=$("$DOTNET_INSTALL_DIR/dotnet" fsi "$scriptroot/tests/TestSplit.fsx" "$test_core_clr_batch" coreclr)
+    fsi_exit=$?
+    if [[ $fsi_exit -ne 0 ]]; then
+      echo "TestSplit.fsx failed with exit code $fsi_exit"
+      ExitWithExitCode 1
+    fi
+    matchCount=0
+    while IFS= read -r line; do
+      [[ "$line" =~ ^dotnet\ test ]] || continue
+      # Extract project path and extra filter args from each line
+      project=$(echo "$line" | sed 's/^dotnet test //' | sed 's/ --no-build.*//')
+      filterargs=$(echo "$line" | sed 's/^dotnet test [^ ]* --no-build -c Release *//')
+      Test --testproject "$repo_root/$project" --targetframework $coreclrtestframework --extraargs "$filterargs"
+      matchCount=$((matchCount + 1))
+    done <<< "$splitOutput"
+    if [[ $matchCount -eq 0 ]]; then
+      echo "No test commands parsed from TestSplit.fsx output"
+      ExitWithExitCode 1
+    fi
+  else
+    # Run all tests without batching
+    Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
+    Test --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
+  fi
 fi
 
 if [[ "$test_compilercomponent_tests" == true ]]; then
   coreclrtestframework=$tfm
   Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
-fi
-
-if [[ "$test_benchmarks" == true ]]; then
-  pushd "$repo_root/tests/benchmarks"
-  ./SmokeTestBenchmarks.sh
-  popd
 fi
 
 if [[ "$test_scripting" == true ]]; then

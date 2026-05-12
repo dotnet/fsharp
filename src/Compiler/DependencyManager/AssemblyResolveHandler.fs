@@ -96,11 +96,11 @@ type AssemblyResolveHandlerDeskTop(assemblyProbingPaths: AssemblyResolutionProbe
     let handler =
         ResolveEventHandler(fun _ (args: ResolveEventArgs) -> resolveAssemblyNET (AssemblyName(args.Name)))
 
-    do AppDomain.CurrentDomain.add_AssemblyResolve (handler)
+    do AppDomain.CurrentDomain.add_AssemblyResolve handler
 
     interface IDisposable with
         member _x.Dispose() =
-            AppDomain.CurrentDomain.remove_AssemblyResolve (handler)
+            AppDomain.CurrentDomain.remove_AssemblyResolve handler
 
 type AssemblyResolveHandler internal (assemblyProbingPaths: AssemblyResolutionProbe option) =
 

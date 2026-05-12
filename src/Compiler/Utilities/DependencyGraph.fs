@@ -329,7 +329,7 @@ type GraphExtensions =
     static member Unpack(node: 'NodeValue, unpacker) =
         match unpacker node with
         | Some value -> value
-        | None -> failwith $"Expected {unpacker} but got: {node}"
+        | None -> failwith $"Expected unpacker to match but got: {node}"
 
     [<Extension>]
     static member UnpackOne(dependencies: 'NodeValue seq, unpacker: 'NodeValue -> 'UnpackedDependency option) =
@@ -337,22 +337,22 @@ type GraphExtensions =
         |> Seq.tryExactlyOne
         |> Option.bind unpacker
         |> Option.defaultWith (fun () ->
-            failwith $"Expected exactly one dependency matching {unpacker} but got: %A{dependencies |> Seq.toArray}")
+            failwith $"Expected exactly one dependency matching unpacker but got: %A{dependencies |> Seq.toArray}")
 
     [<Extension>]
     static member UnpackMany(dependencies: 'NodeValue seq, unpacker) =
         let results = dependencies |> Seq.choose unpacker
 
         if dependencies |> Seq.length <> (results |> Seq.length) then
-            failwith $"Expected all dependencies to match {unpacker} but got: %A{dependencies |> Seq.toArray}"
+            failwith $"Expected all dependencies to match unpacker but got: %A{dependencies |> Seq.toArray}"
 
         results
 
     [<Extension>]
     static member UnpackOneMany(dependencies: 'NodeValue seq, oneUnpacker, manyUnpacker) =
         let mutable oneResult = None
-        let manyResult = new ResizeArray<_>()
-        let extras = new ResizeArray<_>()
+        let manyResult = ResizeArray<_>()
+        let extras = ResizeArray<_>()
 
         for dependency in dependencies do
             match oneUnpacker dependency, manyUnpacker dependency with
@@ -361,7 +361,7 @@ type GraphExtensions =
             | None, None -> extras.Add dependency |> ignore
 
         match oneResult with
-        | None -> failwith $"Expected exactly one dependency matching {oneUnpacker} but didn't find any"
+        | None -> failwith $"Expected exactly one dependency matching oneUnpacker but didn't find any"
         | Some head ->
             if extras.Count > 0 then
                 failwith $"Found extra dependencies: %A{extras.ToArray()}"

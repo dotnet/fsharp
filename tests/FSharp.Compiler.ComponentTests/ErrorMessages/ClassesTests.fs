@@ -181,7 +181,7 @@ type C() =
     override this.M4() = ()
     member this.M5() = ()
         """
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -216,7 +216,7 @@ type B() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         
@@ -305,7 +305,7 @@ type B() =
     member this.M4() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -355,44 +355,6 @@ type C() =
         ]
         
     [<Fact>]
-    let ``Virtual member was not found that corresponds to this override nested base class with lang version70`` () =
-        let CSLib =
-            CSharp """
-public class A
-{
-    public virtual void M1() { }
-    public virtual void M2() { }
-    public virtual void M3() { }
-    public virtual void M4() { }
-}
-
-public class B : A
-{
-    public override void M1() { }
-    public void M2() { }
-    public new void M3() { }
-    public new virtual void M4() { }
-}
-        """ |> withName "CSLib"
-
-        let app =
-            FSharp """
-module ClassTests
-type C() =
-    inherit B()
-    
-    override this.M1() = ()
-    override this.M2() = () // error expected
-    override this.M3() = () // error expected
-    override this.M4() = ()
-    member this.M5() = ()
-        """ |> withReferences [CSLib]
-        app
-        |> withLangVersion70
-        |> compile
-        |> shouldSucceed
-
-    [<Fact>]
     let ``Virtual member was not found that corresponds to this override nested 2 base class with lang preview`` () =
         let CSLib =
             CSharp """
@@ -431,42 +393,6 @@ type C() =
             (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 8, Col 19, Line 8, Col 21, "No abstract or interface member was found that corresponds to this override")
         ]
-        
-    [<Fact>]
-    let ``Virtual member was not found that corresponds to this override nested 2 base classes with lang version70`` () =
-        let CSLib =
-            CSharp """
-public class A
-{
-    public virtual void M1() { }
-    public virtual void M2() { }
-    public virtual void M3() { }
-    public virtual void M4() { }
-}
-
-public class B : A
-{
-    public void M2() { }
-    public new void M3() { }
-}
-        """ |> withName "CSLib"
-
-        let app =
-            FSharp """
-module ClassTests
-type C() =
-    inherit B()
-    
-    override this.M1() = ()
-    override this.M2() = () // error is expected
-    override this.M3() = () // error is expected
-    override this.M4() = ()
-    member this.M5() = ()
-        """ |> withReferences [CSLib]
-        app
-        |> withLangVersion70
-        |> compile
-        |> shouldSucceed
         
     [<Fact>]
     let ``Virtual member was not found that corresponds to this override nested 2 base classes and mixed methods with lang preview`` () =
@@ -536,7 +462,7 @@ type C() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersion70
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [

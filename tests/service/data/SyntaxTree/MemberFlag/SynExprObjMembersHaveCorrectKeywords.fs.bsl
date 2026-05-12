@@ -104,8 +104,9 @@ ImplFile
                      (3,4--7,34)), (2,4--2,7), Yes (2,0--7,34),
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
-                    EqualsRange = Some (2,8--2,9) })], (2,0--7,34))],
-          PreXmlDocEmpty, [], None, (2,0--8,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                    EqualsRange = Some (2,8--2,9) })], (2,0--7,34),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (2,0--8,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

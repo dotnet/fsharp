@@ -1,5 +1,5 @@
 // #Conformance #UnitsOfMeasure 
-#light
+
 
 [<Measure>] type kg
 let mass = 2.0<kg>

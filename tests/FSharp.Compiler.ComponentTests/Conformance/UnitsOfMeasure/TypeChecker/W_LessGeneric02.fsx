@@ -1,5 +1,5 @@
 // #Regression #Conformance #UnitsOfMeasure #TypeInference #TypeConstraints 
-#light
+
 
 // Regression test for FSharp1.0:4036 - acos should force its argument to be dimensionless (also asin etc.)
 //<Expects id="FS0464" status="warning" span="(9,18)">This code is less generic than indicated by its annotations\. A unit-of-measure specified using '_' has been determined to be '1', i\.e\. dimensionless</Expects>

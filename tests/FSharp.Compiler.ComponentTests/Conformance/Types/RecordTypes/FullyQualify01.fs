@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Records 
-#light
+
 
 // Verify the ability to fully qualify record fields
 

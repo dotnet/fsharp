@@ -4,7 +4,7 @@
 // - The library file is designed so that it gets compiled to slightly different assemblies
 // - This file references both assemblies and should compile without problems
 //<Expects status="success"></Expects>
-#light
+
 
 
 let a = N.M.á.M()

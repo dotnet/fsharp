@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- CRITICAL: Prevent MSBuild from crawling to parent Directory.Build files -->
+  <PropertyGroup>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    
+    <!-- Ensure output goes to local bin directory, not repo artifacts -->
+    <BaseOutputPath>bin\</BaseOutputPath>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+
+  <!-- Import UseLocalCompiler when testing with local compiler -->
+  <!-- Note: This is imported here after SDK to ensure it can override SDK F# targets -->
+  <Import Project="../../../../UseLocalCompiler.Directory.Build.props" Condition="'$(LoadLocalFSharpBuild)' == 'True'" />
+
+  <ItemGroup>
+    <Compile Include="AppBuildInfo.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference the library as a NuGet package instead of a project reference -->
+    <!-- This allows testing cross-compiler scenarios where lib and app use different compilers -->
+    <!-- Use wildcard version to always get latest from local feed -->
+    <PackageReference Include="CompilerCompatLib" Version="1.0.*" />
+  </ItemGroup>
+
+  <Target Name="GenerateAppBuildInfo" BeforeTargets="BeforeCompile">
+    <PropertyGroup>
+      <!-- Convert MSBuild boolean property to F# boolean literal -->
+      <IsLocalBuildValue Condition="'$(LoadLocalFSharpBuild)' == 'True'">true</IsLocalBuildValue>
+      <IsLocalBuildValue Condition="'$(LoadLocalFSharpBuild)' != 'True'">false</IsLocalBuildValue>
+      <CleanDotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' != ''">$(DotnetFscCompilerPath.Replace('&quot;', ''))</CleanDotnetFscCompilerPath>
+      <CleanDotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">N/A</CleanDotnetFscCompilerPath>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="AppBuildInfo.fs"
+      Overwrite="true"
+      Lines="namespace CompilerCompatApp
+module AppBuildInfo =
+    let sdkVersion = &quot;$(NETCoreSdkVersion)&quot;
+    let fsharpCompilerPath = &quot;$(FscToolPath)\$(FscToolExe)&quot;
+    let dotnetFscCompilerPath = &quot;$(CleanDotnetFscCompilerPath)&quot;
+    let isLocalBuild = $(IsLocalBuildValue)" />
+  </Target>
+
+</Project>

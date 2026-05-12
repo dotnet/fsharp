@@ -3,7 +3,7 @@
 // Sample from spec - using #light (but with incorrect indentation)
 // Q: Why this warning is emitted twice?
 
-#light
+
 
 (* extra space *) type Message = 
 | Result of string

@@ -129,7 +129,6 @@ printfn ""
         let lexargs =
             mkLexargs (
                 [],
-                IndentationAwareSyntaxStatus(true, false),
                 LexResourceManager(),
                 [],
                 DiscardErrorsLogger,

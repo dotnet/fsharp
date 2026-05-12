@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #Unions 
-#light
+
 
 // Test that when there are two potential matches, they are matched in the order they are defined.
 type Foo = A | B | C | D

@@ -2,7 +2,7 @@
 // By default, Union types implement IComparable
 //<Expects status="success"></Expects>
  
-#light
+
 
 type I = | A
          | B

@@ -101,12 +101,6 @@ stdin(586,20): warning FS0086: The name '(:=)' should not be used as a member na
 stdin(590,20): warning FS1172: Infix operator member '&' has no arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...
 
 
-      static member (&)              = "AMP"
-  -------------------^
-
-stdin(590,20): warning FS0086: The name '(&)' should not be used as a member name. If defining a static member for use from other CLI languages then use the name 'op_Amp' instead.
-
-
       static member (&^)             = "AMP_AMP"
   -------------------^^
 

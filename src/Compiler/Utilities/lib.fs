@@ -25,7 +25,7 @@ let isEnvVarSet s =
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-let dispose (x: IDisposable MaybeNull) =
+let dispose (x: IDisposable | null) =
     match x with
     | Null -> ()
     | NonNull x -> x.Dispose()
@@ -403,7 +403,7 @@ type DisposablesTracker() =
     let items = Stack<IDisposable>()
 
     /// Register some items to dispose
-    member _.Register (i:#IDisposable MaybeNull) = 
+    member _.Register (i:#IDisposable | null) = 
         match box i with
         | null -> ()
         | _ -> items.Push (!!i)
@@ -473,3 +473,15 @@ module WeakMap =
         // Cached factory to avoid allocating a new lambda per lookup.
         let factory = ConditionalWeakTable.CreateValueCallback(fun k -> valueFactory k)
         fun (key: 'Key when 'Key: not null) -> table.GetValue(key, factory)
+
+    /// Like getOrCreate, but only cache the value if it satisfies the given predicate.
+    let cacheConditionally shouldCache valueFactory =
+        let table = ConditionalWeakTable<_, _>()
+        fun (key: 'Key when 'Key: not null) ->
+            match table.TryGetValue key with
+            | true, value -> value
+            | false, _ ->
+                let value = valueFactory key
+                if shouldCache value then 
+                    try table.Add(key, value) with _ -> ()
+                value

@@ -12,7 +12,7 @@ open FSharp.Test.Compiler
 module OpenTypeDeclarationTests =
 
     [<Literal>]
-    let targetVersion = "5.0"
+    let targetVersion = "8.0"
 
     let baseModule = """
 module Core_OpenStaticClasses
@@ -35,127 +35,56 @@ type NotAllowedToOpen() =
 """
 
     [<Fact>]
-    let ``OpenSystemMathOnce - langversion:4.6`` () =
-        Fsx (baseModule + """
-module OpenSystemMathOnce =
-
-               open type System.Math
-               let x = Min(1.0, 2.0)""")
-        |> withLangVersion46
-        |> typecheck
-        |> withDiagnostics
-            [
-                (Error 3350, Line 22, Col 16, Line 22, Col 37, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (Error 39, Line 23, Col 24, Line 23, Col 27, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-            ]
-        |> ignore
-
-    [<Fact>]
-    let ``OpenSystemMathOnce - langversion:5.0`` () =
+    let ``OpenSystemMathOnce - langversion:8.0`` () =
         Fsx (baseModule + """
 module OpenSystemMathOnce =
 
                        open type System.Math
                        let x = Min(1.0, 2.0)""")
-         |> withLangVersion50
+         |> withLangVersion80
          |> typecheck
          |> shouldSucceed
          |> ignore
 
     [<Fact>]
-    let ``OpenSystemMathTwice - langversion:4.6`` () =
-        Fsx (baseModule + """
-module OpenSystemMathTwice = 
-
-    open type System.Math
-    let x = Min(1.0, 2.0)
-
-    open type System.Math
-    let x2 = Min(2.0, 1.0)""")
-        |> withLangVersion46
-        |> typecheck
-        |> withDiagnostics
-            [
-                (Error 3350, Line 22, Col 5, Line 22, Col 26, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (Error 39, Line 23, Col 13, Line 23, Col 16, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-                (Error 3350, Line 25, Col 5, Line 25, Col 26, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (Error 39, Line 26, Col 14, Line 26, Col 17, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-            ]
-        |> ignore
-
-    [<Fact>]
-    let ``OpenSystemMathTwice - langversion:50`` () =
+    let ``OpenSystemMathTwice - langversion:80`` () =
         Fsx (baseModule + """
 module OpenSystemMathOnce =
 
                    open type System.Math
                    let x = Min(1.0, 2.0)""")
-        |> withLangVersion50
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<Fact>]
-    let ``OpenMyMathOnce - langversion:4.6`` () =
+    let ``OpenMyMathOnce - langversion:8.0`` () =
         Fsx (baseModule + """
 module OpenMyMathOnce = 
 
     open type MyMath
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
-        |> withLangVersion46
-        |> typecheck
-        |> withDiagnostics
-            [
-                (Error 3350, Line 22, Col 5, Line 22, Col 21, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (Error 39, Line 23, Col 13, Line 23, Col 16, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-                (Error 39, Line 24, Col 14, Line 24, Col 17, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-            ]
-        |> ignore
-
-    [<Fact>]
-    let ``OpenMyMathOnce - langversion:5.0`` () =
-        Fsx (baseModule + """
-module OpenMyMathOnce = 
-
-    open type MyMath
-    let x = Min(1.0, 2.0)
-    let x2 = Min(1, 2)""")
-        |> withLangVersion50
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<Fact>]
-    let ``DontOpenAutoMath - langversion:4.6`` () =
+    let ``DontOpenAutoMath - langversion:8.0`` () =
         Fsx (baseModule + """
 module DontOpenAutoMath = 
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-        |> withLangVersion46
-        |> typecheck
-        |> withDiagnostics
-            [
-                (Error 39, Line 22, Col 13, Line 22, Col 20, "The value or constructor 'AutoMin' is not defined.")
-                (Error 39, Line 23, Col 14, Line 23, Col 21, "The value or constructor 'AutoMin' is not defined.")
-            ]
-        |> ignore
-
-    [<Fact>]
-    let ``DontOpenAutoMath - langversion:5.0`` () =
-        Fsx (baseModule + """
-module DontOpenAutoMath = 
-
-    let x = AutoMin(1.0, 2.0)
-    let x2 = AutoMin(1, 2)""")
-        |> withLangVersion50
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<Fact>]
-    let ``OpenAutoMath - langversion:4.6`` () =
+    let ``OpenAutoMath - langversion:8.0`` () =
         Fsx (baseModule + """
 module OpenAutoMath = 
     open type AutoOpenMyMath
@@ -163,38 +92,19 @@ module OpenAutoMath =
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-        |> withLangVersion46
-        |> typecheck
-        |> withDiagnostics
-            [
-                (Error 3350, Line 21, Col 5, Line 21, Col 29, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (Error 39, Line 24, Col 13, Line 24, Col 20, "The value or constructor 'AutoMin' is not defined.")
-                (Error 39, Line 25, Col 14, Line 25, Col 21, "The value or constructor 'AutoMin' is not defined.")
-            ]
-        |> ignore
-
-    [<Fact>]
-    let ``OpenAutoMath - langversion:5.0`` () =
-        Fsx (baseModule + """
-module OpenAutoMath = 
-    open type AutoOpenMyMath
-    //open type NotAllowedToOpen
-
-    let x = AutoMin(1.0, 2.0)
-    let x2 = AutoMin(1, 2)""")
-        |> withLangVersion50
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<Fact>]
-    let ``OpenAccessibleFields - langversion:5.0`` () =
+    let ``OpenAccessibleFields - langversion:8.0`` () =
         Fsx (baseModule + """
 module OpenAFieldFromMath =
     open type System.Math
     
     let pi = PI""")
-        |> withLangVersion50
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -235,7 +145,7 @@ module Test =
     let y = NestedTest<int>()
     let a = x.A()
     let b = y.B()"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -273,7 +183,7 @@ namespace FSharpTest
 open System
 type Abbrev = CSharpTest.Test
 open type Abbrev.NestedTest"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -311,7 +221,7 @@ namespace FSharpTest
 open System
 type Abbrev = CSharpTest.Test
 open type Abbrev"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -344,7 +254,7 @@ open type CSharpTest.Test.NestedTest
 
 module Test =
     let x = A()"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -415,7 +325,7 @@ module Test2 =
 
     let y2 : NestedTest<int> = new NestedTest<int>()
     let y2a : byte = y2.A()"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -430,7 +340,7 @@ open type System.Collections.Generic.List<int>
 
 module Test =
     let e2 = new Enumerator()"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> ignore
@@ -534,7 +444,7 @@ module Test4 =
 
     let d : NestedNestedTest<int> = NestedNestedTest<int>()
     let dd : int = d.D()"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -633,7 +543,7 @@ module Test3 =
 
     let r3 : int list = cc.C()
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -651,7 +561,7 @@ type kg
 
 open type kg
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -677,7 +587,7 @@ type vec3<[<Measure>] 'Measure> = Vector3
 
 open type vec3<kg>
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> ignore
@@ -709,7 +619,7 @@ module Test =
     let y : float<kg> = GetY(Unchecked.defaultof<_>)
 
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> ignore
@@ -750,7 +660,7 @@ module Test =
 
     let w : float = GetW(Unchecked.defaultof<_>)
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> ignore
@@ -782,9 +692,9 @@ module Test =
 
     let x : float<g> = GetX(Unchecked.defaultof<_>)
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
-        |> withErrorCode 1
+        |> withErrorCode 193
         |> ignore
 
     [<Fact>]
@@ -794,7 +704,7 @@ namespace FSharpTest
 
 open type (int * int)
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -809,7 +719,7 @@ namespace FSharpTest
 
 open type struct (int * int)
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -824,7 +734,7 @@ namespace FSharpTest
 
 open type (int -> int)
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -839,7 +749,7 @@ namespace FSharpTest
 
 open type {| x: int |}
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -854,7 +764,7 @@ namespace FSharpTest
 
 open type struct {| x: int |}
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -873,7 +783,7 @@ open System
 
 open type Tuple<int, int>
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -892,7 +802,7 @@ open System
 
 open type ValueTuple<int, int>
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -909,7 +819,7 @@ namespace FSharpTest
 
 open type FSharpFunc<int, int>
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -933,7 +843,7 @@ module Test =
     let x = EnumCase1
     let y = EnumCase2
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> ignore
@@ -962,7 +872,7 @@ module Test =
     let x = CSharpEnumCase1
     let y = CSharpEnumCase2
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> withReferences [csharp]
         |> compile
         |> ignore
@@ -988,7 +898,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> ignore
@@ -1014,7 +924,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1037,6 +947,7 @@ module Test2 =
         match x with
         | UCase1 x -> x
         """
+        |> withLangVersion80
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1060,7 +971,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> ignore
@@ -1090,7 +1001,7 @@ module Test3 =
 
     let y = M()
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1120,6 +1031,7 @@ module Test3 =
         match x with
         | { X = x } -> x
         """
+        |> withLangVersion80
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1143,7 +1055,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withErrorCode 39
         |> ignore
@@ -1172,7 +1084,7 @@ module Test2 =
         M(1)
         M(2.0)
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> ignore
@@ -1201,7 +1113,7 @@ module Test2 =
         M(1)
         M(2.0)
         """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withErrorCodes [1;1]
         |> ignore
@@ -1231,7 +1143,7 @@ open CSharpTest.Test
 
 module Test =
     let x = A()"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> withReferences [csharp]
         |> compile
         |> withDiagnostics
@@ -1247,7 +1159,7 @@ module Test =
 namespace FSharpTest
 
 open type System"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -1261,7 +1173,7 @@ open type System"""
 namespace FSharpTest
 
 open type FSharp.Core.Option"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -1277,7 +1189,7 @@ namespace FSharpTest
 open type byref<int>
 open type inref<int>
 open type outref<int>"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -1320,7 +1232,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:8.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MPM2ExtP2Ext")
 
@@ -1355,7 +1267,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:8.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MP")
 
@@ -1393,7 +1305,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:8.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MExtP")
 
@@ -1423,7 +1335,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:8.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "M")
 
@@ -1434,7 +1346,7 @@ open type System.Math
 
 let x = Equals(2.0, 3.0)
             """
-        |> withLangVersion50
+        |> withLangVersion80
         |> compile
         |> withDiagnostics
             [
@@ -1460,7 +1372,7 @@ open type TestExtensions.IntExtensions
 let main _ =
     Test(1)
     0"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> asExe
         |> compile
         |> withDiagnostics
@@ -1473,6 +1385,10 @@ let main _ =
         |> ignore
 
     [<Fact>]
+    // NOTE: With langversion 8.0 and the CSharpExtensionAttributeNotRequired feature,
+    // extension methods with [<Extension>] attribute on the method (but not the type)
+    // are treated as true C# extension methods and are NOT accessible via open type.
+    // This is the correct behavior - they should be used as extension methods, not static calls.
     let ``Opened types do allow unqualified access to C#-style extension methods if type has no [<Extension>] attribute`` () =
         FSharp """
 open System.Runtime.CompilerServices
@@ -1489,10 +1405,12 @@ open type TestExtensions.IntExtensions
 let main _ =
     Test(1)
     0"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> asExe
         |> compile
-        |> shouldSucceed
+        |> withDiagnostics [
+            (Error 39, Line 14, Col 5, Line 14, Col 9, "The value or constructor 'Test' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Text" + System.Environment.NewLine + "   TestExtensions")
+        ]
         |> ignore
 
     [<Fact>]
@@ -1512,7 +1430,7 @@ open type TestExtensions.IntExtensions
 let main _ =
     Test(1)
     0"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1537,7 +1455,7 @@ let main _ =
     let x = 1
     x.Test()
     0"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1556,7 +1474,7 @@ open type A
 let main _ =
     let _x = 1 + 1
     0"""
-        |> withLangVersion50
+        |> withLangVersion80
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1685,7 +1603,7 @@ let x2: int = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:8.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -1811,7 +1729,7 @@ let x2: int = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:8.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -1961,7 +1879,7 @@ let x2: string = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:8.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2120,7 +2038,7 @@ let x2: float32 = X()
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:8.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2161,7 +2079,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:8.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2203,7 +2121,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl], name = "Test")
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:8.0"|], cmplRefs = [csCmpl], name = "Test")
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2242,7 +2160,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:8.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpDiagnosticSeverity.Error, 39, (9, 5, 9, 6), "The value or constructor 'M' is not defined.")
@@ -2262,7 +2180,7 @@ let main _ =
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> ignoreWarnings
-            |> withLangVersion50
+            |> withLangVersion80
 
         let provided =
             Fsx (sprintf """
@@ -2270,7 +2188,7 @@ let main _ =
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> ignoreWarnings
-            |> withLangVersion50
+            |> withLangVersion80
 
         let test =
             Fsx """
@@ -2288,7 +2206,7 @@ if StaticProperty1 <> "You got a static property" then
             """
             |> asExe
             |> ignoreWarnings
-            |> withLangVersion50
+            |> withLangVersion80
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2304,7 +2222,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> ignoreWarnings
-            |> withLangVersion50
+            |> withLangVersion80
 
         let provided =
             Fsx (sprintf """
@@ -2312,7 +2230,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> ignoreWarnings
-            |> withLangVersion50
+            |> withLangVersion80
 
         let test =
             Fsx """
@@ -2328,7 +2246,7 @@ if StaticProperty1 <> "You got a static property" then
             """
             |> asExe
             |> ignoreWarnings
-            |> withLangVersion50
+            |> withLangVersion80
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2361,7 +2279,7 @@ if StaticProperty1 <> "You got a static property" then
             """
             |> asExe
             |> ignoreWarnings
-            |> withLangVersion50
+            |> withLangVersion80
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2394,7 +2312,7 @@ open type TheOuterType
 let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """
             |> asExe
-            |> withLangVersion50
+            |> withLangVersion80
             |> withReferences [provider;provided]
             |> ignoreWarnings
 

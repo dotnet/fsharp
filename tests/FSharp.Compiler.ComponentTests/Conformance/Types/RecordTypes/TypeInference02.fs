@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Records 
-#light
+
 
 // Verify no errors for type inference with ambiguous types
 // and type annotations.

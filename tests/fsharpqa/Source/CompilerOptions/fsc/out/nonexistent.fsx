@@ -1,1 +1,0 @@
-(if System.IO.File.Exists(fsi.CommandLineArgs.[1]) then 1 else 0) |> exit

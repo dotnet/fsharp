@@ -1,5 +1,5 @@
 // #Regression #Conformance #UnitsOfMeasure #ObjectOrientedTypes 
-#light 
+
 
 // Regression for FSB-3570
 // ICE when type parameters and units-of-measure are mixed in the same hierarchy

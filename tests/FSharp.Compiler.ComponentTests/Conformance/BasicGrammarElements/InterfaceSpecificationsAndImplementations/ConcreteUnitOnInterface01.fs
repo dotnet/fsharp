@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #InterfacesAndImplementations 
-#light
+
 
 // FS1 2504, Generic interface instantiated with unit
 

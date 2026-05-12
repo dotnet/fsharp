@@ -4,7 +4,7 @@
 module Core_printf
 #endif
 
-#light
+
 
 open Printf
 

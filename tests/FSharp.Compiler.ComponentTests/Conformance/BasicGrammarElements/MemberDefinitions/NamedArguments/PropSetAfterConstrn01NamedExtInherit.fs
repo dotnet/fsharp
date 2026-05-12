@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
-#light
+
 
 module GenericInheritedClass2 =
     type R =

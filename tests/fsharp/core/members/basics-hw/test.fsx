@@ -1,6 +1,6 @@
 // #Regression #Conformance #SignatureFiles #Classes #ObjectConstructors #ObjectOrientedTypes #Fields #MemberDefinitions #MethodsAndProperties #Unions #InterfacesAndImplementations #Events #Overloading #Recursion #Regression 
 
-#light
+
 
 #if TESTS_AS_APP
 module Core_members_basics

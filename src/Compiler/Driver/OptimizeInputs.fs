@@ -512,12 +512,11 @@ let ApplyAllOptimizations
     let results, optEnvFirstLoop =
         match tcConfig.optSettings.processingMode with
         // Parallel optimization breaks determinism - turn it off in deterministic builds.
-        | Optimizer.OptimizationProcessingMode.Parallel when (not tcConfig.deterministic) ->
+        | Optimizer.OptimizationProcessingMode.Parallel ->
             let results, optEnvFirstPhase =
                 ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
 
             results |> Array.toList, optEnvFirstPhase
-        | Optimizer.OptimizationProcessingMode.Parallel
         | Optimizer.OptimizationProcessingMode.Sequential -> optimizeFilesSequentially optEnv phases implFiles
 
 #if DEBUG
@@ -578,7 +577,7 @@ let GenerateIlxCode
             isInteractive = tcConfig.isInteractive
             isInteractiveItExpr = isInteractiveItExpr
             alwaysCallVirt = tcConfig.alwaysCallVirt
-            parallelIlxGenEnabled = tcConfig.parallelIlxGen && not tcConfig.deterministic
+            parallelIlxGenEnabled = tcConfig.parallelIlxGen
         }
 
     ilxGenerator.GenerateCode(ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)

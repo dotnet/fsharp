@@ -1,5 +1,5 @@
 // #NoMono #NoMT #CodeGen #EmittedIL   
-#light
+
 
 type C(x:int,y:int) = 
     member this.X = x

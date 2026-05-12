@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Modules 
-#light
+
 
 module A
 

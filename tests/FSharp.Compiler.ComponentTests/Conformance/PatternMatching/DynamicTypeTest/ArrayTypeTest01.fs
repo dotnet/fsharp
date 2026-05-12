@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #TypeTests 
-#light
+
 
 // Verify ability to specify an integer array in a dynamic type test
 

@@ -58,7 +58,7 @@ type public FSharpImplementationFileDeclaration =
     | InitAction of action: FSharpExpr
 
 /// Represents a checked and reduced expression, as seen by the F# language.  The active patterns
-/// in 'FSharp.Compiler.SourceCodeServices' can be used to analyze information about the expression.
+/// in 'FSharp.Compiler.Symbols.FSharpExprPatterns' can be used to analyze information about the expression.
 ///
 /// Pattern matching is reduced to decision trees and conditional tests. Some other
 /// constructs may be represented in reduced form.

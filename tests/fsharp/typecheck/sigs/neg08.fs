@@ -8,7 +8,7 @@ let topEnvTable1 = new System.Collections.Generic.List()
   
 let topEnvTable2 = new System.Collections.Generic.List<int,string>()
 
-#light 
+
 
 // Check non-generalization of escaping implicit ctor tyvars
 let x2 = ref []

@@ -6,7 +6,6 @@ open System
 open System.Collections
 open System.Collections.Generic
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Collections
 
 module internal IEnumerator =
     val noReset: unit -> 'a
@@ -18,7 +17,7 @@ module internal IEnumerator =
 
     [<Sealed>]
     type EmptyEnumerator<'T> =
-        interface System.IDisposable
+        interface IDisposable
         interface IEnumerator
         interface IEnumerator<'T>
         new: unit -> EmptyEnumerator<'T>
@@ -34,7 +33,7 @@ module internal IEnumerator =
 
     [<SealedAttribute>]
     type Singleton<'T> =
-        interface System.IDisposable
+        interface IDisposable
         interface IEnumerator
         interface IEnumerator<'T>
         new: v: 'T -> Singleton<'T>
@@ -50,7 +49,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
 open System
 open System.Collections
 open System.Collections.Generic
-open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
@@ -64,7 +62,7 @@ module RuntimeHelpers =
         member Value: 'T
         static member Comparer: IEqualityComparer<StructBox<'T>>
 
-    val internal mkConcatSeq: sources: (seq<#seq<'T>>) -> seq<'T>
+    val internal mkConcatSeq: sources: seq<#seq<'T>> -> seq<'T>
 
     /// <summary>The F# compiler emits calls to this function to
     /// implement the <c>while</c> operator for F# sequence expressions.</summary>

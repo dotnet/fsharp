@@ -1,5 +1,5 @@
 // #Conformance #PatternMatching #TypeTests 
-#light
+
 
 // Perform multiple dynamic type tests at once
 

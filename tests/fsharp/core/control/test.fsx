@@ -2,7 +2,7 @@
 #if TESTS_AS_APP
 module Core_control
 #endif
-#light
+
 
 #if NETCOREAPP
 open System.Threading.Tasks

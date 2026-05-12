@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Records 
 // Record type may implement interfaces
 // In this case, the interface with one member
-#light
+
 
 type I = interface
             abstract member M : int -> int

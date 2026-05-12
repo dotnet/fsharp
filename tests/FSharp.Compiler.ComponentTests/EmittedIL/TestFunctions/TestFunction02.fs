@@ -1,5 +1,5 @@
 // #NoMono #NoMT #CodeGen #EmittedIL 
-#light
+
 
 let TestFunction1() =
     printfn "Hello";

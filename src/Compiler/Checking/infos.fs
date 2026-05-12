@@ -17,14 +17,11 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.Xml
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
-open FSharp.Compiler.AbstractIL
-
 #endif
 
 //-------------------------------------------------------------------------
@@ -33,7 +30,7 @@ open FSharp.Compiler.AbstractIL
 type ValRef with
     /// Indicates if an F#-declared function or member value is a CLIEvent property compiled as a .NET event
     member x.IsFSharpEventProperty g =
-        x.IsMember && CompileAsEvent g x.Attribs && not x.IsExtensionMember
+        x.IsMember && ValCompileAsEvent g x.Deref && not x.IsExtensionMember
 
     /// Check if an F#-declared member value is a virtual method
     member vref.IsVirtualMember =
@@ -96,7 +93,7 @@ let ReparentSlotSigToUseMethodTypars g m ovByMethValRef slotsig =
 
 /// Construct the data representing a parameter in the signature of an abstract method slot
 let MakeSlotParam (ty, argInfo: ArgReprInfo) =
-    TSlotParam(Option.map textOfId argInfo.Name, ty, false, false, false, argInfo.Attribs)
+    TSlotParam(Option.map textOfId argInfo.Name, ty, false, false, false, argInfo.Attribs.AsList())
 
 /// Construct the data representing the signature of an abstract method slot
 let MakeSlotSig (nm, ty, ctps, mtps, paraml, retTy) =
@@ -211,9 +208,8 @@ type OptionalArgInfo =
                         match ilParam.Marshal with
                         | Some(ILNativeType.IUnknown | ILNativeType.IDispatch | ILNativeType.Interface) -> Constant ILFieldInit.Null
                         | _ ->
-                            let attrs = ilParam.CustomAttrs
-                            if   TryFindILAttributeOpt g.attrib_IUnknownConstantAttribute attrs then WrapperForIUnknown
-                            elif TryFindILAttributeOpt g.attrib_IDispatchConstantAttribute attrs then WrapperForIDispatch
+                            if   ilParam.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.IUnknownConstantAttribute) then WrapperForIUnknown
+                            elif ilParam.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.IDispatchConstantAttribute) then WrapperForIDispatch
                             else MissingValue
                     else
                         DefaultValue
@@ -278,20 +274,24 @@ type ParamData =
 type ParamAttribs = ParamAttribs of isParamArrayArg: bool * isInArg: bool * isOutArg: bool * optArgInfo: OptionalArgInfo * callerInfo: CallerInfo * reflArgInfo: ReflectedArgInfo
 
 let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
-    let isParamArrayArg = HasFSharpAttribute g g.attrib_ParamArrayAttribute argInfo.Attribs
+    let attribs = argInfo.Attribs.AsList()
+    let isParamArrayArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ParamArrayAttribute argInfo
     let reflArgInfo =
-        match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute argInfo.Attribs  with
-        | Some b -> ReflectedArgInfo.Quote b
-        | None -> ReflectedArgInfo.None
-    let isOutArg = (HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty) || isOutByrefTy g ty
-    let isInArg = (HasFSharpAttribute g g.attrib_InAttribute argInfo.Attribs && isByrefTy g ty) || isInByrefTy g ty
-    let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
-    let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
+        if ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute_True argInfo then
+            ReflectedArgInfo.Quote true
+        elif ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.ReflectedDefinitionAttribute_False argInfo then
+            ReflectedArgInfo.Quote false
+        else
+            ReflectedArgInfo.None
+    let isOutArg = (ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OutAttribute argInfo && isByrefTy g ty) || isOutByrefTy g ty
+    let isInArg = (ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InAttribute argInfo && isByrefTy g ty) || isInByrefTy g ty
+    let isCalleeSideOptArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptionalArgumentAttribute argInfo
+    let isCallerSideOptArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptionalAttribute argInfo
     let optArgInfo =
         if isCalleeSideOptArg then
             CalleeSide
         elif isCallerSideOptArg then
-            let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute argInfo.Attribs
+            let defaultParameterValueAttribute = tryFindValAttribByFlag g WellKnownValAttributes.DefaultParameterValueAttribute attribs
             match defaultParameterValueAttribute with
             | None ->
                 // Do a type-directed analysis of the type to determine the default value to pass.
@@ -314,9 +314,9 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
                     NotOptional
         else NotOptional
 
-    let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
-    let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
-    let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
+    let isCallerLineNumberArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerLineNumberAttribute argInfo
+    let isCallerFilePathArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerFilePathAttribute argInfo
+    let isCallerMemberNameArg = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.CallerMemberNameAttribute argInfo
 
     let callerInfo =
         match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
@@ -324,9 +324,9 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | true, false, false -> CallerLineNumber
         | false, true, false -> CallerFilePath
         | false, false, true -> CallerMemberName
-        | false, true, true -> 
-            match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
-            | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
+        | false, true, true ->
+            match attribs with
+            | ValAttrib g WellKnownValAttributes.CallerMemberNameAttribute (Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
                 warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
@@ -344,7 +344,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
 type ILFieldInit with
 
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-    static member FromProvidedObj m (v: obj MaybeNull) =
+    static member FromProvidedObj m (v: obj | null) =
         match v with
         | Null -> ILFieldInit.Null
         | NonNull v ->
@@ -396,8 +396,8 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
         NotOptional
 
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo MaybeNull) err = 
-    match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase MaybeNull)),m) with 
+let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> (ProvidedMethodInfo | null)) err = 
+    match mi.PApply((fun mi -> (get mi :> (ProvidedMethodBase | null))),m) with 
     | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull mi.DeclaringType).Name), m)), m))
     | Tainted.NonNull meth -> meth
 
@@ -444,8 +444,7 @@ type ILTypeInfo =
 
     /// Indicates if the type is marked with the [<IsReadOnly>] attribute.
     member x.IsReadOnly (g: TcGlobals) =
-        x.RawMetadata.CustomAttrs
-        |> TryFindILAttribute g.attrib_IsReadOnlyAttribute
+        x.RawMetadata.HasWellKnownAttribute(g, WellKnownILAttributes.IsReadOnlyAttribute)
 
     member x.Instantiate inst =
         let (ILTypeInfo(g, ty, tref, tdef)) = x
@@ -471,7 +470,7 @@ type ILTypeInfo =
             let tref = mkRefForNestedILTypeDef scoref (enc, tdef)
             ILTypeInfo(g, ty, tref, tdef)
         else
-            failwith ("ILTypeInfo.FromType - no IL metadata for type" + System.Environment.StackTrace)
+            failwith ("ILTypeInfo.FromType - no IL metadata for type" + Environment.StackTrace)
 
 [<NoComparison; NoEquality>]
 type ILMethParentTypeInfo =
@@ -588,7 +587,7 @@ type ILMethInfo =
             match x with
             | ILMethInfo(ilType=CSharpStyleExtension(declaring= t)) when t.IsILTycon -> AttributesFromIL(t.ILTyconRawMetadata.MetadataIndex,t.ILTyconRawMetadata.CustomAttrsStored)
             // C#-style extension defined in F# -> we do not support manually adding NullableContextAttribute by F# users.
-            | ILMethInfo(ilType=CSharpStyleExtension _)  -> AttributesFromIL(0,Given(ILAttributes.Empty))
+            | ILMethInfo(ilType=CSharpStyleExtension _)  -> AttributesFromIL(0,ILAttributesStored.CreateGiven(ILAttributes.Empty))
             | ILMethInfo(ilType=IlType(t)) -> t.NullableAttributes
 
         FromMethodAndClass(AttributesFromIL(raw.MetadataIndex,raw.CustomAttrsStored),classAttrs)
@@ -631,8 +630,7 @@ type ILMethInfo =
     /// Indicates if the method is marked with the [<IsReadOnly>] attribute. This is done by looking at the IL custom attributes on
     /// the method.
     member x.IsReadOnly (g: TcGlobals) =
-        x.RawMetadata.CustomAttrs
-        |> TryFindILAttribute g.attrib_IsReadOnlyAttribute
+        x.RawMetadata.HasWellKnownAttribute(g, WellKnownILAttributes.IsReadOnlyAttribute)
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method.
     /// An instance extension method returns one object argument.
@@ -866,7 +864,7 @@ type MethInfo =
     member x.IsUnionCaseTester =
         let tcref = x.ApparentEnclosingTyconRef
         tcref.IsUnionTycon &&
-        x.LogicalName.StartsWithOrdinal("get_Is") &&
+        PrettyNaming.IsUnionCaseTesterPropertyName x.LogicalName &&
         match x.ArbitraryValRef with 
         | Some v -> v.IsImplied
         | None -> false
@@ -1266,20 +1264,20 @@ type MethInfo =
         | ILMeth(g, ilMethInfo, _) ->
             [ [ for p in ilMethInfo.ParamMetadata do
                  let attrs = p.CustomAttrs
-                 let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute attrs
+                 let isParamArrayArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.ParamArrayAttribute)
                  let reflArgInfo =
-                     match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef attrs with
-                     | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
-                     | Some _ -> ReflectedArgInfo.Quote false
+                     match attrs with
+                     | ILAttribDecoded WellKnownILAttributes.ReflectedDefinitionAttribute ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
+                     | ILAttribDecoded WellKnownILAttributes.ReflectedDefinitionAttribute _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None
                  let isOutArg = (p.IsOut && not p.IsIn)
                  let isInArg = (p.IsIn && not p.IsOut)
                  // Note: we get default argument values from VB and other .NET language metadata
                  let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
 
-                 let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute attrs
-                 let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute attrs
-                 let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute attrs
+                 let isCallerLineNumberArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerLineNumberAttribute)
+                 let isCallerFilePathArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerFilePathAttribute)
+                 let isCallerMemberNameArg = p.CustomAttrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.CallerMemberNameAttribute)
 
                  let callerInfo =
                     match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
@@ -1326,7 +1324,7 @@ type MethInfo =
         match x with
         | FSMeth(g, _, vref, _) ->
             match vref.RecursiveValInfo with
-            | ValInRecScope false -> error(Error((FSComp.SR.InvalidRecursiveReferenceToAbstractSlot()), m))
+            | ValInRecScope false -> error(Error(FSComp.SR.InvalidRecursiveReferenceToAbstractSlot(), m))
             | _ -> ()
 
             let allTyparsFromMethod, _, _, retTy, _ = GetTypeOfMemberInMemberForm g vref
@@ -1519,7 +1517,7 @@ type ILFieldInfo =
         match x with
         | ILFieldInfo(tinfo, _) -> tinfo.TypeInstOfRawMetadata
 #if !NO_TYPEPROVIDERS
-        | ProvidedField _ -> [] /// GENERIC TYPE PROVIDERS
+        | ProvidedField _ -> [] // GENERIC TYPE PROVIDERS
 #endif
 
      /// Get the name of the field
@@ -1756,7 +1754,8 @@ type ILPropInfo =
         (x.HasSetter && x.SetterMethod.IsNewSlot)
 
     /// Indicates if the property is required, i.e. has RequiredMemberAttribute applied.
-    member x.IsRequired = TryFindILAttribute x.TcGlobals.attrib_RequiredMemberAttribute x.RawMetadata.CustomAttrs
+    member x.IsRequired =
+        x.RawMetadata.CustomAttrsStored.HasWellKnownAttribute(x.TcGlobals, WellKnownILAttributes.RequiredMemberAttribute)
 
     /// Get the names and types of the indexer arguments associated with the IL property.
     ///
@@ -2050,7 +2049,10 @@ type PropInfo =
     /// Indicates if this is an F# property compiled as a CLI event, e.g. a [<CLIEvent>] property.
     member x.IsFSharpEventProperty =
         match x with
-        | FSProp(g, _, Some vref, None)  -> vref.IsFSharpEventProperty g
+        | FSProp(g, _, getterOpt, setterOpt) ->
+            match getterOpt, setterOpt with
+            | Some vref, _ | None, Some vref -> vref.IsFSharpEventProperty g
+            | None, None -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedProp _ -> false
 #endif
@@ -2272,14 +2274,20 @@ let private tyConformsToIDelegateEvent g ty =
 
 /// Create an error object to raise should an event not have the shape expected by the .NET idiom described further below
 let nonStandardEventError nm m =
-    Error ((FSComp.SR.eventHasNonStandardType(nm, ("add_"+nm), ("remove_"+nm))), m)
+    Error (FSComp.SR.eventHasNonStandardType(nm, ("add_"+nm), ("remove_"+nm)), m)
 
 /// Find the delegate type that an F# event property implements by looking through the type hierarchy of the type of the property
 /// for the first instantiation of IDelegateEvent.
+/// The delegate type is returned with non-null nullness to avoid spurious nullness warnings when implementing
+/// interface events (e.g., INotifyPropertyChanged.PropertyChanged), since delegate parameters to event handlers
+/// should not be nullable.
 let FindDelegateTypeOfPropertyEvent g amap nm m ty =
     match SearchEntireHierarchyOfType (tyConformsToIDelegateEvent g) g amap m ty with
     | None -> error(nonStandardEventError nm m)
-    | Some ty -> destIDelegateEventType g ty
+    | Some ty -> 
+        let delTy = destIDelegateEventType g ty
+        // Strip any nullness from the delegate type - delegate parameters to events are not nullable
+        replaceNullnessOfTy KnownWithoutNull delTy
 
 
 //-------------------------------------------------------------------------

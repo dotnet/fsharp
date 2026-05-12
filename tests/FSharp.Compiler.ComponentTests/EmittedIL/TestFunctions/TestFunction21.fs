@@ -1,5 +1,5 @@
 // #NoMono #NoMT #CodeGen #EmittedIL   
-#light
+
 
 type U = U of int * int
 

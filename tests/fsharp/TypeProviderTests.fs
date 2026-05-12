@@ -17,6 +17,7 @@ open Xunit
 open TestFramework
 open Scripting
 open SingleTest
+open FSharp.Test
 
 open FSharp.Compiler.IO
 

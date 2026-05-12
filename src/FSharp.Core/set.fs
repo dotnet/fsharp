@@ -9,7 +9,6 @@ open System.Diagnostics
 open System.Text
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Collections
 
 // A functional language implementation of binary trees
@@ -116,19 +115,19 @@ module internal SetTree =
         let t2h = height t2
 
         if t2h > t1h + tolerance then // right is heavier than left
-            let t2' = asNode (t2)
+            let t2' = asNode t2
             // one of the nodes must have height > height t1 + 1
             if height t2'.Left > t1h + 1 then // balance left: combination
-                let t2l = asNode (t2'.Left)
+                let t2l = asNode t2'.Left
                 mk (mk t1 v t2l.Left) t2l.Key (mk t2l.Right t2'.Key t2'.Right)
             else // rotate left
                 mk (mk t1 v t2'.Left) t2.Key t2'.Right
         else if t1h > t2h + tolerance then // left is heavier than right
-            let t1' = asNode (t1)
+            let t1' = asNode t1
             // one of the nodes must have height > height t2 + 1
             if height t1'.Right > t2h + 1 then
                 // balance right: combination
-                let t1r = asNode (t1'.Right)
+                let t1r = asNode t1'.Right
                 mk (mk t1'.Left t1.Key t1r.Left) t1r.Key (mk t1r.Right v t2)
             else
                 mk t1'.Left t1'.Key (mk t1'.Right v t2)
@@ -268,6 +267,24 @@ module internal SetTree =
                 elif c = 0 then true
                 else mem comparer k tn.Right
 
+    let rec tryGet (comparer: IComparer<'T>) k (t: SetTree<'T>) =
+        if isEmpty t then
+            ValueNone
+        else
+            let c = comparer.Compare(k, t.Key)
+
+            if t.Height = 1 then
+                if c = 0 then
+                    ValueSome t.Key
+                else
+                    ValueNone
+            else
+                let tn = asNode t
+
+                if c < 0 then tryGet comparer k tn.Left
+                elif c = 0 then ValueSome tn.Key
+                else tryGet comparer k tn.Right
+
     let rec iter f (t: SetTree<'T>) =
         if isEmpty t then
             ()
@@ -392,6 +409,24 @@ module internal SetTree =
 
                 balance comparer (union comparer t2n.Left lo) t2n.Key (union comparer t2n.Right hi)
 
+    let rec intersectionAuxFromSmall comparer a (t: SetTree<'T>) acc =
+        if isEmpty t then
+            acc
+        else if t.Height = 1 then
+            match tryGet comparer t.Key a with
+            | ValueSome v -> add comparer v acc
+            | ValueNone -> acc
+        else
+            let tn = asNode t
+            let acc = intersectionAuxFromSmall comparer a tn.Right acc
+
+            let acc =
+                match tryGet comparer tn.Key a with
+                | ValueSome v -> add comparer v acc
+                | ValueNone -> acc
+
+            intersectionAuxFromSmall comparer a tn.Left acc
+
     let rec intersectionAux comparer b (t: SetTree<'T>) acc =
         if isEmpty t then
             acc
@@ -413,7 +448,13 @@ module internal SetTree =
             intersectionAux comparer b tn.Left acc
 
     let intersection comparer a b =
-        intersectionAux comparer b a empty
+        let h1 = height a
+        let h2 = height b
+
+        if h1 <= h2 then
+            intersectionAux comparer b a empty
+        else
+            intersectionAuxFromSmall comparer a b empty
 
     let partition1 comparer f k (acc1, acc2) =
         if f k then
@@ -434,6 +475,36 @@ module internal SetTree =
 
     let partition comparer f s =
         partitionAux comparer f s (empty, empty)
+
+    let partition1With comparer1 comparer2 partitioner k acc1 acc2 =
+        match partitioner k with
+        | Choice1Of2 v -> struct (add comparer1 v acc1, acc2)
+        | Choice2Of2 v -> struct (acc1, add comparer2 v acc2)
+
+    let partitionWith
+        (comparer1: IComparer<'T1>)
+        (comparer2: IComparer<'T2>)
+        (partitioner: 'T -> Choice<'T1, 'T2>)
+        (t: SetTree<'T>)
+        =
+        // Traverse right-to-left (descending) so inserts into output trees
+        // go largest-first, reducing AVL rotations — same strategy as partitionAux.
+        let rec go (t: SetTree<'T>) acc1 acc2 =
+            if isEmpty t then
+                struct (acc1, acc2)
+            else if t.Height = 1 then
+                partition1With comparer1 comparer2 partitioner t.Key acc1 acc2
+            else
+                let tn = asNode t
+                let struct (acc1, acc2) = go tn.Right acc1 acc2
+
+                let struct (acc1, acc2) =
+                    partition1With comparer1 comparer2 partitioner tn.Key acc1 acc2
+
+                go tn.Left acc1 acc2
+
+        let struct (t1, t2) = go t empty empty
+        t1, t2
 
     let rec minimumElementAux (t: SetTree<'T>) n =
         if isEmpty t then
@@ -557,7 +628,7 @@ module internal SetTree =
 
               member _.Reset() =
                   i <- mkIterator s
-          interface System.IDisposable with
+          interface IDisposable with
               member _.Dispose() =
                   ()
         }
@@ -566,7 +637,7 @@ module internal SetTree =
     let rec compareStacks (comparer: IComparer<'T>) (l1: SetTree<'T> list) (l2: SetTree<'T> list) : int =
         let cont () =
             match l1, l2 with
-            | (x1 :: t1), _ when not (isEmpty x1) ->
+            | x1 :: t1, _ when not (isEmpty x1) ->
                 if x1.Height = 1 then
                     compareStacks comparer (empty :: SetTree x1.Key :: t1) l2
                 else
@@ -576,7 +647,7 @@ module internal SetTree =
                         comparer
                         (x1n.Left :: (SetTreeNode(x1n.Key, empty, x1n.Right, 0) :> SetTree<'T>) :: t1)
                         l2
-            | _, (x2 :: t2) when not (isEmpty x2) ->
+            | _, x2 :: t2 when not (isEmpty x2) ->
                 if x2.Height = 1 then
                     compareStacks comparer l1 (empty :: SetTree x2.Key :: t2)
                 else
@@ -592,7 +663,7 @@ module internal SetTree =
         | [], [] -> 0
         | [], _ -> -1
         | _, [] -> 1
-        | (x1 :: t1), (x2 :: t2) ->
+        | x1 :: t1, x2 :: t2 ->
             if isEmpty x1 then
                 if isEmpty x2 then
                     compareStacks comparer t1 t2
@@ -706,11 +777,11 @@ module internal SetTree =
 [<DebuggerDisplay("Count = {Count}")>]
 type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'T>, tree: SetTree<'T>) =
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // NOTE: This type is logically immutable. This field is only mutated during deserialization.
     let mutable comparer = comparer
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // NOTE: This type is logically immutable. This field is only mutated during deserialization.
     let mutable tree = tree
 
@@ -792,6 +863,12 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
         else
             let t1, t2 = SetTree.partition s.Comparer f s.Tree in Set(s.Comparer, t1), Set(s.Comparer, t2)
 
+    member internal s.PartitionWith(partitioner: 'T -> Choice<'T1, 'T2>) : Set<'T1> * Set<'T2> =
+        let comparer1 = LanguagePrimitives.FastGenericComparer<'T1>
+        let comparer2 = LanguagePrimitives.FastGenericComparer<'T2>
+        let t1, t2 = SetTree.partitionWith comparer1 comparer2 partitioner s.Tree
+        Set(comparer1, t1), Set(comparer2, t2)
+
     member s.Filter f : Set<'T> =
         if SetTree.isEmpty s.Tree then
             s
@@ -800,7 +877,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
 
     member s.Map f : Set<'U> =
         let comparer = LanguagePrimitives.FastGenericComparer<'U>
-        Set(comparer, SetTree.fold (fun acc k -> SetTree.add comparer (f k) acc) (SetTree.empty) s.Tree)
+        Set(comparer, SetTree.fold (fun acc k -> SetTree.add comparer (f k) acc) SetTree.empty s.Tree)
 
     member s.Exists f =
         SetTree.exists f s.Tree
@@ -903,9 +980,9 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
             loop ()
         | _ -> false
 
-    interface System.IComparable with
+    interface IComparable with
         member this.CompareTo(that: objnull) =
-            SetTree.compare this.Comparer this.Tree ((that :?> Set<'T>).Tree)
+            SetTree.compare this.Comparer this.Tree (that :?> Set<'T>).Tree
 
     interface IStructuralEquatable with
         member this.Equals(that, comparer) =
@@ -917,7 +994,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
                 let rec loop () =
                     let m1 = e1.MoveNext()
                     let m2 = e2.MoveNext()
-                    (m1 = m2) && (not m1 || ((comparer.Equals(e1.Current, e2.Current)) && loop ()))
+                    (m1 = m2) && (not m1 || (comparer.Equals(e1.Current, e2.Current) && loop ()))
 
                 loop ()
             | _ -> false
@@ -936,14 +1013,14 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
     interface ICollection<'T> with
         member s.Add x =
             ignore x
-            raise (new System.NotSupportedException("ReadOnlyCollection"))
+            raise (NotSupportedException("ReadOnlyCollection"))
 
         member s.Clear() =
-            raise (new System.NotSupportedException("ReadOnlyCollection"))
+            raise (NotSupportedException("ReadOnlyCollection"))
 
         member s.Remove x =
             ignore x
-            raise (new System.NotSupportedException("ReadOnlyCollection"))
+            raise (NotSupportedException("ReadOnlyCollection"))
 
         member s.Contains x =
             SetTree.mem s.Comparer x s.Tree
@@ -1026,7 +1103,7 @@ and [<CompilerMessage("This type is for compiler use and should not be used dire
       AbstractClass;
       CompiledName("FSharpSet")>] Set =
     [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden = true)>]
-    static member Create([<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T>) =
+    static member Create([<System.Runtime.CompilerServices.ScopedRef>] items: ReadOnlySpan<'T>) =
         let comparer = LanguagePrimitives.FastGenericComparer<'T>
         let mutable acc = SetTree.empty
 
@@ -1103,6 +1180,10 @@ module Set =
     [<CompiledName("Partition")>]
     let partition predicate (set: Set<'T>) =
         set.Partition predicate
+
+    [<CompiledName("PartitionWith")>]
+    let partitionWith (partitioner: 'T -> Choice<'T1, 'T2>) (set: Set<'T>) =
+        set.PartitionWith partitioner
 
     [<CompiledName("Fold")>]
     let fold<'T, 'State when 'T: comparison> folder (state: 'State) (set: Set<'T>) =

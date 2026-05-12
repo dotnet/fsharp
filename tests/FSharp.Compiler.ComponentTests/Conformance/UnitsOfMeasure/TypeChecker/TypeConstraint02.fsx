@@ -1,7 +1,7 @@
 // #Regression #Conformance #UnitsOfMeasure #TypeInference #TypeConstraints 
 // FSB 3458: units ought to satisfy struct constraint
 
-#light
+
 [<Measure>] type m
  
 let f<'a,'b when 'a : struct>() = 1

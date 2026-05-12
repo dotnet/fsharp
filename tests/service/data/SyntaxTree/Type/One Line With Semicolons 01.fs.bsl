@@ -62,7 +62,7 @@ ImplFile
                   (4,70--4,74), NoneAtLet, { LeadingKeyword = Let (4,66--4,69)
                                              InlineKeyword = None
                                              EqualsRange = Some (4,75--4,76) })],
-              (4,66--4,79));
+              (4,66--4,79), { InKeyword = None });
            Open
              (ModuleOrNamespace
                 (SynLongIdent ([System], [], [None]), (4,86--4,92)),

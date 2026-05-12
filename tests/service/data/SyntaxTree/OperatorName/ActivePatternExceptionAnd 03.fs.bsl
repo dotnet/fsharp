@@ -36,10 +36,11 @@ ImplFile
                      (3,26--3,32)), (3,4--3,23), Yes (3,0--3,32),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
-                    EqualsRange = Some (3,24--3,25) })], (3,0--3,32))],
-          PreXmlDocEmpty, [], None, (1,0--3,32), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                    EqualsRange = Some (3,24--3,25) })], (3,0--3,32),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (1,0--3,32),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))
 
 (1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'ActivePatternExceptionAnd 03' based on the file name 'ActivePatternExceptionAnd 03.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

@@ -1,5 +1,5 @@
 // #Conformance #DeclarationElements #LetBindings #TypeAnnotations #TypeInference #TypeConstraints 
-#light
+
 
 let f (x:int) (y:string) = System.String.Concat ((x.ToString()), y)
 let res1 = f 42 "abc"

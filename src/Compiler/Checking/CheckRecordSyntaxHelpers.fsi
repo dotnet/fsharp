@@ -19,5 +19,9 @@ val TransformAstForNestedUpdates<'a> :
     withExpr: SynExpr * (range * 'a) ->
         (Ident list * Ident) * SynExpr option
 
+val BindIdText: string
+
+val inline (|IsSimpleOrBoundExpr|_|): withExprOpt: (SynExpr * BlockSeparator) option -> bool
+
 val BindOriginalRecdExpr:
     withExpr: SynExpr * BlockSeparator -> mkRecdExpr: ((SynExpr * BlockSeparator) option -> SynExpr) -> SynExpr

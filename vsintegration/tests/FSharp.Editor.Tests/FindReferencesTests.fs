@@ -162,3 +162,85 @@ module FindReferences =
 
         if foundReferences.Count <> 2 then
             failwith $"Expected 2 reference but found {foundReferences.Count}"
+
+    /// Fix for bug: https://github.com/dotnet/fsharp/issues/18270
+    /// Tests that find references for properties with get/set accessors correctly
+    /// excludes the 'get' and 'set' keywords from the results.
+    [<Fact>]
+    let ``Find references for property with get set accessors`` () =
+
+        let project3 =
+            SyntheticProject.Create(
+                { sourceFile "First" [] with
+                    SignatureFile = No
+                    ExtraSource =
+                        "type MyType() =\n"
+                        + "    let mutable backingField = false\n"
+                        + "    member this.MyProperty\n"
+                        + "        with get () = backingField\n"
+                        + "        and set v = backingField <- v\n"
+                },
+                { sourceFile "Second" [ "First" ] with
+                    ExtraSource =
+                        "open ModuleFirst\n"
+                        + "let test () =\n"
+                        + "    let instance = MyType()\n"
+                        + "    instance.MyProperty <- true\n"
+                        + "    instance.MyProperty\n"
+                }
+            )
+
+        let solution3, _ = RoslynTestHelpers.CreateSolution project3
+
+        let context, foundDefinitions, foundReferences = getContext ()
+
+        let documentPath = project3.GetFilePath "Second"
+
+        let document =
+            solution3.TryGetDocumentFromPath documentPath
+            |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
+
+        findUsagesService.FindReferencesAsync(document, getPositionOf "MyProperty" documentPath, context).Wait()
+
+        // Should find 1 definition (the property declaration)
+        if foundDefinitions.Count <> 1 then
+            failwith $"Expected 1 definition but found {foundDefinitions.Count}"
+
+        // Should find 2 references (the two uses in Second file)
+        // The 'get' and 'set' keywords are filtered out by Tokenizer.tryFixupSpan
+        // in FindUsagesService.onSymbolFound
+        if foundReferences.Count <> 2 then
+            failwith $"Expected 2 references but found {foundReferences.Count}"
+
+    /// Ensures identifiers genuinely named "get" are not incorrectly filtered out
+    /// by the phantom property accessor filter (#18270 fix).
+    [<Fact>]
+    let ``Find references for identifier named get`` () =
+
+        let project =
+            SyntheticProject.Create(
+                { sourceFile "First" [] with
+                    SignatureFile = No
+                    ExtraSource = "let get x = x + 1\n" + "let result = get 42\n"
+                }
+            )
+
+        let solution, _ = RoslynTestHelpers.CreateSolution project
+
+        let context, foundDefinitions, foundReferences = getContext ()
+
+        let documentPath = project.GetFilePath "First"
+
+        let document =
+            solution.TryGetDocumentFromPath documentPath
+            |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
+
+        findUsagesService.FindReferencesAsync(document, getPositionOf "get x" documentPath, context).Wait()
+
+        // Should find 1 definition
+        if foundDefinitions.Count <> 1 then
+            failwith $"Expected 1 definition but found {foundDefinitions.Count}"
+
+        // Should find 1 reference (the call site) - the identifier "get" must NOT be filtered
+        if foundReferences.Count <> 1 then
+            failwith $"Expected 1 reference but found {foundReferences.Count}"

@@ -28,4 +28,4 @@ SigFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(3,9)-(5,0) parse error Incomplete structured construct at or before this point in signature file. Expected ':', '=' or other token.
+(3,9)-(5,0) parse error Incomplete structured construct at or before this point in signature file. Expected '=' or other token.

@@ -19,7 +19,8 @@ ImplFile
                   ArbitraryAfterError ("localBinding2", (4,0--4,0)), (3,4--4,0),
                   Yes (3,0--4,0), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None
-                                    EqualsRange = None })], (3,0--4,0))],
+                                    EqualsRange = None })], (3,0--4,0),
+              { InKeyword = None })],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,0), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

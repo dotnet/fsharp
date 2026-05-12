@@ -34,9 +34,9 @@ ImplFile
                      { SeparatorRange = None }), (2,0--3,5), NoneAtLet,
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
-                    EqualsRange = Some (3,6--3,7) })], (2,0--9,9))],
-          PreXmlDocEmpty, [], None, (3,0--10,0), { LeadingKeyword = None })],
-      (true, true),
+                    EqualsRange = Some (3,6--3,7) })], (2,0--9,9),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (3,0--10,0),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments =

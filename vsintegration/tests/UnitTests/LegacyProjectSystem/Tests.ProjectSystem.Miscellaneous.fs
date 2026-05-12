@@ -265,7 +265,7 @@ type Miscellaneous() =
              this.MSBuildProjectBoilerplate "Library", 
              (fun project ccn projFileName ->
                 let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
-                File.AppendAllLines(fooPath, ["#light"; "module Foo"])
+                File.AppendAllLines(fooPath, ["module Foo"])
                 
                 //ccn((project :> IVsHierarchy), "Debug|Any CPU")
                 let configName = "Debug"                
@@ -332,7 +332,7 @@ type Miscellaneous() =
             File.AppendAllText(projFile, TheTests.SimpleFsprojText(compileItem, [], ""))
             use project = TheTests.CreateProject(projFile)
             let srcFile = (Path.GetDirectoryName projFile) + "\\" + "foo.fs"
-            File.AppendAllText(srcFile, "#light\nlet foo () =\n  printfn \"A\"\n") 
+            File.AppendAllText(srcFile, "let foo () =\n  printfn \"A\"\n") 
             project.BuildToOutput("Build", vso, null) |> ignore // Build the project using vso as the output logger
             let errors = List.filter (fun (s:string) -> s.Contains(expectedError)) !outputWindowPaneErrors    
             AssertEqual 1 (List.length errors)
@@ -344,7 +344,6 @@ type Miscellaneous() =
                (fun project ccn projFileName ->
                    ccn((project :> IVsHierarchy), "Debug|Any CPU")
                    let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
-                   File.AppendAllText(fooPath, "#light")                
                    let mutable configurationInterface : IVsCfg = null
                    let hr = project.ConfigProvider.GetCfgOfName("Debug", "Any CPU", &configurationInterface)
                    AssertEqual VSConstants.S_OK hr                
@@ -364,7 +363,6 @@ type Miscellaneous() =
             (fun project ccn projFileName ->
                 ccn((project :> IVsHierarchy), "Debug|Any CPU")
                 let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
-                File.AppendAllText(fooPath, "#light")                
                 let buildResult = project.Build("Build")
                 Assert.True buildResult.IsSuccessful
                 AssertEqual true (File.Exists (Path.Combine(project.ProjectFolder, "bin\\Debug\\Blah.exe")))

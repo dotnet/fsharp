@@ -35,8 +35,8 @@ param (
     # Options
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
-    [string]$bootstrapTfm = "net10.0",
-    [string]$fsharpNetCoreProductTfm = "net10.0",
+    [string]$bootstrapTfm = "",
+    [string]$fsharpNetCoreProductTfm = "",
     [switch][Alias('bl')]$binaryLog = $true,
     [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
     [switch][Alias('nolog')]$noBinaryLog = $false,
@@ -48,14 +48,15 @@ param (
     [switch]$useGlobalNuGetCache = $true,
     [switch]$dontUseGlobalNuGetCache = $false,
     [switch]$warnAsError = $true,
+    [string]$warnNotAsError = "",
     [switch][Alias('test')]$testDesktop,
+    [string]$testDesktopBatch = "",
     [switch]$testCoreClr,
     [switch]$testCambridge,
     [switch]$testCompiler,
     [switch]$testCompilerService,
     [switch]$testCompilerComponentTests,
     [switch]$testFSharpCore,
-    [switch]$testFSharpQA,
     [switch]$testIntegration,
     [switch]$testScripting,
     [switch]$testVs,
@@ -65,7 +66,6 @@ param (
     [switch]$testpack,
     [switch]$testAOT,
     [switch]$testEditor,
-    [switch]$testBenchmarks,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch][Alias('pb')]$productBuild,
@@ -74,7 +74,6 @@ param (
     [switch]$compressAllMetadata,
     [switch]$buildnorealsig = $true,
     [switch]$verifypackageshipstatus = $false,
-    [string]$testBatch = "",
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
@@ -83,7 +82,16 @@ $BuildCategory = ""
 $BuildMessage = ""
 
 $desktopTargetFramework = "net472"
-$coreclrTargetFramework = "net10.0"
+# Read product TFM from centralized source of truth via MSBuild
+$coreclrTargetFramework = (& $PSScriptRoot/common/dotnet.ps1 msbuild $PSScriptRoot/TargetFrameworks.props --getProperty:FSharpNetCoreProductTargetFramework).Trim()
+
+# Set defaults for bootstrapTfm and fsharpNetCoreProductTfm if not provided
+if ($bootstrapTfm -eq "") {
+    $bootstrapTfm = $coreclrTargetFramework
+}
+if ($fsharpNetCoreProductTfm -eq "") {
+    $fsharpNetCoreProductTfm = $coreclrTargetFramework
+}
 
 function Print-Usage() {
     Write-Host "Common settings:"
@@ -114,16 +122,15 @@ function Print-Usage() {
     Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
     Write-Host "  -testCompilerComponentTests   Run FSharpCompilerService component tests"
     Write-Host "  -testDesktop                  Run tests against full .NET Framework"
+    Write-Host "  -testDesktopBatch <1|2|3>       Run a specific batch of the desktop test split (implies -testDesktop)"
     Write-Host "  -testCoreClr                  Run tests against CoreCLR"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
-    Write-Host "  -testFSharpQA                 Run F# Cambridge tests"
     Write-Host "  -testIntegration              Run F# integration tests"
     Write-Host "  -testScripting                Run Scripting tests"
     Write-Host "  -testVs                       Run F# editor unit tests"
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -testEditor                   Run VS Editor tests"
-    Write-Host "  -testBenchmarks               Build and Run Benchmark suite"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -141,6 +148,7 @@ function Print-Usage() {
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
     Write-Host "  -buildnorealsig               Build product with realsig- (default use realsig+, where necessary)"
     Write-Host "  -verifypackageshipstatus      Verify whether the packages we are building have already shipped to nuget"
+    Write-Host "  -warnNotAsError <codes>       Suppress specific warnings from being treated as errors (semi-colon delimited)"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -162,7 +170,6 @@ function Process-Arguments() {
     if ($testAll) {
         $script:testDesktop = $True
         $script:testCoreClr = $True
-        $script:testFSharpQA = $True
         $script:testIntegration = $True
         $script:testVs = $True
         $script:testAOT = $True
@@ -171,7 +178,6 @@ function Process-Arguments() {
     if ($testAllButIntegration) {
         $script:testDesktop = $True
         $script:testCoreClr = $True
-        $script:testFSharpQA = $True
         $script:testIntegration = $False
         $script:testVs = $True
         $script:testAOT = $True
@@ -180,7 +186,6 @@ function Process-Arguments() {
     if($testAllButIntegrationAndAot) {
         $script:testDesktop = $True
         $script:testCoreClr = $True
-        $script:testFSharpQA = $True
         $script:testIntegration = $False
         $script:testVs = $True
         $script:testEditor = $True
@@ -188,6 +193,10 @@ function Process-Arguments() {
 
     if($script:testVs) {
         $script:testEditor = $True
+    }
+
+    if ($script:testDesktopBatch -ne "") {
+        $script:testDesktop = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
@@ -200,12 +209,10 @@ function Process-Arguments() {
         $script:testDesktop = $False
         $script:testCoreClr = $False
         $script:testFSharpCore = $False
-        $script:testFSharpQA = $False
         $script:testIntegration = $False
         $script:testVs = $False
         $script:testpack = $False
         $script:testAOT = $False
-        $script:testBenchmarks = $False
         $script:verifypackageshipstatus = $True
     }
 
@@ -243,10 +250,6 @@ function Process-Arguments() {
 
     if ($testAOT) {
         $script:pack = $True;
-    }
-
-    if ($testBenchmarks) {
-        $script:testBenchmarks = $True
     }
 
     foreach ($property in $properties) {
@@ -297,6 +300,8 @@ function BuildSolution([string] $solutionName, $packSolution) {
 
     $pack = if ($packSolution -eq $False) {""} else {$pack}
 
+    $msbuildWarnNotAsError = if ($warnAsError -and $warnNotAsError -ne "") { "/warnNotAsError:$warnNotAsError" } else { "" }
+
     MSBuild $toolsetBuildProj `
         $bl `
         /p:Configuration=$configuration `
@@ -319,7 +324,8 @@ function BuildSolution([string] $solutionName, $packSolution) {
         /p:BuildNoRealsig=$buildnorealsig `
         /v:$verbosity `
         $suppressExtensionDeployment `
-        @properties
+        @properties `
+        $msbuildWarnNotAsError
 
     $env:BUILDING_USING_DOTNET=$BUILDING_USING_DOTNET_ORIG
 }
@@ -366,34 +372,34 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
 
-    $testBatchSuffix = ""
-    if ($testBatch) {
-      $testBatchSuffix = "_batch$testBatch"
-    }
-
-    # {assembly} and {framework} will expand respectively. See https://github.com/spekt/testlogger/wiki/Logger-Configuration#logfilepath
-    # This is useful to deconflict log filenames when there are many test assemblies, e.g. when testing a whole solution.
-    $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}_{framework}$testBatchSuffix.xml"
-
-    $testBinLogPath = "$LogDir\${projectName}_$targetFramework$testBatch.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
-    $args += " --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration"
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
+    $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
+    
+    # MTP requires --solution flag for .sln/.slnx files
+    $testTarget = if ($testProject.EndsWith('.sln') -or $testProject.EndsWith('.slnx')) { "--solution ""$testProject""" } else { "--project ""$testProject""" }
+    
+    # Xunit XML report via XunitXml.TestLogger with CI-friendly filenames
+    $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
+    $xunitLogFileName = "{assembly}.{framework}.${jobName}.xml"
+    $reportArgs = "--report-spekt-xunit --report-spekt-xunit-filename ""$xunitLogFileName"""
+    
+    $test_args = "test $testTarget -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
+    # MTP HangDump extension replaces VSTest --blame-hang-timeout
+    $test_args += " --hangdump --hangdump-timeout 5m --hangdump-type Full"
 
     if (-not $noVisualStudio -or $norestore) {
-        $args += " --no-restore"
+        $test_args += " --no-restore"
     }
 
     if (-not $noVisualStudio) {
-        $args += " --no-build"
+        $test_args += " --no-build"
     }
 
-    $args += " $settings"
-    if ($testBatch) {
-        $args += " --filter batch=$testBatch"
-    }
+    $test_args += " $settings"
 
-    Write-Host("$args")
-    Exec-Console $dotnetExe $args
+    Write-Host("$test_args")
+    
+    Exec-Console $dotnetExe $test_args
 }
 
 function Prepare-TempDir() {
@@ -546,13 +552,6 @@ try {
 
     $nativeTools = InitializeNativeTools
 
-    if (-not (Test-Path variable:NativeToolsOnMachine)) {
-        $env:PERL5Path = Join-Path $nativeTools "perl\5.38.2.2\perl\bin\perl.exe"
-        write-host "variable:NativeToolsOnMachine = unset or false"
-        $nativeTools
-        write-host "Path = $env:PERL5Path"
-    }
-
     $dotnetPath = InitializeDotNetCli
     $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
@@ -567,30 +566,26 @@ try {
         $originalSignValue = $sign
         $originalPublishValue = $publish
         if ($msbuildEngine -eq "dotnet") {
-            # Building FSharp.sln and VisualFSharp.sln with .NET Core MSBuild
+            # Building FSharp.slnx and VisualFSharp.slnx with .NET Core MSBuild
             # don't produce any artifacts to sign. Skip signing in this case.
             $sign = $False
         }
         if ($noVisualStudio) {
-            BuildSolution "FSharp.sln" $False
+            BuildSolution "FSharp.slnx" $False
         }
         else {
             # vsixes do not count as publishing artifacts from Arcade perspective, and arcade publish.proj is failing when it encounters 0 items to publish.
             $publish = $False
-            BuildSolution "VisualFSharp.sln" $False
+            BuildSolution "VisualFSharp.slnx" $False
         }
         $sign = $originalSignValue
         $publish = $originalPublishValue
     }
 
-    if ($testBenchmarks) {
-        BuildSolution "FSharp.Benchmarks.sln" $False
-    }
-
     # When building in product build mode, only build the compiler solution.
     if ($pack -or $productBuild) {
         $properties_storage = $properties
-        BuildSolution "Microsoft.FSharp.Compiler.sln" $True
+        BuildSolution "src\Microsoft.FSharp.Compiler\Microsoft.FSharp.Compiler.fsproj" $True
         $properties = $properties_storage
     }
 
@@ -602,38 +597,30 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework
+        TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:coreclrTargetFramework
     }
 
     if ($testDesktop) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
-    }
-
-    if ($testFSharpQA) {
-        Push-Location "$RepoRoot\tests\fsharpqa\source"
-        $nugetPackages = Get-PackagesDir
-        $resultsRoot = "$ArtifactsDir\TestResults\$configuration"
-        $resultsLog = "test-net40-fsharpqa-results.log"
-        $errorLog = "test-net40-fsharpqa-errors.log"
-        $failLog = "test-net40-fsharpqa-errors"
-        Create-Directory $resultsRoot
-        UpdatePath
-        $env:HOSTED_COMPILER = 1
-        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\4.3.0-1.22220.8\tools\csc.exe"
-        $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\$script:desktopTargetFramework\FSharp.Core.dll"
-        $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
-        $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
-
-        if (-not (Test-Path variable:NativeToolsOnMachine)) {
-            Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        if ($testDesktopBatch -ne "") {
+            $dotnetPath = InitializeDotNetCli
+            $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+            $splitScript = Join-Path $RepoRoot "eng\tests\TestSplit.fsx"
+            $splitOutput = & $dotnetExe fsi $splitScript $testDesktopBatch desktop
+            if ($LASTEXITCODE -ne 0) { throw "TestSplit.fsx failed with exit code $LASTEXITCODE" }
+            $matchCount = 0
+            foreach ($line in $splitOutput) {
+                if ($line -match '^dotnet test (\S+) --no-build -c Release\s*(.*)$') {
+                    $proj = $Matches[1] -replace '/', '\'
+                    $projPath = Join-Path $RepoRoot $proj
+                    $settings = $Matches[2].Trim()
+                    TestUsingMSBuild -testProject $projPath -targetFramework $script:desktopTargetFramework -settings $settings
+                    $matchCount++
+                }
+            }
+            if ($matchCount -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
+        } else {
+            TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:desktopTargetFramework
         }
-        else
-        {
-            Exec-Console "perl.exe" """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
-        }
-
-        write-host "Exec-Console finished"
-        Pop-Location
     }
 
     if ($testFSharpCore) {
@@ -685,12 +672,6 @@ try {
     if ($testAOT) {
         Push-Location "$RepoRoot\tests\AheadOfTime"
         ./check.ps1
-        Pop-Location
-    }
-
-    if ($testBenchmarks) {
-        Push-Location "$RepoRoot\tests\benchmarks"
-        ./SmokeTestBenchmarks.ps1
         Pop-Location
     }
 

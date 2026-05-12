@@ -4,7 +4,7 @@
 
 
 
-#light
+
 
 exception ı of int     // err 
 exception i of int     // err

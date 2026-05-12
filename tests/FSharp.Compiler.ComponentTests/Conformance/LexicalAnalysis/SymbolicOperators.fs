@@ -66,7 +66,7 @@ let a6 = TestType<int, string>.(+++)((fun (x : string) -> 18), tt0)"""
         |> compile
         |> shouldFail
         |> withErrorCode 0670
-        |> withDiagnosticMessageMatches " 'a\) could not be generalized because it would escape its scope"
+        |> withDiagnosticMessageMatches " 'a\) could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'."
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/SymbolicOperators)
@@ -87,5 +87,38 @@ let a6 = TestType<int, string>.(+++)((fun (x : string) -> 18), tt0)"""
         |> asFsx
         |> typecheck
         |> shouldSucceed
+        |> ignore
+
+    // QMark operator tests - migrated from fsharpqa
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|
+        "QMarkSimple.fs"
+        "QMarkNested.fs"
+        "QMarkArguments.fs"
+        "QMarkAssignSimple.fs"
+        "QMarkExpressionAsArgument.fs"
+        "QMarkExpressionAsArgument2.fs"
+        "QMarkPrecedenceArray.fs"
+        "QMarkPrecedenceCurrying.fs"
+        "QMarkPrecedenceInArrays.fs"
+        "QMarkPrecedenceMethodCall.fs"
+        "QMarkPrecedenceMethodCallSpace.fs"
+        "QMarkPrecedenceSpace.fs"
+    |])>]
+    let ``SymbolicOperators - QMark operator`` compilation =
+        compilation
+        |> asFsx
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    // QMark error test - should fail with FS0717: Unexpected type arguments
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/SymbolicOperators", Includes=[|"E_QMarkGeneric.fs"|])>]
+    let ``SymbolicOperators - E_QMarkGeneric_fs`` compilation =
+        compilation
+        |> asFsx
+        |> compile
+        |> shouldFail
+        |> withErrorCode 0717
+        |> withDiagnosticMessageMatches "Unexpected type arguments"
         |> ignore
 

@@ -21,7 +21,6 @@ open System.Text
 open System.Threading
 
 open FSharp.Compiler.AbstractIL.Diagnostics
-open Internal.Utilities.Library
 open Internal.Utilities
 
 let logging = false
@@ -83,7 +82,7 @@ let splitNameAt (nm: string) idx =
     if idx > last then
         failwith "splitNameAt: idx > last"
 
-    (nm.Substring(0, idx)), (if idx < last then nm.Substring(idx + 1, last - idx) else "")
+    nm.Substring(0, idx), (if idx < last then nm.Substring(idx + 1, last - idx) else "")
 
 let rec splitNamespaceAux (nm: string) =
     match nm.IndexOf '.' with
@@ -771,13 +770,13 @@ type ILTypeRef =
         let isPrimaryY = isPrimary y
 
         let xApproxId =
-            if isPrimaryX && not (isPrimaryY) then
+            if isPrimaryX && not isPrimaryY then
                 ILTypeRef.ComputeHash(primaryScopeRef, x.Enclosing, x.Name)
             else
                 x.ApproxId
 
         let yApproxId =
-            if isPrimaryY && not (isPrimaryX) then
+            if isPrimaryY && not isPrimaryX then
                 ILTypeRef.ComputeHash(primaryScopeRef, y.Enclosing, y.Name)
             else
                 y.ApproxId
@@ -1230,19 +1229,75 @@ type ILAttributes(array: ILAttribute[]) =
 
     static member val internal Empty = ILAttributes([||])
 
-[<NoEquality; NoComparison>]
-type ILAttributesStored =
+[<Flags>]
+type WellKnownILAttributes =
+    | None = 0u
+    | IsReadOnlyAttribute = (1u <<< 0)
+    | IsUnmanagedAttribute = (1u <<< 1)
+    | IsByRefLikeAttribute = (1u <<< 2)
+    | ExtensionAttribute = (1u <<< 3)
+    | NullableAttribute = (1u <<< 4)
+    | ParamArrayAttribute = (1u <<< 5)
+    | AllowNullLiteralAttribute = (1u <<< 6)
+    | ReflectedDefinitionAttribute = (1u <<< 7)
+    | AutoOpenAttribute = (1u <<< 8)
+    | InternalsVisibleToAttribute = (1u <<< 9)
+    | CallerMemberNameAttribute = (1u <<< 10)
+    | CallerFilePathAttribute = (1u <<< 11)
+    | CallerLineNumberAttribute = (1u <<< 12)
+    | IDispatchConstantAttribute = (1u <<< 13)
+    | IUnknownConstantAttribute = (1u <<< 14)
+    | RequiresLocationAttribute = (1u <<< 15)
+    | SetsRequiredMembersAttribute = (1u <<< 16)
+    | NoEagerConstraintApplicationAttribute = (1u <<< 17)
+    | DefaultMemberAttribute = (1u <<< 18)
+    | ObsoleteAttribute = (1u <<< 19)
+    | CompilerFeatureRequiredAttribute = (1u <<< 20)
+    | ExperimentalAttribute = (1u <<< 21)
+    | RequiredMemberAttribute = (1u <<< 22)
+    | NullableContextAttribute = (1u <<< 23)
+    | AttributeUsageAttribute = (1u <<< 24)
+    | NotComputed = (1u <<< 31)
 
-    /// Computed by ilread.fs based on metadata index
+type internal ILAttributesStoredRepr =
     | Reader of (int32 -> ILAttribute[])
-
-    /// Already computed
     | Given of ILAttributes
 
-    member x.GetCustomAttrs metadataIndex =
-        match x with
-        | Reader f -> ILAttributes(f metadataIndex)
-        | Given attrs -> attrs
+[<Sealed; NoEquality; NoComparison>]
+type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStoredRepr) =
+    [<VolatileField>]
+    let mutable repr = initial
+
+    [<VolatileField>]
+    let mutable wellKnownFlags = WellKnownILAttributes.NotComputed
+
+    member _.MetadataIndex = metadataIndex
+
+    member x.CustomAttrs: ILAttributes =
+        match repr with
+        | Given a -> a
+        | Reader f ->
+            let r = ILAttributes(f metadataIndex)
+            repr <- Given r
+            r
+
+    member x.HasWellKnownAttribute(flag: WellKnownILAttributes, compute: ILAttributes -> WellKnownILAttributes) : bool =
+        x.GetOrComputeWellKnownFlags(compute) &&& flag <> WellKnownILAttributes.None
+
+    member x.GetOrComputeWellKnownFlags(compute: ILAttributes -> WellKnownILAttributes) : WellKnownILAttributes =
+        let f = wellKnownFlags
+
+        if f <> WellKnownILAttributes.NotComputed then
+            f
+        else
+            let a = x.CustomAttrs
+            let computed = compute a
+            wellKnownFlags <- computed
+            computed
+
+    static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) = ILAttributesStored(idx, Reader f)
+
+    static member CreateGiven(attrs: ILAttributes) = ILAttributesStored(-1, Given attrs)
 
 let emptyILCustomAttrs = ILAttributes [||]
 
@@ -1257,18 +1312,18 @@ let mkILCustomAttrs l =
     | [] -> emptyILCustomAttrs
     | _ -> mkILCustomAttrsFromArray (List.toArray l)
 
-let emptyILCustomAttrsStored = ILAttributesStored.Given emptyILCustomAttrs
+let emptyILCustomAttrsStored = ILAttributesStored.CreateGiven emptyILCustomAttrs
 
 let storeILCustomAttrs (attrs: ILAttributes) =
     if attrs.AsArray().Length = 0 then
         emptyILCustomAttrsStored
     else
-        ILAttributesStored.Given attrs
+        ILAttributesStored.CreateGiven attrs
 
 let mkILCustomAttrsComputed f =
-    ILAttributesStored.Reader(fun _ -> f ())
+    ILAttributesStored.CreateReader(-1, fun _ -> f ())
 
-let mkILCustomAttrsReader f = ILAttributesStored.Reader f
+let mkILCustomAttrsReader f = ILAttributesStored.CreateReader(-1, f)
 
 type ILCodeLabel = int
 
@@ -1792,7 +1847,7 @@ type ILParameter =
         MetadataIndex: int32
     }
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() =
         x.Name |> Option.defaultValue "<no name>"
@@ -1810,7 +1865,7 @@ type ILReturn =
 
     override x.ToString() = "<return>"
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     member x.WithCustomAttrs(customAttrs) =
         { x with
@@ -1871,7 +1926,7 @@ type ILGenericParameterDef =
         MetadataIndex: int32
     }
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -1917,13 +1972,7 @@ type InterfaceImpl =
         mutable CustomAttrsStored: ILAttributesStored
     }
 
-    member x.CustomAttrs =
-        match x.CustomAttrsStored with
-        | ILAttributesStored.Reader f ->
-            let res = ILAttributes(f x.Idx)
-            x.CustomAttrsStored <- ILAttributesStored.Given res
-            res
-        | ILAttributesStored.Given attrs -> attrs
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     static member Create(ilType: ILType, customAttrsStored: ILAttributesStored) =
         {
@@ -2030,7 +2079,7 @@ type ILMethodDef
                  | Some attrs -> attrs)
         )
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs metadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
@@ -2267,7 +2316,7 @@ type ILEventDef
 
     member _.MetadataIndex = metadataIndex
 
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = customAttrsStored.CustomAttrs
 
     member x.With(?eventType, ?name, ?attributes, ?addMethod, ?removeMethod, ?fireMethod, ?otherMethods, ?customAttrs) =
         ILEventDef(
@@ -2284,10 +2333,10 @@ type ILEventDef
                  | Some attrs -> attrs)
         )
 
-    member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_> (0)
+    member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_> 0
 
     member x.IsRTSpecialName =
-        (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_> (0)
+        (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_> 0
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2343,7 +2392,7 @@ type ILPropertyDef
     member x.Init = init
     member x.Args = args
     member x.CustomAttrsStored = customAttrsStored
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = customAttrsStored.CustomAttrs
     member x.MetadataIndex = metadataIndex
 
     member x.With(?name, ?attributes, ?setMethod, ?getMethod, ?callingConv, ?propertyType, ?init, ?args, ?customAttrs) =
@@ -2362,11 +2411,10 @@ type ILPropertyDef
                  | Some attrs -> attrs)
         )
 
-    member x.IsSpecialName =
-        (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_> (0)
+    member x.IsSpecialName = (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_> 0
 
     member x.IsRTSpecialName =
-        (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_> (0)
+        (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_> 0
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2388,7 +2436,7 @@ type ILPropertyDefs =
 let convertFieldAccess (ilMemberAccess: ILMemberAccess) =
     match ilMemberAccess with
     | ILMemberAccess.Assembly -> FieldAttributes.Assembly
-    | ILMemberAccess.CompilerControlled -> enum<FieldAttributes> (0)
+    | ILMemberAccess.CompilerControlled -> enum<FieldAttributes> 0
     | ILMemberAccess.FamilyAndAssembly -> FieldAttributes.FamANDAssem
     | ILMemberAccess.FamilyOrAssembly -> FieldAttributes.FamORAssem
     | ILMemberAccess.Family -> FieldAttributes.Family
@@ -2420,7 +2468,7 @@ type ILFieldDef
     member _.Offset = offset
     member _.Marshal = marshal
     member x.CustomAttrsStored = customAttrsStored
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = customAttrsStored.CustomAttrs
     member x.MetadataIndex = metadataIndex
 
     member x.With
@@ -2679,8 +2727,6 @@ type ILTypeDef
         metadataIndex: int32
     ) =
 
-    let mutable customAttrsStored = customAttrsStored
-
     let hasFlag flag = additionalFlags &&& flag = flag
 
     new
@@ -2828,16 +2874,10 @@ type ILTypeDef
             events = defaultArg events x.Events,
             properties = defaultArg properties x.Properties,
             additionalFlags = defaultArg newAdditionalFlags additionalFlags,
-            customAttrs = defaultArg customAttrs (x.CustomAttrsStored)
+            customAttrs = defaultArg customAttrs x.CustomAttrsStored
         )
 
-    member x.CustomAttrs: ILAttributes =
-        match customAttrsStored with
-        | ILAttributesStored.Reader f ->
-            let res = ILAttributes(f x.MetadataIndex)
-            customAttrsStored <- ILAttributesStored.Given res
-            res
-        | ILAttributesStored.Given res -> res
+    member x.CustomAttrs: ILAttributes = customAttrsStored.CustomAttrs
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
@@ -2995,7 +3035,7 @@ type ILNestedExportedType =
         MetadataIndex: int32
     }
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() = "exported type " + x.Name
 
@@ -3017,9 +3057,9 @@ and [<NoComparison; NoEquality>] ILExportedTypeOrForwarder =
 
     member x.Access = typeAccessOfFlags (int x.Attributes)
 
-    member x.IsForwarder = x.Attributes &&& enum<TypeAttributes> (0x00200000) <> enum 0
+    member x.IsForwarder = x.Attributes &&& enum<TypeAttributes> 0x00200000 <> enum 0
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() = "exported type " + x.Name
 
@@ -3059,7 +3099,7 @@ type ILResource =
         | ILResourceLocation.Local bytes -> bytes.GetByteMemory()
         | _ -> failwith "GetBytes"
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() = "resource " + x.Name
 
@@ -3106,7 +3146,7 @@ type ILAssemblyManifest =
         MetadataIndex: int32
     }
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
@@ -3153,7 +3193,7 @@ type ILModuleDef =
         | None -> false
         | _ -> true
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = x.CustomAttrsStored.CustomAttrs
 
     override x.ToString() = "assembly " + x.Name
 
@@ -3333,6 +3373,15 @@ let mkILSimpleTypar nm =
         HasAllowsRefStruct = false
         CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
         MetadataIndex = NoMetadataIdx
+    }
+
+let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
+    { gp with
+        Constraints = []
+        HasReferenceTypeConstraint = false
+        HasNotNullableValueTypeConstraint = false
+        HasDefaultConstructorConstraint = false
+        HasAllowsRefStruct = false
     }
 
 let genericParamOfGenericActual (_ga: ILType) = mkILSimpleTypar "T"
@@ -4256,7 +4305,7 @@ let mkTypeForwarder scopeRef name nested customAttrs access =
     {
         ScopeRef = scopeRef
         Name = name
-        Attributes = enum<TypeAttributes> (0x00200000) ||| convertTypeAccessFlags access
+        Attributes = enum<TypeAttributes> 0x00200000 ||| convertTypeAccessFlags access
         Nested = nested
         CustomAttrsStored = storeILCustomAttrs customAttrs
         MetadataIndex = NoMetadataIdx
@@ -4293,7 +4342,7 @@ let mkILStorageCtorWithParamNames (preblock: ILInstr list, ty, extraParams, flds
             | Some x -> I_seqpoint x
             | None -> ()
             yield! preblock
-            for (n, (_pnm, nm, fieldTy, _attrs)) in List.indexed flds do
+            for n, (_pnm, nm, fieldTy, _attrs) in List.indexed flds do
                 mkLdarg0
                 mkLdarg (uint16 (n + 1))
                 mkNormalStfld (mkILFieldSpecInTy (ty, nm, fieldTy))
@@ -4303,7 +4352,7 @@ let mkILStorageCtorWithParamNames (preblock: ILInstr list, ty, extraParams, flds
 
     let fieldParams =
         [
-            for (pnm, _, ty, attrs) in flds do
+            for pnm, _, ty, attrs in flds do
                 let ilParam = mkILParamNamed (pnm, ty)
 
                 let ilParam =
@@ -4834,8 +4883,6 @@ let rec encodeCustomAttrElemTypeForObject x =
     | ILAttribElem.Double _ -> [| et_R8 |]
     | ILAttribElem.Array(elemTy, _) -> [| yield et_SZARRAY; yield! encodeCustomAttrElemType elemTy |]
 
-let tspan = TimeSpan(DateTime.UtcNow.Ticks - DateTime(2000, 1, 1).Ticks)
-
 let parseILVersion (vstr: string) =
     // matches "v1.2.3.4" or "1.2.3.4". Note, if numbers are missing, returns -1 (not 0).
     let mutable vstr = vstr.TrimStart [| 'v' |]
@@ -4844,6 +4891,7 @@ let parseILVersion (vstr: string) =
 
     // account for wildcards
     if versionComponents.Length > 2 then
+        let tspan = TimeSpan(DateTime.UtcNow.Ticks - DateTime(2000, 1, 1).Ticks)
         let defaultBuild = uint16 tspan.Days % UInt16.MaxValue - 1us
 
         let defaultRevision =
@@ -4930,6 +4978,7 @@ let rec decodeCustomAttrElemType bytes sigptr x =
         let elemTy, sigptr = decodeCustomAttrElemType bytes sigptr et
         mkILArr1DTy elemTy, sigptr
     | x when x = 0x50uy -> PrimaryAssemblyILGlobals.typ_Type, sigptr
+    | x when x = 0x51uy -> PrimaryAssemblyILGlobals.typ_Object, sigptr // SERIALIZATION_TYPE_TAGGED_OBJECT (ECMA-335 II.23.3)
     | _ -> failwithf "decodeCustomAttrElemType ilg: unrecognized custom element type: %A" x
 
 /// Given a custom attribute element, encode it to a binary representation according to the rules in Ecma 335 Partition II.
@@ -5130,17 +5179,17 @@ type ILTypeSigParser(tstring: string) =
                 drop () // step to the number
                 // fetch the arity
                 let arity =
-                    while (int (here ()) >= (int ('0')))
-                          && (int (here ()) <= (int ('9')))
-                          && (int (peek ()) >= (int ('0')))
-                          && (int (peek ()) <= (int ('9'))) do
+                    while (int (here ()) >= (int '0'))
+                          && (int (here ()) <= (int '9'))
+                          && (int (peek ()) >= (int '0'))
+                          && (int (peek ()) <= (int '9')) do
                         step ()
 
                     Int32.Parse(take ())
                 // skip the '['
                 drop ()
                 // get the specializations
-                typeName + "`" + (arity.ToString()),
+                typeName + "`" + arity.ToString(),
                 Some
                     [
                         for _i in 0 .. arity - 1 do
