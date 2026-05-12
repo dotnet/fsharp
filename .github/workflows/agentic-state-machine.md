@@ -29,6 +29,9 @@ safe-outputs:
     draft: false
     max: 1
     allowed-files: [".github/docs/**"]
+
+env:
+  REPO_RULES_PATH: ".github/tooling-check-repo-rules.md"
 ---
 
 # Agentic State Machine — Diagram Generator
@@ -38,8 +41,8 @@ You read all agentic workflow `.md` files in `.github/workflows/`, extract what 
 </role>
 
 <rules>
-1. Read ALL `.md` files in `.github/workflows/` except `docs/` and `agentic-state-machine.md` (this file).
-2. Also read `.github/tooling-check-repo-rules.md` if it exists.
+1. Read ALL `.md` files in `.github/workflows/` except `docs/`, `shared/`, and `agentic-state-machine.md` (this file).
+2. Read `${{ env.REPO_RULES_PATH }}` from this repo's **default branch** via `get_file_contents` for repo-specific context, workflow descriptions, and diagram hints. If the file does not exist, proceed without it.
 3. If `.github/docs/state-machine.md` exists, read it. Compare source hashes in the `<!-- sources: ... -->` footer against current files (use `sha256sum`). If unchanged → `noop`. If changed → update incrementally, minimal diff.
 4. Every transition edge must label its actor: 👤 human, 🤖 agent-name, ⚙️ CI, ⏰ scheduler.
 5. Do not hardcode sections for "issues" or "PRs". Discover what lifecycle groups exist from the workflows themselves. A workflow that maintains files/branches is its own group.
