@@ -786,8 +786,11 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
     // This enables operators defined on FSharpFunc to work on function values
     let funcTypeResults = SelectIndexedExtMethInfosForFunctionType infoReader nenv optFilter m ty
 
+    // For tuple types, also look up extensions on System.Tuple<_,...> or System.ValueTuple<_,...>
+    let tupleTypeResults = SelectIndexedExtMethInfosForTupleType infoReader nenv optFilter m ty
+
     let combined =
-        let allRootResults = rootResults @ funcTypeResults
+        let allRootResults = rootResults @ funcTypeResults @ tupleTypeResults
         if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil allRootResults) then
             allRootResults
         else
