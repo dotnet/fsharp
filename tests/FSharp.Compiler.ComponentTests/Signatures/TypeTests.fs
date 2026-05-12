@@ -171,7 +171,7 @@ type DataItem<'data> =
     Data: 'data
   }
 
-  static member inline Create: item: ^input -> DataItem<^input> when ^input: (member get_StringValue: unit -> string) and ^input: (member get_FriendlyStringValue: unit -> string)
+  static member inline Create<^input when ^input: (member get_StringValue: unit -> string) and ^input: (member get_FriendlyStringValue: unit -> string)> : item: ^input -> DataItem<^input>
 
   static member Create<'data> : identifier: string * label: string * data: 'data -> DataItem<'data>"""
 
@@ -240,6 +240,7 @@ type Foo =
         """
 module Lib
 
+[<Class>]
 type Foo =
 
   member Bar: int with get, set"""
@@ -257,6 +258,7 @@ type Foo =
         """
 module Lib
 
+[<Class>]
 type Foo =
 
   member Bar: a: int -> int with get
@@ -441,3 +443,335 @@ type ExplicitClass =
     |> compile
     |> shouldSucceed
     |> ignore
+
+// https://github.com/dotnet/fsharp/issues/15339
+[<Fact>]
+let ``Struct with non-comparable field includes NoComparison in signature`` () =
+    let implSource =
+        """
+namespace FSInteractive
+
+open System
+
+[<Struct>]
+type LocalReadWriteLockCookie(locker: obj) =
+    interface IDisposable with
+        member _.Dispose () = ()
+"""
+
+    let generatedSignature =
+        FSharp implSource |> printSignatures
+
+    Assert.Contains("NoComparison", generatedSignature)
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/15339
+[<Fact>]
+let ``Struct with explicit NoComparison does not get duplicate attribute`` () =
+    let generatedSignature =
+        FSharp
+            """
+namespace TestNs
+
+[<Struct; NoComparison>]
+type AlreadyMarked =
+    val X: obj
+    new(x) = { X = x }
+"""
+        |> printSignatures
+
+    // Should NOT duplicate [<NoComparison>] — the explicit one is sufficient
+    let count = System.Text.RegularExpressions.Regex.Matches(generatedSignature, "NoComparison").Count
+    Assert.Equal(1, count)
+
+// https://github.com/dotnet/fsharp/issues/15339
+[<Fact>]
+let ``Struct with CustomComparison does not get NoComparison`` () =
+    let generatedSignature =
+        FSharp
+            """
+namespace TestNs
+
+open System
+
+[<Struct; CustomComparison; NoEquality>]
+type WithCustomCompare =
+    val X: obj
+    new(x) = { X = x }
+    interface IComparable with
+        member _.CompareTo(_) = 0
+"""
+        |> printSignatures
+
+    Assert.DoesNotContain("NoComparison", generatedSignature)
+
+// https://github.com/dotnet/fsharp/issues/15339
+[<Fact>]
+let ``Struct with non-equatable field includes NoEquality in signature`` () =
+    let implSource =
+        """
+namespace TestNs
+
+[<Struct>]
+type StructWithFunc =
+    val Fn: int -> int
+    new(f) = { Fn = f }
+"""
+
+    let generatedSignature =
+        FSharp implSource |> printSignatures
+
+    Assert.Contains("NoComparison", generatedSignature)
+    Assert.Contains("NoEquality", generatedSignature)
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/15560
+[<Fact>]
+let ``Private type abbreviation with prefix type parameter`` () =
+    let signatures =
+        FSharp
+            """
+module Foo
+
+type P<'a> = class end
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module R =     
+    type private 'a P = unit -> 'a
+"""
+        |> printSignatures
+
+    Assert.Contains("type private 'a P", signatures)
+    Assert.DoesNotContain("type 'a private P", signatures)
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``Private constructor class with static members gets Class attribute in signature`` () =
+    let implSource =
+        """
+module Telplin
+
+type A private () = 
+    static member Foo () = ()
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // Static members alone are not enough for the compiler to infer class
+    Assert.Contains("Class", generatedSignature)
+
+    // Roundtrip: the generated signature must compile with the implementation
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``Private constructor class with instance members gets Class attribute in signature`` () =
+    let implSource =
+        """
+module Telplin
+
+type A private () = 
+    member a.Foo () = ()
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // Private ctor is not visible in signature, so [<Class>] is needed
+    Assert.Contains("Class", generatedSignature)
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``Public constructor class does not need Class attribute in signature`` () =
+    let implSource =
+        """
+module Telplin
+
+type B() = 
+    member b.Bar () = ()
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // Public constructor is visible, so [<Class>] should not be needed
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> withOptions [ "--warnaserror:64" ]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``Empty class with private constructor uses class end`` () =
+    let implSource =
+        """
+module Telplin
+
+type Empty private () = class end
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // Empty class should use 'class end' repr, not [<Class>] attribute
+    Assert.Contains("class end", generatedSignature)
+
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// https://github.com/dotnet/fsharp/issues/16531
+[<Fact>]
+let ``AbstractClass with private constructor roundtrips`` () =
+    let implSource =
+        """
+module Telplin
+
+[<AbstractClass>]
+type A private () =
+    abstract member M: unit -> unit
+"""
+
+    let generatedSignature =
+        FSharp implSource
+        |> printSignatures
+
+    // The generated signature should compile with the implementation
+    Fsi generatedSignature
+    |> withAdditionalSourceFile (FsSource implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// =========================================================================
+// Corpus-wide roundtrip sweep failures (1483 standalone .fs files swept).
+// Each test below is a REAL sig-gen bug found in POSITIVE (legit) test code.
+// Negative tests (intentionally broken code) are excluded.
+// =========================================================================
+
+// Sweep: single-case struct DU gets spurious bar (FS0300)
+// Source: tests/fsharp/core/fsfromfsviacs/lib.fs — #19597
+[<Fact>]
+let ``Sweep - single-case struct DU roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+[<Struct>]
+type U0 = U0
+"""
+
+// Sweep: backticked active pattern case names (FS0010) — #19592
+[<Fact>]
+let ``Sweep - backticked active pattern roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+let (|``A B``|) (x:int) = x * 2
+"""
+
+// Sweep: type param with special chars needs backtick escaping (FS0010) — #19595
+[<Fact>]
+let ``Sweep - type param with angle brackets roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+type Foo<'a, 'b>() =
+    member _.Bar<'``c<d>``> (x: '``c<d>``) = x
+"""
+
+// Sweep: SRTP multi-witness constraint lost in generated sig (FS0340)
+// Source: tests/fsharp/typecheck/sigs/pos36-srtp-lib.fs
+[<Fact>]
+let ``Sweep - SRTP multi-witness constraint roundtrips`` () =
+    assertSignatureRoundtrip """
+module Lib
+
+let inline RequireM< ^Witnesses, ^T when (^Witnesses or ^T): (static member M : ^T -> string) > (x: ^T) : string = 
+    ((^Witnesses or ^T): (static member M : ^T -> string) x)
+
+type C(p:int) = 
+    member x.P = p
+
+type Witnesses() =
+    static member M (x: C) : string = sprintf "M(C), x = %d"  x.P
+    static member M (x: int64) : string = sprintf "M(int64), x = %d"  x
+
+type StaticMethods =
+    static member inline M< ^T when (Witnesses or  ^T): (static member M: ^T -> string)>  (x: ^T) : string =
+        RequireM< Witnesses, ^T> (x)
+"""
+
+// Sweep: type application syntax — fixed by SRTP explicit type param change
+// Source: tests/fsharp/typecheck/sigs/pos34.fs
+[<Fact>]
+let ``Sweep - type application in member sig roundtrips`` () =
+    assertSignatureRoundtrip """
+module Pos34
+
+[<Sealed>]
+type Foo<'bar>() =
+    member inline _.Baz<'a> (x: 'a) = x
+"""
+
+// Sweep: multi-case active pattern — fixed by backtick escaping change
+// Source: tests/fsharp/typecheck/sigs/pos16.fs
+[<Fact>]
+let ``Sweep - active pattern in sig roundtrips`` () =
+    assertSignatureRoundtrip """
+module Pos16
+
+let (|A|B|) (x: int) = if x > 0 then A else B
+"""
+
+// Sweep: overloaded member with unit parameter (FS0193) — #19596
+// Roundtrip fails: member M(()) generates sig 'member M: unit -> unit' but
+// conformance checker can't match it when M is overloaded. The sig syntax
+// is correct but the conformance check for unit-parameter overloads is broken.
+[<Fact(Skip = "Sig conformance: member M(()) vs member M: unit -> unit fails when overloaded - FS0193")>]
+let ``Sweep - overloaded member with unit param roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""

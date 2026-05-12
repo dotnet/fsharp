@@ -24,7 +24,13 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 open type System.MemoryExtensions
 
+/// Exception raised when a pattern match is incomplete.
+/// Fields: isComputationExpression * (counterExample * isShownAsFieldPattern) option * range
 exception MatchIncomplete of bool * (string * bool) option * range
+
+/// Wrapper that adds a for-loop hint to an existing MatchIncomplete diagnostic.
+exception MatchIncompleteForLoopHint of exn
+
 exception RuleNeverMatched of range
 exception EnumMatchIncomplete of bool * (string * bool) option * range
 

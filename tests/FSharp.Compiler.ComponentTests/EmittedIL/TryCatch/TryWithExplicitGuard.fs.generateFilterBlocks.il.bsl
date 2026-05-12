@@ -72,7 +72,7 @@
       IL_0024:  ldloc.3
       IL_0025:  ldloc.s    V_4
       IL_0027:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<class [runtime]System.Type>(!!0,
-                                                                                                                                                         !!0)
+                                                                                                                                                               !!0)
       IL_002c:  ldc.i4.0
       IL_002d:  ceq
       IL_002f:  brfalse.s  IL_0037
@@ -99,7 +99,7 @@
       IL_005a:  ldloc.s    V_8
       IL_005c:  ldloc.s    V_9
       IL_005e:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<class [runtime]System.Type>(!!0,
-                                                                                                                                                         !!0)
+                                                                                                                                                               !!0)
       IL_0063:  ldc.i4.0
       IL_0064:  ceq
       IL_0066:  brfalse.s  IL_0072

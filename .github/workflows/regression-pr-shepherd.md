@@ -19,6 +19,8 @@ network:
   - dotnet
 
 safe-outputs:
+  noop:
+    report-as-issue: false
   add-comment:
     max: 5
     target: "*"
@@ -72,6 +74,8 @@ gh pr list --label "AI-Issue-Regression-PR" --state open --json number,title,hea
 4. The PR **must** originate from `dotnet/fsharp` — the `headRepository` owner must be `dotnet` and name must be `fsharp`. Never touch PRs from external forks.
 
 **If a PR fails any of these checks, skip it silently — do not comment, do not attempt any changes.**
+
+**If no eligible PRs exist**, call `noop` with a brief explanation (e.g., "No open regression test PRs need attention"). A run with zero safe outputs is treated as a failure.
 
 **Process at most 3 PRs per run.** Prioritize PRs that have unaddressed review feedback (Category A) or CI failures (Category B) over healthy PRs (Category C). If more than 3 PRs need work, the next scheduled run will pick up the rest.
 

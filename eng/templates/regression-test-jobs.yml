@@ -2,7 +2,7 @@
 # Tests third-party F# projects with the freshly built compiler
 #
 # buildScript notation:
-#   - Single command:   buildScript: dotnet build MySolution.sln
+#   - Single command:   buildScript: dotnet build MySolution.slnx
 #   - Multiple commands: buildScript: dotnet build A.fsproj ;; dotnet build B.fsproj
 #     Commands separated by ';;' run sequentially; the job fails on the first non-zero exit code.
 

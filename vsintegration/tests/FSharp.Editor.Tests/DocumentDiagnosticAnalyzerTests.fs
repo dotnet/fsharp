@@ -362,7 +362,7 @@ let x = 3
 let y = (*start*)x(*end*) 4
 let arr = [| 1; 2; 3 |]
             """,
-            expectedMessage = "This value is not a function and cannot be applied."
+            expectedMessage = "This value is not a function and cannot be applied. It has type 'int', which does not accept arguments."
         )
 
     [<Fact>]
@@ -373,7 +373,7 @@ let arr = [| 1; 2; 3 |]
 let f x = x + 1
 let r = (*start*)f 3(*end*) 4
             """,
-            expectedMessage = "This value is not a function and cannot be applied."
+            expectedMessage = "This value is not a function and cannot be applied. It has type 'int', which does not accept arguments."
         )
 
     [<Fact>]
