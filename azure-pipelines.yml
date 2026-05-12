@@ -271,7 +271,7 @@ extends:
                   PB_SKIPTESTS: ${{ parameters.SkipTests }}
                   PB_OfficialBuildId: $(Build.BuildNumber)
                   BUILDTOOLS_SOURCE: 'https://pkgs.dev.azure.com/dnceng/public/_packaging/myget-legacy/nuget/v3/index.json'
-                  VSS_NUGET_EXTERNAL_FEED_ENDPOINTS: '{"endpointCredentials":[{"endpoint":"https://pkgs.dev.azure.com/devdiv/_packaging/VS/nuget/v3/index.json","username":"VssSessionToken","password":"$(DevDivAccessToken)"}]}'
+                  VSS_NUGET_EXTERNAL_FEED_ENDPOINTS: '{"endpointCredentials":[{"endpoint":"https://pkgs.dev.azure.com/devdiv/_packaging/VS/nuget/v3/index.json","username":"VssSessionToken","password":"$(DevDivAccessToken)"},{"endpoint":"https://pkgs.dev.azure.com/azure-public/vside/_packaging/Roslyn/nuget/v3/index.json","username":"VssSessionToken","password":"$(System.AccessToken)"},{"endpoint":"https://pkgs.dev.azure.com/dnceng/_packaging/MicroBuildToolset/nuget/v3/index.json","username":"VssSessionToken","password":"$(System.AccessToken)"}]}'
               - task: PowerShell@2
                 displayName: 'Mirror legacy log paths into artifacts/log/Release for 1ES PT post-build'
                 condition: succeededOrFailed()
