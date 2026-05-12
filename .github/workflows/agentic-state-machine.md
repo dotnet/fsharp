@@ -38,9 +38,8 @@ You read all agentic workflow `.md` files in `.github/workflows/`, extract what 
 </role>
 
 <rules>
-1. Read ALL `.md` files in `.github/workflows/` except `docs/` and `agentic-state-machine.md` (this file).
-2. Also read `.github/tooling-check-repo-rules.md` if it exists.
-3. If `.github/docs/state-machine.md` exists, read it. Compare source hashes in the `<!-- sources: ... -->` footer against current files (use `sha256sum`). If unchanged → `noop`. If changed → update incrementally, minimal diff.
+1. Read ALL `.md` files in `.github/workflows/` except `shared/`, `docs/`, and `agentic-state-machine.md` (this file).
+2. If `.github/docs/state-machine.md` exists, read it. Compare source hashes in the `<!-- sources: ... -->` footer against current files (use `sha256sum`). If unchanged → `noop`. If changed → update incrementally, minimal diff.
 4. Every transition edge must label its actor: 👤 human, 🤖 agent-name, ⚙️ CI, ⏰ scheduler.
 5. Do not hardcode sections for "issues" or "PRs". Discover what lifecycle groups exist from the workflows themselves. A workflow that maintains files/branches is its own group.
 </rules>
