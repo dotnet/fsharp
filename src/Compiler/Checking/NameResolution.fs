@@ -2874,6 +2874,23 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             | Some(MethodItem msets) when isLookUpExpr ->
                 let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
 
+                // If the intrinsic candidate set already disagrees with the strict
+                // instance/static filter (e.g. expression-form `Type<TArg>.Member` is
+                // resolved as a dot-expression with LookupIsInstance.Yes but yields
+                // static intrinsic members), relax the filter for the extension lookup
+                // so static extension members are also considered. See issue #19664.
+                let isAmbivalent =
+                    minfos
+                    |> List.exists (fun minfo ->
+                        match isInstanceFilter with
+                        | LookupIsInstance.Yes -> not minfo.IsInstance
+                        | LookupIsInstance.No -> minfo.IsInstance
+                        | LookupIsInstance.Ambivalent -> true)
+
+                let isInstanceFilter =
+                    if isAmbivalent then LookupIsInstance.Ambivalent
+                    else isInstanceFilter
+
                 // fold the available extension members into the overload resolution
                 let extensionMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv ad optFilter isInstanceFilter m ty
 
