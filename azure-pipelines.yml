@@ -167,6 +167,24 @@ extends:
                   packageType: sdk
                   useGlobalJson: true
                   workingDirectory: '$(Build.SourcesDirectory)'
+              - task: NuGetCommand@2
+                displayName: 'Pre-restore packages.config (uses NuGetAuthenticate creds; populates NuGet cache so build.cmd nuget restore can hit cache)'
+                inputs:
+                  command: restore
+                  restoreSolution: '$(Build.SourcesDirectory)\packages.config'
+                  feedsToUse: config
+                  nugetConfigPath: '$(Build.SourcesDirectory)\NuGet.Config'
+                  restoreDirectory: '$(Build.SourcesDirectory)\packages'
+                continueOnError: true
+              - task: NuGetCommand@2
+                displayName: 'Pre-restore setup/packages.config'
+                inputs:
+                  command: restore
+                  restoreSolution: '$(Build.SourcesDirectory)\setup\packages.config'
+                  feedsToUse: config
+                  nugetConfigPath: '$(Build.SourcesDirectory)\NuGet.Config'
+                  restoreDirectory: '$(Build.SourcesDirectory)\packages'
+                continueOnError: true
               - task: UseDotNet@2
                 displayName: 'Install legacy .NET Core SDK 2.1.300 to Tools/dotnet20 (F# 15.9 LKG fsc.exe)'
                 inputs:
