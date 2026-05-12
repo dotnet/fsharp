@@ -10300,14 +10300,14 @@ and EmitRestoreStack cgbuf (savedStack, savedStackLocals) =
 //GenAttr: custom attribute generation
 //-------------------------------------------------------------------------
 
-and GenAttribArg amap g eenv x (ilArgTy: ILType) =
+and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
 
     match stripDebugPoints x, ilArgTy with
     // Detect 'null' used for an array argument
     | Expr.Const(Const.Zero, _, _), ILType.Array _ -> ILAttribElem.Null
 
     // Detect standard constants
-    | Expr.Const(c, m, _), _ ->
+    | Expr.Const(c, m, ty), _ ->
         let tynm = ilArgTy.TypeSpec.Name
         let isobj = (tynm = "System.Object")
 
@@ -10334,13 +10334,68 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
         | Const.Zero when isobj -> ILAttribElem.Null
         | Const.Zero when tynm = "System.String" -> ILAttribElem.String None
         | Const.Zero when tynm = "System.Type" -> ILAttribElem.Type None
+        | Const.Zero when tynm = "System.Boolean" -> ILAttribElem.Bool false
+        | Const.Zero when tynm = "System.SByte" -> ILAttribElem.SByte 0y
+        | Const.Zero when tynm = "System.Int16" -> ILAttribElem.Int16 0s
+        | Const.Zero when tynm = "System.Int32" -> ILAttribElem.Int32 0
+        | Const.Zero when tynm = "System.Int64" -> ILAttribElem.Int64 0L
+        | Const.Zero when tynm = "System.Byte" -> ILAttribElem.Byte 0uy
+        | Const.Zero when tynm = "System.UInt16" -> ILAttribElem.UInt16 0us
+        | Const.Zero when tynm = "System.UInt32" -> ILAttribElem.UInt32 0u
+        | Const.Zero when tynm = "System.UInt64" -> ILAttribElem.UInt64 0UL
+        | Const.Zero when tynm = "System.Single" -> ILAttribElem.Single 0.0f
+        | Const.Zero when tynm = "System.Double" -> ILAttribElem.Double 0.0
+        | Const.Zero when tynm = "System.Char" -> ILAttribElem.Char '\000'
+        | Const.Zero when isEnumTy g ty ->
+            let underlyingTy = underlyingTypeOfEnumTy g ty
+            let underlyingIlTy = GenType amap m eenv.tyenv underlyingTy
+            GenAttribArg amap g eenv (Expr.Const(Const.Zero, m, underlyingTy)) underlyingIlTy
         | Const.String i when isobj || tynm = "System.String" -> ILAttribElem.String(Some i)
         | _ -> error (InternalError("The type '" + tynm + "' may not be used as a custom attribute value", m))
 
     // Detect '[| ... |]' nodes
     | Expr.Op(TOp.Array, [ elemTy ], args, m), _ ->
         let ilElemTy = GenType amap m eenv.tyenv elemTy
-        ILAttribElem.Array(ilElemTy, List.map (fun arg -> GenAttribArg amap g eenv arg ilElemTy) args)
+
+        // Check if element type can be encoded in custom attribute metadata (ECMA-335 II.23.3).
+        // Valid element types: primitives, enums, string, System.Type, System.Object.
+        let isEncodableElemType =
+            match ilElemTy with
+            | ILType.Value tspec ->
+                match tspec.Name with
+                | "System.SByte"
+                | "System.Byte"
+                | "System.Int16"
+                | "System.UInt16"
+                | "System.Int32"
+                | "System.UInt32"
+                | "System.Int64"
+                | "System.UInt64"
+                | "System.Double"
+                | "System.Single"
+                | "System.Char"
+                | "System.Boolean" -> true
+                | _ -> isEnumTy g elemTy
+            | ILType.Boxed tspec ->
+                tspec.Name = "System.String"
+                || tspec.Name = "System.Object"
+                || tspec.Name = "System.Type"
+            | _ -> false
+
+        if not isEncodableElemType then
+            if args.IsEmpty then
+                // Empty arrays: substitute System.Object as element type since no elements need encoding.
+                ILAttribElem.Array(g.ilg.typ_Object, [])
+            else
+                let elemTypeName =
+                    if ilElemTy.IsNominal then
+                        ilElemTy.TypeRef.FullName
+                    else
+                        string ilElemTy
+
+                error (Error(FSComp.SR.ilCustomAttrInvalidArrayElemType elemTypeName, m))
+        else
+            ILAttribElem.Array(ilElemTy, List.map (fun arg -> GenAttribArg amap g eenv arg ilElemTy) args)
 
     // Detect 'typeof<ty>' calls
     | TypeOfExpr g ty, _ -> ILAttribElem.Type(Some(GenType amap x.Range eenv.tyenv ty))
