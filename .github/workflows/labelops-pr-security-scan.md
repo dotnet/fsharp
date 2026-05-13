@@ -85,18 +85,18 @@ Read `.github/tooling-check-repo-rules.md` from the default branch for repo-spec
 5. **Fork PRs** → read the file list via `get_files`, the diff via `get_diff`, and the title and body.
 6. Classify into one or more categories below. A PR can trigger multiple.
 7. Apply labels and post one comment:
-   - If any category matches → add all applicable `⚠️` labels:
-     ```
-     🔍 Tooling Safety Check — Affects-Build-Infra, Affects-Restore
-     Build-Infra: modifies eng/targets/Packaging.targets (MSBuild target file)
-     Restore: adds PackageReference with build assets in src/Foo/Foo.fsproj
-     <!-- head:<headRefOid> -->
-     ```
-   - If no category matches → add `AI-Tooling-Check-Scanned-Clean`:
-     ```
-     🔍 Tooling Safety Check — Clean
-     <!-- head:<headRefOid> -->
-     ```
+    - If any category matches → add all applicable `⚠️` labels:
+      ```
+      🔍 Tooling Safety Check — Affects-Build-Infra, Affects-Restore
+      Affects-Build-Infra: <reason>
+      Affects-Restore: <reason>
+      <!-- head:<headRefOid> -->
+      ```
+    - If no category matches → add `AI-Tooling-Check-Scanned-Clean`:
+      ```
+      🔍 Tooling Safety Check — OK
+      <!-- head:<headRefOid> -->
+      ```
 
 The `<!-- head:<sha> -->` marker on the last line is mandatory — it is the state that the next run uses to detect new commits. `hide-older-comments: true` collapses previous scan comments automatically.
 </process>
