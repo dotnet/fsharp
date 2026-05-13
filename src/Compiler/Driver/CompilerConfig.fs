@@ -1260,8 +1260,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.alwaysInline =
         data.alwaysInline
         |> Option.defaultValue (
-            not data.debuginfo
-            || data.optSettings.LocalOptimizationsEnabled
+            data.optSettings.LocalOptimizationsEnabled
             || data.extraOptimizationIterations > 0
         )
 
