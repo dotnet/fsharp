@@ -64,9 +64,7 @@
         .maxstack  7
         .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> V_0,
                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> V_1,
-                 int32 V_2,
-                 class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_3,
-                 int32 V_4)
+                 int32 V_2)
         IL_0000:  ldc.i4.0
         IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
         IL_0006:  stloc.0
@@ -95,14 +93,10 @@
         IL_0039:  stloc.2
         IL_003a:  ldarg.0
         IL_003b:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder assembly/assembly/f3@5::builder@
-        IL_0040:  stloc.3
-        IL_0041:  ldloc.2
-        IL_0042:  stloc.s    V_4
-        IL_0044:  ldloc.s    V_4
-        IL_0046:  newobj     instance void assembly/assembly/'f3@10-1'::.ctor(int32)
-        IL_004b:  tail.
-        IL_004d:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
-        IL_0052:  ret
+        IL_0040:  ldloc.2
+        IL_0041:  tail.
+        IL_0043:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Return<int32>(!!0)
+        IL_0048:  ret
       } 
 
     } 
