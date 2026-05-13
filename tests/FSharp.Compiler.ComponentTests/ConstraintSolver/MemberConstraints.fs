@@ -239,3 +239,60 @@ let inline inverse m =
             """
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Nested inline SRTP with multiple overloads should not cause internal error`` () =
+        // Regression test: unsolved type variables in trait constraint solutions during codegen
+        // caused FS0073 "internal error: Undefined or unsolved type variable" when an inline
+        // SRTP function was wrapped in another SRTP dispatch layer with multiple overloads.
+        FSharp
+            """
+type App<'F, 'a> = | App of 'F * 'a
+
+type LA = LA
+type LB = LB
+
+type D =
+    static member inline Pur(_witness: App<LA, _>, x: 'a) : App<LA, 'a> = App(LA, x)
+    static member inline Pur(_witness: App<LB, _>, x: 'a) : App<LB, list<'a>> = App(LB, [x])
+
+let inline pur_impl (_mthd: ^M, output: ^F, x: 'a) : ^F
+    when (^M or ^F) : (static member Pur : ^F * 'a -> ^F) =
+    ((^M or ^F) : (static member Pur : ^F * 'a -> ^F) (output, x))
+
+let inline pur (x: 'a) : ^F =
+    pur_impl (Unchecked.defaultof<D>, Unchecked.defaultof< ^F>, x)
+
+type D with
+    static member inline Invoke(_witness: App<LA, _>, f: App<LA, 'a -> 'b>, x: App<LA, 'a>) : App<LA, 'b> =
+        let (App(_, fv)) = f
+        let (App(_, xv)) = x
+        App(LA, fv xv)
+    static member inline Invoke(_witness: App<LB, _>, f: App<LB, list<'a -> 'b>>, x: App<LB, list<'a>>) : App<LB, list<'b>> =
+        let (App(_, fv)) = f
+        let (App(_, xv)) = x
+        App(LB, List.map2 (fun f x -> f x) fv xv)
+
+let inline invoke_impl (_mthd: ^M, output: ^R, f: ^FF, x: ^FX) : ^R
+    when (^M or ^R) : (static member Invoke : ^R * ^FF * ^FX -> ^R) =
+    ((^M or ^R) : (static member Invoke : ^R * ^FF * ^FX -> ^R) (output, f, x))
+
+let inline invoke (f: ^FF) (x: ^FX) : ^R =
+    invoke_impl (Unchecked.defaultof<D>, Unchecked.defaultof< ^R>, f, x)
+
+[<EntryPoint>]
+let main _ =
+    // Test pur with two overloads (Pur has wildcard _ in App<LA, _>)
+    let (App(LA, v)) : App<LA, int> = pur 1
+    if v <> 1 then failwith "pur failed"
+
+    // Test invoke with two overloads (Invoke has wildcard _ in App<LA, _>)
+    let f : App<LA, int -> int> = pur (fun x -> x + 1)
+    let x : App<LA, int> = pur 2
+    let (App(LA, r)) : App<LA, int> = invoke f x
+    if r <> 3 then failwith "invoke failed"
+    0
+            """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
