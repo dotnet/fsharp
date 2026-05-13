@@ -36,6 +36,7 @@ tools:
   bash: true
 
 safe-outputs:
+  max-patch-size: 10240
   add-comment:
     max: 5
     target: "*"
