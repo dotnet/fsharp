@@ -450,8 +450,8 @@ type NameResolutionEnv =
       /// Other extension members unindexed by type
       eUnindexedExtensionMembers: ExtensionMember list
 
-      /// Static operator methods from 'open type' declarations, available for SRTP resolution
-      eOpenedTypeOperators: MethInfo list
+      /// Static operator methods from 'open type' declarations, available for SRTP resolution, indexed by logical name.
+      eOpenedTypeOperators: NameMultiMap<MethInfo>
 
       /// Typars (always available by unqualified names). Further typars can be
       /// in the tpenv, a structure folded through each top-level definition.
@@ -475,7 +475,7 @@ type NameResolutionEnv =
           eFullyQualifiedTyconsByDemangledNameAndArity = LayeredMap.Empty
           eIndexedExtensionMembers = TyconRefMultiMap<_>.Empty
           eUnindexedExtensionMembers = []
-          eOpenedTypeOperators = []
+          eOpenedTypeOperators = Map.empty
           eTypars = Map.empty }
 
     member nenv.DisplayEnv = nenv.eDisplayEnv
@@ -965,6 +965,9 @@ let AddTyconByAccessNames bulkAddMode (tcrefs: TyconRef[]) (tab: LayeredMultiMap
 /// Add a record field to the corresponding sub-table of the name resolution environment
 let AddRecdField (rfref: RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfref tab
 
+/// Index a MethInfo by its logical name into a NameMultiMap sub-table of the environment.
+let AddMethInfoByLogicalName (minfo: MethInfo) tab = NameMultiMap.add minfo.LogicalName minfo tab
+
 /// Add a set of union cases to the corresponding sub-table of the environment
 let AddUnionCases1 (tab: Map<_, _>) (ucrefs: UnionCaseRef list) =
     (tab, ucrefs) ||> List.fold (fun acc ucref ->
@@ -1306,9 +1309,12 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
 
     let nenv = { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddMany items }
 
+    let allMethInfos =
+        IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
+
     let methodGroupItems =
         // Methods
-        IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
+        allMethInfos
         |> ChooseMethInfosForNameEnv g m ty
         // Combine methods and extension method groups of the same type
         |> List.map (fun pair ->
@@ -1331,7 +1337,7 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
     // These are intentionally excluded from eUnqualifiedItems by ChooseMethInfosForNameEnv
     // but need to be available for SRTP constraint solving.
     let operatorMethods =
-        IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
+        allMethInfos
         |> List.filter (fun minfo ->
             not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor)
             && typeEquiv g minfo.ApparentEnclosingType ty
@@ -1340,7 +1346,13 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
     if operatorMethods.IsEmpty then
         nenv
     else
-        { nenv with eOpenedTypeOperators = operatorMethods @ nenv.eOpenedTypeOperators }
+        let eOpenedTypeOperators =
+            // Preserve source-declaration order of `operatorMethods` within each bucket
+            // (matches the prior list-prepend semantics). `List.foldBack` lands the first
+            // declared method at the head of the bucket; do not switch to `List.fold` or
+            // `NameMultiMap.initBy` without reversing first. See `docs/name-resolution-operators.md`.
+            List.foldBack AddMethInfoByLogicalName operatorMethods nenv.eOpenedTypeOperators
+        { nenv with eOpenedTypeOperators = eOpenedTypeOperators }
     
 and private AddNestedTypesOfTypeToNameEnv infoReader (amap: Import.ImportMap) ad m nenv ty =
     let tinst, tcrefs = GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
@@ -1774,14 +1786,16 @@ let SelectExtensionMethInfosForTrait (traitInfo: TraitConstraintInfo, m: range, 
     // Also include static operator methods from 'open type' declarations.
     // These are not registered as extension members but should participate in SRTP resolution.
     // Each method is yielded once (paired with the first support type) to avoid duplicates
-    // that would confuse overload resolution.
+    // that would confuse overload resolution. Bucket order is source-declaration order
+    // within each `open type` and most-recently-opened-first across `open type`s; see
+    // `AddStaticContentOfTypeToNameEnv` and `docs/name-resolution-operators.md`.
     let openTypeResults =
         match traitInfo.SupportTypes with
         | [] -> []
         | firstSupportTy :: _ ->
-            [ for minfo in nenv.eOpenedTypeOperators do
-                if minfo.LogicalName = nm then
-                    yield (firstSupportTy, minfo) ]
+            nenv.eOpenedTypeOperators
+            |> NameMultiMap.find nm
+            |> List.map (fun minfo -> (firstSupportTy, minfo))
 
     extResults @ openTypeResults
 

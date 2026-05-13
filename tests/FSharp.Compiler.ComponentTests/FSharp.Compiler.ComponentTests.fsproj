@@ -55,6 +55,7 @@
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs" />
+    <Compile Include="Conformance\Members\CheckEntityDefnEdgeCases.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MemberDefinitions.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />

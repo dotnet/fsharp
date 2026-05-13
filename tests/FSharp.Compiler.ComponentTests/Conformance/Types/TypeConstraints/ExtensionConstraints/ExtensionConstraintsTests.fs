@@ -35,6 +35,70 @@ module ExtensionConstraintsTests =
         compileAndRunPreview "ExtensionPrecedence.fs"
 
     [<Fact>]
+    let ``open type with homograph operators yields all overloads for SRTP`` () =
+        compileAndRunPreview "OpenTypeOperatorHomographOrder.fs"
+
+    [<Fact>]
+    let ``open type homograph operators across multiple holder types accumulate`` () =
+        compileAndRunPreview "OpenTypeOperatorHomographMultipleHolders.fs"
+
+    [<Fact>]
+    let ``open type nested in a module scopes extension operator correctly`` () =
+        compileAndRunPreview "OpenTypeOperatorNestedModule.fs"
+
+    [<Fact>]
+    let ``local let binding shadows open type extension operator`` () =
+        compileAndRunPreview "OpenTypeOperatorShadowing.fs"
+
+    [<Fact>]
+    let ``open type SRTP dispatch selects overload per argument type across holders`` () =
+        compileAndRunPreview "OpenTypeOperatorSRTPDispatch.fs"
+
+    [<Fact>]
+    let ``open type homograph overloads on single holder differ by parameter type`` () =
+        compileAndRunPreview "OpenTypeOperatorOverloadByParam.fs"
+
+    [<Fact>]
+    let ``open type operator with CompiledName attribute resolves by F# symbol`` () =
+        compileAndRunPreview "OpenTypeOperatorCompiledName.fs"
+
+    [<Fact>]
+    let ``open type extension operator crosses assembly boundary`` () =
+        let library =
+            FSharp """
+module OpLib
+
+[<AbstractClass; Sealed>]
+type Ops =
+    static member inline (+!) (a: int, b: int) = a + b + 7
+    static member inline (+!) (a: string, b: string) = a + b + "_X"
+            """
+            |> withName "OpLib"
+            |> asLibrary
+            |> withLangVersionPreview
+
+        FSharp """
+module Consumer
+open OpLib
+open type Ops
+
+let r1 : int = 10 +! 20
+if r1 <> 37 then failwith (sprintf "Expected 37, got %d" r1)
+
+let r2 : string = "a" +! "b"
+if r2 <> "ab_X" then failwith (sprintf "Expected 'ab_X', got '%s'" r2)
+
+let inline combine (a: ^T) (b: ^T) = a +! b
+let r3 : int = combine 1 2
+if r3 <> 10 then failwith (sprintf "Expected 10, got %d" r3)
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [library]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Extension operators respect accessibility`` () =
         compileAndRunPreview "ExtensionAccessibility.fs"
 
