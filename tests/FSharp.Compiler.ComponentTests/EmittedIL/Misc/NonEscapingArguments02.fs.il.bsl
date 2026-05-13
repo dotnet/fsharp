@@ -48,7 +48,7 @@
       IL_0007:  pop
       IL_0008:  ldarg.0
       IL_0009:  ldarg.1
-      IL_000a:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Length<!t>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
+      IL_000a:  callvirt   instance int32 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!t>::get_Length()
       IL_000f:  stfld      int32 class assembly/ListSizeCounter`1<!t>::size
       IL_0014:  ret
     } 
@@ -82,7 +82,6 @@
   } 
 
 } 
-
 
 
 
