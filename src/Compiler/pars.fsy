@@ -4218,29 +4218,17 @@ declExpr:
   | anonLambdaExpr %prec expr_fun
       { $1 }
 
-  | MATCH typedSequentialExpr withClauses %prec expr_match
+  | MATCH matchExprCore
       { let mMatch = rhs parseState 1
-        let mWith, (clauses, mLast) = $3
-        let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith)
+        let spBind, expr, clauses, mWith, mWhole = $2 mMatch
         let trivia = { MatchKeyword = mMatch; WithKeyword = mWith }
-        SynExpr.Match(spBind, $2, clauses, unionRanges mMatch mLast, trivia) }
+        SynExpr.Match(spBind, expr, clauses, mWhole, trivia) }
 
-  | MATCH typedSequentialExpr recover %prec expr_match
-      { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
-        // Produce approximate expression during error recovery
-        exprFromParseError $2 }
-
-  | MATCH_BANG typedSequentialExpr withClauses %prec expr_match
-      { let mMatch = (rhs parseState 1)
-        let mWith, (clauses, mLast) = $3
-        let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith)
+  | MATCH_BANG matchExprCore
+      { let mMatch = rhs parseState 1
+        let spBind, expr, clauses, mWith, mWhole = $2 mMatch
         let trivia = { MatchBangKeyword = mMatch; WithKeyword = mWith }
-        SynExpr.MatchBang(spBind, $2, clauses, unionRanges mMatch mLast, trivia) }
-
-  | MATCH_BANG typedSequentialExpr recover %prec expr_match
-      { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
-        // Produce approximate expression during error recovery
-        exprFromParseError $2 }
+        SynExpr.MatchBang(spBind, expr, clauses, mWhole, trivia) }
 
   | TRY typedSequentialExprBlockR withClauses %prec expr_try
       { let mTry = rhs parseState 1
@@ -4935,6 +4923,31 @@ declExpr:
         SynExpr.IndexRange(None, m, None, m, m, m) }
 
   | minusExpr %prec expr_prefix_plus_minus { $1 }
+
+matchExprCore:
+  | typedSequentialExpr withClauses %prec expr_match
+      { fun mMatch ->
+          let mWith, (clauses, mLast) = $2
+          let mWhole = unionRanges mMatch mLast
+          let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith)
+          spBind, $1, clauses, mWith, mWhole }
+
+  | declExpr %prec expr_match
+      { fun mMatch ->
+          let mExpr = $1.Range
+          let mWhole = unionRanges mMatch mExpr
+          let mEnd = mWhole.EndRange
+          reportParseErrorAt mEnd (FSComp.SR.parsExpectingWith ())
+          let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mEnd)
+          spBind, $1, [], mEnd, mWhole }
+
+  | %prec prec_recover
+      { fun mMatch ->
+          let spBind = DebugPointAtBinding.Yes(mMatch)
+          let expr = arbExpr ("match3", mMatch)
+          let mEnd = mMatch.EndRange
+          reportParseErrorAt mEnd (FSComp.SR.parsExpectingExpression ())
+          spBind, expr, [], mEnd, mMatch }
 
 whileExprCore:
   | declExpr doToken typedSequentialExprBlock doneDeclEnd
