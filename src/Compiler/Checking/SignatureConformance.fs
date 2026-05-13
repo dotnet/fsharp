@@ -689,7 +689,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                         | [av], [fv] -> 
                             if valuesPartiallyMatch av fv then
                                 checkVal implModRef aenv infoReader av fv
-                            elif av.IsMember && fv.IsMember && typeAEquivAux EraseAll g aenv av.Type fv.Type then
+                            elif av.IsMember && fv.IsMember
+                                 && av.LogicalName <> ".ctor"
+                                 && typeAEquivAux EraseAll g aenv av.Type fv.Type then
                                 checkVal implModRef aenv infoReader av fv
                             else
                                 sigValHadNoMatchingImplementation fv None
@@ -707,19 +709,21 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                              // but their types are both unit -> unit.
                              let matchedAvs = matchingPairs |> List.map snd
                              let matchedFvs = matchingPairs |> List.map fst
-                             let unmatchedFvs = fvs |> List.filter (fun fv -> not (List.exists (fun fv2 -> System.Object.ReferenceEquals(fv, fv2)) matchedFvs))
-                             let unmatchedAvs = avs |> List.filter (fun av -> not (List.exists (fun av2 -> System.Object.ReferenceEquals(av, av2)) matchedAvs))
-                             let relaxedPairs =
-                                 unmatchedFvs |> List.choose (fun fv ->
+                             let unmatchedFvs = fvs |> List.filter (fun fv -> not (List.exists (fun fv2 -> obj.ReferenceEquals(fv, fv2)) matchedFvs))
+                             let unmatchedAvs = avs |> List.filter (fun av -> not (List.exists (fun av2 -> obj.ReferenceEquals(av, av2)) matchedAvs))
+                             let relaxedPairs, _ =
+                                 (([], unmatchedAvs), unmatchedFvs)
+                                 ||> List.fold (fun (pairs, remainingAvs) fv ->
                                      let fkey = fv.GetLinkagePartialKey()
-                                     match unmatchedAvs |> List.tryFind (fun av ->
+                                     match remainingAvs |> List.tryFind (fun av ->
                                          let akey = av.GetLinkagePartialKey()
                                          akey.MemberParentMangledName = fkey.MemberParentMangledName &&
                                          akey.LogicalName = fkey.LogicalName &&
                                          av.IsMember && fv.IsMember &&
+                                         av.LogicalName <> ".ctor" &&
                                          typeAEquivAux EraseAll g aenv av.Type fv.Type) with
-                                     | None -> None
-                                     | Some av -> Some(fv, av))
+                                     | None -> (pairs, remainingAvs)
+                                     | Some av -> ((fv, av) :: pairs, remainingAvs |> List.filter (fun a -> not (obj.ReferenceEquals(a, av)))))
                              let allMatchingPairs = matchingPairs @ relaxedPairs
 
                              // Check the ones with matching linkage
