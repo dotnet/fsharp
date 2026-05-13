@@ -303,7 +303,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     List.forall2
                         (fun (sigGroup: ArgReprInfo list) (implGroup: ArgReprInfo list) ->
                             List.length sigGroup <= List.length implGroup
-                            || (List.length implGroup = 0 && List.length sigGroup = 1))
+                            || (implGroup.IsEmpty && sigGroup.Length = 1))
                         sigArgInfos
                         (fst (List.splitAt nSigArgInfos implArgInfos))
 
@@ -688,6 +688,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                         | [], _ | _, [] -> failwith "unreachable"
                         | [av], [fv] -> 
                             if valuesPartiallyMatch av fv then
+                                checkVal implModRef aenv infoReader av fv
+                            elif av.IsMember && fv.IsMember && typeAEquivAux EraseAll g aenv av.Type fv.Type then
                                 checkVal implModRef aenv infoReader av fv
                             else
                                 sigValHadNoMatchingImplementation fv None

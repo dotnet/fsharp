@@ -937,6 +937,28 @@ let test() =
     |> shouldSucceed
     |> ignore
 
+// Non-overloaded: member M(()) with sig member M: unit -> unit (no other overloads)
+[<Fact>]
+let ``Unit param - non-overloaded member M(()) conforms to sig member M: unit -> unit`` () =
+    let sigSource = """
+module Lib
+
+type D =
+    new: unit -> D
+    member M: unit -> unit
+"""
+    let implSource = """
+module Lib
+type D() =
+    member _.M(()) = ()
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
 // Verify M(()) and M() produce identical IL method signatures
 [<Fact>]
 let ``Unit param - M(()) and M() produce same IL method signature`` () =
