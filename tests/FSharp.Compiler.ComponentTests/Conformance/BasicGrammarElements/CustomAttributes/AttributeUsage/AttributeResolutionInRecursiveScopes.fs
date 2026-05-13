@@ -40,9 +40,9 @@ type T() =
         |> typecheck
         |> shouldSucceed
 
-    // https://github.com/dotnet/fsharp/issues/5795 - Custom attribute used on type and let in rec module
+    // Custom attribute defined in same rec module used on type and let declarations
     [<Fact>]
-    let ``Custom attribute used on type and let in rec module`` () =
+    let ``Custom attribute on type and let in rec module`` () =
         FSharp """
 module rec M
 
@@ -54,6 +54,37 @@ type CustomAttribute() =
         """
         |> typecheck
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/5795 - attribute on union case in rec module is not yet resolved
+    [<Fact>]
+    let ``Issue 5795 - attribute on union case in rec module`` () =
+        FSharp """
+module rec M
+
+type CustomAttribute() =
+    inherit System.Attribute()
+
+type A = | [<CustomAttribute>] A
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics
+            [ Error 1133, Line 7, Col 14, Line 7, Col 29, "No constructors are available for the type 'CustomAttribute'" ]
+
+    // https://github.com/dotnet/fsharp/issues/5795 - attribute on type parameter in rec module is not yet resolved
+    [<Fact>]
+    let ``Issue 5795 - attribute on type parameter in rec module`` () =
+        FSharp """
+module rec M
+
+type CustomAttribute() =
+    inherit System.Attribute()
+
+type B<[<CustomAttribute>]'a> = | B of 'a
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 39
 
     // Nested module case: open inside outer module, attribute on inner module
     [<Fact>]
