@@ -847,7 +847,11 @@ stages:
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
           buildScript: dotnet msbuild build.proj -t:Build;Test -bl
-          displayName: FsharpPlus_NET10_Test
+          displayName: FsharpPlus_NET10_Test_Debug
+        - repo: fsprojects/FSharpPlus
+          commit: 2648efe
+          buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
+          displayName: FsharpPlus_NET10_Test_Release
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
           buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
@@ -859,30 +863,38 @@ stages:
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
         - repo: TheAngryByrd/IcedTasks
-          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
           buildScript: dotnet build IcedTasks.sln -bl
           displayName: IcedTasks_Build
         - repo: TheAngryByrd/IcedTasks
-          commit: 863bf91cdee93d8c4c875bb5d321dd92eb20d5a9
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
           buildScript: dotnet test IcedTasks.sln -bl
-          displayName: IcedTasks_Test
+          displayName: IcedTasks_Test_Debug
+        - repo: TheAngryByrd/IcedTasks
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
+          buildScript: dotnet test IcedTasks.sln -c Release -bl
+          displayName: IcedTasks_Test_Release
         - repo: demystifyfp/FsToolkit.ErrorHandling
-          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          commit: a7119caabe329817bee49d7094610c45db7725c1
           buildScript: dotnet build FsToolkit.ErrorHandling.sln -bl
           displayName: FsToolkit_ErrorHandling_Build
         - repo: demystifyfp/FsToolkit.ErrorHandling
-          commit: 9cd957e335767df03e2fb0aa2f7b0fed782c5091
+          commit: a7119caabe329817bee49d7094610c45db7725c1
           buildScript: dotnet test FsToolkit.ErrorHandling.sln -bl
-          displayName: FsToolkit_ErrorHandling_Test
+          displayName: FsToolkit_ErrorHandling_Test_Debug
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: a7119caabe329817bee49d7094610c45db7725c1
+          buildScript: dotnet test FsToolkit.ErrorHandling.sln -c Release -bl
+          displayName: FsToolkit_ErrorHandling_Test_Release
         - repo: opentk/opentk
-          commit: 60c20cca65a7df6e8335e8d6060d91b30909fbea
+          commit: d4b1b18be03859dc066298ee191f6efa521e7e28
           buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release -bl:build_1.binlog ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release -bl:build_2.binlog
           displayName: OpenTK_FSharp_Build
         - repo: bryanedds/Prime
-          commit: 8d55f4e8e1d76e42f5fb3c9ba69eb79fe695e9fa
+          commit: 6ddc28d46f81447eacb241b96e16ce693b210c96
           buildScript: dotnet build Prime.sln --configuration Release
           displayName: Prime_Build
         - repo: bryanedds/Nu
-          commit: b35cbe02029e0e33d72a4846816cf22714eb3aac
+          commit: b321cb41a0bea0dab6b4509f895e6cd4d024e9e5
           buildScript: dotnet build Nu.sln --configuration Release
           displayName: Nu_Build

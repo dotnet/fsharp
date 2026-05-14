@@ -787,6 +787,11 @@
         <target state="translated">Выражение "if" должно возвращать кортеж длиной {0} типа\n    {1}    \nдля соответствия требованиям к типу контекста. В настоящее время возвращается кортеж длиной {2} типа\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilCustomAttrInvalidArrayElemType">
+        <source>The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</source>
+        <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">Неизвестная точка отладки \"{0}\". Доступные точки отладки: \"{1}\".</target>
@@ -8957,12 +8962,12 @@
         <target state="translated">Не удалось загрузить расширение диспетчера зависимостей {0}. Сообщение: {1}</target>
         <note />
       </trans-unit>
-        <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+      <trans-unit id="featureWarnWhenFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
           <source>Warn when a function value is used as an interpolated string argument</source>
           <target state="new">Warn when a function value is used as an interpolated string argument</target>
           <note />
         </trans-unit>
-        <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
+      <trans-unit id="tcFunctionValueUsedAsInterpolatedStringArg" translate="yes" xml:space="preserve">
           <source>This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</source>
           <target state="new">This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</target>
           <note />

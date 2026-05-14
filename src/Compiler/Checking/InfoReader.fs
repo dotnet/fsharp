@@ -571,7 +571,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
         FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 items -> not (items |> List.exists (fun item2 -> equivTest item1 item2))) itemLists 
 
     /// Filter the overrides of methods or properties, either keeping the overrides or keeping the dispatch slots.
-    static let FilterOverrides findFlag (isVirt:'a->bool, isNewSlot, isDefiniteOverride, isFinal, equivSigs, nmf:'a->string) items = 
+    static let FilterOverrides findFlag (isVirt:'a->bool, isNewSlot, isDefiniteOverride, isFinal, isAbstract, equivSigs, nmf:'a->string) items = 
         let equivVirts x y = isVirt x && isVirt y && equivSigs x y
         let filterDefiniteOverrides = List.filter(isDefiniteOverride >> not)
 
@@ -610,9 +610,10 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
               //       (a) not virtual
               //       (b) is a new slot or 
               //       (c) not equivalent
+              //       (d) is abstract (e.g. C# 'abstract override' re-abstracting a base virtual method)
               // We keep virtual finals around for error detection later on
               |> FilterItemsInSubTypesBasedOnItemsInSuperTypes nmf (fun newItem priorItem  ->
-                     (isVirt newItem && isFinal newItem) || not (isVirt newItem) || isNewSlot newItem || not (equivVirts newItem priorItem) )
+                     (isVirt newItem && isFinal newItem) || not (isVirt newItem) || isNewSlot newItem || isAbstract newItem || not (equivVirts newItem priorItem) )
 
               // Remove any abstract slots in supertypes that are (a) hidden by another newslot and (b) implemented
               // We leave unimplemented ones around to give errors, e.g. for
@@ -649,6 +650,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
              (fun minfo -> minfo.IsNewSlot),
              (fun minfo -> minfo.IsDefiniteFSharpOverride),
              (fun minfo -> minfo.IsFinal),
+             (fun minfo -> minfo.IsAbstract),
              MethInfosEquivByNameAndSig EraseNone true g amap m,
              (fun minfo -> minfo.LogicalName)) 
 
@@ -664,7 +666,8 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
               ((fun (pinfo: PropInfo) -> pinfo.IsVirtualProperty),
                (fun pinfo -> pinfo.IsNewSlot),
                (fun pinfo -> pinfo.IsDefiniteFSharpOverride),
-               (fun _ -> false),
+               (fun _ -> false), // isFinal
+               (fun _ -> false), // isAbstract
                PropsGetterSetterEquiv (PropInfosEquivByNameAndSig EraseNone g amap m),
                (fun pinfo -> pinfo.PropertyName)) 
 

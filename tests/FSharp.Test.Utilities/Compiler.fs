@@ -237,27 +237,12 @@ module rec Compiler =
         let ilBslFilePath =
             let ilBslPaths = [|
                 for baselineSuffix in ilBaselineSuffixes do
-#if DEBUG
-    #if NETCOREAPP
-                    yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
+#if NETCOREAPP
                     yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
-    #else
-                    yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
-                    yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
-    #endif
-                    yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
-                    yield sourceFilePath + baselineSuffix + ".il.bsl"
 #else
-    #if NETCOREAPP
-                    yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
-                    yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
-    #else
-                    yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
                     yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
-    #endif
-                    yield sourceFilePath + baselineSuffix + ".il.release.bsl"
-                    yield sourceFilePath + baselineSuffix + ".il.bsl"
 #endif
+                    yield sourceFilePath + baselineSuffix + ".il.bsl"
                 |]
 
             let findBaseline =

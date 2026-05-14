@@ -19,6 +19,8 @@ network:
   - dotnet
 
 safe-outputs:
+  noop:
+    report-as-issue: false
   add-comment:
     max: 5
     target: "*"
