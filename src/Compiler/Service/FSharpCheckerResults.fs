@@ -904,6 +904,7 @@ type internal TypeCheckInfo
     /// Is the item suitable for completion in a pattern
     let IsPatternCandidate (item: CompletionItem) =
         match item.Item with
+        | Item.RecdField f -> f.Tycon.IsEnumTycon
         | Item.Value v -> v.LiteralValue.IsSome
         | Item.ILField field -> field.LiteralValue.IsSome
         | Item.ActivePatternCase _
