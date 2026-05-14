@@ -3483,6 +3483,10 @@ module EstablishTypeDefinitionCores =
     let private TcTyconDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) envinner tpenv inSig (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) (tycon: Tycon) (attrs: Attribs) =
         let g = cenv.g
         let m = tycon.Range
+        // Hold the latest deferred attribute fixup outside the try, so that if a later RecoverableException
+        // is raised after fixupReprAttrs has been captured (Union/Record/General arms), the recovery path still
+        // returns the captured fixup. Otherwise the rec-resolved field/case attribute diagnostics are silently dropped.
+        let latestFixupReprAttrs = ref (fun () -> ())
         try 
             let id = tycon.Id
             let thisTyconRef = mkLocalTyconRef tycon
@@ -3675,6 +3679,7 @@ module EstablishTypeDefinitionCores =
                     let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
                     let unionCases, fixupAttrs = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
                     fixupReprAttrs <- fixupAttrs
+                    latestFixupReprAttrs.Value <- fixupAttrs
                     multiCaseUnionStructCheck unionCases
 
                     writeFakeUnionCtorsToSink unionCases
@@ -3690,6 +3695,7 @@ module EstablishTypeDefinitionCores =
                     structLayoutAttributeCheck true  // these are allowed for records
                     let recdFields, fixupRecdFieldAttrs = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent false tpenv fields
                     fixupReprAttrs <- fixupRecdFieldAttrs
+                    latestFixupReprAttrs.Value <- fixupRecdFieldAttrs
                     recdFields |> CheckDuplicates (fun f -> f.Id) "field" |> ignore
                     writeFakeRecordFieldsToSink recdFields
                     CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
@@ -3717,6 +3723,7 @@ module EstablishTypeDefinitionCores =
                 | SynTypeDefnSimpleRepr.General (kind, inherits, slotsigs, fields, isConcrete, isIncrClass, implicitCtorSynPats, _) ->
                     let userFields, fixupUserFieldAttrs = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent isIncrClass tpenv fields
                     fixupReprAttrs <- fixupUserFieldAttrs
+                    latestFixupReprAttrs.Value <- fixupUserFieldAttrs
                     let implicitStructFields = 
                         [ // For structs with an implicit ctor, determine the fields immediately based on the arguments
                           match implicitCtorSynPats with 
@@ -3908,7 +3915,7 @@ module EstablishTypeDefinitionCores =
             (baseValOpt, safeInitInfo), fixupReprAttrs
         with RecoverableException exn -> 
             errorRecovery exn m 
-            (None, NoSafeInitInfo), (fun () -> ())
+            (None, NoSafeInitInfo), latestFixupReprAttrs.Value
 
     /// Check that a set of type definitions is free of cycles in abbreviations
     let private TcTyconDefnCore_CheckForCyclicAbbreviations tycons = 
