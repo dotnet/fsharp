@@ -63,3 +63,41 @@ let a = ()
 """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute on union case in module rec resolves to attribute defined in same module`` () =
+        Fsx """
+module rec M
+
+type CustomAttribute() = inherit System.Attribute()
+
+type A = | [<CustomAttribute>] A
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute on every case of a DU in module rec resolves to attribute defined in same module`` () =
+        Fsx """
+module rec M
+
+type CustomAttribute() = inherit System.Attribute()
+
+type Shape =
+    | [<CustomAttribute>] Circle of float
+    | [<CustomAttribute>] Square of float
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute shorthand on union case in module rec resolves to attribute defined in same module`` () =
+        Fsx """
+module rec M
+
+type CustomAttribute() = inherit System.Attribute()
+
+type A = | [<Custom>] A
+"""
+        |> compile
+        |> shouldSucceed
