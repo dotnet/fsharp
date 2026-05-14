@@ -11811,6 +11811,13 @@ and TcAttributesCanFail cenv env attrTgt synAttribs =
     let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
     attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
 
+and TcAttributesWithPossibleTargetsCanFail cenv env attrTgt synAttribs =
+    let attrs, didFail = TcAttributesWithPossibleTargetsEx TcCanFail.IgnoreAllErrors cenv env attrTgt (enum 0) synAttribs
+    attrs, (fun () ->
+        if didFail then
+            TcAttributesWithPossibleTargetsEx TcCanFail.ReportAllErrors cenv env attrTgt (enum 0) synAttribs |> fst
+        else attrs)
+
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst
 
