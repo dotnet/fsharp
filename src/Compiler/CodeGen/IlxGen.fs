@@ -529,6 +529,9 @@ type TypeReprEnv
             // Random value for post-hoc diagnostic analysis on generated tree *
             uint16 666
 
+    /// Check if a type parameter is in the environment
+    member _.ContainsKey(tp: Typar) = reprs.ContainsKey(tp.Stamp)
+
     /// Add an additional type parameter to the environment. If the parameter is a units-of-measure parameter
     /// then it is ignored, since it doesn't correspond to a .NET type parameter.
     member tyenv.AddOne(tp: Typar) =
@@ -708,7 +711,15 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         else
             EraseClosures.mkILTyFuncTy cenv.ilxPubCloEnv
 
-    | TType_var(tp, _) -> mkILTyvarTy tyenv[tp, m]
+    | TType_var(tp, _) ->
+        if tyenv.ContainsKey tp then
+            mkILTyvarTy tyenv[tp, m]
+        else
+            // Unsolved type variable not in the TypeReprEnv — can arise for inline SRTP
+            // functions where constraint resolution leaves phantom typars unsolved.
+            // Default the typar and generate the type for the default to avoid an ICE.
+            let defaultTy = TypeRelations.ChooseTyparSolution g cenv.amap tp
+            GenTypeAux cenv m tyenv voidOK ptrsOK defaultTy
 
     | TType_measure _ -> g.ilg.typ_Int32
 
@@ -12264,6 +12275,54 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
             match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
             | Some serializationInfoType, Some streamingContextType ->
 
+                let emitSerializationFieldIL emitPerField =
+                    [
+                        for (_, ilFieldName, ilPropType, _) in fieldNamesAndTypes do
+                            yield! emitPerField ilFieldName ilPropType
+                    ]
+
+                let isILValueType (ty: ILType) =
+                    ty.IsNominal && ty.Boxity = ILBoxity.AsValue
+
+                let ilInstrsToRestoreFields =
+                    emitSerializationFieldIL (fun ilFieldName ilPropType ->
+                        [
+                            mkLdarg0
+                            mkLdarg 1us
+                            I_ldstr ilFieldName
+                            I_ldtoken(ILToken.ILType ilPropType)
+
+                            mkNormalCall (
+                                mkILNonGenericStaticMethSpecInTy (
+                                    g.ilg.typ_Type,
+                                    "GetTypeFromHandle",
+                                    [ g.iltyp_RuntimeTypeHandle ],
+                                    g.ilg.typ_Type
+                                )
+                            )
+
+                            mkNormalCallvirt (
+                                mkILNonGenericInstanceMethSpecInTy (
+                                    serializationInfoType,
+                                    "GetValue",
+                                    [ g.ilg.typ_String; g.ilg.typ_Type ],
+                                    g.ilg.typ_Object
+                                )
+                            )
+
+                            if isILValueType ilPropType then
+                                I_unbox_any ilPropType
+                            else
+                                I_castclass ilPropType
+
+                            mkNormalStfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+                        ])
+
+                // FSharp.Core is SecurityTransparent and cannot override SecurityCritical
+                // Exception.GetObjectData, so field restoration would be unbalanced — skip it.
+                let shouldRestoreFields =
+                    not g.compilingFSharpCore && not fieldNamesAndTypes.IsEmpty
+
                 let ilInstrsForSerialization =
                     [
                         mkLdarg0
@@ -12271,6 +12330,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkLdarg 2us
                         mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [ serializationInfoType; streamingContextType ]))
                     ]
+                    @ (if shouldRestoreFields then ilInstrsToRestoreFields else [])
                     |> nonBranchingInstrsToCode
 
                 let ilCtorDefForSerialization =
@@ -12282,8 +12342,76 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         ],
                         mkMethodBody (false, [], 8, ilInstrsForSerialization, None, eenv.imports)
                     )
+                    |> AddNonUserCompilerGeneratedAttribs g
 
-                [ ilCtorDefForSerialization ]
+                let ilInstrsToSaveFields =
+                    emitSerializationFieldIL (fun ilFieldName ilPropType ->
+                        [
+                            mkLdarg 1us
+                            I_ldstr ilFieldName
+                            mkLdarg0
+                            mkNormalLdfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+
+                            if isILValueType ilPropType then
+                                I_box ilPropType
+
+                            mkNormalCallvirt (
+                                mkILNonGenericInstanceMethSpecInTy (
+                                    serializationInfoType,
+                                    "AddValue",
+                                    [ g.ilg.typ_String; g.ilg.typ_Object ],
+                                    ILType.Void
+                                )
+                            )
+                        ])
+
+                let ilInstrsForGetObjectData =
+                    [
+                        mkLdarg0
+                        mkLdarg 1us
+                        mkLdarg 2us
+                        mkNormalCall (
+                            mkILNonGenericInstanceMethSpecInTy (
+                                g.iltyp_Exception,
+                                "GetObjectData",
+                                [ serializationInfoType; streamingContextType ],
+                                ILType.Void
+                            )
+                        )
+                    ]
+                    @ ilInstrsToSaveFields
+                    |> nonBranchingInstrsToCode
+
+                let ilGetObjectDataDef =
+                    let mdef =
+                        mkILNonGenericVirtualInstanceMethod (
+                            "GetObjectData",
+                            ILMemberAccess.Public,
+                            [
+                                mkILParamNamed ("info", serializationInfoType)
+                                mkILParamNamed ("context", streamingContextType)
+                            ],
+                            mkILReturn ILType.Void,
+                            mkMethodBody (false, [], 8, ilInstrsForGetObjectData, None, eenv.imports)
+                        )
+
+                    // SecurityCritical is required for .NET Framework where Exception.GetObjectData is security-critical
+                    let securityCriticalAttr =
+                        mkILCustomAttribute (g.attrib_SecurityCriticalAttribute.TypeRef, [], [], [])
+
+                    mdef.With(customAttrs = mkILCustomAttrs [ securityCriticalAttr ])
+                    |> AddNonUserCompilerGeneratedAttribs g
+
+                // FSharp.Core has [assembly: SecurityTransparent], making all code transparent.
+                // On .NET Framework, transparent code cannot override SecurityCritical virtual
+                // methods like Exception.GetObjectData. Without GetObjectData to write the fields,
+                // the field-restoring deserialization constructor would crash (fields not in
+                // SerializationInfo). So for FSharp.Core: emit only the base-call ctor (status quo).
+                // For user exceptions: emit both GetObjectData and the field-restoring ctor.
+                if g.compilingFSharpCore || fieldNamesAndTypes.IsEmpty then
+                    [ ilCtorDefForSerialization ]
+                else
+                    [ ilCtorDefForSerialization; ilGetObjectDataDef ]
             | _ -> []
 
         let ilTypeName = tref.Name
