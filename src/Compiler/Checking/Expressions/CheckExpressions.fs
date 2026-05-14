@@ -4125,6 +4125,41 @@ let formatAvailableNames (names: string array) =
     let result = truncated |> String.concat ", "
     if names.Length > 5 then result + ", ..." else result
 
+/// Given the current 'inputTy' of a match clause, the elaborated pattern, and the optional 'when' clause,
+/// returns the (possibly narrowed) inputTy to use for subsequent clauses.
+/// E.g. `match x with | null -> ... | y -> ...` narrows `inputTy` of the y-clause to non-null.
+let EliminateNullnessFromInputType (g: TcGlobals) (inputTy: TType) (pat: Pattern) (whenExprOpt: Expr option) : TType =
+    let removeNull t =
+        // Strip type equations (including abbreviations) and set nullness to non-null.
+        // For type abbreviations like `type objnull = obj | null`, we need to expand
+        // the abbreviation and apply non-null to the underlying type.
+        let stripped = stripTyEqns g t
+        replaceNullnessOfTy KnownWithoutNull stripped
+    let rec isWild (p: Pattern) =
+        match p with
+        | TPat_wild _ -> true
+        | TPat_as (p,_,_) -> isWild p
+        | TPat_disjs(patterns,_) -> patterns |> List.exists isWild
+        | TPat_conjs(patterns,_) -> patterns |> List.forall isWild
+        | TPat_tuple (_,pats,_,_) -> pats |> List.forall isWild
+        | _ -> false
+
+    let rec eliminateNull (ty: TType) (p: Pattern) =
+        match p with
+        | TPat_null _ -> removeNull ty
+        | TPat_as (p,_,_) -> eliminateNull ty p
+        | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
+        | TPat_tuple (_,pats,_,_) ->
+            match stripTyparEqns ty with
+            // In a tuple, if 1 elem is matched for null and the rest are wild => subsequent clauses can strip nullness
+            | TType_tuple(ti,tys) when tys.Length = pats.Length && (pats |> List.count (isWild >> not)) = 1 ->
+                TType_tuple(ti, List.map2 eliminateNull tys pats)
+            | _ -> ty
+        | _ -> ty
+    match whenExprOpt with
+    | None -> eliminateNull inputTy pat
+    | _ -> inputTy
+
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //-------------------------------------------------------------------------
@@ -10967,37 +11002,7 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
 
     let target = TTarget(vspecs, resultExpr, None)
 
-    let inputTypeForNextPatterns=
-        let removeNull t =
-            // Strip type equations (including abbreviations) and set nullness to non-null.
-            // For type abbreviations like `type objnull = obj | null`, we need to expand
-            // the abbreviation and apply non-null to the underlying type.
-            let stripped = stripTyEqns cenv.g t
-            replaceNullnessOfTy KnownWithoutNull stripped
-        let rec isWild (p:Pattern) =
-            match p with
-            | TPat_wild _ -> true
-            | TPat_as (p,_,_) -> isWild p
-            | TPat_disjs(patterns,_) -> patterns |> List.exists isWild
-            | TPat_conjs(patterns,_) -> patterns |> List.forall isWild
-            | TPat_tuple (_,pats,_,_) -> pats |> List.forall isWild
-            | _ -> false
-
-        let rec eliminateNull (ty:TType) (p:Pattern) =
-            match p with
-            | TPat_null _ -> removeNull ty
-            | TPat_as (p,_,_) -> eliminateNull ty p
-            | TPat_disjs(patterns,_) -> (ty,patterns) ||> List.fold eliminateNull
-            | TPat_tuple (_,pats,_,_) ->
-                match stripTyparEqns ty with
-                // In a tuple, if 1 elem is matched for null and the rest are wild => subsequent clauses can strip nullness
-                | TType_tuple(ti,tys) when tys.Length = pats.Length && (pats |> List.count (isWild >> not)) = 1 ->
-                    TType_tuple(ti, List.map2 eliminateNull tys pats)
-                | _ -> ty
-            | _ -> ty
-        match whenExprOpt with
-        | None -> eliminateNull inputTy pat
-        | _ -> inputTy
+    let inputTypeForNextPatterns = EliminateNullnessFromInputType cenv.g inputTy pat whenExprOpt
 
     MatchClause(pat, whenExprOpt, target, patm), (tpenv,inputTypeForNextPatterns)
 

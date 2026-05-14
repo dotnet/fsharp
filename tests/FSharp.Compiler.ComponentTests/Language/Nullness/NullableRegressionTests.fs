@@ -198,3 +198,67 @@ type C7 =
             |> shouldFail
             |> withDiagnostics 
                 [(Error 444, Line 7, Col 17, Line 7, Col 23, "The type of a field using the 'DefaultValue' attribute must admit default initialization, i.e. have 'null' as a proper value or be a struct type whose fields all admit default initialization. You can use 'DefaultValue(false)' to disable this check")]
+
+[<Fact>]
+let ``Issue 19644 - match-null narrowing inside list comprehension`` () =
+    FSharp """
+module M
+open System.Collections.Immutable
+
+let sets (builders: (ImmutableHashSet<int>.Builder | null)[]) = [
+    for builder in builders do
+        match builder with
+        | null -> ()
+        | b -> yield b.ToImmutable()
+]
+"""
+    |> withVersionAndCheckNulls ("preview", true)
+    |> compile
+    |> shouldSucceed
+
+[<Fact>]
+let ``Issue 19644 - match-null narrowing inside seq expression`` () =
+    FSharp """
+module M
+let v (xs: (string | null) seq) =
+    seq {
+        for x in xs do
+            match x with
+            | null -> ()
+            | y -> yield y.Length
+    }
+"""
+    |> withVersionAndCheckNulls ("preview", true)
+    |> compile
+    |> shouldSucceed
+
+[<Fact>]
+let ``Issue 19644 - match-null narrowing inside array comprehension`` () =
+    FSharp """
+module M
+let v (xs: (string | null)[]) = [|
+    for x in xs do
+        match x with
+        | null -> ()
+        | y -> yield y.Length
+|]
+"""
+    |> withVersionAndCheckNulls ("preview", true)
+    |> compile
+    |> shouldSucceed
+
+[<Fact>]
+let ``Issue 19644 - match-null narrowing inside list comprehension (no for)`` () =
+    FSharp """
+module M
+open System.Collections.Immutable
+
+let v (b: ImmutableHashSet<int>.Builder | null) = [
+    match b with
+    | null -> ()
+    | x -> yield x.ToImmutable()
+]
+"""
+    |> withVersionAndCheckNulls ("preview", true)
+    |> compile
+    |> shouldSucceed
