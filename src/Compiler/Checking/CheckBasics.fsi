@@ -156,7 +156,12 @@ type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 ///
 /// The declared type parameters, e.g. let f<'a> (x:'a) = x, plus an indication
 /// of whether additional polymorphism may be inferred, e.g. let f<'a, ..> (x:'a) y = x
-type ExplicitTyparInfo = ExplicitTyparInfo of rigidCopyOfDeclaredTypars: Typars * declaredTypars: Typars * infer: bool * hasExplicitTyparDecls: bool
+type ExplicitTyparInfo =
+    | ExplicitTyparInfo of
+        rigidCopyOfDeclaredTypars: Typars *
+        declaredTypars: Typars *
+        infer: bool *
+        hasExplicitTyparDecls: bool
 
 type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
 

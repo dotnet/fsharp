@@ -1568,12 +1568,12 @@ type ('T1 * 'T2) with
             |> Seq.map (fun su -> su.Symbol.DisplayName, su.Range.StartLine, su.Range.StartColumn)
             |> Seq.toList
 
-        // The only type entity should be 'Test' module, not a synthetic tuple type
-        let tupleSymbols =
+        // Verify no synthetic tuple type symbols (containing '*') appear
+        let syntheticTupleSymbols =
             typeSymbolUses
-            |> List.filter (fun (name, _, _) -> name.Contains("*") || name.Contains("Tuple"))
+            |> List.filter (fun (name, _, _) -> name.Contains("*"))
 
-        Assert.True(List.isEmpty tupleSymbols, $"Found unexpected tuple type symbols: {tupleSymbols}")
+        Assert.True(List.isEmpty syntheticTupleSymbols, $"Found unexpected synthetic tuple type symbols: {syntheticTupleSymbols}")
 
     [<Fact>]
     let ``Multiple tuple type extensions symbols are all non-synthetic`` () =

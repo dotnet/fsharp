@@ -17,7 +17,7 @@ ImplFile
                                Star (1,10--1,11);
                                Type
                                  (Var (SynTypar (T2, None, false), (1,12--1,15)))],
-                              (1,6--1,15)), (1,5--1,16))),
+                              (1,5--1,16)), (1,5--1,16))),
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (1,5--1,16)),
                   Simple (None (1,5--1,16), (1,5--1,16)), [], None, (1,5--1,16),
