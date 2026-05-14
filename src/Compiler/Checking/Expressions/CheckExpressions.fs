@@ -10135,13 +10135,21 @@ and TcMethodApplication_SplitSynArguments
 
         | _ ->
             let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared MakeUnnamedCallerArgInfo
+            let supportsValueOptionalArgs =
+                g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters
             let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (isOpt, nm, x) ->
                 let ty = GetNewInferenceTypeForMethodArg cenv x
                 // #435263: compiler crash with .net optional parameters and F# optional syntax
-                // named optional arguments should always have option type
-                // STRUCT OPTIONS: if we allow struct options as optional arguments then we should relax this and rely
-                // on later inference to work out if this is a struct option or ref option
-                let ty = if isOpt then mkOptionTy denv.g ty else ty
+                // For LangVersion < 10 named optional arguments are constrained to option type here
+                // so that an early, friendly error is reported. With LangVersion >= 10 the parameter
+                // may be a struct-option (voption) — see issue dotnet/fsharp#19711 — so we leave the
+                // type as a fresh inference variable and let later unification (CalleeSide branch in
+                // AdjustCalledArgTypeForOptionals) pick option<_> or voption<_>.
+                let ty =
+                    if isOpt && not supportsValueOptionalArgs then
+                        mkOptionTy denv.g ty
+                    else
+                        ty
                 nm, isOpt, x, ty, x.Range)
 
             (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
