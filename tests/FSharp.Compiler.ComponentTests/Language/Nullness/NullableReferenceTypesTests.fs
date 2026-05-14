@@ -2514,14 +2514,19 @@ let main _ = 0
     |> run
     |> verifyOutputContains [|"-1"|]
 
-// Regression for https://github.com/dotnet/fsharp/issues/19646
-// After `match x with | null -> … | s -> …` the binding `s` must keep
-// the alias `string`, not be stripped to its BCL representation `String`.
-[<FSharp.Test.FactForNETCOREAPPAttribute>]
-let ``Issue 19646 - string alias is preserved after null pattern`` () =
-    FSharp """module Test
+// https://github.com/dotnet/fsharp/issues/19646
+// After `| null -> … | s -> …`, `s` must keep its type alias, not the BCL type.
+[<Theory>]
+[<InlineData("", "string", "'string'")>]
+[<InlineData("type MyStr = string", "MyStr", "'MyStr'")>]
+[<InlineData("open System\ntype MyUri = Uri", "MyUri", "'MyUri'")>]
+let ``Issue 19646 - type alias is preserved after null pattern``
+    (typeDef: string, paramTypeName: string, expectedSubstring: string) =
+    FSharp $"""module Test
 
-let test (x: string | null) : int =
+{typeDef}
+
+let test (x: {paramTypeName} | null) : int =
     match x with
     | null -> 0
     | s -> s
@@ -2529,62 +2534,4 @@ let test (x: string | null) : int =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnosticMessageMatches "'string'"
-
-// Regression for https://github.com/dotnet/fsharp/issues/19646
-// Same scenario expressed with a user-defined transparent type alias.
-[<FSharp.Test.FactForNETCOREAPPAttribute>]
-let ``Issue 19646 - user type alias is preserved after null pattern`` () =
-    FSharp """module Test
-
-type MyStr = string
-
-let test (x: MyStr | null) : int =
-    match x with
-    | null -> 0
-    | s -> s
-    """
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnosticMessageMatches "'MyStr'"
-
-// Regression for https://github.com/dotnet/fsharp/issues/19646
-// The fix must not erase the alias on `Uri` (a non-string class type) either.
-[<FSharp.Test.FactForNETCOREAPPAttribute>]
-let ``Issue 19646 - Uri alias is preserved after null pattern`` () =
-    FSharp """module Test
-
-open System
-
-type MyUri = Uri
-
-let test (x: MyUri | null) : int =
-    match x with
-    | null -> 0
-    | s -> s
-    """
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnosticMessageMatches "'MyUri'"
-
-// Regression for https://github.com/dotnet/fsharp/issues/19646
-// Negative: the BCL name `String` MUST NOT appear in the error message
-// when the source used the `string` alias.
-[<FSharp.Test.FactForNETCOREAPPAttribute>]
-let ``Issue 19646 - error message must not show String when source used string`` () =
-    let result =
-        FSharp """module Test
-
-let test (x: string | null) : int =
-    match x with
-    | null -> 0
-    | s -> s
-    """
-        |> asLibrary
-        |> typeCheckWithStrictNullness
-    result |> shouldFail |> ignore
-    // After the fix, the diagnostic must mention `string`, not `String`.
-    result
-    |> withDiagnosticMessageMatches "'string'"
+    |> withDiagnosticMessageMatches expectedSubstring
