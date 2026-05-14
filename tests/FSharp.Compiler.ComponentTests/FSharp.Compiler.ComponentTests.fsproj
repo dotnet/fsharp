@@ -76,6 +76,7 @@
     <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBangBindings.fs" />
+	<Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindingsAndExtensionMembers.fs" />
     <Compile Include="Conformance\Constraints\Unmanaged.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
@@ -85,6 +86,7 @@
     <Compile Include="Conformance\Expressions\ApplicationExpressions\Ctor.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ComputationExpressions\ComputationExpressions.fs" />
+	<Compile Include="Conformance\Expressions\ComputationExpressions\CEExtensionMethodCapture.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\StructObjectExpression.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
@@ -284,6 +286,7 @@
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Signatures.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Closures.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Crashes.fs" />
+    <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Exceptions.fs" />
     <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />

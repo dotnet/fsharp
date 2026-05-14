@@ -66,4 +66,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(4,15)-(5,4) parse error Incomplete structured construct at or before this point in member definition. Expected identifier or other token.
+(4,15)-(5,4) parse error Incomplete structured construct at or before this point in auto property definition. Expected identifier or other token.

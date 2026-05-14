@@ -5856,6 +5856,9 @@ let ``Empty source list produces error FS0207`` () =
 // https://github.com/dotnet/fsharp/issues/14969
 module internal ProjectActivePatternInSig =
 
+    // Dedicated checker to isolate from shared state races with parallel tests.
+    let checker = FSharpChecker.Create(useTransparentCompiler = FSharp.Test.CompilerAssertHelpers.UseTransparentCompiler)
+
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let sigFileName1 = Path.ChangeExtension(fileName1, ".fsi")
     let base2 = getTemporaryFileName ()
@@ -5911,7 +5914,7 @@ let describe x =
 [<Fact>]
 let ``FindReferences for active patterns in fsi - project has no errors`` () =
     let wholeProjectResults =
-        checker.ParseAndCheckProject(ProjectActivePatternInSig.options)
+        ProjectActivePatternInSig.checker.ParseAndCheckProject(ProjectActivePatternInSig.options)
         |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -5922,11 +5925,11 @@ let ``FindReferences for active patterns in fsi - project has no errors`` () =
 [<Fact>]
 let ``FindReferences for active patterns in fsi - finds Even in sig and impl`` () =
     let wholeProjectResults =
-        checker.ParseAndCheckProject(ProjectActivePatternInSig.options)
+        ProjectActivePatternInSig.checker.ParseAndCheckProject(ProjectActivePatternInSig.options)
         |> Async.RunImmediate
 
     let _, typedParse2 =
-        checker.GetBackgroundCheckResultsForFileInProject(
+        ProjectActivePatternInSig.checker.GetBackgroundCheckResultsForFileInProject(
             ProjectActivePatternInSig.fileName2,
             ProjectActivePatternInSig.options
         )

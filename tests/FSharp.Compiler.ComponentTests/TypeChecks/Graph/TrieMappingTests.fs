@@ -490,6 +490,9 @@ module ``module`` =
                 }
             |]
 
+    // Dive into the anonymous module created for Program.fs
+    let trie = trie.Children["Program"]
+
     Assert.Equal(1, trie.Children.Count)
     Assert.True(trie.Children.ContainsKey("module"))
 

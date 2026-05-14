@@ -37,21 +37,16 @@
   {
     
     .maxstack  4
-    .locals init (int32 V_0,
-             class '<>f__AnonymousType1912756633`2'<int32,int32> V_1)
+    .locals init (int32 V_0)
     IL_0000:  ldc.i4.1
     IL_0001:  stloc.0
-    IL_0002:  ldc.i4.1
-    IL_0003:  ldc.i4.1
-    IL_0004:  newobj     instance void class '<>f__AnonymousType1912756633`2'<int32,int32>::.ctor(!0,
-                                                                                                  !1)
-    IL_0009:  stloc.1
-    IL_000a:  ldloc.0
-    IL_000b:  ldc.i4.1
-    IL_000c:  add
-    IL_000d:  stloc.0
-    IL_000e:  ldc.i4.0
-    IL_000f:  ret
+    IL_0002:  nop
+    IL_0003:  ldloc.0
+    IL_0004:  ldc.i4.1
+    IL_0005:  add
+    IL_0006:  stloc.0
+    IL_0007:  ldc.i4.0
+    IL_0008:  ret
   } 
 
 } 
@@ -491,7 +486,6 @@
     .get instance !'<B>j__TPar' '<>f__AnonymousType1912756633`2'::get_B()
   } 
 } 
-
 
 
 
