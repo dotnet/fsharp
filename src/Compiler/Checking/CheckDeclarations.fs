@@ -2836,12 +2836,14 @@ module EstablishTypeDefinitionCores =
     let private TcTyconDefnCore_Phase1A_BuildInitialTycon (cenv: cenv) env parent (MutRecDefnsPhase1DataForTycon(synTyconInfo, synTyconRepr, _, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, _)) = 
         let g = cenv.g
         let (SynComponentInfo (_, TyparDecls synTypars, _, id, xmlDoc, preferPostfix, synVis, _)) = synTyconInfo
-        let checkedTypars = TcTyparDecls cenv env synTypars
+        let checkedTypars, fixupTyparAttrs = TcTyparDecls cenv env synTypars
         id |> List.iter (CheckNamespaceModuleOrTypeName g)
 
         match synTyconRepr with 
         | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
-          TcExceptionDeclarations.TcExnDefnCore_Phase1A g cenv env parent synExnDefnRepr
+          // Exceptions don't carry user-declared typars; finalize eagerly.
+          fixupTyparAttrs env
+          TcExceptionDeclarations.TcExnDefnCore_Phase1A g cenv env parent synExnDefnRepr, (fun _ -> ())
         | _ ->
         let id = ComputeTyconName (id, (match synTyconRepr with SynTypeDefnSimpleRepr.TypeAbbrev _ -> false | _ -> true), checkedTypars)
 
@@ -2899,9 +2901,11 @@ module EstablishTypeDefinitionCores =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames )
-        Construct.NewTycon
-            (cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars,
-             xmlDoc, preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmodTy)
+        let tycon =
+            Construct.NewTycon
+                (cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars,
+                 xmlDoc, preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmodTy)
+        tycon, fixupTyparAttrs
 
     //-------------------------------------------------------------------------
     /// Establishing type definitions: early phase: work out the basic kind of the type definition
@@ -4139,6 +4143,11 @@ module EstablishTypeDefinitionCores =
         // See https://github.com/dotnet/fsharp/issues/7931
         let envWithOpens = preProcessOpensForPhase1A cenv envInitial mutRecDefns
 
+        // Per-tycon typar attribute fixups produced in Phase1A. These can't run until later
+        // because user-defined attributes referenced by type-parameter attributes may live in
+        // the same rec scope and aren't yet wired. The fixups are composed into Phase1G's
+        // per-tycon fixupFinalAttrs below.
+        let typarAttrFixups = System.Collections.Generic.Dictionary<Stamp, TcEnv -> unit>()
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these. Augmentations are skipped in this phase.
         let withEntities = 
@@ -4154,7 +4163,9 @@ module EstablishTypeDefinitionCores =
                      let (MutRecDefnsPhase1DataForTycon(isAtOriginalTyconDefn=isAtOriginalTyconDefn)) = typeDefCore
                      let tyconOpt = 
                          if isAtOriginalTyconDefn then 
-                             Some (TcTyconDefnCore_Phase1A_BuildInitialTycon cenv envForDecls innerParent typeDefCore)
+                             let tycon, fixupTyparAttrs = TcTyconDefnCore_Phase1A_BuildInitialTycon cenv envForDecls innerParent typeDefCore
+                             typarAttrFixups[tycon.Stamp] <- fixupTyparAttrs
+                             Some tycon
                          else 
                              None 
                      (typeDefCore, tyconMemberInfo, innerParent), tyconOpt) 
@@ -4284,8 +4295,13 @@ module EstablishTypeDefinitionCores =
                     match tyconAndAttrsOpt with
                     | None -> None, fixupReprAttrs
                     | Some (tycon, (_prelimAttrs, getFinalAttrs)) ->
+                        let fixupTyparAttrs =
+                            match typarAttrFixups.TryGetValue tycon.Stamp with
+                            | true, f -> f
+                            | _ -> fun _ -> ()
                         Some tycon, (fun () ->
                             tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs())
+                            fixupTyparAttrs envForDecls
                             fixupReprAttrs())
 
                 (origInfo, tyconOpt, fixupFinalAttrs, info))
@@ -4373,7 +4389,8 @@ module TcDeclarations =
         
             let nReqTypars = reqTypars.Length
 
-            let declaredTypars = TcTyparDecls cenv envForDecls synTypars
+            let declaredTypars, fixupTypars = TcTyparDecls cenv envForDecls synTypars
+            fixupTypars envForDecls
             let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envForDecls
             let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)

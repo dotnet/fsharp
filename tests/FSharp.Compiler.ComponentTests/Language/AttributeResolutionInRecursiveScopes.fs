@@ -142,3 +142,40 @@ type R = { [<CustomAttribute>] X: int }
 """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute on type parameter in module rec resolves to attribute defined in same module`` () =
+        Fsx """
+module rec M
+
+type CustomAttribute() = inherit System.Attribute()
+
+type B<[<CustomAttribute>]'a> = | B of 'a
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute on type parameter in namespace rec resolves to attribute defined in same namespace`` () =
+        Fsx """
+namespace rec Ns
+
+type CustomAttribute() = inherit System.Attribute()
+
+type B<[<CustomAttribute>]'a> = | B of 'a
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute on type parameter combined with framework Measure attribute in module rec compiles`` () =
+        // Sanity: framework MeasureAttribute still works alongside a deferred user attribute.
+        Fsx """
+module rec M
+
+type CustomAttribute() = inherit System.Attribute()
+
+type B<[<Measure>]'u, [<CustomAttribute>]'a> = B of 'a
+"""
+        |> compile
+        |> shouldSucceed
