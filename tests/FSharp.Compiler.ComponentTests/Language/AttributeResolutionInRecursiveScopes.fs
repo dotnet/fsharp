@@ -101,3 +101,44 @@ type A = | [<Custom>] A
 """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute on record field in module rec resolves to attribute defined in same module`` () =
+        Fsx """
+module rec M
+
+type CustomAttribute() = inherit System.Attribute()
+
+type R = { [<CustomAttribute>] X: int }
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute on multiple record fields in module rec resolves to attributes defined in same module`` () =
+        Fsx """
+module rec M
+
+type CustomAttribute() = inherit System.Attribute()
+type AnotherAttribute() = inherit System.Attribute()
+
+type R = {
+    [<CustomAttribute>] X: int
+    [<AnotherAttribute>] Y: string
+    [<CustomAttribute; AnotherAttribute>] Z: float
+}
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``attribute on record field in namespace rec resolves to attribute defined in same namespace`` () =
+        Fsx """
+namespace rec Ns
+
+type CustomAttribute() = inherit System.Attribute()
+
+type R = { [<CustomAttribute>] X: int }
+"""
+        |> compile
+        |> shouldSucceed

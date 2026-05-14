@@ -630,6 +630,17 @@ val TcAttributesWithPossibleTargets:
     synAttribs: SynAttribute list ->
         (AttributeTargets * Attrib) list * bool
 
+/// Check a set of attributes which can only target specific elements, allowing failure
+/// because a later phase of type realization may successfully check the attributes (if
+/// the attribute type or its arguments are in the same recursive group). Returns the
+/// preliminary attribute/target pairs plus a thunk to re-resolve and report errors.
+val TcAttributesWithPossibleTargetsCanFail:
+    cenv: TcFileState ->
+    env: TcEnv ->
+    attrTgt: AttributeTargets ->
+    synAttribs: SynAttribute list ->
+        (AttributeTargets * Attrib) list * (unit -> (AttributeTargets * Attrib) list)
+
 /// Check a constant value, e.g. a literal
 val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> synConst: SynConst -> Const
 
