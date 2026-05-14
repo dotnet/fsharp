@@ -6642,7 +6642,7 @@ and TcTyparExprThen (cenv: cenv) overallTy env tpenv synTypar m delayed =
             | [] -> delayed2
             | _ -> DelayedDotLookup (rest, m2) :: delayed2
         CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.AccessRights)
-        TcItemThen cenv overallTy env tpenv ([], item, mExprAndLongId, mExprAndLongId, [], AfterResolution.DoNothing) (Some ty) delayed3
+        TcItemThen cenv overallTy env tpenv ([], item, mExprAndLongId, [], AfterResolution.DoNothing) (Some ty) delayed3
         //TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem rest afterResolution
     | _ ->
         let (SynTypar(_, q, _)) = synTypar
@@ -8631,7 +8631,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId None
             let resolvesAsExpr =
                 match nameResolutionResult with
-                | Result (_, item, _, _, _, _ as res)
+                | Result (tinstEnclosing, item, mItem, _, rest, afterRes)
                     when
                          (match item with
                           | Item.DelegateCtor _
@@ -8642,7 +8642,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
                               | _ -> true
                           | _ -> true) ->
                     let overallTy = match overallTyOpt with None -> MustEqual (NewInferenceType g) | Some t -> t
-                    let _, _ = TcItemThen cenv overallTy env tpenv res None delayed
+                    let _, _ = TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afterRes) None delayed
                     true
                 | _ ->
                     false
@@ -8869,18 +8869,18 @@ and TcLongIdentThen (cenv: cenv) (overallTy: OverallTy) env tpenv (SynLongIdent(
 
     let ad = env.eAccessRights
     let typeNameResInfo = GetLongIdentTypeNameInfo delayed
-    let nameResolutionResult =
+    let (tinstEnclosing, item, mItem, _, rest, afterResolution) =
         let maybeAppliedArgExpr = DelayedItem.maybeAppliedArgForPreferExtensionOverProperty delayed
         ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId maybeAppliedArgExpr
         |> ForceRaise
-    TcItemThen cenv overallTy env tpenv nameResolutionResult None delayed
+    TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afterResolution) None delayed
 
 //-------------------------------------------------------------------------
 // Typecheck "item+projections"
 //------------------------------------------------------------------------- *)
 
 // mItem is the textual range covered by the long identifiers that make up the item
-and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mItem, _mItemIdent, rest, afterResolution) staticTyOpt delayed =
+and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mItem, rest, afterResolution) staticTyOpt delayed =
     let delayed = delayRest rest mItem delayed
     match item with
     // x where x is a union case or active pattern result tag.
@@ -9120,8 +9120,8 @@ and TcTypeItemThen (cenv: cenv) overallTy env nm ty tpenv mItem tinstEnclosing d
         let item = Item.Types(nm, [ty])
         CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
         let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
-        let item, mItem, mItemIdent, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true None
-        TcItemThen cenv overallTy env tpenv ((argsOfAppTy g ty), item, mItem, mItemIdent, rest, afterResolution) None otherDelayed
+        let item, mItem, _, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true None
+        TcItemThen cenv overallTy env tpenv ((argsOfAppTy g ty), item, mItem, rest, afterResolution) None otherDelayed
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: _delayed' ->
         // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
