@@ -4515,9 +4515,23 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     // are always in scope and resolve here, so kind inference and conditional-dependency
     // flags remain correct in Phase1A. A fixup thunk re-resolves attributes against a richer
     // env, finalizing the typar attribs with proper diagnostics.
-    let prelimAttrs =
-        suppressErrorReporting (fun () ->
-            TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env AttributeTargets.GenericParameter synAttrs |> fst)
+    // Use a capturing logger so we can both suppress prelim diagnostics AND detect whether
+    // any were emitted. If anything was reported, we must re-run with the real logger to
+    // surface the diagnostics; if nothing was reported, we can skip the work entirely.
+    let prelimCapture = CapturingDiagnosticsLogger("TcTyparDecl prelim")
+    let prelimAttrs, didFailReported =
+        let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        try
+            SetThreadDiagnosticsLoggerNoUnwind prelimCapture
+            TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env AttributeTargets.GenericParameter synAttrs
+        finally
+            SetThreadDiagnosticsLoggerNoUnwind oldLogger
+    // didFail is true if name resolution reported failure, any synAttr was dropped due to
+    // a caught RecoverableException (length mismatch), or any diagnostic was suppressed.
+    let didFail =
+        didFailReported
+        || List.length prelimAttrs < List.length synAttrs
+        || not prelimCapture.Diagnostics.IsEmpty
     let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute prelimAttrs
     let hasEqDepAttr = HasFSharpAttribute g g.attrib_EqualityConditionalOnAttribute prelimAttrs
     let hasCompDepAttr = HasFSharpAttribute g g.attrib_ComparisonConditionalOnAttribute prelimAttrs
@@ -4535,11 +4549,12 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.UseInType, env.eAccessRights)
 
     let fixupAttrs (envForFinal: TcEnv) =
-        // Re-resolve against the (possibly richer) env and finalize. Reports any genuine errors.
-        let finalAttrs =
-            TcAttributes cenv envForFinal AttributeTargets.GenericParameter synAttrs
-            |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
-        tp.SetAttribs finalAttrs
+        // Only re-resolve if the prelim pass actually suppressed errors; otherwise keep prelim attrs.
+        if didFail then
+            let finalAttrs =
+                TcAttributes cenv envForFinal AttributeTargets.GenericParameter synAttrs
+                |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
+            tp.SetAttribs finalAttrs
 
     tp, fixupAttrs
 
