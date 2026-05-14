@@ -730,11 +730,13 @@ module PrintTypes =
         | _, _ -> squareAngleL (sepListL RightL.semicolon ((match kind with TyparKind.Type -> [] | TyparKind.Measure -> [wordL (tagText "Measure")]) @ List.map (layoutAttrib denv) attrs)) ^^ restL
 
     and layoutTyparRef denv (typar: Typar) =
+        let rawName = typar.DeclaredName |> Option.defaultValue typar.Name
+        let name = if System.String.IsNullOrEmpty rawName then rawName else NormalizeIdentifierBackticks rawName
         tagTypeParameter 
             (sprintf "%s%s%s"
                 (if denv.showStaticallyResolvedTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
                 (if denv.showInferenceTyparAnnotations then prefixOfInferenceTypar typar else "")
-                (typar.DeclaredName |> Option.defaultValue typar.Name))
+                name)
         |> mkNav typar.Range
         |> wordL
 
@@ -1200,10 +1202,15 @@ module PrintTypes =
         let (prettyTyparInst, prettyArgInfos, prettyRetTy), cxs = PrettyTypes.PrettifyInstAndUncurriedSig denv.g (typarInst, argInfos, retTy)
         prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv [prettyArgInfos] prettyRetTy cxs
 
-    let prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys = 
+    let prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys excludeSrtpConstraints = 
         let (prettyTyparInst, parentTyparTys, argInfos, retTy), cxs = PrettyTypes.PrettifyInstAndCurriedSig denv.g (typarInst, parentTyparTys, argInfos, retTy)
         // Filter out the parent typars, which don't get shown in the member signature 
         let cxs = cxs |> List.filter (fun (tp, _) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with ValueSome destTypar -> typarEq tp destTypar | _ -> false))) 
+        // When SRTP method typars are shown on explicit type param declarations, exclude their constraints from postfix
+        let cxs =
+            if excludeSrtpConstraints then
+                cxs |> List.filter (fun (tp, _) -> tp.StaticReq <> TyparStaticReq.HeadType)
+            else cxs
         prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv argInfos retTy cxs
 
     let prettyArgInfos denv allTyparInst =
@@ -1224,7 +1231,8 @@ module PrintTypes =
         // aren't chosen as names for displayed variables. 
         let memberParentTypars = List.map fst memberToParentInst
         let parentTyparTys = List.map (mkTyparTy >> instType allTyparInst) memberParentTypars
-        let prettyTyparInst, layout = prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys
+        let hasStaticallyResolvedTypars = niceMethodTypars |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType)
+        let prettyTyparInst, layout = prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys hasStaticallyResolvedTypars
 
         prettyTyparInst, niceMethodTypars, layout
 
@@ -1355,8 +1363,10 @@ module PrintTastMemberOrVals =
             |> Seq.exists (fun tp -> parentTyparNames.Contains tp.typar_id.idText)
 
         let typarOrderMismatch = isTyparOrderMismatch niceMethodTypars argInfos
+        let hasStaticallyResolvedTypars =
+            niceMethodTypars |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType)
         let nameL =
-            if denv.showTyparBinding || typarOrderMismatch || memberHasSameTyparNameAsParentTypeTypars then
+            if denv.showTyparBinding || typarOrderMismatch || memberHasSameTyparNameAsParentTypeTypars || hasStaticallyResolvedTypars then
                 layoutTyparDecls denv nameL true niceMethodTypars
             else
                 nameL
@@ -1527,10 +1537,19 @@ module PrintTastMemberOrVals =
         let isTyFunction = v.IsTypeFunction // Bug: 1143, and innerpoly tests
         let typarOrderMismatch = isTyparOrderMismatch tps argInfos
 
+        let hasStaticallyResolvedTypars =
+            tps |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType) &&
+            not (IsLogicalOpName v.LogicalName) &&
+            not denv.shortConstraints
         let typarBindingsL = 
-            if isTyFunction || isOverGeneric || denv.showTyparBinding || typarOrderMismatch then 
+            if isTyFunction || isOverGeneric || denv.showTyparBinding || typarOrderMismatch || hasStaticallyResolvedTypars then 
                 layoutTyparDecls denv nameL true tps 
             else nameL
+        // When SRTP method typars are shown on explicit type param declarations, exclude their constraints from postfix
+        let cxs =
+            if hasStaticallyResolvedTypars then
+                cxs |> List.filter (fun (tp, _) -> tp.StaticReq <> TyparStaticReq.HeadType)
+            else cxs
         let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- layoutTopType denv env argInfos retTy cxs
         let valAndTypeL =
             match denv.generatedValueLayout v with
@@ -1902,8 +1921,12 @@ module TastDefinitionPrinting =
             | fields -> (prefixL ^^ nmL ^^ WordL.keywordOf) --- layoutUnionCaseFields denv infoReader true enclosingTcref fields
         layoutXmlDocOfUnionCase denv infoReader (UnionCaseRef(enclosingTcref, ucase.Id.idText)) caseL
 
-    let layoutUnionCases denv infoReader enclosingTcref ucases =
-        let prefixL = WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
+    let layoutUnionCases denv infoReader isStruct enclosingTcref ucases =
+        let prefixL =
+            match ucases with
+            // Single-case struct: bar changes base type semantics (FS0300), so omit it
+            | [ _ ] when isStruct -> emptyL
+            | _ -> WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
         List.map (layoutUnionCase denv infoReader prefixL enclosingTcref) ucases
 
     /// When to force a break? "type tyname = <HERE> repn"
@@ -2332,8 +2355,9 @@ module TastDefinitionPrinting =
 
             | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } ->
                 let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
+                let isStruct = tycon.IsStructOrEnumTycon
                 tycon.UnionCasesAsList
-                |> layoutUnionCases denv infoReader tcref
+                |> layoutUnionCases denv infoReader isStruct tcref
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL
                 |> addReprAccessL
@@ -2583,6 +2607,16 @@ module InferredSigPrinting =
 
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
 
+        // Detect namespace global: bare types/vals at root level (not wrapped in Module binding)
+        let rec hasBareToplevelTypes x =
+            match x with
+            | TMDefRec(_, _, tycons, _, _) -> not (List.isEmpty tycons)
+            | TMDefLet _ | TMDefDo _ -> true
+            | TMDefOpens _ -> false
+            | TMDefs defs -> defs |> List.exists hasBareToplevelTypes
+
+        let isGlobalNamespace = hasBareToplevelTypes expr
+
         let rec isConcreteNamespace x = 
             match x with 
             | TMDefRec(_, _opens, tycons, mbinds, _) -> 
@@ -2708,7 +2742,7 @@ module InferredSigPrinting =
                         if showHeader then
                             // OK, we're not in F# Interactive
                             // Check if this is an outer module with no namespace
-                            if isNil outerPath then
+                            if isNil outerPath && not isGlobalNamespace then
                                 // If so print a "module" declaration, no indentation
                                 modNameL @@ basic
                             else
@@ -2746,7 +2780,12 @@ module InferredSigPrinting =
         | EmptyModuleOrNamespaces mspecs when showHeader ->
             List.map emptyModuleOrNamespace mspecs
             |> aboveListL
-        | expr -> imdefL denv expr
+        | expr ->
+            let layout = imdefL denv expr
+            if isGlobalNamespace then
+                WordL.keywordNamespace ^^ wordL (TaggedText.tagNamespace "global") @@* layout
+            else
+                layout
 
 //--------------------------------------------------------------------------
 

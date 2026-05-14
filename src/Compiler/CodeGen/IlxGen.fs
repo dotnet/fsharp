@@ -529,6 +529,9 @@ type TypeReprEnv
             // Random value for post-hoc diagnostic analysis on generated tree *
             uint16 666
 
+    /// Check if a type parameter is in the environment
+    member _.ContainsKey(tp: Typar) = reprs.ContainsKey(tp.Stamp)
+
     /// Add an additional type parameter to the environment. If the parameter is a units-of-measure parameter
     /// then it is ignored, since it doesn't correspond to a .NET type parameter.
     member tyenv.AddOne(tp: Typar) =
@@ -708,7 +711,15 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         else
             EraseClosures.mkILTyFuncTy cenv.ilxPubCloEnv
 
-    | TType_var(tp, _) -> mkILTyvarTy tyenv[tp, m]
+    | TType_var(tp, _) ->
+        if tyenv.ContainsKey tp then
+            mkILTyvarTy tyenv[tp, m]
+        else
+            // Unsolved type variable not in the TypeReprEnv — can arise for inline SRTP
+            // functions where constraint resolution leaves phantom typars unsolved.
+            // Default the typar and generate the type for the default to avoid an ICE.
+            let defaultTy = TypeRelations.ChooseTyparSolution g cenv.amap tp
+            GenTypeAux cenv m tyenv voidOK ptrsOK defaultTy
 
     | TType_measure _ -> g.ilg.typ_Int32
 
@@ -10300,14 +10311,14 @@ and EmitRestoreStack cgbuf (savedStack, savedStackLocals) =
 //GenAttr: custom attribute generation
 //-------------------------------------------------------------------------
 
-and GenAttribArg amap g eenv x (ilArgTy: ILType) =
+and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
 
     match stripDebugPoints x, ilArgTy with
     // Detect 'null' used for an array argument
     | Expr.Const(Const.Zero, _, _), ILType.Array _ -> ILAttribElem.Null
 
     // Detect standard constants
-    | Expr.Const(c, m, _), _ ->
+    | Expr.Const(c, m, ty), _ ->
         let tynm = ilArgTy.TypeSpec.Name
         let isobj = (tynm = "System.Object")
 
@@ -10334,13 +10345,68 @@ and GenAttribArg amap g eenv x (ilArgTy: ILType) =
         | Const.Zero when isobj -> ILAttribElem.Null
         | Const.Zero when tynm = "System.String" -> ILAttribElem.String None
         | Const.Zero when tynm = "System.Type" -> ILAttribElem.Type None
+        | Const.Zero when tynm = "System.Boolean" -> ILAttribElem.Bool false
+        | Const.Zero when tynm = "System.SByte" -> ILAttribElem.SByte 0y
+        | Const.Zero when tynm = "System.Int16" -> ILAttribElem.Int16 0s
+        | Const.Zero when tynm = "System.Int32" -> ILAttribElem.Int32 0
+        | Const.Zero when tynm = "System.Int64" -> ILAttribElem.Int64 0L
+        | Const.Zero when tynm = "System.Byte" -> ILAttribElem.Byte 0uy
+        | Const.Zero when tynm = "System.UInt16" -> ILAttribElem.UInt16 0us
+        | Const.Zero when tynm = "System.UInt32" -> ILAttribElem.UInt32 0u
+        | Const.Zero when tynm = "System.UInt64" -> ILAttribElem.UInt64 0UL
+        | Const.Zero when tynm = "System.Single" -> ILAttribElem.Single 0.0f
+        | Const.Zero when tynm = "System.Double" -> ILAttribElem.Double 0.0
+        | Const.Zero when tynm = "System.Char" -> ILAttribElem.Char '\000'
+        | Const.Zero when isEnumTy g ty ->
+            let underlyingTy = underlyingTypeOfEnumTy g ty
+            let underlyingIlTy = GenType amap m eenv.tyenv underlyingTy
+            GenAttribArg amap g eenv (Expr.Const(Const.Zero, m, underlyingTy)) underlyingIlTy
         | Const.String i when isobj || tynm = "System.String" -> ILAttribElem.String(Some i)
         | _ -> error (InternalError("The type '" + tynm + "' may not be used as a custom attribute value", m))
 
     // Detect '[| ... |]' nodes
     | Expr.Op(TOp.Array, [ elemTy ], args, m), _ ->
         let ilElemTy = GenType amap m eenv.tyenv elemTy
-        ILAttribElem.Array(ilElemTy, List.map (fun arg -> GenAttribArg amap g eenv arg ilElemTy) args)
+
+        // Check if element type can be encoded in custom attribute metadata (ECMA-335 II.23.3).
+        // Valid element types: primitives, enums, string, System.Type, System.Object.
+        let isEncodableElemType =
+            match ilElemTy with
+            | ILType.Value tspec ->
+                match tspec.Name with
+                | "System.SByte"
+                | "System.Byte"
+                | "System.Int16"
+                | "System.UInt16"
+                | "System.Int32"
+                | "System.UInt32"
+                | "System.Int64"
+                | "System.UInt64"
+                | "System.Double"
+                | "System.Single"
+                | "System.Char"
+                | "System.Boolean" -> true
+                | _ -> isEnumTy g elemTy
+            | ILType.Boxed tspec ->
+                tspec.Name = "System.String"
+                || tspec.Name = "System.Object"
+                || tspec.Name = "System.Type"
+            | _ -> false
+
+        if not isEncodableElemType then
+            if args.IsEmpty then
+                // Empty arrays: substitute System.Object as element type since no elements need encoding.
+                ILAttribElem.Array(g.ilg.typ_Object, [])
+            else
+                let elemTypeName =
+                    if ilElemTy.IsNominal then
+                        ilElemTy.TypeRef.FullName
+                    else
+                        string ilElemTy
+
+                error (Error(FSComp.SR.ilCustomAttrInvalidArrayElemType elemTypeName, m))
+        else
+            ILAttribElem.Array(ilElemTy, List.map (fun arg -> GenAttribArg amap g eenv arg ilElemTy) args)
 
     // Detect 'typeof<ty>' calls
     | TypeOfExpr g ty, _ -> ILAttribElem.Type(Some(GenType amap x.Range eenv.tyenv ty))
@@ -12209,6 +12275,54 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
             match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
             | Some serializationInfoType, Some streamingContextType ->
 
+                let emitSerializationFieldIL emitPerField =
+                    [
+                        for (_, ilFieldName, ilPropType, _) in fieldNamesAndTypes do
+                            yield! emitPerField ilFieldName ilPropType
+                    ]
+
+                let isILValueType (ty: ILType) =
+                    ty.IsNominal && ty.Boxity = ILBoxity.AsValue
+
+                let ilInstrsToRestoreFields =
+                    emitSerializationFieldIL (fun ilFieldName ilPropType ->
+                        [
+                            mkLdarg0
+                            mkLdarg 1us
+                            I_ldstr ilFieldName
+                            I_ldtoken(ILToken.ILType ilPropType)
+
+                            mkNormalCall (
+                                mkILNonGenericStaticMethSpecInTy (
+                                    g.ilg.typ_Type,
+                                    "GetTypeFromHandle",
+                                    [ g.iltyp_RuntimeTypeHandle ],
+                                    g.ilg.typ_Type
+                                )
+                            )
+
+                            mkNormalCallvirt (
+                                mkILNonGenericInstanceMethSpecInTy (
+                                    serializationInfoType,
+                                    "GetValue",
+                                    [ g.ilg.typ_String; g.ilg.typ_Type ],
+                                    g.ilg.typ_Object
+                                )
+                            )
+
+                            if isILValueType ilPropType then
+                                I_unbox_any ilPropType
+                            else
+                                I_castclass ilPropType
+
+                            mkNormalStfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+                        ])
+
+                // FSharp.Core is SecurityTransparent and cannot override SecurityCritical
+                // Exception.GetObjectData, so field restoration would be unbalanced — skip it.
+                let shouldRestoreFields =
+                    not g.compilingFSharpCore && not fieldNamesAndTypes.IsEmpty
+
                 let ilInstrsForSerialization =
                     [
                         mkLdarg0
@@ -12216,6 +12330,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkLdarg 2us
                         mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [ serializationInfoType; streamingContextType ]))
                     ]
+                    @ (if shouldRestoreFields then ilInstrsToRestoreFields else [])
                     |> nonBranchingInstrsToCode
 
                 let ilCtorDefForSerialization =
@@ -12227,8 +12342,76 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         ],
                         mkMethodBody (false, [], 8, ilInstrsForSerialization, None, eenv.imports)
                     )
+                    |> AddNonUserCompilerGeneratedAttribs g
 
-                [ ilCtorDefForSerialization ]
+                let ilInstrsToSaveFields =
+                    emitSerializationFieldIL (fun ilFieldName ilPropType ->
+                        [
+                            mkLdarg 1us
+                            I_ldstr ilFieldName
+                            mkLdarg0
+                            mkNormalLdfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+
+                            if isILValueType ilPropType then
+                                I_box ilPropType
+
+                            mkNormalCallvirt (
+                                mkILNonGenericInstanceMethSpecInTy (
+                                    serializationInfoType,
+                                    "AddValue",
+                                    [ g.ilg.typ_String; g.ilg.typ_Object ],
+                                    ILType.Void
+                                )
+                            )
+                        ])
+
+                let ilInstrsForGetObjectData =
+                    [
+                        mkLdarg0
+                        mkLdarg 1us
+                        mkLdarg 2us
+                        mkNormalCall (
+                            mkILNonGenericInstanceMethSpecInTy (
+                                g.iltyp_Exception,
+                                "GetObjectData",
+                                [ serializationInfoType; streamingContextType ],
+                                ILType.Void
+                            )
+                        )
+                    ]
+                    @ ilInstrsToSaveFields
+                    |> nonBranchingInstrsToCode
+
+                let ilGetObjectDataDef =
+                    let mdef =
+                        mkILNonGenericVirtualInstanceMethod (
+                            "GetObjectData",
+                            ILMemberAccess.Public,
+                            [
+                                mkILParamNamed ("info", serializationInfoType)
+                                mkILParamNamed ("context", streamingContextType)
+                            ],
+                            mkILReturn ILType.Void,
+                            mkMethodBody (false, [], 8, ilInstrsForGetObjectData, None, eenv.imports)
+                        )
+
+                    // SecurityCritical is required for .NET Framework where Exception.GetObjectData is security-critical
+                    let securityCriticalAttr =
+                        mkILCustomAttribute (g.attrib_SecurityCriticalAttribute.TypeRef, [], [], [])
+
+                    mdef.With(customAttrs = mkILCustomAttrs [ securityCriticalAttr ])
+                    |> AddNonUserCompilerGeneratedAttribs g
+
+                // FSharp.Core has [assembly: SecurityTransparent], making all code transparent.
+                // On .NET Framework, transparent code cannot override SecurityCritical virtual
+                // methods like Exception.GetObjectData. Without GetObjectData to write the fields,
+                // the field-restoring deserialization constructor would crash (fields not in
+                // SerializationInfo). So for FSharp.Core: emit only the base-call ctor (status quo).
+                // For user exceptions: emit both GetObjectData and the field-restoring ctor.
+                if g.compilingFSharpCore || fieldNamesAndTypes.IsEmpty then
+                    [ ilCtorDefForSerialization ]
+                else
+                    [ ilCtorDefForSerialization; ilGetObjectDataDef ]
             | _ -> []
 
         let ilTypeName = tref.Name
