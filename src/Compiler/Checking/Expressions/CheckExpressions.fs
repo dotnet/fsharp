@@ -4130,11 +4130,31 @@ let formatAvailableNames (names: string array) =
 /// E.g. `match x with | null -> ... | y -> ...` narrows `inputTy` of the y-clause to non-null.
 let EliminateNullnessFromInputType (g: TcGlobals) (inputTy: TType) (pat: Pattern) (whenExprOpt: Expr option) : TType =
     let removeNull t =
-        // Strip type equations (including abbreviations) and set nullness to non-null.
-        // For type abbreviations like `type objnull = obj | null`, we need to expand
-        // the abbreviation and apply non-null to the underlying type.
-        let stripped = stripTyEqns g t
-        replaceNullnessOfTy KnownWithoutNull stripped
+        // We want to refine `t` to its "non-null" version for the remaining
+        // match clauses. Two cases:
+        //
+        // 1. Plain/transparent abbreviations such as `string` (an alias for
+        //    `System.String`) or any user-defined `type MyStr = string` do
+        //    NOT themselves introduce a `WithNull` annotation. For these
+        //    just clearing the outer nullness via `replaceNullnessOfTy`
+        //    yields a correctly non-null type AND preserves the alias in
+        //    tooltips / error messages. See issue #19646.
+        //
+        // 2. Abbreviations whose RHS encodes nullness (e.g.
+        //    `type objnull = obj | null`) hide a `WithNull` annotation
+        //    inside the expansion. Just clearing the outer nullness is not
+        //    enough because `addNullnessToTy KnownWithoutNull` over a type
+        //    that already has `WithNull` returns the original `WithNull`
+        //    (see `combineNullness` in TypedTreeBasics.fs). For these we
+        //    must fully strip and re-mark the underlying type. See issue
+        //    #18488 / PR #18852.
+        let nonNullOriginal = replaceNullnessOfTy KnownWithoutNull t
+
+        match (nullnessOfTy g nonNullOriginal).TryEvaluate() with
+        | ValueSome NullnessInfo.WithoutNull -> nonNullOriginal
+        | _ ->
+            let stripped = stripTyEqns g t
+            replaceNullnessOfTy KnownWithoutNull stripped
     let rec isWild (p: Pattern) =
         match p with
         | TPat_wild _ -> true
