@@ -45,7 +45,7 @@ safe-outputs:
     - "⚠️ Affects-Agent-Config"
     - "⚠️ Suspicious-Prompting"
     - "⚠️ Scope-Review-Needed"
-    max: 10
+    max: 50
     target: "*"
   add-comment:
     max: 5
@@ -189,4 +189,4 @@ The diff clearly does more than what the title and description claim. Compare th
 
 Read `.github/tooling-check-repo-rules.md` from this repo (via `get_file_contents` on the default branch). It defines additional categories, trusted authors, and non-fork bypass rules specific to this repository. Apply those categories alongside the generic ones above.
 
-<!-- Safety: no shell, no checkout, no filesystem. Read-only + fixed label allowlist + 1 comment. -->
+<!-- Safety: no shell, no checkout, no filesystem. Read-only + fixed label allowlist + max 5 comments. -->
