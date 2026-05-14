@@ -77,6 +77,18 @@ type A = | [<CustomAttribute>] A
         |> shouldSucceed
 
     [<Fact>]
+    let ``attribute on union case in namespace rec resolves to attribute defined in same namespace`` () =
+        Fsx """
+namespace rec Ns
+
+type CustomAttribute() = inherit System.Attribute()
+
+type A = | [<CustomAttribute>] A
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
     let ``attribute on every case of a DU in module rec resolves to attribute defined in same module`` () =
         Fsx """
 module rec M
