@@ -819,8 +819,14 @@ val TcTyparConstraints:
     synConstraints: SynTypeConstraint list ->
         UnscopedTyparEnv
 
-/// Check a collection of type parameters declarations
-val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list
+/// Check a collection of type parameters declarations.
+///
+/// Returns the typars together with a fixup thunk that finalizes their attributes against a
+/// (possibly richer) env. User-defined attributes that fail to resolve eagerly (e.g.
+/// attributes from the same `module rec` group whose constructors aren't yet wired) are
+/// re-tried by the thunk using the env passed in. Callers in non-rec contexts should invoke
+/// the thunk immediately with the same env they used for the eager pass.
+val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list * (TcEnv -> unit)
 
 /// Check a syntactic type
 val TcType:
