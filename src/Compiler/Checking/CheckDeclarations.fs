@@ -582,7 +582,11 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
-        let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
+        // Use TcAttributesCanFail so attribute-constructor lookups that fail at this point
+        // (e.g. attribute types defined later in the same `module rec` group whose
+        // constructors aren't yet wired) can be retried after Phase1G via the
+        // returned thunk. See fixup wired into Phase1G's `fixupFinalAttrs`.
+        let attrs, getFinalAttrs = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
         (*
             The attributes of a union case decl get attached to the generated "static factory" method.
             Enforce union-cases AttributeTargets:
@@ -610,14 +614,18 @@ module TcRecdUnionAndEnumDeclarations =
                 if  hasNotMethodTarget then
                     warning(Error(FSComp.SR.tcAttributeIsNotValidForUnionCaseWithFields(), id.idRange)))
         
-        Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
+        let unionCase = Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
+        let fixupAttrs () = unionCase.Attribs <- getFinalAttrs ()
+        unionCase, fixupAttrs
 
     let TcUnionCaseDecls (cenv: cenv) env (parent: ParentRef) (thisTy: TType) (thisTyInst: TypeInst) hasRQAAttribute tpenv unionCases =
-        let unionCasesR =
+        let unionCasesAndFixups =
             unionCases
             |> List.filter (fun (SynUnionCase(_, SynIdent(id, _), _, _, _, _, _)) -> id.idText <> "")
             |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv hasRQAAttribute) 
-        unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case" 
+        let unionCasesR = unionCasesAndFixups |> List.map fst
+        let fixups = unionCasesAndFixups |> List.map snd
+        unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case", (fun () -> fixups |> List.iter (fun f -> f ()))
 
     let MakeEnumCaseSpec g cenv env parent attrs thisTy caseRange (caseIdent: Ident) (xmldoc: PreXmlDoc) value =
         let vis, _ = ComputeAccessAndCompPath g env None caseRange None None parent
@@ -3578,6 +3586,7 @@ module EstablishTypeDefinitionCores =
                     let item = Item.UnionCase(info, false)
                     CallNameResolutionSink cenv.tcSink (unionCase.Range, nenv, item, emptyTyparInst, ItemOccurrence.Binding, ad)
             
+            let mutable fixupUnionCaseAttrs = fun () -> ()
             let typeRepr, baseValOpt, safeInitInfo = 
                 match synTyconRepr with 
 
@@ -3637,7 +3646,8 @@ module EstablishTypeDefinitionCores =
                     structLayoutAttributeCheck false
 
                     let hasRQAAttribute = EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.RequireQualifiedAccessAttribute tycon
-                    let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
+                    let unionCases, fixupAttrs = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
+                    fixupUnionCaseAttrs <- fixupAttrs
                     multiCaseUnionStructCheck unionCases
 
                     writeFakeUnionCtorsToSink unionCases
@@ -3866,10 +3876,10 @@ module EstablishTypeDefinitionCores =
                     errorR(Error(FSComp.SR.tcConditionalAttributeUsage(), m))
             | _ -> ()         
                    
-            (baseValOpt, safeInitInfo)
+            (baseValOpt, safeInitInfo), fixupUnionCaseAttrs
         with RecoverableException exn -> 
             errorRecovery exn m 
-            None, NoSafeInitInfo
+            (None, NoSafeInitInfo), (fun () -> ())
 
     /// Check that a set of type definitions is free of cycles in abbreviations
     let private TcTyconDefnCore_CheckForCyclicAbbreviations tycons = 
@@ -4241,14 +4251,17 @@ module EstablishTypeDefinitionCores =
         // checking the members.
         let withBaseValsAndSafeInitInfos = 
             (envMutRecPrelim, withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) -> 
-                let info = 
+                let info, fixupUnionCaseAttrs = 
                     match origInfo, tyconAndAttrsOpt with 
                     | (typeDefCore, _, _), Some (tycon, (attrs, _)) -> TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs
-                    | _ -> None, NoSafeInitInfo 
+                    | _ -> (None, NoSafeInitInfo), (fun () -> ())
                 let tyconOpt, fixupFinalAttrs = 
                     match tyconAndAttrsOpt with
-                    | None -> None, (fun () -> ())
-                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) -> Some tycon, (fun () -> tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs()))
+                    | None -> None, fixupUnionCaseAttrs
+                    | Some (tycon, (_prelimAttrs, getFinalAttrs)) ->
+                        Some tycon, (fun () ->
+                            tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs())
+                            fixupUnionCaseAttrs())
 
                 (origInfo, tyconOpt, fixupFinalAttrs, info))
                 
