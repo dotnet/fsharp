@@ -11234,11 +11234,17 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                      |> List.zip attrs
                      |> List.partition(function | _, Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
                      |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
+            // SynInfo.RotateReturnAttributes (called from mkSynBinding) may have already moved
+            // [<return:...>] attributes into valSynData's return SynArgInfo. Pick those up too.
+            let valSynDataRetSynAttrs =
+                let (SynValData(_, SynValInfo(_, SynArgInfo(retAttrs, _, _)), _)) = valSynData
+                retAttrs |> List.collect (fun a -> a.Attributes)
             let retAttribs =
+                let fromValSyn = TcAttrs AttributeTargets.ReturnValue true valSynDataRetSynAttrs
                 match rtyOpt with
                 | Some (SynBindingReturnInfo(attributes = Attributes retAttrs)) ->
-                    rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs
-                | None -> rotRetAttribs
+                    rotRetAttribs @ fromValSyn @ TcAttrs AttributeTargets.ReturnValue true retAttrs
+                | None -> rotRetAttribs @ fromValSyn
             let valSynData =
                 match rotRetSynAttrs with
                 | [] -> valSynData
