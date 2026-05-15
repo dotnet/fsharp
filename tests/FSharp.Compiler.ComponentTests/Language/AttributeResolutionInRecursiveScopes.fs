@@ -8,8 +8,7 @@ open FSharp.Test.Compiler
 
 module AttributeResolutionInRecursiveScopes =
 
-    // Regression baseline — these attribute positions already worked before issue #5795 was fixed.
-    // They must continue to compile after the fix. Do NOT remove these tests.
+    // Baselines: these attribute positions already worked before #5795.
 
     [<Fact>]
     let ``attribute on type declaration in module rec resolves to attribute defined in same module`` () =
@@ -52,7 +51,6 @@ type A = | A
 
     [<Fact>]
     let ``attribute on let binding in non-rec module resolves to attribute defined in same module`` () =
-        // Non-rec baseline — should always work.
         Fsx """
 module M
 
@@ -181,7 +179,6 @@ type B<[<CustomAttribute>]'a> = | B of 'a
 
     [<Fact>]
     let ``attribute on type parameter combined with framework Measure attribute in module rec compiles`` () =
-        // Sanity: framework MeasureAttribute still works alongside a deferred user attribute.
         Fsx """
 module rec M
 
@@ -192,7 +189,7 @@ type B<[<Measure>]'u, [<CustomAttribute>]'a> = B of 'a
         |> compile
         |> shouldSucceed
 
-    // === Edge cases ===
+    // Edge cases
 
     [<Fact>]
     let ``attribute defined in nested module of rec scope resolves on union case`` () =
@@ -262,11 +259,8 @@ module rec M =
         |> compile
         |> shouldSucceed
 
-    // F# attribute kind inference is name-resolution based: when a user-defined
-    // MeasureAttribute is in scope, [<Measure>] resolves to the user's attribute and
-    // the typar kind is NOT inferred as Measure. This is standard F# behaviour and
-    // independent of the rec-scope deferred attribute resolution fix. Tracking
-    // follow-up: <https://github.com/dotnet/fsharp/issues/5795> commentary.
+    // [<Measure>] resolves to the user's MeasureAttribute by name, so kind inference breaks.
+    // Unrelated to #5795 rec-scope fix.
     [<Fact(Skip = "Tracked separately: user-shadow of MeasureAttribute changes kind inference by name-resolution, unrelated to #5795 fix")>]
     let ``user-defined MeasureAttribute in rec scope does not break framework Measure kind inference`` () =
         Fsx """
@@ -279,13 +273,11 @@ type MeasureAttribute() = inherit System.Attribute()
         |> compile
         |> shouldSucceed
 
-    // === Negative tests — these MUST still error after the fix ===
+    // Negative tests — must still error after the fix.
 
     [<Fact>]
     let ``non-attribute type used on union case in module rec still produces diagnostic`` () =
-        // The F# compiler emits warning FS3242 ("This type does not inherit Attribute, ...")
-        // rather than an error for a user-defined non-Attribute-derived class used as an attribute.
-        // The negative test confirms a diagnostic is still produced after the rec-scope fix.
+        // FS3242: "does not inherit Attribute" — warning, not error.
         Fsx """
 module rec M
 

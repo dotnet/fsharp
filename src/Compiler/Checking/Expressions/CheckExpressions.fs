@@ -4561,16 +4561,9 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     let (SynTyparDecl (attributes = Attributes synAttrs; typar = synTypar)) = synTyparDecl
     let (SynTypar (ident = id)) = synTypar
 
-    // Resolve attributes in a preliminary pass with error reporting suppressed so user-defined
-    // attributes referenced from the same `module rec` group (whose entities aren't yet wired)
-    // don't prematurely emit FS0039. Framework attributes (MeasureAttribute,
-    // EqualityConditionalOnAttribute, ComparisonConditionalOnAttribute, CompiledNameAttribute)
-    // are always in scope and resolve here, so kind inference and conditional-dependency
-    // flags remain correct in Phase1A. A fixup thunk re-resolves attributes against a richer
-    // env, finalizing the typar attribs with proper diagnostics.
-    // Use a capturing logger so we can both suppress prelim diagnostics AND detect whether
-    // any were emitted. If anything was reported, we must re-run with the real logger to
-    // surface the diagnostics; if nothing was reported, we can skip the work entirely.
+    // Prelim pass: suppress diagnostics so rec-scope attrs (not yet wired) don't emit FS0039.
+    // Framework attrs (Measure, EqualityConditionalOn, etc.) resolve here for kind inference.
+    // Fixup thunk re-resolves with the final env.
     let prelimCapture = CapturingDiagnosticsLogger("TcTyparDecl prelim")
     let prelimAttrs, didFailReported =
         let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
@@ -4579,8 +4572,7 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
             TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env AttributeTargets.GenericParameter synAttrs
         finally
             SetThreadDiagnosticsLoggerNoUnwind oldLogger
-    // didFail is true if name resolution reported failure, any synAttr was dropped due to
-    // a caught RecoverableException (length mismatch), or any diagnostic was suppressed.
+    // Failed if: TcCanFail reported failure, attrs were dropped, or diagnostics were suppressed.
     let didFail =
         didFailReported
         || List.length prelimAttrs < List.length synAttrs
@@ -4602,7 +4594,7 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.UseInType, env.eAccessRights)
 
     let fixupAttrs (envForFinal: TcEnv) =
-        // Only re-resolve if the prelim pass actually suppressed errors; otherwise keep prelim attrs.
+        // Re-resolve only if prelim pass suppressed errors.
         if didFail then
             let finalAttrs =
                 TcAttributes cenv envForFinal AttributeTargets.GenericParameter synAttrs
