@@ -428,10 +428,7 @@ module TcRecdUnionAndEnumDeclarations =
     let TcFieldDecl (cenv: cenv) env parent isIncrClass tpenv (isStatic, synAttrs, id: Ident, nameGenerated, ty, isMutable, xmldoc, vis) =
         let g = cenv.g
         let m = id.idRange
-        // Use the CanFail variant so attribute-constructor lookups that fail at this point
-        // (e.g. attribute types defined later in the same `module rec` group whose
-        // constructors aren't yet wired) can be retried after Phase1G via the
-        // returned thunk. See fixup wired into Phase1G's representation fixup.
+        // CanFail: attrs from same rec group may not resolve yet; fixup re-resolves in Phase1G.
         let attrs, getFinalAttrs = TcAttributesWithPossibleTargetsCanFail cenv env AttributeTargets.FieldDecl synAttrs
 
         let splitAttrs (attrsWithTargets: (AttributeTargets * Attrib) list) =
@@ -594,10 +591,7 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
-        // Use TcAttributesCanFail so attribute-constructor lookups that fail at this point
-        // (e.g. attribute types defined later in the same `module rec` group whose
-        // constructors aren't yet wired) can be retried after Phase1G via the
-        // returned thunk. See fixup wired into Phase1G's `fixupFinalAttrs`.
+        // CanFail: attrs from same rec group may not resolve yet; fixup re-resolves in Phase1G.
         let attrs, getFinalAttrs = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
         (*
             The attributes of a union case decl get attached to the generated "static factory" method.
@@ -2459,7 +2453,7 @@ module TcExceptionDeclarations =
                 | _ -> ()
 
                 let rfield, fixupFieldAttrs = TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef
-                // Exception field attributes are resolved eagerly (no rec-group fixup).
+                // Exceptions aren't in rec groups — finalize field attrs eagerly.
                 fixupFieldAttrs ()
                 rfield)
         TcRecdUnionAndEnumDeclarations.ValidateFieldNames(args, args')
@@ -2803,7 +2797,7 @@ module EstablishTypeDefinitionCores =
 
         match synTyconRepr with 
         | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
-          // Exceptions don't carry user-declared typars; finalize eagerly.
+          // Exceptions have no user typars — finalize eagerly.
           fixupTyparAttrs env
           TcExceptionDeclarations.TcExnDefnCore_Phase1A g cenv env parent synExnDefnRepr, (fun _ -> ())
         | _ ->
@@ -3424,9 +3418,7 @@ module EstablishTypeDefinitionCores =
     let private TcTyconDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) envinner tpenv inSig (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) (tycon: Tycon) (attrs: Attribs) =
         let g = cenv.g
         let m = tycon.Range
-        // Hold the latest deferred attribute fixup outside the try, so that if a later RecoverableException
-        // is raised after fixupReprAttrs has been captured (Union/Record/General arms), the recovery path still
-        // returns the captured fixup. Otherwise the rec-resolved field/case attribute diagnostics are silently dropped.
+        // Survives RecoverableException so captured fixup isn't lost on recovery path.
         let latestFixupReprAttrs = ref (fun () -> ())
         try 
             let id = tycon.Id
@@ -4085,10 +4077,7 @@ module EstablishTypeDefinitionCores =
 
 
     let TcMutRecDefns_Phase1 mkLetInfo (cenv: cenv) envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
-        // Per-tycon typar attribute fixups produced in Phase1A. These can't run until later
-        // because user-defined attributes referenced by type-parameter attributes may live in
-        // the same rec scope and aren't yet wired. The fixups are composed into Phase1G's
-        // per-tycon fixupFinalAttrs below.
+        // Typar attr fixups from Phase1A — deferred because rec-scope attrs aren't wired yet.
         let typarAttrFixups = System.Collections.Generic.Dictionary<Stamp, TcEnv -> unit>()
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these. Augmentations are skipped in this phase.

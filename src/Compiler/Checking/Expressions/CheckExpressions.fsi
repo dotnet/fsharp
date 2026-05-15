@@ -626,10 +626,8 @@ val TcAttributesWithPossibleTargets:
     synAttribs: SynAttribute list ->
         (AttributeTargets * Attrib) list * bool
 
-/// Check a set of attributes which can only target specific elements, allowing failure
-/// because a later phase of type realization may successfully check the attributes (if
-/// the attribute type or its arguments are in the same recursive group). Returns the
-/// preliminary attribute/target pairs plus a thunk to re-resolve and report errors.
+/// Like TcAttributesWithPossibleTargets, but allows failure for rec-scope attrs.
+/// Returns prelim attrs + a fixup thunk that re-resolves with the final env.
 val TcAttributesWithPossibleTargetsCanFail:
     cenv: TcFileState ->
     env: TcEnv ->
@@ -819,13 +817,9 @@ val TcTyparConstraints:
     synConstraints: SynTypeConstraint list ->
         UnscopedTyparEnv
 
-/// Check a collection of type parameters declarations.
-///
-/// Returns the typars together with a fixup thunk that finalizes their attributes against a
-/// (possibly richer) env. User-defined attributes that fail to resolve eagerly (e.g.
-/// attributes from the same `module rec` group whose constructors aren't yet wired) are
-/// re-tried by the thunk using the env passed in. Callers in non-rec contexts should invoke
-/// the thunk immediately with the same env they used for the eager pass.
+/// Check type parameter declarations.
+/// Returns typars + fixup thunk for deferred attr resolution in rec scopes.
+/// Non-rec callers: invoke the fixup immediately with the same env.
 val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list * (TcEnv -> unit)
 
 /// Check a syntactic type
