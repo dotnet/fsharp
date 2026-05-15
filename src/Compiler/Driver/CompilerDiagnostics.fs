@@ -449,7 +449,10 @@ module OldStyleMessages =
     let ConstraintSolverNullnessWarningWithTypesE () = Message("ConstraintSolverNullnessWarningWithTypes", "%s%s")
     let ConstraintSolverNullnessWarningWithTypeE () = Message("ConstraintSolverNullnessWarningWithType", "%s")
     let ConstraintSolverNullnessWarningOnDotAccessE () = Message("ConstraintSolverNullnessWarningOnDotAccess", "%s%s")
-    let ConstraintSolverNullnessWarningOnDotAccessWithBindingE () = Message("ConstraintSolverNullnessWarningOnDotAccessWithBinding", "%s%s%s")
+
+    let ConstraintSolverNullnessWarningOnDotAccessWithBindingE () =
+        Message("ConstraintSolverNullnessWarningOnDotAccessWithBinding", "%s%s%s")
+
     let ConstraintSolverNullnessWarningE () = Message("ConstraintSolverNullnessWarning", "%s")
     let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
     let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
@@ -736,13 +739,20 @@ type Exception with
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
         | ConstraintSolverNullnessWarningOnDotAccess(denv, objTy, memberName, bindingName, _, _) ->
-            let denv = { denv with showNullnessAnnotations = Some false }
+            let denv =
+                { denv with
+                    showNullnessAnnotations = Some false
+                }
+
             let tyStr = NicePrint.minimalStringOfType denv objTy
+
             match bindingName with
             | Some name ->
-                os.Append(ConstraintSolverNullnessWarningOnDotAccessWithBindingE().Format memberName name tyStr) |> ignore
+                os.Append(ConstraintSolverNullnessWarningOnDotAccessWithBindingE().Format memberName name tyStr)
+                |> ignore
             | None ->
-                os.Append(ConstraintSolverNullnessWarningOnDotAccessE().Format memberName tyStr) |> ignore
+                os.Append(ConstraintSolverNullnessWarningOnDotAccessE().Format memberName tyStr)
+                |> ignore
 
         | ConstraintSolverNullnessWarning(msg, m, m2) ->
             os.Append(ConstraintSolverNullnessWarningE().Format(msg)) |> ignore

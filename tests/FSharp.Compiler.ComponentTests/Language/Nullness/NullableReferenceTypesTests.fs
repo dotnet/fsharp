@@ -295,7 +295,7 @@ let getLength (x: string | null) = x.Length
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 37, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string'."]
 
 [<Fact>]
 let ``Does report warning on obj to static member`` () =
