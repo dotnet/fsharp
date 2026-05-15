@@ -170,6 +170,7 @@ type Exception with
         | ConstraintSolverNullnessWarningEquivWithTypes(_, _, _, _, _, m, _)
         | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
         | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
+        | ConstraintSolverNullnessWarningOnDotAccess(_, _, _, _, m, _)
         | ConstraintSolverNullnessWarning(_, m, _)
         | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
         | ConstraintSolverError(_, m, _)
@@ -348,6 +349,7 @@ type Exception with
         | ConstraintSolverNullnessWarningEquivWithTypes _ -> 3261
         | ConstraintSolverNullnessWarningWithTypes _ -> 3261
         | ConstraintSolverNullnessWarningWithType _ -> 3261
+        | ConstraintSolverNullnessWarningOnDotAccess _ -> 3261
         | ConstraintSolverNullnessWarning _ -> 3261
         | InvalidAttributeTargetForLanguageElement _ -> 842
         | _ -> 193
@@ -446,6 +448,8 @@ module OldStyleMessages =
     let ConstraintSolverNullnessWarningEquivWithTypesE () = Message("ConstraintSolverNullnessWarningEquivWithTypes", "%s")
     let ConstraintSolverNullnessWarningWithTypesE () = Message("ConstraintSolverNullnessWarningWithTypes", "%s%s")
     let ConstraintSolverNullnessWarningWithTypeE () = Message("ConstraintSolverNullnessWarningWithType", "%s")
+    let ConstraintSolverNullnessWarningOnDotAccessE () = Message("ConstraintSolverNullnessWarningOnDotAccess", "%s%s")
+    let ConstraintSolverNullnessWarningOnDotAccessWithBindingE () = Message("ConstraintSolverNullnessWarningOnDotAccessWithBinding", "%s%s%s")
     let ConstraintSolverNullnessWarningE () = Message("ConstraintSolverNullnessWarning", "%s")
     let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
     let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
@@ -731,6 +735,15 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
+        | ConstraintSolverNullnessWarningOnDotAccess(denv, objTy, memberName, bindingName, _, _) ->
+            let denv = { denv with showNullnessAnnotations = Some false }
+            let tyStr = NicePrint.minimalStringOfType denv objTy
+            match bindingName with
+            | Some name ->
+                os.Append(ConstraintSolverNullnessWarningOnDotAccessWithBindingE().Format memberName name tyStr) |> ignore
+            | None ->
+                os.Append(ConstraintSolverNullnessWarningOnDotAccessE().Format memberName tyStr) |> ignore
+
         | ConstraintSolverNullnessWarning(msg, m, m2) ->
             os.Append(ConstraintSolverNullnessWarningE().Format(msg)) |> ignore
 
@@ -792,6 +805,7 @@ type Exception with
             (match contextInfo with
              | ContextInfo.NoContext -> false
              | ContextInfo.NullnessCheckOfCapturedArg _ -> false
+             | ContextInfo.MemberAccessOnNullable _ -> false
              | _ -> true)
             ->
             e.Output(os, suggestNames)

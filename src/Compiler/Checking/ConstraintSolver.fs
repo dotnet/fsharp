@@ -1049,6 +1049,7 @@ and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
 and getNullnessWarningRange (csenv: ConstraintSolverEnv) =
     match csenv.eContextInfo with
     | ContextInfo.NullnessCheckOfCapturedArg capturedArgRange -> capturedArgRange
+    | ContextInfo.MemberAccessOnNullable (objExprRange, _, _) -> objExprRange
     | _ -> csenv.m
 
 // nullness1: actual
@@ -1124,7 +1125,12 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then               
-                WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
+                match csenv.eContextInfo with
+                | ContextInfo.MemberAccessOnNullable (objExprRange, memberName, bindingName) ->
+                    let displayTy = replaceNullnessOfTy csenv.g.knownWithoutNull ty2
+                    WarnD(ConstraintSolverNullnessWarningOnDotAccess(csenv.DisplayEnv, displayTy, memberName, bindingName, objExprRange, m2))
+                | _ ->
+                    WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
             else
                 CompleteD
     | Nullness.KnownFromConstructor, _ | _, Nullness.KnownFromConstructor -> CompleteD // Unreachable after Normalize()
@@ -2075,7 +2081,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                             let methOverloadResult, errors = 
                                 trace.CollectThenUndoOrCommit
                                     (fun (a, _) -> Option.isSome a)
-                                    (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual retTy)))
+                                    (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) None CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual retTy)))
 
                             match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
                             | Some (anonInfo, tinst, i), None, None -> 
@@ -3487,6 +3493,7 @@ and ResolveOverloadingCore
          methodName
          ndeep
          cx
+         objArgInfo
          (callerArgs: CallerArgs<Expr>)
          ad
          (calledMethGroup: CalledMeth<Expr> list)
@@ -3503,6 +3510,12 @@ and ResolveOverloadingCore
     let infoReader = csenv.InfoReader
     let m = csenv.m
 
+    let withObjArgContext (env: ConstraintSolverEnv) =
+        match objArgInfo with
+        | Some (mObj, memberName, bindingName) ->
+            { env with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
+        | None -> env
+
     // Always take the return type into account for
     //    -- op_Explicit, op_Implicit
     //    -- candidate method sets that potentially use tupling of unfilled out args
@@ -3516,13 +3529,14 @@ and ResolveOverloadingCore
     let exactMatchCandidates =
         candidates |> FilterEachThenUndo (fun newTrace calledMeth ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+              let objCsenv = withObjArgContext csenv
               let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
               CanMemberSigsMatchUpToCheck 
                   csenv 
                   permitOptArgs 
                   alwaysCheckReturn
                   (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
-                  (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
+                  (TypesMustSubsume objCsenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
                   (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
                   (ArgsEquivOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome)  // args exact
                   reqdRetTyOpt 
@@ -3539,13 +3553,14 @@ and ResolveOverloadingCore
       let applicable =
           candidates |> FilterEachThenUndo (fun newTrace candidate ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+              let objCsenv = withObjArgContext csenv
               let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) candidate
               CanMemberSigsMatchUpToCheck 
                   csenv 
                   permitOptArgs
                   alwaysCheckReturn
                   (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
-                  (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
+                  (TypesMustSubsume objCsenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
                   (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
                   (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
                   reqdRetTyOpt 
@@ -3561,13 +3576,14 @@ and ResolveOverloadingCore
               |> List.choose (fun calledMeth -> 
                       match CollectThenUndo (fun newTrace -> 
                                    let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+                                   let objCsenv = withObjArgContext csenv
                                    let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
                                    CanMemberSigsMatchUpToCheck 
                                        csenv 
                                        permitOptArgs
                                        alwaysCheckReturn
                                        (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln) 
-                                       (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m)
+                                       (TypesMustSubsume objCsenv ndeep (WithTrace newTrace) cxsln m)
                                        (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
                                        (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
                                        reqdRetTyOpt 
@@ -3600,6 +3616,7 @@ and ResolveOverloading
          methodName      // The name of the method being called, for error reporting
          ndeep           // Depth of inference
          cx              // We're doing overload resolution as part of constraint solving, where special rules apply for op_Explicit and op_Implicit constraints.
+         objArgInfo      // Information about the receiver of a dotted call, used to refine nullness warnings.
          (callerArgs: CallerArgs<Expr>)
          ad              // The access domain of the caller, e.g. a module, type etc. 
          calledMethGroup // The set of methods being called 
@@ -3679,7 +3696,7 @@ and ResolveOverloading
           match cachedHit with
           | Some result -> result
           | None ->
-              ResolveOverloadingCore csenv methodName ndeep cx callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion retTyOpt anyHasOutArgs cacheKeyOpt cache
+              ResolveOverloadingCore csenv methodName ndeep cx objArgInfo callerArgs ad calledMethGroup candidates permitOptArgs reqdRetTyOpt isOpConversion retTyOpt anyHasOutArgs cacheKeyOpt cache
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
@@ -3696,6 +3713,11 @@ and ResolveOverloading
         trackErrors {
                         do! errors
                         let cxsln = AssumeMethodSolvesTrait csenv cx m trace calledMeth
+                        let objCsenv =
+                            match objArgInfo with
+                            | Some (mObj, memberName, bindingName) ->
+                                { csenv with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
+                            | None -> csenv
                         match calledMethTrace with
                         | NoTrace ->
                            let! _usesTDC =
@@ -3704,7 +3726,7 @@ and ResolveOverloading
                                  permitOptArgs
                                  true
                                  (TypesEquiv csenv ndeep trace cxsln) // instantiations equal
-                                 (TypesMustSubsume csenv ndeep trace cxsln m) // obj can subsume
+                                 (TypesMustSubsume objCsenv ndeep trace cxsln m) // obj can subsume
                                  (ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome m) // return can subsume or convert
                                  (ArgsMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome true)  // args can subsume or convert
                                  reqdRetTyOpt 
@@ -3967,9 +3989,9 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (PossibleCandidates(methodName, methods,cx)) m
         None, ErrorD err, NoTrace
 
-let ResolveOverloadingForCall denv css m  methodName callerArgs ad calledMethGroup permitOptArgs reqdRetTy =
+let ResolveOverloadingForCall denv css m objArgInfo methodName callerArgs ad calledMethGroup permitOptArgs reqdRetTy =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    ResolveOverloading csenv NoTrace methodName 0 None callerArgs ad calledMethGroup permitOptArgs (Some reqdRetTy)
+    ResolveOverloading csenv NoTrace methodName 0 None objArgInfo callerArgs ad calledMethGroup permitOptArgs (Some reqdRetTy)
 
 /// This is used before analyzing the types of arguments in a single overload resolution
 let UnifyUniqueOverloading 
@@ -3977,12 +3999,18 @@ let UnifyUniqueOverloading
          css 
          m 
          callerArgCounts 
+         objArgInfo
          methodName 
          ad 
          (calledMethGroup: CalledMeth<SynExpr> list) 
          reqdRetTy    // The expected return type, if known 
    =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let objCsenv =
+        match objArgInfo with
+        | Some (mObj, memberName, bindingName) ->
+            { csenv with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
+        | None -> csenv
     let m = csenv.m
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad)) 
@@ -3996,7 +4024,7 @@ let UnifyUniqueOverloading
             true // permitOptArgs
             true // always check return type
             (TypesEquiv csenv ndeep NoTrace None) 
-            (TypesMustSubsume csenv ndeep NoTrace None m)
+            (TypesMustSubsume objCsenv ndeep NoTrace None m)
             (ReturnTypesMustSubsumeOrConvert csenv ad ndeep NoTrace None false m)
             (ArgsMustSubsumeOrConvert csenv ad ndeep NoTrace None false false)
             (Some reqdRetTy)

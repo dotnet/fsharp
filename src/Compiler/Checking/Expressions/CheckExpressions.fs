@@ -10159,6 +10159,7 @@ and TcMethodApplication_UniqueOverloadInference
     objTyOpt
     isCheckingAttributeCall
     callerObjArgTys
+    objArgInfo
     methodName
     curriedCallerArgsOpt
     candidateMethsAndProps
@@ -10235,7 +10236,7 @@ and TcMethodApplication_UniqueOverloadInference
                 yield makeOneCalledMeth (minfo, pinfoOpt, false) ]
 
     let uniquelyResolved =
-        UnifyUniqueOverloading denv cenv.css mMethExpr callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
+        UnifyUniqueOverloading denv cenv.css mMethExpr callerArgCounts objArgInfo methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
 
     uniquelyResolved, preArgumentTypeCheckingCalledMethGroup
 
@@ -10393,6 +10394,16 @@ and TcMethodApplication
     let callerObjArgTys = objArgs |> List.map (tyOfExpr g)
     let calledMeths = calledMethsAndProps |> List.map fst
 
+    let objArgInfo =
+        match objArgs with
+        | [objExpr] ->
+            let bindingName =
+                match stripDebugPoints objExpr with
+                | Expr.Val (vref, _, _) -> Some vref.DisplayName
+                | _ -> None
+            Some (objExpr.Range, methodName, bindingName)
+        | _ -> None
+
     // Uses of curried members are ALWAYS treated as if they are first class uses of members.
     // Curried members may not be overloaded (checked at use-site for curried members brought into scope through extension members)
     let curriedCallerArgs, exprTy, delayed =
@@ -10423,7 +10434,7 @@ and TcMethodApplication
     // Extract what we know about the caller arguments, either type-directed if
     // no arguments are given or else based on the syntax of the arguments.
     let uniquelyResolved, preArgumentTypeCheckingCalledMethGroup =
-        TcMethodApplication_UniqueOverloadInference cenv env exprTy tyArgsOpt ad objTyOpt isCheckingAttributeCall callerObjArgTys methodName curriedCallerArgsOpt candidateMethsAndProps candidates mMethExpr mItem staticTyOpt
+        TcMethodApplication_UniqueOverloadInference cenv env exprTy tyArgsOpt ad objTyOpt isCheckingAttributeCall callerObjArgTys objArgInfo methodName curriedCallerArgsOpt candidateMethsAndProps candidates mMethExpr mItem staticTyOpt
 
     // STEP 2. Check arguments
     let unnamedCurriedCallerArgs, namedCurriedCallerArgs, lambdaVars, returnTy, tpenv =
@@ -10462,7 +10473,7 @@ and TcMethodApplication
             CanonicalizePartialInferenceProblem cenv.css denv mItem
                  (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight g false callerArg.CallerArgumentType))
 
-        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
+        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr objArgInfo methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
 
         match afterResolution, result with
         | AfterResolution.DoNothing, _ -> ()

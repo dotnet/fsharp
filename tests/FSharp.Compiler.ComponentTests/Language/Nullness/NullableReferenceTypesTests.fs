@@ -2418,6 +2418,6 @@ let main _ =
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 5, Col 13, Line 5, Col 23,
+        Error 3261, Line 5, Col 14, Line 5, Col 22,
             "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string'."
     ]

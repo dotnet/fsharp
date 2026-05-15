@@ -260,6 +260,7 @@ val ResolveOverloadingForCall:
     DisplayEnv ->
     ConstraintSolverState ->
     range ->
+    objArgInfo: (range * string * string option) option ->
     methodName: string ->
     callerArgs: CallerArgs<Expr> ->
     AccessorDomain ->
@@ -273,6 +274,7 @@ val UnifyUniqueOverloading:
     ConstraintSolverState ->
     range ->
     int * int ->
+        objArgInfo: (range * string * string option) option ->
         string ->
         AccessorDomain ->
         CalledMeth<SynExpr> list ->
