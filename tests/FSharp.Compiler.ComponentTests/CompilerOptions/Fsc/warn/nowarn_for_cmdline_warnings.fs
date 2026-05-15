@@ -31,3 +31,13 @@ module ``Nowarn for command-line option warnings`` =
         |> compile
         |> shouldSucceed
 
+    // FS1063: "Unknown --test argument: '%s'". Emitted from `testingAndQAFlags`
+    // when an unknown sub-flag is passed via --test:. Routed through `warningCmdLine`.
+    [<Fact>]
+    let ``--nowarn 1063 suppresses FS1063 for --test unknown-arg`` () =
+        FSharp "module Module"
+        |> withNoWarn 1063
+        |> withOptions ["--test:NoSuchTestFlag"]
+        |> compile
+        |> shouldSucceed
+

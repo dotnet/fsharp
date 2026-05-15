@@ -125,8 +125,10 @@ type CapturingDiagnosticsLogger with
     /// command-line option parsing (e.g. FS0075 from internal/test-only flags).
     member x.CommitDelayedDiagnostics(diagnosticsLoggerProvider: IDiagnosticsLoggerProvider, tcConfigB: TcConfigBuilder, exiter) =
         let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
+
         let filteredLogger =
             GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfigB.diagnosticsOptions, diagnosticsLogger)
+
         x.CommitDelayedDiagnostics filteredLogger
 
 /// The default DiagnosticsLogger implementation, reporting messages to the Console up to the maxerrors maximum
@@ -273,7 +275,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
     let abbrevArgs = GetAbbrevFlagSet tcConfigB true
 
     // This is where flags are interpreted by the command line fsc.exe.
-    ParseCompilerOptions(collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+    ParseCompilerOptions(tcConfigB, collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
 
     let inputFiles = List.rev inputFilesRef
 
@@ -509,7 +511,7 @@ let main1
         // Rather than start processing, just collect names, then process them.
         try
             let files = ProcessCommandLineFlags(tcConfigB, lcidFromCodePage, argv)
-            let files = CheckAndReportSourceFileDuplicates(ResizeArray.ofList files)
+            let files = CheckAndReportSourceFileDuplicates tcConfigB (ResizeArray.ofList files)
             AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
             errorRecovery e rangeStartup

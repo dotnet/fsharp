@@ -492,7 +492,7 @@ type internal TransparentCompiler
             let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfig
 
             try
-                ParseCompilerOptions(ignore, fsiCompilerOptions, otherOptions)
+                ParseCompilerOptions(tcConfig, ignore, fsiCompilerOptions, otherOptions)
             with
             | :? OperationCanceledException -> reraise ()
             | exn -> errorRecovery exn range0

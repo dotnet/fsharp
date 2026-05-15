@@ -50,7 +50,7 @@ val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 val FilterCompilerOptionBlock: (CompilerOption -> bool) -> CompilerOptionBlock -> CompilerOptionBlock
 
 /// Parse and process a set of compiler options
-val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string list -> unit
+val ParseCompilerOptions: TcConfigBuilder * (string -> unit) * CompilerOptionBlock list * string list -> unit
 
 val GetBannerText: tcConfigB: TcConfigBuilder -> string
 
@@ -66,7 +66,7 @@ val GetCoreFsiCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
 val GetCoreServiceCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
-val CheckAndReportSourceFileDuplicates: ResizeArray<string> -> string list
+val CheckAndReportSourceFileDuplicates: tcConfigB: TcConfigBuilder -> ResizeArray<string> -> string list
 
 /// Apply args to TcConfigBuilder and return new list of source files
 val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string list * argv: string list -> string list

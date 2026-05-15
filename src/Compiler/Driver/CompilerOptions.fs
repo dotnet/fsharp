@@ -255,7 +255,24 @@ module ResponseFile =
         with e ->
             Choice2Of2 e
 
-let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args) =
+/// Emit a warning from command-line option processing, respecting --nowarn and warn-level
+/// settings already accumulated on `tcConfigB`.
+///
+/// Background: warnings emitted during option parsing are typically captured by a
+/// `CapturingDiagnosticsLogger` and filtered at commit time. This helper is a second,
+/// local line of defense so that adding a new `warning` callsite in this file cannot
+/// silently bypass --nowarn even if the commit-time wrapper is missing.
+let internal warningCmdLine (tcConfigB: TcConfigBuilder) (exn: exn) =
+    let diagnostic =
+        PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase, FSharpDiagnosticSeverity.Warning)
+
+    match diagnostic.AdjustSeverity(tcConfigB.diagnosticsOptions) with
+    | FSharpDiagnosticSeverity.Hidden -> ()
+    | FSharpDiagnosticSeverity.Warning -> warning exn
+    | FSharpDiagnosticSeverity.Error -> errorR exn
+    | FSharpDiagnosticSeverity.Info -> informationalWarning exn
+
+let ParseCompilerOptions (tcConfigB: TcConfigBuilder, collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args) =
     use _ = UseBuildPhase BuildPhase.Parameter
 
     let specs = List.collect GetOptionsOfBlock blocks
@@ -364,7 +381,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             let reportDeprecatedOption errOpt =
                 match errOpt with
-                | Some e -> warning e
+                | Some e -> warningCmdLine tcConfigB e
                 | None -> ()
 
             let rec attempt l =
@@ -1462,7 +1479,7 @@ let testFlag tcConfigB =
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
-            | str -> warning (Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch str, rangeCmdArgs))),
+            | str -> warningCmdLine tcConfigB (Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch str, rangeCmdArgs))),
         None,
         None
     )
@@ -2348,7 +2365,7 @@ let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
         )
     ]
 
-let CheckAndReportSourceFileDuplicates (sourceFiles: ResizeArray<string>) =
+let CheckAndReportSourceFileDuplicates (tcConfigB: TcConfigBuilder) (sourceFiles: ResizeArray<string>) =
     let visited = Dictionary.newWithSize (sourceFiles.Count * 2)
     let count = sourceFiles.Count
 
@@ -2359,7 +2376,7 @@ let CheckAndReportSourceFileDuplicates (sourceFiles: ResizeArray<string>) =
             match visited.TryGetValue source with
             | true, duplicatePosition ->
 
-                warning (Error(FSComp.SR.buildDuplicateFile (source, i + 1, count, duplicatePosition + 1, count), range0))
+                warningCmdLine tcConfigB (Error(FSComp.SR.buildDuplicateFile (source, i + 1, count, duplicatePosition + 1, count), range0))
             | false, _ ->
                 visited.Add(source, i)
                 yield source
@@ -2373,8 +2390,8 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
             if not (FileSystemUtils.isDll name) then
                 sourceFilesAcc.Add name
 
-        ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, argv)
-        sourceFilesAcc |> CheckAndReportSourceFileDuplicates
+        ParseCompilerOptions(tcConfigB, collect, GetCoreServiceCompilerOptions tcConfigB, argv)
+        sourceFilesAcc |> CheckAndReportSourceFileDuplicates tcConfigB
     with RecoverableException e ->
         errorRecovery e range0
         sourceFiles
