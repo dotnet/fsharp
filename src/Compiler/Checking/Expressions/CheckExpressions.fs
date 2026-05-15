@@ -604,7 +604,8 @@ let ShrinkContext env oldRange newRange =
     | ContextInfo.RuntimeTypeTest _
     | ContextInfo.DowncastUsedInsteadOfUpcast _
     | ContextInfo.SequenceExpression _
-    | ContextInfo.NullnessCheckOfCapturedArg _ ->
+    | ContextInfo.NullnessCheckOfCapturedArg _
+    | ContextInfo.MemberAccessOnNullable _ ->
         env
     | ContextInfo.CollectionElement (b,m) ->
         if not (equals m oldRange) then env else

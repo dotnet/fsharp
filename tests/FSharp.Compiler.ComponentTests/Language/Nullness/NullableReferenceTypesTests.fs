@@ -2373,3 +2373,51 @@ let main _ = 0
     |> compile
     |> run
     |> verifyOutputContains [|"-1"|]
+
+[<Fact>]
+let ``Issue 19658 - nullness warning on dotted method access underlines the receiver and mentions the member`` () =
+    FSharp """module Program
+[<EntryPoint>]
+let main _ =
+    let x: string | null = ""
+    let y = x.PadLeft(1)
+    0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 5, Col 13, Line 5, Col 14,
+            "Nullness warning: Possible dereference of a null value when accessing member 'PadLeft' on the nullable value 'x' of type 'string'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - nullness warning on dotted property access underlines the receiver`` () =
+    FSharp """module Program
+[<EntryPoint>]
+let main _ =
+    let x: string | null = ""
+    let n = x.Length
+    0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 5, Col 13, Line 5, Col 14,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - nullness warning on dotted access of complex receiver omits binding name`` () =
+    FSharp """module Program
+let getStr () : string | null = ""
+[<EntryPoint>]
+let main _ =
+    let n = (getStr()).Length
+    0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 5, Col 13, Line 5, Col 23,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string'."
+    ]
