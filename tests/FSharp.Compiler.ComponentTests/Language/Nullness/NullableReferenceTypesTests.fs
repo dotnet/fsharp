@@ -2160,7 +2160,7 @@ let matched (x: S | null) =
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 16, Col 35, Line 16, Col 36, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+        Error 3261, Line 14, Col 35, Line 14, Col 36, "Nullness warning: A non-nullable 'S' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
     ]
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
