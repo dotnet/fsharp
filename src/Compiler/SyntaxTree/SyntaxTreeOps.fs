@@ -752,18 +752,34 @@ module SynInfo =
     let RotateReturnAttributes (attrs: SynAttributes) (valSynData: SynValData) : SynAttributes * SynValData =
         // Fast path: avoid all allocation when there's nothing to rotate (the common case).
         let hasReturn =
-            attrs |> List.exists (fun lst -> lst.Attributes |> List.exists isReturnTargetedAttribute)
+            attrs
+            |> List.exists (fun lst -> lst.Attributes |> List.exists isReturnTargetedAttribute)
+
         if not hasReturn then
             attrs, valSynData
         else
             let mutable returnTargeted = []
+
             let newAttrs =
-                attrs |> List.choose (fun lst ->
+                attrs
+                |> List.choose (fun lst ->
                     let ret, kept = lst.Attributes |> List.partition isReturnTargetedAttribute
                     returnTargeted <- returnTargeted @ ret
-                    if List.isEmpty kept then None else Some { lst with Attributes = kept })
-            let (SynValData(memFlags, SynValInfo(args, SynArgInfo(retAttrs, opt, retId)), thisIdOpt)) = valSynData
-            let retList: SynAttributeList = { Attributes = returnTargeted; Range = (List.head returnTargeted).Range }
+
+                    if List.isEmpty kept then
+                        None
+                    else
+                        Some { lst with Attributes = kept })
+
+            let (SynValData(memFlags, SynValInfo(args, SynArgInfo(retAttrs, opt, retId)), thisIdOpt)) =
+                valSynData
+
+            let retList: SynAttributeList =
+                {
+                    Attributes = returnTargeted
+                    Range = (List.head returnTargeted).Range
+                }
+
             newAttrs, SynValData(memFlags, SynValInfo(args, SynArgInfo(retList :: retAttrs, opt, retId)), thisIdOpt)
 
 let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
