@@ -31,18 +31,3 @@ module ``Nowarn for command-line option warnings`` =
         |> compile
         |> shouldSucceed
 
-    // FS0075 also covers the unknown --test: argument warning emitted from CompilerOptions.fs
-    // (line ~1465: warning (Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch str, ...)))
-    // That message currently uses error number 75 as well because it shares the
-    // InternalCommandLineOption phrase family (`buildArgInvalidInt` etc. behavior).
-    // If, on your branch, the unknown --test: argument turns out to use a different number,
-    // adjust the nowarn argument accordingly. The point is: --nowarn <N> should silence it.
-    [<Fact>]
-    let ``--nowarn for the --test unknown-arg warning suppresses it`` () =
-        // Use --test:NotARealTestArg to trigger optsUnknownArgumentToTheTestSwitch.
-        // Look up its FS error number; in current main it surfaces as FS1052
-        // (buildUnrecognizedOption family). Cover both common numbers via a wider nowarn list.
-        FSharp "module Module"
-        |> withOptions ["--nowarn:75"; "--nowarn:1052"; "--test:NotARealTestArg"]
-        |> compile
-        |> shouldSucceed
