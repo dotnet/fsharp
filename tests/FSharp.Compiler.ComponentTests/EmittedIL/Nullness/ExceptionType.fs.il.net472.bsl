@@ -30,7 +30,7 @@
          extends [runtime]System.Exception
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 05 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .field assembly string Data0@
     .method public specialname rtspecialname instance void  .ctor(string data0) cil managed
     {
@@ -101,13 +101,13 @@
          extends [runtime]System.Exception
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 05 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .field assembly string M1@
     .field assembly string M2@
     .method public specialname rtspecialname instance void  .ctor(string m1, string m2) cil managed
     {
       .param [2]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -156,7 +156,7 @@
     .method public hidebysig specialname instance string  get_M2() cil managed
     {
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -185,7 +185,7 @@
     } 
     .property instance string M2()
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 04 00 00 00 01 00 00 00 00 00 ) 
       .get instance string MyLibrary/TwoStrings::get_M2()
@@ -196,12 +196,12 @@
          extends [runtime]System.Exception
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 05 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .field assembly string Data0@
     .method public specialname rtspecialname instance void  .ctor(string data0) cil managed
     {
       .param [1]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -238,7 +238,7 @@
     .method public hidebysig specialname instance string  get_Data0() cil managed
     {
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -261,7 +261,7 @@
 
     .property instance string Data0()
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 ) 
       .get instance string MyLibrary/NullableStringE::get_Data0()
@@ -272,12 +272,12 @@
          extends [runtime]System.Exception
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 05 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .field assembly string Message@
     .method public specialname rtspecialname instance void  .ctor(string message) cil managed
     {
       .param [1]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -314,7 +314,7 @@
     .method public hidebysig specialname virtual instance string  get_Message() cil managed
     {
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -324,7 +324,7 @@
 
     .property instance string Message()
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 ) 
       .get instance string MyLibrary/NullableMessage::get_Message()
@@ -337,6 +337,72 @@
        extends [runtime]System.Object
 {
 } 
+
+.class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableAttribute
+       extends [runtime]System.Attribute
+{
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .field public uint8[] NullableFlags
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method public specialname rtspecialname instance void  .ctor(uint8 scalarByteValue) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  ldc.i4.1
+    IL_0008:  newarr     [runtime]System.Byte
+    IL_000d:  dup
+    IL_000e:  ldc.i4.0
+    IL_000f:  ldarg.1
+    IL_0010:  stelem.i1
+    IL_0011:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
+    IL_0016:  ret
+  } 
+
+  .method public specialname rtspecialname instance void  .ctor(uint8[] NullableFlags) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  ldarg.1
+    IL_0008:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
+    IL_000d:  ret
+  } 
+
+} 
+
+.class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableContextAttribute
+       extends [runtime]System.Attribute
+{
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .field public uint8 Flag
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method public specialname rtspecialname instance void  .ctor(uint8 Flag) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  ldarg.1
+    IL_0008:  stfld      uint8 System.Runtime.CompilerServices.NullableContextAttribute::Flag
+    IL_000d:  ret
+  } 
+
+} 
+
 
 
 
