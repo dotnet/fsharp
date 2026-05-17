@@ -126,6 +126,30 @@ type T() =
          |> shouldFail
          |> withSingleDiagnostic (Error 429, Line 8, Col 7, Line 8, Col 19, "The attribute type 'AttrAttribute' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
 
+    [<Fact>]
+    let ``CompilationRepresentation(Instance) on a union-type member is not rotated to the return value`` () =
+        FSharp """
+module M
+type MyOption<'T> =
+    | MySome of 'T
+    | MyNone
+    [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
+    member this.Value = match this with | MySome v -> v | MyNone -> failwith "MyNone"
+
+[<EntryPoint>]
+let main _ =
+    let m = typeof<MyOption<int>>.GetMethod("get_Value")
+    if isNull m then failwith "get_Value not found — CompilationRepresentation(Instance) was likely rotated away from the member"
+    if m.IsStatic then failwith "get_Value should be an instance method"
+    if (MySome 42).Value <> 42 then failwith "Value did not return the carried payload"
+    0
+        """
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Regression: typechecker does not fail when attribute is on type variable (https://github.com/dotnet/fsharp/issues/13525)`` () =
