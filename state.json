@@ -1,7 +1,6 @@
 {
   "prs": {
     "19750": { "sha": "6bc70b1c1148fd1bee8bb04252e4efc032561af8", "cats": [] },
-    "19748": { "sha": "ef0275d77fb17d56a5d16caa366e92704909ecc6", "cats": ["Affects-Build-Infra"] },
     "19747": { "sha": "beb1af044dc5d00089d7886d2ea6e679fa5f775e", "cats": [] },
     "19746": { "sha": "f1a9d69fdcbf46dce4144f0f83e0bcfe51eef3b9", "cats": [] },
     "19745": { "sha": "716d47d497ed100a44f031d9939e551d8f9e7d3b", "cats": [] },
