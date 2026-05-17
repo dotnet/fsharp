@@ -11169,7 +11169,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
     let envinner = AddDeclaredTypars NoCheckForDuplicateTypars (enclosingDeclaredTypars@declaredTypars) env
 
     match bind with
-    | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), _, debugPoint) ->
+    | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, _, rhsExpr), _, debugPoint) ->
         let (SynValData(memberFlags = memberFlagsOpt)) = valSynData
         let mBinding = pat.Range
 
@@ -11224,19 +11224,16 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             attrs
 
         // [<return: X>] attributes are moved out of the binding's prefix and into
-        // SynValData.SynValInfo.retInfo by SynInfo.RotateReturnAttributes in mkSynBinding.
-        // Pick them up from there along with any attributes on the return type annotation.
+        // SynValData.SynValInfo.retInfo by SynInfo.RotateReturnAttributes in mkSynBinding,
+        // alongside any attributes on the return type annotation populated by InferSynReturnData.
+        // Use that as the single source of truth.
         let valAttribs = TcAttrs attrTgt false attrs
 
         let retAttribs =
-            let valSynDataRetSynAttrs =
-                let (SynValData(_, SynValInfo(_, SynArgInfo(retAttrs, _, _)), _)) = valSynData
-                retAttrs |> List.collect (fun a -> a.Attributes)
-            let fromValSyn = TcAttrs AttributeTargets.ReturnValue true valSynDataRetSynAttrs
-            match rtyOpt with
-            | Some(SynBindingReturnInfo(attributes = Attributes retAttrs)) ->
-                fromValSyn @ TcAttrs AttributeTargets.ReturnValue true retAttrs
-            | None -> fromValSyn
+            let (SynValData(_, SynValInfo(_, SynArgInfo(retAttrs, _, _)), _)) = valSynData
+            retAttrs
+            |> List.collect (fun a -> a.Attributes)
+            |> TcAttrs AttributeTargets.ReturnValue true
 
         let valAttribFlags = computeValWellKnownFlags g valAttribs
 
