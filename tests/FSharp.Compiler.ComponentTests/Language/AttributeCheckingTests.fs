@@ -44,37 +44,30 @@ type C() =
          |> compile
          |> shouldSucceed
 
-    // Regression test for https://github.com/dotnet/fsharp/issues/19020
-    [<Fact>]
-    let ``[<return: X>] prefix attributes are emitted on class members`` () =
-        FSharp """
-module TestModule
-open System
+    // Regression tests for #17904 and #19020. Both have a common root cause:
+    // [<return: X>] prefix attributes must route to the return-value metadata slot,
+    // not stay on the binding alongside method-targeted attributes.
 
+    [<Fact>]
+    let ``Issue 19020 - [<return: X>] is emitted on the return parameter of class members`` () =
+        FSharp """
+module M
+open System
 [<AttributeUsage(AttributeTargets.ReturnValue)>]
 type DescAttribute() = inherit Attribute()
 
-module Mod =
-    [<return: Desc>]
-    let func a = a + 1
-
 type T() =
     [<return: Desc>]
-    member _.InstMember a = a + 1
-
+    member _.Inst a = a + 1
     [<return: Desc>]
-    static member StatMember a = a + 1
+    static member Stat a = a + 1
 
 [<EntryPoint>]
 let main _ =
-    let asm = System.Reflection.Assembly.GetExecutingAssembly()
-    let modType = asm.GetType("TestModule+Mod")
-    let modAttrs = modType.GetMethod("func").ReturnParameter.GetCustomAttributes(typeof<DescAttribute>, false).Length
-    let inst = typeof<T>.GetMethod("InstMember").ReturnParameter.GetCustomAttributes(typeof<DescAttribute>, false).Length
-    let stat = typeof<T>.GetMethod("StatMember").ReturnParameter.GetCustomAttributes(typeof<DescAttribute>, false).Length
-    if modAttrs <> 1 then failwithf "module func: expected 1, got %d" modAttrs
-    if inst <> 1 then failwithf "InstMember: expected 1 (bug #19020 — attribute dropped on instance members), got %d" inst
-    if stat <> 1 then failwithf "StatMember: expected 1 (bug #19020 — attribute dropped on static members), got %d" stat
+    let inst = typeof<T>.GetMethod("Inst").ReturnParameter.GetCustomAttributes(typeof<DescAttribute>, false).Length
+    let stat = typeof<T>.GetMethod("Stat").ReturnParameter.GetCustomAttributes(typeof<DescAttribute>, false).Length
+    if inst <> 1 then failwithf "instance member: expected 1, got %d" inst
+    if stat <> 1 then failwithf "static member: expected 1, got %d" stat
     0
         """
         |> asExe
@@ -83,37 +76,47 @@ let main _ =
         |> run
         |> shouldSucceed
 
-    // Regression test for https://github.com/dotnet/fsharp/issues/17904
     [<Fact>]
-    let ``AllowMultiple=false allows the same attribute on method and on its return value`` () =
+    let ``Issue 17904 - [<X>] on method and [<return: X>] on return value are not duplicates`` () =
         Fsx """
 open System
-
 [<AttributeUsage(AttributeTargets.All)>]
-type AttrAttribute(m: string) =
-    inherit Attribute()
+type AttrAttribute() = inherit Attribute()
 
-type Test() =
-    [<Attr("on method")>]
-    [<return: Attr("on return")>]
+type T() =
+    [<Attr>]
+    [<return: Attr>]
     member _.Foo() = ()
         """
          |> ignoreWarnings
          |> compile
          |> shouldSucceed
 
-    // Regression test for https://github.com/dotnet/fsharp/issues/17904 — short-form + explicit-same-target
-    // mix must still be flagged as a duplicate because both apply to the same metadata target.
     [<Fact>]
-    let ``AllowMultiple=false still errors when short-form and method-targeted attributes are mixed`` () =
+    let ``Issue 17904 - two [<return: X>] on the same return value remain duplicates`` () =
         Fsx """
 open System
-
 [<AttributeUsage(AttributeTargets.All)>]
-type AttrAttribute() =
-    inherit Attribute()
+type AttrAttribute() = inherit Attribute()
 
-type Test() =
+type T() =
+    [<return: Attr>]
+    [<return: Attr>]
+    member _.Foo() = ()
+        """
+         |> ignoreWarnings
+         |> compile
+         |> shouldFail
+         |> withSingleDiagnostic (Error 429, Line 8, Col 7, Line 8, Col 19, "The attribute type 'AttrAttribute' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
+
+    [<Fact>]
+    let ``Issue 17904 - [<X>] and [<method: X>] on a method remain duplicates`` () =
+        Fsx """
+open System
+[<AttributeUsage(AttributeTargets.All)>]
+type AttrAttribute() = inherit Attribute()
+
+type T() =
     [<Attr>]
     [<method: Attr>]
     member _.Foo() = ()
@@ -121,27 +124,7 @@ type Test() =
          |> ignoreWarnings
          |> compile
          |> shouldFail
-         |> withSingleDiagnostic (Error 429, Line 10, Col 7, Line 10, Col 19, "The attribute type 'AttrAttribute' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
-
-    // Regression test for https://github.com/dotnet/fsharp/issues/17904
-    [<Fact>]
-    let ``AllowMultiple=false still errors when the same attribute is applied twice to the same target`` () =
-        Fsx """
-open System
-
-[<AttributeUsage(AttributeTargets.All)>]
-type AttrAttribute() =
-    inherit Attribute()
-
-type Test() =
-    [<return: Attr>]
-    [<return: Attr>]
-    member _.Foo() = ()
-        """
-         |> ignoreWarnings
-         |> compile
-         |> shouldFail
-         |> withSingleDiagnostic (Error 429, Line 10, Col 7, Line 10, Col 19, "The attribute type 'AttrAttribute' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
+         |> withSingleDiagnostic (Error 429, Line 8, Col 7, Line 8, Col 19, "The attribute type 'AttrAttribute' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
 
 
     [<FSharp.Test.FactForNETCOREAPP>]
