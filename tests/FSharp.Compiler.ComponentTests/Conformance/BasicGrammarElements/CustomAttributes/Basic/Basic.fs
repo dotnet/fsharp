@@ -397,7 +397,7 @@ module CustomAttributes_Basic =
         ]
 
     [<Fact>]
-    let ``StructLayoutAttribute has size=1 for struct DUs with no instance fields`` () =
+    let ``StructLayoutAttribute doesn't have size=1 for struct DUs with no instance fields`` () =
         Fsx """
         [<Struct>] type Option<'T> = None | Some
         """
@@ -413,8 +413,6 @@ module CustomAttributes_Basic =
                    [runtime]System.IComparable,
                    [runtime]System.Collections.IStructuralComparable
   {
-    .pack 0
-    .size 1
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
                                                                                                   61 79 28 29 2C 6E 71 7D 00 00 )                   

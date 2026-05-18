@@ -12031,15 +12031,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         }
 
                     let layout =
-                        // Structs with no instance fields get size 1, pack 0
+                        // Struct unions always carry a hidden tag field, so never emit size 1 here
                         if isStructTy g thisTy then
-                            if
-                                (tycon.AllFieldsArray.Length = 0
-                                 || tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic))
-                                && (alternatives
-                                    |> Array.collect (fun a -> a.FieldDefs)
-                                    |> Array.exists (fun fd -> not fd.ILField.IsStatic))
-                            then
+                            if tycon.IsUnionTycon then
                                 ILTypeDefLayout.Sequential { Size = None; Pack = None }
                             else
                                 ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
