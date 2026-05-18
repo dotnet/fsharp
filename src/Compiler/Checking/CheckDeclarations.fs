@@ -2735,6 +2735,23 @@ module EstablishTypeDefinitionCores =
                | _ -> () ]
             |> set
 
+    /// Pre-process open declarations from a list of mutually recursive shapes so that
+    /// opened namespaces are available during Phase1A attribute checking.
+    /// In recursive scopes, opens are normally processed in Phase1AB (after Phase1A builds
+    /// module/type entities), but attributes on modules need the opened namespaces.
+    /// Errors are suppressed because some opens may refer to modules being defined in the
+    /// current recursive scope, which don't exist yet during Phase1A. Those opens will be
+    /// properly processed (with full error reporting) during Phase1AB.
+    let private preProcessOpensForPhase1A (cenv: cenv) (env: TcEnv) (shapes: MutRecShapes<_, _, _>) =
+        suppressErrorReporting (fun () ->
+            use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+            (env, shapes) ||> List.fold (fun env shape ->
+                match shape with
+                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, openm, moduleRange, _)) ->
+                    let env, _ = TcOpenDecl cenv openm moduleRange env target
+                    env
+                | _ -> env))
+
     let TcTyconDefnCore_Phase1A_BuildInitialModule (cenv: cenv) envInitial parent typeNames compInfo decls =
         let g = cenv.g
         let (SynComponentInfo(Attributes attribs, _, _, longPath, xml, _, vis, im)) = compInfo 
@@ -2750,7 +2767,11 @@ module EstablishTypeDefinitionCores =
         CheckForDuplicateConcreteType envInitial id.idText im
         CheckNamespaceModuleOrTypeName g id
 
-        let envForDecls, moduleTyAcc = MakeInnerEnv true envInitial id moduleKind    
+        let envForDecls, moduleTyAcc = MakeInnerEnv true envInitial id moduleKind
+
+        // Pre-process opens from children so nested modules can see opened namespaces during attribute checking
+        let envForDecls = preProcessOpensForPhase1A cenv envForDecls decls
+
         let moduleTy = Construct.NewEmptyModuleOrNamespaceType moduleKind
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
@@ -4039,12 +4060,18 @@ module EstablishTypeDefinitionCores =
 
 
     let TcMutRecDefns_Phase1 mkLetInfo (cenv: cenv) envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
+        // Pre-process top-level opens so they are available during attribute checking in Phase1A.
+        // In recursive scopes (namespace rec / module rec), opens are normally processed in Phase1AB
+        // after module entities are built, but module attributes need access to opened namespaces.
+        // See https://github.com/dotnet/fsharp/issues/7931
+        let envWithOpens = preProcessOpensForPhase1A cenv envInitial mutRecDefns
+
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these. Augmentations are skipped in this phase.
         let withEntities = 
             mutRecDefns 
             |> MutRecShapes.mapWithParent 
-                 (parent, typeNames, envInitial)
+                 (parent, typeNames, envWithOpens)
                  // Build the initial entity for each module definition
                  (fun (innerParent, typeNames, envForDecls) compInfo decls -> 
                      TcTyconDefnCore_Phase1A_BuildInitialModule cenv envForDecls innerParent typeNames compInfo decls) 
