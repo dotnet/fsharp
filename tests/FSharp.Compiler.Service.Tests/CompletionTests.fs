@@ -369,6 +369,45 @@ module Module =
 """
     assertHasNoItemsWithNames ["E"] info
 
+[<Fact>]
+let ``Pattern - Enum 01`` () =
+    let info =
+        Checker.getCompletionInfo """
+namespace Ns1
+type E =
+    | A = 1
+    | B = 2
+
+namespace Ns2
+
+open Ns1
+
+module M =
+    match E.A with
+    | E.{caret}
+"""
+    assertHasItemWithNames ["A"] info
+
+[<Fact>]
+let ``Pattern - Enum 02`` () =
+    let info =
+        Checker.getCompletionInfo """
+namespace Ns1
+type E =
+    | A = 1
+    | B = 2
+
+namespace Ns2
+
+open Ns1
+
+module M =
+    match E.A with
+    | E.{caret}
+    | E.B -> ()
+"""
+    assertHasItemWithNames ["A"] info
+
 #if NETCOREAPP
 [<Fact>]
 let ``Span appears in completion and is not marked obsolete`` () =
