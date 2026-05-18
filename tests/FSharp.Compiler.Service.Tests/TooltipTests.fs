@@ -399,6 +399,9 @@ let assertNameTagInTooltip expectedTag expectedName (tooltip: ToolTipText) =
     let desc = tags |> Array.map (fun t -> sprintf "(%A, %s)" t.Tag t.Text) |> String.concat ", "
     Assert.True(found, sprintf "Expected tag %A with text '%s' in tooltip, but found: %s" expectedTag expectedName desc)
 
+let assertToolTipIsEmpty (ToolTipText(items)) =
+    Assert.Empty items
+
 let normalize (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 
 [<Fact>]
@@ -593,6 +596,24 @@ let y = normaliz{caret}e' 5
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo "val normalize': x: int -> int"
+
+[<Fact>]
+let ``Wildcard lambda parameter inside member with underscore instance identifier has no tooltip`` () =
+    Checker.getTooltip """
+type T () =
+    member _.M () =
+        fun _{caret} -> ()
+"""
+    |> assertToolTipIsEmpty
+
+[<Fact>]
+let ``Wildcard let binding inside member with underscore instance identifier has no tooltip`` () =
+    Checker.getTooltip """
+type T () =
+    member _.N () =
+        let _{caret} = () in ()
+"""
+    |> assertToolTipIsEmpty
 
 // https://github.com/dotnet/fsharp/issues/13194
 [<Fact>]
