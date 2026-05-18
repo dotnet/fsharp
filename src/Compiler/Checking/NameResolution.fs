@@ -3531,7 +3531,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                 match extraDotAtTheEnd with
                 | ExtraDotAfterIdentifier.Yes ->
                     match LookupTypeNameInEnvNoArity fullyQualified id.idText nenv with
-                    | tcref :: _ when tcref.IsUnionTycon ->
+                    | tcref :: _ when tcref.IsUnionTycon || tcref.IsEnumTycon ->
                         let res = ResolutionInfo.Empty.AddEntity (id.idRange, tcref)
                         ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurrence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
                         Item.Types (id.idText, [ mkWoNullAppTy tcref [] ])

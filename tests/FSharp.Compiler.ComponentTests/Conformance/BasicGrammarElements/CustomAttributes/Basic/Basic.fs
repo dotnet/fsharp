@@ -263,6 +263,14 @@ module CustomAttributes_Basic =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    // SOURCE=ReturnType04.fs							# ReturnType04.fs
+    // Regression test for https://github.com/dotnet/fsharp/issues/462
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnType04.fs"|])>]
+    let ``ReturnType04_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // SOURCE=SanityCheck01.fs							# SanityCheck01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck01.fs"|])>]
     let ``SanityCheck01_fs`` compilation =
