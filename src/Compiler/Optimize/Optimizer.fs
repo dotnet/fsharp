@@ -496,7 +496,7 @@ let rec IsPartialExprVal x =
     | SizeValue (_, a) -> IsPartialExprVal a
 
 let CheckInlineValueIsComplete (v: Val) res =
-    if v.ShouldInline && IsPartialExprVal res then
+    if v.ShouldInline && not v.IsMember && IsPartialExprVal res then
         errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
         //System.Diagnostics.Debug.Assert(false, sprintf "Break for incomplete inline value %s" v.DisplayName)
 

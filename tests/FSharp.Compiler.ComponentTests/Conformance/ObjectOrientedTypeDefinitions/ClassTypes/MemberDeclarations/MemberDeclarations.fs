@@ -8,6 +8,25 @@ open FSharp.Test.Compiler
 
 module MemberDeclarations =
 
+    [<Fact>]
+    let ``Inline member with class-scope self identifier should compile`` () =
+        FSharp """
+module Test
+
+type TestClass1() as SomeSelfIdentifier =
+    member inline AnotherSelfIdentifier.test() = 5
+
+type TestClass2() as self =
+    member inline self.test() = 5
+
+type TestClass3() as self =
+    member inline _.test() = 5
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
     // Error tests
 
     [<Theory; FileInlineData("E_byref_two_arguments_curried.fsx")>]
