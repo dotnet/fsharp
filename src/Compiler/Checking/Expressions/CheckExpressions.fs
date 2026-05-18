@@ -4304,7 +4304,8 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
 and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv synValSig attrs =
     let g = cenv.g
     let (SynValSig(ident=SynIdent(id,_); explicitTypeParams=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = synValSig
-    let declaredTypars = TcTyparDecls cenv env synTypars
+    let declaredTypars, fixupTypars = TcTyparDecls cenv env synTypars
+    fixupTypars env
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 
     let enclosingDeclaredTypars, memberContainerInfo, thisTyOpt, declKind =
@@ -4502,20 +4503,35 @@ and TcTypeOrMeasureParameter kindOpt cenv (env: TcEnv) newOk tpenv (SynTypar(id,
 and TcTypar (cenv: cenv) env newOk tpenv tp : Typar * UnscopedTyparEnv =
     TcTypeOrMeasureParameter (Some TyparKind.Type) cenv env newOk tpenv tp
 
-and TcTyparDecl (cenv: cenv) env synTyparDecl =
+and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     let g = cenv.g
     let (SynTyparDecl (attributes = Attributes synAttrs; typar = synTypar)) = synTyparDecl
     let (SynTypar (ident = id)) = synTypar
 
-    let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
-    let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
-    let hasEqDepAttr = HasFSharpAttribute g g.attrib_EqualityConditionalOnAttribute attrs
-    let hasCompDepAttr = HasFSharpAttribute g g.attrib_ComparisonConditionalOnAttribute attrs
-    let attrs = attrs |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
+    // Prelim pass: suppress diagnostics so rec-scope attrs (not yet wired) don't emit FS0039.
+    // Framework attrs (Measure, EqualityConditionalOn, etc.) resolve here for kind inference.
+    // Fixup thunk re-resolves with the final env.
+    let prelimCapture = CapturingDiagnosticsLogger("TcTyparDecl prelim")
+    let prelimAttrs, didFailReported =
+        let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        try
+            SetThreadDiagnosticsLoggerNoUnwind prelimCapture
+            TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env AttributeTargets.GenericParameter synAttrs
+        finally
+            SetThreadDiagnosticsLoggerNoUnwind oldLogger
+    // Failed if: TcCanFail reported failure, attrs were dropped, or diagnostics were suppressed.
+    let didFail =
+        didFailReported
+        || List.length prelimAttrs < List.length synAttrs
+        || not prelimCapture.Diagnostics.IsEmpty
+    let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute prelimAttrs
+    let hasEqDepAttr = HasFSharpAttribute g g.attrib_EqualityConditionalOnAttribute prelimAttrs
+    let hasCompDepAttr = HasFSharpAttribute g g.attrib_ComparisonConditionalOnAttribute prelimAttrs
+    let attrsForTypar = prelimAttrs |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
-    let tp = Construct.NewTypar (kind, TyparRigidity.WarnIfNotRigid, synTypar, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
+    let tp = Construct.NewTypar (kind, TyparRigidity.WarnIfNotRigid, synTypar, false, TyparDynamicReq.Yes, attrsForTypar, hasEqDepAttr, hasCompDepAttr)
 
-    match attrs with
+    match attrsForTypar with
     | ValAttribString g WellKnownValAttributes.CompiledNameAttribute compiledName ->
         tp.SetILName (Some compiledName)
     | _ ->
@@ -4524,10 +4540,21 @@ and TcTyparDecl (cenv: cenv) env synTyparDecl =
 
     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.UseInType, env.eAccessRights)
 
-    tp
+    let fixupAttrs (envForFinal: TcEnv) =
+        // Re-resolve only if prelim pass suppressed errors.
+        if didFail then
+            let finalAttrs =
+                TcAttributes cenv envForFinal AttributeTargets.GenericParameter synAttrs
+                |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
+            tp.SetAttribs finalAttrs
+
+    tp, fixupAttrs
 
 and TcTyparDecls (cenv: cenv) env synTypars =
-    List.map (TcTyparDecl cenv env) synTypars
+    let results = List.map (TcTyparDecl cenv env) synTypars
+    let typars = results |> List.map fst
+    let fixups = results |> List.map snd
+    typars, (fun envForFinal -> fixups |> List.iter (fun f -> f envForFinal))
 
 /// Check and elaborate a syntactic type or unit-of-measure
 ///
@@ -11502,7 +11529,8 @@ and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
     else hasLiteralAttr, None
 
 and TcBindingTyparDecls alwaysRigid cenv env tpenv (ValTyparDecls(synTypars, synTyparConstraints, infer)) =
-    let declaredTypars = TcTyparDecls cenv env synTypars
+    let declaredTypars, fixupTypars = TcTyparDecls cenv env synTypars
+    fixupTypars env
     let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTypars env
     let tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envinner tpenv synTyparConstraints
 
@@ -11810,6 +11838,13 @@ and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
 and TcAttributesCanFail cenv env attrTgt synAttribs =
     let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
     attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
+
+and TcAttributesWithPossibleTargetsCanFail cenv env attrTgt synAttribs =
+    let attrs, didFail = TcAttributesWithPossibleTargetsEx TcCanFail.IgnoreAllErrors cenv env attrTgt (enum 0) synAttribs
+    attrs, (fun () ->
+        if didFail then
+            TcAttributesWithPossibleTargetsEx TcCanFail.ReportAllErrors cenv env attrTgt (enum 0) synAttribs |> fst
+        else attrs)
 
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst
@@ -13172,7 +13207,8 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     let (SynValSig (attributes=Attributes synAttrs; explicitTypeParams=explicitTypeParams; isInline=isInline; isMutable=mutableFlag; xmlDoc=xmlDoc; accessibility=vis; synExpr=literalExprOpt; range=m)) = synValSig
     let (ValTyparDecls (synTypars, _, synCanInferTypars)) = explicitTypeParams
-    let declaredTypars = TcTyparDecls cenv env synTypars
+    let declaredTypars, fixupTypars = TcTyparDecls cenv env synTypars
+    fixupTypars env
 
     GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, declaredTypars, m)
 

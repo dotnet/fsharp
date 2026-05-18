@@ -626,6 +626,15 @@ val TcAttributesWithPossibleTargets:
     synAttribs: SynAttribute list ->
         (AttributeTargets * Attrib) list * bool
 
+/// Like TcAttributesWithPossibleTargets, but allows failure for rec-scope attrs.
+/// Returns prelim attrs + a fixup thunk that re-resolves with the final env.
+val TcAttributesWithPossibleTargetsCanFail:
+    cenv: TcFileState ->
+    env: TcEnv ->
+    attrTgt: AttributeTargets ->
+    synAttribs: SynAttribute list ->
+        (AttributeTargets * Attrib) list * (unit -> (AttributeTargets * Attrib) list)
+
 /// Check a constant value, e.g. a literal
 val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> synConst: SynConst -> Const
 
@@ -808,8 +817,10 @@ val TcTyparConstraints:
     synConstraints: SynTypeConstraint list ->
         UnscopedTyparEnv
 
-/// Check a collection of type parameters declarations
-val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list
+/// Check type parameter declarations.
+/// Returns typars + fixup thunk for deferred attr resolution in rec scopes.
+/// Non-rec callers: invoke the fixup immediately with the same env.
+val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl list -> Typar list * (TcEnv -> unit)
 
 /// Check a syntactic type
 val TcType:
