@@ -1641,8 +1641,7 @@ type internal TypeCheckInfo
             | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) ->
                 // lookup based on name resolution results successful
                 Some(items |> List.map (CompletionItem (getType ()) ValueNone), denv, m)
-            | _ when isDiscardIdentifier ->
-                None
+            | _ when isDiscardIdentifier -> None
             | _ ->
                 match origLongIdentOpt with
                 | None -> None
