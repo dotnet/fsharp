@@ -119,3 +119,76 @@ let o: obj = null
 if true then
     o.GetHashCode{caret}
 """
+
+module Patterns =
+    [<Fact>]
+    let ``Enum - Type 01`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}.A -> ()
+"""
+
+    [<Fact>]
+    let ``Enum - Type 02`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret} -> ()
+"""
+
+    [<Fact>]
+    let ``Enum - Type 03`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}
+"""
+
+    [<Fact>]
+    let ``Enum - Type 04`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}.
+"""
+        
+    [<Fact>]
+    let ``Enum - Type 05`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}. -> ()
+"""
+
+    [<Fact(Skip = "Improve name resolution recovery")>]
+    let ``Enum - Type 06`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}.B
+"""
+
+    [<Fact>]
+    let ``Enum - Type 07`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}.
+
+()
+"""

@@ -110,5 +110,5 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(5,23)-(6,4) parse error Incomplete structured construct at or before this point in member definition
+(5,22)-(5,22) parse error Identifier expected
 (5,23)-(6,4) parse error Expecting member body
