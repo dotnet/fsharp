@@ -2145,7 +2145,6 @@ type string<[<Measure>] 'm> = string
 type S = string<tag>
 
 let onlyNotNull (s: S) = ()
-let onlyNotNullPlain (s: string) = ()
 
 let widen (x: S) : S | null = x
 
@@ -2160,8 +2159,51 @@ let matched (x: S | null) =
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 14, Col 35, Line 14, Col 36, "Nullness warning: A non-nullable 'S' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+        Error 3261, Line 13, Col 35, Line 13, Col 36, "Nullness warning: A non-nullable 'S' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
     ]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation satisfies not-struct constraint`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+[<Measure>] type tag
+type S = string<tag>
+
+let needsRef<'T when 'T : not struct> (x: 'T) = ()
+let callIt (s: S) = needsRef s
+let callNullable (s: S | null) = needsRef s
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation over obj, interface, and chained abbreviation allows nullable`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type obj<[<Measure>] 'm> = obj
+
+[<MeasureAnnotatedAbbreviation>]
+type IDisposable<[<Measure>] 'm> = System.IDisposable
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+type chainedString<[<Measure>] 'm> = string<'m>
+
+[<Measure>] type tag
+
+let a : obj<tag> | null = null
+let b : IDisposable<tag> | null = null
+let c : chainedString<tag> | null = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``ToString on reference type still returns nullable string`` () =
