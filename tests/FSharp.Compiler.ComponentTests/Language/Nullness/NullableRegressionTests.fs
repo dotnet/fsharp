@@ -203,13 +203,12 @@ type C7 =
 let ``Issue 19644 - match-null narrowing inside list comprehension`` () =
     FSharp """
 module M
-open System.Collections.Immutable
 
-let sets (builders: (ImmutableHashSet<int>.Builder | null)[]) = [
-    for builder in builders do
-        match builder with
+let lengths (xs: (string | null)[]) = [
+    for x in xs do
+        match x with
         | null -> ()
-        | b -> yield b.ToImmutable()
+        | s -> yield s.Length
 ]
 """
     |> withVersionAndCheckNulls ("preview", true)
@@ -251,12 +250,11 @@ let v (xs: (string | null)[]) = [|
 let ``Issue 19644 - match-null narrowing inside list comprehension (no for)`` () =
     FSharp """
 module M
-open System.Collections.Immutable
 
-let v (b: ImmutableHashSet<int>.Builder | null) = [
-    match b with
+let v (s: string | null) = [
+    match s with
     | null -> ()
-    | x -> yield x.ToImmutable()
+    | x -> yield x.Length
 ]
 """
     |> withVersionAndCheckNulls ("preview", true)
