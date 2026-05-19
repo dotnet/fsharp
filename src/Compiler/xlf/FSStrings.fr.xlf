@@ -67,6 +67,16 @@
         <target state="new">This attribute is not valid for use on this language element</target>
         <note />
       </trans-unit>
+      <trans-unit id="NONTERM.autoPropsDefnDecl">
+        <source> in auto property definition</source>
+        <target state="new"> in auto property definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.classMemberSpfnGetSetElements">
+        <source> in property definition</source>
+        <target state="new"> in property definition</target>
+        <note />
+      </trans-unit>
       <trans-unit id="NoConstructorsAvailableForType">
         <source>No constructors are available for the type '{0}'</source>
         <target state="new">No constructors are available for the type '{0}'</target>

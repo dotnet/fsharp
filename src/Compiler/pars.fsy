@@ -241,6 +241,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 
 /* start with lowest */
 
+%nonassoc prec_atompat_pathop_error
 %nonassoc prec_args_error            /* less than RPAREN */
 %nonassoc prec_atomexpr_lparen_error /* less than RPAREN */
 
@@ -6066,7 +6067,12 @@ topType:
 
   | topTupleType
      { let ty, rmdata = $1
-       ty, (SynValInfo([], (match rmdata with [md] -> md | _ -> SynInfo.unnamedRetVal))) }
+       let retArgInfo =
+           match rmdata with
+           | [md] -> md
+           | SynArgInfo(attrs, _, _) :: _ when not attrs.IsEmpty -> SynArgInfo(attrs, false, None)
+           | _ -> SynInfo.unnamedRetVal
+       ty, SynValInfo([], retArgInfo) }
 
 topTupleType:
   | topAppType STAR topTupleTypeElements
@@ -6928,6 +6934,11 @@ pathOp:
   | opName
      { let ident, trivia = $1
        SynLongIdent([ident], [], [Some trivia]) }
+
+  | ident DOT %prec prec_atompat_pathop_error
+     { let mDot = rhs parseState 2
+       reportParseErrorAt mDot.EndRange (FSComp.SR.parsIdentifierExpected())
+       SynLongIdent([$1], [mDot], [None]) }
 
   | ident DOT pathOp
      { prependIdentInLongIdentWithTrivia (SynIdent($1, None)) (rhs parseState 2) $3 }
