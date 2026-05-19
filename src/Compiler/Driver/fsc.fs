@@ -119,17 +119,10 @@ type IDiagnosticsLoggerProvider =
 
 type CapturingDiagnosticsLogger with
 
-    /// Commit the delayed diagnostics via a fresh temporary logger of the right kind.
-    /// Wraps the target logger with a filter so that --nowarn / --warnaserror / warn level
-    /// set on the command line are honored for diagnostics that were captured *during*
-    /// command-line option parsing (e.g. FS0075 from internal/test-only flags).
+    /// Commit the delayed diagnostics, filtering by --nowarn/--warnaserror accumulated during option parsing.
     member x.CommitDelayedDiagnostics(diagnosticsLoggerProvider: IDiagnosticsLoggerProvider, tcConfigB: TcConfigBuilder, exiter) =
         let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
-
-        let filteredLogger =
-            GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfigB.diagnosticsOptions, diagnosticsLogger)
-
-        x.CommitDelayedDiagnostics filteredLogger
+        x.CommitDelayedDiagnostics(GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfigB.diagnosticsOptions, diagnosticsLogger))
 
 /// The default DiagnosticsLogger implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider() =
@@ -275,7 +268,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
     let abbrevArgs = GetAbbrevFlagSet tcConfigB true
 
     // This is where flags are interpreted by the command line fsc.exe.
-    ParseCompilerOptions(tcConfigB, collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+    ParseCompilerOptions(collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
 
     let inputFiles = List.rev inputFilesRef
 
@@ -511,7 +504,7 @@ let main1
         // Rather than start processing, just collect names, then process them.
         try
             let files = ProcessCommandLineFlags(tcConfigB, lcidFromCodePage, argv)
-            let files = CheckAndReportSourceFileDuplicates tcConfigB (ResizeArray.ofList files)
+            let files = CheckAndReportSourceFileDuplicates(ResizeArray.ofList files)
             AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
             errorRecovery e rangeStartup
@@ -584,12 +577,10 @@ let main1
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
     SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 
-    // Forward all errors from flags, filtering by command-line --nowarn/--warnaserror so that
-    // diagnostics captured during option parsing honor those switches (see issue #19576).
-    let delayedFlagsCommitLogger =
+    // Forward all errors from flags, filtering by --nowarn/--warnaserror.
+    delayForFlagsLogger.CommitDelayedDiagnostics(
         GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfigB.diagnosticsOptions, diagnosticsLogger)
-
-    delayForFlagsLogger.CommitDelayedDiagnostics delayedFlagsCommitLogger
+    )
 
     if not tcConfigB.continueAfterParseFailure then
         AbortOnError(diagnosticsLogger, exiter)

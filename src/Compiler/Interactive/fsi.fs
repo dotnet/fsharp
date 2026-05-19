@@ -1225,7 +1225,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                 @ fsiUsageSuffix tcConfigB
 
             let abbrevArgs = GetAbbrevFlagSet tcConfigB false
-            ParseCompilerOptions(tcConfigB, collect, fsiCompilerOptions, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+            ParseCompilerOptions(collect, fsiCompilerOptions, List.tail (PostProcessCompilerArgs abbrevArgs argv))
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e
