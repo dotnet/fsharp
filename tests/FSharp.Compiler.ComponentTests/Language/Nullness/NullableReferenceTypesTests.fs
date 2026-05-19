@@ -2375,49 +2375,104 @@ let main _ = 0
     |> verifyOutputContains [|"-1"|]
 
 [<Fact>]
-let ``Issue 19658 - nullness warning on dotted method access underlines the receiver and mentions the member`` () =
-    FSharp """module Program
-[<EntryPoint>]
-let main _ =
-    let x: string | null = ""
-    let y = x.PadLeft(1)
-    0"""
+let ``Issue 19658 - nullness warning on dotted method access underlines the receiver`` () =
+    FSharp """module MyLib
+let f (x: string | null) = x.PadLeft(1)"""
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 5, Col 13, Line 5, Col 14,
+        Error 3261, Line 2, Col 28, Line 2, Col 29,
             "Nullness warning: Possible dereference of a null value when accessing member 'PadLeft' on the nullable value 'x' of type 'string'."
     ]
 
 [<Fact>]
 let ``Issue 19658 - nullness warning on dotted property access underlines the receiver`` () =
-    FSharp """module Program
-[<EntryPoint>]
-let main _ =
-    let x: string | null = ""
-    let n = x.Length
-    0"""
+    FSharp """module MyLib
+let f (x: string | null) = x.Length"""
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 5, Col 13, Line 5, Col 14,
+        Error 3261, Line 2, Col 28, Line 2, Col 29,
             "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string'."
     ]
 
 [<Fact>]
-let ``Issue 19658 - nullness warning on dotted access of complex receiver omits binding name`` () =
-    FSharp """module Program
+let ``Issue 19658 - nullness warning on complex receiver omits binding name`` () =
+    FSharp """module MyLib
 let getStr () : string | null = ""
-[<EntryPoint>]
-let main _ =
-    let n = (getStr()).Length
-    0"""
+let f () = (getStr()).Length"""
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 5, Col 14, Line 5, Col 22,
+        Error 3261, Line 3, Col 13, Line 3, Col 21,
             "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - chained access warns only on the nullable receiver`` () =
+    FSharp """module MyLib
+let f (x: string | null) = x.Trim().Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 2, Col 28, Line 2, Col 29,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Trim' on the nullable value 'x' of type 'string'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - mutable receiver shows binding name`` () =
+    FSharp """module MyLib
+let f () =
+    let mutable s: string | null = null
+    s.Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 5, Line 4, Col 6,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - overloaded method does not double-fire`` () =
+    FSharp """module MyLib
+let f (x: string | null) = x.Split(',')"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 2, Col 28, Line 2, Col 29,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Split' on the nullable value 'x' of type 'string'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - extension method on nullable receiver`` () =
+    FSharp """module MyLib
+open System.Linq
+let f (xs: System.Collections.Generic.List<int> | null) = xs.First()"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 59, Line 3, Col 61,
+            "Nullness warning: Possible dereference of a null value when accessing member 'First' on the nullable value 'xs' of type 'int seq'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - static call still uses generic nullness warning`` () =
+    FSharp """module MyLib
+type C() =
+    static member Do(x: string) = ()
+let x: string | null = ""
+C.Do(x)"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 5, Col 6, Line 5, Col 7,
+            "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
     ]

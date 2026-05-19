@@ -66,10 +66,7 @@ type ContextInfo =
     /// The range points to the original argument location.
     | NullnessCheckOfCapturedArg of range
 
-    /// The type equation comes from a member access on a nullable receiver expression.
-    /// The first range is the receiver/object-expression range (e.g. the `x` in `x.PadLeft`).
-    /// The string is the resolved member/method name.
-    /// The optional string is the binding name when the receiver is a simple value reference (e.g. "x").
+    /// Obj-argument type check in a dotted member access on a nullable receiver.
     | MemberAccessOnNullable of objExprRange: range * memberName: string * bindingName: string option
 
 /// Captures relevant information for a particular failed overload resolution.

@@ -186,10 +186,7 @@ type ContextInfo =
     /// The range points to the original argument location.
     | NullnessCheckOfCapturedArg of range
 
-    /// The type equation comes from a member access on a nullable receiver expression.
-    /// The first range is the receiver/object-expression range (e.g. the `x` in `x.PadLeft`).
-    /// The string is the resolved member/method name.
-    /// The optional string is the binding name when the receiver is a simple value reference (e.g. "x").
+    /// Obj-argument type check in a dotted member access on a nullable receiver.
     | MemberAccessOnNullable of objExprRange: range * memberName: string * bindingName: string option
 
 /// Captures relevant information for a particular failed overload resolution.
@@ -1127,8 +1124,7 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
             if csenv.g.checkNullness then               
                 match csenv.eContextInfo with
                 | ContextInfo.MemberAccessOnNullable (objExprRange, memberName, bindingName) ->
-                    let displayTy = replaceNullnessOfTy csenv.g.knownWithoutNull ty2
-                    WarnD(ConstraintSolverNullnessWarningOnDotAccess(csenv.DisplayEnv, displayTy, memberName, bindingName, objExprRange, m2))
+                    WarnD(ConstraintSolverNullnessWarningOnDotAccess(csenv.DisplayEnv, ty2, memberName, bindingName, objExprRange, m2))
                 | _ ->
                     WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
             else
@@ -3627,6 +3623,12 @@ and ResolveOverloading
     let g = csenv.g
     let m    = csenv.m
 
+    let withObjArgContext (env: ConstraintSolverEnv) =
+        match objArgInfo with
+        | Some (mObj, memberName, bindingName) ->
+            { env with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
+        | None -> env
+
     let isOpConversion =
         (methodName = "op_Explicit") ||
         (methodName = "op_Implicit")
@@ -3713,11 +3715,7 @@ and ResolveOverloading
         trackErrors {
                         do! errors
                         let cxsln = AssumeMethodSolvesTrait csenv cx m trace calledMeth
-                        let objCsenv =
-                            match objArgInfo with
-                            | Some (mObj, memberName, bindingName) ->
-                                { csenv with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
-                            | None -> csenv
+                        let objCsenv = withObjArgContext csenv
                         match calledMethTrace with
                         | NoTrace ->
                            let! _usesTDC =
@@ -4006,11 +4004,11 @@ let UnifyUniqueOverloading
          reqdRetTy    // The expected return type, if known 
    =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    let objCsenv =
+    let withObjArgContext (env: ConstraintSolverEnv) =
         match objArgInfo with
         | Some (mObj, memberName, bindingName) ->
-            { csenv with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
-        | None -> csenv
+            { env with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
+        | None -> env
     let m = csenv.m
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad)) 
@@ -4024,7 +4022,7 @@ let UnifyUniqueOverloading
             true // permitOptArgs
             true // always check return type
             (TypesEquiv csenv ndeep NoTrace None) 
-            (TypesMustSubsume objCsenv ndeep NoTrace None m)
+            (TypesMustSubsume (withObjArgContext csenv) ndeep NoTrace None m)
             (ReturnTypesMustSubsumeOrConvert csenv ad ndeep NoTrace None false m)
             (ArgsMustSubsumeOrConvert csenv ad ndeep NoTrace None false false)
             (Some reqdRetTy)
