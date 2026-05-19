@@ -4203,14 +4203,14 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
 ///   `delayRest` computations, so we never narrow it.
 ///
 /// * `itemIdentRange` is the terminal identifier's own source range — the
-///   piece the user perceives as "this item's name". It is used only inside
-///   the name-resolution sink callbacks (above) for diagnostics and IDE
-///   symbol-use reporting (Find Usages, symbol highlight, FSharpSymbolUse),
-///   so error / IDE UI hits only the resolved name. Fixes #14284 and #3920.
+///   piece the user perceives as "this item's name". It is used for
+///   diagnostics (e.g. narrowing overload-error ranges to the method name),
+///   name-resolution sink callbacks, and IDE symbol-use reporting (Find
+///   Usages, symbol highlight, FSharpSymbolUse). Fixes #14284 and #3920.
 ///
 /// For `T.Instance.Method("")`:
 ///   itemRange      = `T.Instance.Method` (consumed by TcItemThen for tree construction)
-///   itemIdentRange = `Method`            (reported to IDE sinks only)
+///   itemIdentRange = `Method`            (reported to IDE sinks and diagnostics)
 let ComputeItemRange wholem (lid: Ident list) rest =
     let itemRange =
         match rest with

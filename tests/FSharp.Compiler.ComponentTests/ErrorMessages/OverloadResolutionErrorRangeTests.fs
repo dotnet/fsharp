@@ -98,10 +98,10 @@ Available overloads:
  - member T.Method: double -> unit // Argument at index 1 doesn't match
  - member T.Method: int -> unit // Argument at index 1 doesn't match") ]
 
-// Verify that backtick-escaped method names fall back to the full mItem range
-// (methodName.Length doesn't account for backtick delimiters in source text)
+// Verify that backtick-escaped method names are also correctly narrowed
+// (itemIdentRange from ComputeItemRange includes the backtick delimiters)
 [<Fact>]
-let ``Issue 14284 - backtick-escaped method name falls back to full range`` () =
+let ``Issue 14284 - backtick-escaped method name is narrowed to identifier`` () =
     FSharp
         """
 type T() =
@@ -115,7 +115,7 @@ T.Instance.``My Method``("")
     |> typecheck
     |> shouldFail
     |> withDiagnostics
-        [ (Error 41, Line 8, Col 1, Line 8, Col 25, "No overloads match for method 'My Method'.
+        [ (Error 41, Line 8, Col 12, Line 8, Col 25, "No overloads match for method 'My Method'.
 
 Known type of argument: string
 
@@ -123,9 +123,9 @@ Available overloads:
  - member T.``My Method`` : double -> unit // Argument at index 1 doesn't match
  - member T.``My Method`` : int -> unit // Argument at index 1 doesn't match") ]
 
-// Verify multiline method access falls back to mItem range
+// Verify multiline method access is also correctly narrowed to the method name
 [<Fact>]
-let ``Issue 14284 - multiline method access falls back to mItem`` () =
+let ``Issue 14284 - multiline method access narrows to method name`` () =
     FSharp
         """
 type T() =

@@ -6643,7 +6643,7 @@ and TcTyparExprThen (cenv: cenv) overallTy env tpenv synTypar m delayed =
             | [] -> delayed2
             | _ -> DelayedDotLookup (rest, m2) :: delayed2
         CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.AccessRights)
-        TcItemThen cenv overallTy env tpenv ([], item, mExprAndLongId, [], AfterResolution.DoNothing) (Some ty) delayed3
+        TcItemThen cenv overallTy env tpenv ([], item, mExprAndLongId, ident.idRange, [], AfterResolution.DoNothing) (Some ty) delayed3
         //TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem rest afterResolution
     | _ ->
         let (SynTypar(_, q, _)) = synTypar
@@ -6968,7 +6968,7 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
             | Some mObjTy, None -> ForNewConstructors cenv.tcSink env mObjTy methodName minfos
             | None, _ -> AfterResolution.DoNothing
 
-        TcMethodApplicationThen cenv env overallTy (Some objTy) tpenv None [] mWholeCall mItem methodName ad PossiblyMutates false meths afterResolution isSuperInit args ExprAtomicFlag.NonAtomic None delayed
+        TcMethodApplicationThen cenv env overallTy (Some objTy) tpenv None [] mWholeCall mItem mItem methodName ad PossiblyMutates false meths afterResolution isSuperInit args ExprAtomicFlag.NonAtomic None delayed
 
     | Item.DelegateCtor ty, [arg] ->
         // Re-record the name resolution since we now know it's a constructor call
@@ -7395,7 +7395,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                     let afterResolution = ForNewConstructors cenv.tcSink env mObjTy methodName minfos
                     let ad = env.AccessRights
 
-                    let expr, tpenv = TcMethodApplicationThen cenv env (MustEqual objTy) None tpenv None [] mWholeExpr mObjTy methodName ad PossiblyMutates false meths afterResolution CtorValUsedAsSuperInit [arg] ExprAtomicFlag.Atomic None []
+                    let expr, tpenv = TcMethodApplicationThen cenv env (MustEqual objTy) None tpenv None [] mWholeExpr mObjTy mObjTy methodName ad PossiblyMutates false meths afterResolution CtorValUsedAsSuperInit [arg] ExprAtomicFlag.Atomic None []
                     // The 'base' value is always bound
                     let baseIdOpt = (match baseIdOpt with None -> Some(ident("base", mObjTy)) | Some id -> Some id)
                     expr, baseIdOpt, tpenv
@@ -8632,7 +8632,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId None
             let resolvesAsExpr =
                 match nameResolutionResult with
-                | Result (tinstEnclosing, item, mItem, _, rest, afterRes)
+                | Result (tinstEnclosing, item, mItem, mItemIdent, rest, afterRes)
                     when
                          (match item with
                           | Item.DelegateCtor _
@@ -8643,7 +8643,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
                               | _ -> true
                           | _ -> true) ->
                     let overallTy = match overallTyOpt with None -> MustEqual (NewInferenceType g) | Some t -> t
-                    let _, _ = TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afterRes) None delayed
+                    let _, _ = TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, mItemIdent, rest, afterRes) None delayed
                     true
                 | _ ->
                     false
@@ -8870,18 +8870,19 @@ and TcLongIdentThen (cenv: cenv) (overallTy: OverallTy) env tpenv (SynLongIdent(
 
     let ad = env.eAccessRights
     let typeNameResInfo = GetLongIdentTypeNameInfo delayed
-    let (tinstEnclosing, item, mItem, _, rest, afterResolution) =
+    let (tinstEnclosing, item, mItem, mItemIdent, rest, afterResolution) =
         let maybeAppliedArgExpr = DelayedItem.maybeAppliedArgForPreferExtensionOverProperty delayed
         ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId maybeAppliedArgExpr
         |> ForceRaise
-    TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afterResolution) None delayed
+    TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, mItemIdent, rest, afterResolution) None delayed
 
 //-------------------------------------------------------------------------
 // Typecheck "item+projections"
 //------------------------------------------------------------------------- *)
 
 // mItem is the textual range covered by the long identifiers that make up the item
-and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mItem, rest, afterResolution) staticTyOpt delayed =
+// mItemIdent is the range of the terminal identifier (method/property name only)
+and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mItem, mItemIdent, rest, afterResolution) staticTyOpt delayed =
     let delayed = delayRest rest mItem delayed
     match item with
     // x where x is a union case or active pattern result tag.
@@ -8892,7 +8893,7 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
         TcTypeItemThen cenv overallTy env nm ty tpenv mItem tinstEnclosing delayed
 
     | Item.MethodGroup (methodName, minfos, _) ->
-        TcMethodItemThen cenv overallTy env item methodName minfos tpenv mItem afterResolution staticTyOpt delayed
+        TcMethodItemThen cenv overallTy env item methodName minfos tpenv mItem mItemIdent afterResolution staticTyOpt delayed
 
     | Item.Trait traitInfo ->
         TcTraitItemThen cenv overallTy env None traitInfo tpenv mItem delayed
@@ -9121,8 +9122,8 @@ and TcTypeItemThen (cenv: cenv) overallTy env nm ty tpenv mItem tinstEnclosing d
         let item = Item.Types(nm, [ty])
         CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
         let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
-        let item, mItem, _, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true None
-        TcItemThen cenv overallTy env tpenv ((argsOfAppTy g ty), item, mItem, rest, afterResolution) None otherDelayed
+        let item, mItem, mItemIdent, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true None
+        TcItemThen cenv overallTy env tpenv ((argsOfAppTy g ty), item, mItem, mItemIdent, rest, afterResolution) None otherDelayed
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: _delayed' ->
         // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
@@ -9142,13 +9143,13 @@ and TcTypeItemThen (cenv: cenv) overallTy env nm ty tpenv mItem tinstEnclosing d
         else
             error(Error(FSComp.SR.tcInvalidUseOfTypeName(), mItem))
 
-and TcMethodItemThen (cenv: cenv) overallTy env item methodName minfos tpenv mItem afterResolution staticTyOpt delayed =
+and TcMethodItemThen (cenv: cenv) overallTy env item methodName minfos tpenv mItem mItemIdent afterResolution staticTyOpt delayed =
     let ad = env.eAccessRights
     // Static method calls Type.Foo(arg1, ..., argn)
     let meths = List.map (fun minfo -> minfo, None) minfos
     match delayed with
     | DelayedApp (atomicFlag, _, _, arg, mExprAndArg) :: otherDelayed ->
-        TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag staticTyOpt otherDelayed
+        TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem mItemIdent methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag staticTyOpt otherDelayed
 
     | DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: otherDelayed ->
 
@@ -9162,9 +9163,9 @@ and TcMethodItemThen (cenv: cenv) overallTy env item methodName minfos tpenv mIt
 
             match otherDelayed with
             | DelayedApp(atomicFlag, _, _, arg, mExprAndArg) :: otherDelayed ->
-                TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [arg] atomicFlag staticTyOpt otherDelayed
+                TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem mItemIdent methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [arg] atomicFlag staticTyOpt otherDelayed
             | _ ->
-                TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndTypeArgs mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [] ExprAtomicFlag.Atomic staticTyOpt otherDelayed
+                TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndTypeArgs mItem mItemIdent methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [] ExprAtomicFlag.Atomic staticTyOpt otherDelayed
 
         | None ->
 #endif
@@ -9178,16 +9179,16 @@ and TcMethodItemThen (cenv: cenv) overallTy env item methodName minfos tpenv mIt
 
         match otherDelayed with
         | DelayedApp(atomicFlag, _, _, arg, mExprAndArg) :: otherDelayed ->
-            TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndArg mItem methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag staticTyOpt otherDelayed
+            TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndArg mItem mItemIdent methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag staticTyOpt otherDelayed
         | _ ->
-            TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndTypeArgs mItem methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic staticTyOpt otherDelayed
+            TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndTypeArgs mItem mItemIdent methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic staticTyOpt otherDelayed
 
     | _ ->
 #if !NO_TYPEPROVIDERS
         if not minfos.IsEmpty && minfos[0].ProvidedStaticParameterInfo.IsSome then
             error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
 #endif
-        TcMethodApplicationThen cenv env overallTy None tpenv None [] mItem mItem methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic staticTyOpt delayed
+        TcMethodApplicationThen cenv env overallTy None tpenv None [] mItem mItem mItemIdent methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic staticTyOpt delayed
 
 and TcCtorItemThen (cenv: cenv) overallTy env item nm minfos tinstEnclosing tpenv mItem afterResolution delayed =
 #if !NO_TYPEPROVIDERS
@@ -9583,19 +9584,19 @@ and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem afterResolution 
 
             // x.P <- ... byref setter
             if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-            TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic staticTyOpt delayed
+            TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic staticTyOpt delayed
         else
             let args = if pinfo.IsIndexer then args else []
             if isNil meths then
                 errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
             // Note: static calls never mutate a struct object argument
-            TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[expr2]) ExprAtomicFlag.NonAtomic staticTyOpt otherDelayed
+            TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mStmt mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[expr2]) ExprAtomicFlag.NonAtomic staticTyOpt otherDelayed
     | _ ->
         // Static Property Get (possibly indexer)
         let meths = pinfos |> GettersOfPropInfos
         if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
         // Note: static calls never mutate a struct object argument
-        TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic staticTyOpt delayed
+        TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic staticTyOpt delayed
 
 and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
     let g = cenv.g
@@ -9721,10 +9722,10 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         CanonicalizePartialInferenceProblem cenv.css env.DisplayEnv mExprAndLongId (freeInTypeLeftToRight g false objExprTy)
 
     let maybeAppliedArgExpr = DelayedItem.maybeAppliedArgForPreferExtensionOverProperty delayed
-    let item, mItem, _mItemIdent, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver mExprAndLongId ad env.NameEnv objExprTy longId TypeNameResolutionInfo.Default findFlag false maybeAppliedArgExpr
-    TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem rest afterResolution
+    let item, mItem, mItemIdent, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver mExprAndLongId ad env.NameEnv objExprTy longId TypeNameResolutionInfo.Default findFlag false maybeAppliedArgExpr
+    TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem mItemIdent rest afterResolution
 
-and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem rest afterResolution =
+and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem mItemIdent rest afterResolution =
     let g = cenv.g
     let ad = env.eAccessRights
     let objArgs = [objExpr]
@@ -9750,7 +9751,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
             let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos[0])
             CallNameResolutionSinkReplacing cenv.tcSink (mExprAndItem, env.NameEnv, item, [], ItemOccurrence.Use, env.eAccessRights)
 
-            TcMethodApplicationThen cenv env overallTy None tpenv None objArgs mExprAndItem mItem methodName ad mutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse args atomicFlag None delayed
+            TcMethodApplicationThen cenv env overallTy None tpenv None objArgs mExprAndItem mItem mItemIdent methodName ad mutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse args atomicFlag None delayed
         | None ->
         if not minfos.IsEmpty && minfos[0].ProvidedStaticParameterInfo.IsSome then
             error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
@@ -9759,7 +9760,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         let tyArgsOpt, tpenv = TcMemberTyArgsOpt cenv env tpenv tyArgsOpt
         let meths = minfos |> List.map (fun minfo -> minfo, None)
 
-        TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem methodName ad mutates false meths afterResolution NormalValUse args atomicFlag None delayed
+        TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem mItemIdent methodName ad mutates false meths afterResolution NormalValUse args atomicFlag None delayed
 
     | Item.Property (nm, pinfos, _) ->
         // Instance property
@@ -9787,7 +9788,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
                     errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
                 // x.P <- ... byref setter
                 if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-                TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
+                TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem mItemIdent nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
             else
 
                 if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly then
@@ -9795,12 +9796,12 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
 
                 let args = if pinfo.IsIndexer then args else []
                 let mut = (if isStructTy g (tyOfExpr g objExpr) then DefinitelyMutates else PossiblyMutates)
-                TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mStmt mItem nm ad mut true meths afterResolution NormalValUse (args @ [expr2]) atomicFlag None []
+                TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mStmt mItem mItemIdent nm ad mut true meths afterResolution NormalValUse (args @ [expr2]) atomicFlag None []
         | _ ->
             // Instance property getter
             let meths = GettersOfPropInfos pinfos
             if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-            TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
+            TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem mItemIdent nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
 
     | Item.RecdField rfinfo ->
         // Get or set instance F# field or literal
@@ -9961,6 +9962,7 @@ and TcMethodApplicationThen
        objArgs      // The 'obj' arguments in obj.M(...) and obj.M, if any
        m           // The range of the object argument or whole application. We immediately union this with the range of the arguments
        mItem       // The range of the item that resolved to the method name
+       mItemIdent  // The range of the terminal identifier (method name only) for error reporting
        methodName // string, name of the method
        ad          // accessibility rights of the caller
        mut         // what do we know/assume about whether this method will mutate or not?
@@ -9988,7 +9990,7 @@ and TcMethodApplicationThen
 
     // Call the helper below to do the real checking
     let (expr, attributeAssignedNamedItems, delayed), tpenv =
-        TcMethodApplication false cenv env tpenv callerTyArgs objArgs mWholeExpr mItem methodName objTyOpt ad mut isProp meths afterResolution isSuperInit args exprTy staticTyOpt delayed
+        TcMethodApplication false cenv env tpenv callerTyArgs objArgs mWholeExpr mItem mItemIdent methodName objTyOpt ad mut isProp meths afterResolution isSuperInit args exprTy staticTyOpt delayed
 
     // Give errors if some things couldn't be assigned
     if not (isNil attributeAssignedNamedItems) then
@@ -10373,6 +10375,7 @@ and TcMethodApplication
         objArgs
         mMethExpr // range of the entire method expression
         mItem
+        mItemIdent // range of the terminal identifier (method name only) for error reporting
         methodName
         (objTyOpt: TType option)
         ad
@@ -10464,27 +10467,11 @@ and TcMethodApplication
         let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
 
         // Narrow the error range for unresolved overloading from the whole expression (mMethExpr)
-        // to just the method name. For instance calls like T.Instance.Method(""), mItem covers
-        // the entire "T.Instance.Method" range, so we compute the method-name-only range from
-        // the end of mItem and the method name length. See https://github.com/dotnet/fsharp/issues/14284.
+        // to the terminal identifier range (mItemIdent). See https://github.com/dotnet/fsharp/issues/14284.
         let errors =
             match errors with
             | ErrorResult(warns, UnresolvedOverloading(denvErr, callerArgsErr, failure, _mWide)) ->
-                let mMethodName =
-                    let itemWidth = mItem.EndColumn - mItem.StartColumn
-                    // Only narrow when the range is single-line and the method name fits within it.
-                    // Generic constructors may have internal names longer than the source text
-                    // (e.g., "ImmutableStack`1" vs source "ImmutableStack").
-                    if
-                        mItem.StartLine = mItem.EndLine
-                        && methodName.Length < itemWidth
-                        && not (DoesIdentifierNeedBackticks methodName)
-                    then
-                        let startPos = mkPos mItem.EndLine (mItem.EndColumn - methodName.Length)
-                        withStart startPos mItem
-                    else
-                        mItem
-                ErrorResult(warns, UnresolvedOverloading(denvErr, callerArgsErr, failure, mMethodName))
+                ErrorResult(warns, UnresolvedOverloading(denvErr, callerArgsErr, failure, mItemIdent))
             | other -> other
 
         match afterResolution, result with
@@ -11706,7 +11693,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                 let meths = minfos |> List.map (fun minfo -> minfo, None)
                 let afterResolution = ForNewConstructors cenv.tcSink env tyId.idRange methodName minfos
                 let (expr, attributeAssignedNamedItems, _), _ =
-                  TcMethodApplication true cenv env tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual ty) None []
+                  TcMethodApplication true cenv env tpenv None [] mAttr mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual ty) None []
 
                 UnifyTypes cenv env mAttr ty (tyOfExpr g expr)
 
