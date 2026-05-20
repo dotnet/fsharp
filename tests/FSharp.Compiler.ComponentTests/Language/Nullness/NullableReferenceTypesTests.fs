@@ -2545,3 +2545,96 @@ type C() =
         Error 3261, Line 4, Col 26, Line 4, Col 36,
             "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string'."
     ]
+
+// -------- Coverage tests (positive: new dot-access message is used) --------
+
+[<Fact>]
+let ``Issue 19658 - property setter on nullable receiver uses new message`` () =
+    FSharp """module MyLib
+open System.Text
+let f (sb: StringBuilder | null) = sb.Length <- 0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 36, Line 3, Col 38,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'sb' of type 'StringBuilder'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - piped lambda receiver uses new message`` () =
+    FSharp """module MyLib
+let f () =
+    let x: string | null = ""
+    x |> fun s -> s.Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 19, Line 4, Col 20,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string'."
+    ]
+
+// -------- KNOWN GAP tests (negative: old generic message still used) --------
+// These pin the current behavior of paths intentionally NOT routed through
+// TcMethodApplication. Widening coverage to these paths is a separate
+// enhancement tracked under #17409. If a future change starts emitting the
+// new dot-access message for any of these, that change must update these
+// tests deliberately.
+
+[<Fact>]
+let ``Issue 19658 - KNOWN GAP indexer access falls back to generic nullness warning`` () =
+    FSharp """module MyLib
+let f (x: string | null) = x.[0]"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 2, Col 28, Line 2, Col 33,
+            "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - KNOWN GAP F# record field access falls back to generic nullness warning`` () =
+    FSharp """module MyLib
+type R = { Field: int }
+let f (r: R | null) = r.Field"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 23, Line 3, Col 30,
+            "Nullness warning: The types 'R' and 'R | null' do not have compatible nullability."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - KNOWN GAP anonymous record type cannot be marked nullable`` () =
+    // Anonymous record types do not support a `| null` qualification at all,
+    // so the dot-access nullness path cannot fire on them. This pins the
+    // current behavior: instead of FS3261, the language rejects the type.
+    FSharp """module MyLib
+let f (r: {| Field: int |} | null) = r.Field"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3260, Line 2, Col 11, Line 2, Col 34,
+            "The type '{| Field: int |}' does not support a nullness qualification."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - KNOWN GAP SRTP member call still uses generic nullness warning`` () =
+    // SRTP-constrained members do not go through TcMethodApplication's
+    // overload resolution path; objArgInfo is None. The generic FS3261
+    // message fires. If/when SRTP gets routed through the same path, this
+    // test should be updated.
+    FSharp """module MyLib
+let inline f (x: ^T when ^T: (member Length: int)) : int = x.Length
+let g (s: string | null) = f s"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 30, Line 3, Col 31,
+            "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+    ]
