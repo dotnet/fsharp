@@ -39,6 +39,7 @@
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeResolutionInRecursiveScopes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
@@ -286,6 +287,7 @@
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Signatures.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Closures.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Crashes.fs" />
+    <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Exceptions.fs" />
     <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
