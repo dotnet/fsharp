@@ -10394,7 +10394,7 @@ and TcMethodApplication
     let callerObjArgTys = objArgs |> List.map (tyOfExpr g)
     let calledMeths = calledMethsAndProps |> List.map fst
 
-    let objArgInfo =
+    let objArgInfo: ObjArgInfo option =
         if g.checkNullness then
             match objArgs with
             | [objExpr] ->
@@ -10411,7 +10411,7 @@ and TcMethodApplication
                         tryGetBindingName innerExpr
                     | _ -> None
                 let bindingName = tryGetBindingName objExpr
-                Some (objExpr.Range, methodName, bindingName)
+                Some { ObjExprRange = objExpr.Range; MemberName = methodName; BindingName = bindingName }
             | _ -> None
         else None
 

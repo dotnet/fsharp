@@ -69,6 +69,14 @@ type ContextInfo =
     /// Obj-argument type check in a dotted member access on a nullable receiver.
     | MemberAccessOnNullable of objExprRange: range * memberName: string * bindingName: string option
 
+/// Receiver information for a dotted member access, used to produce
+/// targeted nullness warnings (e.g. "Possible dereference of null when
+/// accessing member 'M' on the nullable value 'x'").
+type ObjArgInfo =
+    { ObjExprRange: range
+      MemberName: string
+      BindingName: string option }
+
 /// Captures relevant information for a particular failed overload resolution.
 type OverloadInformation =
     { methodSlot: CalledMeth<Expr>
@@ -257,7 +265,7 @@ val ResolveOverloadingForCall:
     DisplayEnv ->
     ConstraintSolverState ->
     range ->
-    objArgInfo: (range * string * string option) option ->
+    objArgInfo: ObjArgInfo option ->
     methodName: string ->
     callerArgs: CallerArgs<Expr> ->
     AccessorDomain ->
@@ -271,7 +279,7 @@ val UnifyUniqueOverloading:
     ConstraintSolverState ->
     range ->
     int * int ->
-        objArgInfo: (range * string * string option) option ->
+        objArgInfo: ObjArgInfo option ->
         string ->
         AccessorDomain ->
         CalledMeth<SynExpr> list ->

@@ -189,6 +189,14 @@ type ContextInfo =
     /// Obj-argument type check in a dotted member access on a nullable receiver.
     | MemberAccessOnNullable of objExprRange: range * memberName: string * bindingName: string option
 
+/// Receiver information for a dotted member access, used to produce
+/// targeted nullness warnings (e.g. "Possible dereference of null when
+/// accessing member 'M' on the nullable value 'x'").
+type ObjArgInfo =
+    { ObjExprRange: range
+      MemberName: string
+      BindingName: string option }
+
 /// Captures relevant information for a particular failed overload resolution.
 type OverloadInformation = 
     {
@@ -362,6 +370,14 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       IsSupportsNullFlex = false
       ExtraRigidTypars = emptyFreeTypars
     }
+
+let applyObjArgContext (objArgInfo: ObjArgInfo option) (csenv: ConstraintSolverEnv) =
+    match objArgInfo with
+    | Some info when csenv.g.checkNullness ->
+        { csenv with
+            eContextInfo = ContextInfo.MemberAccessOnNullable(info.ObjExprRange, info.MemberName, info.BindingName)
+        }
+    | _ -> csenv
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as
@@ -3515,12 +3531,6 @@ and ResolveOverloadingCore
     let infoReader = csenv.InfoReader
     let m = csenv.m
 
-    let withObjArgContext (env: ConstraintSolverEnv) =
-        match objArgInfo with
-        | Some (mObj, memberName, bindingName) when env.g.checkNullness ->
-            { env with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
-        | _ -> env
-
     // Always take the return type into account for
     //    -- op_Explicit, op_Implicit
     //    -- candidate method sets that potentially use tupling of unfilled out args
@@ -3534,7 +3544,7 @@ and ResolveOverloadingCore
     let exactMatchCandidates =
         candidates |> FilterEachThenUndo (fun newTrace calledMeth ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-              let objCsenv = withObjArgContext csenv
+              let objCsenv = applyObjArgContext objArgInfo csenv
               let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
               CanMemberSigsMatchUpToCheck 
                   csenv 
@@ -3558,7 +3568,7 @@ and ResolveOverloadingCore
       let applicable =
           candidates |> FilterEachThenUndo (fun newTrace candidate ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-              let objCsenv = withObjArgContext csenv
+              let objCsenv = applyObjArgContext objArgInfo csenv
               let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) candidate
               CanMemberSigsMatchUpToCheck 
                   csenv 
@@ -3581,7 +3591,7 @@ and ResolveOverloadingCore
               |> List.choose (fun calledMeth -> 
                       match CollectThenUndo (fun newTrace -> 
                                    let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                                   let objCsenv = withObjArgContext csenv
+                                   let objCsenv = applyObjArgContext objArgInfo csenv
                                    let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
                                    CanMemberSigsMatchUpToCheck 
                                        csenv 
@@ -3631,12 +3641,6 @@ and ResolveOverloading
      =
     let g = csenv.g
     let m    = csenv.m
-
-    let withObjArgContext (env: ConstraintSolverEnv) =
-        match objArgInfo with
-        | Some (mObj, memberName, bindingName) when env.g.checkNullness ->
-            { env with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
-        | _ -> env
 
     let isOpConversion =
         (methodName = "op_Explicit") ||
@@ -3724,7 +3728,7 @@ and ResolveOverloading
         trackErrors {
                         do! errors
                         let cxsln = AssumeMethodSolvesTrait csenv cx m trace calledMeth
-                        let objCsenv = withObjArgContext csenv
+                        let objCsenv = applyObjArgContext objArgInfo csenv
                         match calledMethTrace with
                         | NoTrace ->
                            let! _usesTDC =
@@ -4013,11 +4017,6 @@ let UnifyUniqueOverloading
          reqdRetTy    // The expected return type, if known 
    =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    let withObjArgContext (env: ConstraintSolverEnv) =
-        match objArgInfo with
-        | Some (mObj, memberName, bindingName) when env.g.checkNullness ->
-            { env with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
-        | _ -> env
     let m = csenv.m
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad)) 
@@ -4031,7 +4030,7 @@ let UnifyUniqueOverloading
             true // permitOptArgs
             true // always check return type
             (TypesEquiv csenv ndeep NoTrace None) 
-            (TypesMustSubsume (withObjArgContext csenv) ndeep NoTrace None m)
+            (TypesMustSubsume (applyObjArgContext objArgInfo csenv) ndeep NoTrace None m)
             (ReturnTypesMustSubsumeOrConvert csenv ad ndeep NoTrace None false m)
             (ArgsMustSubsumeOrConvert csenv ad ndeep NoTrace None false false)
             (Some reqdRetTy)
