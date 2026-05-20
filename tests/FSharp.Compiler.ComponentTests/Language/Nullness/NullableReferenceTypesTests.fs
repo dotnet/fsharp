@@ -2463,6 +2463,19 @@ let f (xs: System.Collections.Generic.List<int> | null) = xs.First()"""
     ]
 
 [<Fact>]
+let ``Issue 19658 - nested nullable generic receiver does not produce misleading inner-type-arg message`` () =
+    FSharp """module MyLib
+let f (xs: System.Collections.Generic.List<string | null> | null) =
+    xs.Count"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 5, Line 3, Col 7,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Count' on the nullable value 'xs' of type 'System.Collections.Generic.List<string>'."
+    ]
+
+[<Fact>]
 let ``Issue 19658 - static call still uses generic nullness warning`` () =
     FSharp """module MyLib
 type C() =
