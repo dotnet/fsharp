@@ -48,6 +48,16 @@ module ``Nowarn for command-line option warnings`` =
         |> shouldSucceed
 
     [<Fact>]
+    let ``--nowarn suppresses only the targeted warning`` () =
+        FSharp "module Module"
+        |> withOptions [ "--extraoptimizationloops:1"; "--test:NoSuchTestFlag"; "--nowarn:75" ]
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+        |> withWarningCode 1063
+        |> ignore
+
+    [<Fact>]
     let ``--nowarn 3551 suppresses duplicate source file warning`` () =
         let file =
             SourceCodeFileKind.Fs(
