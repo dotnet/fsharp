@@ -311,8 +311,16 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string nSigArgInfos, id.idText, id.idText))
                 else 
                   let implArgInfos = implArgInfos |> List.truncate nSigArgInfos
-                  // When impl has empty group [] and sig has [unit_arg], use min to avoid taking more than available
-                  let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.take (min l1.Length l2.Length))
+                  // When impl has empty group [] (unit param like member M(())), synthesize
+                  // ArgReprInfo from the sig so SetValReprInfo reflects the signature contract.
+                  let implArgInfos =
+                      (implArgInfos, sigArgInfos)
+                      ||> List.map2 (fun implGroup sigGroup ->
+                          if implGroup.IsEmpty && sigGroup.Length = 1 then
+                              sigGroup |> List.map (fun sigArg ->
+                                  ({ Attribs = sigArg.Attribs; Name = sigArg.Name; OtherRange = None }: ArgReprInfo))
+                          else
+                              implGroup |> List.take (min implGroup.Length sigGroup.Length))
                   // Propagate some information signature to implementation. 
 
                   // Check the attributes on each argument, and update the ValReprInfo for
@@ -321,9 +329,6 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   // the implementation. This also propagates argument names from signature to implementation
                   let res = 
                       (implArgInfos, sigArgInfos) ||> List.forall2 (fun (implGroup: ArgReprInfo list) (sigGroup: ArgReprInfo list) ->
-                          // When impl group is empty (unit param like member M(())), skip arg-level checks
-                          if implGroup.IsEmpty then true
-                          else
                           (implGroup, sigGroup) ||> List.forall2 (fun implArgInfo sigArgInfo -> 
                           checkAttribs aenv (implArgInfo.Attribs.AsList()) (sigArgInfo.Attribs.AsList()) (fun attribs -> 
                               match implArgInfo.Name, sigArgInfo.Name with 

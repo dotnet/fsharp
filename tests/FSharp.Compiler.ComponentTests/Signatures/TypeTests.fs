@@ -959,6 +959,37 @@ type D() =
     |> shouldSucceed
     |> ignore
 
+// Non-overloaded: member M(()) with sig member M: unit -> unit, consumer calls d.M()
+// Verifies that synthesized ArgReprInfo from sig allows consumer access
+[<Fact>]
+let ``Unit param - non-overloaded member M(()) consumer can call M()`` () =
+    let sigSource = """
+module Lib
+
+type D =
+    new: unit -> D
+    member M: unit -> unit
+"""
+    let implSource = """
+module Lib
+type D() =
+    member _.M(()) = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
 // Verify M(()) and M() produce identical IL method signatures
 [<Fact>]
 let ``Unit param - M(()) and M() produce same IL method signature`` () =
