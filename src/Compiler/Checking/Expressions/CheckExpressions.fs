@@ -10398,10 +10398,19 @@ and TcMethodApplication
         if g.checkNullness then
             match objArgs with
             | [objExpr] ->
-                let bindingName =
-                    match stripDebugPoints objExpr with
-                    | Expr.Val (vref, _, _) -> Some vref.DisplayName
+                // Receiver may be wrapped in a debug point and/or an interface
+                // upcast (Expr.Op(TOp.Coerce, ...)). Drill through both. Filter
+                // out compiler-generated vals (e.g. _arg1, matchValue,
+                // copyOfStruct, tupledArg) so internal names never leak into
+                // user-facing nullness warnings.
+                let rec tryGetBindingName expr =
+                    match stripDebugPoints expr with
+                    | Expr.Val (vref, _, _) when not vref.IsCompilerGenerated ->
+                        Some vref.DisplayName
+                    | Expr.Op (TOp.Coerce, _, [innerExpr], _) ->
+                        tryGetBindingName innerExpr
                     | _ -> None
+                let bindingName = tryGetBindingName objExpr
                 Some (objExpr.Range, methodName, bindingName)
             | _ -> None
         else None

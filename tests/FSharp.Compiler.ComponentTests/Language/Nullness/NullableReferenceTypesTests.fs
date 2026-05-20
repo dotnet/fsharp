@@ -2513,3 +2513,35 @@ let f (x: string | null) =
         Error 3261, Line 3, Col 5, Line 3, Col 6,
             "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string'.. See also test.fs(3,4)-(4,15)."
     ]
+
+[<Fact>]
+let ``Issue 19658 - binding name surfaces through interface upcast Coerce`` () =
+    // The receiver xs typed as IEnumerable<int> | null gets a
+    // Expr.Op(TOp.Coerce, ...) wrapper at the call site of GetEnumerator
+    // (interface-method dispatch). Binding name 'xs' must still surface.
+    FSharp """module MyLib
+let f (xs: System.Collections.Generic.IEnumerable<int> | null) = xs.GetEnumerator()"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 2, Col 66, Line 2, Col 68,
+            "Nullness warning: Possible dereference of a null value when accessing member 'GetEnumerator' on the nullable value 'xs' of type 'System.Collections.Generic.IEnumerable<int>'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - implicit 'this' receiver does not leak name`` () =
+    // 'this.Get()' is an Expr.App, not an Expr.Val, so tryGetBindingName
+    // returns None and the "expression" form fires - documents the contract
+    // that complex expressions get the "expression" wording.
+    FSharp """module MyLib
+type C() =
+    member _.Get () : string | null = null
+    member this.Use () = this.Get().Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 26, Line 4, Col 36,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string'."
+    ]
