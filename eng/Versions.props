@@ -89,7 +89,12 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-    <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
+    <!-- System.* packages from dotnet/runtime, aligned with MSBuild and Roslyn deps. -->
+    <SystemPackagesVersion>10.0.2</SystemPackagesVersion>
+    <SystemCollectionsImmutableVersion>$(SystemPackagesVersion)</SystemCollectionsImmutableVersion>
+    <SystemCompositionVersion>$(SystemPackagesVersion)</SystemCompositionVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemPackagesVersion)</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemReflectionMetadataVersion>$(SystemPackagesVersion)</SystemReflectionMetadataVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -156,7 +161,7 @@
      <!-- Making diff way too large, update separately later. e.g. to 6.0.0-rtm.21518.12 and 9.0.0-rc.2.24462.10 or via darc -->
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
-    <MicrosoftTestPlatformVersion>17.14.1</MicrosoftTestPlatformVersion>
+    <MicrosoftTestPlatformVersion>18.0.1</MicrosoftTestPlatformVersion>
     <MicrosoftTestingExtensionsHangDumpVersion>2.0.2</MicrosoftTestingExtensionsHangDumpVersion>
     <NewtonsoftJsonVersion>13.0.4</NewtonsoftJsonVersion>
     <XunitVersion>3.2.2</XunitVersion>
