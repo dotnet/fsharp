@@ -2489,3 +2489,13 @@ C.Do(x)"""
         Error 3261, Line 5, Col 6, Line 5, Col 7,
             "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
     ]
+
+[<Fact>]
+let ``Issue 19658 - no FS3261 when nullness checking is off`` () =
+    // Without strict nullness, x.PadLeft compiles clean - the new context
+    // must not introduce diagnostics when --checknulls is not enabled.
+    FSharp """module MyLib
+let f (x: string) = x.PadLeft(1)"""
+    |> asLibrary
+    |> compile
+    |> shouldSucceed

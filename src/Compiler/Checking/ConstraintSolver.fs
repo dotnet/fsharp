@@ -3517,9 +3517,9 @@ and ResolveOverloadingCore
 
     let withObjArgContext (env: ConstraintSolverEnv) =
         match objArgInfo with
-        | Some (mObj, memberName, bindingName) ->
+        | Some (mObj, memberName, bindingName) when env.g.checkNullness ->
             { env with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
-        | None -> env
+        | _ -> env
 
     // Always take the return type into account for
     //    -- op_Explicit, op_Implicit
@@ -3634,9 +3634,9 @@ and ResolveOverloading
 
     let withObjArgContext (env: ConstraintSolverEnv) =
         match objArgInfo with
-        | Some (mObj, memberName, bindingName) ->
+        | Some (mObj, memberName, bindingName) when env.g.checkNullness ->
             { env with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
-        | None -> env
+        | _ -> env
 
     let isOpConversion =
         (methodName = "op_Explicit") ||
@@ -4015,9 +4015,9 @@ let UnifyUniqueOverloading
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     let withObjArgContext (env: ConstraintSolverEnv) =
         match objArgInfo with
-        | Some (mObj, memberName, bindingName) ->
+        | Some (mObj, memberName, bindingName) when env.g.checkNullness ->
             { env with eContextInfo = ContextInfo.MemberAccessOnNullable(mObj, memberName, bindingName) }
-        | None -> env
+        | _ -> env
     let m = csenv.m
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad)) 

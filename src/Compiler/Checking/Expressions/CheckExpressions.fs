@@ -10395,14 +10395,16 @@ and TcMethodApplication
     let calledMeths = calledMethsAndProps |> List.map fst
 
     let objArgInfo =
-        match objArgs with
-        | [objExpr] ->
-            let bindingName =
-                match stripDebugPoints objExpr with
-                | Expr.Val (vref, _, _) -> Some vref.DisplayName
-                | _ -> None
-            Some (objExpr.Range, methodName, bindingName)
-        | _ -> None
+        if g.checkNullness then
+            match objArgs with
+            | [objExpr] ->
+                let bindingName =
+                    match stripDebugPoints objExpr with
+                    | Expr.Val (vref, _, _) -> Some vref.DisplayName
+                    | _ -> None
+                Some (objExpr.Range, methodName, bindingName)
+            | _ -> None
+        else None
 
     // Uses of curried members are ALWAYS treated as if they are first class uses of members.
     // Curried members may not be overloaded (checked at use-site for curried members brought into scope through extension members)
