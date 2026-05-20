@@ -1,6 +1,6 @@
 {
   "sdk": {
-    "version": "10.0.107",
+    "version": "10.0.202",
     "allowPrerelease": true,
     "paths": [
       ".dotnet",
@@ -8,18 +8,18 @@
     ],
     "errorMessage": "The .NET SDK could not be found, please run ./eng/common/dotnet.sh."
   },
+  "test": {
+    "runner": "Microsoft.Testing.Platform"
+  },
   "tools": {
-    "dotnet": "10.0.107",
+    "dotnet": "10.0.202",
     "vs": {
-      "version": "17.8",
+      "version": "18.0",
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
     },
     "xcopy-msbuild": "18.0.0"
-  },
-  "native-tools": {
-    "perl": "5.38.2.2"
   },
   "msbuild-sdks": {
     "Microsoft.DotNet.Arcade.Sdk": "10.0.0-beta.26269.2",
