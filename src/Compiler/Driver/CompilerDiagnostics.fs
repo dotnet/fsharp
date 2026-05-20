@@ -738,7 +738,7 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
-        | ConstraintSolverNullnessWarningOnDotAccess(denv, objTy, memberName, bindingName, _, _) ->
+        | ConstraintSolverNullnessWarningOnDotAccess(denv, objTy, memberName, bindingName, m, m2) ->
             let denv =
                 { denv with
                     showNullnessAnnotations = Some false
@@ -753,6 +753,9 @@ type Exception with
             | None ->
                 os.Append(ConstraintSolverNullnessWarningOnDotAccessE().Format memberName tyStr)
                 |> ignore
+
+            if m.StartLine <> m2.StartLine || m.EndLine <> m2.EndLine then
+                os.Append(SeeAlsoE().Format(stringOfRange m2)) |> ignore
 
         | ConstraintSolverNullnessWarning(msg, m, m2) ->
             os.Append(ConstraintSolverNullnessWarningE().Format(msg)) |> ignore

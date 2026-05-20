@@ -2499,3 +2499,17 @@ let f (x: string) = x.PadLeft(1)"""
     |> asLibrary
     |> compile
     |> shouldSucceed
+
+[<Fact>]
+let ``Issue 19658 - multi-line receiver emits SeeAlso pointing at member call site`` () =
+    FSharp """module MyLib
+let f (x: string | null) =
+    x
+        .Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 5, Line 3, Col 6,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string'.. See also test.fs(3,4)-(4,15)."
+    ]
