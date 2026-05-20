@@ -1629,10 +1629,11 @@ let rec ExprHasEffect g expr =
     | Expr.Const _ -> false
     // type applications do not have effects, with the exception of type functions
     | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect g f0
-    // EI_ilzero (Unchecked.defaultof<'T>) is effect-free when all type args are concrete (not type parameters).
-    // When type args contain type variables (e.g. SRTP), we conservatively treat it as having an effect
-    // to avoid issues with orphaned type variables during IL generation.
-    | Expr.Op (TOp.ILAsm ([ EI_ilzero _ ], _), tyargs, [], _) -> tyargs |> List.exists (isTyparTy g)
+    // EI_ilzero (Unchecked.defaultof<'T>) is effect-free when all type args are fully concrete.
+    // When type args contain type variables anywhere (e.g. SRTP ^T, or SomeType<^T>), we conservatively
+    // treat it as having an effect to avoid orphaned type variables during IL generation (FS0073).
+    | Expr.Op (TOp.ILAsm ([ EI_ilzero _ ], _), tyargs, [], _) ->
+        not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
     | Expr.Op (op, _, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op
     | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
     | Expr.Let (bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
@@ -2648,10 +2649,11 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
 
     let effect =
         match op with
-        // EI_ilzero (Unchecked.defaultof<'T>) is effect-free when all type args are concrete.
-        // When type args contain type variables (e.g. SRTP), we conservatively treat it as having an effect
-        // to avoid issues with orphaned type variables during IL generation (FS0073).
-        | TOp.ILAsm ([ EI_ilzero _ ], _) -> tyargs |> List.exists (isTyparTy g)
+        // EI_ilzero (Unchecked.defaultof<'T>) is effect-free when all type args are fully concrete.
+        // When type args contain type variables anywhere (e.g. SRTP ^T, or SomeType<^T>), we conservatively
+        // treat it as having an effect to avoid orphaned type variables during IL generation (FS0073).
+        | TOp.ILAsm ([ EI_ilzero _ ], _) ->
+            not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
         | _ -> OpHasEffect g m op
     let cost, value_ = 
       match op with
