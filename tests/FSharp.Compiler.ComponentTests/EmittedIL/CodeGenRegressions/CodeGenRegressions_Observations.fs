@@ -241,3 +241,24 @@ let f (n: float32) =
         |> shouldSucceed
         |> verifyILNotPresent [ "initobj" ]
         |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/17775
+    // Regression: Unchecked.defaultof with type variables (including nested) must not be eliminated,
+    // otherwise orphaned type variables cause FS0073 during IL generation.
+    [<Fact>]
+    let ``Unchecked_defaultof_with_type_variables_compiles_with_optimization`` () =
+        FSharp """
+module Test
+
+type Wrapper<'T> = { Value: 'T }
+
+let inline f< ^T when ^T : (static member op_Explicit: ^T -> int)> (x: ^T) =
+    let _ = Unchecked.defaultof< ^T >
+    let _ = Unchecked.defaultof<Wrapper< ^T >>
+    int x
+"""
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> ignore

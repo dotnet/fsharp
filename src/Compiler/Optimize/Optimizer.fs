@@ -1615,7 +1615,8 @@ let IlAssemblyCodeInstrHasEffect i =
     | ( AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or 
                | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl 
                | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull )
-    | I_ldstr _ | I_ldtoken _ -> false
+    | I_ldstr _ | I_ldtoken _
+    | EI_ilzero _ -> false
     | _ -> true
   
 let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
@@ -1629,12 +1630,16 @@ let rec ExprHasEffect g expr =
     | Expr.Const _ -> false
     // type applications do not have effects, with the exception of type functions
     | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect g f0
-    // EI_ilzero (Unchecked.defaultof<'T>) is effect-free when all type args are fully concrete.
-    // When type args contain type variables anywhere (e.g. SRTP ^T, or SomeType<^T>), we conservatively
-    // treat it as having an effect to avoid orphaned type variables during IL generation (FS0073).
-    | Expr.Op (TOp.ILAsm ([ EI_ilzero _ ], _), tyargs, [], _) ->
-        not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
-    | Expr.Op (op, _, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op
+    // An Expr.Op is effect-free when its op is effect-free, its args are effect-free, AND its type args
+    // don't contain free type parameters. Type variables in tyargs indicate the expression may serve as a
+    // witness/dummy for SRTP resolution; eliminating it can orphan those type vars causing FS0073 in IlxGen.
+    | Expr.Op (op, tyargs, args, m) ->
+        if ExprsHaveEffect g args || OpHasEffect g m op then
+            true
+        elif List.isEmpty tyargs then
+            false
+        else
+            not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
     | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
     | Expr.Let (bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
@@ -2648,13 +2653,16 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let argValues = List.map (fun x -> x.Info) arginfos
 
     let effect =
-        match op with
-        // EI_ilzero (Unchecked.defaultof<'T>) is effect-free when all type args are fully concrete.
-        // When type args contain type variables anywhere (e.g. SRTP ^T, or SomeType<^T>), we conservatively
-        // treat it as having an effect to avoid orphaned type variables during IL generation (FS0073).
-        | TOp.ILAsm ([ EI_ilzero _ ], _) ->
+        let opEffect = OpHasEffect g m op
+
+        // If an operation would be effect-free, but its type args contain free type parameters,
+        // conservatively treat it as having an effect. This prevents dead binding/sequential
+        // elimination from orphaning type variables that are only referenced through the eliminated
+        // expression, which would cause FS0073 during IL generation (common with SRTP patterns).
+        if not opEffect && not argEffects && not (List.isEmpty tyargs) then
             not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
-        | _ -> OpHasEffect g m op
+        else
+            opEffect
     let cost, value_ = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
