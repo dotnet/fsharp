@@ -2044,6 +2044,8 @@ and typeLayoutOfFlags (ctxt: ILMetadataReader) mdv flags tidx =
         ILTypeDefLayout.Sequential(seekReadClassLayout ctxt mdv tidx)
     elif f = 0x00000010 then
         ILTypeDefLayout.Explicit(seekReadClassLayout ctxt mdv tidx)
+    elif f = 0x00000018 then
+        ILTypeDefLayout.Extended
     else
         ILTypeDefLayout.Auto
 
@@ -2134,6 +2136,8 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let super = seekReadSuperType ctxt numTypars AsObject extendsIdx
         let layout = typeLayoutOfFlags ctxt mdv flags idx
 
+        // Only Explicit layout has per-field offsets in the FieldLayout metadata table.
+        // Sequential and Extended layouts don't use FieldLayout rows.
         let hasLayout =
             match layout with
             | ILTypeDefLayout.Explicit _ -> true

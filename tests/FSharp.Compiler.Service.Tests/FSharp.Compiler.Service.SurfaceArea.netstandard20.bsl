@@ -1617,6 +1617,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential: ILTypeDefLayoutInfo It
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential: ILTypeDefLayoutInfo get_Item()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Auto
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Explicit
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Extended
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags: Int32 Sequential
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(ILTypeDefLayout)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(ILTypeDefLayout, System.Collections.IEqualityComparer)
@@ -1624,17 +1625,21 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsAuto
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsExplicit
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsExtended
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean IsSequential
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsAuto()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsExplicit()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsExtended()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Boolean get_IsSequential()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Explicit
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Tags
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout Auto
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout Extended
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout NewExplicit(ILTypeDefLayoutInfo)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout NewSequential(ILTypeDefLayoutInfo)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout get_Auto()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: ILTypeDefLayout get_Extended()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 CompareTo(ILTypeDefLayout)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 CompareTo(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 CompareTo(System.Object, System.Collections.IComparer)

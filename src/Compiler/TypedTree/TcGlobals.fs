@@ -1476,6 +1476,7 @@ type TcGlobals(
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
   member val attrib_IsByRefLikeAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
+  member val attrib_ExtendedLayoutAttribute_opt = tryFindSysAttrib "System.Runtime.InteropServices.ExtendedLayoutAttribute"
 
   member val attrib_TypeForwardedToAttribute = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
 
