@@ -6,7 +6,7 @@ ImplFile
          ([M], false, NamedModule,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [N],
+                ([], None, [], Some (LongIdent (SynLongIdent ([N], [], []))),
                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (2,0--2,8)), false,
               [Expr (Const (Unit, (4,4--4,6)), (4,4--4,6));

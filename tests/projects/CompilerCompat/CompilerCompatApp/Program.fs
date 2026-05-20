@@ -68,8 +68,64 @@ let main _argv =
                 printfn "ERROR: Processed result doesn't match expected"
                 1
             else
-                printfn "SUCCESS: All compiler compatibility tests passed"
-                0
+                printfn "SUCCESS: Anonymous record tests passed"
+
+                // ---- RFC FS-1043 breaking change compat tests ----
+
+                // T4a: inline addOne via concrete wrapper
+                let addOneResult = Library.addOneConcrete 41
+                if addOneResult <> 42 then
+                    printfn "ERROR: addOneConcrete 41 = %d, expected 42" addOneResult
+                    1
+                else
+                    printfn "SUCCESS: addOneConcrete test passed"
+
+                    // T4b: inline negate via concrete wrapper
+                    let negateResult = Library.negateConcrete 7
+                    if negateResult <> -7 then
+                        printfn "ERROR: negateConcrete 7 = %d, expected -7" negateResult
+                        1
+                    else
+                        printfn "SUCCESS: negateConcrete test passed"
+
+                        // T4c: pass concrete wrapper as function value
+                        let applyResult = Library.applyToInt Library.addOneConcrete 41
+                        if applyResult <> 42 then
+                            printfn "ERROR: applyToInt addOneConcrete 41 = %d, expected 42" applyResult
+                            1
+                        else
+                            printfn "SUCCESS: applyToInt test passed"
+
+                            // T5: custom type operator via concrete wrapper
+                            let n1 = { Library.V = 3 }
+                            let n2 = { Library.V = 4 }
+                            let numResult = Library.addNumsConcrete n1 n2
+                            if numResult.V <> 7 then
+                                printfn "ERROR: addNumsConcrete {V=3} {V=4} = {V=%d}, expected {V=7}" numResult.V
+                                1
+                            else
+                                printfn "SUCCESS: custom type operator compat test passed"
+
+                                // T6: extension operator on StringRep via concrete wrapper
+                                let repeatResult = Library.repeatRepConcrete { Library.Value = "ab" } 3
+                                if repeatResult.Value <> "ababab" then
+                                    printfn "ERROR: repeatRepConcrete {Value=\"ab\"} 3 = \"%s\", expected \"ababab\"" repeatResult.Value
+                                    1
+                                else
+                                    printfn "SUCCESS: extension string repeat compat test passed"
+
+                                    // T7: extension operator on generic Wrapper via concrete wrapper
+                                    let w1 = { Library.Inner = 42 }
+                                    let w2 = { Library.Inner = 99 }
+                                    let mergeResult = Library.mergeWrappersConcrete w1 w2
+                                    if mergeResult.Inner <> 42 then
+                                        printfn "ERROR: mergeWrappersConcrete {Inner=42} {Inner=99} = {Inner=%d}, expected {Inner=42}" mergeResult.Inner
+                                        1
+                                    else
+                                        printfn "SUCCESS: extension generic wrapper compat test passed"
+
+                                        printfn "SUCCESS: All compiler compatibility tests passed"
+                                        0
                 
     with ex ->
         printfn "ERROR: Exception occurred: %s" ex.Message

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.CheckBasics
 
@@ -9,6 +9,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Collections
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.Infos
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
@@ -141,6 +142,11 @@ type TcEnv =
 
     member AccessRights: AccessorDomain
 
+    /// Makes this environment available in a form that can be stored into a trait during solving.
+    member TraitContext: ITraitContext option
+
+    interface ITraitContext<AccessorDomain, MethInfo, InfoReader>
+
 /// Represents the current environment of type variables that have implicit scope
 /// (i.e. are without explicit declaration).
 type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
@@ -150,7 +156,12 @@ type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 ///
 /// The declared type parameters, e.g. let f<'a> (x:'a) = x, plus an indication
 /// of whether additional polymorphism may be inferred, e.g. let f<'a, ..> (x:'a) y = x
-type ExplicitTyparInfo = ExplicitTyparInfo of rigidCopyOfDeclaredTypars: Typars * declaredTypars: Typars * infer: bool
+type ExplicitTyparInfo =
+    | ExplicitTyparInfo of
+        rigidCopyOfDeclaredTypars: Typars *
+        declaredTypars: Typars *
+        infer: bool *
+        hasExplicitTyparDecls: bool
 
 type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
 

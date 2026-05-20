@@ -427,6 +427,11 @@
         <target state="translated">扩展字符串内插类似于 C# 原始字符串字面量。</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>Allow extension members to participate in SRTP constraint resolution</source>
+        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">固定索引切片 3d/4d</target>
@@ -1575,6 +1580,11 @@
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
         <target state="translated">只允许在部分活动模式定义中对值、函数和方法使用 "[&lt;Struct&gt;]"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidTypeForTypeExtension">
+        <source>This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</source>
+        <target state="new">This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">

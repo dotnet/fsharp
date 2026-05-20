@@ -13,7 +13,8 @@ SigFile
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range = (4,2--4,6) }]
-                        Range = (4,0--4,8) }], None, [], [MyType],
+                        Range = (4,0--4,8) }], None, [],
+                     Some (LongIdent (SynLongIdent ([MyType], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (5,5--5,11)),
                   ObjectModel (Class, [], (6,4--7,7)), [], (4,0--7,7),

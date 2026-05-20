@@ -3768,9 +3768,6 @@ let ``Test Project25 symbol uses of type-provided members`` () =
            ("ErasedWithConstructor.Provided.MyType.DoNothing", "file1", ((10, 8), (10, 26)), [ "member" ]) // line 10: let _ = >MyType().DoNothing<()
            ("TypeProviderTests", "file1", ((2, 7), (2, 24)), [ "module" ]) |] // line 2: module >TypeProviderTests<
 
-    printfn "actual =\n%A" allUses
-    printfn "expected =\n%A" expected
-
     allUses |> shouldBeEqualCollections expected
 
     // Verify the DoNothing method can be found and its uses tracked

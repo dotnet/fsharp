@@ -427,6 +427,11 @@
         <target state="translated">C# ham sabit değerli dizeye benzer genişletilmiş dize ilişkilendirmesi.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>Allow extension members to participate in SRTP constraint resolution</source>
+        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">sabit dizinli dilim 3d/4d</target>
@@ -1575,6 +1580,11 @@
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
         <target state="translated">Değerler, işlevler ve yöntemler üzerinde '[&lt;Struct&gt;]' kullanımına yalnızca kısmi etkin model tanımlarında izin verilir</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidTypeForTypeExtension">
+        <source>This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</source>
+        <target state="new">This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">

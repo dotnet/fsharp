@@ -280,7 +280,7 @@ module internal FreeTypeVars =
         | TyparConstraint.AllowsRefStruct _
         | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-    and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, _, sln)) acc =
+    and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, _, sln, _)) acc =
         Option.foldBack
             (accFreeInTraitSln opts)
             sln.Value
@@ -427,7 +427,7 @@ module internal FreeTypeVars =
         | TyparConstraint.IsReferenceType _
         | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-    and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argTys, retTy, _, _)) =
+    and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argTys, retTy, _, _, _)) =
         let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc tys
         let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argTys
         let acc = Option.fold (accFreeInTypeLeftToRight g cxFlag thruFlag) acc retTy
@@ -632,7 +632,7 @@ module internal MemberRepresentation =
 
         /// Get the key associated with the member constraint.
         member traitInfo.GetWitnessInfo() =
-            let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _, _)) = traitInfo
+            let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _, _, _)) = traitInfo
             TraitWitnessInfo(tys, nm, memFlags, objAndArgTys, rty)
 
     /// Get information about the trait constraints for a set of typars.

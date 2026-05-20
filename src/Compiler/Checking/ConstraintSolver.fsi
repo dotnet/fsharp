@@ -16,6 +16,9 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
+/// Concrete ITraitContext used throughout the compiler.
+type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
+
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =
@@ -359,3 +362,8 @@ val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar ->
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
 
 val CanonicalizePartialInferenceProblem: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+val CanonicalizePartialInferenceProblemForExtensions: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+/// Create an ITraitContext from implementation file contents for use during optimization/codegen
+val CreateImplFileTraitContext: TcGlobals -> ModuleOrNamespaceContents list -> CcuThunk list -> TraitContext

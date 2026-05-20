@@ -7,7 +7,9 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [MyClassBase1],
+                    ([], None, [],
+                     Some
+                       (LongIdent (SynLongIdent ([MyClassBase1], [], [None]))),
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (1,5--1,17)),
                   ObjectModel

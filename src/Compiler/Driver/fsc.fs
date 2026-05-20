@@ -836,7 +836,8 @@ let main3
             ApplyAllOptimizations(
                 tcConfig,
                 tcGlobals,
-                (LightweightTcValForUsingInBuildMethodCall tcGlobals),
+                // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
+                (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
                 outfile,
                 importMap,
                 false,
@@ -953,9 +954,15 @@ let main4
     ReportTime tcConfig "TAST -> IL"
     use _ = UseBuildPhase BuildPhase.IlxGen
 
-    // Create the Abstract IL generator
+    // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
     let ilxGenerator =
-        CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
+        CreateIlxAssemblyGenerator(
+            tcConfig,
+            tcImports,
+            tcGlobals,
+            (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
+            generatedCcu
+        )
 
     let codegenBackend =
         (if Option.isSome dynamicAssemblyCreator then

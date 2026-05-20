@@ -1,4 +1,4 @@
-ï»¿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.CheckBasics
 
@@ -14,6 +14,7 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
@@ -57,7 +58,8 @@ type ExplicitTyparInfo =
     | ExplicitTyparInfo of
         rigidCopyOfDeclaredTypars: Typars *
         declaredTypars: Typars *
-        infer: bool
+        infer: bool *
+        hasExplicitTyparDecls: bool
 
 type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
 
@@ -248,6 +250,15 @@ type TcEnv =
 
     member tenv.AccessRights = tenv.eAccessRights
 
+    /// Makes this environment available in a form that can be stored into a trait during solving.
+    member tenv.TraitContext = Some (tenv :> ITraitContext)
+
+    interface ITraitContext<AccessorDomain, MethInfo, InfoReader> with
+        member tenv.SelectExtensionMethods(traitInfo, m, infoReader) =
+            SelectExtensionMethInfosForTrait(traitInfo, m, tenv.eNameResEnv, infoReader)
+
+        member tenv.AccessRights = tenv.eAccessRights
+
     override tenv.ToString() = "TcEnv(...)"
 
 /// Represents the compilation environment for typechecking a single file in an assembly.
@@ -340,7 +351,8 @@ type TcFileState =
 
         let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
-        let instantiationGenerator m tpsorig = FreshenTypars g m tpsorig
+        // traitCtxtNone: NameResolver construction — trait context flows separately through TcEnv during actual resolution (audited for RFC FS-1043)
+        let instantiationGenerator m tpsorig = FreshenTypars g traitCtxtNone m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
           amap = amap

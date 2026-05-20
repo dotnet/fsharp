@@ -455,6 +455,9 @@ type NameResolutionEnv =
       /// Other extension members unindexed by type
       eUnindexedExtensionMembers: ExtensionMember list
 
+      /// Static operator methods from 'open type' declarations, available for SRTP resolution, indexed by logical name.
+      eOpenedTypeOperators: NameMultiMap<MethInfo>
+
       /// Typars (always available by unqualified names). Further typars can be
       /// in the tpenv, a structure folded through each top-level definition.
       eTypars: NameMap<Typar>
@@ -477,6 +480,7 @@ type NameResolutionEnv =
           eFullyQualifiedTyconsByDemangledNameAndArity = LayeredMap.Empty
           eIndexedExtensionMembers = TyconRefMultiMap<_>.Empty
           eUnindexedExtensionMembers = []
+          eOpenedTypeOperators = Map.empty
           eTypars = Map.empty }
 
     member nenv.DisplayEnv = nenv.eDisplayEnv
@@ -634,6 +638,8 @@ let IntrinsicPropInfosOfTypeInScope (infoReader: InfoReader) optFilter ad findFl
 
 /// Select from a list of extension properties
 let SelectPropInfosFromExtMembers (infoReader: InfoReader) ad optFilter declaringTy m extMemInfos =
+    // Fast path: no allocations when the input list is empty.
+    if isNil extMemInfos then [] else
     let g = infoReader.g
     let amap = infoReader.amap
     // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers, hence use a set.
@@ -709,6 +715,9 @@ let rec TrySelectExtensionMethInfoOfILExtMem m amap apparentTy (actualParent, mi
 
 /// Select from a list of extension methods
 let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy m extMemInfos =
+    // Fast path: avoid allocating the HashSet and list builder when there are no candidates.
+    // This is hot under SRTP/extension-member-heavy code where many lookups miss entirely.
+    if isNil extMemInfos then [] else
     let g = infoReader.g
     // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers
     let seen = HashSet(ExtensionMember.Comparer g)
@@ -731,25 +740,73 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
                 | _ -> ()
     ]
 
+/// Look up extension method infos for a single type from indexed extension members only.
+/// This does NOT handle function type -> FSharpFunc conversion to avoid issues with SRTP constraint solving.
+let private SelectIndexedExtMethInfosForType (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+    let g = infoReader.g
+
+    match tryTcrefOfAppTy g ty with
+    | ValueSome tcref ->
+        let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
+        SelectMethInfosFromExtMembers infoReader optFilter ty m extMemInfos
+    | _ -> []
+
+/// Look up extension method infos for function types by converting to FSharpFunc<_,_>.
+let private SelectIndexedExtMethInfosForFunctionType (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+    let g = infoReader.g
+
+    match tryDestFunTy g ty with
+    | ValueSome (domTy, rngTy) -> 
+        let fsharpFuncTy = mkWoNullAppTy g.fastFunc_tcr [domTy; rngTy]
+        let extMemInfos = nenv.eIndexedExtensionMembers.Find g.fastFunc_tcr
+        SelectMethInfosFromExtMembers infoReader optFilter fsharpFuncTy m extMemInfos
+    | ValueNone -> []
+
+/// Look up extension method infos for tuple types by converting to System.Tuple<_,...> or System.ValueTuple<_,...>.
+let private SelectIndexedExtMethInfosForTupleType (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+    let g = infoReader.g
+
+    if isAnyTupleTy g ty then
+        let compiledTupleTy = convertToTypeWithMetadataIfPossible g ty
+        match tryTcrefOfAppTy g compiledTupleTy with
+        | ValueSome tcref ->
+            let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
+            SelectMethInfosFromExtMembers infoReader optFilter compiledTupleTy m extMemInfos
+        | ValueNone -> []
+    else
+        []
+
+/// Look up extension method infos for a single type from both indexed and unindexed extension members.
+let private SelectExtMethInfosForType (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+    let indexedResults = SelectIndexedExtMethInfosForType infoReader nenv optFilter m ty
+    let unindexedResults = SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
+    indexedResults @ unindexedResults
+
 /// Query the available extension methods of a type (including extension methods for inherited types)
 let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) ad optFilter isInstanceFilter m ty =
     let amap = infoReader.amap
+    let rootResults = SelectExtMethInfosForType infoReader nenv optFilter m ty
 
-    let extMemsDangling = SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
+    // For function types, also look up extensions on FSharpFunc<_,_>
+    // This enables operators defined on FSharpFunc to work on function values
+    let funcTypeResults = SelectIndexedExtMethInfosForFunctionType infoReader nenv optFilter m ty
 
-    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
-        extMemsDangling
-    else
-        let extMemsFromHierarchy =
-            infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
-            |> List.collect (fun ty ->
-                let g = infoReader.g
-                match tryTcrefOfAppTy g ty with
-                | ValueSome tcref ->
-                    let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
-                    SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
-                | _ -> [])
-        extMemsDangling @ extMemsFromHierarchy
+    // For tuple types, also look up extensions on System.Tuple<_,...> or System.ValueTuple<_,...>
+    let tupleTypeResults = SelectIndexedExtMethInfosForTupleType infoReader nenv optFilter m ty
+
+    let combined =
+        let allRootResults = rootResults @ funcTypeResults @ tupleTypeResults
+        if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil allRootResults) then
+            allRootResults
+        else
+            let baseIndexedResults =
+                match infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty) with
+                | _ :: baseTys -> baseTys |> List.collect (SelectIndexedExtMethInfosForType infoReader nenv optFilter m)
+                | [] -> []
+
+            allRootResults @ baseIndexedResults
+
+    combined
     |> List.filter (fun minfo ->
         let isAccesible = IsMethInfoAccessible amap m ad minfo
 
@@ -912,6 +969,9 @@ let AddTyconByAccessNames bulkAddMode (tcrefs: TyconRef[]) (tab: LayeredMultiMap
 
 /// Add a record field to the corresponding sub-table of the name resolution environment
 let AddRecdField (rfref: RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfref tab
+
+/// Index a MethInfo by its logical name into a NameMultiMap sub-table of the environment.
+let AddMethInfoByLogicalName (minfo: MethInfo) tab = NameMultiMap.add minfo.LogicalName minfo tab
 
 /// Add a set of union cases to the corresponding sub-table of the environment
 let AddUnionCases1 (tab: Map<_, _>) (ucrefs: UnionCaseRef list) =
@@ -1254,9 +1314,12 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
 
     let nenv = { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddMany items }
 
+    let allMethInfos =
+        IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
+
     let methodGroupItems =
         // Methods
-        IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
+        allMethInfos
         |> ChooseMethInfosForNameEnv g m ty
         // Combine methods and extension method groups of the same type
         |> List.map (fun pair ->
@@ -1273,7 +1336,28 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
                 pair)
         |> Array.ofList
 
-    { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddMany methodGroupItems }
+    let nenv = { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddMany methodGroupItems }
+
+    // Collect static operator methods for SRTP resolution via 'open type'.
+    // These are intentionally excluded from eUnqualifiedItems by ChooseMethInfosForNameEnv
+    // but need to be available for SRTP constraint solving.
+    let operatorMethods =
+        allMethInfos
+        |> List.filter (fun minfo ->
+            not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor)
+            && typeEquiv g minfo.ApparentEnclosingType ty
+            && IsLogicalOpName minfo.LogicalName)
+
+    if operatorMethods.IsEmpty then
+        nenv
+    else
+        let eOpenedTypeOperators =
+            // Preserve source-declaration order of `operatorMethods` within each bucket
+            // (matches the prior list-prepend semantics). `List.foldBack` lands the first
+            // declared method at the head of the bucket; do not switch to `List.fold` or
+            // `NameMultiMap.initBy` without reversing first. See `docs/name-resolution-operators.md`.
+            List.foldBack AddMethInfoByLogicalName operatorMethods nenv.eOpenedTypeOperators
+        { nenv with eOpenedTypeOperators = eOpenedTypeOperators }
     
 and private AddNestedTypesOfTypeToNameEnv infoReader (amap: Import.ImportMap) ad m nenv ty =
     let tinst, tcrefs = GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
@@ -1654,27 +1738,71 @@ let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
 // abstract generic method slot. But we later check the generalization 
 // condition anyway, so we could get away with a non-rigid typar. This 
 // would sort of be cleaner, though give errors later. 
-let FreshenAndFixupTypars g m rigid fctps tinst tpsorig =
+let FreshenAndFixupTypars g (traitCtxt: ITraitContext option) m rigid fctps tinst tpsorig =
     let tps = tpsorig |> List.map (FreshenTypar g rigid)
-    let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
+    let renaming, tinst = FixupNewTypars traitCtxt m fctps tinst tpsorig tps
     tps, renaming, tinst
 
-let FreshenTypeInst g m tpsorig =
-    FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] tpsorig
+let FreshenTypeInst g traitCtxt m tpsorig =
+    FreshenAndFixupTypars g traitCtxt m TyparRigidity.Flexible [] [] tpsorig
 
-let FreshMethInst g m fctps tinst tpsorig =
-    FreshenAndFixupTypars g m TyparRigidity.Flexible fctps tinst tpsorig
+let FreshMethInst g traitCtxt m fctps tinst tpsorig =
+    FreshenAndFixupTypars g traitCtxt m TyparRigidity.Flexible fctps tinst tpsorig
 
-let FreshenTypars g m tpsorig =
+let FreshenTypars g traitCtxt m tpsorig =
     match tpsorig with 
     | [] -> []
     | _ -> 
-        let _, _, tpTys = FreshenTypeInst g m tpsorig
+        let _, _, tpTys = FreshenTypeInst g traitCtxt m tpsorig
         tpTys
 
-let FreshenMethInfo m (minfo: MethInfo) =
-    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+let FreshenMethInfo g traitCtxt m (minfo: MethInfo) =
+    let _, _, tpTys = FreshMethInst g traitCtxt m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tpTys
+
+/// Select extension method infos that are relevant to solving a trait constraint.
+/// Looks up extension members in the name resolution environment by the TyconRef of each
+/// support type, and filters to those matching the trait's member name.
+let SelectExtensionMethInfosForTrait (traitInfo: TraitConstraintInfo, m: range, nenv: NameResolutionEnv, infoReader: InfoReader) : (TType * MethInfo) list =
+    let nm = traitInfo.MemberLogicalName
+
+    // Helper to check if a type contains any rigid type parameters.
+    // Rigid type parameters appear in inline function definitions and cause IL gen issues
+    // when used with FSharpFunc extension lookup.
+    let containsRigidTypar ty =
+        let freeTypars = (freeInType CollectTyparsNoCaching ty).FreeTypars
+        freeTypars |> Zset.exists (fun tp -> tp.Rigidity = TyparRigidity.Rigid)
+
+    let extResults =
+        [ for supportTy in traitInfo.SupportTypes do
+            for minfo in SelectExtMethInfosForType infoReader nenv (Some nm) m supportTy do
+                yield (supportTy, minfo)
+
+            // For function types, also look up extensions on FSharpFunc<_,_>
+            // but skip if the type contains rigid type parameters to avoid IL gen issues
+            if not (containsRigidTypar supportTy) then
+                for minfo in SelectIndexedExtMethInfosForFunctionType infoReader nenv (Some nm) m supportTy do
+                    yield (supportTy, minfo)
+
+            // For tuple types, also look up extensions on System.Tuple<_,...> / System.ValueTuple<_,...>
+            for minfo in SelectIndexedExtMethInfosForTupleType infoReader nenv (Some nm) m supportTy do
+                yield (supportTy, minfo) ]
+
+    // Also include static operator methods from 'open type' declarations.
+    // These are not registered as extension members but should participate in SRTP resolution.
+    // Each method is yielded once (paired with the first support type) to avoid duplicates
+    // that would confuse overload resolution. Bucket order is source-declaration order
+    // within each `open type` and most-recently-opened-first across `open type`s; see
+    // `AddStaticContentOfTypeToNameEnv` and `docs/name-resolution-operators.md`.
+    let openTypeResults =
+        match traitInfo.SupportTypes with
+        | [] -> []
+        | firstSupportTy :: _ ->
+            nenv.eOpenedTypeOperators
+            |> NameMultiMap.find nm
+            |> List.map (fun minfo -> (firstSupportTy, minfo))
+
+    extResults @ openTypeResults
 
 /// This must be called after fetching unqualified items that may need to be freshened 
 /// or have type instantiations
@@ -3284,7 +3412,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                     match tyconSearch () with
                     | Result((resInfo, tcref) :: _) ->
-                        let _, _, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+                        // traitCtxtNone: type freshening for name resolution result — SRTP solving happens later in ConstraintSolver (audited for RFC FS-1043)
+                        let _, _, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars m)
                         let item = Item.Types(id.idText, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
                         success (resInfo, item)
                     | _ ->
@@ -3661,7 +3790,8 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResIn
             ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref id rest)
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.Use, ad, resInfo, ResultTyparChecker(fun () -> true))
 
-    let _, tinst, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+    // traitCtxtNone: type freshening for name resolution result — SRTP solving happens later in ConstraintSolver (audited for RFC FS-1043)
+    let _, tinst, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars m)
     let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
     CallNameResolutionSink sink (rangeOfLid lid, nenv, item, tinst, ItemOccurrence.UseInType, ad)
 
@@ -3824,7 +3954,8 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurrence fullyQualified
     | Result (resInfo, tcref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
 
-        let _, tinst, tyargs = FreshenTypeInst ncenv.g m (tcref.Typars m)
+        // traitCtxtNone: type freshening for name resolution result — SRTP solving happens later in ConstraintSolver (audited for RFC FS-1043)
+        let _, tinst, tyargs = FreshenTypeInst ncenv.g traitCtxtNone m (tcref.Typars m)
         let item = Item.Types(tcref.DisplayName, [TType_app(tcref, tyargs, ncenv.g.knownWithoutNull)])
         CallNameResolutionSink sink (m, nenv, item, tinst, occurrence, ad)
 

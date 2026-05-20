@@ -7,7 +7,8 @@ SigFile
           [Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [X],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([X], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,5--4,6)),
                   ObjectModel
@@ -38,7 +39,8 @@ SigFile
            Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [Y],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Y], [], [None]))),
                      PreXmlDoc ((11,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (11,5--11,6)),
                   Simple
@@ -51,7 +53,8 @@ SigFile
            Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [Z],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Z], [], [None]))),
                      PreXmlDoc ((14,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (14,5--14,6)),
                   Simple (None (14,5--15,32), (14,5--15,32)),

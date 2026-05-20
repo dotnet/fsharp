@@ -43,7 +43,7 @@ ImplFile
                           ([SynTyparDecl
                               ([], SynTypar (T, None, false), [],
                                { AmpersandRanges = [] })], (4,27--4,31))), [],
-                     [x],
+                     Some (LongIdent (SynLongIdent ([x], [], [None]))),
                      PreXmlDoc ((4,22), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,32--4,33)),
                   Simple (None (4,32--4,33), (4,32--4,33)), [], None,

@@ -222,3 +222,33 @@ module TypeExtensionsBasic =
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
+
+    [<Theory; FileInlineData("TupleTypeExtension01.fs")>]
+    let ``TupleTypeExtension01_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("TupleTypeExtension02.fs")>]
+    let ``TupleTypeExtension02_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("TupleTypeExtension03.fs")>]
+    let ``TupleTypeExtension03_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed

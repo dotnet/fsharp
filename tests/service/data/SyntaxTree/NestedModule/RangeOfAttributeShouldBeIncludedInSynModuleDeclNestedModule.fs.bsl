@@ -11,7 +11,8 @@ ImplFile
                                     Target = None
                                     AppliesToGetterAndSetter = false
                                     Range = (4,2--4,5) }]
-                    Range = (4,0--4,7) }], None, [], [Nested],
+                    Range = (4,0--4,7) }], None, [],
+                 Some (LongIdent (SynLongIdent ([Nested], [], []))),
                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (5,0--5,13)), false,
               [Expr (Const (Unit, (6,4--6,6)), (6,4--6,6))], false, (4,0--6,6),

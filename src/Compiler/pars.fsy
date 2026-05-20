@@ -186,6 +186,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
 %type <SynLongIdent> path
 %type <SynLongIdent> pathOp
+%type <SynTyparDecls option * bool * SynAccess option * SynType option> tyconNameAndTyparDecls
 /* LESS GREATER parsedOk typeArgs m for each mWhole */
 %type <range * range option * bool     * SynType list * range list * range> typeArgsActual
 /* LESS GREATER typeArgs m for each mWhole */
@@ -694,7 +695,8 @@ moduleSpfn:
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
-        let info = SynComponentInfo($1 @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+        let synTy = Some(SynType.LongIdent(SynLongIdent(path, [], [])))
+        let info = SynComponentInfo($1 @ attribs2, None, [], synTy, xmlDoc, false, vis, rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let decls, mOptEnd = $5
         let m = (rhs2 parseState 1 4, decls)
@@ -709,7 +711,8 @@ moduleSpfn:
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
-        let info = SynComponentInfo($1 @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+        let synTy = Some(SynType.LongIdent(SynLongIdent(path, [], [])))
+        let info = SynComponentInfo($1 @ attribs2, None, [], synTy, xmlDoc, false, vis, rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
         let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
@@ -718,7 +721,7 @@ moduleSpfn:
   | opt_attributes opt_access typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
         let leadingKeyword = SynTypeDefnLeadingKeyword.Type(rhs parseState 3)
-        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), typeRepr, members, range, trivia)) = $4 leadingKeyword
+        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, synTy, _xmlDoc, d, d2, d3), typeRepr, members, range, trivia)) = $4 leadingKeyword
         _xmlDoc.MarkAsInvalid()
         let attrs = $1 @ cas
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
@@ -726,7 +729,7 @@ moduleSpfn:
             (d3, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             |> unionRanges range
             |> unionRangeWithXmlDoc xmlDoc
-        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), typeRepr, members, mDefn, trivia))
+        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, synTy, xmlDoc, d, d2, d3), typeRepr, members, mDefn, trivia))
         let m = (mDefn, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range) |> unionRanges (rhs parseState 3)
         SynModuleSigDecl.Types(tc :: $5, m) }
 
@@ -799,7 +802,7 @@ tyconSpfnList:
        let tyconSpfn =
            let leadingKeyword = SynTypeDefnLeadingKeyword.And(rhs parseState 1)
            let (SynTypeDefnSig(componentInfo, typeRepr, members, range, trivia) as typeDefnSig) = $2 leadingKeyword
-           let (SynComponentInfo(a, typars, c, lid, _xmlDoc, fixity, vis, mLongId)) = componentInfo
+           let (SynComponentInfo(a, typars, c, synTy, _xmlDoc, fixity, vis, mRange)) = componentInfo
            if xmlDoc.IsEmpty then
                if _xmlDoc.IsEmpty then typeDefnSig else
                let range = unionRangeWithXmlDoc _xmlDoc range
@@ -808,7 +811,7 @@ tyconSpfnList:
            else
                _xmlDoc.MarkAsInvalid()
                let range = unionRangeWithXmlDoc xmlDoc range
-               let componentInfo = SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, mLongId)
+               let componentInfo = SynComponentInfo (a, typars, c, synTy, xmlDoc, fixity, vis, mRange)
                SynTypeDefnSig(componentInfo, typeRepr, members, range, trivia)
        tyconSpfn :: $3 }
 
@@ -1329,11 +1332,11 @@ moduleDefn:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let leadingKeyword = SynTypeDefnLeadingKeyword.Type(rhs parseState 3)
-        let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _xmlDoc, d, d2, d3), e, f, g, h, trivia)) = $4 leadingKeyword
+        let (SynTypeDefn(SynComponentInfo(cas, a, cs, synTy, _xmlDoc, d, d2, d3), e, f, g, h, trivia)) = $4 leadingKeyword
         _xmlDoc.MarkAsInvalid()
         let attrs = $1@cas
         let mDefn = (h, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRangeWithXmlDoc xmlDoc
-        let tc = SynTypeDefn(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), e, f, g, mDefn, trivia)
+        let tc = SynTypeDefn(SynComponentInfo(attrs, a, cs, synTy, xmlDoc, d, d2, d3), e, f, g, mDefn, trivia)
         let types = tc :: $5
         [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range)) ] }
 
@@ -1365,7 +1368,8 @@ moduleDefn:
             [ SynModuleDecl.ModuleAbbrev(List.head path, eqn, (rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange)) ]
         | Choice2Of2 (def, mEndOpt) ->
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
-            let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+            let synTy = Some(SynType.LongIdent(SynLongIdent(path, [], [])))
+            let info = SynComponentInfo(attribs @ attribs2, None, [], synTy, xmlDoc, false, vis, rhs parseState 3)
             let mEquals = rhs parseState 4
             let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = Some mEquals }
             let m =
@@ -1380,7 +1384,8 @@ moduleDefn:
       { let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
         let attribs, (mModule, isRec, path, vis, attribs2) = $1, $3
-        let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+        let synTy = Some(SynType.LongIdent(SynLongIdent(path, [], [])))
+        let info = SynComponentInfo(attribs @ attribs2, None, [], synTy, xmlDoc, false, vis, rhs parseState 3)
         let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
         [ SynModuleDecl.NestedModule(info, isRec, [], false, mWhole, trivia) ] }
 
@@ -1603,10 +1608,10 @@ memberFlags:
 /* The name of a type in a signature or implementation, possibly with type parameters and constraints */
 typeNameInfo:
   | opt_attributes tyconNameAndTyparDecls opt_typeConstraints
-     { let typars, lid, fixity, vis = $2
+     { let typars, fixity, vis, synTy = $2
        let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       let m = match lid with [] -> rhs parseState 2 | _ -> rangeOfLid lid
-       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, m) }
+       let m = match synTy with | Some ty -> ty.Range | None -> rhs parseState 2
+       SynComponentInfo ($1, typars, $3, synTy, xmlDoc, fixity, vis, m) }
 
 /* Part of a set of type definitions */
 tyconDefnList:
@@ -1615,7 +1620,7 @@ tyconDefnList:
        let tyconDefn =
            let leadingKeyword = SynTypeDefnLeadingKeyword.And(rhs parseState 1)
            let (SynTypeDefn(componentInfo, typeRepr, members, implicitConstructor, range, trivia) as typeDefn) = $2 leadingKeyword
-           let (SynComponentInfo(a, typars, c, lid, _xmlDoc, fixity, vis, mLongId)) = componentInfo
+           let (SynComponentInfo(a, typars, c, synTy, _xmlDoc, fixity, vis, mRange)) = componentInfo
            if xmlDoc.IsEmpty then
                if _xmlDoc.IsEmpty then typeDefn else
                let range = unionRangeWithXmlDoc _xmlDoc range
@@ -1624,7 +1629,7 @@ tyconDefnList:
            else
                _xmlDoc.MarkAsInvalid()
                let range = unionRangeWithXmlDoc xmlDoc range
-               let componentInfo = SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, mLongId)
+               let componentInfo = SynComponentInfo (a, typars, c, synTy, xmlDoc, fixity, vis, mRange)
                SynTypeDefn(componentInfo, typeRepr, members, implicitConstructor, range, trivia)
        tyconDefn :: $3 }
   |
@@ -1648,7 +1653,7 @@ tyconDefn:
      { let vis, pat, az = $3, $5, $6
        let nameRange = rhs parseState 1
        let (tcDefRepr, mWith, members) = $8 nameRange
-       let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1
+       let lid = $1.LongIdent
        let mEquals = rhs parseState 7
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc (parseState, $2, 2)
@@ -1691,7 +1696,7 @@ tyconDefn:
 
   | typeNameInfo opt_attributes opt_access opt_HIGH_PRECEDENCE_APP opt_simplePatterns optAsSpec recover
      { let vis, pat, az = $3, $5, $6
-       let (SynComponentInfo(longId = lid)) = $1
+       let lid = $1.LongIdent
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc (parseState, $2, 2)
        let m = match lid with [] -> rhs parseState 1 | _ -> rangeOfLid lid
@@ -2541,16 +2546,52 @@ interfaceMember:
 
 tyconNameAndTyparDecls:
   | opt_access path
-      { None, $2.LongIdent, false, $1 }
+      { None, false, $1, Some(SynType.LongIdent($2)) }
 
   | opt_access prefixTyparDecls path
-      { Some $2, $3.LongIdent, false, $1 }
+      { Some $2, false, $1, Some(SynType.LongIdent($3)) }
 
   | opt_access path postfixTyparDecls
-      { Some $3, $2.LongIdent, true, $1 }
+      { Some $3, true, $1, Some(SynType.LongIdent($2)) }
+
+  /* Non-struct tuple type extension: type (int * int) with ...
+     Uses explicit STAR to disambiguate from prefix typar decls ('a,'b) which use COMMA.
+     Validation of which types are valid for extension is deferred to CheckDeclarations.fs */
+  | opt_access LPAREN appTypeCanBeNullable STAR tupleOrQuotTypeElements rparen
+      { let mStar = rhs parseState 4
+        let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
+        let mTuple = rhs2 parseState 2 6
+        None, false, $1, Some (SynType.Paren(SynType.Tuple(false, path, mTuple), mTuple)) }
+
+  /* Struct tuple type extension: type struct (int * int) with ... */
+  | opt_access STRUCT LPAREN appTypeCanBeNullable STAR tupleOrQuotTypeElements rparen
+      { let mStar = rhs parseState 5
+        let path = SynTupleTypeSegment.Type $4 :: SynTupleTypeSegment.Star mStar :: $6
+        let mTuple = rhs2 parseState 1 7
+        None, false, $1, Some (SynType.Tuple(true, path, mTuple)) }
+
+  /* Recovery: type ('T1 *) or type ('T1 *) with ... - trailing star, missing second type */
+  | opt_access LPAREN appTypeCanBeNullable STAR rparen
+      { let mStar = rhs parseState 4
+        let ty2 = SynType.FromParseError(mStar.EndRange)
+        let path = [SynTupleTypeSegment.Type $3; SynTupleTypeSegment.Star mStar; SynTupleTypeSegment.Type ty2]
+        let mTuple = rhs2 parseState 2 5
+        None, false, $1, Some (SynType.Tuple(false, path, mTuple.MakeSynthetic())) }
+
+  /* Recovery: type struct ('T1) or type struct ('T1) with ... - single type in parens with struct */
+  | opt_access STRUCT LPAREN appTypeCanBeNullable rparen
+      { None, false, $1, Some $4 }
+
+  /* Recovery: type struct ('T1 *) or type struct ('T1 *) with ... - trailing star with struct */
+  | opt_access STRUCT LPAREN appTypeCanBeNullable STAR rparen
+      { let mStar = rhs parseState 5
+        let ty2 = SynType.FromParseError(mStar.EndRange)
+        let path = [SynTupleTypeSegment.Type $4; SynTupleTypeSegment.Star mStar; SynTupleTypeSegment.Type ty2]
+        let mTuple = rhs2 parseState 2 6
+        None, false, $1, Some (SynType.Tuple(true, path, mTuple.MakeSynthetic())) }
 
   | opt_access recover
-      { None, [], false, $1 }
+      { None, false, $1, None }
 
 prefixTyparDecls:
   | typar
@@ -2564,10 +2605,20 @@ typarDeclList:
   | typarDecl { [$1] }
 
 typarDecl:
-  | opt_attributes typar
+  /* Split into attributed/non-attributed alternatives to avoid an epsilon-reduction of opt_attributes
+     that creates a shift/reduce conflict with appTypeCon in tyconNameAndTyparDecls tuple type rules. */
+  | typar
+      { SynTyparDecl([], $1, [], SynTyparDeclTrivia.Zero) }
+
+  | attributes typar
       { SynTyparDecl($1, $2, [], SynTyparDeclTrivia.Zero) }
 
-  | opt_attributes typar AMP intersectionConstraints
+  | typar AMP intersectionConstraints
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (rhs2 parseState 2 3)
+        let constraints, mAmpersands = $3
+        SynTyparDecl([], $1, List.rev constraints, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
+
+  | attributes typar AMP intersectionConstraints
       { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (rhs2 parseState 3 4)
         let constraints, mAmpersands = $4
         SynTyparDecl($1, $2, List.rev constraints, { AmpersandRanges = rhs parseState 3 :: List.rev mAmpersands }) }
@@ -2585,6 +2636,9 @@ postfixTyparDecls:
 explicitValTyparDeclsCore:
   | typarDeclList COMMA DOT_DOT
       { (List.rev $1, true) }
+
+  | DOT_DOT
+      { ([], true) }
 
   | typarDeclList
       { (List.rev $1, false) }
@@ -7023,6 +7077,10 @@ opt_seps:
 opt_rec:
   | REC { true }
   | /* EMPTY */ { false }
+
+opt_struct:
+  | STRUCT { Some(rhs parseState 1) }
+  | /* EMPTY */ { None }
 
 opt_inline:
   | INLINE { Some(rhs parseState 1) }

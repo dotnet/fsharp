@@ -427,6 +427,11 @@
         <target state="translated">C# 원시 문자열 리터럴과 유사한 확장 문자열 보간입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>Allow extension members to participate in SRTP constraint resolution</source>
+        <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">고정 인덱스 슬라이스 3d/4d</target>
@@ -1575,6 +1580,11 @@
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
         <target state="translated">값, 함수 및 메서드에 '[&lt;Struct&gt;]'을(를) 사용하는 것은 부분 활성 패턴 정의에서만 허용됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidTypeForTypeExtension">
+        <source>This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</source>
+        <target state="new">This type cannot be used for a type extension. Type extensions are only supported for named types and tuple types.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
