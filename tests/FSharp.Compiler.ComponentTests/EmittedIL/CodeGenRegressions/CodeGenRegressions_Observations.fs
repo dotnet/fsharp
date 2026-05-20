@@ -218,3 +218,26 @@ let empty<'T> = Seq.empty<'T>
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
 """
         ]
+
+    // https://github.com/dotnet/fsharp/issues/17775
+    [<Fact>]
+    let ``Unchecked_defaultof_unused_bindings_eliminated_when_optimized`` () =
+        FSharp """
+module Test
+
+open System
+
+let f (n: float32) =
+    Console.WriteLine n
+    let _ = Unchecked.defaultof<decimal>
+    let _ = Unchecked.defaultof<decimal>
+    let _ = Unchecked.defaultof<decimal>
+    let n' = n * 2.f
+    Console.WriteLine n'
+"""
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILNotPresent [ "initobj" ]
+        |> ignore
