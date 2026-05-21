@@ -8881,8 +8881,6 @@ and TcLongIdentThen (cenv: cenv) (overallTy: OverallTy) env tpenv (SynLongIdent(
 // Typecheck "item+projections"
 //------------------------------------------------------------------------- *)
 
-// mItem is the textual range covered by the long identifiers that make up the item
-// mItemIdent is the range of the terminal identifier (method/property name only)
 and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mItem, mItemIdent, rest, afterResolution) staticTyOpt delayed =
     let delayed = delayRest rest mItem delayed
     match item with
@@ -9963,7 +9961,7 @@ and TcMethodApplicationThen
        objArgs      // The 'obj' arguments in obj.M(...) and obj.M, if any
        m           // The range of the object argument or whole application. We immediately union this with the range of the arguments
        mItem       // The range of the item that resolved to the method name
-       mItemIdent  // The range of the terminal identifier (method name only) for error reporting
+       mItemIdent
        methodName // string, name of the method
        ad          // accessibility rights of the caller
        mut         // what do we know/assume about whether this method will mutate or not?
@@ -10376,7 +10374,7 @@ and TcMethodApplication
         objArgs
         mMethExpr // range of the entire method expression
         mItem
-        mItemIdent // range of the terminal identifier (method name only) for error reporting
+        mItemIdent
         methodName
         (objTyOpt: TType option)
         ad
@@ -10467,8 +10465,7 @@ and TcMethodApplication
 
         let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
 
-        // Narrow the error range for unresolved overloading from the whole expression (mMethExpr)
-        // to the terminal identifier range (mItemIdent). See https://github.com/dotnet/fsharp/issues/14284.
+        // Narrow the error range to the method name only (#14284)
         let errors =
             match errors with
             | ErrorResult(warns, UnresolvedOverloading(denvErr, callerArgsErr, failure, _mWide)) ->
