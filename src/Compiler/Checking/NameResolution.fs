@@ -4345,14 +4345,14 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
         | None -> AfterResolution.DoNothing // do not refine the resolution if nobody listens
         | Some _ ->
             // resolution for goto definition
-            let unrefinedItem, itemRange, _itemIdentRange, overrides =
+            let unrefinedItem, itemRange, overrides =
                 match findFlag, item with
                 | FindMemberFlag.PreferOverrides, _
-                | _, NonOverridable() -> item, itemRange, itemIdentRange, false
+                | _, NonOverridable() -> item, itemRange, false
                 | FindMemberFlag.IgnoreOverrides, _
                 | FindMemberFlag.DiscardOnFirstNonOverride, _ ->
-                    let _, item, _, itemRange, itemIdentRange = resolveExpr FindMemberFlag.PreferOverrides
-                    item, itemRange, itemIdentRange, true
+                    let _, item, _, itemRange, _ = resolveExpr FindMemberFlag.PreferOverrides
+                    item, itemRange, true
 
             let callSink (refinedItem, tpinst) =
                 let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly

@@ -8881,6 +8881,7 @@ and TcLongIdentThen (cenv: cenv) (overallTy: OverallTy) env tpenv (SynLongIdent(
 // Typecheck "item+projections"
 //------------------------------------------------------------------------- *)
 
+// mItem = range of all resolved long-ident segments; mItemIdent = terminal ident only (for diagnostic ranges)
 and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mItem, mItemIdent, rest, afterResolution) staticTyOpt delayed =
     let delayed = delayRest rest mItem delayed
     match item with

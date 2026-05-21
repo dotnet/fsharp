@@ -147,11 +147,20 @@ Available overloads:
 let ``Issue 14284 - constructor overload error`` () =
     FSharp
         """
-type T(_: int) =
-    new(_: double) = T(0)
+module M =
+    type T =
+        new(_: int) = {}
+        new(_: double) = {}
 
-T("")
+M.T("")
         """
     |> typecheck
     |> shouldFail
-    |> withErrorCode 41
+    |> withDiagnostics
+        [ (Error 41, Line 7, Col 3, Line 7, Col 4, "No overloads match for method 'T'.
+
+Known type of argument: string
+
+Available overloads:
+ - new: double -> M.T // Argument at index 1 doesn't match
+ - new: int -> M.T // Argument at index 1 doesn't match") ]
