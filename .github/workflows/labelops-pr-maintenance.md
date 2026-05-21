@@ -44,7 +44,7 @@ safe-outputs:
   push-to-pull-request-branch:
     target: "*"
     max: 5
-    protected-files: fallback-to-issue
+    protected-files: allowed
   add-labels:
     allowed: ["AI-needs-CI-fix-input"]
     max: 3
