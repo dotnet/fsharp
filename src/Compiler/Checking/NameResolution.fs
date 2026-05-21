@@ -4194,9 +4194,6 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
     | _ ->
         ForceRaise adhocDotSearchAccessible
 
-/// Computes the range of the consumed long-identifier prefix (`itemRange`) and the
-/// terminal identifier only (`itemIdentRange`).
-/// `itemIdentRange` is used for overload-resolution error diagnostics (see #14284).
 let ComputeItemRange wholem (lid: Ident list) rest =
     let itemRange =
         match rest with

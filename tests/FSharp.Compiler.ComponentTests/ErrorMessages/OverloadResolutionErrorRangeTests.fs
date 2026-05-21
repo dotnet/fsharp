@@ -142,3 +142,16 @@ Known type of argument: string
 Available overloads:
  - member T.Method: double -> unit // Argument at index 1 doesn't match
  - member T.Method: int -> unit // Argument at index 1 doesn't match") ]
+
+[<Fact>]
+let ``Issue 14284 - constructor overload error`` () =
+    FSharp
+        """
+type T(_: int) =
+    new(_: double) = T(0)
+
+T("")
+        """
+    |> typecheck
+    |> shouldFail
+    |> withErrorCode 41

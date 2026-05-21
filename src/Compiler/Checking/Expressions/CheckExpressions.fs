@@ -10465,7 +10465,7 @@ and TcMethodApplication
 
         let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
 
-        // Narrow the error range to the method name only (#14284)
+        // #14284
         let errors =
             match errors with
             | ErrorResult(warns, UnresolvedOverloading(denvErr, callerArgsErr, failure, _mWide)) ->
