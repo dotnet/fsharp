@@ -2374,28 +2374,32 @@ let main _ = 0
     |> run
     |> verifyOutputContains [|"-1"|]
 
-[<Fact>]
-let ``Issue 19658 - nullness warning on dotted method access underlines the receiver`` () =
-    FSharp """module MyLib
-let f (x: string | null) = x.PadLeft(1)"""
+[<Theory>]
+// (source, line, col1, col2, memberName, bindingName, typeName)
+[<InlineData("module MyLib\nlet f (x: string | null) = x.PadLeft(1)",
+             2, 28, 29, "PadLeft", "x", "string")>]
+[<InlineData("module MyLib\nlet f (x: string | null) = x.Length",
+             2, 28, 29, "Length", "x", "string")>]
+[<InlineData("module MyLib\nlet f (x: string | null) = x.Trim().Length",
+             2, 28, 29, "Trim", "x", "string")>]
+[<InlineData("module MyLib\nlet f (x: string | null) = x.Split(',')",
+             2, 28, 29, "Split", "x", "string")>]
+[<InlineData("module MyLib\nopen System.Linq\nlet f (xs: System.Collections.Generic.List<int> | null) = xs.First()",
+             3, 59, 61, "First", "xs", "int seq")>]
+[<InlineData("module MyLib\nlet f (xs: System.Collections.Generic.IEnumerable<int> | null) = xs.GetEnumerator()",
+             2, 66, 68, "GetEnumerator", "xs", "System.Collections.Generic.IEnumerable<int>")>]
+[<InlineData("module MyLib\nopen System.Text\nlet f (sb: StringBuilder | null) = sb.Length <- 0",
+             3, 36, 38, "Length", "sb", "StringBuilder")>]
+let ``Issue 19658 - dot-access on nullable receiver names the binding and member``
+        (source: string, line: int, col1: int, col2: int,
+         memberName: string, bindingName: string, typeName: string) =
+    FSharp source
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 2, Col 28, Line 2, Col 29,
-            "Nullness warning: Possible dereference of a null value when accessing member 'PadLeft' on the nullable value 'x' of type 'string'."
-    ]
-
-[<Fact>]
-let ``Issue 19658 - nullness warning on dotted property access underlines the receiver`` () =
-    FSharp """module MyLib
-let f (x: string | null) = x.Length"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics [
-        Error 3261, Line 2, Col 28, Line 2, Col 29,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string'."
+        Error 3261, Line line, Col col1, Line line, Col col2,
+            $"Nullness warning: Possible dereference of a null value when accessing member '{memberName}' on the nullable value '{bindingName}' of type '{typeName}'."
     ]
 
 [<Fact>]
@@ -2412,18 +2416,6 @@ let f () = (getStr()).Length"""
     ]
 
 [<Fact>]
-let ``Issue 19658 - chained access warns only on the nullable receiver`` () =
-    FSharp """module MyLib
-let f (x: string | null) = x.Trim().Length"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics [
-        Error 3261, Line 2, Col 28, Line 2, Col 29,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Trim' on the nullable value 'x' of type 'string'."
-    ]
-
-[<Fact>]
 let ``Issue 19658 - mutable receiver shows binding name`` () =
     FSharp """module MyLib
 let f () =
@@ -2435,31 +2427,6 @@ let f () =
     |> withDiagnostics [
         Error 3261, Line 4, Col 5, Line 4, Col 6,
             "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string'."
-    ]
-
-[<Fact>]
-let ``Issue 19658 - overloaded method does not double-fire`` () =
-    FSharp """module MyLib
-let f (x: string | null) = x.Split(',')"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics [
-        Error 3261, Line 2, Col 28, Line 2, Col 29,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Split' on the nullable value 'x' of type 'string'."
-    ]
-
-[<Fact>]
-let ``Issue 19658 - extension method on nullable receiver`` () =
-    FSharp """module MyLib
-open System.Linq
-let f (xs: System.Collections.Generic.List<int> | null) = xs.First()"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics [
-        Error 3261, Line 3, Col 59, Line 3, Col 61,
-            "Nullness warning: Possible dereference of a null value when accessing member 'First' on the nullable value 'xs' of type 'int seq'."
     ]
 
 [<Fact>]
@@ -2515,21 +2482,6 @@ let f (x: string | null) =
     ]
 
 [<Fact>]
-let ``Issue 19658 - binding name surfaces through interface upcast Coerce`` () =
-    // The receiver xs typed as IEnumerable<int> | null gets a
-    // Expr.Op(TOp.Coerce, ...) wrapper at the call site of GetEnumerator
-    // (interface-method dispatch). Binding name 'xs' must still surface.
-    FSharp """module MyLib
-let f (xs: System.Collections.Generic.IEnumerable<int> | null) = xs.GetEnumerator()"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics [
-        Error 3261, Line 2, Col 66, Line 2, Col 68,
-            "Nullness warning: Possible dereference of a null value when accessing member 'GetEnumerator' on the nullable value 'xs' of type 'System.Collections.Generic.IEnumerable<int>'."
-    ]
-
-[<Fact>]
 let ``Issue 19658 - implicit 'this' receiver does not leak name`` () =
     // 'this.Get()' is an Expr.App, not an Expr.Val, so tryGetBindingName
     // returns None and the "expression" form fires - documents the contract
@@ -2549,19 +2501,6 @@ type C() =
 // -------- Coverage tests (positive: new dot-access message is used) --------
 
 [<Fact>]
-let ``Issue 19658 - property setter on nullable receiver uses new message`` () =
-    FSharp """module MyLib
-open System.Text
-let f (sb: StringBuilder | null) = sb.Length <- 0"""
-    |> asLibrary
-    |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics [
-        Error 3261, Line 3, Col 36, Line 3, Col 38,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'sb' of type 'StringBuilder'."
-    ]
-
-[<Fact>]
 let ``Issue 19658 - piped lambda receiver uses new message`` () =
     FSharp """module MyLib
 let f () =
@@ -2575,15 +2514,14 @@ let f () =
             "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string'."
     ]
 
-// -------- KNOWN GAP tests (negative: old generic message still used) --------
+// -------- Out-of-scope-path tests (positive: old generic message still used) --------
 // These pin the current behavior of paths intentionally NOT routed through
-// TcMethodApplication. Widening coverage to these paths is a separate
-// enhancement tracked under #17409. If a future change starts emitting the
-// new dot-access message for any of these, that change must update these
-// tests deliberately.
+// TcMethodApplication. Widening coverage to these paths is tracked separately
+// under #17409. If a future change starts emitting the new dot-access message
+// for any of these, that change must update these tests deliberately.
 
 [<Fact>]
-let ``Issue 19658 - KNOWN GAP indexer access falls back to generic nullness warning`` () =
+let ``Issue 19658 - indexer access falls back to generic nullness warning`` () =
     FSharp """module MyLib
 let f (x: string | null) = x.[0]"""
     |> asLibrary
@@ -2595,7 +2533,7 @@ let f (x: string | null) = x.[0]"""
     ]
 
 [<Fact>]
-let ``Issue 19658 - KNOWN GAP F# record field access falls back to generic nullness warning`` () =
+let ``Issue 19658 - F# record field access falls back to generic nullness warning`` () =
     FSharp """module MyLib
 type R = { Field: int }
 let f (r: R | null) = r.Field"""
@@ -2608,7 +2546,7 @@ let f (r: R | null) = r.Field"""
     ]
 
 [<Fact>]
-let ``Issue 19658 - KNOWN GAP anonymous record type cannot be marked nullable`` () =
+let ``Issue 19658 - anonymous record type cannot be marked nullable`` () =
     // Anonymous record types do not support a `| null` qualification at all,
     // so the dot-access nullness path cannot fire on them. This pins the
     // current behavior: instead of FS3261, the language rejects the type.
@@ -2623,7 +2561,7 @@ let f (r: {| Field: int |} | null) = r.Field"""
     ]
 
 [<Fact>]
-let ``Issue 19658 - KNOWN GAP SRTP member call still uses generic nullness warning`` () =
+let ``Issue 19658 - SRTP member call uses generic nullness warning`` () =
     // SRTP-constrained members do not go through TcMethodApplication's
     // overload resolution path; objArgInfo is None. The generic FS3261
     // message fires. If/when SRTP gets routed through the same path, this
