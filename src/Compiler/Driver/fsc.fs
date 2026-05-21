@@ -119,8 +119,6 @@ type IDiagnosticsLoggerProvider =
 
 type CapturingDiagnosticsLogger with
 
-    /// Commit the delayed diagnostics through a nowarn-filtering logger so that
-    /// options parsed after the warning-emitting option can still suppress it.
     member x.CommitDelayedDiagnostics(diagnosticsLoggerProvider: IDiagnosticsLoggerProvider, tcConfigB, exiter) =
         let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
         x.CommitDelayedDiagnostics(GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfigB.diagnosticsOptions, diagnosticsLogger))
@@ -578,7 +576,7 @@ let main1
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
     SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 
-    // Replay delayed flag diagnostics through nowarn/warnaserror filtering.
+    // Forward all errors from flags
     delayForFlagsLogger.CommitDelayedDiagnostics(
         GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfigB.diagnosticsOptions, diagnosticsLogger)
     )
