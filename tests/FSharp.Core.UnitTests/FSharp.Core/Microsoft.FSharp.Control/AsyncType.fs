@@ -220,14 +220,14 @@ type AsyncType() =
             | _ -> reraise()
         Assert.True (tcs.Task.IsCompleted, "Task is not completed")
 
-    [<Fact>]
-    member _.RunSynchronouslyCancellationWithDelayedResult () =
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.RunSynchronouslyCancellationWithDelayedResult(newAwait: bool) =
         let cts = new CancellationTokenSource()
         let tcs = TaskCompletionSource<int>()
         let _ = cts.Token.Register(fun () -> tcs.SetResult 42)
         let a = async {
-            cts.CancelAfter (100)
-            let! result = tcs.Task |> Async.AwaitTask
+            cts.CancelAfter(100)
+            let! result = tcs.Task |> if newAwait then Async.Await else Async.AwaitTask
             return result }
 
         let cancelled =
@@ -367,127 +367,127 @@ type AsyncType() =
         Assert.True(t.IsCanceled)
         Assert.True(cancelled)
 
-    [<Fact>]
-    member _.TaskAsyncValue () =
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.TaskAsyncValue(newAwait: bool) =
         let s = "Test"
         use t = Task.Factory.StartNew(Func<_>(fun () -> s))
         let a = async {
-                let! s1 = Async.AwaitTask(t)
-                return s = s1
-            }
-        Async.RunSynchronously(a) |> Assert.True
+            let! s1 = t |> if newAwait then Async.Await else Async.AwaitTask
+            return s = s1
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
 
-    [<Fact>]
-    member _.AwaitTaskCancellation () =
-        let test() = async {
-            let tcs = new System.Threading.Tasks.TaskCompletionSource<unit>()
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.AwaitTaskCancellation(newAwait: bool) =
+        let a = async {
+            let tcs = System.Threading.Tasks.TaskCompletionSource<unit>()
             tcs.SetCanceled()
             try
-                do! Async.AwaitTask tcs.Task
+                do! tcs.Task |> if newAwait then Async.Await else Async.AwaitTask
                 return false
-            with :? System.OperationCanceledException -> return true
+            with :? OperationCanceledException -> return true
         }
-
-        Async.RunSynchronously(test()) |> Assert.True
+        let ok = Async.RunSynchronously a
+        Assert.True ok
 
     [<Fact>]
     member _.AwaitCompletedTask() =
-        let test() = async {
+        let a = async {
             let threadIdBefore = Thread.CurrentThread.ManagedThreadId
             do! Async.AwaitTask Task.CompletedTask
             let threadIdAfter = Thread.CurrentThread.ManagedThreadId
             return threadIdBefore = threadIdAfter
         }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
 
-        Async.RunSynchronously(test()) |> Assert.True
-
-    [<Fact>]
-    member _.AwaitTaskCancellationUntyped () =
-        let test() = async {
-            let tcs = new System.Threading.Tasks.TaskCompletionSource<unit>()
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.AwaitTaskCancellationUntyped(newAwait: bool) =
+        let a = async {
+            let tcs = System.Threading.Tasks.TaskCompletionSource<unit>()
             tcs.SetCanceled()
             try
-                do! Async.AwaitTask (tcs.Task :> Task)
+                do! tcs.Task :> Task |> if newAwait then Async.Await else Async.AwaitTask
                 return false
-            with :? System.OperationCanceledException -> return true
+            with :? OperationCanceledException -> return true
         }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
 
-        Async.RunSynchronously(test()) |> Assert.True
-
-    [<Fact>]
-    member _.TaskAsyncValueException () =
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.TaskAsyncValueException(newAwait: bool) =
         use t = Task.Factory.StartNew(Func<unit>(fun () -> raise <| Exception()))
         let a = async {
-                try
-                    let! v = Async.AwaitTask(t)
-                    return false
-                with e -> return true
-              }
-        Async.RunSynchronously(a) |> Assert.True
+            try let! v = t |> if newAwait then Async.Await else Async.AwaitTask
+                return false
+            with e -> return true
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
 
-    [<Fact>]
-    member _.TaskAsyncValueCancellation () =
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.TaskAsyncValueCancellation(newAwait: bool) =
         use ewh = new ManualResetEvent(false)
         let cts = new CancellationTokenSource()
         let token = cts.Token
         use t : Task<unit> = Task.Factory.StartNew(Func<unit>(fun () -> while not token.IsCancellationRequested do ()), token)
         let cancelled = ref true
-        let a = 
-            async {
-                try
-                    use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
-                    let! v = Async.AwaitTask(t)
-                    return v
-                // AwaitTask raises TaskCanceledException when it is canceled, it is a valid result of this test
-                with
-                   :? TaskCanceledException -> 
-                      ewh.Set() |> ignore // this is ok
-            }
+        let a = async {
+            try
+                use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
+                let! v = t |> if newAwait then Async.Await else Async.AwaitTask
+                return v
+            // A canceled task yields TaskCanceledException via the exception continuation
+            with
+               :? TaskCanceledException -> 
+                  ewh.Set() |> ignore // this is ok
+        }
         let t1 = Async.StartAsTask a
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore
         // Don't leave unobserved background tasks, because they can crash the test run.
         t1.Wait()
 
-    [<Fact>]
-    member _.NonGenericTaskAsyncValue () =
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.NonGenericTaskAsyncValue(newAwait: bool) =
         let mutable hasBeenCalled = false
         use t = Task.Factory.StartNew(Action(fun () -> hasBeenCalled <- true))
         let a = async {
-                do! Async.AwaitTask(t)
-                return true
-            }
-        let result = Async.RunSynchronously(a)
-        (hasBeenCalled && result) |> Assert.True
+            do! t |> if newAwait then Async.Await else Async.AwaitTask
+            return true
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True(hasBeenCalled && ok)
 
-    [<Fact>]
-    member _.NonGenericTaskAsyncValueException () =
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.NonGenericTaskAsyncValueException(newAwait: bool) =
         use t = Task.Factory.StartNew(Action(fun () -> raise <| Exception()))
         let a = async {
-                try
-                    let! v = Async.AwaitTask(t)
-                    return false
-                with e -> return true
-              }
-        Async.RunSynchronously(a) |> Assert.True
+            try
+                let! v = t |> if newAwait then Async.Await else Async.AwaitTask
+                return false
+            with e -> return true
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
 
-    [<Fact>]
-    member _.NonGenericTaskAsyncValueCancellation () =
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.NonGenericTaskAsyncValueCancellation(newAwait: bool) =
         use ewh = new ManualResetEvent(false)
         let cts = new CancellationTokenSource()
         let token = cts.Token
         use t = Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
-        let a =
-            async {
-                try
-                    use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
-                    let! v = Async.AwaitTask(t)
-                    return v
-                // AwaitTask raises TaskCanceledException when it is canceled, it is a valid result of this test
-                with
-                   :? TaskCanceledException -> 
-                      ewh.Set() |> ignore // this is ok
-            }
+        let a = async {
+            try
+                use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
+                let! v = t |> if newAwait then Async.Await else Async.AwaitTask
+                return v
+            // A canceled task yields TaskCanceledException via the exception continuation
+            with
+               :? TaskCanceledException -> 
+                  ewh.Set() |> ignore // this is ok
+        }
         let t1 = Async.StartAsTask a
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore
@@ -510,19 +510,192 @@ type AsyncType() =
         ewh.Wait(10000) |> ignore
         Assert.False hasThrown
 
-    [<Fact>]
-    member _.NoStackOverflowOnRecursion() =
-
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.NoStackOverflowOnRecursion(newAwait: bool) =
         let mutable hasThrown = false
         let rec loop (x: int) = async {
-            do! Task.CompletedTask |> Async.AwaitTask
+            do! Task.CompletedTask |> if newAwait then Async.Await else Async.AwaitTask
             Console.WriteLine (if x = 10000 then failwith "finish" else x)
             return! loop(x+1)
         }
     
-        try 
-           Async.RunSynchronously (loop 0)
-           hasThrown <- false
+        try Async.RunSynchronously (loop 0)
+            hasThrown <- false
         with Failure "finish" -> 
             hasThrown <- true
         Assert.True hasThrown
+
+    // Both AwaitTask and Await ignore the ambient cancellation token while waiting
+    // (Same goes for the typed variants)
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.``Both AwaitTask and Await ignore ambient cancellation while waiting``(newAwait) =
+        let cts = new CancellationTokenSource()
+        let tcs = TaskCompletionSource<unit>()  // task that never completes
+        let res = TaskCompletionSource<bool>()
+
+        let a = async {
+            try do! tcs.Task |> if newAwait then Async.Await else Async.AwaitTask
+                res.TrySetResult true |> ignore
+            with _ -> res.TrySetResult false |> ignore
+        }
+
+        Async.Start(a, cts.Token)
+        // NOTE we only cancel during the Await/AwaitTask - the initial check would throw if we canceled before the Start()
+        cts.CancelAfter 100
+
+        // AwaitTask should NOT honor the ambient CT trigger
+        let taskCompleted = res.Task.Wait 500
+        Assert.False(taskCompleted, "Await/AwaitTask should not have responded to ambient CT cancellation")
+        tcs.TrySetResult() |> ignore // clean up
+        res.Task.Wait()
+
+    (* When an AggregateException has multiple inner exceptions, Await and AwaitTask behave identically *)
+    
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.``Await and AwaitTask(Task<'T>) valid AggregateException is surfaced``(newAwait) =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetException [ ArgumentException "a" :> exn; InvalidOperationException "b" :> exn ]
+        let a = async {
+            try
+                let! _ = tcs.Task |> if newAwait then Async.Await else Async.AwaitTask
+                return false
+            with :? AggregateException as ae -> return ae.InnerExceptions.Count = 2
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    member _.``Await and AwaitTask(Task) valid AggregateException is surfaced``(newAwait) =
+        let tcs = TaskCompletionSource<unit>()
+        tcs.SetException [| ArgumentException "a" :> exn; InvalidOperationException "b" |]
+        let a = async {
+            try
+                do! tcs.Task |> if newAwait then Async.Await else Async.AwaitTask
+                return false
+            with :? AggregateException as ae -> return ae.InnerExceptions.Count = 2
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+        
+    (* Async.Await behavioral differences
+    
+       The following tests demonstrate where Async.Await deliberately differs from Async.AwaitTask *)
+
+    // Async.AwaitTask(Task) surfaces the wrapping AggregateException ...
+    [<Fact>]
+    member _.``AwaitTask(Task) egregious AggregateException is unchanged``() =
+        let tcs = TaskCompletionSource<unit>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try do! Async.AwaitTask tcs.Task
+                return false
+            with :? AggregateException -> return true
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    // ... whereas Async.Await(Task) surfaces the inner exception directly.
+    [<Fact>]
+    member _.``Await(Task) egregious AggregateException is unwrapped``() =
+        let tcs = TaskCompletionSource<unit>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try do! Async.Await tcs.Task
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    // Async.AwaitTask(Task<'T>) surfaces the wrapping AggregateException ...
+    [<Fact>]
+    member _.``AwaitTask(Task<'T>) egregious AggregateException is unchanged``() =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try let! _ = Async.AwaitTask tcs.Task
+                return false
+            with :? AggregateException -> return true
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    // ... whereas Async.Await(Task<'T>) surfaces the inner exception directly.
+    [<Fact>]
+    member _.``Await(Task<'T>) egregious AggregateException is unwrapped``() =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try let! _ = Async.Await tcs.Task
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    (* Await(Task/Task<'T>) overloads happy path *)
+    
+    [<Fact>]
+    member _.``Await(Task<'T>) happy path``() =
+        let a = async {
+            let! v = Async.Await(System.Threading.Tasks.Task.FromResult(42))
+            return v = 42
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    [<Fact>]
+    member _.``Await(Task) happy path``() =
+        let a = async {
+            do! Async.Await(System.Threading.Tasks.Task.CompletedTask)
+            return true
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+#if NETSTANDARD2_1
+    (* Await(ValueTask and ValueTask<'T>) overloads coverage of mainline behaviors *)
+
+    [<Fact>]
+    member _.``Await(ValueTask) happy path``() =
+        let a = async {
+            do! Async.Await(ValueTask())
+            return true
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    [<Fact>]
+    member _.``Await(ValueTask<'T>) happy path``() =
+        let a = async {
+            let! v = Async.Await(ValueTask<int>(42))
+            return v = 42
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    [<Fact>]
+    member _.``Await(ValueTask) exception unwraps``() =
+        let tcs = TaskCompletionSource<unit>()
+        tcs.SetException(ArgumentException "original")
+        let task = ValueTask(tcs.Task :> Task)
+        let a = async {
+            try do! Async.Await task
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    [<Fact>]
+    member _.``Await(ValueTask<'T>) exception unwraps``() =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try let! _ = Async.Await(ValueTask<int>(tcs.Task))
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+#endif

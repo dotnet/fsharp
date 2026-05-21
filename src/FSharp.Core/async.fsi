@@ -740,19 +740,18 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         static member AwaitIAsyncResult: iar: IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
 
-        /// <summary>Return an asynchronous computation that will wait for the given task to complete and return
+        /// <summary>Creates an asynchronous computation that will wait asynchronously for the given task to complete, returning
         /// its result.</summary>
         ///
         /// <param name="task">The task to await.</param>
         ///
-        /// <remarks>If an exception occurs in the asynchronous computation then an exception is re-raised by this
-        /// function.
+        /// <remarks>If the task yields an exception, then then the full underlying <see cref="T:System.AggregateException"/>  is re-raised by this function.
         ///
-        /// If the task is cancelled then <see cref="F:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
         /// that the task may be governed by a different cancellation token to the overall async computation
         /// where the AwaitTask occurs. In practice you should normally start the task with the
         /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
-        /// any <see cref="F:System.Threading.Tasks.TaskCanceledException"/> at the point where the
+        /// any <see cref="T:System.Threading.Tasks.TaskCanceledException"/> at the point where the
         /// overall async is started.
         /// </remarks>
         ///
@@ -761,19 +760,17 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         static member AwaitTask: task: Task<'T> -> Async<'T>
 
-        /// <summary>Return an asynchronous computation that will wait for the given task to complete and return
-        /// its result.</summary>
+        /// <summary>Creates an asynchronous computation that will wait asynchronously for the given task to complete.</summary>
         ///
         /// <param name="task">The task to await.</param>
         ///
-        /// <remarks>If an exception occurs in the asynchronous computation then an exception is re-raised by this
-        /// function.
+        /// <remarks>If the task yields an exception, then the full underlying <see cref="T:System.AggregateException"/> is re-raised by this function.
         ///
-        /// If the task is cancelled then <see cref="F:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
         /// that the task may be governed by a different cancellation token to the overall async computation
         /// where the AwaitTask occurs. In practice you should normally start the task with the
         /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
-        /// any <see cref="F:System.Threading.Tasks.TaskCanceledException"/> at the point where the
+        /// any <see cref="T:System.Threading.Tasks.TaskCanceledException"/> at the point where the
         /// overall async is started.
         /// </remarks>
         ///
@@ -781,6 +778,74 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example-tbd></example-tbd>
         static member AwaitTask: task: Task -> Async<unit>
+
+        /// <summary>Creates an asynchronous computation that will wait for the given task to complete and return
+        /// its result.</summary>
+        ///
+        /// <param name="task">The task to await.</param>
+        ///
+        /// <remarks>Exceptions from the task are surfaced directly, without wrapping in
+        /// <see cref="T:System.AggregateException"/>. An <see cref="T:System.AggregateException"/>
+        /// will only be surfaced where multiple inner exceptions are present.
+        ///
+        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
+        /// </remarks>
+        ///
+        /// <category index="2">Awaiting Results</category>
+        ///
+        /// <example-tbd></example-tbd>
+        static member Await: task: Task<'T> -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that will wait for the given task to complete.</summary>
+        ///
+        /// <param name="task">The task to await.</param>
+        ///
+        /// <remarks>Exceptions from the task are surfaced directly, without wrapping in
+        /// <see cref="T:System.AggregateException"/>. An <see cref="T:System.AggregateException"/>
+        /// will only be surfaced where multiple inner exceptions are present.
+        ///
+        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
+        /// </remarks>
+        ///
+        /// <category index="2">Awaiting Results</category>
+        ///
+        /// <example-tbd></example-tbd>
+        static member Await: task: Task -> Async<unit>
+
+#if NETSTANDARD2_1
+        /// <summary>Return an asynchronous computation that will wait for the given task to complete and return
+        /// its result.</summary>
+        ///
+        /// <param name="task">The <c>ValueTask</c> to await.</param>
+        ///
+        /// <remarks>Exceptions from the task are surfaced directly, without wrapping in
+        /// <see cref="T:System.AggregateException"/>. An <see cref="T:System.AggregateException"/>
+        /// will only be surfaced where multiple inner exceptions are present.
+        ///
+        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
+        /// </remarks>
+        ///
+        /// <category index="2">Awaiting Results</category>
+        ///
+        /// <example-tbd></example-tbd>
+        static member Await: task: ValueTask<'T> -> Async<'T>
+
+        /// <summary>Return an asynchronous computation that will wait for the given <c>ValueTask</c> to complete.</summary>
+        ///
+        /// <param name="task">The task to await.</param>
+        ///
+        /// <remarks>Exceptions from the task are surfaced directly, without wrapping in
+        /// <see cref="T:System.AggregateException"/>. An <see cref="T:System.AggregateException"/>
+        /// will only be surfaced where multiple inner exceptions are present.
+        ///
+        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
+        /// </remarks>
+        ///
+        /// <category index="2">Awaiting Results</category>
+        ///
+        /// <example-tbd></example-tbd>
+        static member Await: task: ValueTask -> Async<unit>
+#endif
 
         /// <summary>
         ///  Creates an asynchronous computation that will sleep for the given time. This is scheduled
