@@ -92,6 +92,13 @@ module ``Nowarn for command-line option warnings`` =
         |> shouldSucceed
 
     [<Fact>]
+    let ``--nowarn before --warnaserror+ still suppresses`` () =
+        FSharp "module Module"
+        |> withOptions [ "--nowarn:75"; "--warnaserror+"; "--extraoptimizationloops:1" ]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
     let ``--warnaserror 75 with --nowarn 75 still errors because specific warnaserror wins`` () =
         FSharp "module Module"
         |> withOptions [ "--warnaserror:75"; "--extraoptimizationloops:1"; "--nowarn:75" ]
