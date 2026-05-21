@@ -881,8 +881,8 @@ val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> Accessor
 ///
 /// Returns the structural `range` (the whole long-identifier span used for
 /// typed-tree construction) and a narrow `range` — the terminal identifier's
-/// own source range — for use in diagnostics and symbol-use reporting
-/// (see #14284, #3920).
+/// own source range — for use in overload-resolution error diagnostics
+/// (see #14284).
 val internal ResolveLongIdentAsExprAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
@@ -898,8 +898,8 @@ val internal ResolveLongIdentAsExprAndComputeRange:
 ///
 /// Returns the structural `range` (the whole long-identifier span used for
 /// typed-tree construction) and a narrow `range` — the terminal identifier's
-/// own source range — for use in diagnostics and symbol-use reporting
-/// (see #14284, #3920).
+/// own source range — for use in overload-resolution error diagnostics
+/// (see #14284).
 val internal ResolveExprDotLongIdentAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->

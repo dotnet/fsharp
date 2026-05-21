@@ -4196,7 +4196,7 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
 
 /// Computes the range of the consumed long-identifier prefix (`itemRange`) and the
 /// terminal identifier only (`itemIdentRange`).
-/// `itemIdentRange` is used for diagnostics and sink reporting (see #14284, #3920).
+/// `itemIdentRange` is used for overload-resolution error diagnostics (see #14284).
 let ComputeItemRange wholem (lid: Ident list) rest =
     let itemRange =
         match rest with
@@ -4284,16 +4284,13 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                 | Item.ActivePatternResult _ -> ItemOccurrence.Binding
                 | _ -> ItemOccurrence.Use
 
-            // Use the narrow terminal-identifier range for the sink so that
-            // FSharpSymbolUse / Find Usages / symbol-highlight surfaces report
-            // only on the name the user perceives as the item's name, not on
-            // the full long-id span. See #3920, #14284.
-            CallMethodGroupNameResolutionSink sink (itemIdentRange, nenv, refinedItem, item, tpinst, occurrence, ad)
+            CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, item, tpinst, occurrence, ad)
 
             // #16621
             match refinedItem with
             | Item.Property(_, pinfos, _) ->
-                RegisterUnionCaseTesterForProperty sink itemIdentRange pinfos
+                let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
+                RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
             | _ -> ()
 
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
@@ -4313,7 +4310,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                 AfterResolution.RecordResolution(None, (fun tpinst -> callSink(item, tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (item, emptyTyparInst)))
 
             elif isWrongItemInExpr item then
-               CallNameResolutionSink sink (itemIdentRange, nenv, item, emptyTyparInst, ItemOccurrence.InvalidUse, ad)
+               CallNameResolutionSink sink (itemRange, nenv, item, emptyTyparInst, ItemOccurrence.InvalidUse, ad)
                AfterResolution.DoNothing
 
             else
@@ -4351,7 +4348,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
         | None -> AfterResolution.DoNothing // do not refine the resolution if nobody listens
         | Some _ ->
             // resolution for goto definition
-            let unrefinedItem, itemRange, itemIdentRange, overrides =
+            let unrefinedItem, itemRange, _itemIdentRange, overrides =
                 match findFlag, item with
                 | FindMemberFlag.PreferOverrides, _
                 | _, NonOverridable() -> item, itemRange, itemIdentRange, false
@@ -4363,14 +4360,13 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
             let callSink (refinedItem, tpinst) =
                 let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
                 let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
-                // Use narrow terminal-identifier range for the sink (FSharpSymbolUse / Find Usages
-                // / symbol highlight). See #3920, #14284.
-                CallMethodGroupNameResolutionSink sink (itemIdentRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurrence.Use, ad)
+                CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurrence.Use, ad)
 
                 // #16621
                 match refinedItem with
                 | Item.Property(_, pinfos, _) ->
-                    RegisterUnionCaseTesterForProperty sink itemIdentRange pinfos
+                    let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
+                    RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
                 | _ -> ()
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =

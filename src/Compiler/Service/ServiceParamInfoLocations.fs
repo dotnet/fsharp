@@ -466,29 +466,13 @@ module internal SynExprAppLocationsImpl =
             | _ -> None, Some inner
 
     let getAllCurriedArgsAtPosition pos parseTree =
-        // Finds the leaf (non-App) function expression in a curried application chain.
-        // E.g. for App(App(LongIdent([M;f]), arg1), arg2) returns LongIdent([M;f]).
-        let rec getLeafFuncExpr =
-            function
-            | SynExpr.App(funcExpr = funcExpr) -> getLeafFuncExpr funcExpr
-            | expr -> expr
-
         SyntaxTraversal.Traverse(
             pos,
             parseTree,
             { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                     match expr with
-                    // After symbol-use range narrowing for dotted accesses (e.g. M.f, obj.Method),
-                    // pos may point at the terminal identifier rather than the full long-id start.
-                    // The second condition handles this by checking whether pos falls within the
-                    // leaf function expression's range in the application chain.
-                    // We exclude infix applications from the fallback to avoid matching operator
-                    // uses like "a === b" where pos points at the operator.
-                    | SynExpr.App(_exprAtomicFlag, isInfix, funcExpr, argExpr, range) when
-                        posEq pos range.Start
-                        || (not isInfix && rangeContainsPos (getLeafFuncExpr funcExpr).Range pos)
-                        ->
+                    | SynExpr.App(_exprAtomicFlag, _isInfix, funcExpr, argExpr, range) when posEq pos range.Start ->
                         let isInfixFuncExpr =
                             match funcExpr with
                             | SynExpr.App(_, isInfix, _, _, _) -> isInfix

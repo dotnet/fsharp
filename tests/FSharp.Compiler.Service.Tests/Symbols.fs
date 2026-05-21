@@ -1203,10 +1203,10 @@ let d = System.Object.Builder { return 3 }
                 (19, 28), false
 
                 // A.Builder { return 3 }
-                (21, 10), false
+                (21, 8), false
 
                 // System.Object.Builder { return 3 }
-                (22, 22), false
+                (22, 8), false
             ]
             [
                 for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.sortBy (fun x -> x.Range.StartLine, x.Range.StartColumn) do
