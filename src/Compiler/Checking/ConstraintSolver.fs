@@ -371,6 +371,15 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       ExtraRigidTypars = emptyFreeTypars
     }
 
+/// Strip a MemberAccessOnNullable context before recursing into inner type
+/// components. That context describes the OUTER receiver of a dot-access and
+/// must not leak into recursive subsumption/unification of inner types
+/// (tuple components, type args, fun domain/range, ...). See #19658.
+let stripMemberAccessOnNullableCtx (csenv: ConstraintSolverEnv) =
+    match csenv.eContextInfo with
+    | ContextInfo.MemberAccessOnNullable _ -> { csenv with eContextInfo = ContextInfo.NoContext }
+    | _ -> csenv
+
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as
 ///    'a = 'a list
@@ -1524,10 +1533,7 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         // dot-access message to a deep mismatch (wrong message AND wrong range).
         // Strip it once here so all recursive callsites below default to the
         // safe behavior. See #19658.
-        let csenv =
-            match csenv.eContextInfo with
-            | ContextInfo.MemberAccessOnNullable _ -> { csenv with eContextInfo = ContextInfo.NoContext }
-            | _ -> csenv
+        let csenv = stripMemberAccessOnNullableCtx csenv
 
         let sty1 = stripTyEqnsA csenv.g canShortcut ty1
         let sty2 = stripTyEqnsA csenv.g canShortcut ty2
@@ -3541,10 +3547,7 @@ and ResolveOverloadingCore
     let exactMatchCandidates =
         candidates |> FilterEachThenUndo (fun newTrace calledMeth ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-              let csenvNoCtx =
-                  match csenv.eContextInfo with
-                  | ContextInfo.MemberAccessOnNullable _ -> { csenv with eContextInfo = ContextInfo.NoContext }
-                  | _ -> csenv
+              let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
               let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m (WithTrace newTrace) calledMeth
               CanMemberSigsMatchUpToCheck 
                   csenvNoCtx 
@@ -3568,10 +3571,7 @@ and ResolveOverloadingCore
       let applicable =
           candidates |> FilterEachThenUndo (fun newTrace candidate ->
               let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-              let csenvNoCtx =
-                  match csenv.eContextInfo with
-                  | ContextInfo.MemberAccessOnNullable _ -> { csenv with eContextInfo = ContextInfo.NoContext }
-                  | _ -> csenv
+              let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
               let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m (WithTrace newTrace) candidate
               CanMemberSigsMatchUpToCheck 
                   csenvNoCtx 
@@ -3594,10 +3594,7 @@ and ResolveOverloadingCore
               |> List.choose (fun calledMeth -> 
                       match CollectThenUndo (fun newTrace -> 
                                    let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                                   let csenvNoCtx =
-                                       match csenv.eContextInfo with
-                                       | ContextInfo.MemberAccessOnNullable _ -> { csenv with eContextInfo = ContextInfo.NoContext }
-                                       | _ -> csenv
+                                   let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
                                    let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m (WithTrace newTrace) calledMeth
                                    CanMemberSigsMatchUpToCheck 
                                        csenvNoCtx 
@@ -3732,10 +3729,7 @@ and ResolveOverloading
         calledMethOpt, 
         trackErrors {
                         do! errors
-                        let csenvNoCtx =
-                            match csenv.eContextInfo with
-                            | ContextInfo.MemberAccessOnNullable _ -> { csenv with eContextInfo = ContextInfo.NoContext }
-                            | _ -> csenv
+                        let csenvNoCtx = stripMemberAccessOnNullableCtx csenv
                         let cxsln = AssumeMethodSolvesTrait csenvNoCtx cx m trace calledMeth
                         match calledMethTrace with
                         | NoTrace ->
