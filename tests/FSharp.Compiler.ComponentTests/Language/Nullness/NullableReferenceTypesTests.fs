@@ -295,7 +295,7 @@ let getLength (x: string | null) = x.Length
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 37, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string'."]
+    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 37, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string | null'."]
 
 [<Fact>]
 let ``Does report warning on obj to static member`` () =
@@ -2377,19 +2377,19 @@ let main _ = 0
 [<Theory>]
 // (source, line, col1, col2, memberName, bindingName, typeName)
 [<InlineData("module MyLib\nlet f (x: string | null) = x.PadLeft(1)",
-             2, 28, 29, "PadLeft", "x", "string")>]
+             2, 28, 29, "PadLeft", "x", "string | null")>]
 [<InlineData("module MyLib\nlet f (x: string | null) = x.Length",
-             2, 28, 29, "Length", "x", "string")>]
+             2, 28, 29, "Length", "x", "string | null")>]
 [<InlineData("module MyLib\nlet f (x: string | null) = x.Trim().Length",
-             2, 28, 29, "Trim", "x", "string")>]
+             2, 28, 29, "Trim", "x", "string | null")>]
 [<InlineData("module MyLib\nlet f (x: string | null) = x.Split(',')",
-             2, 28, 29, "Split", "x", "string")>]
+             2, 28, 29, "Split", "x", "string | null")>]
 [<InlineData("module MyLib\nopen System.Linq\nlet f (xs: System.Collections.Generic.List<int> | null) = xs.First()",
-             3, 59, 61, "First", "xs", "int seq")>]
+             3, 59, 61, "First", "xs", "int seq | null")>]
 [<InlineData("module MyLib\nlet f (xs: System.Collections.Generic.IEnumerable<int> | null) = xs.GetEnumerator()",
-             2, 66, 68, "GetEnumerator", "xs", "System.Collections.Generic.IEnumerable<int>")>]
+             2, 66, 68, "GetEnumerator", "xs", "System.Collections.Generic.IEnumerable<int> | null")>]
 [<InlineData("module MyLib\nopen System.Text\nlet f (sb: StringBuilder | null) = sb.Length <- 0",
-             3, 36, 38, "Length", "sb", "StringBuilder")>]
+             3, 36, 38, "Length", "sb", "StringBuilder | null")>]
 let ``Issue 19658 - dot-access on nullable receiver names the binding and member``
         (source: string, line: int, col1: int, col2: int,
          memberName: string, bindingName: string, typeName: string) =
@@ -2412,7 +2412,7 @@ let f () = (getStr()).Length"""
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 3, Col 13, Line 3, Col 21,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string'."
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string | null'."
     ]
 
 [<Fact>]
@@ -2426,7 +2426,7 @@ let f () =
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 4, Col 5, Line 4, Col 6,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string'."
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
     ]
 
 [<Fact>]
@@ -2439,7 +2439,7 @@ let f (xs: System.Collections.Generic.List<string | null> | null) =
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 3, Col 5, Line 3, Col 7,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Count' on the nullable value 'xs' of type 'System.Collections.Generic.List<string>'."
+            "Nullness warning: Possible dereference of a null value when accessing member 'Count' on the nullable value 'xs' of type 'System.Collections.Generic.List<string | null> | null'."
     ]
 
 [<Fact>]
@@ -2478,7 +2478,7 @@ let f (x: string | null) =
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 3, Col 5, Line 3, Col 6,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string'.. See also test.fs(3,4)-(4,15)."
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string | null'.. See also test.fs(3,4)-(4,15)."
     ]
 
 [<Fact>]
@@ -2495,7 +2495,7 @@ type C() =
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 4, Col 26, Line 4, Col 36,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string'."
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string | null'."
     ]
 
 // -------- Coverage tests (positive: new dot-access message is used) --------
@@ -2511,7 +2511,7 @@ let f () =
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 4, Col 19, Line 4, Col 20,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string'."
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
     ]
 
 // -------- Out-of-scope-path tests (positive: old generic message still used) --------

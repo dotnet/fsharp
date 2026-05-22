@@ -739,17 +739,7 @@ type Exception with
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
         | ConstraintSolverNullnessWarningOnDotAccess(denv, objTy, memberName, bindingName, m, m2) ->
-            // Sibling FS3261 handlers print raw type equations and show
-            // the | null annotation. This message already states "nullable
-            // value/expression", so we suppress the annotation to avoid
-            // redundant phrasings like "nullable value 'x' of type
-            // 'string | null'". Keep "Some false" intentional.
-            let denv =
-                { denv with
-                    showNullnessAnnotations = Some false
-                }
-
-            let tyStr = NicePrint.minimalStringOfType denv objTy
+            let tyStr = NicePrint.minimalStringOfTypeWithNullness denv objTy
 
             match bindingName with
             | Some name ->
