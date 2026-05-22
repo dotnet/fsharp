@@ -49,24 +49,25 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Runs the asynchronous computation and await its result.</summary>
         ///
-        /// <remarks>If an exception occurs in the asynchronous computation then an exception is re-raised by this
-        /// function.
+        /// <remarks>If an exception occurs in the asynchronous computation then it will be propagated to the caller.
         ///
         /// If no cancellation token is provided then the default cancellation token is used.
         ///
         /// The computation is started on the current thread if <see cref="P:System.Threading.SynchronizationContext.Current"/> is null,
-        /// <see cref="P:System.Threading.Thread.CurrentThread"/> has  <see cref="P:System.Threading.Thread.IsThreadPoolThread"/>
-        /// of <c>true</c>, and no timeout is specified. Otherwise the computation is started by queueing a new work item in the thread pool,
-        /// and the current thread is blocked awaiting the completion of the computation.
+        /// <see cref="P:System.Threading.Thread.CurrentThread"/> has <see cref="P:System.Threading.Thread.IsThreadPoolThread"/>
+        /// of <c>true</c>, and no timeout is specified.<br/>
         ///
-        /// The timeout parameter is given in milliseconds.  A value of -1 is equivalent to
+        /// Otherwise the computation is offloaded to the thread pool,
+        /// and the current thread is blocked awaiting the completion of the computation. Note in this case the stacktrace will be incomplete.<br/>
+        ///
+        /// The timeout parameter is given in milliseconds. A value of -1 is equivalent to
         /// <see cref="F:System.Threading.Timeout.Infinite"/>.
         /// </remarks>
         ///
         /// <param name="computation">The computation to run.</param>
-        /// <param name="timeout">The amount of time in milliseconds to wait for the result of the
-        /// computation before raising a <see cref="T:System.TimeoutException"/>.  If no value is provided
-        /// for timeout then a default of -1 is used to correspond to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
+        /// <param name="timeout">The number of milliseconds to wait for the result of the
+        /// computation before raising a <see cref="T:System.TimeoutException"/>. If no value or -1 is provided
+        /// the timeout will be <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         /// <param name="cancellationToken">The cancellation token to be associated with the computation.
         /// If one is not supplied, the default cancellation token is used.</param>
         ///
@@ -87,10 +88,49 @@ namespace Microsoft.FSharp.Control
         ///
         /// printfn "D"
         /// </code>
-        /// Prints "A", "B" immediately, then "C", "D" in 1 second. result is set to 17.
+        /// Prints "A", "B" immediately, then "C", "D" in 1 second. Yields <c>result = 17</c>.
         /// </example>
         static member RunSynchronously : computation:Async<'T> * ?timeout : int * ?cancellationToken:CancellationToken-> 'T
-        
+
+        /// <summary>Runs the asynchronous computation synchronously on the current thread, yielding its result.</summary>
+        ///
+        /// <remarks>Unlike <see cref="M:Microsoft.FSharp.Control.FSharpAsync.RunSynchronously``1"/>, execution
+        /// always starts immediately on the calling thread even if
+        /// <see cref="P:System.Threading.SynchronizationContext.Current"/> being non-<c>null</c> or 
+        /// <see cref="P:System.Threading.Thread.IsThreadPoolThread"/> being <c>false</c> would normally dictate offloading to a threadpool thread.
+        /// This key benefit is that this preserves call-stack context in the case of an exception.
+        ///
+        /// If an exception occurs in the asynchronous computation then it will be propagated to the caller.
+        ///
+        /// If no cancellation token is provided then the default cancellation token is used.
+        ///
+        /// This overload does not support a timeout; see <see cref="M:Microsoft.FSharp.Control.FSharpAsync.RunSynchronously``1"/>
+        /// if a timeout is required.
+        /// </remarks>
+        ///
+        /// <param name="computation">The computation to run.</param>
+        /// <param name="cancellationToken">The cancellation token to be associated with the computation.
+        /// If one is not supplied, the default cancellation token is used.</param>
+        /// <returns>The result of the computation.</returns>
+        /// <category index="0">Starting Async Computations</category>
+        ///
+        /// <example id="run-synchronously-immediate-1">
+        /// <code lang="fsharp">
+        /// printfn "A"
+        ///
+        /// let result = async {
+        ///     printfn "B"
+        ///     do! Async.Sleep(1000)
+        ///     printfn "C"
+        ///     17
+        /// } |> Async.RunSynchronouslyImmediate
+        ///
+        /// printfn "D"
+        /// </code>
+        /// Prints "A", "B" immediately (on the calling thread), then "C" (from a thread-pool thread), then "D" in 1 second (on the calling thread). Yields <c>result = 17</c>.
+        /// </example>
+        static member RunSynchronouslyImmediate : computation:Async<'T> * ?cancellationToken:CancellationToken -> 'T
+
         /// <summary>Starts the asynchronous computation in the thread pool. Do not await its result.</summary>
         ///
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>

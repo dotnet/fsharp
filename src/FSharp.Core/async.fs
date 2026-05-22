@@ -1096,7 +1096,7 @@ module AsyncPrimitives =
 
     /// Run the asynchronous workflow and wait for its result.
     [<DebuggerHidden>]
-    let QueueAsyncAndWaitForResultSynchronously (token: CancellationToken) computation timeout =
+    let QueueAsyncAndWaitForResultSynchronously computation (token: CancellationToken) timeout =
         let token, innerCTS =
             // If timeout is provided, we govern the async by our own CTS, to cancel
             // when execution times out. Otherwise, the user-supplied token governs the async.
@@ -1138,7 +1138,7 @@ module AsyncPrimitives =
             res.Commit()
 
     [<DebuggerHidden>]
-    let RunImmediate (cancellationToken: CancellationToken) computation =
+    let RunSynchronouslyImmediate computation (cancellationToken: CancellationToken) =
         use resultCell = new ResultCell<AsyncResult<_>>()
         let trampolineHolder = TrampolineHolder()
 
@@ -1158,11 +1158,11 @@ module AsyncPrimitives =
         res.Commit()
 
     [<DebuggerHidden>]
-    let RunSynchronously cancellationToken (computation: Async<'T>) timeout =
-        // Reuse the current ThreadPool thread if possible.
+    let RunSynchronouslyBackgroundThreadPool (computation: Async<'T>) cancellationToken timeout =
+        // Run inline only where it's guaranteed to be safe
         match SynchronizationContext.Current, Thread.CurrentThread.IsThreadPoolThread, timeout with
-        | null, true, None -> RunImmediate cancellationToken computation
-        | _ -> QueueAsyncAndWaitForResultSynchronously cancellationToken computation timeout
+        | null, true, None -> RunSynchronouslyImmediate computation cancellationToken // clean stacktrace in case of exception
+        | _ -> QueueAsyncAndWaitForResultSynchronously computation cancellationToken timeout // NOTE no useful stack traces
 
     [<DebuggerHidden>]
     let Start cancellationToken (computation: Async<unit>) =
@@ -1511,7 +1511,13 @@ type Async =
             | Some token when not token.CanBeCanceled -> timeout, token
             | Some token -> None, token
 
-        RunSynchronously cancellationToken computation timeout
+        RunSynchronouslyBackgroundThreadPool computation cancellationToken timeout
+
+    static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken: CancellationToken) =
+        let cancellationToken =
+            defaultArg cancellationToken defaultCancellationTokenSource.Token
+
+        RunSynchronouslyImmediate computation cancellationToken 
 
     static member Start(computation, ?cancellationToken) =
         let cancellationToken =
