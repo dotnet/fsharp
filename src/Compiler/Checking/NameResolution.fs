@@ -2185,6 +2185,8 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
+    let capturedFormatSpecifierRanges = HashSet<range>()
+
     let capturedNameResolutionIdentifiers =
         HashSet<pos * string>
             { new IEqualityComparer<_> with
@@ -2289,7 +2291,8 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                     capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurrenceType, nenv, ad, m))
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
-            capturedFormatSpecifierLocations.Add((m, numArgs))
+            if capturedFormatSpecifierRanges.Add(m) then
+                capturedFormatSpecifierLocations.Add((m, numArgs))
 
         member sink.NotifyRelatedSymbolUse(m, item, kind) =
             if allowedRange m then
