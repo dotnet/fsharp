@@ -2256,14 +2256,14 @@ type Async =
 
 #if NETSTANDARD2_1
     static member Await(task: ValueTask<'T>) : Async<'T> =
-        if task.IsCompleted then
-            async { return task.GetAwaiter().GetResult() }
+        if task.IsCompletedSuccessfully then
+            CreateReturnAsync(task.GetAwaiter().GetResult())
         else
             Async.Await(task.AsTask())
 
     static member Await(task: ValueTask) : Async<unit> =
-        if task.IsCompleted then
-            async { return task.GetAwaiter().GetResult() }
+        if task.IsCompletedSuccessfully then
+            CreateReturnAsync(task.GetAwaiter().GetResult())
         else
             Async.Await(task.AsTask())
 #endif
