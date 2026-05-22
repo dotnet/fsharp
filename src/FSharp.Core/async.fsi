@@ -741,42 +741,64 @@ namespace Microsoft.FSharp.Control
         static member AwaitIAsyncResult: iar: IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
 
         /// <summary>Creates an asynchronous computation that will wait asynchronously for the given task to complete, returning
-        /// its result.</summary>
-        ///
+        /// its result. Note exceptions are wrapped in <see cref="T:System.AggregateException"/>; for new
+        /// code, prefer <c>Async.Await</c>, which surfaces single exceptions directly.</summary>
         /// <param name="task">The task to await.</param>
-        ///
-        /// <remarks>If the task yields an exception, then then the full underlying <see cref="T:System.AggregateException"/>  is re-raised by this function.
-        ///
-        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// <remarks>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
         /// that the task may be governed by a different cancellation token to the overall async computation
         /// where the AwaitTask occurs. In practice you should normally start the task with the
         /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
         /// any <see cref="T:System.Threading.Tasks.TaskCanceledException"/> at the point where the
         /// overall async is started.
         /// </remarks>
-        ///
         /// <category index="2">Awaiting Results</category>
-        ///
-        /// <example-tbd></example-tbd>
+        /// <example id="awaittask-1">
+        /// <code lang="fsharp">
+        /// let t = Task.Run(fun () -> invalidOp "test"; 42)
+        /// async {
+        ///     try
+        ///         let! _ = Async.AwaitTask t
+        ///         ()
+        ///     with
+        ///     | :? System.InvalidOperationException ->
+        ///         printfn "unreachable" // will not match: exception is wrapped in AggregateException
+        ///     | :? System.AggregateException as e ->
+        ///         printfn $"Caught: {e.InnerException.Message}"
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>. The <c>InvalidOperationException</c> branch is not reached because
+        /// exceptions from tasks are always wrapped in <see cref="T:System.AggregateException"/>. Contrast with <c>Async.Await</c>.
+        /// </example>
         static member AwaitTask: task: Task<'T> -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation that will wait asynchronously for the given task to complete.</summary>
-        ///
+        /// <summary>Creates an asynchronous computation that will wait asynchronously for the given task to complete.
+        /// Note exceptions are wrapped in <see cref="T:System.AggregateException"/>; for new
+        /// code, prefer <c>Async.Await</c>, which surfaces single exceptions directly.</summary>
         /// <param name="task">The task to await.</param>
-        ///
-        /// <remarks>If the task yields an exception, then the full underlying <see cref="T:System.AggregateException"/> is re-raised by this function.
-        ///
-        /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// <remarks>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
         /// that the task may be governed by a different cancellation token to the overall async computation
         /// where the AwaitTask occurs. In practice you should normally start the task with the
         /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
         /// any <see cref="T:System.Threading.Tasks.TaskCanceledException"/> at the point where the
         /// overall async is started.
         /// </remarks>
-        ///
         /// <category index="2">Awaiting Results</category>
-        ///
-        /// <example-tbd></example-tbd>
+        /// <example id="awaittask-2">
+        /// <code lang="fsharp">
+        /// let t = Task.Run(fun () -> invalidOp "test")
+        /// async {
+        ///     try
+        ///         do! Async.AwaitTask t
+        ///     with
+        ///     | :? System.InvalidOperationException ->
+        ///         printfn "unreachable" // will not match: exception is wrapped in AggregateException
+        ///     | :? System.AggregateException as e ->
+        ///         printfn $"Caught: {e.InnerException.Message}"
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>. The <c>InvalidOperationException</c> branch is not reached because
+        /// exceptions from tasks are always wrapped in <see cref="T:System.AggregateException"/>. Contrast with <c>Async.Await</c>.
+        /// </example>
         static member AwaitTask: task: Task -> Async<unit>
 
         /// <summary>Creates an asynchronous computation that will wait for the given task to complete and return
@@ -784,66 +806,118 @@ namespace Microsoft.FSharp.Control
         ///
         /// <param name="task">The task to await.</param>
         ///
-        /// <remarks>Exceptions from the task are surfaced directly, without wrapping in
-        /// <see cref="T:System.AggregateException"/>. An <see cref="T:System.AggregateException"/>
-        /// will only be surfaced where multiple inner exceptions are present.
+        /// <remarks>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
+        /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.
         ///
         /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
         /// </remarks>
         ///
         /// <category index="2">Awaiting Results</category>
         ///
-        /// <example-tbd></example-tbd>
+        /// <example id="await-task-1">
+        /// <code lang="fsharp">
+        /// let t = Task.Run(fun () -> invalidOp "test"; 42)
+        /// async {
+        ///     try
+        ///         let! _ = Async.Await t
+        ///         ()
+        ///     with
+        ///     | :? System.InvalidOperationException as e ->
+        ///         printfn $"Caught: {e.Message}"
+        ///     | :? System.AggregateException ->
+        ///         printfn "unreachable" // will not match: single exception is unwrapped
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>. The <c>AggregateException</c> branch is not reached because a
+        /// single-inner exception is unwrapped. Contrast with <c>Async.AwaitTask</c>.
+        /// </example>
         static member Await: task: Task<'T> -> Async<'T>
 
         /// <summary>Creates an asynchronous computation that will wait for the given task to complete.</summary>
-        ///
         /// <param name="task">The task to await.</param>
-        ///
-        /// <remarks>Exceptions from the task are surfaced directly, without wrapping in
-        /// <see cref="T:System.AggregateException"/>. An <see cref="T:System.AggregateException"/>
-        /// will only be surfaced where multiple inner exceptions are present.
+        /// <remarks>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
+        /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.
         ///
         /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
         /// </remarks>
-        ///
         /// <category index="2">Awaiting Results</category>
-        ///
-        /// <example-tbd></example-tbd>
+        /// <example id="await-task-2">
+        /// <code lang="fsharp">
+        /// let t = Task.Run(fun () -> invalidOp "test")
+        /// async {
+        ///     try
+        ///         do! Async.Await t
+        ///     with
+        ///     | :? System.InvalidOperationException as e ->
+        ///         printfn $"Caught: {e.Message}"
+        ///     | :? System.AggregateException ->
+        ///         printfn "unreachable" // will not match: single exception is unwrapped
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>. The <c>AggregateException</c> branch is not reached because a
+        /// single-inner exception is unwrapped. Contrast with <c>Async.AwaitTask</c>.
+        /// </example>
         static member Await: task: Task -> Async<unit>
 
 #if NETSTANDARD2_1
-        /// <summary>Return an asynchronous computation that will wait for the given task to complete and return
+        /// <summary>Creates an asynchronous computation that will wait for the given <c>ValueTask</c> to complete and return
         /// its result.</summary>
-        ///
         /// <param name="task">The <c>ValueTask</c> to await.</param>
-        ///
-        /// <remarks>Exceptions from the task are surfaced directly, without wrapping in
-        /// <see cref="T:System.AggregateException"/>. An <see cref="T:System.AggregateException"/>
-        /// will only be surfaced where multiple inner exceptions are present.
+        /// <remarks>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
+        /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.
         ///
         /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
         /// </remarks>
-        ///
         /// <category index="2">Awaiting Results</category>
-        ///
-        /// <example-tbd></example-tbd>
+        /// <example id="await-valuetask-1">
+        /// <code lang="fsharp">
+        /// let vt = ValueTask&lt;int&gt;(Task.Run(fun () -> invalidOp "test"; 42))
+        /// async {
+        ///     try
+        ///         let! _ = Async.Await vt
+        ///         ()
+        ///     with
+        ///     | :? System.InvalidOperationException as e ->
+        ///         printfn $"Caught: {e.Message}"
+        ///     | :? System.AggregateException ->
+        ///         printfn "unreachable" // will not match: single exception is unwrapped
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>.
+        /// </example>
         static member Await: task: ValueTask<'T> -> Async<'T>
 
-        /// <summary>Return an asynchronous computation that will wait for the given <c>ValueTask</c> to complete.</summary>
-        ///
-        /// <param name="task">The task to await.</param>
-        ///
-        /// <remarks>Exceptions from the task are surfaced directly, without wrapping in
-        /// <see cref="T:System.AggregateException"/>. An <see cref="T:System.AggregateException"/>
-        /// will only be surfaced where multiple inner exceptions are present.
+        /// <summary>Creates an asynchronous computation that will wait for the given <c>ValueTask</c> to complete.</summary>
+        /// <param name="task">The <c>ValueTask</c> to await.</param>
+        /// <remarks>Exceptions are surfaced directly: a task faulted with a single exception raises that
+        /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
+        /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
+        /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.
         ///
         /// If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.
         /// </remarks>
-        ///
         /// <category index="2">Awaiting Results</category>
-        ///
-        /// <example-tbd></example-tbd>
+        /// <example id="await-valuetask-2">
+        /// <code lang="fsharp">
+        /// let vt = ValueTask(Task.Run(fun () -> invalidOp "test"))
+        /// async {
+        ///     try
+        ///         do! Async.Await vt
+        ///     with
+        ///     | :? System.InvalidOperationException as e ->
+        ///         printfn $"Caught: {e.Message}"
+        ///     | :? System.AggregateException ->
+        ///         printfn "unreachable" // will not match: single exception is unwrapped
+        /// } |> Async.RunSynchronously
+        /// </code>
+        /// Prints <c>Caught: test</c>.
+        /// </example>
         static member Await: task: ValueTask -> Async<unit>
 #endif
 
