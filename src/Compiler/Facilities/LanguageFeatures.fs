@@ -18,6 +18,7 @@ module internal FSharp.Compiler.Features
 type LanguageFeature =
     | FromEndSlicing
     | RuntimeAsync
+    | AnonTtUnions
     | NullnessChecking
     | UnionIsPropertiesVisible
     | UnmanagedConstraintCsharpInterop
@@ -164,6 +165,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // F# preview
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.AnonTtUnions, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -257,6 +259,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
+        | LanguageFeature.AnonTtUnions -> FSComp.SR.featureAnonTtUnions()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
         | LanguageFeature.ReuseSameFieldsInStructUnions -> FSComp.SR.featureReuseSameFieldsInStructUnions ()
