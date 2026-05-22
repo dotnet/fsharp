@@ -2259,13 +2259,13 @@ type Async =
         if task.IsCompletedSuccessfully then
             CreateReturnAsync(task.GetAwaiter().GetResult())
         else
-            Async.Await(task.AsTask())
+            AwaitTask true (task.AsTask())
 
     static member Await(task: ValueTask) : Async<unit> =
         if task.IsCompletedSuccessfully then
             CreateReturnAsync(task.GetAwaiter().GetResult())
         else
-            Async.Await(task.AsTask())
+            AwaitUnitTask true (task.AsTask())
 #endif
 
 module CommonExtensions =
