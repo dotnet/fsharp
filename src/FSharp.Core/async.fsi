@@ -983,6 +983,79 @@ namespace Microsoft.FSharp.Control
         static member Await: task: ValueTask -> Async<unit>
 #endif
 
+        /// <summary>Creates an asynchronous computation that captures the ambient <c>CancellationToken</c>, passes it to
+        /// <c>createTask</c>, and then awaits the resulting task, returning its result.</summary>
+        ///
+        /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>Task&lt;'T&gt;</c>.</param>
+        ///
+        /// <remarks>The cancellation token of the enclosing async computation is automatically passed to
+        /// <c>createTask</c>, propagating cancellation naturally to the task without requiring manual token capture.
+        ///
+        /// The resulting task is awaited using <see cref="M:Microsoft.FSharp.Control.FSharpAsync.Await``1(System.Threading.Tasks.Task{``0})"/>;
+        /// exception unwrapping and cancellation handling are as per that overload.
+        /// </remarks>
+        /// <category index="0">Starting Async Computations</category>
+        /// <example id="startTaskImmediate-taskt-1">
+        /// <code lang="fsharp">
+        /// async {
+        ///     let! text = Async.StartTaskImmediate(fun ct -> File.ReadAllTextAsync("file.txt", ct))
+        ///     printfn "Content: %s" text
+        /// }
+        /// </code>
+        /// </example>
+        static member StartTaskImmediate: createTask: (CancellationToken -> Task<'T>) -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that captures the ambient <c>CancellationToken</c>, passes it to
+        /// <c>createTask</c>, and then awaits the resulting task.</summary>
+        ///
+        /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>Task</c>.</param>
+        ///
+        /// <remarks>The cancellation token of the enclosing async computation is automatically passed to
+        /// <c>createTask</c>, propagating cancellation naturally to the task without requiring manual token capture.
+        ///
+        /// The resulting task is awaited using <see cref="M:Microsoft.FSharp.Control.FSharpAsync.Await(System.Threading.Tasks.Task)"/>;
+        /// exception unwrapping and cancellation handling are as per that overload.
+        /// </remarks>
+        /// <category index="0">Starting Async Computations</category>
+        /// <example id="startTaskImmediate-task-1">
+        /// <code lang="fsharp">
+        /// async {
+        ///     do! Async.StartTaskImmediate(fun ct -> File.WriteAllTextAsync("file.txt", "hello", ct))
+        /// }
+        /// </code>
+        /// </example>
+        static member StartTaskImmediate: createTask: (CancellationToken -> Task) -> Async<unit>
+
+#if NETSTANDARD2_1
+        /// <summary>Creates an asynchronous computation that captures the ambient <c>CancellationToken</c>, passes it to
+        /// <c>createTask</c>, and then awaits the resulting <c>ValueTask</c>, returning its result.</summary>
+        ///
+        /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>ValueTask&lt;'T&gt;</c>.</param>
+        ///
+        /// <remarks>The cancellation token of the enclosing async computation is automatically passed to
+        /// <c>createTask</c>, propagating cancellation naturally to the task without requiring manual token capture.
+        ///
+        /// The resulting task is awaited using <see cref="M:Microsoft.FSharp.Control.FSharpAsync.Await``1(System.Threading.Tasks.ValueTask{``0})"/>;
+        /// exception unwrapping and cancellation handling are as per that overload.
+        /// </remarks>
+        /// <category index="0">Starting Async Computations</category>
+        static member StartTaskImmediate: createTask: (CancellationToken -> ValueTask<'T>) -> Async<'T>
+
+        /// <summary>Creates an asynchronous computation that captures the ambient <c>CancellationToken</c>, passes it to
+        /// <c>createTask</c>, and then awaits the resulting <c>ValueTask</c>.</summary>
+        ///
+        /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>ValueTask</c>.</param>
+        ///
+        /// <remarks>The cancellation token of the enclosing async computation is automatically passed to
+        /// <c>createTask</c>, propagating cancellation naturally to the task without requiring manual token capture.
+        ///
+        /// The resulting task is awaited using <see cref="M:Microsoft.FSharp.Control.FSharpAsync.Await(System.Threading.Tasks.ValueTask)"/>;
+        /// exception unwrapping and cancellation handling are as per that overload.
+        /// </remarks>
+        /// <category index="0">Starting Async Computations</category>
+        static member StartTaskImmediate: createTask: (CancellationToken -> ValueTask) -> Async<unit>
+
+#endif
         /// <summary>
         ///  Creates an asynchronous computation that will sleep for the given time. This is scheduled
         ///  using a System.Threading.Timer object. The operation will not block operating system threads

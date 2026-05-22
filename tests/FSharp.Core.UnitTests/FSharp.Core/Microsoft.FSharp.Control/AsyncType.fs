@@ -653,6 +653,74 @@ type AsyncType() =
         let ok = Async.RunSynchronously a
         Assert.True ok
 
+    (* StartTaskImmediate(Task/Task<'T>) coverage *)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task<'T>) flows result``() =
+        let a = async {
+            let! v = Async.StartTaskImmediate(fun _ct -> Task.FromResult(42))
+            return v = 42
+        }
+        Assert.True(Async.RunSynchronously a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task) happy path``() =
+        let mutable called = false
+        let a = async {
+            do! Async.StartTaskImmediate(fun _ct -> Task.Run(fun () -> called <- true))
+            return true
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True(called && ok)
+
+    [<Fact>]
+    member _.``StartTaskImmediate flows CancellationToken``() =
+        let cts = new CancellationTokenSource()
+        let capturedCt = ref CancellationToken.None
+        let a = async {
+            do! Async.StartTaskImmediate(fun ct ->
+                capturedCt.Value <- ct
+                Task.CompletedTask)
+        }
+        Async.RunSynchronously(a, cancellationToken = cts.Token)
+        Assert.Equal(cts.Token, capturedCt.Value)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task<'T>) exception unwraps``() =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try let! _ = Async.StartTaskImmediate(fun _ct -> tcs.Task)
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task) exception unwraps``() =
+        let tcs = TaskCompletionSource<unit>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try do! Async.StartTaskImmediate(fun _ct -> tcs.Task :> Task)
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
+    [<Fact>]
+    member _.``StartTaskImmediate(Task<'T>) cancellation raises TaskCanceledException``() =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetCanceled()
+        let a = async {
+            try let! _ = Async.StartTaskImmediate(fun _ct -> tcs.Task)
+                return false
+            with :? TaskCanceledException -> return true
+        }
+        let ok = Async.RunSynchronously a
+        Assert.True ok
+
 #if !NETFRAMEWORK
     (* Await(ValueTask and ValueTask<'T>) overloads coverage of mainline behaviors *)
 
@@ -698,6 +766,48 @@ type AsyncType() =
         }
         let ok = Async.RunSynchronously a
         Assert.True ok
+
+    (* StartTaskImmediate(ValueTask/ValueTask<'T>) coverage *)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(ValueTask<'T>) flows result``() =
+        let a = async {
+            let! v = Async.StartTaskImmediate(fun _ct -> ValueTask<int>(42))
+            return v = 42
+        }
+        Assert.True(Async.RunSynchronously a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(ValueTask) happy path``() =
+        let a = async {
+            do! Async.StartTaskImmediate(fun _ct -> ValueTask())
+            return true
+        }
+        Assert.True(Async.RunSynchronously a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(ValueTask<'T>) exception unwraps``() =
+        let tcs = TaskCompletionSource<int>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try
+                let! _ = Async.StartTaskImmediate(fun _ct -> ValueTask<int>(tcs.Task))
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        Assert.True(Async.RunSynchronously a)
+
+    [<Fact>]
+    member _.``StartTaskImmediate(ValueTask) exception unwraps``() =
+        let tcs = TaskCompletionSource<unit>()
+        tcs.SetException(ArgumentException "original")
+        let a = async {
+            try
+                do! Async.StartTaskImmediate(fun _ct -> ValueTask(tcs.Task :> Task))
+                return false
+            with :? ArgumentException as ae -> return ae.Message = "original"
+        }
+        Assert.True(Async.RunSynchronously a)
 #endif
 
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]

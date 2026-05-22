@@ -2268,6 +2268,19 @@ type Async =
             AwaitUnitTask true (task.AsTask())
 #endif
 
+    static member StartTaskImmediate(createTask: CancellationToken -> Task<'T>) : Async<'T> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await) 
+    static member StartTaskImmediate(createTask: CancellationToken -> Task) : Async<unit> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await) 
+
+#if NETSTANDARD2_1
+    static member StartTaskImmediate(createTask: CancellationToken -> ValueTask<'T>) : Async<'T> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await) 
+
+    static member StartTaskImmediate(createTask: CancellationToken -> ValueTask) : Async<unit> =
+        CreateBindAsync Async.CancellationToken (createTask >> Async.Await) 
+#endif
+
 module AsyncTaskLikeExtensions =
 
     type Async with

@@ -657,6 +657,7 @@ Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Mic
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Ignore[T](Microsoft.FSharp.Control.FSharpAsync`1[T])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Sleep(Int32)
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Sleep(System.TimeSpan)
+Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] StartTaskImmediate(Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] SwitchToContext(System.Threading.SynchronizationContext)
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] SwitchToNewThread()
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] SwitchToThreadPool()
@@ -677,6 +678,7 @@ Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] 
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] FromBeginEnd[TArg1,T](TArg1, Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`3[TArg1,System.AsyncCallback,System.Object],System.IAsyncResult], Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] FromBeginEnd[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.AsyncCallback,System.Object],System.IAsyncResult], Microsoft.FSharp.Core.FSharpFunc`2[System.IAsyncResult,T], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] FromContinuations[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`3[Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.FSharpFunc`2[System.OperationCanceledException,Microsoft.FSharp.Core.Unit]],Microsoft.FSharp.Core.Unit])
+Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] StartTaskImmediate[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[T]])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[T] TryCancelled[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpFunc`2[System.OperationCanceledException,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Control.FSharpAsync: System.Threading.CancellationToken DefaultCancellationToken
 Microsoft.FSharp.Control.FSharpAsync: System.Threading.CancellationToken get_DefaultCancellationToken()
