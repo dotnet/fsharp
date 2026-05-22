@@ -299,7 +299,7 @@ let test(x: 'T) =
 """
          FSharpDiagnosticSeverity.Warning
          64
-         (11, 5, 11, 11)
+         (11, 7, 11, 8)
          """This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'int'."""
 
     [<Fact>]
