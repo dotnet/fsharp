@@ -280,7 +280,11 @@ type Async =
   static member FromContinuations: callback: (('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
   ...
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
-
+        // Hack to deal with fact that FSharp.Core's Async.Await will have 2 overloads in netstandard2.0 but 4 in netstandard2.1
+        let checkTooltip expected ((tooltip: string, span : TextSpan), (row, col)) =
+            let tooltip = tooltip.Replace("static member Await: task: Task<'T> -> Async<'T> + 1 overload",
+                                          "static member Await: task: Task<'T> -> Async<'T> + 3 overloads")
+            checkTooltip expected ((tooltip, span), (row, col))
         this.CheckTooltip(source, "Asyn", false, checkTooltip expectedTooltip)
 
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
