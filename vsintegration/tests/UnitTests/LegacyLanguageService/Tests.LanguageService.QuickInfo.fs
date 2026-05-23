@@ -277,7 +277,6 @@ type Async =
   static member Catch: computation: Async<'T> -> Async<Choice<'T,exn>>
   static member Choice: computations: Async<'T option> seq -> Async<'T option>
   static member FromBeginEnd: beginAction: (AsyncCallback * objnull -> IAsyncResult) * endAction: (IAsyncResult -> 'T) * ?cancelAction: (unit -> unit) -> Async<'T> + 3 overloads
-  static member FromContinuations: callback: (('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
   ...
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         // Hack to deal with fact that FSharp.Core's Async.Await will have 2 overloads in netstandard2.0 but 4 in netstandard2.1
