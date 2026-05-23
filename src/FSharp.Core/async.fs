@@ -13,6 +13,7 @@ open System.Runtime.ExceptionServices
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
@@ -2267,6 +2268,34 @@ type Async =
         else
             AwaitUnitTask true (task.AsTask())
 #endif
+
+module AsyncTaskLikeExtensions =
+
+    type Async with
+
+        [<NoEagerConstraintApplication>]
+        static member inline Await< ^TaskLike, ^Awaiter, 'T
+            when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> ICriticalNotifyCompletion
+            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter: (member GetResult: unit -> 'T)>
+            (task: ^TaskLike)
+            : Async<'T> =
+            Async.FromContinuations(fun (cont, econt, _ccont) ->
+                let mutable awaiter = (^TaskLike: (member GetAwaiter: unit -> ^Awaiter) task)
+
+                if (^Awaiter: (member get_IsCompleted: unit -> bool) awaiter) then
+                    try
+                        cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
+                    with e ->
+                        econt e
+                else
+                    (awaiter :> ICriticalNotifyCompletion)
+                        .UnsafeOnCompleted(fun () ->
+                            try
+                                cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
+                            with e ->
+                                econt e))
 
 module CommonExtensions =
 

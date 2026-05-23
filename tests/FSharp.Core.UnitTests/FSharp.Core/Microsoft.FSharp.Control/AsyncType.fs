@@ -699,3 +699,59 @@ type AsyncType() =
         let ok = Async.RunSynchronously a
         Assert.True ok
 #endif
+
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module AsyncTaskLikeAwaitTests =
+
+    // Minimal custom task-like type wrapping Task<'T>
+    type MyTask<'T>(inner: Task<'T>) =
+        member _.GetAwaiter() = inner.GetAwaiter()
+
+    // Minimal custom unit-returning task-like
+    type MyUnitTask(inner: Task) =
+        member _.GetAwaiter() = inner.GetAwaiter()
+
+    [<Fact>]
+    let ``Await(task-like) happy path with result``() =
+        let result =
+            async {
+                let! v = Async.Await(MyTask(Task.FromResult 99))
+                return v
+            }
+            |> Async.RunSynchronously
+        Assert.Equal(99, result)
+
+    [<Fact>]
+    let ``Await(task-like) happy path unit``() =
+        async {
+            do! Async.Await(MyUnitTask(Task.CompletedTask))
+        }
+        |> Async.RunSynchronously
+
+    [<Fact>]
+    let ``Await(task-like) deferred completion``() =
+        let tcs = TaskCompletionSource<int>()
+        let t =
+            async {
+                let! v = Async.Await(MyTask(tcs.Task))
+                return v
+            }
+            |> Async.StartAsTask
+        Assert.False(t.IsCompleted, "Should not be done before TCS is set")
+        tcs.SetResult 7
+        t.Wait(TimeSpan.FromSeconds 5.0) |> ignore
+        Assert.Equal(7, t.Result)
+
+    [<Fact>]
+    let ``Await(task-like) exception propagation``() =
+        let tcs = TaskCompletionSource<int>()
+        let a =
+            async {
+                try let! _ = Async.Await(MyTask(tcs.Task))
+                    return false
+                with :? InvalidOperationException as e ->
+                    return e.Message = "boom"
+            }
+        tcs.SetException(InvalidOperationException "boom")
+        let ok = Async.RunSynchronously a
+        Assert.True ok

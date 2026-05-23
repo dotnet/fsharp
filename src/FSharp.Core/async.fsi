@@ -5,9 +5,11 @@ namespace Microsoft.FSharp.Control
     open System
     open System.Threading
     open System.Threading.Tasks
+    open System.Runtime.CompilerServices
     open System.Runtime.ExceptionServices
 
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
@@ -1212,6 +1214,50 @@ namespace Microsoft.FSharp.Control
         static member StartImmediateAsTask: 
             computation:Async<'T> * ?cancellationToken:CancellationToken-> Task<'T>
 
+
+    /// <summary>A module of extension members providing support for awaiting any task-like value via the GetAwaiter pattern.</summary>
+    ///
+    /// <category index="2">Awaiting Results</category>
+    [<AutoOpen>]
+    module AsyncTaskLikeExtensions =
+
+        type Async with
+
+            /// <summary>Creates an asynchronous computation that will wait for the given task-like value to complete and return
+            /// its result.</summary>
+            /// <param name="task">The task-like value to await.</param>
+            /// <remarks>The value must satisfy the GetAwaiter pattern: it must have a <c>GetAwaiter()</c> method
+            /// returning an awaiter implementing <see cref="T:System.Runtime.CompilerServices.ICriticalNotifyCompletion"/>
+            /// with <c>IsCompleted</c> and <c>GetResult()</c> members. Exceptions thrown by <c>GetResult()</c> are
+            /// propagated directly.
+            ///
+            /// This overload uses statically resolved type parameters (SRTP) so it can accept any task-like type.
+            /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/>, <see cref="T:System.Threading.Tasks.Task"/>,
+            /// <see cref="T:System.Threading.Tasks.ValueTask`1"/> and <see cref="T:System.Threading.Tasks.ValueTask"/>
+            /// are preferred when the argument type is known.
+            /// </remarks>
+            /// <category index="2">Awaiting Results</category>
+            /// <example id="await-tasklike-1">
+            /// <code lang="fsharp">
+            /// // A minimal custom task-like type
+            /// type MyTask&lt;'T&gt;(task: System.Threading.Tasks.Task&lt;'T&gt;) =
+            ///     member _.GetAwaiter() = task.GetAwaiter()
+            ///
+            /// let myTask = MyTask(System.Threading.Tasks.Task.FromResult 42)
+            /// async {
+            ///     let! result = Async.Await myTask
+            ///     printfn $"Result: {result}"
+            /// } |> Async.RunSynchronously
+            /// </code>
+            /// Prints <c>Result: 42</c>.
+            /// </example>
+            [<NoEagerConstraintApplication>]
+            static member inline Await< ^TaskLike, ^Awaiter, 'T> :
+                task: ^TaskLike -> Async<'T>
+                    when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+                    and ^Awaiter :> ICriticalNotifyCompletion
+                    and ^Awaiter: (member get_IsCompleted: unit -> bool)
+                    and ^Awaiter: (member GetResult: unit -> 'T)
 
     /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
     ///
