@@ -10,6 +10,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open System.Threading
 open System.Threading.Tasks
+open Xunit.Internal
 
 // Cancels default token.
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
@@ -755,3 +756,86 @@ module AsyncTaskLikeAwaitTests =
         tcs.SetException(InvalidOperationException "boom")
         let ok = Async.RunSynchronously a
         Assert.True ok
+
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module AsyncAwaitStackTraceTests =
+
+    open System.Runtime.CompilerServices
+
+    // Minimal wrapper to route through the SRTP overload instead of the specific Task<'T> overload.
+    // Task<'T>, Task, ValueTask<'T>, and ValueTask all have higher-priority intrinsic overloads.
+    type TaskWrapper<'T>(inner: Task<'T>) =
+        member _.GetAwaiter() = inner.GetAwaiter()
+
+    // Plain function — provides a stable named frame at the outermost throw site.
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let throwAtLevel1 () : unit = invalidOp "boom"
+
+    // Level-1 task: thin wrapper around the direct throw.
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let level1Task () : Task<unit> = task { throwAtLevel1 () }
+
+    // Level-2 task: introduces a real async await boundary between levels 1 and 2.
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let level2Task () : Task<unit> = task { do! level1Task () }
+
+    // Run via StartImmediateAsTask + .Wait() and return the inner exception.
+    // Using StartImmediateAsTask (not RunSynchronously) ensures that the async-layer
+    // exception machinery goes through TaskCompletionSource.SetException, which preserves
+    // the stack trace rather than rethrowing synchronously and potentially truncating it.
+    let runAndCaptureException (computation: Async<unit>) : exn =
+        // TODO swap in usage of Async.RunSynchronouslyImmediate
+        let t = Async.StartImmediateAsTask computation
+        let ae = Assert.Throws<AggregateException>(fun () -> t.Wait())
+        ae.InnerException
+
+    // Template assertion: levels 1 and 2 must be traceable in the stack trace
+    // regardless of which Async.Await overload is used.
+    let checkTrace totalCount (e: exn) =
+        let trace = e.StackTrace
+        Assert.NotNull(trace)
+        Assert.Contains("throwAtLevel1", trace)
+        Assert.Contains("level1Task", trace)
+        Assert.Contains("level2Task", trace)
+#if !NETFRAMEWORK472 // downlevel has interstitial layers we are not seeking to characterize at this point
+        Assert.True((totalCount = trace.Split('\n').Length), trace)
+#endif
+
+    // --- Tests per overload ---
+    // The common skeleton is: build a 3-level chain (throwAtLevel1 → level1Task → level2Task),
+    // wrap the outermost level in an async block using Async.Await, run via
+    // StartImmediateAsTask + .Wait(), and assert on the resulting exception's stack trace.
+
+    [<Fact>]
+    let ``Await Task-of-T: all three levels visible in stack trace`` () =
+        let e = runAndCaptureException (async { do! Async.Await(level2Task()) })
+        checkTrace 3 e
+
+    [<Fact>]
+    let ``Await Task (non-generic): all three levels visible in stack trace`` () =
+        let e = runAndCaptureException (async { do! Async.Await(level2Task() :> Task) })
+        checkTrace 3 e
+        // Same behavior as the Task<'T> overload — see comment there.
+
+#if NETSTANDARD2_1
+    [<Fact>]
+    let ``Await ValueTask-of-T: all three levels visible in stack trace`` () =
+        // For a faulted ValueTask<unit>, IsCompletedSuccessfully is false; the overload falls
+        // through to AwaitTask, which takes the same path as the specific Task<'T> overload.
+        let e = runAndCaptureException (async { do! Async.Await(ValueTask<unit>(level2Task())) }) 
+        checkTrace 3 e
+
+    [<Fact>]
+    let ``Await ValueTask (non-generic): all three levels visible in stack trace`` () =
+        // Same as ValueTask<'T>: falls through to AwaitUnitTask for the non-successfully-completed case.
+        let e = runAndCaptureException (async { do! Async.Await(ValueTask(level2Task() :> Task)) })
+
+        checkTrace 3 e
+#endif
+
+    [<Fact>]
+    let ``Await task-like via SRTP overload: all three levels visible in stack trace`` () =
+        let e = runAndCaptureException (async { do! Async.Await(TaskWrapper(level2Task())) })
+
+        // 4 instead of 3 as current impl has an outer "at FSharp.Core.UnitTests.Control.AsyncAwaitStackTraceTests.e@836-9.Invoke(Tuple`3 tupledArg)
+        checkTrace 4 e
