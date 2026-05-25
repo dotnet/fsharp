@@ -757,6 +757,29 @@ module AsyncTaskLikeAwaitTests =
         let ok = Async.RunSynchronously a
         Assert.True ok
 
+    [<Fact>]
+    let ``Await(YieldAwaitable) yields and resumes``() =
+        // Task.Yield() returns a YieldAwaitable which is a struct — exercises the struct-awaiter path.
+        let mutable before, after = false, false
+        async {
+            before <- true
+            do! Async.Await(Task.Yield())
+            after <- true
+        }
+        |> Async.RunSynchronously
+        Assert.True(before && after)
+
+    [<Fact>]
+    let ``Await(ConfiguredTaskAwaitable) from ConfigureAwait``() =
+        // task.ConfigureAwait(false) returns a ConfiguredTaskAwaitable — a common real-world task-like.
+        let result =
+            async {
+                let! v = Async.Await(Task.FromResult(42).ConfigureAwait(false))
+                return v
+            }
+            |> Async.RunSynchronously
+        Assert.Equal(42, result)
+
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncAwaitStackTraceTests =
 
