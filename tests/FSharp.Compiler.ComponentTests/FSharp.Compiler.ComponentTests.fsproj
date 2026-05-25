@@ -419,6 +419,7 @@
     <Compile Include="CompilerOptions\fsc\Platform.fs" />
     <Compile Include="CompilerOptions\fsc\times\times.fs" />
     <Compile Include="CompilerOptions\fsc\warn\warn.fs" />
+    <Compile Include="CompilerOptions\fsc\warn\nowarn_for_cmdline_warnings.fs" />
     <Compile Include="CompilerOptions\fsc\warnon\warnon.fs" />
     <Compile Include="CompilerOptions\fsc\reference.fs" />
     <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />

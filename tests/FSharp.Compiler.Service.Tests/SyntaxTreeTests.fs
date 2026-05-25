@@ -7,6 +7,7 @@ open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Test
+open FSharp.Test.Compiler
 open Xunit
 
 let testCasesDir = __SOURCE_DIRECTORY__ ++ ".." ++ "service" ++ "data" ++ "SyntaxTree"
@@ -186,18 +187,14 @@ let ParseFile fileName =
         else
             "No baseline was found"
 
-    let equals = expected = actual
-    let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
-
-    let shouldUpdateBaseline =
-        (not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" && not equals)
-
-    if shouldUpdateBaseline then
-        File.WriteAllText(bslPath, actual)
-    elif not equals then
-        File.WriteAllText(actualPath, actual)
-    else
+    if expected = actual then
         File.Delete(actualPath)
+    else
+        if shouldUpdateBaselines then
+            File.Delete(actualPath)
+            File.WriteAllText(bslPath, actual)
+        else
+            File.WriteAllText(actualPath, actual)
 
     Assert.Equal(expected, actual)
 
