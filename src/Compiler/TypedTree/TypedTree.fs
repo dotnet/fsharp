@@ -172,6 +172,15 @@ type ValFlags(flags: int64) =
                                                              |               0b00000000000000110000L -> ValInline.Never
                                                              | _          -> failwith "unreachable"
 
+    member x.WithInlineInfo inlineInfo =
+            let flags =
+                     (flags       &&&                                     ~~~0b00000000000000110000L) |||
+                     (match inlineInfo with
+                                     | ValInline.Always ->                   0b00000000000000010000L
+                                     | ValInline.Optional ->                 0b00000000000000100000L
+                                     | ValInline.Never ->                    0b00000000000000110000L)
+            ValFlags flags
+
     member x.MutabilityInfo = 
                                   match (flags       &&&                     0b00000000000001000000L) with 
                                                              |               0b00000000000000000000L -> Immutable
@@ -3300,6 +3309,8 @@ type Val =
     member x.SetIgnoresByrefScope() = x.val_flags <- x.val_flags.WithIgnoresByrefScope
 
     member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
+
+    member x.SetInlineInfo (inlineInfo: ValInline) = x.val_flags <- x.val_flags.WithInlineInfo inlineInfo
 
     member x.SetIsImplied() = x.val_flags <- x.val_flags.WithIsImplied
 
