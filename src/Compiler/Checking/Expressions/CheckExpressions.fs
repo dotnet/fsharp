@@ -13201,6 +13201,15 @@ and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) 
     // Now that we know what we've generalized we can adjust the recursive references
     let vxbinds = vxbinds |> List.map (FixupLetrecBind cenv env.DisplayEnv generalizedTyparsForRecursiveBlock)
 
+    let groupStamps = vxbinds |> List.map (fun pgrbind -> pgrbind.Binding.Var.Stamp) |> Set.ofList
+    for pgrbind in vxbinds do
+        let (TBind(v, e, _)) = pgrbind.Binding
+        if v.ShouldInline then
+            let frees = (freeInExpr CollectLocalsNoCaching e).FreeLocals
+            if frees |> Zset.exists (fun fv -> Set.contains fv.Stamp groupStamps) then
+                errorR(Error(FSComp.SR.tcRecursiveInlineNotAllowed(v.DisplayName), v.Range))
+                v.SetInlineInfo ValInline.Never
+
     // Now eliminate any initialization graphs
     let binds =
         let bindsWithoutLaziness = vxbinds
