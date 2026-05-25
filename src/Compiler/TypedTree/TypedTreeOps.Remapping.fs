@@ -622,8 +622,11 @@ module internal SignatureOps =
 
             match entity1.IsNamespace, entity2.IsNamespace, entity1.IsModule, entity2.IsModule with
             | true, true, _, _ -> ()
+            | true, _, _, true
+            | _, true, true, _ -> errorR (Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly (textOfPath path2), entity2.Range))
             | true, _, _, _
-            | _, true, _, _ -> errorR (Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly (textOfPath path2), entity2.Range))
+            | _, true, _, _ ->
+                errorR (Error(FSComp.SR.tastNamespaceAndTypeWithSameNameInAssembly (textOfPath path2, entity2.LogicalName), entity2.Range))
             | false, false, false, false ->
                 errorR (Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly (entity2.LogicalName, textOfPath path), entity2.Range))
             | false, false, true, true -> errorR (Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly (textOfPath path2), entity2.Range))
