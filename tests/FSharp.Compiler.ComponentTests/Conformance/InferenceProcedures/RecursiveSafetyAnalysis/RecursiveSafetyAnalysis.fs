@@ -2,6 +2,7 @@
 
 namespace Conformance.InferenceProcedures
 
+open System
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
@@ -34,10 +35,7 @@ module RecursiveSafetyAnalysis =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1114, Line 8, Col 15, Line 8, Col 25, "The value 'E_RecursiveInline.test' was marked inline but was not bound in the optimization environment")
-            (Error 1113, Line 7, Col 16, Line 7, Col 20, "The value 'test' was marked inline but its implementation makes use of an internal or private function which is not sufficiently accessible")
-            (Warning 1116, Line 8, Col 15, Line 8, Col 25, "A value marked as 'inline' has an unexpected value")
-            (Error 1118, Line 8, Col 15, Line 8, Col 25, "Failed to inline the value 'test' marked 'inline', perhaps because a recursive value was marked 'inline'")
+            (Error 3888, Line 7, Col 16, Line 7, Col 20, "The value or member 'test' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.")
         ]
 
     // SOURCE=E_TypeDeclaration01.fs SCFLAGS="--langversion:8.0 --test:ErrorRanges" COMPILE_ONLY=1	# E_TypeDeclaration01.fs
@@ -116,4 +114,61 @@ module RecursiveSafetyAnalysis =
         |> withOptions ["--nowarn:3370"]
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive inline member emits single clear diagnostic`` () =
+        let source = "module M\ntype C() as self = member inline _.X = self.X"
+        let diags =
+            FSharp source
+            |> compile
+            |> fun r -> r.Output.Diagnostics
+        Assert.Equal(1, diags.Length)
+        Assert.Contains("recursive", diags.[0].Message, StringComparison.OrdinalIgnoreCase)
+
+    [<Fact>]
+    let ``Mutual recursive inline members emit clear diagnostic`` () =
+        let source = """module M
+type C() as self =
+    member inline _.X = self.Y
+    member inline _.Y = self.X"""
+        let diags =
+            FSharp source
+            |> compile
+            |> fun r -> r.Output.Diagnostics
+        let recursiveErrs =
+            diags
+            |> List.filter (fun d -> d.Message.IndexOf("recursive", StringComparison.OrdinalIgnoreCase) >= 0)
+        Assert.True(recursiveErrs.Length >= 1)
+
+    [<Fact>]
+    let ``Module-level recursive inline emits clear diagnostic`` () =
+        let source = "module M\nlet rec inline f x = f x"
+        let diags =
+            FSharp source
+            |> compile
+            |> fun r -> r.Output.Diagnostics
+        Assert.Equal(1, diags.Length)
+        Assert.Contains("recursive", diags.[0].Message, StringComparison.OrdinalIgnoreCase)
+
+    [<Fact>]
+    let ``Non-recursive inline in rec group compiles cleanly`` () =
+        let source = "module M\nlet rec inline f x = x + 1"
+        FSharp source
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline CE builder members do not trigger recursive diagnostic`` () =
+        let source = """module M
+type B() =
+    member inline _.Bind(x, f) = f x
+    member inline _.Return(x) = x"""
+        let diags =
+            FSharp source
+            |> compile
+            |> fun r -> r.Output.Diagnostics
+        let recursiveErrs =
+            diags
+            |> List.filter (fun d -> d.Message.IndexOf("recursive", StringComparison.OrdinalIgnoreCase) >= 0)
+        Assert.Empty(recursiveErrs)
 

@@ -13168,6 +13168,52 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
 
 and unionGeneralizedTypars typarSets = List.foldBack (ListSet.unionFavourRight typarEq) typarSets []
 
+and CheckRecursiveInlineGroup (bindings: PreInitializationGraphEliminationBinding list) =
+    let inlineBindings =
+        bindings
+        |> List.filter (fun pgrbind ->
+            let (TBind(v, _, _)) = pgrbind.Binding
+            v.ShouldInline)
+    if not (List.isEmpty inlineBindings) then
+        let inlineStamps =
+            inlineBindings
+            |> List.map (fun pgrbind ->
+                let (TBind(v, _, _)) = pgrbind.Binding
+                v.Stamp)
+            |> Set.ofList
+        // Map from inline stamp to set of free-local stamps in its body.
+        let freeStampsByStamp =
+            inlineBindings
+            |> List.map (fun pgrbind ->
+                let (TBind(v, e, _)) = pgrbind.Binding
+                let freeVals = (freeInExpr CollectLocalsNoCaching e).FreeLocals
+                let frees = Zset.fold (fun (fv: Val) acc -> Set.add fv.Stamp acc) freeVals Set.empty
+                v.Stamp, frees)
+            |> Map.ofList
+        // For each inline binding, perform BFS through inline-only edges and
+        // detect whether we can return to ourselves. A self-loop or any cycle
+        // through other inline bindings counts.
+        for pgrbind in inlineBindings do
+            let (TBind(v, _, _)) = pgrbind.Binding
+            let startStamp = v.Stamp
+            let mutable foundCycle = false
+            let mutable visited = Set.empty
+            let mutable queue = [startStamp]
+            while not (List.isEmpty queue) && not foundCycle do
+                let cur = List.head queue
+                queue <- List.tail queue
+                let frees = freeStampsByStamp |> Map.tryFind cur |> Option.defaultValue Set.empty
+                for fv in frees do
+                    if not foundCycle then
+                        if fv = startStamp then
+                            foundCycle <- true
+                        elif Set.contains fv inlineStamps && not (Set.contains fv visited) then
+                            visited <- Set.add fv visited
+                            queue <- fv :: queue
+            if foundCycle then
+                errorR(Error(FSComp.SR.tcRecursiveInlineNotAllowed(v.DisplayName), v.Range))
+                v.SetInlineInfo ValInline.Never
+
 and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) =
 
     let g = cenv.g
@@ -13201,14 +13247,7 @@ and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) 
     // Now that we know what we've generalized we can adjust the recursive references
     let vxbinds = vxbinds |> List.map (FixupLetrecBind cenv env.DisplayEnv generalizedTyparsForRecursiveBlock)
 
-    let groupStamps = vxbinds |> List.map (fun pgrbind -> pgrbind.Binding.Var.Stamp) |> Set.ofList
-    for pgrbind in vxbinds do
-        let (TBind(v, e, _)) = pgrbind.Binding
-        if v.ShouldInline then
-            let frees = (freeInExpr CollectLocalsNoCaching e).FreeLocals
-            if frees |> Zset.exists (fun fv -> Set.contains fv.Stamp groupStamps) then
-                errorR(Error(FSComp.SR.tcRecursiveInlineNotAllowed(v.DisplayName), v.Range))
-                v.SetInlineInfo ValInline.Never
+    CheckRecursiveInlineGroup vxbinds
 
     // Now eliminate any initialization graphs
     let binds =
