@@ -250,3 +250,25 @@ M.Svc.OldMethod()
             // Second: pre-existing duplicate from name resolution attribute check (whole expression range)
             (Warning 44, Line 7, Col 1, Line 7, Col 18, "This construct is deprecated. use NewMethod instead")
         ]
+
+[<Fact>]
+let ``Static indexed property overload error should point at property name`` () =
+    FSharp
+        """
+open System
+type Lookup() =
+    static member Item with get (key: int) = "int"
+    static member Item with get (key: float) = "float"
+
+let _ = Lookup.Item("")
+        """
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics
+        [ (Error 41, Line 7, Col 16, Line 7, Col 20, "No overloads match for method 'Item'.
+
+Known type of argument: string
+
+Available overloads:
+ - static member Lookup.Item: key: float -> string with get // Argument 'key' doesn't match
+ - static member Lookup.Item: key: int -> string with get // Argument 'key' doesn't match") ]
