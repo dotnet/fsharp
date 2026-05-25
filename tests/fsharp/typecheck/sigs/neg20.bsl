@@ -158,16 +158,6 @@ neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to
 but here has type
     'objnull'    
 
-neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'objnull'    
-
-neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'objnull'    
-
 neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
@@ -180,16 +170,6 @@ is not compatible with type
 
 
 neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'objnull'    
-
-neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'objnull'    
-
-neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'objnull'    
@@ -212,16 +192,6 @@ neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to
 but here has type
     'objnull'    
 
-neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'objnull'    
-
-neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'objnull'    
-
 neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
@@ -234,16 +204,6 @@ is not compatible with type
 
 
 neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'objnull'    
-
-neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'objnull'    
-
-neg20.fs(190,34,190,39): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'objnull'    
@@ -348,8 +308,6 @@ neg20.fs(285,12,285,13): typecheck error FS0038: 'x' is bound twice in this patt
 neg20.fs(286,14,286,15): typecheck error FS0038: 'x' is bound twice in this pattern
 
 neg20.fs(288,17,288,18): typecheck error FS0038: 'x' is bound twice in this pattern
-
-neg20.fs(294,5,294,36): typecheck error FS0840: Unrecognized attribute target. Valid attribute targets are 'assembly', 'module', 'type', 'method', 'property', 'return', 'param', 'field', 'event', 'constructor'.
 
 neg20.fs(294,5,294,36): typecheck error FS0840: Unrecognized attribute target. Valid attribute targets are 'assembly', 'module', 'type', 'method', 'property', 'return', 'param', 'field', 'event', 'constructor'.
 
