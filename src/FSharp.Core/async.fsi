@@ -983,7 +983,7 @@ namespace Microsoft.FSharp.Control
         static member Await: task: ValueTask -> Async<unit>
 #endif
 
-        /// <summary>Creates an asynchronous computation that captures the ambient <c>CancellationToken</c>, passes it to
+        /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
         /// <c>createTask</c>, and then awaits the resulting task, returning its result.</summary>
         ///
         /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>Task&lt;'T&gt;</c>.</param>
@@ -1005,7 +1005,7 @@ namespace Microsoft.FSharp.Control
         /// </example>
         static member StartTaskImmediate: createTask: (CancellationToken -> Task<'T>) -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation that captures the ambient <c>CancellationToken</c>, passes it to
+        /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
         /// <c>createTask</c>, and then awaits the resulting task.</summary>
         ///
         /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>Task</c>.</param>
@@ -1027,7 +1027,7 @@ namespace Microsoft.FSharp.Control
         static member StartTaskImmediate: createTask: (CancellationToken -> Task) -> Async<unit>
 
 #if NETSTANDARD2_1
-        /// <summary>Creates an asynchronous computation that captures the ambient <c>CancellationToken</c>, passes it to
+        /// <summary>Creates an asynchronous computation that captures the ambient <c>Async.CancellationToken</c> to
         /// <c>createTask</c>, and then awaits the resulting <c>ValueTask</c>, returning its result.</summary>
         ///
         /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>ValueTask&lt;'T&gt;</c>.</param>
@@ -1041,7 +1041,7 @@ namespace Microsoft.FSharp.Control
         /// <category index="0">Starting Async Computations</category>
         static member StartTaskImmediate: createTask: (CancellationToken -> ValueTask<'T>) -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation that captures the ambient <c>CancellationToken</c>, passes it to
+        /// <summary>Creates an asynchronous computation that passes the ambient <c>CancellationToken</c> to
         /// <c>createTask</c>, and then awaits the resulting <c>ValueTask</c>.</summary>
         ///
         /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>ValueTask</c>.</param>
@@ -1403,7 +1403,7 @@ namespace Microsoft.FSharp.Control
                     and ^Awaiter: (member get_IsCompleted: unit -> bool)
                     and ^Awaiter: (member GetResult: unit -> 'T)
 
-            /// <summary>Creates an asynchronous computation that passes the ambient <c>CancellationToken</c>, to
+            /// <summary>Creates an asynchronous computation that passes the ambient <c>CancellationToken</c> to
             /// <c>createTask</c>, and then awaits the resulting task-like value.</summary>
             ///
             /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a task-like value
@@ -1424,11 +1424,21 @@ namespace Microsoft.FSharp.Control
             /// <category index="0">Starting Async Computations</category>
             /// <example id="startTaskImmediate-tasklike-1">
             /// <code lang="fsharp">
+            /// // Straightforward: factory returns Task&lt;string&gt;, which is handled by
+            /// // the specific Task&lt;'T&gt; overload of StartTaskImmediate (not this one).
+            /// let fetchPlain (url: string) =
+            ///     Async.StartTaskImmediate(fun ct ->
+            ///         httpClient.GetStringAsync(url, ct))   // returns Task&lt;string&gt;
+            ///
+            /// // Adding ConfigureAwait(false) to the mix yields a ConfiguredTaskAwaitable&lt;string&gt;,
+            /// // which has no specific overload — this SRTP overload handles it.
+            /// let fetchConfigured (url: string) =
+            ///     Async.StartTaskImmediate(fun ct ->
+            ///         httpClient.GetStringAsync(url, ct).ConfigureAwait(false))
+            ///
             /// async {
-            ///     // Yield to other work and resume, without capturing a SynchronizationContext
-            ///     do! Async.StartTaskImmediate(fun _ct -> Task.Yield())
-            ///     let! v = Async.StartTaskImmediate(fun _ct -> Task.FromResult(42).ConfigureAwait(false))
-            ///     printfn $"Result: {v}"
+            ///     let! html = fetchConfigured "https://example.com"
+            ///     printfn $"Downloaded {html.Length} chars"
             /// } |> Async.RunSynchronously
             /// </code>
             /// </example>
