@@ -865,10 +865,8 @@ let rec SimplifyMeasuresInType g resultFirst (generalizable, generalized as para
     | TType_ucase(_, l)
     | TType_app (_, l, _)
     | TType_anon (_,l)
+    | TType_anon_tt_union (_, l)
     | TType_tuple (_, l) -> SimplifyMeasuresInTypes g param l
-
-    // TODO: Anonymous type-tagged union
-    | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
 
     | TType_fun (domainTy, rangeTy, _) ->
         if resultFirst then
@@ -913,14 +911,13 @@ let rec GetMeasureVarGcdInType v ty =
     | TType_ucase(_, l)
     | TType_app (_, l, _)
     | TType_anon (_,l)
+    | TType_anon_tt_union (_, l)
     | TType_tuple (_, l) -> GetMeasureVarGcdInTypes v l
 
     | TType_fun (domainTy, rangeTy, _) -> GcdRational (GetMeasureVarGcdInType v domainTy) (GetMeasureVarGcdInType v rangeTy)
     | TType_var _   -> ZeroRational
     | TType_forall (_, tau) -> GetMeasureVarGcdInType v tau
     | TType_measure unt -> MeasureVarExponent v unt
-    // TODO: Anonymous type-tagged union
-    | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
 
 and GetMeasureVarGcdInTypes v tys =
     match tys with
@@ -1479,6 +1476,9 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2 ->
             SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
+        | TType_anon_tt_union (_, cases1), TType_anon_tt_union(_, cases2) ->
+            SolveTypeEqualsTypeEqns csenv ndeep m2 trace None cases1 cases2
+
         | _  -> localAbortD
 
 and SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2 =
@@ -1684,6 +1684,23 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
 
         | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  ->
             SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
+
+        // (int|string) :> sty1 if
+        //     int :> sty1 AND
+        //     string :> sty1
+        | _, TType_anon_tt_union (_, cases2) ->
+            cases2 |> IterateD (fun ty2 -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln sty1 ty2)
+
+        // sty2 :> (IComparable|ICloneable) if
+        //    sty2 :> IComparable OR
+        //    sty2 :> ICloneable OR
+        // when sty2 is not an erased union type
+        | TType_anon_tt_union (_, cases1), _ ->
+            match cases1 |> List.tryFind (fun ty1 -> TypeFeasiblySubsumesType ndeep g amap csenv.m ty1 CanCoerce sty2) with
+            | Some ty1 ->
+                SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 sty2
+            | None ->
+                ErrorD (ConstraintSolverError(FSComp.SR.csAnonTtUnionTypeNotContained(NicePrint.minimalStringOfType denv sty2, NicePrint.minimalStringOfType denv sty1), csenv.m, m2))
 
         | _ ->
             // By now we know the type is not a variable type
