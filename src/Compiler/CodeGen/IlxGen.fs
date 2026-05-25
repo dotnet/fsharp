@@ -12031,12 +12031,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         }
 
                     let layout =
-                        // Struct unions always carry a hidden tag field, so never emit size 1 here
+                        // Multi-case struct unions carry a hidden tag field; single-case struct unions
+                        // are handled by the CLR's minimum-1-byte guarantee. No explicit size needed.
                         if isStructTy g thisTy then
-                            if tycon.IsUnionTycon then
-                                ILTypeDefLayout.Sequential { Size = None; Pack = None }
-                            else
-                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
+                            ILTypeDefLayout.Sequential { Size = None; Pack = None }
                         else
                             ILTypeDefLayout.Auto
 
