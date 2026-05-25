@@ -1161,8 +1161,8 @@ module AsyncPrimitives =
     let RunSynchronouslyBackgroundThreadPool (computation: Async<'T>) cancellationToken timeout =
         // Run inline only where it's guaranteed to be safe
         match SynchronizationContext.Current, Thread.CurrentThread.IsThreadPoolThread, timeout with
-        | null, true, None -> RunSynchronouslyImmediate computation cancellationToken // clean stacktrace in case of exception
-        | _ -> QueueAsyncAndWaitForResultSynchronously computation cancellationToken timeout // NOTE no useful stack traces
+        | null, true, None -> RunSynchronouslyImmediate computation cancellationToken // best stacktrace in case of exception
+        | _ -> QueueAsyncAndWaitForResultSynchronously computation cancellationToken timeout // less useful stack traces
 
     [<DebuggerHidden>]
     let Start cancellationToken (computation: Async<unit>) =
@@ -1517,7 +1517,7 @@ type Async =
         let cancellationToken =
             defaultArg cancellationToken defaultCancellationTokenSource.Token
 
-        RunSynchronouslyImmediate computation cancellationToken 
+        RunSynchronouslyImmediate computation cancellationToken
 
     static member Start(computation, ?cancellationToken) =
         let cancellationToken =
