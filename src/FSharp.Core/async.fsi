@@ -1403,6 +1403,43 @@ namespace Microsoft.FSharp.Control
                     and ^Awaiter: (member get_IsCompleted: unit -> bool)
                     and ^Awaiter: (member GetResult: unit -> 'T)
 
+            /// <summary>Creates an asynchronous computation that passes the ambient <c>CancellationToken</c>, to
+            /// <c>createTask</c>, and then awaits the resulting task-like value.</summary>
+            ///
+            /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a task-like value
+            /// satisfying the GetAwaiter pattern.</param>
+            ///
+            /// <remarks>The value returned by <c>createTask</c> must satisfy the GetAwaiter pattern: it must have a
+            /// <c>GetAwaiter()</c> method returning an awaiter implementing
+            /// <see cref="T:System.Runtime.CompilerServices.ICriticalNotifyCompletion"/>
+            /// with <c>IsCompleted</c> and <c>GetResult()</c> members.
+            ///
+            /// This overload uses statically resolved type parameters (SRTP) so it can accept factories returning
+            /// any task-like type, including <c>YieldAwaitable</c> (from <c>Task.Yield()</c>) and
+            /// <c>ConfiguredTaskAwaitable</c> (from <c>task.ConfigureAwait(false)</c>).
+            /// The specific overloads for <see cref="T:System.Threading.Tasks.Task`1"/>, <see cref="T:System.Threading.Tasks.Task"/>,
+            /// <see cref="T:System.Threading.Tasks.ValueTask`1"/> and <see cref="T:System.Threading.Tasks.ValueTask"/>
+            /// are preferred when the factory return type is known.
+            /// </remarks>
+            /// <category index="0">Starting Async Computations</category>
+            /// <example id="startTaskImmediate-tasklike-1">
+            /// <code lang="fsharp">
+            /// async {
+            ///     // Yield to other work and resume, without capturing a SynchronizationContext
+            ///     do! Async.StartTaskImmediate(fun _ct -> Task.Yield())
+            ///     let! v = Async.StartTaskImmediate(fun _ct -> Task.FromResult(42).ConfigureAwait(false))
+            ///     printfn $"Result: {v}"
+            /// } |> Async.RunSynchronously
+            /// </code>
+            /// </example>
+            [<NoEagerConstraintApplication>]
+            static member inline StartTaskImmediate< ^TaskLike, ^Awaiter, 'T> :
+                createTask: (CancellationToken -> ^TaskLike) -> Async<'T>
+                    when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+                    and ^Awaiter :> ICriticalNotifyCompletion
+                    and ^Awaiter: (member get_IsCompleted: unit -> bool)
+                    and ^Awaiter: (member GetResult: unit -> 'T)
+
     /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
     ///
     /// <category index="5">Async Internals</category>

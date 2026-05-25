@@ -676,14 +676,14 @@ type AsyncType() =
     [<Fact>]
     member _.``StartTaskImmediate flows CancellationToken``() =
         let cts = new CancellationTokenSource()
-        let capturedCt = ref CancellationToken.None
+        let mutable capturedCt = CancellationToken.None
         let a = async {
             do! Async.StartTaskImmediate(fun ct ->
-                capturedCt.Value <- ct
+                capturedCt <- ct
                 Task.CompletedTask)
         }
         Async.RunSynchronously(a, cancellationToken = cts.Token)
-        Assert.Equal(cts.Token, capturedCt.Value)
+        Assert.Equal(cts.Token, capturedCt)
 
     [<Fact>]
     member _.``StartTaskImmediate(Task<'T>) exception unwraps``() =
@@ -913,6 +913,49 @@ module AsyncTaskLikeAwaitTests =
             }
             |> Async.RunSynchronously
         Assert.Equal(42, result)
+
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module AsyncStartTaskImmediateTaskLikeTests =
+
+    [<Fact>]
+    let ``StartTaskImmediate(YieldAwaitable factory) yields and resumes``() =
+        // Task.Yield() returns a struct YieldAwaitable — exercises the struct-awaiter SRTP path.
+        let mutable before, after = false, false
+
+        async {
+            before <- true
+            do! Async.StartTaskImmediate(fun _ -> Task.Yield())
+            after <- true
+        }
+        |> Async.RunSynchronously
+
+        Assert.True(before && after)
+
+    [<Fact>]
+    let ``StartTaskImmediate(ConfiguredTaskAwaitable factory) returns result``() =
+        // ConfigureAwait(false) returns a ConfiguredTaskAwaitable — a common real-world task-like.
+        let result =
+            async {
+                return! Async.StartTaskImmediate(fun _ -> Task.FromResult(42).ConfigureAwait(false))
+            }
+            |> Async.RunSynchronously
+
+        Assert.Equal(42, result)
+
+    [<Fact>]
+    let ``StartTaskImmediate flows CancellationToken``() =
+        // The factory receives the ambient cancellation token from the enclosing async.
+        let mutable capturedCt = CancellationToken.None
+        use cts = new CancellationTokenSource()
+
+        let a = async {
+            do! Async.StartTaskImmediate(fun ct ->
+                    capturedCt <- ct
+                    Task.CompletedTask.ConfigureAwait(false))
+        }
+        Async.RunSynchronously(a, cancellationToken = cts.Token)
+
+        Assert.Equal(cts.Token, capturedCt)
 
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncAwaitStackTraceTests =
