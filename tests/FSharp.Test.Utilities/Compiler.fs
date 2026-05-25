@@ -5,9 +5,7 @@ namespace FSharp.Test
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
-open FSharp.Test.Assert
 open FSharp.Test.Utilities
 open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
@@ -27,9 +25,10 @@ open TestFramework
 
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
-open FSharp.Compiler.CodeAnalysis
 
 module rec Compiler =
+    let shouldUpdateBaselines =
+        Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") <> null
 
     [<AutoOpen>]
     type SourceUtilities () =
@@ -1230,10 +1229,8 @@ Expected:
 {expected}
 Actual:
 {actual}"""
-    let updateBaseline () =
-        snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0
     let updateBaseLineIfEnvironmentSaysSo baseline =
-        if updateBaseline () then
+        if shouldUpdateBaselines then
             if FileSystem.FileExistsShim baseline.FilePath then
                 FileSystem.CopyShim(baseline.FilePath, baseline.BslSource, true)
 
@@ -2020,7 +2017,7 @@ Actual:
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
                 | None -> ()
                 | Some diff ->
-                    if Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") <> null then
+                    if shouldUpdateBaselines then
                         File.WriteAllText(path, actualErrors)
 
                     printfn $"{Path.GetFullPath path} \n {diff}"
