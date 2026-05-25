@@ -10,7 +10,6 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open System.Threading
 open System.Threading.Tasks
-open Xunit.Internal
 
 // Cancels default token.
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
@@ -816,12 +815,16 @@ module AsyncAwaitStackTraceTests =
     // regardless of which Async.Await overload is used.
     let checkTrace totalCount (e: exn) =
         let trace = e.StackTrace
+        // stacktrace should be relatively compact and not bloat the logs, so unconditionally print it to save time analyzing regressions
+        printfn "EDI trace ===="
+        printfn "%s" trace
+        printfn "==== EDI trace"
         Assert.NotNull(trace)
         Assert.Contains("throwAtLevel1", trace)
         Assert.Contains("level1Task", trace)
         Assert.Contains("level2Task", trace)
-#if !NETFRAMEWORK472 // downlevel has interstitial layers we are not seeking to characterize at this point
-        Assert.True((totalCount = trace.Split('\n').Length), trace)
+#if !NETFRAMEWORK // downlevel has interstitial layers we are not seeking to characterize at this point
+        Assert.Equal(totalCount, trace.Split('\n').Length)
 #endif
 
     // --- Tests per overload ---
