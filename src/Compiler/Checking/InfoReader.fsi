@@ -344,7 +344,7 @@ val PropTypeOfEventInfo: infoReader: InfoReader -> m: range -> ad: AccessorDomai
 
 /// Try to find the name of the metadata file for this external definition
 val TryFindMetadataInfoOfExternalEntityRef:
-    infoReader: InfoReader -> m: range -> eref: EntityRef -> (string option * Typars * ILTypeInfo) option
+    infoReader: InfoReader -> _m: range -> eref: EntityRef -> (string option * Typars * ILTypeInfo) option
 
 /// Try to find the xml doc associated with the assembly name and metadata key
 val TryFindXmlDocByAssemblyNameAndSig:

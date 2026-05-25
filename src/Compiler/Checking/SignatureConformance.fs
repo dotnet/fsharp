@@ -198,8 +198,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             
             checkExnInfo  (fun f -> FSharpExceptionNotContained(denv, infoReader, implTycon, sigTycon, f)) aenv infoReader implTycon sigTycon implTycon.ExceptionInfo sigTycon.ExceptionInfo &&
             
-            let implTypars = implTycon.Typars m
-            let sigTypars = sigTycon.Typars m
+            let implTypars = implTycon.Typars
+            let sigTypars = sigTycon.Typars
             
             if implTypars.Length <> sigTypars.Length then  
                 errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleParameterCountsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)) 

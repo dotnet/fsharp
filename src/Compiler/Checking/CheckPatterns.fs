@@ -510,7 +510,7 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
     | Some(tinst, tcref, fldsmap, _fldsList) ->
 
     let gtyp = mkWoNullAppTy tcref tinst
-    let inst = List.zip (tcref.Typars m) tinst
+    let inst = List.zip (tcref.Typars) tinst
 
     UnifyTypes cenv env m ty gtyp
 
@@ -658,7 +658,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
         CheckUnionCaseAttributes g ucref m |> CommitOperationResult
         CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
         let resTy = actualResultTyOfUnionCase ucinfo.TypeInst ucref
-        let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
+        let inst = mkTyparInst ucref.TyconRef.Typars ucinfo.TypeInst
         let mkf =
             try
                 UnifyTypes cenv env m overallTy resTy

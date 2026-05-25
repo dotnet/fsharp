@@ -1923,7 +1923,7 @@ let FreshenPossibleForallTy g m rigid ty =
         origTypars, tps, tinst, instType renaming tau
 
 let FreshenTyconRef2 (g: TcGlobals) m (tcref: TyconRef) =
-    let tps, renaming, tinst = FreshenTypeInst g m (tcref.Typars m)
+    let tps, renaming, tinst = FreshenTypeInst g m (tcref.Typars)
     tps, renaming, tinst, TType_app (tcref, tinst, g.knownWithoutNull)
 
 /// Given a abstract method, which may be a generic method, freshen the type in preparation
@@ -2078,7 +2078,7 @@ let ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m (cenv: cenv) env o
         CheckUnionCaseAttributes g ucref m |> CommitOperationResult
         CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
         let resTy = actualResultTyOfUnionCase ucinfo.TypeInst ucref
-        let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
+        let inst = mkTyparInst ucref.TyconRef.Typars ucinfo.TypeInst
         UnifyTypes cenv env m overallTy resTy
         let mkf = makerForUnionCase(ucref, ucinfo.TypeInst)
         mkf, actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f.Id ]
@@ -4190,7 +4190,7 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
             match checkConstraints with
             | NoCheckCxs ->
                 //let formalEnclosingTypars = []
-                let tpsorig = tcref.Typars(m) //List.map (destTyparTy g) inst //, _, tinst, _ = FreshenTyconRef2 g m tcref
+                let tpsorig = tcref.Typars //List.map (destTyparTy g) inst //, _, tinst, _ = FreshenTyconRef2 g m tcref
                 let tps = List.map (destTyparTy g) tinst //, _, tinst, _ = FreshenTyconRef2 g m tcref
                 let tprefInst, _tptys = mkTyparToTyparRenaming tpsorig tps
                 //let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
@@ -4673,7 +4673,7 @@ and TcLongIdentAppType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env
         TType_measure (NewErrorMeasure ()), tpenv
 
     | _, TyparKind.Type ->
-        if postfix && tcref.Typars m |> List.exists (fun tp -> match tp.Kind with TyparKind.Measure -> true | _ -> false) then
+        if postfix && tcref.Typars |> List.exists (fun tp -> match tp.Kind with TyparKind.Measure -> true | _ -> false) then
             error(Error(FSComp.SR.tcInvalidUnitsOfMeasurePrefix(), m))
         TcTypeApp cenv newOk checkConstraints occ env tpenv m tcref tinstEnclosing args inst
 

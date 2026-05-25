@@ -1055,7 +1055,7 @@ type Exception with
                 os.AppendString(FSComp.SR.notAFunctionWithType (NicePrint.prettyStringOfTy denv ty))
 
         | TyconBadArgs(_, tcref, d, _) ->
-            let exp = tcref.TyparsNoRange.Length
+            let exp = tcref.Typars.Length
 
             if exp = 0 then
                 os.AppendString(FSComp.SR.buildUnexpectedTypeArgs (fullDisplayTextOfTyconRef tcref, d))

@@ -1163,13 +1163,13 @@ let PropTypeOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     mkIEventType g delTy argsTy
 
 /// Try to find the name of the metadata file for this external definition 
-let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) m eref = 
+let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) (_m: range) eref = 
     let g = infoReader.g
     match eref with 
     | ERefLocal _ -> None
     | ERefNonLocal nlref -> 
         // Generalize to get a formal signature 
-        let formalTypars = eref.Typars m
+        let formalTypars = eref.Typars
         let formalTypeInst = generalizeTypars formalTypars
         let ty = TType_app(eref, formalTypeInst, KnownAmbivalentToNull)
         if isILAppTy g ty then

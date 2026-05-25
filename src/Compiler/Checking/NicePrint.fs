@@ -1356,7 +1356,7 @@ module PrintTastMemberOrVals =
 
         let memberHasSameTyparNameAsParentTypeTypars =
             let parentTyparNames =
-                vref.DeclaringEntity.TyparsNoRange
+                vref.DeclaringEntity.Typars
                 |> Seq.choose (fun tp -> if tp.typar_id.idText = unassignedTyparName then None else Some tp.typar_id.idText)
                 |> set
             niceMethodTypars
@@ -2081,7 +2081,7 @@ module TastDefinitionPrinting =
         let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayNameCore
 
         let lhsL =
-            let tps = tycon.TyparsNoRange
+            let tps = tycon.Typars
             let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
             let tpsL = layoutAccessibility denv tycon.Accessibility tpsL
             typewordL ^^ tpsL

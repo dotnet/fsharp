@@ -558,7 +558,7 @@ type TypeReprEnv
     member eenv.ForTypars tps = eenv.ResetTypars().Add tps
 
     /// Get the environment for within a type definition
-    member eenv.ForTycon(tycon: Tycon) = eenv.ForTypars tycon.TyparsNoRange
+    member eenv.ForTycon(tycon: Tycon) = eenv.ForTypars tycon.Typars
 
     /// Get the environment for generating a reference to items within a type definition
     member eenv.ForTyconRef(tcref: TyconRef) = eenv.ForTycon tcref.Deref
@@ -1460,7 +1460,7 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
     let isCtor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor)
     let cctor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.ClassConstructor)
     let parentTcref = vref.DeclaringEntity
-    let parentTypars = parentTcref.TyparsNoRange
+    let parentTypars = parentTcref.Typars
     let numParentTypars = parentTypars.Length
 
     if tps.Length < numParentTypars then
@@ -4495,7 +4495,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
             // @REVIEW: refactor this
             let numEnclILTypeArgs =
                 match vref.MemberInfo with
-                | Some _ when not vref.IsExtensionMember -> List.length (vref.MemberApparentEntity.TyparsNoRange |> DropErasedTypars)
+                | Some _ when not vref.IsExtensionMember -> List.length (vref.MemberApparentEntity.Typars |> DropErasedTypars)
                 | _ -> 0
 
             let ilEnclArgTys, ilMethArgTys =
@@ -8678,7 +8678,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
     | _ when
         vspec.IsClassConstructor
-        && isNil vspec.DeclaringEntity.TyparsNoRange
+        && isNil vspec.DeclaringEntity.Typars
         && not isStateVar
         ->
         let tps, _, _, _, cctorBody, _ =
@@ -11214,7 +11214,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let ilThisTy = GenType cenv m eenvinner.tyenv thisTy
             let tref = ilThisTy.TypeRef
-            let ilGenParams = GenGenericParams cenv eenvinner tycon.TyparsNoRange
+            let ilGenParams = GenGenericParams cenv eenvinner tycon.Typars
             let checkNullness = g.langFeatureNullness && g.checkNullness
 
             let ilIntfTys =
@@ -11423,7 +11423,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                 isEmptyStruct
                 && cenv.options.workAroundReflectionEmitBugs
-                && not tycon.TyparsNoRange.IsEmpty
+                && not tycon.Typars.IsEmpty
 
             // Compute a bunch of useful things for each field
             let isCLIMutable =
@@ -11821,7 +11821,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             // If this property doesn't hold then the .cctor can end up running
             // before the main method even starts.
             let typeDefTrigger =
-                if eenv.isFinalFile || tycon.TyparsNoRange.IsEmpty then
+                if eenv.isFinalFile || tycon.Typars.IsEmpty then
                     ILTypeInit.OnAny
                 else
                     ILTypeInit.BeforeField
@@ -11920,7 +11920,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     ||
                                     // Reflection emit doesn't let us emit 'pack' and 'size' for generic structs.
                                     // In that case we generate a dummy field instead
-                                    (cenv.options.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty)
+                                    (cenv.options.workAroundReflectionEmitBugs && not tycon.Typars.IsEmpty)
                                 then
                                     ILTypeDefLayout.Sequential { Size = None; Pack = None }, ILDefaultPInvokeEncoding.Ansi
                                 else
@@ -12169,7 +12169,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             //
             // In this case, the .cctor for this type must force the .cctor of the backing static class for the file.
             if
-                tycon.TyparsNoRange.IsEmpty
+                tycon.Typars.IsEmpty
                 && not eenv.realsig
                 && tycon.MembersOfFSharpTyconSorted
                    |> List.exists (fun vref -> vref.Deref.IsClassConstructor)

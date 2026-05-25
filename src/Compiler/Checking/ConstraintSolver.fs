@@ -1607,17 +1607,17 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                             (tyconRefEq g tagc1 g.byrefkind_In_tcr || tyconRefEq g tagc1 g.byrefkind_Out_tcr) ) -> ()
                 | _ -> return! SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2
                 }
-            | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
+            | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.Typars tc1
 
         // Special handling for delegate types - ignore nullness differences
         // Delegates from C# interfaces without nullable annotations should match F# events
         // See https://github.com/dotnet/fsharp/issues/18361 and https://github.com/dotnet/fsharp/issues/18349
         | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 && isDelegateTy g sty1 ->
-            SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
+            SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.Typars tc1
 
         | TType_app (tc1, l1, _)  , TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {            
-                do! SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
+                do! SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.Typars tc1
                 do! SolveNullnessSubsumesNullness csenvOuter m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
@@ -2872,7 +2872,7 @@ and SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                     match ty with
                     | AppTy g (tcref, tinst) ->
                         // Check the (possibly inferred) structural dependencies
-                        (tinst, tcref.TyparsNoRange) ||> Iterate2D (fun ty tp -> 
+                        (tinst, tcref.Typars) ||> Iterate2D (fun ty tp -> 
                             if tp.ComparisonConditionalOn then 
                                 SolveTypeSupportsComparison (csenv: ConstraintSolverEnv) ndeep m2 trace ty 
                             else 
@@ -2919,7 +2919,7 @@ and SolveTypeSupportsEquality (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                        ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportEquality3(NicePrint.minimalStringOfType denv ty), m, m2))
                    else
                        // Check the (possibly inferred) structural dependencies
-                       (tinst, tcref.TyparsNoRange) ||> Iterate2D (fun ty tp -> 
+                       (tinst, tcref.Typars) ||> Iterate2D (fun ty tp -> 
                            if tp.EqualityConditionalOn then 
                                SolveTypeSupportsEquality csenv ndeep m2 trace ty
                            else 
