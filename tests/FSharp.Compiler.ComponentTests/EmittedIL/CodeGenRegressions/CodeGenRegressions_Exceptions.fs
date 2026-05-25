@@ -19,6 +19,7 @@ exception Foo of x:string * y:int
         let result =
             FSharp source
             |> asLibrary
+            |> withLangVersion "11"
             |> compile
             |> shouldSucceed
 
@@ -90,6 +91,7 @@ let main _ =
 """
         FSharp source
         |> asExe
+        |> withLangVersion "11"
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
@@ -146,6 +148,7 @@ let main _ =
 """
         FSharp source
         |> asExe
+        |> withLangVersion "11"
         |> ignoreWarnings
         |> compile
         |> shouldSucceed

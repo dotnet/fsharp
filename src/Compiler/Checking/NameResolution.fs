@@ -94,11 +94,16 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
                 ActivePatternReturnKind.RefTypeWrapper
             else
                 let _, apReturnTy = stripFunTy g vref.TauType
-                let hasStructAttribute() = 
-                    vref.Attribs
-                    |> List.exists (function 
-                        | Attrib(targetsOpt = Some(System.AttributeTargets.ReturnValue)) as a -> hasFlag (classifyValAttrib g a) WellKnownValAttributes.StructAttribute
-                        | _ -> false)
+                let hasStructAttribute() =
+                    // After SynInfo.RotateReturnAttributes, [<return: Struct>] lives in
+                    // ValReprInfo's result ArgReprInfo rather than vref.Attribs. The flag bits
+                    // in ArgReprInfo.Attribs are computed lazily, so classify the underlying
+                    // attribute list directly.
+                    match vref.ValReprInfo with
+                    | Some(ValReprInfo(_, _, retInfo)) ->
+                        let flags = computeValWellKnownFlags g (retInfo.Attribs.AsList())
+                        hasFlag flags WellKnownValAttributes.StructAttribute
+                    | None -> false
                 if isValueOptionTy g apReturnTy || hasStructAttribute() then ActivePatternReturnKind.StructTypeWrapper
                 elif isBoolTy g apReturnTy then ActivePatternReturnKind.Boolean
                 else ActivePatternReturnKind.RefTypeWrapper
