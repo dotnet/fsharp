@@ -1631,6 +1631,7 @@ type internal TypeCheckInfo
                         | None -> ValueNone
                     | _ -> ValueNone
 
+            // Wildcard _ should not resolve to the member's synthetic self-identifier via fallback.
             let isDiscardIdentifier =
                 match residueOpt, origLongIdentOpt with
                 | None, Some [ "_" ] -> true

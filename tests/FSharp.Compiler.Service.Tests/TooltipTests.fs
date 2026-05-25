@@ -615,6 +615,25 @@ type T () =
 """
     |> assertToolTipIsEmpty
 
+[<Fact>]
+let ``Wildcard match pattern inside member with underscore instance identifier has no tooltip`` () =
+    Checker.getTooltip """
+type T () =
+    member _.M (x: int) =
+        match x with
+        | _{caret} -> ()
+"""
+    |> assertToolTipIsEmpty
+
+[<Fact>]
+let ``Named self-identifier is not affected by wildcard discard fix`` () =
+    Checker.getTooltip """
+type T () =
+    member thi{caret}s.M () = ()
+"""
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldContain "T"
+
 // https://github.com/dotnet/fsharp/issues/13194
 [<Fact>]
 let ``Sig file XML doc fallback works for member whose name contains a single quote`` () =
