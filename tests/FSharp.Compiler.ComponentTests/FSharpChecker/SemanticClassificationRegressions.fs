@@ -136,3 +136,74 @@ type Animal =
           (7, 2, 8)    // s.IsCircle && s.IsSquare — two on same line
           (12, 1, 7)   // t.IsIdent — RequireQualifiedAccess
           (17, 1, 5) ] // this.IsCat — self-referential member
+
+/// (#18009 regression) Static method on a generic type with a *qualified* type argument
+/// must still classify the type name as a type.
+[<Fact>]
+let ``Static method on generic type should classify type name as type`` () =
+    let source =
+        """
+module Test
+
+type MyType<'T> =
+    static member S = 1
+
+let _ = MyType<int>.S
+let _ = MyType<System.Int32>.S
+"""
+
+    let items = getClassifications source
+
+    let isMyTypeRefOnLine line (item: SemanticClassificationItem) =
+        item.Type = SemanticClassificationType.ReferenceType
+        && item.Range.StartLine = line
+        && item.Range.StartColumn = 8
+        && item.Range.EndColumn = 14
+
+    let unqualified = items |> Array.filter (isMyTypeRefOnLine 7)
+    Assert.True(
+        unqualified.Length = 1,
+        sprintf
+            "Expected exactly one ReferenceType classification for MyType on line 7, got: %A"
+            (items |> Array.filter (fun i -> i.Range.StartLine = 7)
+                   |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
+
+    let qualified = items |> Array.filter (isMyTypeRefOnLine 8)
+    Assert.True(
+        qualified.Length = 1,
+        sprintf
+            "Expected exactly one ReferenceType classification for MyType on line 8, got: %A"
+            (items |> Array.filter (fun i -> i.Range.StartLine = 8)
+                   |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
+
+/// (#18009 follow-up) Accepting ItemOccurrence.InvalidUse in LegitTypeOccurrence must
+/// not cause unresolved identifiers to be classified as types.
+[<Fact>]
+let ``Undeclared identifier in expression position is not classified as a type`` () =
+    let source =
+        """
+module Test
+
+let _ = NotDeclaredAnywhere.S
+"""
+
+    let items = getClassifications source
+
+    let badSpans =
+        items
+        |> Array.filter (fun item ->
+            item.Range.StartLine = 4
+            && item.Range.StartColumn = 8
+            && item.Range.EndColumn = 27
+            && (item.Type = SemanticClassificationType.ReferenceType
+                || item.Type = SemanticClassificationType.ValueType
+                || item.Type = SemanticClassificationType.Type))
+
+    Assert.True(
+        badSpans.Length = 0,
+        sprintf
+            "Undeclared identifier should not be classified as a type, but found: %A"
+            (badSpans |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
