@@ -329,7 +329,7 @@ let test2(x: 'T) =
          [|
              (FSharpDiagnosticSeverity.Error,
              41,
-             (11, 5, 11, 11),
+             (11, 7, 11, 8),
              """A unique overload for method 'A' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'T
@@ -341,7 +341,7 @@ Candidates:
  - static member M.A: n: int -> unit""")
              (FSharpDiagnosticSeverity.Error,
              41,
-             (19, 5, 19, 12),
+             (19, 8, 19, 9),
              """A unique overload for method 'A' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'T
@@ -368,7 +368,7 @@ let test(x: 'T) =
 """
          FSharpDiagnosticSeverity.Error
          41
-         (10, 5, 10, 11)
+         (10, 7, 10, 8)
          """A unique overload for method 'A' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'T
@@ -495,7 +495,7 @@ let test() = M.A(System.DateTime.UtcNow, 1)
         """
              FSharpDiagnosticSeverity.Error
              41
-             (6, 14, 6, 44)
+             (6, 16, 6, 17)
              """A unique overload for method 'A' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known types of arguments: System.DateTime * int
