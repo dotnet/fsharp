@@ -1,5 +1,13 @@
 {
   "prs": {
+    "19820": {
+      "sha": "98d38a43fbb87676c814b9833b8c9fd705ac348a",
+      "cats": []
+    },
+    "19818": {
+      "sha": "45a6bcf08ab7a18feadf5f6c68f3b7daec7d1c14",
+      "cats": []
+    },
     "19815": {
       "sha": "56de9346bc1a49c1cdec244b35446abc01f0ab4a",
       "cats": []
@@ -105,10 +113,6 @@
       "cats": [
         "Affects-Bootstrap"
       ]
-    },
-    "19818": {
-      "sha": "45a6bcf08ab7a18feadf5f6c68f3b7daec7d1c14",
-      "cats": []
     }
   }
 }
