@@ -1027,7 +1027,7 @@ namespace Microsoft.FSharp.Control
         static member StartTaskImmediate: createTask: (CancellationToken -> Task) -> Async<unit>
 
 #if NETSTANDARD2_1
-        /// <summary>Creates an asynchronous computation that captures the ambient <c>Async.CancellationToken</c> to
+        /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
         /// <c>createTask</c>, and then awaits the resulting <c>ValueTask</c>, returning its result.</summary>
         ///
         /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>ValueTask&lt;'T&gt;</c>.</param>
@@ -1041,7 +1041,7 @@ namespace Microsoft.FSharp.Control
         /// <category index="0">Starting Async Computations</category>
         static member StartTaskImmediate: createTask: (CancellationToken -> ValueTask<'T>) -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation that passes the ambient <c>CancellationToken</c> to
+        /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
         /// <c>createTask</c>, and then awaits the resulting <c>ValueTask</c>.</summary>
         ///
         /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a <c>ValueTask</c>.</param>
@@ -1403,7 +1403,7 @@ namespace Microsoft.FSharp.Control
                     and ^Awaiter: (member get_IsCompleted: unit -> bool)
                     and ^Awaiter: (member GetResult: unit -> 'T)
 
-            /// <summary>Creates an asynchronous computation that passes the ambient <c>CancellationToken</c> to
+            /// <summary>Creates an asynchronous computation that passes the ambient <c>Async.CancellationToken</c> to
             /// <c>createTask</c>, and then awaits the resulting task-like value.</summary>
             ///
             /// <param name="createTask">A function that accepts a <c>CancellationToken</c> and returns a task-like value
