@@ -489,13 +489,22 @@ type AsyncModule() =
     // incomplete. RunSynchronouslyImmediate always executes the first step on the calling thread,
     // giving a complete call stack that is much more useful during interactive testing.
 
+    static member private OnFreshThread f =
+        let mutable exn = null
+        let t = Thread(fun () ->
+            try f ()
+            with e -> exn <- e)
+        t.Start()
+        t.Join()
+        if exn <> null then raise exn
+ 
     [<Fact>]
     // RunSynchronously offloads to the thread pool when SynchronizationContext.Current is non-null
     // (see RunSynchronously.ThreadJump.IfSyncCtxtNonNull).
     // and/or the caller is not a threadpool thread
     // RunSynchronouslyImmediate always starts on the calling thread regardless.
     member _.``RunSynchronouslyImmediate.StartsOnCallingThread WhenSyncContextNonNull``() =
-        let t = Thread(fun () ->
+        AsyncModule.OnFreshThread(fun () ->
             Assert.False(Thread.CurrentThread.IsThreadPoolThread)
             let old = SynchronizationContext.Current
             SynchronizationContext.SetSynchronizationContext(SynchronizationContext())
@@ -505,8 +514,6 @@ type AsyncModule() =
             |> Async.RunSynchronouslyImmediate
             SynchronizationContext.SetSynchronizationContext(old)
             Assert.Equal(Thread.CurrentThread.ManagedThreadId, startThreadId) )
-        t.Start()
-        t.Join()
 
     [<Fact>]
     // Demonstrates the key difference in starting-thread identity between the two methods when called
@@ -519,14 +526,12 @@ type AsyncModule() =
         let mutable runSyncThreadId = -1
         let mutable immThreadId = -1
         let mutable callerThreadId = -1
-        let t = Thread(fun () ->
+        AsyncModule.OnFreshThread(fun () ->
             callerThreadId <- Thread.CurrentThread.ManagedThreadId
             async { runSyncThreadId <- Thread.CurrentThread.ManagedThreadId }
             |> Async.RunSynchronously
             async { immThreadId <- Thread.CurrentThread.ManagedThreadId }
             |> Async.RunSynchronouslyImmediate)
-        t.Start()
-        t.Join()
         Assert.NotEqual(callerThreadId, runSyncThreadId)
         Assert.AreEqual(callerThreadId, immThreadId)
 
