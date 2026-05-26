@@ -67,3 +67,47 @@ module FsiCliTests =
         let result = runFsiProcess [option]
         Assert.NotEqual(0, result.ExitCode)
         Assert.Contains(expectedError, result.StdErr)
+
+    // ============================================================================
+    // Issue #18086: --quiet must suppress NuGet restore stdout chatter
+    // ============================================================================
+
+    let private writeTempScript (content: string) : string =
+        let path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"fsi_quiet_{System.Guid.NewGuid():N}.fsx")
+        System.IO.File.WriteAllText(path, content)
+        path
+
+    let private runFsiScript (extraArgs: string list) (scriptBody: string) =
+        let scriptPath = writeTempScript scriptBody
+        try
+            let result = runFsiProcess (extraArgs @ [scriptPath])
+            result
+        finally
+            try System.IO.File.Delete(scriptPath) with _ -> ()
+
+    [<Fact>]
+    let ``FSI quiet mode suppresses NuGet restore output from stdout`` () =
+        let script = """
+#r "nuget: Newtonsoft.Json, 13.0.3"
+printfn "RESULT_MARKER_18086"
+"""
+        let result = runFsiScript ["--quiet"] script
+        Assert.Contains("RESULT_MARKER_18086", result.StdOut)
+        Assert.DoesNotContain("Determining projects to restore", result.StdOut)
+        Assert.DoesNotContain("Restored ", result.StdOut)
+        Assert.DoesNotContain("NU1", result.StdOut)
+
+    [<Fact>]
+    let ``FSI default (non-quiet) mode still evaluates script and prints user output`` () =
+        let script = """
+#r "nuget: Newtonsoft.Json, 13.0.3"
+printfn "RESULT_MARKER_18086_DEFAULT"
+"""
+        let result = runFsiScript [] script
+        Assert.Contains("RESULT_MARKER_18086_DEFAULT", result.StdOut)
+
+    [<Fact>]
+    let ``FSI quiet mode still prints user printfn output to stdout`` () =
+        let script = """printfn "hello from quiet script" """
+        let result = runFsiScript ["--quiet"] script
+        Assert.Contains("hello from quiet script", result.StdOut)
