@@ -704,7 +704,18 @@ let determineTransforms g (z: Results) =
                     let callPatterns = sitesCPs sites // callPatterns from sites
                     decideTransform g z f callPatterns (m, tps, vss, retTy) // make transform (if required)
 
-    let vtransforms = Zmap.chooseL selectTransform z.Uses
+    // Walk z.Uses in stable source-position order so the contained call to
+    // NiceNameGenerator (via decideTransform) sees the same call order across
+    // runs, regardless of Val.Stamp values assigned during parallel parse.
+    // See https://github.com/dotnet/fsharp/issues/19732.
+    let vtransforms =
+        Zmap.toList z.Uses
+        |> List.sortWith (fun (v1: Val, _) (v2: Val, _) ->
+            let r1, r2 = v1.Range, v2.Range
+            compare
+                struct (r1.FileIndex, r1.StartLine, r1.StartColumn, v1.LogicalName)
+                struct (r2.FileIndex, r2.StartLine, r2.StartColumn, v2.LogicalName))
+        |> List.choose (fun (f, sites) -> selectTransform f sites)
     let vtransforms = Zmap.ofList valOrder vtransforms
     vtransforms
 
