@@ -1,11 +1,11 @@
 
-neg45.fs(12,5,12,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
+neg45.fs(12,8,12,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
 
-neg45.fs(14,5,14,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
+neg45.fs(14,8,14,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
 
-neg45.fs(23,5,23,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
+neg45.fs(23,8,23,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
 
-neg45.fs(25,5,25,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
+neg45.fs(25,8,25,11): typecheck error FS0685: The generic function 'Foo' must be given explicit type argument(s)
 
 neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
 
