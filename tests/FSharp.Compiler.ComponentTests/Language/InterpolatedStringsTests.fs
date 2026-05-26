@@ -361,3 +361,107 @@ let s = $"{f.Invoke(42)}"
             """
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 16696 - let-binding with =$"..." (no space)`` () =
+        Fsx """
+let n = 42
+let world = "world"
+let plain =$"123"
+let withHole =$"hello {world}"
+let withTypedHole =$"%d{n}"
+if plain <> "123" then failwithf "plain: expected 123, got %s" plain
+if withHole <> "hello world" then failwithf "withHole: expected 'hello world', got %s" withHole
+if withTypedHole <> "42" then failwithf "withTypedHole: expected 42, got %s" withTypedHole
+            """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 16696 - property initialization in constructor call with Name=$"..."`` () =
+        Fsx """
+type C() =
+    member val Name = "" with get, set
+
+let n = 42
+let plain = C(Name=$"123")
+let withHole = C(Name=$"items: %d{n}")
+
+if plain.Name <> "123" then failwithf "plain: expected 123, got %s" plain.Name
+if withHole.Name <> "items: 42" then failwithf "withHole: expected 'items: 42', got %s" withHole.Name
+            """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 16696 - record creation with Field=$"..."`` () =
+        Fsx """
+type R = { Name: string }
+let n = 42
+let r1 = { Name=$"abc" }
+let r2 = { Name=$"%d{n}" }
+if r1.Name <> "abc" then failwithf "r1: expected abc, got %s" r1.Name
+if r2.Name <> "42" then failwithf "r2: expected 42, got %s" r2.Name
+            """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 16696 - record copy with Field=$"..."`` () =
+        Fsx """
+type R = { Name: string; Count: int }
+let n = 42
+let r = { Name = ""; Count = 1 }
+let r1 = { r with Name=$"abc" }
+let r2 = { r with Name=$"%d{n}" }
+if r1.Name <> "abc" then failwithf "r1: expected abc, got %s" r1.Name
+if r2.Name <> "42" then failwithf "r2: expected 42, got %s" r2.Name
+            """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 16696 - =$ followed by non-quote still rejected as deprecated operator`` () =
+        Fsx """
+let x =$abc
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "is not permitted as a character in operator names"
+
+    [<Fact>]
+    let ``Issue 16696 - defining (=$) as a custom operator is still rejected`` () =
+        Fsx """
+let (=$) a b = a + b
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "is not permitted as a character in operator names"
+
+    [<Fact>]
+    let ``Issue 16696 - =$ used as infix operator is still rejected`` () =
+        Fsx """
+let f a b = a =$ b
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "is not permitted as a character in operator names"
+
+    [<Fact>]
+    let ``Issue 16696 - =$@ verbatim interpolation form is still rejected (out of scope)`` () =
+        Fsx """
+let x =$@"abc"
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "is not permitted as a character in operator names"
+
+    [<Fact>]
+    let ``Issue 16696 - = $"..." (with space) still parses unchanged`` () =
+        Fsx """
+let n = 42
+let x = $"%d{n}"
+if x <> "42" then failwithf "expected 42, got %s" x
+            """
+        |> compileExeAndRun
+        |> shouldSucceed
