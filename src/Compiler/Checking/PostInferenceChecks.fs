@@ -427,9 +427,6 @@ let rec CheckTypeDeep<'V when 'V :> ITypeVisitor and 'V: struct>
                 CheckTypeConstraintDeep cenv v g env cx
 
     | TType_measure _ -> ()
-
-    // TODO: Anonymous type-tagged union
-    | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
     
     | TType_app (tcref, tinst, _) ->
         v.VisitTyconRef(typeInstParent, tcref)
@@ -457,6 +454,9 @@ let rec CheckTypeDeep<'V when 'V :> ITypeVisitor and 'V: struct>
 
     | TType_ucase (_, tinst) ->
         CheckTypesDeep cenv v g env tinst
+
+    | TType_anon_tt_union (_, tys) ->
+        CheckTypesDeep cenv f g env tys
 
     | TType_tuple (_, tys) ->
         CheckTypesDeep cenv v g env tys
