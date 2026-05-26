@@ -930,6 +930,32 @@ module AsyncPrimitives =
         member _.PostOrQueueWithTrampoline res =
             trampolineHolder.PostOrQueueWithTrampoline syncCtxt (fun () -> ctxt.cont res)
 
+    [<DebuggerHidden>]
+    let StartWithContinuations cancellationToken (computation: Async<'T>) cont econt ccont =
+        let trampolineHolder = TrampolineHolder()
+
+        trampolineHolder.ExecuteWithTrampoline(fun () ->
+            let ctxt =
+                AsyncActivation.Create
+                    cancellationToken
+                    trampolineHolder
+                    (cont >> fake)
+                    (econt >> fake)
+                    (ccont >> fake)
+
+            computation.Invoke ctxt)
+        |> unfake
+
+    [<DebuggerHidden>]
+    let RunSynchronouslyImmediate<'T> computation (cancellationToken: CancellationToken) =
+        let tcs = TaskCompletionSource<'T>()
+        StartWithContinuations cancellationToken computation
+            tcs.SetResult
+            (fun edi -> tcs.SetException edi.SourceException)
+            (fun _ -> tcs.SetCanceled())
+        // Synchronously block waiting for the result (i.e. even if continuations run on another thread, this caller will busy-wait)
+        tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
+            
     /// A utility type to provide a synchronization point between an asynchronous computation
     /// and callers waiting on the result of that computation.
     ///
@@ -1138,26 +1164,6 @@ module AsyncPrimitives =
             res.Commit()
 
     [<DebuggerHidden>]
-    let RunSynchronouslyImmediate computation (cancellationToken: CancellationToken) =
-        use resultCell = new ResultCell<AsyncResult<_>>()
-        let trampolineHolder = TrampolineHolder()
-
-        trampolineHolder.ExecuteWithTrampoline(fun () ->
-            let ctxt =
-                AsyncActivation.Create
-                    cancellationToken
-                    trampolineHolder
-                    (fun res -> resultCell.RegisterResult(AsyncResult.Ok res, reuseThread = true))
-                    (fun edi -> resultCell.RegisterResult(AsyncResult.Error edi, reuseThread = true))
-                    (fun exn -> resultCell.RegisterResult(AsyncResult.Canceled exn, reuseThread = true))
-
-            computation.Invoke ctxt)
-        |> unfake
-
-        let res = resultCell.TryWaitForResultSynchronously().Value
-        res.Commit()
-
-    [<DebuggerHidden>]
     let RunSynchronouslyBackgroundThreadPool (computation: Async<'T>) cancellationToken timeout =
         // Run inline only where it's guaranteed to be safe
         match SynchronizationContext.Current, Thread.CurrentThread.IsThreadPoolThread, timeout with
@@ -1174,32 +1180,6 @@ module AsyncPrimitives =
             computation
         |> unfake
 
-    [<DebuggerHidden>]
-    let StartWithContinuations cancellationToken (computation: Async<'T>) cont econt ccont =
-        let trampolineHolder = TrampolineHolder()
-
-        trampolineHolder.ExecuteWithTrampoline(fun () ->
-            let ctxt =
-                AsyncActivation.Create
-                    cancellationToken
-                    trampolineHolder
-                    (cont >> fake)
-                    (econt >> fake)
-                    (ccont >> fake)
-
-            computation.Invoke ctxt)
-        |> unfake
-
-    [<DebuggerHidden>]
-    let RunSynchronouslyImmediate2 computation (cancellationToken: CancellationToken) =
-        let tcs = TaskCompletionSource()
-        let task = tcs.Task
-        StartWithContinuations cancellationToken computation
-            tcs.SetResult
-            (fun edi -> edi.GetAssociatedSourceException() |> tcs.SetException)
-            (fun _ -> tcs.SetCanceled())
-        task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
-            
     [<DebuggerHidden>]
     let StartAsTask cancellationToken (computation: Async<'T>) taskCreationOptions =
         let taskCreationOptions = defaultArg taskCreationOptions TaskCreationOptions.None
@@ -1524,10 +1504,9 @@ type Async =
         RunSynchronouslyBackgroundThreadPool computation cancellationToken timeout
 
     static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken: CancellationToken) =
-        let cancellationToken =
-            defaultArg cancellationToken defaultCancellationTokenSource.Token
+        let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
 
-        RunSynchronouslyImmediate2 computation cancellationToken
+        RunSynchronouslyImmediate computation cancellationToken
 
     static member Start(computation, ?cancellationToken) =
         let cancellationToken =

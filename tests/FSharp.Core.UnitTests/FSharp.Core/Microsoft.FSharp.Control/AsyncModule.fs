@@ -466,6 +466,7 @@ type AsyncModule() =
     member _.``RunSynchronouslyImmediate respects pre-cancelled token``() =
         use cts = new CancellationTokenSource()
         cts.Cancel()
+        // NOTE TaskCanceledException vs OperationCanceledException from RunSynchronously
         Assert.Throws<TaskCanceledException>(fun () ->
             Async.RunSynchronouslyImmediate(async { return 1 }, cancellationToken = cts.Token)
             |> ignore
