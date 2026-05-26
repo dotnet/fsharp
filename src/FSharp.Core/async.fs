@@ -896,6 +896,22 @@ module AsyncPrimitives =
                 ccont = (fun cexn -> ctxt.PostWithTrampoline syncCtxt (fun () -> ctxt.ccont cexn))
             )
 
+    [<DebuggerHidden>]
+    let StartWithContinuations cancellationToken (computation: Async<'T>) cont econt ccont =
+        let trampolineHolder = TrampolineHolder()
+
+        trampolineHolder.ExecuteWithTrampoline(fun () ->
+            let ctxt =
+                AsyncActivation.Create
+                    cancellationToken
+                    trampolineHolder
+                    (cont >> fake)
+                    (econt >> fake)
+                    (ccont >> fake)
+
+            computation.Invoke ctxt)
+        |> unfake
+
     [<Sealed>]
     [<AutoSerializable(false)>]
     type SuspendedAsync<'T>(ctxt: AsyncActivation<'T>) =
@@ -930,32 +946,6 @@ module AsyncPrimitives =
         member _.PostOrQueueWithTrampoline res =
             trampolineHolder.PostOrQueueWithTrampoline syncCtxt (fun () -> ctxt.cont res)
 
-    [<DebuggerHidden>]
-    let StartWithContinuations cancellationToken (computation: Async<'T>) cont econt ccont =
-        let trampolineHolder = TrampolineHolder()
-
-        trampolineHolder.ExecuteWithTrampoline(fun () ->
-            let ctxt =
-                AsyncActivation.Create
-                    cancellationToken
-                    trampolineHolder
-                    (cont >> fake)
-                    (econt >> fake)
-                    (ccont >> fake)
-
-            computation.Invoke ctxt)
-        |> unfake
-
-    [<DebuggerHidden>]
-    let RunSynchronouslyImmediate<'T> computation (cancellationToken: CancellationToken) =
-        let tcs = TaskCompletionSource<'T>()
-        StartWithContinuations cancellationToken computation
-            tcs.SetResult
-            (fun edi -> tcs.SetException edi.SourceException)
-            (fun _ -> tcs.SetCanceled())
-        // Synchronously block waiting for the result (i.e. even if continuations run on another thread, this caller will busy-wait)
-        tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
-            
     /// A utility type to provide a synchronization point between an asynchronous computation
     /// and callers waiting on the result of that computation.
     ///
@@ -1163,6 +1153,16 @@ module AsyncPrimitives =
 
             res.Commit()
 
+    [<DebuggerHidden>]
+    let RunSynchronouslyImmediate<'T> computation (cancellationToken: CancellationToken) =
+        let tcs = TaskCompletionSource<'T>()
+        StartWithContinuations cancellationToken computation
+            tcs.SetResult
+            (fun edi -> tcs.SetException edi.SourceException)
+            (fun _ -> tcs.SetCanceled())
+        // Synchronously block waiting for the result (i.e. even if continuations run on another thread, this caller will busy-wait)
+        tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
+            
     [<DebuggerHidden>]
     let RunSynchronouslyBackgroundThreadPool (computation: Async<'T>) cancellationToken timeout =
         // Run inline only where it's guaranteed to be safe
