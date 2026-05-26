@@ -117,12 +117,12 @@ namespace Microsoft.FSharp.Control
         ///     printfn "B" // ALSO runs on calling thread (hence immediately)
         ///     do! Async.Sleep(1000)
         ///     printfn "C" // runs in continuation context (depends on SynchronizationContext etc)
-        ///     17
+        ///     return 17
         /// } |> Async.RunSynchronouslyImmediate
         ///
         /// printfn "D" // runs on calling thread
         /// </code>
-        /// <p>Prints "A", then "D", "B" quickly in any order, and then "C" in 1 second.</p>
+        /// <p>Prints "A", "B" immediately, then "C", "D" after 1 second.</p>
         /// <p>Yields <c>result = 17</c>.</p>
         /// </example>
         static member RunSynchronouslyImmediate : computation : Async<'T> * ?cancellationToken : CancellationToken -> 'T

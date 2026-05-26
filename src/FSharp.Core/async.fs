@@ -1162,8 +1162,10 @@ module AsyncPrimitives =
             computation
             tcs.SetResult
             (fun edi -> tcs.SetException edi.SourceException)
-            (fun _ -> tcs.SetCanceled())
-        // Synchronously block waiting for the result (i.e. even if continuations run on another thread, this caller will busy-wait)
+            // NOTE In this case, cancellation will surface as a TaskCanceledException (with CT.None) from GetResult()
+            //      (as opposed to the OperationCanceledException that RegisterResult cancellation ends up mapping to)
+            (fun _operationCanceledExn -> tcs.SetCanceled())
+        // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
         tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
 
     [<DebuggerHidden>]

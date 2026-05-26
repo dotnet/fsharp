@@ -480,7 +480,7 @@ type AsyncModule() =
                 return 17
             }
             |> Async.RunSynchronouslyImmediate
-        Assert.AreEqual(17, result)
+        Assert.Equal(17, result)
 
     // ---- RunSynchronouslyImmediate: differences from RunSynchronously ----
     //
@@ -504,17 +504,17 @@ type AsyncModule() =
     // (see RunSynchronously.ThreadJump.IfSyncCtxtNonNull).
     // and/or the caller is not a threadpool thread
     // RunSynchronouslyImmediate always starts on the calling thread regardless.
-    member _.``RunSynchronouslyImmediate.StartsOnCallingThread WhenSyncContextNonNull``() =
+    member _.``RunSynchronouslyImmediate Starts on calling thread even when SynchronizationContext present``() =
         AsyncModule.OnFreshThread(fun () ->
-            Assert.False(Thread.CurrentThread.IsThreadPoolThread)
+            // Aside: bonus condition that would also make RunSynchronously offload
+            Assert.False(Thread.CurrentThread.IsThreadPoolThread) 
             let old = SynchronizationContext.Current
-            SynchronizationContext.SetSynchronizationContext(SynchronizationContext())
-            Assert.NotNull(SynchronizationContext.Current)
-            let mutable startThreadId = -1
-            async { startThreadId <- Thread.CurrentThread.ManagedThreadId }
-            |> Async.RunSynchronouslyImmediate
-            SynchronizationContext.SetSynchronizationContext(old)
-            Assert.Equal(Thread.CurrentThread.ManagedThreadId, startThreadId) )
+            try SynchronizationContext.SetSynchronizationContext(SynchronizationContext())
+                let mutable startThreadId = -1
+                async { startThreadId <- Thread.CurrentThread.ManagedThreadId }
+                |> Async.RunSynchronouslyImmediate
+                Assert.Equal(Thread.CurrentThread.ManagedThreadId, startThreadId)
+            finally SynchronizationContext.SetSynchronizationContext old )
 
     [<Fact>]
     // Demonstrates the key difference in starting-thread identity between the two methods when called
@@ -534,17 +534,16 @@ type AsyncModule() =
             async { immThreadId <- Thread.CurrentThread.ManagedThreadId }
             |> Async.RunSynchronouslyImmediate)
         Assert.NotEqual(callerThreadId, runSyncThreadId)
-        Assert.AreEqual(callerThreadId, immThreadId)
+        Assert.Equal(callerThreadId, immThreadId)
 
     [<Fact>]
     // Because RunSynchronouslyImmediate starts on the calling thread, an exception thrown before
-    // any do! in the computation is captured on that thread.  When re-raised to the caller the
-    // exception stack trace therefore includes the caller's thread frames, whereas RunSynchronously
-    // (when it offloads) only carries thread-pool frames in the original portion of the trace.
+    // any do! in the computation is captured on that thread. When re-raised to the caller the
+    // exception stack trace will include it as a nested exception.
     member _.``RunSynchronouslyImmediate.ExceptionOriginatesOnCallingThread``() =
         let mutable callerThreadId = -1
         let mutable exceptionOriginThreadId = -1
-        let t = Thread(fun () ->
+        AsyncModule.OnFreshThread(fun () ->
             callerThreadId <- Thread.CurrentThread.ManagedThreadId
             try async {
                     exceptionOriginThreadId <- Thread.CurrentThread.ManagedThreadId
@@ -552,11 +551,12 @@ type AsyncModule() =
                 }
                 |> Async.RunSynchronouslyImmediate
             with e ->
-                printfn $"STACKTRACE ===\n{e.StackTrace}\n==="
-                ())
-        t.Start()
-        t.Join()
-        Assert.AreEqual(callerThreadId, exceptionOriginThreadId)
+                // Not part of the test, but useful for understanding:
+                // shows full stack trace from test thread down
+                // Equivalent code under RunSynchronously would be capturing a partial trace from the threadpool thread here,
+                //  followed by rethrowing it as a nested exception at the wait site (via AsyncResult.Commit())
+                printfn $"STACKTRACE ===\n{e.StackTrace}\n===")
+        Assert.Equal(callerThreadId, exceptionOriginThreadId)
 
     [<Fact>]
     member _.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
