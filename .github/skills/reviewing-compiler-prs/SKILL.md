@@ -33,11 +33,16 @@ Full dimension definitions and CHECK rules live in the `expert-reviewer` agent.
 | `vsintegration/` | IDE Responsiveness, Memory Footprint, Cross-Platform |
 | `eng/`, `setup/`, build scripts | Build Infrastructure, Cross-Platform |
 
-## Multi-Model Dispatch
+## Subagent Dispatch
 
-Dispatch one agent per selected dimension. For high-confidence reviews, assess each dimension with multiple models (`claude-opus-4.6`, `gemini-3-pro-preview`, `gpt-5.2-codex`). Minimum viable council = 2 models.
+For each selected dimension from the table above, the `expert-reviewer` agent MUST launch an independent subagent (background task) to assess that dimension. This is not optional — a single agent doing all dimensions sequentially produces shallow analysis and wall-of-text summaries.
 
-**Claims coverage** — before dimension assessment, cross-reference every claim in the PR description and linked issues against actual code changes. Flag orphan claims (stated but not implemented), orphan changes (code changed but not mentioned), and partial implementations.
+Each subagent receives:
+1. The dimension's CHECK rules (from expert-reviewer.md)
+2. The relevant file diffs (filtered by the dimension's hotspot paths)
+3. Instructions to produce a structured finding: `{file, line, severity, dimension, issue, suggestion}` or `LGTM` if no findings
+
+The expert-reviewer consolidates subagent results, deduplicates, applies assessment gates, and posts as inline comments per Wave 5.
 
 **Assessment gates** — apply before flagging:
 - Understand execution context before judging (test harness ≠ compiler runtime)
