@@ -1156,13 +1156,16 @@ module AsyncPrimitives =
     [<DebuggerHidden>]
     let RunSynchronouslyImmediate<'T> computation (cancellationToken: CancellationToken) =
         let tcs = TaskCompletionSource<'T>()
-        StartWithContinuations cancellationToken computation
+
+        StartWithContinuations
+            cancellationToken
+            computation
             tcs.SetResult
             (fun edi -> tcs.SetException edi.SourceException)
             (fun _ -> tcs.SetCanceled())
         // Synchronously block waiting for the result (i.e. even if continuations run on another thread, this caller will busy-wait)
         tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
-            
+
     [<DebuggerHidden>]
     let RunSynchronouslyBackgroundThreadPool (computation: Async<'T>) cancellationToken timeout =
         // Run inline only where it's guaranteed to be safe
@@ -1504,7 +1507,8 @@ type Async =
         RunSynchronouslyBackgroundThreadPool computation cancellationToken timeout
 
     static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken: CancellationToken) =
-        let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
+        let cancellationToken =
+            defaultArg cancellationToken defaultCancellationTokenSource.Token
 
         RunSynchronouslyImmediate computation cancellationToken
 
