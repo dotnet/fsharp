@@ -29,6 +29,21 @@ type DocumentDiagnosticAnalyzerTests() =
 
         task.Result
 
+    member private _.getSyntaxAndSemantic(fileContents: string) =
+        let task =
+            cancellableTask {
+                let document =
+                    RoslynTestHelpers.CreateSolution(fileContents)
+                    |> RoslynTestHelpers.GetSingleDocument
+
+                let! syntactic = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
+                let! semantic = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+                return Seq.toArray syntactic, Seq.toArray semantic
+            }
+            |> CancellableTask.start CancellationToken.None
+
+        task.Result
+
     member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =
         let errors = this.getDiagnostics (fileContents, ?additionalFlags = additionalFlags)
 
@@ -523,3 +538,63 @@ printf "%d" x
             """,
             additionalFlags = [| "--times" |]
         )
+
+    [<Fact>]
+    member this.``Parse diagnostic not duplicated in semantic results``() =
+        let source = "let x =   // incomplete expression - parse error\n"
+        let syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+
+        let duplicates =
+            semanticDiags
+            |> Array.filter (fun (d: Diagnostic) ->
+                syntaxDiags
+                |> Array.exists (fun (s: Diagnostic) -> s.Id = d.Id && s.Location.SourceSpan = d.Location.SourceSpan))
+
+        Assert.Empty(duplicates)
+
+    [<Fact>]
+    member this.``Type error appears only in semantic results``() =
+        let source = "let x: int = \"hello\"\n"
+        let _syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+        Assert.Contains(semanticDiags, fun (d: Diagnostic) -> d.Id = "FS0001")
+
+    [<Fact>]
+    member this.``Parse errors still reported in syntax pass``() =
+        let source = "let x =\n"
+        let syntaxDiags, _ = this.getSyntaxAndSemantic source
+        Assert.NotEmpty(syntaxDiags)
+
+    [<Fact>]
+    member this.``Clean code has no diagnostics``() =
+        let source = "let x = 42\nlet y = x + 1\n"
+        let syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+        Assert.Empty(syntaxDiags)
+        Assert.Empty(semanticDiags)
+
+    [<Fact>]
+    member this.``Multiple parse errors not duplicated``() =
+        let source = "let x =\nlet y =\n"
+        let syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+        let allDiags = Array.append syntaxDiags semanticDiags
+
+        let uniqueCount =
+            allDiags
+            |> Array.distinctBy (fun (d: Diagnostic) -> d.Id, d.Location.SourceSpan)
+            |> Array.length
+
+        Assert.Equal(allDiags.Length, uniqueCount)
+
+    [<Fact>]
+    member this.``Warning not duplicated across passes``() =
+        let source = "let x = 42\n"
+        let syntaxDiags, semanticDiags = this.getSyntaxAndSemantic source
+
+        let allWarnings =
+            Array.append syntaxDiags semanticDiags
+            |> Array.filter (fun (d: Diagnostic) -> d.Severity = DiagnosticSeverity.Warning)
+
+        let uniqueWarnings =
+            allWarnings
+            |> Array.distinctBy (fun (d: Diagnostic) -> d.Id, d.Location.SourceSpan)
+
+        Assert.Equal(allWarnings.Length, uniqueWarnings.Length)
