@@ -1,0 +1,16 @@
+Create a pull request for the current branch against main in dotnet/fsharp.
+
+1. Run `git log origin/main..HEAD --oneline` and `git diff origin/main --stat` to understand the changes
+2. Create the PR with `gh pr create`:
+   - Title: concise, max 72 chars, describes what changed
+   - Body: starts with "Fixes #18841" on its own line, then a blank line, then 1-2 sentences of commentary
+   - Target repo: dotnet/fsharp
+
+Run exactly:
+```
+gh pr create --repo dotnet/fsharp --title "YOUR TITLE" --body "Fixes #18841
+
+YOUR BRIEF DESCRIPTION" --head fix/issue-18841
+```
+
+3. After creating, output the PR URL on its own line.
