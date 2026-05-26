@@ -42,6 +42,7 @@ usage()
   echo "  --prepareMachine         Prepare machine for CI run, clean up processes after build"
   echo "  --nodeReuse <value>      Sets nodereuse msbuild parameter ('true' or 'false')"
   echo "  --warnAsError <value>    Sets warnaserror msbuild parameter ('true' or 'false')"
+  echo "  --warnNotAsError <value> Sets a semi-colon delimited list of warning codes that should not be treated as errors"
   echo "  --buildCheck <value>     Sets /check msbuild parameter"
   echo "  --fromVMR                Set when building from within the VMR"
   echo ""
@@ -78,11 +79,11 @@ ci=false
 clean=false
 
 warn_as_error=true
+warn_not_as_error=''
 node_reuse=true
 build_check=false
 binary_log=false
 exclude_ci_binary_log=false
-pipelines_log=false
 
 projects=''
 configuration=''
@@ -92,7 +93,7 @@ runtime_source_feed=''
 runtime_source_feed_key=''
 
 properties=()
-while [[ $# > 0 ]]; do
+while [[ $# -gt 0 ]]; do
   opt="$(echo "${1/#--/-}" | tr "[:upper:]" "[:lower:]")"
   case "$opt" in
     -help|-h)
@@ -115,9 +116,6 @@ while [[ $# > 0 ]]; do
       ;;
     -excludecibinarylog|-nobl)
       exclude_ci_binary_log=true
-      ;;
-    -pipelineslog|-pl)
-      pipelines_log=true
       ;;
     -restore|-r)
       restore=true
@@ -176,6 +174,10 @@ while [[ $# > 0 ]]; do
       warn_as_error=$2
       shift
       ;;
+    -warnnotaserror)
+      warn_not_as_error=$2
+      shift
+      ;;
     -nodereuse)
       node_reuse=$2
       shift
@@ -204,7 +206,6 @@ if [[ -z "$configuration" ]]; then
 fi
 
 if [[ "$ci" == true ]]; then
-  pipelines_log=true
   node_reuse=false
   if [[ "$exclude_ci_binary_log" == false ]]; then
     binary_log=true
