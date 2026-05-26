@@ -448,7 +448,7 @@ let f a b = a =$ b
         |> withDiagnosticMessageMatches "is not permitted as a character in operator names"
 
     [<Fact>]
-    let ``Issue 16696 - =$@ verbatim interpolation form is still rejected (out of scope)`` () =
+    let ``Issue 16696 - verbatim interpolation form is still rejected (out of scope)`` () =
         Fsx """
 let x =$@"abc"
             """
