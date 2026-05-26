@@ -1191,6 +1191,16 @@ module AsyncPrimitives =
         |> unfake
 
     [<DebuggerHidden>]
+    let RunSynchronouslyImmediate2 computation (cancellationToken: CancellationToken) =
+        let tcs = TaskCompletionSource()
+        let task = tcs.Task
+        StartWithContinuations cancellationToken computation
+            tcs.SetResult
+            (fun edi -> edi.GetAssociatedSourceException() |> tcs.SetException)
+            (fun _ -> tcs.SetCanceled())
+        task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
+            
+    [<DebuggerHidden>]
     let StartAsTask cancellationToken (computation: Async<'T>) taskCreationOptions =
         let taskCreationOptions = defaultArg taskCreationOptions TaskCreationOptions.None
         let tcs = TaskCompletionSource<_>(taskCreationOptions)
@@ -1517,7 +1527,7 @@ type Async =
         let cancellationToken =
             defaultArg cancellationToken defaultCancellationTokenSource.Token
 
-        RunSynchronouslyImmediate computation cancellationToken
+        RunSynchronouslyImmediate2 computation cancellationToken
 
     static member Start(computation, ?cancellationToken) =
         let cancellationToken =
