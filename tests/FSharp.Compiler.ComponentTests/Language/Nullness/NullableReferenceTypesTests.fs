@@ -1,6 +1,7 @@
 module Language.NullableReferenceTypes
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
 
 let withNullnessOptions cu =
@@ -2384,8 +2385,8 @@ let main _ = 0
              2, 28, 29, "Trim", "x", "string | null")>]
 [<InlineData("module MyLib\nlet f (x: string | null) = x.Split(',')",
              2, 28, 29, "Split", "x", "string | null")>]
-[<InlineData("module MyLib\nopen System.Linq\nlet f (xs: System.Collections.Generic.List<int> | null) = xs.First()",
-             3, 59, 61, "First", "xs", "int seq | null")>]
+[<InlineData("module MyLib\nlet f (xs: System.Collections.Generic.List<int> | null) = xs.Contains(1)",
+             2, 59, 61, "Contains", "xs", "System.Collections.Generic.List<int> | null")>]
 [<InlineData("module MyLib\nlet f (xs: System.Collections.Generic.IEnumerable<int> | null) = xs.GetEnumerator()",
              2, 66, 68, "GetEnumerator", "xs", "System.Collections.Generic.IEnumerable<int> | null")>]
 [<InlineData("module MyLib\nopen System.Text\nlet f (sb: StringBuilder | null) = sb.Length <- 0",
@@ -2400,6 +2401,21 @@ let ``Issue 19658 - dot-access on nullable receiver names the binding and member
     |> withDiagnostics [
         Error 3261, Line line, Col col1, Line line, Col col2,
             $"Nullness warning: Possible dereference of a null value when accessing member '{memberName}' on the nullable value '{bindingName}' of type '{typeName}'."
+    ]
+
+// LINQ extension methods: on net472, BCL lacks NullableAttribute so the
+// extension-method parameter is ambivalent and no FS3261 fires.
+[<FactForNETCOREAPP>]
+let ``Issue 19658 - LINQ extension method dot-access on nullable receiver`` () =
+    FSharp """module MyLib
+open System.Linq
+let f (xs: System.Collections.Generic.List<int> | null) = xs.First()"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 59, Line 3, Col 61,
+            "Nullness warning: Possible dereference of a null value when accessing member 'First' on the nullable value 'xs' of type 'int seq | null'."
     ]
 
 [<Fact>]
