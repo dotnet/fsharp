@@ -984,9 +984,6 @@ module PrintTypes =
         | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
             layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
 
-        // TODO: Anonymous type-tagged union
-        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
-
         // Layout a type application
         | TType_ucase (UnionCaseRef(tc, _), args) ->
             let prefix, denv = usePrefix denv tc
@@ -1072,6 +1069,17 @@ module PrintTypes =
             part2
 
         | TType_measure unt -> layoutMeasure denv unt
+
+        | TType_anon_tt_union (unionInfo, types) ->
+            let sigma = unionInfo.UnsortedCaseSourceIndices
+
+            let unsortedTyps =
+                types
+                |> List.indexed
+                |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
+                |> List.map snd
+
+            bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "|")) unsortedTyps)
 
     /// Layout a list of types, separated with the given separator, either '*' or ','
     and layoutTypesWithInfoAndPrec denv env prec sep typl =
