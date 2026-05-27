@@ -367,7 +367,7 @@ let main args =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 8, Col 25, Line 8, Col 37, "The tuples have differing lengths of 3 and 2")
+            (Error 1, Line 8, Col 29, Line 8, Col 37, "The tuples have differing lengths of 3 and 2")
         ]
 
     module ``Not a function`` =

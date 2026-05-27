@@ -463,7 +463,7 @@ let f : FSharpFunc`2 =
     in
     [DebugRange(452:12 - 452:36)] <{ 
     [DebugRange(452:12 - 452:13)] <{ f }>(
-        [DebugRange(452:14 - 452:33)] <{ DefaultOf (
+        [DebugRange(452:24 - 452:33)] <{ DefaultOf (
         )
          }>
     )

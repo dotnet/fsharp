@@ -122,29 +122,29 @@ neg10.fs(245,50,245,51): typecheck error FS0193: A type parameter is missing a c
 
 neg10.fs(245,17,245,20): typecheck error FS0043: A type parameter is missing a constraint 'when 'b :> C'
 
-neg10.fs(251,49,251,61): typecheck error FS0001: The type ''a -> 'a' does not support the 'equality' constraint because it is a function type
+neg10.fs(251,59,251,61): typecheck error FS0001: The type ''a -> 'a' does not support the 'equality' constraint because it is a function type
 
-neg10.fs(252,45,252,57): typecheck error FS0001: The type ''a -> 'a' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface
+neg10.fs(252,55,252,57): typecheck error FS0001: The type ''a -> 'a' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface
 
-neg10.fs(253,36,253,48): typecheck error FS0001: The type ''a -> 'a' does not support the 'equality' constraint because it is a function type
+neg10.fs(253,46,253,48): typecheck error FS0001: The type ''a -> 'a' does not support the 'equality' constraint because it is a function type
 
 neg10.fs(297,22,297,24): typecheck error FS1187: An indexer property must be given at least one argument
 
 neg10.fs(298,22,298,24): typecheck error FS1187: An indexer property must be given at least one argument
 
-neg10.fs(299,17,299,24): typecheck error FS0807: Property 'S2' is not readable
+neg10.fs(299,22,299,24): typecheck error FS0807: Property 'S2' is not readable
 
-neg10.fs(300,17,300,24): typecheck error FS0807: Property 'S3' is not readable
+neg10.fs(300,22,300,24): typecheck error FS0807: Property 'S3' is not readable
 
-neg10.fs(301,17,301,24): typecheck error FS0807: Property 'S4' is not readable
+neg10.fs(301,22,301,24): typecheck error FS0807: Property 'S4' is not readable
 
-neg10.fs(303,17,303,22): typecheck error FS0807: Property 'SS2' is not readable
+neg10.fs(303,19,303,22): typecheck error FS0807: Property 'SS2' is not readable
 
-neg10.fs(304,17,304,22): typecheck error FS0807: Property 'SS3' is not readable
+neg10.fs(304,19,304,22): typecheck error FS0807: Property 'SS3' is not readable
 
-neg10.fs(305,17,305,22): typecheck error FS0807: Property 'SS4' is not readable
+neg10.fs(305,19,305,22): typecheck error FS0807: Property 'SS4' is not readable
 
-neg10.fs(316,17,316,28): typecheck error FS0807: Property 'X' is not readable
+neg10.fs(316,27,316,28): typecheck error FS0807: Property 'X' is not readable
 
 neg10.fs(324,28,324,29): typecheck error FS1187: An indexer property must be given at least one argument
 

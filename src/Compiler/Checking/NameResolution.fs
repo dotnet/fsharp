@@ -4293,8 +4293,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
             // #16621
             match refinedItem with
             | Item.Property(_, pinfos, _) ->
-                let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
-                RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
+                RegisterUnionCaseTesterForProperty sink itemIdentRange pinfos
             | _ -> ()
 
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
@@ -4321,7 +4320,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                callSink (item, emptyTyparInst)
                AfterResolution.DoNothing
 
-    success (tinstEnclosing, item, itemRange, itemIdentRange, rest, afterResolution)
+    success (tinstEnclosing, item, itemIdentRange, rest, afterResolution)
 
 [<return: Struct>]
 let (|NonOverridable|_|) namedItem =
@@ -4369,8 +4368,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 // #16621
                 match refinedItem with
                 | Item.Property(_, pinfos, _) ->
-                    let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
-                    RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
+                    RegisterUnionCaseTesterForProperty sink itemIdentRange pinfos
                 | _ -> ()
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
@@ -4391,7 +4389,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing
 
-    item, itemRange, itemIdentRange, rest, afterResolution
+    item, itemIdentRange, rest, afterResolution
 
 
 //-------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 
-neg1.fsx(3,18,3,70): typecheck error FS0193: Type constraint mismatch. The type 
+neg1.fsx(3,67,3,70): typecheck error FS0193: Type constraint mismatch. The type 
     'int'    
 is not compatible with type
     'string'    

@@ -636,7 +636,7 @@ let xe = $"%A{{1}}" // fake expression (delimiters escaped)
 """
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:8.0" |]
             code
-            [|(FSharpDiagnosticSeverity.Error, 1, (2, 19, 2, 38),
+            [|(FSharpDiagnosticSeverity.Error, 1, (2, 33, 2, 38),
                "The type 'string' is not compatible with any of the types byte,int16,int32,int64,sbyte,uint16,uint32,uint64,nativeint,unativeint, arising from the use of a printf-style format string");
               (FSharpDiagnosticSeverity.Error, 1, (3, 19, 3, 20),
                """This expression was expected to have type
