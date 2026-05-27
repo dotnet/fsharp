@@ -852,8 +852,8 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
         |> List.sortWith (fun (v1: Val) (v2: Val) ->
             let r1, r2 = v1.Range, v2.Range
             compare
-                struct (r1.FileIndex, r1.StartLine, r1.StartColumn, v1.LogicalName)
-                struct (r2.FileIndex, r2.StartLine, r2.StartColumn, v2.LogicalName))
+                struct (r1.FileIndex, r1.StartLine, r1.StartColumn, v1.LogicalName, v1.Stamp)
+                struct (r2.FileIndex, r2.StartLine, r2.StartColumn, v2.LogicalName, v2.Stamp))
     let ffHats = List.map (fun f -> f, createFHat f) fs
     let fHatM = Zmap.ofList valOrder ffHats
     fHatM
