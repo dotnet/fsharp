@@ -128,9 +128,9 @@ neg10.fs(252,45,252,57): typecheck error FS0001: The type ''a -> 'a' does not su
 
 neg10.fs(253,36,253,48): typecheck error FS0001: The type ''a -> 'a' does not support the 'equality' constraint because it is a function type
 
-neg10.fs(297,17,297,24): typecheck error FS1187: An indexer property must be given at least one argument
+neg10.fs(297,22,297,24): typecheck error FS1187: An indexer property must be given at least one argument
 
-neg10.fs(298,17,298,24): typecheck error FS1187: An indexer property must be given at least one argument
+neg10.fs(298,22,298,24): typecheck error FS1187: An indexer property must be given at least one argument
 
 neg10.fs(299,17,299,24): typecheck error FS0807: Property 'S2' is not readable
 
@@ -146,9 +146,9 @@ neg10.fs(305,17,305,22): typecheck error FS0807: Property 'SS4' is not readable
 
 neg10.fs(316,17,316,28): typecheck error FS0807: Property 'X' is not readable
 
-neg10.fs(324,17,324,29): typecheck error FS1187: An indexer property must be given at least one argument
+neg10.fs(324,28,324,29): typecheck error FS1187: An indexer property must be given at least one argument
 
-neg10.fs(333,17,333,29): typecheck error FS1187: An indexer property must be given at least one argument
+neg10.fs(333,28,333,29): typecheck error FS1187: An indexer property must be given at least one argument
 
 neg10.fs(335,17,335,39): typecheck error FS0501: The member or object constructor 'X' takes 2 argument(s) but is here given 3. The required signature is 'member T3.X: a: int -> int * int with set'.
 
