@@ -8982,6 +8982,11 @@
           <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
           <note />
         </trans-unit>
+        <trans-unit id="featureExceptionFieldSerializationSupport">
+          <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
+          <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
+          <note />
+        </trans-unit>
     </body>
   </file>
 </xliff>
