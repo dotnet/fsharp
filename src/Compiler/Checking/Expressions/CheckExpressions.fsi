@@ -721,6 +721,11 @@ val TcMatchPattern:
     tcTrueMatchClause: TcTrueMatchClause ->
         Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv
 
+/// Given the current 'inputTy' of a match clause, the elaborated pattern, and the optional 'when' clause,
+/// returns the (possibly narrowed) inputTy to use for subsequent clauses.
+/// E.g. `match x with | null -> ... | y -> ...` narrows `inputTy` of the y-clause to non-null.
+val EliminateNullnessFromInputType: g: TcGlobals -> inputTy: TType -> pat: Pattern -> whenExprOpt: Expr option -> TType
+
 [<return: Struct>]
 val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) voption
 

@@ -23,4 +23,6 @@ neg30.fs(63,13,63,27): typecheck error FS0001: A generic construct requires that
 
 neg30.fs(71,12,71,35): typecheck error FS0120: hello!
 
-neg30.fs(78,13,78,37): typecheck error FS10021: hello!
+neg30.fs(71,34,71,35): typecheck error FS0120: hello!
+
+neg30.fs(78,36,78,37): typecheck error FS10021: hello!
