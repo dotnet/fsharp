@@ -658,19 +658,24 @@ type CalledMeth<'T>
 
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
+                // For an indexer setter the ParamArray slot is the second-to-last unnamed called arg
+                // (the last one is the setter 'value'). When a named argument matched one of the indexer
+                // args, fewer unnamed called args remain and the setter degenerates to the non-ParamArray
+                // shape - fall back to the regular indexing in that case.
+                let useIndexerSetterShape = isIndexerSetter && nUnnamedCalledArgs >= 2
                 let supportsParamArgs = 
                     allowParamArgs && 
                     nUnnamedCalledArgs >= 1 && 
                     nUnnamedCallerArgs >= nUnnamedCalledArgs-1 &&
                     let possibleParamArg =
-                        if isIndexerSetter then
+                        if useIndexerSetterShape then
                             unnamedCalledArgs[nUnnamedCalledArgs-2]
                         else
                             unnamedCalledArgs[nUnnamedCalledArgs-1]
                     possibleParamArg.IsParamArray && isArray1DTy g possibleParamArg.CalledArgumentType
 
                 if supportsParamArgs then
-                    if isIndexerSetter then
+                    if useIndexerSetterShape then
                         // Note, for an indexer setter nUnnamedCalledArgs will be at least two, and normally exactly 2
                         let unnamedCalledArgs2 =
                             unnamedCalledArgs[0..unnamedCalledArgs.Length-3] @
@@ -807,6 +812,8 @@ type CalledMeth<'T>
     member x.UsesParamArrayConversion = x.ArgSets |> List.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
 
     member x.IsIndexParamArraySetter = isIndexerSetter && x.UsesParamArrayConversion
+
+    member x.IsIndexerSetter = isIndexerSetter
 
     member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
 

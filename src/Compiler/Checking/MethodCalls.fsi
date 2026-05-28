@@ -271,6 +271,8 @@ type CalledMeth<'T> =
 
     member IsIndexParamArraySetter: bool
 
+    member IsIndexerSetter: bool
+
     /// The method we're attempting to call
     member Method: MethInfo
 
