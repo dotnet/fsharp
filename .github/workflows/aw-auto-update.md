@@ -27,6 +27,9 @@ tools:
   bash: true
 
 safe-outputs:
+  github-app:
+    client-id: ${{ vars.APP_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
   noop:
     report-as-issue: false
   create-pull-request:
@@ -34,25 +37,27 @@ safe-outputs:
     title-prefix: "[Auto Update] "
     labels: [automation]
     max: 1
+    allow-workflows: true
     allowed-files:
       - ".github/workflows/*.md"
       - ".github/workflows/*.lock.yml"
       - ".github/workflows/shared/**"
       - ".github/aw/**"
       - ".github/agents/**"
-    protected-files: fallback-to-issue
+    protected-files: allowed
   push-to-pull-request-branch:
     target: "*"
     title-prefix: "[Auto Update] "
     labels: [automation]
     max: 1
+    allow-workflows: true
     allowed-files:
       - ".github/workflows/*.md"
       - ".github/workflows/*.lock.yml"
       - ".github/workflows/shared/**"
       - ".github/aw/**"
       - ".github/agents/**"
-    protected-files: fallback-to-issue
+    protected-files: allowed
 ---
 
 # Agentic Workflow Auto-Update
