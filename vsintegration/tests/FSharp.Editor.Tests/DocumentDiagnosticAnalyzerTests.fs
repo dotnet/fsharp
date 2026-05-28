@@ -103,64 +103,6 @@ type DocumentDiagnosticAnalyzerTests() =
         actualError.Location.SourceSpan.End
         |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
-    member private this.VerifyDiagnosticBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE
-        (fileContents: string, expectedMessage: string, expectedSeverity: DiagnosticSeverity)
-        =
-        let errors =
-            this.getDiagnostics fileContents
-            |> Seq.filter (fun e -> e.Severity = expectedSeverity)
-            |> Seq.toArray
-
-        errors.Length
-        |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
-
-        let actualError = errors.[0]
-        Assert.Equal(expectedSeverity, actualError.Severity)
-
-        actualError.GetMessage()
-        |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
-
-        let expectedStart = fileContents.IndexOf(startMarker) + startMarker.Length
-
-        actualError.Location.SourceSpan.Start
-        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
-
-        let expectedEnd = fileContents.IndexOf(endMarker)
-
-        actualError.Location.SourceSpan.End
-        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
-
-    member private this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(fileContents: string, expectedMessage: string) =
-        this.VerifyDiagnosticBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(fileContents, expectedMessage, DiagnosticSeverity.Error)
-
-    member private this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE
-        (fileContents: string, expectedMarker: string, ?expectedMessage: string)
-        =
-        let errors =
-            this.getDiagnostics fileContents
-            |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
-            |> Seq.toArray
-
-        errors.Length
-        |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
-
-        let actualError = errors.[0]
-
-        if expectedMessage.IsSome then
-            actualError.GetMessage()
-            |> Assert.shouldBeEqualWith expectedMessage.Value "Error messages should match"
-
-        Assert.Equal(DiagnosticSeverity.Error, actualError.Severity)
-        let expectedStart = fileContents.IndexOf(expectedMarker)
-
-        actualError.Location.SourceSpan.Start
-        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
-
-        let expectedEnd = expectedStart + expectedMarker.Length
-
-        actualError.Location.SourceSpan.End
-        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
-
     member private this.VerifyErrorBetweenMarkers(fileContents: string, expectedMessage: string) =
         this.VerifyDiagnosticBetweenMarkers(fileContents, expectedMessage, DiagnosticSeverity.Error)
 
@@ -169,7 +111,7 @@ type DocumentDiagnosticAnalyzerTests() =
 
     [<Fact>]
     member public this.Error_Expression_IllegalIntegerLiteral() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 let _ = 1
@@ -180,7 +122,7 @@ let a = 0.1(*start*).(*end*)0
 
     [<Fact>]
     member public this.Error_Expression_IncompleteDefine() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 let a = (*start*);(*end*)
@@ -190,7 +132,7 @@ let a = (*start*);(*end*)
 
     [<Fact>]
     member public this.Error_Expression_KeywordAsValue() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 let b =
@@ -325,7 +267,7 @@ let f () =
 
     [<Fact>]
     member public this.Error_Identifer_IllegalFloatPointLiteral() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 let x: float = 1.2(*start*).(*end*)3
@@ -438,7 +380,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.ExtraEndif() =
-        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorBetweenMarkers(
             fileContents =
                 """
 #if UNDEFINED
@@ -453,7 +395,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashNotFirstSymbol_If() =
-        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorAtMarker(
             fileContents =
                 """
 (*comment*) #if UNDEFINED
@@ -468,7 +410,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashNotFirstSymbol_Endif() =
-        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorAtMarker(
             fileContents =
                 """
 #if DEBUG
@@ -483,7 +425,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashIfWithMultilineComment() =
-        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorAtMarker(
             fileContents =
                 """
 #if DEBUG (*comment*)
@@ -495,7 +437,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashIfWithUnexpected() =
-        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
+        this.VerifyErrorAtMarker(
             fileContents =
                 """
 #if DEBUG TEST
