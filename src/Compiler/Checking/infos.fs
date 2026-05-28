@@ -81,7 +81,7 @@ let GetCompiledReturnTyOfProvidedMethodInfo amap m (mi: Tainted<ProvidedMethodBa
 
 /// The slotsig returned by methInfo.GetSlotSig is in terms of the type parameters on the parent type of the overriding method.
 /// Reverse-map the slotsig so it is in terms of the type parameters for the overriding method
-let ReparentSlotSigToUseMethodTypars g (_m: range) ovByMethValRef slotsig =
+let ReparentSlotSigToUseMethodTypars g ovByMethValRef slotsig =
     match PartitionValRefTypars g ovByMethValRef with
     | Some(_, enclosingTypars, _, _, _) ->
         let parentToMemberInst, _ = mkTyparToTyparRenaming (ovByMethValRef.MemberApparentEntity.Typars) enclosingTypars
@@ -1451,7 +1451,7 @@ type MethInfo =
     /// For extension methods, no type parameters are returned, because all the
     /// type parameters are part of the apparent type, rather the
     /// declaring type, even for extension methods extending generic types.
-    member x.GetFormalTyparsOfDeclaringType(_m: range) =
+    member x.GetFormalTyparsOfDeclaringType() =
         if x.IsExtensionMember then []
         else
             match x with
@@ -1689,7 +1689,7 @@ type UnionCaseInfo =
     member x.DisplayName = x.UnionCase.DisplayName
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
-    member x.GetTyparInst(_m: range) = mkTyparInst (x.TyconRef.Typars) x.TypeInst
+    member x.GetTyparInst() = mkTyparInst (x.TyconRef.Typars) x.TypeInst
 
     override x.ToString() = x.TyconRef.ToString() + "::" + x.DisplayNameCore
 
@@ -2509,7 +2509,7 @@ let CompiledSigOfMeth g amap m (minfo: MethInfo) =
     // of the enclosing type. This instantiations can be used to interpret those type parameters
     let fmtpinst =
         let parentTyArgs = argsOfAppTy g minfo.ApparentEnclosingAppType
-        let memberParentTypars  = minfo.GetFormalTyparsOfDeclaringType m
+        let memberParentTypars  = minfo.GetFormalTyparsOfDeclaringType()
         mkTyparInst memberParentTypars parentTyArgs
 
     CompiledSig(vargTys, vrty, formalMethTypars, fmtpinst)

@@ -301,14 +301,14 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEventInfo (denv: DisplayEnv) (infoReader: InfoReader) (einfo: EventInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEvent infoReader Range.range0 einfo
+            GetXmlDocSigOfEvent infoReader einfo
             |> layoutXmlDocFromSig denv infoReader true einfo.XmlDoc restL             
         else
             restL
 
     let layoutXmlDocOfILFieldInfo (denv: DisplayEnv) (infoReader: InfoReader) (finfo: ILFieldInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfILFieldInfo infoReader Range.range0 finfo
+            GetXmlDocSigOfILFieldInfo infoReader finfo
             |> layoutXmlDocFromSig denv infoReader true XmlDoc.Empty restL
         else
             restL
@@ -329,7 +329,7 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEntity (denv: DisplayEnv) (infoReader: InfoReader) (eref: EntityRef) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEntityRef infoReader Range.range0 eref
+            GetXmlDocSigOfEntityRef infoReader eref
             |> layoutXmlDocFromSig denv infoReader true eref.XmlDoc restL             
         else
             restL

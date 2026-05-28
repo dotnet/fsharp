@@ -529,7 +529,7 @@ type ResultCollectionSettings =
 let NextExtensionMethodPriority() = uint64 (newStamp())
 
 /// Checks if the type is used for C# style extension members.
-let IsTyconRefUsedForCSharpStyleExtensionMembers g _m (tcref: TyconRef) =
+let IsTyconRefUsedForCSharpStyleExtensionMembers g (tcref: TyconRef) =
     // Type must be non-generic and have 'Extension' attribute
     match metadataOfTycon tcref.Deref with
     | ILTypeMetadata(TILObjectReprData(_, _, tdef)) -> tdef.CanContainExtensionMethods
@@ -537,9 +537,9 @@ let IsTyconRefUsedForCSharpStyleExtensionMembers g _m (tcref: TyconRef) =
     && isNil(tcref.Typars) && TyconRefHasWellKnownAttribute g WellKnownILAttributes.ExtensionAttribute tcref
 
 /// Checks if the type is used for C# style extension members.
-let IsTypeUsedForCSharpStyleExtensionMembers g m ty =
+let IsTypeUsedForCSharpStyleExtensionMembers g ty =
     match tryTcrefOfAppTy g ty with
-    | ValueSome tcref -> IsTyconRefUsedForCSharpStyleExtensionMembers g m tcref
+    | ValueSome tcref -> IsTyconRefUsedForCSharpStyleExtensionMembers g tcref
     | _ -> false
 
 /// A 'plain' method is an extension method not interpreted as an extension method.
@@ -591,7 +591,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
     let g = amap.g
 
     let isApplicable =
-        IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass ||
+        IsTyconRefUsedForCSharpStyleExtensionMembers g tcrefOfStaticClass ||
 
         g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) &&
         tcrefOfStaticClass.IsLocalRef &&
@@ -1167,7 +1167,7 @@ let GetNestedTypesOfType (ad, ncenv: NameResolver, optFilter, staticResInfo, che
     |> List.map (MakeNestedType ncenv tinst m)
 
 let ChooseMethInfosForNameEnv g m ty (minfos: MethInfo list) =
-    let isExtTy = IsTypeUsedForCSharpStyleExtensionMembers g m ty
+    let isExtTy = IsTypeUsedForCSharpStyleExtensionMembers g ty
 
     minfos
     |> List.filter (fun minfo ->
@@ -1357,7 +1357,7 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
         eIndexedExtensionMembers = eIndexedExtensionMembers
         eUnindexedExtensionMembers = eUnindexedExtensionMembers }
 
-and private CanAutoOpenTyconRef (g: TcGlobals) _m (tcref: TyconRef) =
+and private CanAutoOpenTyconRef (g: TcGlobals) (tcref: TyconRef) =
     g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration &&
     not tcref.IsILTycon &&
     EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoOpenAttribute tcref.Deref &&
@@ -1398,7 +1398,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
 
     let nenv = AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m nenv None tcref
     let nenv = 
-        if CanAutoOpenTyconRef g m tcref then
+        if CanAutoOpenTyconRef g tcref then
             let ty = generalizedTyconRef g tcref
             AddStaticContentOfTypeToNameEnv g amap ad m nenv ty
         else
@@ -1673,7 +1673,7 @@ let FreshenTypars g m tpsorig =
         tpTys
 
 let FreshenMethInfo m (minfo: MethInfo) =
-    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType()) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tpTys
 
 /// This must be called after fetching unqualified items that may need to be freshened 
@@ -3599,7 +3599,7 @@ let ResolvePatternLongIdent sink (ncenv: NameResolver) warnOnUpper newDef m ad n
 //
 // X.ListEnumerator // does not resolve
 //
-let ResolveNestedTypeThroughAbbreviation (ncenv: NameResolver) (tcref: TyconRef) _m =
+let ResolveNestedTypeThroughAbbreviation (ncenv: NameResolver) (tcref: TyconRef) =
     if tcref.IsTypeAbbrev && tcref.Typars.IsEmpty then 
         match tryAppTy ncenv.g tcref.TypeAbbrev.Value with
         | ValueSome (abbrevTcref, []) -> abbrevTcref
@@ -3609,7 +3609,7 @@ let ResolveNestedTypeThroughAbbreviation (ncenv: NameResolver) (tcref: TyconRef)
 
 /// Resolve a long identifier representing a type name
 let rec ResolveTypeLongIdentInTyconRefPrim (ncenv: NameResolver) (typeNameResInfo: TypeNameResolutionInfo) ad resInfo genOk depth m (tcref: TyconRef) (id: Ident) (rest: Ident list) =
-    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
+    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref
     match rest with
     | [] ->
 #if !NO_TYPEPROVIDERS
@@ -4963,7 +4963,7 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
             LookupTypeNameInEnvNoArity OpenQualified id nenv
             |> List.tryHead
             |> Option.map (fun tcref ->
-                let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
+                let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref
                 FreshenTycon ncenv m tcref)
     | _ -> None
 
@@ -5058,7 +5058,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
             [ if not isItemVal then
                 // type.lookup: lookup a static something in a type
                 for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
-                    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
+                    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref
                     let ty = FreshenTycon ncenv m tcref
                     yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest ty allowObsolete
 
@@ -5596,7 +5596,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
             | _ ->
                 // type.lookup: lookup a static something in a type
                 for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
-                    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
+                    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref
                     let ty = FreshenTycon ncenv m tcref
                     yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad true rest item ty
     }

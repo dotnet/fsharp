@@ -1163,7 +1163,7 @@ let PropTypeOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     mkIEventType g delTy argsTy
 
 /// Try to find the name of the metadata file for this external definition 
-let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) (_m: range) eref = 
+let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) eref = 
     let g = infoReader.g
     match eref with 
     | ERefLocal _ -> None
@@ -1189,9 +1189,9 @@ let private libFileOfEntityRef x =
     | ERefLocal _ -> None
     | ERefNonLocal nlref -> nlref.Ccu.FileName 
 
-let GetXmlDocSigOfEntityRef infoReader m (eref: EntityRef) = 
+let GetXmlDocSigOfEntityRef infoReader (eref: EntityRef) = 
     if eref.IsILTycon then 
-        match TryFindMetadataInfoOfExternalEntityRef infoReader m eref  with
+        match TryFindMetadataInfoOfExternalEntityRef infoReader eref  with
         | None -> None
         | Some (ccuFileName, _, formalTypeInfo) -> Some(ccuFileName, "T:"+formalTypeInfo.ILTypeRef.FullName)
     else
@@ -1240,7 +1240,7 @@ let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         let fmtps = ilminfo.FormalMethodTypars            
         let genericArity = if fmtps.Length=0 then "" else sprintf "``%d" fmtps.Length
 
-        match TryFindMetadataInfoOfExternalEntityRef infoReader m ilminfo.DeclaringTyconRef  with 
+        match TryFindMetadataInfoOfExternalEntityRef infoReader ilminfo.DeclaringTyconRef  with 
         | None -> None
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
             let filminfo = ILMethInfo(g, IlType formalTypeInfo, ilminfo.RawMetadata, fmtps) 
@@ -1294,23 +1294,23 @@ let GetXmlDocSigOfProp infoReader m (pinfo: PropInfo) =
         | None -> None
         | Some vref -> GetXmlDocSigOfScopedValRef g pinfo.DeclaringTyconRef vref
     | ILProp(ILPropInfo(_, pdef)) -> 
-        match TryFindMetadataInfoOfExternalEntityRef infoReader m pinfo.DeclaringTyconRef with
+        match TryFindMetadataInfoOfExternalEntityRef infoReader pinfo.DeclaringTyconRef with
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
             let filpinfo = ILPropInfo(formalTypeInfo, pdef)
             Some (ccuFileName, "P:"+formalTypeInfo.ILTypeRef.FullName+"."+pdef.Name+XmlDocArgsEnc g (formalTypars, []) (filpinfo.GetParamTypes(infoReader.amap, m)))
         | _ -> None
 
-let GetXmlDocSigOfEvent infoReader m (einfo: EventInfo) =
+let GetXmlDocSigOfEvent infoReader (einfo: EventInfo) =
     match einfo with
     | ILEvent _ ->
-        match TryFindMetadataInfoOfExternalEntityRef infoReader m einfo.DeclaringTyconRef with 
+        match TryFindMetadataInfoOfExternalEntityRef infoReader einfo.DeclaringTyconRef with 
         | Some (ccuFileName, _, formalTypeInfo) -> 
             Some(ccuFileName, "E:"+formalTypeInfo.ILTypeRef.FullName+"."+einfo.EventName)
         | _ -> None
     | _ -> None
 
-let GetXmlDocSigOfILFieldInfo infoReader m (finfo: ILFieldInfo) =
-    match TryFindMetadataInfoOfExternalEntityRef infoReader m finfo.DeclaringTyconRef with
+let GetXmlDocSigOfILFieldInfo infoReader (finfo: ILFieldInfo) =
+    match TryFindMetadataInfoOfExternalEntityRef infoReader finfo.DeclaringTyconRef with
     | Some (ccuFileName, _, formalTypeInfo) ->
         Some(ccuFileName, "F:"+formalTypeInfo.ILTypeRef.FullName+"."+finfo.FieldName)
     | _ -> None

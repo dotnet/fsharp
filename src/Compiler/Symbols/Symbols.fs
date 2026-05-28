@@ -198,7 +198,7 @@ module Impl =
             
 
     let getXmlDocSigForEntity (cenv: SymbolEnv) (ent:EntityRef)=
-        match GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
+        match GetXmlDocSigOfEntityRef cenv.infoReader ent with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -1200,7 +1200,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
                 let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.Typars, v)
                 GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef
             | ILField f -> 
-                GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
+                GetXmlDocSigOfILFieldInfo cenv.infoReader f
             | AnonField _ -> None
         match xmlsig with
         | Some (_, docsig) -> docsig
@@ -2083,8 +2083,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
  
         match d with 
         | E e ->
-            let range = defaultArg sym.DeclarationLocationOpt range0
-            match GetXmlDocSigOfEvent cenv.infoReader range e with
+            match GetXmlDocSigOfEvent cenv.infoReader e with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | P p ->

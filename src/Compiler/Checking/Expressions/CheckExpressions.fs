@@ -1947,7 +1947,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 
     // If the virtual method is a generic method then copy its type parameters
     let typarsFromAbsSlot, typarInstFromAbsSlot, _ =
-        let ttps = absMethInfo.GetFormalTyparsOfDeclaringType m
+        let ttps = absMethInfo.GetFormalTyparsOfDeclaringType()
         let ttinst = argsOfAppTy g absMethInfo.ApparentEnclosingType
         let rigid = if typarsFromAbsSlotAreRigid then TyparRigidity.Rigid else TyparRigidity.Flexible
         FreshenAndFixupTypars g m rigid ttps ttinst fmtps

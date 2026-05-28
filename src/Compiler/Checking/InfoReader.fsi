@@ -344,13 +344,13 @@ val PropTypeOfEventInfo: infoReader: InfoReader -> m: range -> ad: AccessorDomai
 
 /// Try to find the name of the metadata file for this external definition
 val TryFindMetadataInfoOfExternalEntityRef:
-    infoReader: InfoReader -> _m: range -> eref: EntityRef -> (string option * Typars * ILTypeInfo) option
+    infoReader: InfoReader -> eref: EntityRef -> (string option * Typars * ILTypeInfo) option
 
 /// Try to find the xml doc associated with the assembly name and metadata key
 val TryFindXmlDocByAssemblyNameAndSig:
     infoReader: InfoReader -> assemblyName: string -> xmlDocSig: string -> XmlDoc option
 
-val GetXmlDocSigOfEntityRef: infoReader: InfoReader -> m: range -> eref: EntityRef -> (string option * string) option
+val GetXmlDocSigOfEntityRef: infoReader: InfoReader -> eref: EntityRef -> (string option * string) option
 
 val GetXmlDocSigOfScopedValRef: TcGlobals -> tcref: TyconRef -> vref: ValRef -> (string option * string) option
 
@@ -364,7 +364,6 @@ val GetXmlDocSigOfValRef: TcGlobals -> vref: ValRef -> (string option * string) 
 
 val GetXmlDocSigOfProp: infoReader: InfoReader -> m: range -> pinfo: PropInfo -> (string option * string) option
 
-val GetXmlDocSigOfEvent: infoReader: InfoReader -> m: range -> einfo: EventInfo -> (string option * string) option
+val GetXmlDocSigOfEvent: infoReader: InfoReader -> einfo: EventInfo -> (string option * string) option
 
-val GetXmlDocSigOfILFieldInfo:
-    infoReader: InfoReader -> m: range -> finfo: ILFieldInfo -> (string option * string) option
+val GetXmlDocSigOfILFieldInfo: infoReader: InfoReader -> finfo: ILFieldInfo -> (string option * string) option

@@ -67,12 +67,12 @@ type ContextInfo =
     | NullnessCheckOfCapturedArg of range
 
     /// Obj-argument type check in a dotted member access on a nullable receiver.
-    | MemberAccessOnNullable of objExprRange: range * memberName: string * bindingName: string option
+    | MemberAccessOnNullable of ObjArgInfo
 
 /// Receiver information for a dotted member access, used to produce
 /// targeted nullness warnings (e.g. "Possible dereference of null when
 /// accessing member 'M' on the nullable value 'x'").
-type ObjArgInfo =
+and ObjArgInfo =
     { ObjExprRange: range
       MemberName: string
       BindingName: string option }

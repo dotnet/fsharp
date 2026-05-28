@@ -127,7 +127,7 @@ let FreshMethInst g m fctps tinst tpsorig =
     FreshenAndFixupTypars g m TyparRigidity.Flexible fctps tinst tpsorig
 
 let FreshenMethInfo m (minfo: MethInfo) =
-    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+    let _, _, tpTys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType()) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tpTys
 
 //-------------------------------------------------------------------------
@@ -187,12 +187,12 @@ type ContextInfo =
     | NullnessCheckOfCapturedArg of range
 
     /// Obj-argument type check in a dotted member access on a nullable receiver.
-    | MemberAccessOnNullable of objExprRange: range * memberName: string * bindingName: string option
+    | MemberAccessOnNullable of ObjArgInfo
 
 /// Receiver information for a dotted member access, used to produce
 /// targeted nullness warnings (e.g. "Possible dereference of null when
 /// accessing member 'M' on the nullable value 'x'").
-type ObjArgInfo =
+and ObjArgInfo =
     { ObjExprRange: range
       MemberName: string
       BindingName: string option }
@@ -1063,7 +1063,7 @@ and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
 and getNullnessWarningRange (csenv: ConstraintSolverEnv) =
     match csenv.eContextInfo with
     | ContextInfo.NullnessCheckOfCapturedArg capturedArgRange -> capturedArgRange
-    | ContextInfo.MemberAccessOnNullable (objExprRange, _, _) -> objExprRange
+    | ContextInfo.MemberAccessOnNullable info -> info.ObjExprRange
     | _ -> csenv.m
 
 // nullness1: actual
@@ -1140,8 +1140,8 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
             if csenv.g.checkNullness then               
                 match csenv.eContextInfo with
-                | ContextInfo.MemberAccessOnNullable (objExprRange, memberName, bindingName) ->
-                    WarnD(ConstraintSolverNullnessWarningOnDotAccess(csenv.DisplayEnv, ty2, memberName, bindingName, objExprRange, m2))
+                | ContextInfo.MemberAccessOnNullable info ->
+                    WarnD(ConstraintSolverNullnessWarningOnDotAccess(csenv.DisplayEnv, ty2, info.MemberName, info.BindingName, info.ObjExprRange, m2))
                 | _ ->
                     WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, getNullnessWarningRange csenv, m2))
             else
@@ -4009,7 +4009,7 @@ let ResolveOverloadingForCall denv css m objArgInfo methodName callerArgs ad cal
         | Some info when csenvNoCtx.g.checkNullness ->
             { csenvNoCtx with
                 eContextInfo =
-                    ContextInfo.MemberAccessOnNullable(info.ObjExprRange, info.MemberName, info.BindingName) }
+                    ContextInfo.MemberAccessOnNullable info }
         | _ -> csenvNoCtx
     ResolveOverloading csenv NoTrace methodName 0 None callerArgs ad calledMethGroup permitOptArgs (Some reqdRetTy)
 
@@ -4031,7 +4031,7 @@ let UnifyUniqueOverloading
         | Some info when csenvNoCtx.g.checkNullness ->
             { csenvNoCtx with
                 eContextInfo =
-                    ContextInfo.MemberAccessOnNullable(info.ObjExprRange, info.MemberName, info.BindingName) }
+                    ContextInfo.MemberAccessOnNullable info }
         | _ -> csenvNoCtx
     let m = csenv.m
     // See what candidates we have based on name and arity 
