@@ -878,6 +878,7 @@ val internal ResolvePartialLongIdentToClassOrRecdFields:
 val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
 /// Resolve a long identifier occurring in an expression position.
+/// Also returns the terminal identifier range for error diagnostics (#14284).
 val internal ResolveLongIdentAsExprAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
@@ -887,9 +888,10 @@ val internal ResolveLongIdentAsExprAndComputeRange:
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
     maybeAppliedArgExpr: SynExpr option ->
-        ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
+        ResultOrException<EnclosingTypeInst * Item * range * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
+/// Also returns the terminal identifier range for error diagnostics (#14284).
 val internal ResolveExprDotLongIdentAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
@@ -902,7 +904,7 @@ val internal ResolveExprDotLongIdentAndComputeRange:
     findFlag: FindMemberFlag ->
     staticOnly: bool ->
     maybeAppliedArgExpr: SynExpr option ->
-        Item * range * Ident list * AfterResolution
+        Item * range * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
 val FakeInstantiationGenerator: range -> Typar list -> TType list
