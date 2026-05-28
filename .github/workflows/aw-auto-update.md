@@ -5,12 +5,6 @@ description: |
   the normal steady state) or `create-agent-session` (delegate the actual
   upgrade + recompile + PR to a Copilot Coding Agent session).
 
-  Rationale: `gh aw compile` writes to `.github/workflows/*.lock.yml`, but the
-  default `GITHUB_TOKEN` cannot push under `.github/workflows/` (GitHub platform
-  rule). Rather than provisioning a GitHub App or PAT, this workflow delegates
-  the write work to a Copilot Coding Agent session, which runs under its own
-  identity (COPILOT_GITHUB_TOKEN) and can write workflow files.
-
 on:
   schedule: every 24h
   workflow_dispatch:
@@ -55,7 +49,7 @@ You detect whether the gh-aw infrastructure has pending updates and, if so, dele
   - `.github/workflows/shared/**`
   - `.github/aw/**` (incl. `actions-lock.json` with pinned action SHAs)
   - `.github/agents/**`
-- The `create-agent-session` safe output used here is documented at <https://github.github.com/gh-aw/reference/safe-outputs/#agent-session-creation-create-agent-session>. The safe-outputs job invokes `gh agent-task create` using `COPILOT_GITHUB_TOKEN`, which spawns a Copilot Coding Agent run that has the perms required to write `.github/workflows/`.
+- The `create-agent-session` safe output used here is documented at <https://github.github.com/gh-aw/reference/safe-outputs/#agent-session-creation-create-agent-session>. The safe-outputs job invokes `gh agent-task create`, which spawns a Copilot Coding Agent run that opens the actual PR.
 
 ## Task
 
