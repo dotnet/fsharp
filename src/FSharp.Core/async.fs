@@ -2495,3 +2495,11 @@ module Async =
 
     [<CompiledName("Empty")>]
     let empty: Async<unit> = async.Zero()
+
+    [<CompiledName("ParallelLimit")>]
+    let parallelLimit (maxDegreeOfParallelism: int) (computations: seq<Async<'T>>) : Async<'T[]> =
+        Async.Parallel(computations, maxDegreeOfParallelism = maxDegreeOfParallelism)
+
+    [<CompiledName("ParallelDoLimit")>]
+    let parallelDoLimit (maxDegreeOfParallelism: int) (computations: seq<Async<unit>>) : Async<unit> =
+        parallelLimit maxDegreeOfParallelism computations |> ignore<unit[]>

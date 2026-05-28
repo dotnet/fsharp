@@ -2074,3 +2074,42 @@ namespace Microsoft.FSharp.Control
         /// </example>
         [<CompiledName("Empty")>]
         val empty: Async<unit>
+
+        /// <summary>Creates an asynchronous computation that executes all the given asynchronous computations, using at
+        /// most <c>maxDegreeOfParallelism</c> simultaneously, and returns their results as an array.<br/>
+        /// While the result order matches the input order, there is no guarantee of relative start or completion order per computation.</summary>
+        ///
+        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently.</param>
+        /// <param name="computations">A sequence of computations to be parallelized.</param>
+        ///
+        /// <returns>A computation that returns an array of results from the input computations in the same order they were supplied.</returns>
+        ///
+        /// <example id="async-parallellimit-1">
+        /// <code lang="fsharp">
+        /// let results =
+        ///     [for i in 1..10 -> async { return i * i }]
+        ///     |> Async.parallelLimit 3
+        ///     |> Async.RunSynchronously
+        /// results // evaluates to [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
+        /// </code>
+        /// </example>
+        [<CompiledName("ParallelLimit")>]
+        val parallelLimit: maxDegreeOfParallelism: int -> computations: seq<Async<'T>> -> Async<'T[]>
+
+        /// <summary>Creates an asynchronous computation that executes all the given unit asynchronous computations,
+        /// using at most <c>maxDegreeOfParallelism</c> simultaneously, discarding the results.</summary>
+        ///
+        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently.</param>
+        /// <param name="computations">A sequence of unit computations to be parallelized.</param>
+        ///
+        /// <returns>A computation that runs all inputs with limited parallelism and returns <c>unit</c>.</returns>
+        ///
+        /// <example id="async-paralleldolimit-1">
+        /// <code lang="fsharp">
+        /// [for i in 1..10 do async { printfn "%d" i }]
+        /// |> Async.parallelDoLimit 3
+        /// |> Async.RunSynchronously
+        /// </code>
+        /// </example>
+        [<CompiledName("ParallelDoLimit")>]
+        val parallelDoLimit: maxDegreeOfParallelism: int -> computations: seq<Async<unit>> -> Async<unit>

@@ -719,8 +719,10 @@ module LowPlusPriority =
 
 namespace Microsoft.FSharp.Control
 
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Collections
 open TaskBuilder
 open Microsoft.FSharp.Control.TaskBuilderExtensions
 open Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority
@@ -787,6 +789,38 @@ module Task =
     [<CompiledName("Catch")>]
     let catch (task: Task<'T>) : Task<Result<'T, exn>> =
         task |> map Ok |> catchWith Error
+
+    [<CompiledName("ParallelLimit")>]
+    let parallelLimit
+        (maxDegreeOfParallelism: int)
+        (ct: CancellationToken)
+        (computations: seq<CancellationToken -> Task<'T>>)
+        : Task<'T[]> =
+        task {
+            use sem = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism)
+
+            return!
+                Task.WhenAll
+                    [|
+                        for f in computations ->
+                            task {
+                                do! sem.WaitAsync ct
+
+                                try
+                                    return! f ct
+                                finally
+                                    sem.Release() |> Operators.ignore
+                            }
+                    |]
+        }
+
+    [<CompiledName("ParallelDoLimit")>]
+    let parallelDoLimit
+        (maxDegreeOfParallelism: int)
+        (ct: CancellationToken)
+        (computations: seq<CancellationToken -> Task<unit>>)
+        : Task<unit> =
+        parallelLimit maxDegreeOfParallelism ct computations |> ignore<unit[]>
 
 #if NETSTANDARD2_1 || NET
     [<CompiledName("OfValueTask")>]
