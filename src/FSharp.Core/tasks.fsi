@@ -566,7 +566,7 @@ module Task =
     /// </code>
     /// </example>
     [<CompiledName("Catch")>]
-    val inline catch: task: Task<'T> -> Task<Result<'T, exn>>
+    val catch: task: Task<'T> -> Task<Result<'T, exn>>
 
     /// <summary>A completed task that returns <c>unit</c>. This is a <c>Task&lt;unit&gt;</c> (not the non-generic <c>Task.CompletedTask</c>).</summary>
     ///
@@ -703,7 +703,7 @@ module ValueTask =
     /// </code>
     /// </example>
     [<CompiledName("Catch")>]
-    val inline catch: task: ValueTask<'T> -> ValueTask<Result<'T, exn>>
+    val catch: task: ValueTask<'T> -> ValueTask<Result<'T, exn>>
 
     /// <summary>A completed value task that returns <c>unit</c>.</summary>
     ///

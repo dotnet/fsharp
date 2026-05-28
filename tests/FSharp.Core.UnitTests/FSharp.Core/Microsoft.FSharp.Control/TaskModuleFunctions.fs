@@ -5,6 +5,7 @@
 namespace FSharp.Core.UnitTests.Control
 
 open System
+open System.Threading
 open System.Threading.Tasks
 open Xunit
 
@@ -117,6 +118,28 @@ module TaskModuleFunctionsTests =
             match result with
             | Error ex -> Assert.Equal("boom", ex.Message)
             | Ok _ -> failwith "expected Error"
+        }
+
+    [<Fact>]
+    let ``Task.catch returns Error on cancellation (sync)`` () =
+        let source = Task.FromCanceled<int>(CancellationToken(true))
+        Assert.True(source.IsCompleted)
+        let t = source |> Task.catch
+        match t.Result with
+        | Error (:? TaskCanceledException) -> ()
+        | r -> failwithf "expected Error(OperationCanceledException) but got %A" r
+
+    [<Fact>]
+    let ``Task.catch returns Error on cancellation (async)`` () : Task =
+        let tcs = pendingTaskSource()
+        Assert.False(tcs.Task.IsCompleted)
+        let t = tcs.Task |> Task.catch
+        Assert.False(t.IsCompleted)
+        tcs.SetCanceled()
+        task {
+            match! t with
+            | Error (:? TaskCanceledException) -> ()
+            | r -> failwithf "expected Error(OperationCanceledException) but got %A" r
         }
 
     [<Fact>]
@@ -274,6 +297,29 @@ module ValueTaskModuleFunctionsTests =
             match result with
             | Error ex -> Assert.Equal("boom", ex.Message)
             | Ok _ -> failwith "expected Error"
+        }
+
+    [<Fact>]
+    let ``ValueTask.catch returns Error on cancellation (sync)`` () =
+        let source = ValueTask<int>(Task.FromCanceled<int>(CancellationToken(true)))
+        Assert.True(source.IsCompleted)
+        let vt = source |> ValueTask.catch
+        match vt.Result with
+        | Error (:? TaskCanceledException) -> ()
+        | r -> failwithf "expected Error(TaskCanceledException) but got %A" r
+
+    [<Fact>]
+    let ``ValueTask.catch returns Error on cancellation (async)`` () : Task =
+        let tcs = pendingTaskSource()
+        let source = ValueTask<int>(tcs.Task)
+        Assert.False(source.IsCompletedSuccessfully)
+        let vt = source |> ValueTask.catch
+        Assert.False(vt.IsCompletedSuccessfully)
+        tcs.SetCanceled()
+        task {
+            match!  with
+            | Error (:? TaskCanceledException) -> ()
+            | r -> failwithf "expected Error(TaskCanceledException) but got %A" r
         }
 
     [<Fact>]

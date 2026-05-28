@@ -1550,7 +1550,6 @@ namespace Microsoft.FSharp.Control
     /// <summary>Contains camelCase module-level functions for <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> computations.</summary>
     ///
     /// <category index="1">Async Programming</category>
-    [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Async =
 

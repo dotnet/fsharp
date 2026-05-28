@@ -777,7 +777,7 @@ module Task =
             }
 
     [<CompiledName("Catch")>]
-    let inline catch (task: Task<'T>) : Task<Result<'T, exn>> =
+    let catch (task: Task<'T>) : Task<Result<'T, exn>> =
         if task.Status = TaskStatus.RanToCompletion then
             result (Ok task.Result)
         else
@@ -850,7 +850,7 @@ module ValueTask =
             ValueTask<'T>(t)
 
     [<CompiledName("Catch")>]
-    let inline catch (task: ValueTask<'T>) : ValueTask<Result<'T, exn>> =
+    let catch (task: ValueTask<'T>) : ValueTask<Result<'T, exn>> =
         if task.IsCompletedSuccessfully then
             ValueTask<Result<'T, exn>>(Ok task.Result)
         else
@@ -866,7 +866,7 @@ module ValueTask =
             ValueTask<Result<'T, exn>>(t)
 
     [<CompiledName("Empty")>]
-    let empty: ValueTask<unit> = Unchecked.defaultof<_>
+    let empty: ValueTask<unit> = result ()
 
     [<CompiledName("OfTask")>]
     let inline ofTask (task: Task<'T>) : ValueTask<'T> =
