@@ -100,7 +100,7 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
           # Determinism, we want to run it only in PR builds
-        - job: Determinism_Release
+        - job: Determinism_Debug
           condition: eq(variables['Build.Reason'], 'PullRequest')
           variables:
           - name: _SignType
@@ -129,15 +129,15 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\eng\test-determinism.cmd -configuration Release
+          - script: .\eng\test-determinism.cmd -configuration Debug
             env:
               FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
-            displayName: Determinism tests with Release configuration
+            displayName: Determinism tests with Debug configuration
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
-              artifactName: 'Determinism_Release Attempt $(System.JobAttempt) Logs'
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
+              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
             continueOnError: true
             condition: not(succeeded())
 
