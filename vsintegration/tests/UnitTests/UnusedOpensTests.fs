@@ -851,3 +851,123 @@ printfn "%A" MyModule.Thingy.Thing
     """
     => [6, (10, 25)]
 
+[<Fact>]
+let ``unused opens analysis - no false positive when open is used after a type error``() =
+    """
+module M
+open System.Collections.Generic
+let d = Dictionary<string, int>()
+let _ = d.Add("x", 1 + "not an int")
+let _ = d.["x"]
+"""
+    => []
+
+[<Fact>]
+let ``unused opens analysis - multiple opens, only post-error use, none flagged when file has errors``() =
+    """
+module M
+open System
+open System.Collections.Generic
+let _ = DateTime.Now
+let d = Dictionary<string, int>()
+let _ = d.Add("x", 1 + "not an int")
+let _ = d.["x"]
+"""
+    => []
+
+[<Fact>]
+let ``unused opens analysis - open used in function body, type error in different function``() =
+    """
+module M
+open System.Collections.Generic
+let f () = 1 + "not an int"
+let g () = Dictionary<string, int>()
+"""
+    => []
+
+[<Fact>]
+let ``unused opens analysis - open used only via type annotation after error``() =
+    """
+module M
+open System.Collections.Generic
+let _ = 1 + "not an int"
+let f (x: Dictionary<string, int>) = x
+"""
+    => []
+
+[<Fact>]
+let ``unused opens analysis - nested module open with error after usage``() =
+    """
+module M
+open System.Collections.Generic
+let d = Dictionary<string, int>()
+let _ = d.["x"]
+let _ = 1 + "not an int"
+"""
+    => []
+
+[<Fact>]
+let ``unused opens analysis - file with no errors still reports genuinely unused opens``() =
+    """
+module M
+open System
+open System.IO
+let _ = DateTime.Now
+"""
+    => [ 4, (5, 14) ]
+
+[<Fact>]
+let ``unused opens analysis - file with no errors and used opens reports nothing``() =
+    """
+module M
+open System
+let _ = DateTime.Now
+"""
+    => []
+
+[<Fact>]
+let ``unused opens analysis - warnings do not suppress analysis``() =
+    """
+module M
+open System
+open System.IO
+let f (x: int option) = match x with Some y -> y
+let _ = DateTime.Now
+"""
+    => [ 4, (5, 14) ]
+
+[<Fact>]
+let ``unused opens analysis - all opens used before error, none flagged``() =
+    """
+module M
+open System
+open System.Collections.Generic
+let d = Dictionary<string, int>()
+let _ = DateTime.Now
+let _ = d.Add("x", 1 + "not an int")
+"""
+    => []
+
+[<Fact>]
+let ``unused opens analysis - error on first line, no opens flagged``() =
+    """
+module M
+open System
+let _ = 1 + "not an int"
+let _ = DateTime.Now
+"""
+    => []
+
+[<Fact>]
+let ``unused opens analysis - multiple scattered type errors suppresses analysis``() =
+    """
+module M
+open System.Collections.Generic
+let _ = 1 + "not an int"
+let d = Dictionary<string, int>()
+let _ = "x" + 1
+let _ = d.["x"]
+"""
+    => []
+
+
