@@ -46,6 +46,9 @@ module ItemKeyTags =
     let typeUnionCase = "#U#"
 
     [<Literal>]
+    let typeAnonTtUnionCase = "#G#"
+
+    [<Literal>]
     let typeMeasureVar = "#p#"
 
     [<Literal>]
@@ -337,9 +340,6 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeString anonInfo.ILTypeRef.BasicQualifiedName
             tinst |> List.iter (writeType false)
 
-        // TODO: Anonymous type-tagged union
-        | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
-
         | TType_fun(domainTy, rangeTy, _) ->
             writeString ItemKeyTags.typeFunction
             writeType false domainTy
@@ -358,6 +358,10 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
                 writeString ItemKeyTags.typeUnionCase
                 writeEntityRef tcref
                 writeString nm
+
+        | TType_anon_tt_union(_, tinst) ->
+            writeString ItemKeyTags.typeAnonTtUnionCase
+            tinst |> List.iter (writeType false)
 
     and writeMeasure isStandalone (ms: Measure) =
         debug.WriteMeasure isStandalone ms
