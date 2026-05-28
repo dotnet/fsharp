@@ -29,6 +29,7 @@ safe-outputs:
     draft: false
     max: 1
     allowed-files: [".github/docs/**"]
+    protected-files: allowed
 ---
 
 # Agentic State Machine — Diagram Generator
