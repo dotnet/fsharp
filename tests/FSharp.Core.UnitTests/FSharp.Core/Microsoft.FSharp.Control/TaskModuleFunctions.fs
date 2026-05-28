@@ -38,7 +38,7 @@ module TaskModuleFunctionsTests =
     let ``Task.ignore discards result`` () =
         let t = Task.result 42 |> Task.ignore<int>
         t.Result
-        Assert.True(t.IsCompletedSuccessfully)
+        Assert.True(t.Status = TaskStatus.RanToCompletion) // IsCompletedSuccessfully would work but netstandard2.0
 
     [<Fact>]
     let ``Task.catchWith recovers from exception (sync)`` () =
@@ -114,8 +114,7 @@ module TaskModuleFunctionsTests =
         Assert.False(t.IsCompleted)
         tcs.SetException(Exception "boom")
         task {
-            let! result = t
-            match result with
+            match! t with
             | Error ex -> Assert.Equal("boom", ex.Message)
             | Ok _ -> failwith "expected Error"
         }
@@ -166,7 +165,7 @@ module TaskModuleFunctionsTests =
     let ``Task.empty returns completed unit task`` () =
         let t = Task.empty
         t.Result
-        Assert.True(t.IsCompletedSuccessfully)
+        Assert.True(t.Status = TaskStatus.RanToCompletion) // IsCompletedSuccessfully would work but netstandard2.0
 
 #if NETSTANDARD2_1
     [<Fact>]
@@ -293,8 +292,7 @@ module ValueTaskModuleFunctionsTests =
         Assert.False(vt.IsCompletedSuccessfully)
         tcs.SetException(Exception "boom")
         task {
-            let! result = vt
-            match result with
+            match! vt with
             | Error ex -> Assert.Equal("boom", ex.Message)
             | Ok _ -> failwith "expected Error"
         }
@@ -317,7 +315,7 @@ module ValueTaskModuleFunctionsTests =
         Assert.False(vt.IsCompletedSuccessfully)
         tcs.SetCanceled()
         task {
-            match!  with
+            match! vt with
             | Error (:? TaskCanceledException) -> ()
             | r -> failwithf "expected Error(TaskCanceledException) but got %A" r
         }
