@@ -3,16 +3,41 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
+    <!-- Derive repo root: this fsproj is at .github/skills/fsharp-diagnostics/server/ -->
+    <_DiagServerRepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', '..', '..'))</_DiagServerRepoRoot>
+    <!-- Use Release-built FCS (built from current source, includes latest changes) -->
+    <_ReleaseFcsPath>$(_DiagServerRepoRoot)artifacts/bin/FSharp.Compiler.Service/Release/net10.0/FSharp.Compiler.Service.dll</_ReleaseFcsPath>
+    <!-- Fallback: Proto-built FCS -->
+    <_ProtoFcsPath>$(_DiagServerRepoRoot)artifacts/Bootstrap/fsc/FSharp.Compiler.Service.dll</_ProtoFcsPath>
   </PropertyGroup>
 
-  <ItemGroup>
+  <!-- Prefer Release-built FCS (includes latest source changes) -->
+  <ItemGroup Condition="Exists('$(_ReleaseFcsPath)')">
+    <Reference Include="FSharp.Compiler.Service">
+      <HintPath>$(_ReleaseFcsPath)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Fallback to Proto when no Release build exists -->
+  <ItemGroup Condition="!Exists('$(_ReleaseFcsPath)') AND Exists('$(_ProtoFcsPath)')">
+    <Reference Include="FSharp.Compiler.Service">
+      <HintPath>$(_ProtoFcsPath)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Fallback to NuGet when neither exists -->
+  <ItemGroup Condition="!Exists('$(_ReleaseFcsPath)') AND !Exists('$(_ProtoFcsPath)')">
     <PackageReference Include="FSharp.Compiler.Service" Version="43.*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="10.*" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="DesignTimeBuild.fs" />
     <Compile Include="ProjectManager.fs" />
+    <Compile Include="ProjectRouting.fs" />
     <Compile Include="DiagnosticsFormatter.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
