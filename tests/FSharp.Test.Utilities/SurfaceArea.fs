@@ -4,8 +4,9 @@ module FSharp.Test.SurfaceArea
     open System
     open System.IO
     open System.Reflection
-    open System.Text.RegularExpressions 
-        
+    open FSharp.Test.Compiler
+    open System.Text.RegularExpressions
+
     // Gets string form of public surface area for the currently-loaded assembly
     let private getSurfaceAreaForAssembly (assembly: Assembly) =
 
@@ -66,8 +67,10 @@ module FSharp.Test.SurfaceArea
             File.Delete(outFilePath)
 
         | Some diff ->
-            match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
-            | null ->
+            if shouldUpdateBaselines then
+                File.Delete(outFilePath)
+                File.WriteAllText(baselinePath, actual)
+            else
                 File.WriteAllText(outFilePath, actual)
 
                 let msg = $"""Assembly: %A{asm}
@@ -78,6 +81,3 @@ module FSharp.Test.SurfaceArea
                   {diff}"""
 
                 failwith msg
-            | _ ->
-                File.Delete(outFilePath)
-                File.WriteAllText(baselinePath, actual)
