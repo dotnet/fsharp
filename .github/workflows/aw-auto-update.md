@@ -27,6 +27,9 @@ tools:
   bash: true
 
 safe-outputs:
+  github-app:
+    client-id: ${{ vars.GH_AW_APP_CLIENT_ID }}
+    private-key: ${{ secrets.GH_AW_APP_PRIVATE_KEY }}
   noop:
     report-as-issue: false
   create-pull-request:
@@ -34,6 +37,7 @@ safe-outputs:
     title-prefix: "[Auto Update] "
     labels: [automation]
     max: 1
+    allow-workflows: true
     allowed-files:
       - ".github/workflows/*.md"
       - ".github/workflows/*.lock.yml"
@@ -43,9 +47,10 @@ safe-outputs:
     protected-files: fallback-to-issue
   push-to-pull-request-branch:
     target: "*"
-    title-prefix: "[Auto Update] "
-    labels: [automation]
+    required-title-prefix: "[Auto Update] "
+    required-labels: [automation]
     max: 1
+    allow-workflows: true
     allowed-files:
       - ".github/workflows/*.md"
       - ".github/workflows/*.lock.yml"
