@@ -40,7 +40,6 @@ safe-outputs:
   create-agent-session:
     base: main
     max: 1
-    github-token: ${{ secrets.COPILOT_GITHUB_TOKEN }}
 ---
 
 # Agentic Workflow Auto-Update — Detection
