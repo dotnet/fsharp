@@ -16,6 +16,12 @@ let getClassifications (source: string) =
     let checkResults = getTypeCheckResult results
     checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
 
+/// Extract the source substring covered by a classification item's range (single-line ranges).
+let private substringOfRange (source: string) (r: Range) =
+    let lines = source.Replace("\r\n", "\n").Split('\n')
+    let line = lines[r.StartLine - 1]
+    line.Substring(r.StartColumn, r.EndColumn - r.StartColumn)
+
 /// (#15290 regression) Copy-and-update record fields must not be classified as type names.
 /// Before the fix, Item.Types was registered with mWholeExpr and ItemOccurrence.Use, producing
 /// a wide type classification that overshadowed the correct RecordField classification.
@@ -207,3 +213,61 @@ let _ = NotDeclaredAnywhere.S
             "Undeclared identifier should not be classified as a type, but found: %A"
             (badSpans |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
     )
+
+/// (#16982) Delegate `Invoke` synthesized in a delegate declaration must not be classified as Method.
+[<Fact>]
+let ``Delegate Invoke in declaration not classified as method`` () =
+    let source = """
+type MyDelegate = delegate of int -> string
+"""
+    let classifications = getClassifications source
+    let invokeMethods =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.Method
+            && substringOfRange source c.Range = "Invoke")
+    Assert.Empty(invokeMethods)
+
+/// (#16982) Negative: at a real call site, `Invoke` must still classify as Method.
+[<Fact>]
+let ``Delegate Invoke at call site classified as method`` () =
+    let source = """
+type MyDelegate = delegate of int -> string
+let d = MyDelegate(fun i -> string i)
+let result = d.Invoke(42)
+"""
+    let classifications = getClassifications source
+    let invokeCallSite =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.Method && c.Range.StartLine = 4)
+    Assert.NotEmpty(invokeCallSite)
+
+/// (#16982) Generic delegate variant.
+[<Fact>]
+let ``Generic delegate Invoke not classified as method in decl`` () =
+    let source = """
+type MyGenDelegate<'T> = delegate of 'T -> 'T
+"""
+    let classifications = getClassifications source
+    let invokeMethods =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.Method
+            && substringOfRange source c.Range = "Invoke")
+    Assert.Empty(invokeMethods)
+
+/// (#16982) The synthesized async-pattern members `BeginInvoke`/`EndInvoke` must also be suppressed in the declaration.
+[<Fact>]
+let ``BeginInvoke EndInvoke also not classified in decl`` () =
+    let source = """
+type MyDelegate = delegate of int -> string
+"""
+    let classifications = getClassifications source
+    let asyncInvokeMethods =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.Method
+            && (let text = substringOfRange source c.Range
+                text = "BeginInvoke" || text = "EndInvoke"))
+    Assert.Empty(asyncInvokeMethods)
