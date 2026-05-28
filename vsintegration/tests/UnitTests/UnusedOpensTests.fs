@@ -788,7 +788,7 @@ module Nested =
 
 open Nested
 """
-    => [ 10, (5, 11) ]
+    => [ ]
 
 [<Fact>]
 let ``used inner module open declaration in rec module``() =

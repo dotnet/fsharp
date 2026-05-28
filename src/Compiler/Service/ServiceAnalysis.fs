@@ -8,6 +8,7 @@ open System.Runtime.CompilerServices
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
@@ -304,7 +305,13 @@ module UnusedOpens =
         async {
             use! _holder = Cancellable.UseToken()
 
-            if checkFileResults.OpenDeclarations.Length = 0 then
+            let hasErrors =
+                checkFileResults.Diagnostics
+                |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
+            if hasErrors then
+                return []
+            elif checkFileResults.OpenDeclarations.Length = 0 then
                 return []
             else
                 let! ct = Async.CancellationToken
@@ -465,8 +472,15 @@ module UnusedDeclarations =
 
     let getUnusedDeclarations (checkFileResults: FSharpCheckFileResults, isScriptFile: bool) =
         async {
-            let! ct = Async.CancellationToken
-            let allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
-            let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
-            return unusedRanges
+            let hasErrors =
+                checkFileResults.Diagnostics
+                |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
+            if hasErrors then
+                return Seq.empty
+            else
+                let! ct = Async.CancellationToken
+                let allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+                let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
+                return unusedRanges
         }
