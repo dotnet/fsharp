@@ -844,10 +844,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
         let fHat = mkLocalNameTypeArity f.IsCompilerGenerated m fHatName fHatTy (Some fHatArity)
         fHat
 
-    // See https://github.com/dotnet/fsharp/issues/19732 for why we sort here.
-    let fs =
-        Zset.elements tlrS
-        |> List.sortWith (fun v1 v2 -> compare (valSourceOrderKey v1) (valSourceOrderKey v2))
+    let fs = Zset.elements tlrS
     let ffHats = List.map (fun f -> f, createFHat f) fs
     let fHatM = Zmap.ofList valOrder ffHats
     fHatM

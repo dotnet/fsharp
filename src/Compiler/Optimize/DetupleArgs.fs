@@ -704,11 +704,8 @@ let determineTransforms g (z: Results) =
                     let callPatterns = sitesCPs sites // callPatterns from sites
                     decideTransform g z f callPatterns (m, tps, vss, retTy) // make transform (if required)
 
-    // See https://github.com/dotnet/fsharp/issues/19732 for why we sort here.
     let vtransforms =
-        Zmap.toList z.Uses
-        |> List.sortWith (fun (v1, _) (v2, _) -> compare (valSourceOrderKey v1) (valSourceOrderKey v2))
-        |> List.choose (fun (f, sites) -> selectTransform f sites)
+        Zmap.chooseL selectTransform z.Uses
     let vtransforms = Zmap.ofList valOrder vtransforms
     vtransforms
 
