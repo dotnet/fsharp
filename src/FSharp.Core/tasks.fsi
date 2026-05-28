@@ -452,8 +452,10 @@ module HighPriority =
 
 namespace Microsoft.FSharp.Control
 
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Collections
 
 /// <summary>Contains camelCase module-level functions for <see cref="T:System.Threading.Tasks.Task`1"/> computations.</summary>
 ///
@@ -573,6 +575,56 @@ module Task =
     /// </example>
     [<CompiledName("Empty")>]
     val empty: Task<unit>
+
+    /// <summary>Creates a task that runs all given tasks with at most <c>maxDegreeOfParallelism</c>
+    /// running concurrently and returns their results in order. Relative start and finish order per computation is not guaranteed.</summary>
+    ///
+    /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently.</param>
+    /// <param name="ct">A cancellation token to pass to each task factory.</param>
+    /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    ///
+    /// <returns>A task yielding the results of all input tasks in order.</returns>
+    ///
+    /// <example id="task-parallellimit-1">
+    /// <code lang="fsharp">
+    /// open System.Threading
+    /// let results =
+    ///     [for i in 1..10 do fun _ct -> Task.result (i * i)]
+    ///     |> Task.parallelLimit 3 CancellationToken.None
+    /// results.Result // evaluates to [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
+    /// </code>
+    /// </example>
+    [<CompiledName("ParallelLimit")>]
+    val parallelLimit:
+        maxDegreeOfParallelism: int ->
+        ct: CancellationToken ->
+        computations: seq<CancellationToken -> Task<'T>> ->
+            Task<'T[]>
+
+    /// <summary>Creates a task that runs all given unit tasks
+    /// with at most <c>maxDegreeOfParallelism</c> running concurrently, discarding the results.</summary>
+    ///
+    /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently.</param>
+    /// <param name="ct">A cancellation token to pass to each task factory.</param>
+    /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    ///
+    /// <returns>A task that runs all inputs with the specified parallelism limit and returns <c>unit</c>.</returns>
+    ///
+    /// <example id="task-paralleldolimit-1">
+    /// <code lang="fsharp">
+    /// open System.Threading
+    /// do
+    ///     [for i in 1..10 do fun _ct -> task { printfn "%d" i }]
+    ///     |> Task.parallelDoLimit 3 CancellationToken.None
+    ///     |> _.Wait()
+    /// </code>
+    /// </example>
+    [<CompiledName("ParallelDoLimit")>]
+    val parallelDoLimit:
+        maxDegreeOfParallelism: int ->
+        ct: CancellationToken ->
+        computations: seq<CancellationToken -> Task<unit>> ->
+            Task<unit>
 
 #if NETSTANDARD2_1 || NET
     /// <summary>Converts a <see cref="T:System.Threading.Tasks.ValueTask`1"/> to a <see cref="T:System.Threading.Tasks.Task`1"/>.</summary>

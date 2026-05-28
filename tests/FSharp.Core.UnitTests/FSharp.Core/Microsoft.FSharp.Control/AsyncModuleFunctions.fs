@@ -263,3 +263,43 @@ let ``Async.catch propagates Cancellation (async)`` () =
 let ``Async.empty returns unit`` () =
     let actual = Async.empty |> asyncWait
     Assert.Equal((), actual)
+    
+
+[<Fact>]
+let ``Async.parallelLimit runs all computations`` () =
+    let results =
+        [for i in 1..5 do async { return i * i }]
+        |> Async.parallelLimit 2
+        |> Async.RunSynchronouslyImmediate
+    Assert.True([| 1; 4; 9; 16; 25 |] = results)
+
+[<Fact>]
+let ``Async.parallelLimit limits concurrency`` () =
+    let mutable concurrent = 0
+    let mutable maxConcurrent = 0
+    let lockObj = obj()
+    let a =
+        [for _ in 1..10 do
+            async {
+                let n =
+                    lock lockObj (fun () ->
+                        concurrent <- concurrent + 1
+                        if concurrent > maxConcurrent then maxConcurrent <- concurrent
+                        concurrent)
+                do! Async.Sleep 1
+                lock lockObj (fun () -> concurrent <- concurrent - 1) |> ignore
+                return n
+            }]
+        |> Async.parallelLimit 3
+    a |> Async.RunSynchronouslyImmediate |> ignore
+    Assert.True(maxConcurrent <= 3, $"max concurrent was {maxConcurrent}, expected <= 3")
+
+[<Fact>]
+let ``Async.parallelDoLimit runs all computations and returns unit`` () =
+    let results = System.Collections.Generic.List<int>()
+    seq {
+        for i in 1..5 do
+            async { lock results (fun () -> results.Add(i)) } }
+    |> Async.parallelDoLimit 2
+    |> Async.RunSynchronouslyImmediate
+    Assert.Equal(5, results.Count)
