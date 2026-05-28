@@ -970,4 +970,85 @@ let _ = d.["x"]
 """
     => []
 
+// This test exercises the Error-diagnostic guard in UnusedOpens.getUnusedOpens.
+// Without the guard, the snippet below produced [ 10, (5, 11) ] because the
+// `'open' must come first in rec` parse error left symbol uses incomplete and
+// the analysis flagged the open as unused. With the guard, the file's Error
+// diagnostic suppresses the analysis and the range list is empty.
+[<Fact>]
+let ``unused opens analysis - parse error in rec module suppresses analysis (guard regression)``() =
+    """
+module rec TopModule
+
+module Nested =
+    let x = 1
+    let f x = x
+    type T() = class end
+    type R = { F: int }
+
+open Nested
+"""
+    => [ ]
+
+// Verifies UnusedDeclarations.getUnusedDeclarations returns an empty seq<range>
+// when the file has any Error-severity diagnostic. The let-binding `unused`
+// would normally be flagged as an unused declaration, but the type error must
+// suppress the analysis.
+[<Fact>]
+let ``unused declarations analysis - file with type error returns empty``() =
+    let source = """
+module M
+let unused = 42
+let _ = 1 + "not an int"
+"""
+    let _, checkFileAnswer =
+        checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions)
+        |> Async.RunSynchronously
+
+    let checkFileResults =
+        match checkFileAnswer with
+        | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
+        | FSharpCheckFileAnswer.Succeeded(r) -> r
+
+    let hasError =
+        checkFileResults.Diagnostics
+        |> Array.exists (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
+    Assert.True(hasError, "expected source to contain at least one Error diagnostic")
+
+    let unused =
+        UnusedDeclarations.getUnusedDeclarations(checkFileResults, false)
+        |> Async.RunSynchronously
+        |> Seq.toList
+    Assert.Equal<range list>([], unused)
+
+// Verifies UnusedDeclarations.getUnusedDeclarations still reports genuinely
+// unused declarations on a clean file (no Error diagnostics), so the guard
+// doesn't silently disable the analysis everywhere.
+[<Fact>]
+let ``unused declarations analysis - clean file still reports unused``() =
+    let source = """
+module M
+let private unused = 42
+let _ = 1
+"""
+    let _, checkFileAnswer =
+        checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions)
+        |> Async.RunSynchronously
+
+    let checkFileResults =
+        match checkFileAnswer with
+        | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
+        | FSharpCheckFileAnswer.Succeeded(r) -> r
+
+    let hasError =
+        checkFileResults.Diagnostics
+        |> Array.exists (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
+    Assert.False(hasError, "expected clean source to have no Error diagnostics")
+
+    let unused =
+        UnusedDeclarations.getUnusedDeclarations(checkFileResults, false)
+        |> Async.RunSynchronously
+        |> Seq.toList
+    Assert.NotEmpty(unused)
+
 
