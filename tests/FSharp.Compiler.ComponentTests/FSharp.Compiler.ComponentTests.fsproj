@@ -65,7 +65,6 @@
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MethodResolution\MethodResolution.fs" />
-    <Compile Include="Conformance\BasicGrammarElements\MethodResolution\StaticMethodResolution.fs" />
 	<Compile Include="Conformance\BasicGrammarElements\MethodResolution\StaticMethodResolution.fs" />
 	<Compile Include="Conformance\BasicGrammarElements\PropertyResolution\StaticPropertyResolution.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
