@@ -11,6 +11,10 @@ on:
 
 timeout-minutes: 15
 
+concurrency:
+  group: labelops-pr-security-scan
+  cancel-in-progress: false
+
 permissions: read-all
 
 network:
