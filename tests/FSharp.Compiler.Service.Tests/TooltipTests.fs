@@ -852,3 +852,99 @@ let inline fo{caret}o< ^T> (x: ^T) = x
     |> fun text ->
         // Type param appears in tooltip
         Assert.Contains("'T", text)
+
+// https://github.com/dotnet/fsharp/issues/11612
+// Tooltip for overloaded CE [<CustomOperation>] should reflect the resolved overload,
+// not just the last one registered with the builder.
+let private renderAllGroups (ToolTipText elements) =
+    let sb = System.Text.StringBuilder()
+    for el in elements do
+        match el with
+        | ToolTipElement.Group items ->
+            for item in items do
+                for line in item.MainDescription do
+                    sb.Append(line.Text) |> ignore
+                sb.Append('\n') |> ignore
+        | ToolTipElement.CompositionError msg -> sb.AppendLine(msg) |> ignore
+        | ToolTipElement.None -> ()
+    sb.ToString()
+
+[<Fact>]
+let ``CE custom operator QuickInfo shows resolved overload`` () =
+    Checker.getTooltip """
+type Builder() =
+    member _.Yield(x) = [x]
+    member _.For(xs, body) = xs |> List.collect body
+    [<CustomOperation("whereOp")>]
+    member _.WhereInt(xs: int list, [<ProjectionParameter>] f: int -> bool) = List.filter f xs
+    [<CustomOperation("whereOp")>]
+    member _.WhereStr(xs: string list, [<ProjectionParameter>] f: string -> bool) = List.filter f xs
+
+let b = Builder()
+let result = b { for x in [1;2;3] do whereO{caret}p (x > 0) }
+"""
+    |> renderAllGroups
+    |> fun text -> Assert.Contains("int", text)
+
+[<Fact>]
+let ``CE custom operator with three overloads shows resolved float overload`` () =
+    Checker.getTooltip """
+type Builder() =
+    member _.Yield(x) = [x]
+    member _.For(xs, body) = xs |> List.collect body
+    [<CustomOperation("filterOp")>]
+    member _.F1(xs: int list, [<ProjectionParameter>] f: int -> bool) = List.filter f xs
+    [<CustomOperation("filterOp")>]
+    member _.F2(xs: float list, [<ProjectionParameter>] f: float -> bool) = List.filter f xs
+    [<CustomOperation("filterOp")>]
+    member _.F3(xs: string list, [<ProjectionParameter>] f: string -> bool) = List.filter f xs
+
+let b = Builder()
+let result = b { for x in [1.0;2.0] do filterO{caret}p (x > 0.0) }
+"""
+    |> renderAllGroups
+    |> fun text -> Assert.Contains("float", text)
+
+[<Fact>]
+let ``CE single custom operator QuickInfo still works`` () =
+    Checker.getTooltip """
+type Builder() =
+    member _.Yield(x) = [x]
+    member _.For(xs, body) = xs |> List.collect body
+    [<CustomOperation("whereSingle")>]
+    member _.W(xs: int list, [<ProjectionParameter>] f: int -> bool) = List.filter f xs
+
+let b = Builder()
+let result = b { for x in [1;2;3] do whereSing{caret}le (x > 0) }
+"""
+    |> renderAllGroups
+    |> fun text -> Assert.Contains("whereSingle", text)
+
+[<Fact>]
+let ``Regular method overload QuickInfo unaffected`` () =
+    Checker.getTooltip """
+type T() =
+    member _.M(x: int) = x
+    member _.M(x: string) = x.Length
+let t = T()
+let r = t.M{caret}(42)
+"""
+    |> renderAllGroups
+    |> fun text -> Assert.Contains("int", text)
+
+[<Fact>]
+let ``GetSymbolUse resolves correct CE operator overload`` () =
+    Checker.getTooltip """
+type Builder() =
+    member _.Yield(x) = [x]
+    member _.For(xs, body) = xs |> List.collect body
+    [<CustomOperation("pickOne")>]
+    member _.PickInt(xs: int list, [<ProjectionParameter>] f: int -> bool) = List.filter f xs
+    [<CustomOperation("pickOne")>]
+    member _.PickStr(xs: string list, [<ProjectionParameter>] f: string -> bool) = List.filter f xs
+
+let b = Builder()
+let result = b { for x in [1;2;3] do pickO{caret}ne (x > 0) }
+"""
+    |> renderAllGroups
+    |> fun text -> Assert.Contains("int", text)
