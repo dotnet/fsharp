@@ -48,6 +48,30 @@ open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.TypeProviders
 #endif
 
+/// Wraps an inner DiagnosticsLogger and suppresses subsequent identical
+/// 'UndefinedName' (FS0039) errors raised for the same identifier text within
+/// its lifetime. This addresses the case where an undefined base type in an
+/// 'inherit' / 'interface inherit' clause is reported multiple times because
+/// the type-establishment pipeline resolves the same SynType in several passes
+/// (FirstPass / SecondPass / Phase2AInherit). The key is the formatted
+/// diagnostic message so all other diagnostics, and FS0039 emissions for
+/// distinct identifiers, pass through unchanged.
+type private DedupInheritDiagnosticsLogger(inner: DiagnosticsLogger) =
+    inherit DiagnosticsLogger("DedupInheritDiagnosticsLogger")
+    let seen = HashSet<string>()
+
+    let rec isDuplicateUndefinedName (e: exn) =
+        match e with
+        | UndefinedName _ -> not (seen.Add e.Message)
+        | WrappedError(inner, _) -> isDuplicateUndefinedName inner
+        | _ -> false
+
+    override _.DiagnosticSink(diagnostic: PhasedDiagnostic) =
+        if not (isDuplicateUndefinedName diagnostic.Exception) then
+            inner.DiagnosticSink diagnostic
+
+    override _.ErrorCount = inner.ErrorCount
+
 type cenv = TcFileState
 
 //-------------------------------------------------------------------------
@@ -4610,6 +4634,16 @@ module TcDeclarations =
     let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) isMutRec =
 
         let g = cenv.g
+
+        // Suppress duplicate FS0039 ('UndefinedName') diagnostics emitted across the
+        // multiple establishment passes for a mutually recursive type-definition group.
+        // For example, an undefined base type in an 'inherit' / 'interface inherit'
+        // clause is otherwise reported once each in FirstPass, SecondPass and the
+        // Phase2AInherit member-checking pass. Dedup is keyed by the formatted
+        // 'UndefinedName' message so unrelated diagnostics pass through unchanged.
+        use _ =
+            UseTransformedDiagnosticsLogger(fun inner ->
+                DedupInheritDiagnosticsLogger(inner) :> DiagnosticsLogger)
 
         // Split the definitions into "core representations" and "members". The code to process core representations
         // is shared between processing of signature files and implementation files.
