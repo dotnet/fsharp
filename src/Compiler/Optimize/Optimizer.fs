@@ -1612,14 +1612,24 @@ let SplitValuesByIsUsedOrHasEffect cenv fvs x =
 
 let IlAssemblyCodeInstrHasEffect i = 
     match i with 
-    | ( AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or 
-               | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl 
-               | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull )
+    | AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or
+    | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl
+    | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull
     | I_ldstr _ | I_ldtoken _
     | EI_ilzero _ -> false
     | _ -> true
-  
-let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
+
+let tyargsContainFreeTypars tyargs =
+    match tyargs with
+    | [] -> false
+    | _ -> not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
+
+let ILAsmHasEffect instrs tyargs =
+    instrs |> List.exists (function
+        // EI_ilzero<'T> embeds the type into IL; eliminating the expression would orphan
+        // free typars referenced only through tyargs and trip FS0073 in IlxGen.
+        | EI_ilzero _ -> tyargsContainFreeTypars tyargs
+        | i -> IlAssemblyCodeInstrHasEffect i)
 
 let rec ExprHasEffect g expr = 
     match stripDebugPoints expr with 
@@ -1630,16 +1640,7 @@ let rec ExprHasEffect g expr =
     | Expr.Const _ -> false
     // type applications do not have effects, with the exception of type functions
     | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect g f0
-    // An Expr.Op is effect-free when its op is effect-free, its args are effect-free, AND its type args
-    // don't contain free type parameters. Type variables in tyargs indicate the expression may serve as a
-    // witness/dummy for SRTP resolution; eliminating it can orphan those type vars causing FS0073 in IlxGen.
-    | Expr.Op (op, tyargs, args, m) ->
-        if ExprsHaveEffect g args || OpHasEffect g m op then
-            true
-        elif List.isEmpty tyargs then
-            false
-        else
-            not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
+    | Expr.Op (op, tyargs, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op tyargs
     | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
     | Expr.Let (bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
@@ -1651,7 +1652,7 @@ and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
 
 and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 
-and OpHasEffect g m op = 
+and OpHasEffect g m op tyargs =
     match op with 
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
@@ -1665,7 +1666,7 @@ and OpHasEffect g m op =
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
-    | TOp.ILAsm (instrs, _) -> IlAssemblyCodeHasEffect instrs
+    | TOp.ILAsm (instrs, _) -> ILAsmHasEffect instrs tyargs
     | TOp.TupleFieldGet _ -> false
     | TOp.ExnFieldGet (ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet _ -> false
@@ -2580,7 +2581,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect g m newOp
+          HasEffect = OpHasEffect g m newOp tyargs
           MightMakeCriticalTailcall = false
           Info = ValueOfExpr newExpr }
 
@@ -2652,17 +2653,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
 
-    let effect =
-        let opEffect = OpHasEffect g m op
-
-        // If an operation would be effect-free, but its type args contain free type parameters,
-        // conservatively treat it as having an effect. This prevents dead binding/sequential
-        // elimination from orphaning type variables that are only referenced through the eliminated
-        // expression, which would cause FS0073 during IL generation (common with SRTP patterns).
-        if not opEffect && not argEffects && not (List.isEmpty tyargs) then
-            not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
-        else
-            opEffect
+    let effect = OpHasEffect g m op tyargs
     let cost, value_ = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)

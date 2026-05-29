@@ -221,7 +221,7 @@ let empty<'T> = Seq.empty<'T>
 
     // https://github.com/dotnet/fsharp/issues/17775
     [<Fact>]
-    let ``Unchecked_defaultof_unused_bindings_eliminated_when_optimized`` () =
+    let ``Unchecked_defaultof_concrete_type_eliminated_when_unused`` () =
         FSharp """
 module Test
 
@@ -243,17 +243,32 @@ let f (n: float32) =
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/17775
-    // Regression: Unchecked.defaultof with type variables (including nested) must not be eliminated,
-    // otherwise orphaned type variables cause FS0073 during IL generation.
+    // FS0073 regression: free type variable in EI_ilzero tyargs must not be eliminated.
     [<Fact>]
-    let ``Unchecked_defaultof_with_type_variables_compiles_with_optimization`` () =
+    let ``Unchecked_defaultof_typar_kept_in_SRTP_context`` () =
+        FSharp """
+module Test
+
+let inline f< ^T when ^T : (static member op_Explicit: ^T -> int)> (x: ^T) =
+    let _ = Unchecked.defaultof< ^T >
+    int x
+"""
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/17775
+    // Nested free typar (Wrapper< ^T >) must also keep the binding alive.
+    [<Fact>]
+    let ``Unchecked_defaultof_nested_typar_kept_in_SRTP_context`` () =
         FSharp """
 module Test
 
 type Wrapper<'T> = { Value: 'T }
 
 let inline f< ^T when ^T : (static member op_Explicit: ^T -> int)> (x: ^T) =
-    let _ = Unchecked.defaultof< ^T >
     let _ = Unchecked.defaultof<Wrapper< ^T >>
     int x
 """
@@ -261,4 +276,26 @@ let inline f< ^T when ^T : (static member op_Explicit: ^T -> int)> (x: ^T) =
         |> withOptimize
         |> compile
         |> shouldSucceed
+        |> ignore
+
+    // Non-regression: the EI_ilzero fix must not over-broadly mark other effect-free
+    // generic operations as effectful. A generic Some over a free typar should still
+    // be eliminated as a dead binding under optimization.
+    [<Fact>]
+    let ``Generic_Some_unused_binding_still_eliminated`` () =
+        FSharp """
+module Test
+
+open System
+
+let f<'T> (x: 'T) =
+    Console.WriteLine "before"
+    let _ = Some x
+    Console.WriteLine "after"
+"""
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILNotPresent [ "FSharpOption" ]
         |> ignore
