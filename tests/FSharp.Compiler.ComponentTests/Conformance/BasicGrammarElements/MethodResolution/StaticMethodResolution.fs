@@ -5,37 +5,90 @@ namespace Conformance.BasicGrammarElements
 open FSharp.Test.Compiler
 open Xunit
 
+// Regression tests for https://github.com/dotnet/fsharp/issues/19664
+// Fix: https://github.com/dotnet/fsharp/pull/19698
 module StaticMethodResolution =
-    
-    // Regression test for https://github.com/dotnet/fsharp/issues/19664
-    //
-    // When a static extension method is defined in a *different* [<AutoOpen>] module than
-    // the generic type it extends, and shares its name with an intrinsic static member,
-    // resolving the call via the explicit-type-argument syntax `Type<TArg>.Member(...)`
-    // previously failed with FS0505. The non-generic dotted form `Type.Member(...)`
-    // resolved correctly, so any regression test that omits the explicit type arguments
-    // does not actually exercise the bug. See the discussion at
-    // https://github.com/dotnet/fsharp/issues/19675#issuecomment-4373059900.
-    [<Fact>]
-    let ``Static extension on generic type resolves with explicit type arguments``() =
-        Fsx """
-module Extensions =
+
+    let private sharedSource = """
+module Lib =
 
     type StaticGeneric<'T> =
         static member Bar() = ()
         static member Bar(_: int, _: int) = ()
 
     [<AutoOpen>]
-    module StaticGenericExtensions =
+    module Extensions =
         type StaticGeneric<'T> with
             static member Bar(_: int) = ()
+"""
+
+    [<Fact>]
+    let ``Static extension on generic type resolves with explicit type arguments``() =
+        Fsx (sharedSource + """
+module Program =
+    open Lib
+
+    StaticGeneric<int>.Bar()
+    StaticGeneric<int>.Bar(42)
+    StaticGeneric<int>.Bar(42, 0)
+        """)
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Static extension on generic type - wrong arity produces diagnostic``() =
+        Fsx (sharedSource + """
+module Program =
+    open Lib
+
+    StaticGeneric<int>.Bar(1, 2, 3)
+        """)
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 505
+
+    [<Fact>]
+    let ``Static extension on non-generic type still resolves``() =
+        Fsx """
+module Lib =
+
+    type Ops =
+        static member Run() = ()
+
+    [<AutoOpen>]
+    module Extensions =
+        type Ops with
+            static member Run(_: int) = ()
 
 module Program =
-    open Extensions
+    open Lib
 
-    StaticGeneric<int>.Bar()        // intrinsic, 0 args
-    StaticGeneric<int>.Bar(42)      // regressed: extension, 1 arg, see issue 19664 (FS0505)
-    StaticGeneric<int>.Bar(42, 0)   // intrinsic, 2 args
+    Ops.Run()
+    Ops.Run(1)
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Static extension on generic type resolves alongside instance members``() =
+        Fsx """
+module Lib =
+
+    type Container<'T> =
+        static member Create() = Unchecked.defaultof<Container<'T>>
+        member _.Value = Unchecked.defaultof<'T>
+
+    [<AutoOpen>]
+    module Extensions =
+        type Container<'T> with
+            static member Create(_: 'T) = Unchecked.defaultof<Container<'T>>
+
+module Program =
+    open Lib
+
+    let c = Container<int>.Create()
+    let c2 = Container<int>.Create(42)
+    let v = c.Value
         """
         |> typecheck
         |> shouldSucceed
