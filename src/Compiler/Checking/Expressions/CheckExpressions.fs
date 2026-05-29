@@ -11956,12 +11956,17 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         // Add the dispose of any "use x = ..." to bodyExpr
         let mkCleanup (bodyExpr, bodyExprTy) =
             if isUse && not isFixed then
-                let isDiscarded = match checkedPat2 with TPat_wild _ -> true | _ -> false
-                let allValsDefinedByPattern = if isDiscarded then [patternInputTmp] else allValsDefinedByPattern
-                (allValsDefinedByPattern, (bodyExpr, bodyExprTy)) ||> List.foldBack (fun v (bodyExpr, bodyExprTy) ->
-                    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace g.system_IDisposableNull_ty v.Type
-                    let cleanupE = BuildDisposableCleanup cenv env m v
-                    mkTryFinally g (bodyExpr, cleanupE, m, bodyExprTy, DebugPointAtTry.No, DebugPointAtFinally.No), bodyExprTy)
+                // Issue #12300: a single `use` binding must produce exactly one Dispose call,
+                // even when the pattern binds multiple names (e.g. `use a as b = d`).
+                // `patternInputTmp` is the canonical value holding the bound expression:
+                //   - for `use v = expr` it is `v` itself (see the TPat_as arm above);
+                //   - for `use _ = expr` it is a fresh compiler-generated temp;
+                //   - for `use a as b = expr` it is the outermost named val (e.g. `b`),
+                //     and every other name in the pattern aliases the same object.
+                let v = patternInputTmp
+                AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace g.system_IDisposableNull_ty v.Type
+                let cleanupE = BuildDisposableCleanup cenv env m v
+                mkTryFinally g (bodyExpr, cleanupE, m, bodyExprTy, DebugPointAtTry.No, DebugPointAtFinally.No), bodyExprTy
             else
                 (bodyExpr, bodyExprTy)
 
