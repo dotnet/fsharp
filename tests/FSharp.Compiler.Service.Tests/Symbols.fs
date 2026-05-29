@@ -256,6 +256,43 @@ let x = 123
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
 
+    [<Fact>]
+    let ``FCS - [<X>] surfaces on the method's Attributes only`` () =
+        let source = """
+open System.ComponentModel
+type Calculator() =
+    [<Description "method">]
+    member _.Compu{caret}te () = 1
+"""
+        let mfv = (Checker.getSymbolUse source).Symbol :?> FSharpMemberOrFunctionOrValue
+        mfv.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+        mfv.ReturnParameter.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual false
+
+    [<Fact>]
+    let ``FCS - [<return: X>] surfaces on ReturnParameter.Attributes only`` () =
+        let source = """
+open System.ComponentModel
+type Calculator() =
+    [<return: Description "return">]
+    member _.Compu{caret}te () = 1
+"""
+        let mfv = (Checker.getSymbolUse source).Symbol :?> FSharpMemberOrFunctionOrValue
+        mfv.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual false
+        mfv.ReturnParameter.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+
+    [<Fact>]
+    let ``FCS - [<X>] and [<return: X>] surface independently on the same member`` () =
+        let source = """
+open System.ComponentModel
+type Calculator() =
+    [<Description "method">]
+    [<return: Description "return">]
+    member _.Compu{caret}te () = 1
+"""
+        let mfv = (Checker.getSymbolUse source).Symbol :?> FSharpMemberOrFunctionOrValue
+        mfv.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+        mfv.ReturnParameter.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+
 module Types =
     [<Fact>]
     let ``FSharpType.Print parent namespace qualifiers`` () =

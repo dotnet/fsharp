@@ -94,11 +94,16 @@ let ActivePatternElemsOfValRef g (vref: ValRef) =
                 ActivePatternReturnKind.RefTypeWrapper
             else
                 let _, apReturnTy = stripFunTy g vref.TauType
-                let hasStructAttribute() = 
-                    vref.Attribs
-                    |> List.exists (function 
-                        | Attrib(targetsOpt = Some(System.AttributeTargets.ReturnValue)) as a -> hasFlag (classifyValAttrib g a) WellKnownValAttributes.StructAttribute
-                        | _ -> false)
+                let hasStructAttribute() =
+                    // After SynInfo.RotateReturnAttributes, [<return: Struct>] lives in
+                    // ValReprInfo's result ArgReprInfo rather than vref.Attribs. The flag bits
+                    // in ArgReprInfo.Attribs are computed lazily, so classify the underlying
+                    // attribute list directly.
+                    match vref.ValReprInfo with
+                    | Some(ValReprInfo(_, _, retInfo)) ->
+                        let flags = computeValWellKnownFlags g (retInfo.Attribs.AsList())
+                        hasFlag flags WellKnownValAttributes.StructAttribute
+                    | None -> false
                 if isValueOptionTy g apReturnTy || hasStructAttribute() then ActivePatternReturnKind.StructTypeWrapper
                 elif isBoolTy g apReturnTy then ActivePatternReturnKind.Boolean
                 else ActivePatternReturnKind.RefTypeWrapper
@@ -2874,23 +2879,6 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             | Some(MethodItem msets) when isLookUpExpr ->
                 let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
 
-                // If the intrinsic candidate set already disagrees with the strict
-                // instance/static filter (e.g. expression-form `Type<TArg>.Member` is
-                // resolved as a dot-expression with LookupIsInstance.Yes but yields
-                // static intrinsic members), relax the filter for the extension lookup
-                // so static extension members are also considered. See issue #19664.
-                let isAmbivalent =
-                    minfos
-                    |> List.exists (fun minfo ->
-                        match isInstanceFilter with
-                        | LookupIsInstance.Yes -> not minfo.IsInstance
-                        | LookupIsInstance.No -> minfo.IsInstance
-                        | LookupIsInstance.Ambivalent -> true)
-
-                let isInstanceFilter =
-                    if isAmbivalent then LookupIsInstance.Ambivalent
-                    else isInstanceFilter
-
                 // fold the available extension members into the overload resolution
                 let extensionMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv ad optFilter isInstanceFilter m ty
 
@@ -3548,7 +3536,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                 match extraDotAtTheEnd with
                 | ExtraDotAfterIdentifier.Yes ->
                     match LookupTypeNameInEnvNoArity fullyQualified id.idText nenv with
-                    | tcref :: _ when tcref.IsUnionTycon ->
+                    | tcref :: _ when tcref.IsUnionTycon || tcref.IsEnumTycon ->
                         let res = ResolutionInfo.Empty.AddEntity (id.idRange, tcref)
                         ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurrence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
                         Item.Types (id.idText, [ mkWoNullAppTy tcref [] ])
@@ -4181,8 +4169,10 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
 /// determine any valid members
 //
 // QUERY (instantiationGenerator cleanup): it would be really nice not to flow instantiationGenerator to here.
-let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Ident) rest (typeNameResInfo: TypeNameResolutionInfo) findFlag maybeArgExpr =
-    let lookupKind = LookupKind.Expr LookupIsInstance.Yes
+let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Ident) rest (typeNameResInfo: TypeNameResolutionInfo) findFlag staticOnly maybeArgExpr =
+    let lookupKind = 
+        if staticOnly then LookupKind.Expr LookupIsInstance.No
+        else LookupKind.Expr LookupIsInstance.Yes
     let adhocDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo ty maybeArgExpr)
     match adhocDotSearchAccessible with
     | Exception _ ->
@@ -4212,13 +4202,19 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
         ForceRaise adhocDotSearchAccessible
 
 let ComputeItemRange wholem (lid: Ident list) rest =
-    match rest with
-    | [] -> wholem
-    | _ ->
-        let ids = List.truncate (max 0 (lid.Length - rest.Length)) lid
-        match ids with
+    let itemRange =
+        match rest with
         | [] -> wholem
-        | _ -> rangeOfLid ids
+        | _ ->
+            let ids = List.truncate (max 0 (lid.Length - rest.Length)) lid
+            match ids with
+            | [] -> wholem
+            | _ -> rangeOfLid ids
+    let itemIdentRange =
+        match rest, lid with
+        | [], _ :: _ -> (List.last lid).idRange
+        | _ -> itemRange
+    itemRange, itemIdentRange
 
 /// Filters method groups that will be sent to Visual Studio IntelliSense
 /// to include only static/instance members
@@ -4266,7 +4262,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
     match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid maybeAppliedArgExpr with 
     | Exception e -> Exception e 
     | Result (tinstEnclosing, item1, rest) ->
-    let itemRange = ComputeItemRange wholem lid rest
+    let itemRange, itemIdentRange = ComputeItemRange wholem lid rest
 
     let item = FilterMethodGroups ncenv itemRange item1 true
 
@@ -4325,7 +4321,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                callSink (item, emptyTyparInst)
                AfterResolution.DoNothing
 
-    success (tinstEnclosing, item, itemRange, rest, afterResolution)
+    success (tinstEnclosing, item, itemRange, itemIdentRange, rest, afterResolution)
 
 [<return: Struct>]
 let (|NonOverridable|_|) namedItem =
@@ -4341,13 +4337,13 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
         let resInfo, item, rest =
             match lid with
             | id :: rest ->
-                ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag maybeAppliedArgExpr
+                ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag staticOnly maybeAppliedArgExpr
             | _ -> error(InternalError("ResolveExprDotLongIdentAndComputeRange", wholem))
-        let itemRange = ComputeItemRange wholem lid rest
-        resInfo, item, rest, itemRange
+        let itemRange, itemIdentRange = ComputeItemRange wholem lid rest
+        resInfo, item, rest, itemRange, itemIdentRange
 
     // "true" resolution
-    let resInfo, item, rest, itemRange = resolveExpr findFlag
+    let resInfo, item, rest, itemRange, itemIdentRange = resolveExpr findFlag
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap itemRange item))
 
     // Record the precise resolution of the field for intellisense/goto definition
@@ -4362,7 +4358,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 | _, NonOverridable() -> item, itemRange, false
                 | FindMemberFlag.IgnoreOverrides, _
                 | FindMemberFlag.DiscardOnFirstNonOverride, _ ->
-                    let _, item, _, itemRange = resolveExpr FindMemberFlag.PreferOverrides
+                    let _, item, _, itemRange, _ = resolveExpr FindMemberFlag.PreferOverrides
                     item, itemRange, true
 
             let callSink (refinedItem, tpinst) =
@@ -4395,7 +4391,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing
 
-    item, itemRange, rest, afterResolution
+    item, itemRange, itemIdentRange, rest, afterResolution
 
 
 //-------------------------------------------------------------------------
