@@ -890,7 +890,7 @@ let ``ModuleSuffix attribute without companion type demangles`` () =
 module TestNs
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Foo =
-    let {caret}x = 1
+    let x{caret} = 1
 """
     Assert.Contains("Foo.x", remarks)
     Assert.DoesNotContain("FooModule", remarks)
