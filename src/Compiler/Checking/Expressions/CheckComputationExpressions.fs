@@ -1009,6 +1009,40 @@ let requireBuilderMethod methodName ceenv m1 m2 =
     if not (hasBuilderMethod ceenv m1 methodName) then
         error (Error(FSComp.SR.tcRequireBuilderMethod methodName, m2))
 
+/// Detect whether an expression syntactically contains computation-expression-only constructs
+/// (such as let!, use!, do!, return, return!, yield, yield!, match!, while!) that can only
+/// be legally type-checked inside a CE translation. Used to decide whether to "lift" these
+/// constructs out of the RHS of a plain 'let' binding inside a CE so that the surrounding
+/// CE translator can process them. We only recurse through positions where the lifted
+/// construct would syntactically remain in CE-evaluation position (Sequential tail,
+/// LetOrUse body); branches that open a new scope (lambdas, match clauses, if branches,
+/// nested CEs) are intentionally not traversed.
+let rec private exprContainsCEOnlyConstruct expr =
+    match expr with
+    | LetOrUse(_, true, _) -> true
+    | SynExpr.DoBang _
+    | SynExpr.MatchBang _
+    | SynExpr.WhileBang _
+    | SynExpr.YieldOrReturnFrom _
+    | SynExpr.YieldOrReturn _ -> true
+    | LetOrUse({ Body = body; IsRecursive = false }, false, false) -> exprContainsCEOnlyConstruct body
+    | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> exprContainsCEOnlyConstruct e1 || exprContainsCEOnlyConstruct e2
+    | _ -> false
+
+/// Walk the binding RHS of a plain 'let p = rhs in body' that appears inside a computation expression,
+/// threading the binding 'let p = <hole> in body' to the value-position of 'rhs' so that any
+/// CE-only constructs (let!, do!, etc.) appearing as a prefix of 'rhs' end up lifted into the
+/// enclosing CE, where the CE translator can desugar them properly. See issue dotnet/fsharp#19457.
+let rec private liftCEFromBindingRhs (rhs: SynExpr) (k: SynExpr -> SynExpr) : SynExpr =
+    match rhs with
+    | SynExpr.LetOrUse data when not data.IsRecursive ->
+        SynExpr.LetOrUse
+            { data with
+                Body = liftCEFromBindingRhs data.Body k
+            }
+    | SynExpr.Sequential(sp, isTrueSeq, e1, e2, m, trivia) -> SynExpr.Sequential(sp, isTrueSeq, e1, liftCEFromBindingRhs e2 k, m, trivia)
+    | _ -> k rhs
+
 /// <summary>
 /// Try translate the syntax sugar
 /// </summary>
@@ -1841,51 +1875,113 @@ let rec TryTranslateComputationExpression
                    false,
                    false) ->
 
-            // For 'query' check immediately
-            if ceenv.isQuery then
-                match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv ceenv.env) binds) with
-                | [ NormalizedBinding(_, SynBindingKind.Normal, false, false, _, _, _, _, _, _, _, _) ] when not isRec -> ()
-                | normalizedBindings ->
-                    let failAt m =
-                        error (Error(FSComp.SR.tcNonSimpleLetBindingInQuery (), m))
+            // https://github.com/dotnet/fsharp/issues/19457
+            // If the (single) plain 'let p = rhs in body' binding's RHS is itself a chain of CE-only
+            // constructs (e.g. 'let! x = ...; x' or 'do! ...; rest'), rewrite the expression so that
+            // those constructs are lifted into the enclosing CE, where they desugar correctly.
+            // We only apply this when not in a query, when the binding is non-recursive and non-bang,
+            // and when there is exactly one binding (the case the issue is about). Otherwise we fall
+            // through to the standard plain-let handling.
+            let liftedRewrite =
+                if ceenv.isQuery || isRec then
+                    None
+                else
+                    match binds with
+                    | [ SynBinding(
+                            accessibility = a
+                            kind = bk
+                            isInline = isInline
+                            isMutable = isMutable
+                            attributes = attrs
+                            xmlDoc = xmlDoc
+                            valData = valData
+                            headPat = headPat
+                            returnInfo = returnInfo
+                            expr = rhsExpr
+                            range = bindRange
+                            debugPoint = debugPoint
+                            trivia = bindTrivia) ] when exprContainsCEOnlyConstruct rhsExpr ->
+                        let rewritten =
+                            liftCEFromBindingRhs rhsExpr (fun finalValue ->
+                                let newBinding =
+                                    SynBinding(
+                                        a,
+                                        bk,
+                                        isInline,
+                                        isMutable,
+                                        attrs,
+                                        xmlDoc,
+                                        valData,
+                                        headPat,
+                                        returnInfo,
+                                        finalValue,
+                                        bindRange,
+                                        debugPoint,
+                                        bindTrivia
+                                    )
 
-                    match normalizedBindings with
-                    | NormalizedBinding(mBinding = mBinding) :: _ -> failAt mBinding
-                    | _ -> failAt m
+                                SynExpr.LetOrUse
+                                    {
+                                        IsRecursive = isRec
+                                        IsFromSource = isFromSource
+                                        Bindings = [ newBinding ]
+                                        Body = innerComp
+                                        Range = m
+                                        Trivia = trivia
+                                    })
 
-            // Add the variables to the query variable space, on demand
-            let varSpace =
-                addVarsToVarSpace varSpace (fun mQueryOp env ->
-                    // Normalize the bindings before detecting the bound variables
-                    match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with
-                    | [ NormalizedBinding(kind = SynBindingKind.Normal; shouldInline = false; isMutable = false; pat = pat) ] ->
-                        // successful case
-                        use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                        Some rewritten
+                    | _ -> None
 
-                        let _, _, vspecs, envinner, _ =
-                            TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv pat None TcTrueMatchClause.No
+            match liftedRewrite with
+            | Some rewritten -> Some(TranslateComputationExpression ceenv firstTry q varSpace rewritten translatedCtxt)
+            | None ->
 
-                        vspecs, envinner
-                    | _ ->
-                        // error case
-                        error (Error(FSComp.SR.tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings (), mQueryOp)))
+                // For 'query' check immediately
+                if ceenv.isQuery then
+                    match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv ceenv.env) binds) with
+                    | [ NormalizedBinding(_, SynBindingKind.Normal, false, false, _, _, _, _, _, _, _, _) ] when not isRec -> ()
+                    | normalizedBindings ->
+                        let failAt m =
+                            error (Error(FSComp.SR.tcNonSimpleLetBindingInQuery (), m))
 
-            Some(
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
-                    translatedCtxt (
-                        SynExpr.LetOrUse
-                            {
-                                IsRecursive = isRec
-                                //isUse = false,
-                                IsFromSource = isFromSource
-                                //isBang = false,
-                                Bindings = binds
-                                Body = holeFill
-                                Range = m
-                                Trivia = trivia
-                            }
-                    ))
-            )
+                        match normalizedBindings with
+                        | NormalizedBinding(mBinding = mBinding) :: _ -> failAt mBinding
+                        | _ -> failAt m
+
+                // Add the variables to the query variable space, on demand
+                let varSpace =
+                    addVarsToVarSpace varSpace (fun mQueryOp env ->
+                        // Normalize the bindings before detecting the bound variables
+                        match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with
+                        | [ NormalizedBinding(kind = SynBindingKind.Normal; shouldInline = false; isMutable = false; pat = pat) ] ->
+                            // successful case
+                            use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+
+                            let _, _, vspecs, envinner, _ =
+                                TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv pat None TcTrueMatchClause.No
+
+                            vspecs, envinner
+                        | _ ->
+                            // error case
+                            error (Error(FSComp.SR.tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings (), mQueryOp)))
+
+                Some(
+                    TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
+                        translatedCtxt (
+                            SynExpr.LetOrUse
+                                {
+                                    IsRecursive = isRec
+                                    //isUse = false,
+                                    IsFromSource = isFromSource
+                                    //isBang = false,
+                                    Bindings = binds
+                                    Body = holeFill
+                                    Range = m
+                                    Trivia = trivia
+                                }
+                        ))
+                )
 
         // 'use x = expr in expr'
         | LetOrUse({
