@@ -108,7 +108,7 @@ neg06.fs(350,13,350,21): typecheck error FS0800: Invalid use of a type name
 
 neg06.fs(375,9,375,10): typecheck error FS1197: The parameter 'x' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref<int>'. When used, a byref parameter is implicitly dereferenced.
 
-neg06.fs(382,13,382,19): typecheck error FS0041: A unique overload for method 'M1' could not be determined based on type information prior to this program point. A type annotation may be needed.
+neg06.fs(382,15,382,17): typecheck error FS0041: A unique overload for method 'M1' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a
 
