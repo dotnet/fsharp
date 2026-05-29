@@ -29,7 +29,7 @@ module Program =
     open Lib
 
     StaticGeneric<int>.Bar()
-    StaticGeneric<int>.Bar(42)
+    StaticGeneric<int>.Bar(42)      // extension overload — regressed to FS0505 in issue #19664
     StaticGeneric<int>.Bar(42, 0)
         """)
         |> typecheck
