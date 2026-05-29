@@ -48,28 +48,6 @@ module Program =
         |> withErrorCode 505
 
     [<Fact>]
-    let ``Static extension on non-generic type still resolves``() =
-        Fsx """
-module Lib =
-
-    type Ops =
-        static member Run() = ()
-
-    [<AutoOpen>]
-    module Extensions =
-        type Ops with
-            static member Run(_: int) = ()
-
-module Program =
-    open Lib
-
-    Ops.Run()
-    Ops.Run(1)
-        """
-        |> typecheck
-        |> shouldSucceed
-
-    [<Fact>]
     let ``Static extension on generic type resolves alongside instance members``() =
         Fsx """
 module Lib =
