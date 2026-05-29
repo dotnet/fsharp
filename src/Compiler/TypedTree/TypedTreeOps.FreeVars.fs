@@ -1397,10 +1397,8 @@ module internal MemberRepresentation =
         | VRefLocal x ->
             match x.PublicPath, x.TryDeclaringEntity with
             | None, _ -> ValueNone
-            | Some _, Parent eref ->
-                ValueSome(fullNameOfEntityRef (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
-            | Some(ValPubPath(pp, _)), ParentNone ->
-                ValueSome(fullNameOfPubPath pp)
+            | Some _, Parent eref -> ValueSome(fullNameOfEntityRef (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
+            | Some(ValPubPath(pp, _)), ParentNone -> ValueSome(fullNameOfPubPath pp)
         | VRefNonLocal nlr -> ValueSome(fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
     let fullNameOfParentOfValRefAsLayout vref =
@@ -1408,10 +1406,8 @@ module internal MemberRepresentation =
         | VRefLocal x ->
             match x.PublicPath, x.TryDeclaringEntity with
             | None, _ -> ValueNone
-            | Some _, Parent eref ->
-                ValueSome(fullNameOfEntityRefAsLayout (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
-            | Some(ValPubPath(pp, _)), ParentNone ->
-                ValueSome(fullNameOfPubPathAsLayout pp)
+            | Some _, Parent eref -> ValueSome(fullNameOfEntityRefAsLayout (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
+            | Some(ValPubPath(pp, _)), ParentNone -> ValueSome(fullNameOfPubPathAsLayout pp)
         | VRefNonLocal nlr ->
             ValueSome(fullNameOfEntityRefAsLayout (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
