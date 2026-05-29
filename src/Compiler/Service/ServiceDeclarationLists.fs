@@ -13,6 +13,8 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.CheckComputationExpressions
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.DiagnosticsLogger
@@ -31,6 +33,7 @@ open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
@@ -333,25 +336,55 @@ module DeclarationListHelpers =
         // Custom operations in queries
         | Item.CustomOperation (customOpName, usageText, Some minfo) -> 
 
+            // Gather all sibling [<CustomOperation(customOpName)>] overloads declared on the same builder type,
+            // so that QuickInfo shows every overload (with the resolved one first) rather than only the one
+            // that name resolution happened to pick. See https://github.com/dotnet/fsharp/issues/11612.
+            let siblingMethInfos =
+                let enclTy = minfo.ApparentEnclosingType
+                // NOTE: extension-method-defined custom operators are not surfaced here. The type checker
+                // discovers them via AllMethInfosOfTypeInScope (which honours nenv); at tooltip time we
+                // only have the resolved minfo and intrinsic methods. This matches the common case
+                // (CustomOperation methods are nearly always intrinsic members of the builder type).
+                let allMeths = GetIntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m enclTy
+                let matched = allMeths |> List.filter (fun mi -> TryGetCustomOperationName g m mi = Some customOpName)
+                let isResolved (mi: MethInfo) = MethInfosEquivByNameAndSig EraseAll true g amap m mi minfo
+                match List.tryFind isResolved matched with
+                | Some resolved -> resolved :: (matched |> List.filter (fun mi -> not (isResolved mi)))
+                | None -> if List.isEmpty matched then [minfo] else matched
+
             // Build 'custom operation: where (bool)
             //        
-            //        Calls QueryBuilder.Where'
-            let layout = 
+            //        Calls QueryBuilder.Where' for each overload
+            let showInputTy = List.length siblingMethInfos > 1
+            let layoutOne (mi: MethInfo) =
+                let inputTyL =
+                    if not showInputTy then emptyL else
+                    match mi.GetParamTypes(amap, m, mi.FormalMethodInst) with
+                    | (firstTy :: _) :: _ ->
+                        let firstTy, _ = PrettyTypes.PrettifyType g firstTy
+                        SepL.colon ^^ layoutType denv firstTy
+                    | _ -> emptyL
                 wordL (tagText (FSComp.SR.typeInfoCustomOperation())) ^^
                 RightL.colon ^^
                 (
                     match usageText() with
                     | Some t -> wordL (tagText t)
                     | None ->
-                        let argTys = ParamNameAndTypesOfUnaryCustomOperation g minfo |> List.map (fun (ParamNameAndType(_, ty)) -> ty)
+                        let argTys = ParamNameAndTypesOfUnaryCustomOperation g mi |> List.map (fun (ParamNameAndType(_, ty)) -> ty)
                         let argTys, _ = PrettyTypes.PrettifyTypes g argTys 
                         wordL (tagMethod customOpName) ^^ sepListL SepL.space (List.map (fun ty -> LeftL.leftParen ^^ layoutType denv ty ^^ SepL.rightParen) argTys)
                 ) ^^
                 SepL.lineBreak ^^ SepL.lineBreak  ^^
                 wordL (tagText (FSComp.SR.typeInfoCallsWord())) ^^
-                layoutTyconRef denv minfo.ApparentEnclosingTyconRef ^^
+                layoutTyconRef denv mi.ApparentEnclosingTyconRef ^^
                 SepL.dot ^^
-                wordL (tagMethod minfo.DisplayName)
+                wordL (tagMethod mi.DisplayName) ^^
+                inputTyL
+
+            let layout =
+                siblingMethInfos
+                |> List.map layoutOne
+                |> List.reduce (fun a b -> a ^^ SepL.lineBreak ^^ SepL.lineBreak ^^ b)
 
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout

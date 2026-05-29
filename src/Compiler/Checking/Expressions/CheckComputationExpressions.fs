@@ -178,6 +178,26 @@ let transferVarSpaceReferences (expr: Expr) =
             for v in vals do
                 v.SetHasBeenReferenced()
 
+let TryGetCustomOperationName g m (methInfo: MethInfo) : string option =
+    TryBindMethInfoAttribute
+        g
+        m
+        g.attrib_CustomOperationAttribute
+        methInfo
+        IgnoreAttribute // We do not respect this attribute for IL methods
+        (fun attr ->
+            // NOTE: right now, we support of custom operations with spaces in them ([<CustomOperation("foo bar")>])
+            // In the parameterless CustomOperationAttribute - we use the method name, and also allow it to be ````-quoted (member _.``foo bar`` _ = ...)
+            match attr with
+            // Empty string and parameterless constructor - we use the method name
+            | Attrib(unnamedArgs = [ AttribStringArg "" ]) // Empty string as parameter
+            | Attrib(unnamedArgs = []) -> // No parameters, same as empty string for compat reasons.
+                Some methInfo.LogicalName
+            // Use the specified name
+            | Attrib(unnamedArgs = [ AttribStringArg msg ]) -> Some msg
+            | _ -> None)
+        IgnoreAttribute // We do not respect this attribute for provided methods
+
 let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
     | [] -> false
@@ -198,25 +218,7 @@ let getCustomOperationMethods (cenv: TcFileState) (env: TcEnv) ad mBuilderVal bu
     [
         for methInfo in allMethInfos do
             if IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo then
-                let nameSearch =
-                    TryBindMethInfoAttribute
-                        cenv.g
-                        mBuilderVal
-                        cenv.g.attrib_CustomOperationAttribute
-                        methInfo
-                        IgnoreAttribute // We do not respect this attribute for IL methods
-                        (fun attr ->
-                            // NOTE: right now, we support of custom operations with spaces in them ([<CustomOperation("foo bar")>])
-                            // In the parameterless CustomOperationAttribute - we use the method name, and also allow it to be ````-quoted (member _.``foo bar`` _ = ...)
-                            match attr with
-                            // Empty string and parameterless constructor - we use the method name
-                            | Attrib(unnamedArgs = [ AttribStringArg "" ]) // Empty string as parameter
-                            | Attrib(unnamedArgs = []) -> // No parameters, same as empty string for compat reasons.
-                                Some methInfo.LogicalName
-                            // Use the specified name
-                            | Attrib(unnamedArgs = [ AttribStringArg msg ]) -> Some msg
-                            | _ -> None)
-                        IgnoreAttribute // We do not respect this attribute for provided methods
+                let nameSearch = TryGetCustomOperationName cenv.g mBuilderVal methInfo
 
                 match nameSearch with
                 | None -> ()
