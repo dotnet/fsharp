@@ -48,21 +48,16 @@ open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.TypeProviders
 #endif
 
-/// Wraps an inner DiagnosticsLogger and suppresses subsequent identical
-/// 'UndefinedName' (FS0039) errors raised for the same identifier text within
-/// its lifetime. This addresses the case where an undefined base type in an
-/// 'inherit' / 'interface inherit' clause is reported multiple times because
-/// the type-establishment pipeline resolves the same SynType in several passes
-/// (FirstPass / SecondPass / Phase2AInherit). The key is the formatted
-/// diagnostic message so all other diagnostics, and FS0039 emissions for
-/// distinct identifiers, pass through unchanged.
-type private DedupInheritDiagnosticsLogger(inner: DiagnosticsLogger) =
-    inherit DiagnosticsLogger("DedupInheritDiagnosticsLogger")
-    let seen = HashSet<string>()
+/// A diagnostics-logger wrapper used while type-checking an `inherit` clause. It drops any
+/// `UndefinedName` diagnostic whose `(id.idRange, id.idText)` key has already been seen in
+/// the same `cenv`, so duplicate FS0039s caused by re-resolution across Phase 1F / Phase 2A
+/// are suppressed. All other diagnostics are forwarded unchanged. See issue #16432.
+type private InheritDedupDiagnosticsLogger(seen: HashSet<range * string>, inner: DiagnosticsLogger) =
+    inherit DiagnosticsLogger("InheritDedupDiagnosticsLogger")
 
     let rec isDuplicateUndefinedName (e: exn) =
         match e with
-        | UndefinedName _ -> not (seen.Add e.Message)
+        | UndefinedName(_, _, id, _) -> not (seen.Add(id.idRange, id.idText))
         | WrappedError(inner, _) -> isDuplicateUndefinedName inner
         | _ -> false
 
@@ -73,6 +68,10 @@ type private DedupInheritDiagnosticsLogger(inner: DiagnosticsLogger) =
     override _.ErrorCount = inner.ErrorCount
 
 type cenv = TcFileState
+
+let private useInheritDedupLogger (cenv: cenv) =
+    UseTransformedDiagnosticsLogger(fun inner ->
+        InheritDedupDiagnosticsLogger(cenv.reportedUndefinedNames, inner) :> DiagnosticsLogger)
 
 //-------------------------------------------------------------------------
 // Mutually recursive shapes
@@ -1390,6 +1389,7 @@ module MutRecBindingChecking =
                             
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
+                            use _ = useInheritDedupLogger cenv
                             let inheritsExpr, tpenv =
                                 try
                                    let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
@@ -3341,7 +3341,9 @@ module EstablishTypeDefinitionCores =
                         let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
 
                         let inherits = inherits |> List.map (fun (ty, m, _) -> (ty, m)) 
-                        let inheritedTys = fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv inherits)
+                        let inheritedTys =
+                            use _ = useInheritDedupLogger cenv
+                            fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv inherits)
                         let implementedTys, inheritedTys =   
                             match kind with 
                             | SynTypeDefnKind.Interface -> 
@@ -4634,16 +4636,6 @@ module TcDeclarations =
     let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) isMutRec =
 
         let g = cenv.g
-
-        // Suppress duplicate FS0039 ('UndefinedName') diagnostics emitted across the
-        // multiple establishment passes for a mutually recursive type-definition group.
-        // For example, an undefined base type in an 'inherit' / 'interface inherit'
-        // clause is otherwise reported once each in FirstPass, SecondPass and the
-        // Phase2AInherit member-checking pass. Dedup is keyed by the formatted
-        // 'UndefinedName' message so unrelated diagnostics pass through unchanged.
-        use _ =
-            UseTransformedDiagnosticsLogger(fun inner ->
-                DedupInheritDiagnosticsLogger(inner) :> DiagnosticsLogger)
 
         // Split the definitions into "core representations" and "members". The code to process core representations
         // is shared between processing of signature files and implementation files.

@@ -274,6 +274,12 @@ type TcFileState =
         /// we're always dealing with the same instance and the updates don't get lost
         argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
+        /// Tracks (range, identifier-text) keys of `UndefinedName` diagnostics that have already
+        /// been reported during this cenv's lifetime so they can be deduplicated when the same
+        /// identifier is re-resolved by multiple passes (e.g. Phase 1F vs. Phase 2A of an
+        /// `inherit` clause). See issue dotnet/fsharp#16432.
+        reportedUndefinedNames: HashSet<range * string>
+
         // forward call
         TcPat:
             WarnOnUpperFlag
