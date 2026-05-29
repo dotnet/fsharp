@@ -1841,11 +1841,13 @@ type Exception with
 
         | ValNotMutable(_, vref, _) ->
             let name = vref.DisplayName
+
             let msg =
                 if vref.Deref.ArgReprInfoForDisplay.IsSome then
                     ValNotMutableParameterE().Format name name name
                 else
                     ValNotMutableE().Format name
+
             os.AppendString msg
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
