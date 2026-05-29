@@ -278,7 +278,7 @@ type TcFileState =
         /// been reported during this cenv's lifetime so they can be deduplicated when the same
         /// identifier is re-resolved by multiple passes (e.g. Phase 1F vs. Phase 2A of an
         /// `inherit` clause). See issue dotnet/fsharp#16432.
-        reportedUndefinedNames: HashSet<range * string>
+        reportedUndefinedNames: ConcurrentDictionary<struct (range * string), unit>
 
         // forward call
         TcPat:

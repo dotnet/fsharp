@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.CheckDeclarations
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Threading
 
@@ -52,12 +53,17 @@ open FSharp.Compiler.TypeProviders
 /// `UndefinedName` diagnostic whose `(id.idRange, id.idText)` key has already been seen in
 /// the same `cenv`, so duplicate FS0039s caused by re-resolution across Phase 1F / Phase 2A
 /// are suppressed. All other diagnostics are forwarded unchanged. See issue #16432.
-type private InheritDedupDiagnosticsLogger(seen: HashSet<range * string>, inner: DiagnosticsLogger) =
+type private InheritDedupDiagnosticsLogger
+    (seen: ConcurrentDictionary<struct (range * string), unit>, inner: DiagnosticsLogger) =
     inherit DiagnosticsLogger("InheritDedupDiagnosticsLogger")
 
+    // Only `WrappedError` is unwrapped here: it is the single wrapper that the
+    // `inherit` type-checking path can place around an `UndefinedName`. Other diagnostic
+    // exception families (`StopProcessingExn`/`ReportedError` short-circuit before reaching
+    // the sink, and `DiagnosticWithSuggestions` etc. are peer errors, not wrappers).
     let rec isDuplicateUndefinedName (e: exn) =
         match e with
-        | UndefinedName(_, _, id, _) -> not (seen.Add(id.idRange, id.idText))
+        | UndefinedName(_, _, id, _) -> not (seen.TryAdd(struct (id.idRange, id.idText), ()))
         | WrappedError(inner, _) -> isDuplicateUndefinedName inner
         | _ -> false
 
@@ -66,6 +72,8 @@ type private InheritDedupDiagnosticsLogger(seen: HashSet<range * string>, inner:
             inner.DiagnosticSink diagnostic
 
     override _.ErrorCount = inner.ErrorCount
+
+    override _.CheckForRealErrorsIgnoringWarnings = inner.CheckForRealErrorsIgnoringWarnings
 
 type cenv = TcFileState
 
