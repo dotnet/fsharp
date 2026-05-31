@@ -55,8 +55,10 @@
       "cats": []
     },
     "19836": {
-      "sha": "4e2276c0383e0280f04513c63b6111e7788b450b",
-      "cats": []
+      "sha": "8f551a2157cf580da0b1f9eb73b56171628a95b5",
+      "cats": [
+        "Affects-Build-Infra"
+      ]
     },
     "19828": {
       "sha": "747c6374339db879d64330d8d18b26f5238cee02",
@@ -72,8 +74,11 @@
       ]
     },
     "19826": {
-      "sha": "085f4bb9da6bc06fe2b603317fd9565816f6c294",
-      "cats": []
+      "sha": "76734dc3b087142d52b940512413775746e8af6e",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
     },
     "19825": {
       "sha": "495309dd89546cf93bb37903b7d5263bf873087e",
