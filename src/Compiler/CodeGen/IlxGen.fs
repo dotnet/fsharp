@@ -2081,22 +2081,61 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     member _.ILTypeDef = tdef
 
+and [<AllowNullLiteral>] BatchAddContext() =
+    [<DefaultValue>]
+    val mutable IntraCounter: int
+
+    member val BatchIndex: int = 0 with get, set
+
+and ParallelCodeGenContext private () =
+    static let current = new ThreadLocal<BatchAddContext>()
+
+    static member CurrentBatch =
+        match current.Value with
+        | null -> None
+        | ctx -> Some ctx
+
+    static member WithBatch(batchIndex: int, action: unit -> unit) =
+        let prev = current.Value
+        let ctx = BatchAddContext(BatchIndex = batchIndex)
+        current.Value <- ctx
+
+        try
+            action ()
+        finally
+            current.Value <- prev
+
 and TypeDefsBuilder() =
 
     let tdefs =
-        ConcurrentDictionary<string, list<int * (TypeDefBuilder * bool)>>(HashIdentity.Structural)
+        ConcurrentDictionary<string, list<int * int * (TypeDefBuilder * bool)>>(HashIdentity.Structural)
 
-    let mutable countDown = Int32.MaxValue
-    let mutable countUp = -1
+    // Sequential phase counters (used outside any parallel batch context).
+    let mutable seqCountUp = -1
+    let mutable seqCountDown = Int32.MaxValue
 
     member b.Close(g: TcGlobals) =
-        //The order we emit type definitions is not deterministic since it is using the reverse of a range from a hash table. We should use an approximation of source order.
-        // Ideally it shouldn't matter which order we use.
-        // However, for some tests FSI generated code appears sensitive to the order, especially for nested types.
+        // Sort key is (batchIndex, intraBatchIndex). Sequential AddTypeDef calls use
+        // batchIndex = 0 with monotonically-assigned intraBatchIndex (countUp ascending
+        // for normal types, countDown descending so they sort after countUp values and
+        // in reverse-insertion order — matching legacy behavior). Parallel calls use
+        // batchIndex = file index + 1 so each file's types form a contiguous deterministic
+        // block in source-file order, and within a file an ascending counter preserves
+        // intra-file insertion order. ConcurrentDictionary.Values iteration is
+        // bucket-order racy (string GetHashCode is per-process randomized in .NET 6+),
+        // so we materialize and sort explicitly.
+        let allEntries =
+            [
+                for KeyValue(_, lst) in tdefs do
+                    yield! lst
+            ]
+            |> List.sortWith (fun (b1, i1, _) (b2, i2, _) ->
+                let c = compare b1 b2
+                if c <> 0 then c else compare i1 i2)
 
         [
-            for _, (b, eliminateIfEmpty) in tdefs.Values |> Seq.collect id |> Seq.sortBy fst do
-                let tdef = b.Close(g)
+            for _, _, (builder, eliminateIfEmpty) in allEntries do
+                let tdef = builder.Close(g)
                 // Skip the <PrivateImplementationDetails$> type if it is empty
                 if
                     not eliminateIfEmpty
@@ -2111,7 +2150,7 @@ and TypeDefsBuilder() =
 
     member b.FindTypeDefBuilder nm =
         try
-            tdefs[nm] |> List.head |> snd |> fst
+            tdefs[nm] |> List.head |> (fun (_, _, x) -> fst x)
         with :? KeyNotFoundException ->
             failwith ("FindTypeDefBuilder: " + nm + " not found")
 
@@ -2122,15 +2161,26 @@ and TypeDefsBuilder() =
         b.FindNestedTypeDefsBuilder(tref.Enclosing).FindTypeDefBuilder(tref.Name)
 
     member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
-        let idx =
-            if addAtEnd then
-                Interlocked.Decrement(&countDown)
-            else
-                Interlocked.Increment(&countUp)
+        let batchIdx, intraIdx =
+            match ParallelCodeGenContext.CurrentBatch with
+            | Some ctx ->
+                // Inside a parallel file batch: file-scoped deterministic counter.
+                let i = Interlocked.Increment(&ctx.IntraCounter)
+                ctx.BatchIndex, if addAtEnd then Int32.MaxValue - i else i
+            | None ->
+                // Sequential phase: batchIndex 0 keeps it before any parallel batches.
+                let i =
+                    if addAtEnd then
+                        Interlocked.Decrement(&seqCountDown)
+                    else
+                        Interlocked.Increment(&seqCountUp)
 
-        let newVal = idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
+                0, i
 
-        tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun key oldList -> newVal :: oldList))
+        let newVal =
+            batchIdx, intraIdx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
+
+        tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun _ oldList -> newVal :: oldList))
         |> ignore
 
 type AnonTypeGenerationTable() =
@@ -12462,7 +12512,9 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         eenv.delayedFileGenReverse
         |> Array.ofList
         |> Array.rev
-        |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen ()))
+        |> ArrayParallel.iteri (fun fileIdx genMeths ->
+            // Use 1-based batch index so it sorts after sequential (batch 0) additions.
+            ParallelCodeGenContext.WithBatch(fileIdx + 1, fun () -> genMeths |> Array.iter (fun gen -> gen ())))
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
