@@ -736,6 +736,13 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
     for fileName in sourceFiles do
         checkInputFile tcConfig fileName
 
+    // Pre-register FileIndex values in source-file order. Without this, parallel
+    // parsing races for indices via fileIndexOfFile -> FileIndexTable lock,
+    // producing non-deterministic FileIndex assignments that leak into IL
+    // (via debug info, NiceNameGenerator keys, and sort orders downstream).
+    for fileName in sourceFiles do
+        FileIndex.fileIndexOfFile fileName |> ignore
+
     let sourceFiles = List.zip sourceFiles isLastCompiland
 
     UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->

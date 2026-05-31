@@ -275,6 +275,21 @@
     IL_0015:  ret
   } 
 
+  .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldarg.1
+    IL_0002:  unbox.any  class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>
+    IL_0007:  tail.
+    IL_0009:  callvirt   instance int32 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::CompareTo(class '<>f__AnonymousType2430756162`3'<!0,!1,!2>)
+    IL_000e:  ret
+  } 
+
   .method public hidebysig virtual final instance int32  CompareTo(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -356,21 +371,6 @@
 
     IL_006c:  ldc.i4.0
     IL_006d:  ret
-  } 
-
-  .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  unbox.any  class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>
-    IL_0007:  tail.
-    IL_0009:  callvirt   instance int32 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::CompareTo(class '<>f__AnonymousType2430756162`3'<!0,!1,!2>)
-    IL_000e:  ret
   } 
 
   .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
@@ -467,6 +467,183 @@
     IL_0074:  ret
   } 
 
+  .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  4
+    .locals init (class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> V_0)
+    IL_0000:  ldarg.1
+    IL_0001:  isinst     class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>
+    IL_0006:  stloc.0
+    IL_0007:  ldloc.0
+    IL_0008:  brfalse.s  IL_0014
+
+    IL_000a:  ldarg.0
+    IL_000b:  ldloc.0
+    IL_000c:  tail.
+    IL_000e:  callvirt   instance bool class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::Equals(class '<>f__AnonymousType2430756162`3'<!0,!1,!2>)
+    IL_0013:  ret
+
+    IL_0014:  ldc.i4.0
+    IL_0015:  ret
+  } 
+
+  .method public hidebysig virtual final instance bool  Equals(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  4
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_0046
+
+    IL_0003:  ldarg.1
+    IL_0004:  brfalse.s  IL_0044
+
+    IL_0006:  ldarg.0
+    IL_0007:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
+    IL_000c:  ldarg.1
+    IL_000d:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
+    IL_0012:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<A>j__TPar'>(!!0,
+                                                                                                                      !!0)
+    IL_0017:  brfalse.s  IL_0042
+
+    IL_0019:  ldarg.0
+    IL_001a:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
+    IL_001f:  ldarg.1
+    IL_0020:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
+    IL_0025:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<B>j__TPar'>(!!0,
+                                                                                                                      !!0)
+    IL_002a:  brfalse.s  IL_0040
+
+    IL_002c:  ldarg.0
+    IL_002d:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
+    IL_0032:  ldarg.1
+    IL_0033:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
+    IL_0038:  tail.
+    IL_003a:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<C>j__TPar'>(!!0,
+                                                                                                                      !!0)
+    IL_003f:  ret
+
+    IL_0040:  ldc.i4.0
+    IL_0041:  ret
+
+    IL_0042:  ldc.i4.0
+    IL_0043:  ret
+
+    IL_0044:  ldc.i4.0
+    IL_0045:  ret
+
+    IL_0046:  ldarg.1
+    IL_0047:  ldnull
+    IL_0048:  cgt.un
+    IL_004a:  ldc.i4.0
+    IL_004b:  ceq
+    IL_004d:  ret
+  } 
+
+  .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  5
+    .locals init (class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> V_0)
+    IL_0000:  ldarg.1
+    IL_0001:  isinst     class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>
+    IL_0006:  stloc.0
+    IL_0007:  ldloc.0
+    IL_0008:  brfalse.s  IL_0015
+
+    IL_000a:  ldarg.0
+    IL_000b:  ldloc.0
+    IL_000c:  ldarg.2
+    IL_000d:  tail.
+    IL_000f:  callvirt   instance bool class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::Equals(class '<>f__AnonymousType2430756162`3'<!0,!1,!2>,
+                                                                                                                                 class [runtime]System.Collections.IEqualityComparer)
+    IL_0014:  ret
+
+    IL_0015:  ldc.i4.0
+    IL_0016:  ret
+  } 
+
+  .method public hidebysig instance bool Equals(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  5
+    .locals init (class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> V_0)
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_004b
+
+    IL_0003:  ldarg.1
+    IL_0004:  brfalse.s  IL_0049
+
+    IL_0006:  ldarg.1
+    IL_0007:  stloc.0
+    IL_0008:  ldarg.2
+    IL_0009:  ldarg.0
+    IL_000a:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
+    IL_000f:  ldloc.0
+    IL_0010:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
+    IL_0015:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<A>j__TPar'>(class [runtime]System.Collections.IEqualityComparer,
+                                                                                                                                !!0,
+                                                                                                                                !!0)
+    IL_001a:  brfalse.s  IL_0047
+
+    IL_001c:  ldarg.2
+    IL_001d:  ldarg.0
+    IL_001e:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
+    IL_0023:  ldloc.0
+    IL_0024:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
+    IL_0029:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<B>j__TPar'>(class [runtime]System.Collections.IEqualityComparer,
+                                                                                                                                !!0,
+                                                                                                                                !!0)
+    IL_002e:  brfalse.s  IL_0045
+
+    IL_0030:  ldarg.2
+    IL_0031:  ldarg.0
+    IL_0032:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
+    IL_0037:  ldloc.0
+    IL_0038:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
+    IL_003d:  tail.
+    IL_003f:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<C>j__TPar'>(class [runtime]System.Collections.IEqualityComparer,
+                                                                                                                                !!0,
+                                                                                                                                !!0)
+    IL_0044:  ret
+
+    IL_0045:  ldc.i4.0
+    IL_0046:  ret
+
+    IL_0047:  ldc.i4.0
+    IL_0048:  ret
+
+    IL_0049:  ldc.i4.0
+    IL_004a:  ret
+
+    IL_004b:  ldarg.1
+    IL_004c:  ldnull
+    IL_004d:  cgt.un
+    IL_004f:  ldc.i4.0
+    IL_0050:  ceq
+    IL_0052:  ret
+  } 
+
+  .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+    IL_0006:  tail.
+    IL_0008:  callvirt   instance int32 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+    IL_000d:  ret
+  } 
+
   .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -533,183 +710,6 @@
     IL_0059:  ret
   } 
 
-  .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-    IL_0006:  tail.
-    IL_0008:  callvirt   instance int32 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-    IL_000d:  ret
-  } 
-
-  .method public hidebysig instance bool Equals(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  5
-    .locals init (class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> V_0)
-    IL_0000:  ldarg.0
-    IL_0001:  brfalse.s  IL_004b
-
-    IL_0003:  ldarg.1
-    IL_0004:  brfalse.s  IL_0049
-
-    IL_0006:  ldarg.1
-    IL_0007:  stloc.0
-    IL_0008:  ldarg.2
-    IL_0009:  ldarg.0
-    IL_000a:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
-    IL_000f:  ldloc.0
-    IL_0010:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
-    IL_0015:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<A>j__TPar'>(class [runtime]System.Collections.IEqualityComparer,
-                                                                                                                                !!0,
-                                                                                                                                !!0)
-    IL_001a:  brfalse.s  IL_0047
-
-    IL_001c:  ldarg.2
-    IL_001d:  ldarg.0
-    IL_001e:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
-    IL_0023:  ldloc.0
-    IL_0024:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
-    IL_0029:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<B>j__TPar'>(class [runtime]System.Collections.IEqualityComparer,
-                                                                                                                                !!0,
-                                                                                                                                !!0)
-    IL_002e:  brfalse.s  IL_0045
-
-    IL_0030:  ldarg.2
-    IL_0031:  ldarg.0
-    IL_0032:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
-    IL_0037:  ldloc.0
-    IL_0038:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
-    IL_003d:  tail.
-    IL_003f:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<C>j__TPar'>(class [runtime]System.Collections.IEqualityComparer,
-                                                                                                                                !!0,
-                                                                                                                                !!0)
-    IL_0044:  ret
-
-    IL_0045:  ldc.i4.0
-    IL_0046:  ret
-
-    IL_0047:  ldc.i4.0
-    IL_0048:  ret
-
-    IL_0049:  ldc.i4.0
-    IL_004a:  ret
-
-    IL_004b:  ldarg.1
-    IL_004c:  ldnull
-    IL_004d:  cgt.un
-    IL_004f:  ldc.i4.0
-    IL_0050:  ceq
-    IL_0052:  ret
-  } 
-
-  .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  5
-    .locals init (class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> V_0)
-    IL_0000:  ldarg.1
-    IL_0001:  isinst     class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>
-    IL_0006:  stloc.0
-    IL_0007:  ldloc.0
-    IL_0008:  brfalse.s  IL_0015
-
-    IL_000a:  ldarg.0
-    IL_000b:  ldloc.0
-    IL_000c:  ldarg.2
-    IL_000d:  tail.
-    IL_000f:  callvirt   instance bool class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::Equals(class '<>f__AnonymousType2430756162`3'<!0,!1,!2>,
-                                                                                                                                 class [runtime]System.Collections.IEqualityComparer)
-    IL_0014:  ret
-
-    IL_0015:  ldc.i4.0
-    IL_0016:  ret
-  } 
-
-  .method public hidebysig virtual final instance bool  Equals(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  4
-    IL_0000:  ldarg.0
-    IL_0001:  brfalse.s  IL_0046
-
-    IL_0003:  ldarg.1
-    IL_0004:  brfalse.s  IL_0044
-
-    IL_0006:  ldarg.0
-    IL_0007:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
-    IL_000c:  ldarg.1
-    IL_000d:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
-    IL_0012:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<A>j__TPar'>(!!0,
-                                                                                                                      !!0)
-    IL_0017:  brfalse.s  IL_0042
-
-    IL_0019:  ldarg.0
-    IL_001a:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
-    IL_001f:  ldarg.1
-    IL_0020:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
-    IL_0025:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<B>j__TPar'>(!!0,
-                                                                                                                      !!0)
-    IL_002a:  brfalse.s  IL_0040
-
-    IL_002c:  ldarg.0
-    IL_002d:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
-    IL_0032:  ldarg.1
-    IL_0033:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
-    IL_0038:  tail.
-    IL_003a:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<C>j__TPar'>(!!0,
-                                                                                                                      !!0)
-    IL_003f:  ret
-
-    IL_0040:  ldc.i4.0
-    IL_0041:  ret
-
-    IL_0042:  ldc.i4.0
-    IL_0043:  ret
-
-    IL_0044:  ldc.i4.0
-    IL_0045:  ret
-
-    IL_0046:  ldarg.1
-    IL_0047:  ldnull
-    IL_0048:  cgt.un
-    IL_004a:  ldc.i4.0
-    IL_004b:  ceq
-    IL_004d:  ret
-  } 
-
-  .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  4
-    .locals init (class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> V_0)
-    IL_0000:  ldarg.1
-    IL_0001:  isinst     class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>
-    IL_0006:  stloc.0
-    IL_0007:  ldloc.0
-    IL_0008:  brfalse.s  IL_0014
-
-    IL_000a:  ldarg.0
-    IL_000b:  ldloc.0
-    IL_000c:  tail.
-    IL_000e:  callvirt   instance bool class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::Equals(class '<>f__AnonymousType2430756162`3'<!0,!1,!2>)
-    IL_0013:  ret
-
-    IL_0014:  ldc.i4.0
-    IL_0015:  ret
-  } 
-
   .property instance !'<A>j__TPar' A()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
@@ -729,7 +729,6 @@
     .get instance !'<C>j__TPar' '<>f__AnonymousType2430756162`3'::get_C()
   } 
 } 
-
 
 
 

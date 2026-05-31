@@ -12519,6 +12519,10 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
         let extraBindings = mgbuf.GrabExtraBindingsToGenerate()
+        // Stable order: ConcurrentStack.ToArray returns LIFO and PushRange calls
+        // interleave across parallel file gens, both of which are non-deterministic.
+        let extraBindings =
+            extraBindings |> Array.sortBy (fun (TBind(v, _, _)) -> valSourceOrderKey v)
         //printfn "#extraBindings = %d" extraBindings.Length
         if extraBindings.Length > 0 then
             let mexpr = TMDefs [ for b in extraBindings -> TMDefLet(b, range0) ]
