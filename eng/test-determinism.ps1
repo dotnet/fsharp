@@ -2,6 +2,8 @@
 param([string]$configuration = "Debug",
   [string]$msbuildEngine = "vs",
   [string]$altRootDrive = "q:",
+  [ValidateSet("same", "seq-vs-par")]
+  [string]$mode = "same",
   [switch]$help,
   [switch]$norestore,
   [switch]$rebuild)
@@ -15,6 +17,8 @@ function Print-Usage() {
   Write-Host "  -msbuildEngine <value>    Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
   Write-Host "  -bootstrapDir             Directory containing the bootstrap compiler"
   Write-Host "  -altRootDrive             The drive we build on (via subst) for verifying pathmap implementation"
+  Write-Host "  -mode <value>             'same' (default): build twice with identical flags (race-detector)"
+  Write-Host "                            'seq-vs-par': first build sequential, second build parallel (deterministic 1-shot diff)"
 }
 
 if ($help) {
@@ -25,7 +29,7 @@ if ($help) {
 # List of binary names that should be skipped because they have a known issue that
 # makes them non-deterministic.
 $script:skipList = @()
-function Run-Build([string]$rootDir, [string]$increment) {
+function Run-Build([string]$rootDir, [string]$increment, [string]$additionalFscFlags = "") {
 
   $logFileName = $increment
 
@@ -62,6 +66,9 @@ function Run-Build([string]$rootDir, [string]$increment) {
   Stop-Processes
 
   Write-Host "Building $solution using $bootstrapDir into '$increment' $incrementDir"
+  if ($additionalFscFlags -ne "") {
+    Write-Host "  AdditionalFscCmdFlags = '$additionalFscFlags'"
+  }
   MSBuild $toolsetBuildProj `
     /p:Configuration=$configuration `
     /p:Projects=$solution `
@@ -86,6 +93,7 @@ function Run-Build([string]$rootDir, [string]$increment) {
     /p:RunAnalyzers=false `
     /p:RunAnalyzersDuringBuild=false `
     /p:BUILDING_USING_DOTNET=false `
+    /p:AdditionalFscCmdFlags="$additionalFscFlags" `
     /bl:$logFilePath
 
   Write-Host "Copy-Item -Path $binDir -Destination $incrementDir -ErrorAction SilentlyContinue -Recurse"
@@ -202,9 +210,9 @@ function Test-MapContents($dataMap) {
   }
 }
 
-function Test-Build([string]$rootDir, $dataMap, [string]$increment) {
+function Test-Build([string]$rootDir, $dataMap, [string]$increment, [string]$additionalFscFlags = "") {
   $logFileName = $increment
-  Run-Build $rootDir -increment $increment
+  Run-Build $rootDir -increment $increment -additionalFscFlags $additionalFscFlags
 
   $errorList = @()
   $allGood = $true
@@ -273,14 +281,31 @@ function Test-Build([string]$rootDir, $dataMap, [string]$increment) {
 }
 
 function Run-Test() {
+  $seqFlags = ""
+  $parFlags = ""
+  if ($mode -eq "seq-vs-par") {
+    # First build: sequential (force single-threaded, disable any parallel test paths)
+    $seqFlags = "--parallelcompilation- --test:ParallelOff --nowarn:75"
+    # Second build: parallel (default in modern fsc, made explicit for clarity)
+    $parFlags = "--parallelcompilation+"
+    Write-Host "Determinism mode: seq-vs-par"
+    Write-Host "  Initial (seq): $seqFlags"
+    Write-Host "  Test1   (par): $parFlags"
+  }
+  else {
+    Write-Host "Determinism mode: same (race-detector; both builds identical)"
+  }
+
   # Run the initial build so that we can populate the maps
-  Run-Build $RepoRoot -increment "Initial" -useBootstrap
+  Run-Build $RepoRoot -increment "Initial" -additionalFscFlags $seqFlags
 
   $dataMap = Record-Binaries $RepoRoot "Initial"
   Test-MapContents $dataMap
 
-  # Run a test against the source in the same directory location
-  Test-Build -rootDir $RepoRoot -dataMap $dataMap -increment "Test1"
+  # Run a test against the source in the same directory location.
+  # In 'same' mode: same flags as Initial (probabilistic race detector).
+  # In 'seq-vs-par' mode: parallel flags, contrasting against the sequential Initial.
+  Test-Build -rootDir $RepoRoot -dataMap $dataMap -increment "Test1" -additionalFscFlags $parFlags
 
   # Run another build in a different source location and verify that path mapping
   # allows the build to be identical.  To do this we'll copy the entire source
