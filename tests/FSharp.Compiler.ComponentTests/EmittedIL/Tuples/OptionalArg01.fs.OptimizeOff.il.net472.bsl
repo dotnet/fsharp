@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -47,8 +37,7 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -65,8 +54,7 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -77,9 +65,7 @@
       IL_0008:  ret
     } 
 
-    .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> 
-            F(class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> x1,
-              class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> x2) cil managed
+    .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> F(class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> x1, class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A> x2) cil managed
     {
       .param [1]
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.OptionalArgumentAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -188,57 +174,53 @@
 
   } 
 
-  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A>
-          test() cil managed
+  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> test() cil managed
   {
-
+    
     .maxstack  8
     IL_0000:  ldnull
     IL_0001:  ldnull
     IL_0002:  call       class [runtime]System.Collections.Generic.List`1<class assembly/A> assembly/C::F(class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>,
-                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>)
+                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>)
     IL_0007:  ret
-  }
+  } 
 
-  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A>
-          test2() cil managed
+  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> test2() cil managed
   {
-
+    
     .maxstack  8
     IL_0000:  newobj     instance void assembly/A::.ctor()
     IL_0005:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::Some(!0)
     IL_000a:  ldnull
     IL_000b:  call       class [runtime]System.Collections.Generic.List`1<class assembly/A> assembly/C::F(class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>,
-                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>)
+                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>)
     IL_0010:  ret
-  }
+  } 
 
-  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A>
-          test3() cil managed
+  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> test3() cil managed
   {
-
+    
     .maxstack  8
     IL_0000:  ldnull
     IL_0001:  newobj     instance void assembly/A::.ctor()
     IL_0006:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::Some(!0)
     IL_000b:  call       class [runtime]System.Collections.Generic.List`1<class assembly/A> assembly/C::F(class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>,
-                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>)
+                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>)
     IL_0010:  ret
-  }
+  } 
 
-  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A>
-          test4() cil managed
+  .method public static class [runtime]System.Collections.Generic.List`1<class assembly/A> test4() cil managed
   {
-
+    
     .maxstack  8
     IL_0000:  newobj     instance void assembly/A::.ctor()
     IL_0005:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::Some(!0)
     IL_000a:  newobj     instance void assembly/A::.ctor()
     IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>::Some(!0)
     IL_0014:  call       class [runtime]System.Collections.Generic.List`1<class assembly/A> assembly/C::F(class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>,
-                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>)
+                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class assembly/A>)
     IL_0019:  ret
-  }
+  } 
 
 } 
 
