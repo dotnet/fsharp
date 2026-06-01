@@ -484,8 +484,12 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
         match tyargsl, tmargsl, laterStruct with
         // CASE 1 - Type abstraction
         | _ :: _, [], _ ->
-            let addedGenParams = tyargsl
             let nowReturnTy = (mkTyOfLambdas cenv laterStruct)
+
+            // Strip constraints: both the Specialize override method-typars (CASE 1b) and the
+            // later closure class-typars (CASE 1a) must be unconstrained — the override must match
+            // its base signature, and the class must accept any T that Specialize passes. See #14492.
+            let unconstrainedGenParams = tyargsl |> List.map stripILGenericParamConstraints
 
             // CASE 1a. Split a type abstraction.
             // Adjust all the argument and environment accesses
@@ -504,7 +508,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                 let laterTypeName = td.Name + "T"
                 let laterTypeRef = mkILNestedTyRef (ILScopeRef.Local, encl, laterTypeName)
-                let laterGenericParams = td.GenericParams @ addedGenParams
+                let laterGenericParams = td.GenericParams @ unconstrainedGenParams
 
                 let selfFreeVar =
                     let baseName = CompilerGeneratedName("self" + string nowFields.Length)
@@ -564,14 +568,12 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                 let convil = convILMethodBody (Some nowCloSpec, boxReturnTy) clo.cloCode.Value
 
-                let specializeGenParams = addedGenParams |> List.map stripILGenericParamConstraints
-
                 let nowApplyMethDef =
                     mkILGenericVirtualMethod (
                         "Specialize",
                         ILCallingConv.Instance,
                         ILMemberAccess.Public,
-                        specializeGenParams,
+                        unconstrainedGenParams,
                         [],
                         mkILReturn cenv.ilg.typ_Object,
                         MethodBody.IL(notlazy convil)
