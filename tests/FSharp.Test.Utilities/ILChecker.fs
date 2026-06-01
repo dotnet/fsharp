@@ -195,18 +195,24 @@ module ILChecker =
     let verifyILAndReturnActual args dllFilePath expectedIL =
         checkILPrim args dllFilePath expectedIL
 
-    let checkILNotPresent dllFilePath unexpectedIL =
+    let private checkILFragments shouldBePresent dllFilePath fragments =
         let actualIL = generateIL dllFilePath []
-        if unexpectedIL = [] then
-            Assert.Fail $"No unexpected IL given. This is actual IL: \n{actualIL}"
+        if fragments = [] then
+            Assert.Fail $"No IL fragments given. This is actual IL: \n{actualIL}"
+        let label = if shouldBePresent then "Not found in" else "Found in"
+        let isError (fragment: string) = actualIL.Contains(fragment) <> shouldBePresent
         let errors =
-            unexpectedIL
+            fragments
             |> Seq.map (normalizeILText None)
-            |> Seq.filter actualIL.Contains
-            |> Seq.map (sprintf "Found in actual IL: '%s'")
+            |> Seq.filter isError
+            |> Seq.map (sprintf "%s actual IL: '%s'" label)
             |> String.concat "\n"
         if errors <> "" then
             Assert.Fail $"{errors}\n\n\nEntire actual:\n{actualIL}"
+
+    let checkILNotPresent dllFilePath unexpectedIL = checkILFragments false dllFilePath unexpectedIL
+
+    let checkILPresent dllFilePath expectedIL = checkILFragments true dllFilePath expectedIL
 
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM

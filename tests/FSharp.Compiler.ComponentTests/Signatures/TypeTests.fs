@@ -344,7 +344,7 @@ type GenericType<'X> with
 
     one |> withAdditionalSourceFiles [ two; three ]
     |> compile
-    |> verifyILContains [ ".Print<ActualType>" ]
+    |> verifyILPresent [ ".Print<ActualType>" ]
 
 // https://github.com/dotnet/fsharp/issues/14310
 [<Fact>]
@@ -1001,8 +1001,7 @@ type D() =
 """
     |> compile
     |> shouldSucceed
-    |> verifyILContains [
-        ".method public hidebysig instance int32 M() cil managed"
+    |> verifyILPresent [
+        ".method public hidebysig instance int32 M(class [FSharp.Core]Microsoft.FSharp.Core.Unit _arg1) cil managed"
         ".method public hidebysig instance int32 M(int32 y) cil managed"
     ]
-    |> ignore
