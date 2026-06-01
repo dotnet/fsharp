@@ -2094,36 +2094,33 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            lock gproperties (fun () -> AddPropertyDefToHash m gproperties pdef)
+            AddPropertyDefToHash m gproperties pdef
 
-    // Callers run on the main thread after the parallel codegen join in
-    // CodegenAssembly, but we lock anyway to keep the invariant local and
-    // robust if that ordering ever changes.
+    // Append/Prepend are only invoked from the main thread after the parallel
+    // codegen join (see CodegenAssembly), so they do not need to lock gmethods.
     member _.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        lock gmethods (fun () ->
-            match gmethods |> Seq.tryFindIndex (fun struct (_, _, m) -> cond m) with
-            | Some idx ->
-                let struct (b, i, m) = gmethods.[idx]
-                gmethods.[idx] <- struct (b, i, appendInstrsToMethod instrs m)
-            | None ->
-                let body =
-                    mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
+        match gmethods |> Seq.tryFindIndex (fun struct (_, _, m) -> cond m) with
+        | Some idx ->
+            let struct (b, i, m) = gmethods.[idx]
+            gmethods.[idx] <- struct (b, i, appendInstrsToMethod instrs m)
+        | None ->
+            let body =
+                mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-                let struct (b, i) = nextOrderKey ()
-                gmethods.Add(struct (b, i, mkILClassCtor body)))
+            let struct (b, i) = nextOrderKey ()
+            gmethods.Add(struct (b, i, mkILClassCtor body))
 
     member this.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        lock gmethods (fun () ->
-            match gmethods |> Seq.tryFindIndex (fun struct (_, _, m) -> cond m) with
-            | Some idx ->
-                let struct (b, i, m) = gmethods.[idx]
-                gmethods.[idx] <- struct (b, i, prependInstrsToMethod instrs m)
-            | None ->
-                let body =
-                    mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
+        match gmethods |> Seq.tryFindIndex (fun struct (_, _, m) -> cond m) with
+        | Some idx ->
+            let struct (b, i, m) = gmethods.[idx]
+            gmethods.[idx] <- struct (b, i, prependInstrsToMethod instrs m)
+        | None ->
+            let body =
+                mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-                let struct (b, i) = nextOrderKey ()
-                gmethods.Add(struct (b, i, mkILClassCtor body)))
+            let struct (b, i) = nextOrderKey ()
+            gmethods.Add(struct (b, i, mkILClassCtor body))
 
         this
 
@@ -2164,15 +2161,9 @@ and TypeDefsBuilder() =
     let mutable seqCountDown = Int32.MaxValue
 
     member b.Close(g: TcGlobals) =
-        // Sort key is (batchIndex, intraBatchIndex). Sequential AddTypeDef calls use
-        // batchIndex = 0 with monotonically-assigned intraBatchIndex (countUp ascending
-        // for normal types, countDown descending so they sort after countUp values and
-        // in reverse-insertion order — matching legacy behavior). Parallel calls use
-        // batchIndex = file index + 1 so each file's types form a contiguous deterministic
-        // block in source-file order, and within a file an ascending counter preserves
-        // intra-file insertion order. ConcurrentDictionary.Values iteration is
-        // bucket-order racy (string GetHashCode is per-process randomized in .NET 6+),
-        // so we materialize and sort explicitly.
+        // Sort by (batchIndex, intraBatchIndex) to make emit order independent
+        // of ConcurrentDictionary bucket iteration (racy under per-process
+        // randomized string GetHashCode) and of thread-scheduling.
         let allEntries =
             [
                 for KeyValue(_, lst) in tdefs do
@@ -12698,11 +12689,9 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let eenv =
         { eenv with
             cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
-            // Always defer method body generation; this normalizes the timing of
-            // mgbuf.AddMethodDef calls between sequential and parallel codegen so
-            // that emitted IL is identical regardless of --parallelcompilation.
-            // The parallelism switch only controls whether the deferred bodies are
-            // forced sequentially or in parallel further down (see CodegenAssembly).
+            // Always defer body generation so the order of mgbuf.AddMethodDef calls
+            // is identical under --parallelcompilation+/-. CodegenAssembly forces
+            // the deferred batches sequentially or in parallel based on that flag.
             delayCodeGen = true
         }
 

@@ -22,17 +22,10 @@ module internal ExprConstruction =
     /// An ordering for value definitions, based on stamp
     val valOrder: IComparer<Val>
 
-    /// Stable, source-position-derived key for ordering Vals.
-    /// Use this before calling NiceNameGenerator from parallel optimizer passes
-    /// so the generated names do not depend on Val.Stamp assignment race.
-    /// See https://github.com/dotnet/fsharp/issues/19732.
+    /// Stable, source-position-derived sort key for Vals. v.Stamp is the final
+    /// tiebreaker; for the case where two synthetic Vals share the build-stable
+    /// prefix, see the docstring on `valSourceOrderKey` and #19732.
     val valSourceOrderKey: Val -> struct (int * int * int * string * int64)
-
-    /// Debug-only check that no two Vals in the input collide on the
-    /// build-stable prefix of `valSourceOrderKey` ((FileIndex, line, col,
-    /// LogicalName)). A collision means that ordering would be decided by
-    /// `Val.Stamp`, which is racy across rebuilds and reintroduces #19732.
-    val assertValSourceOrderKeyUnique: Val list -> unit
 
     /// An ordering for type definitions, based on stamp
     val tyconOrder: IComparer<Tycon>

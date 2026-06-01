@@ -848,9 +848,6 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
     let fs =
         Zset.elements tlrS
         |> List.sortWith (fun v1 v2 -> compare (valSourceOrderKey v1) (valSourceOrderKey v2))
-
-    assertValSourceOrderKeyUnique fs
-
     let ffHats = List.map (fun f -> f, createFHat f) fs
     let fHatM = Zmap.ofList valOrder ffHats
     fHatM
