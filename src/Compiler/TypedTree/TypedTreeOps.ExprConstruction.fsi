@@ -28,6 +28,12 @@ module internal ExprConstruction =
     /// See https://github.com/dotnet/fsharp/issues/19732.
     val valSourceOrderKey: Val -> struct (int * int * int * string * int64)
 
+    /// Debug-only check that no two Vals in the input collide on the
+    /// build-stable prefix of `valSourceOrderKey` ((FileIndex, line, col,
+    /// LogicalName)). A collision means that ordering would be decided by
+    /// `Val.Stamp`, which is racy across rebuilds and reintroduces #19732.
+    val assertValSourceOrderKeyUnique: Val list -> unit
+
     /// An ordering for type definitions, based on stamp
     val tyconOrder: IComparer<Tycon>
 

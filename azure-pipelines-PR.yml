@@ -109,13 +109,6 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 90
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
@@ -130,8 +123,6 @@ stages:
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
           - script: .\eng\test-determinism.cmd -configuration Release
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: Determinism tests with Release configuration
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs

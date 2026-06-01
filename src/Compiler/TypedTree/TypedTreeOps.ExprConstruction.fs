@@ -46,12 +46,38 @@ module internal ExprConstruction =
 
     // Source-position-derived order key for Vals. Used to walk Val collections
     // in a stable, build-independent order before calling NiceNameGenerator
-    // from parallel optimizer passes. Stamp is the final tiebreaker for
-    // synthetic Vals at the same location; stamps are fixed within a single
-    // process so the order is total. See https://github.com/dotnet/fsharp/issues/19732.
+    // from parallel optimizer passes. The first four components are build-stable.
+    // v.Stamp is appended only to guarantee a total order; it is per-process
+    // non-deterministic and a collision on the first four components would
+    // reintroduce build-to-build instability. Callers should pair this with
+    // `assertValSourceOrderKeyUnique` so a collision triggers in debug builds
+    // before it can silently produce non-reproducible output.
+    // See https://github.com/dotnet/fsharp/issues/19732.
     let valSourceOrderKey (v: Val) =
         let r = v.Range
         struct (r.FileIndex, r.StartLine, r.StartColumn, v.LogicalName, v.Stamp)
+
+    let assertValSourceOrderKeyUnique (vs: Val list) =
+#if DEBUG
+        let seen = System.Collections.Generic.HashSet()
+
+        for v in vs do
+            let r = v.Range
+            let buildStableKey = struct (r.FileIndex, r.StartLine, r.StartColumn, v.LogicalName)
+
+            if not (seen.Add buildStableKey) then
+                System.Diagnostics.Debug.Assert(
+                    false,
+                    sprintf
+                        "valSourceOrderKey collision on (%d,%d,%d,%s); v.Stamp tiebreaker is not build-stable, see https://github.com/dotnet/fsharp/issues/19732"
+                        r.FileIndex
+                        r.StartLine
+                        r.StartColumn
+                        v.LogicalName
+                )
+#else
+        ignore vs
+#endif
 
     let tyconOrder =
         { new IComparer<Tycon> with

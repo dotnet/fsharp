@@ -2000,32 +2000,29 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
     // batches) for the same TypeDef (e.g. StartupCode$, AnonymousType$, derived
     // augmentations). Tag each addition with (batchIndex, intraIndex) and emit in
     // that order at Close.
-    let initialMethods =
-        tdef.Methods.AsList() |> List.mapi (fun i m -> struct (0, i, m))
+    let tagInitial xs =
+        xs |> List.mapi (fun i x -> struct (0, i, x))
 
-    let gmethods = ResizeArray<struct (int * int * ILMethodDef)>(initialMethods)
+    let gmethods =
+        ResizeArray<struct (int * int * ILMethodDef)>(tagInitial (tdef.Methods.AsList()))
 
-    let initialFields = tdef.Fields.AsList() |> List.mapi (fun i f -> struct (0, i, f))
-
-    let gfields = ResizeArray<struct (int * int * ILFieldDef)>(initialFields)
+    let gfields =
+        ResizeArray<struct (int * int * ILFieldDef)>(tagInitial (tdef.Fields.AsList()))
 
     let gproperties: Dictionary<PropKey, int * ILPropertyDef> =
         Dictionary<_, _>(3, HashIdentity.Structural)
 
-    let initialEvents = tdef.Events.AsList() |> List.mapi (fun i e -> struct (0, i, e))
+    let gevents =
+        ResizeArray<struct (int * int * ILEventDef)>(tagInitial (tdef.Events.AsList()))
 
-    let gevents = ResizeArray<struct (int * int * ILEventDef)>(initialEvents)
     let gnested = TypeDefsBuilder()
 
-    // Sequential-phase counter shared across methods/fields/events; this just needs to
-    // produce a monotonically increasing intra-batch index per builder, so a single
-    // counter is sufficient and avoids byref-of-class-field complications.
     let mutable seqCounter =
-        max 0 (max initialMethods.Length (max initialFields.Length initialEvents.Length))
+        max 0 (max gmethods.Count (max gfields.Count gevents.Count))
 
     let nextOrderKey () =
         match ParallelCodeGenContext.CurrentBatch with
-        | Some ctx -> struct ((ctx: BatchAddContext).BatchIndex, ctx.NextIntra())
+        | Some ctx -> struct ((ctx: BatchAddContext).BatchIndex, ctx.NextIntraBatchIndex())
         | None ->
             let i = Interlocked.Increment(&seqCounter)
             struct (0, i)
@@ -2097,57 +2094,36 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            AddPropertyDefToHash m gproperties pdef
+            lock gproperties (fun () -> AddPropertyDefToHash m gproperties pdef)
 
+    // Callers run on the main thread after the parallel codegen join in
+    // CodegenAssembly, but we lock anyway to keep the invariant local and
+    // robust if that ordering ever changes.
     member _.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        let foundIdx =
-            let mutable idx = -1
-            let mutable i = 0
+        lock gmethods (fun () ->
+            match gmethods |> Seq.tryFindIndex (fun struct (_, _, m) -> cond m) with
+            | Some idx ->
+                let struct (b, i, m) = gmethods.[idx]
+                gmethods.[idx] <- struct (b, i, appendInstrsToMethod instrs m)
+            | None ->
+                let body =
+                    mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-            while idx = -1 && i < gmethods.Count do
-                let struct (_, _, m) = gmethods.[i]
-
-                if cond m then
-                    idx <- i
-
-                i <- i + 1
-
-            idx
-
-        if foundIdx >= 0 then
-            let struct (b, i, m) = gmethods.[foundIdx]
-            gmethods.[foundIdx] <- struct (b, i, appendInstrsToMethod instrs m)
-        else
-            let body =
-                mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
-
-            let struct (b, i) = nextOrderKey ()
-            lock gmethods (fun () -> gmethods.Add(struct (b, i, mkILClassCtor body)))
+                let struct (b, i) = nextOrderKey ()
+                gmethods.Add(struct (b, i, mkILClassCtor body)))
 
     member this.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        let foundIdx =
-            let mutable idx = -1
-            let mutable i = 0
+        lock gmethods (fun () ->
+            match gmethods |> Seq.tryFindIndex (fun struct (_, _, m) -> cond m) with
+            | Some idx ->
+                let struct (b, i, m) = gmethods.[idx]
+                gmethods.[idx] <- struct (b, i, prependInstrsToMethod instrs m)
+            | None ->
+                let body =
+                    mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-            while idx = -1 && i < gmethods.Count do
-                let struct (_, _, m) = gmethods.[i]
-
-                if cond m then
-                    idx <- i
-
-                i <- i + 1
-
-            idx
-
-        if foundIdx >= 0 then
-            let struct (b, i, m) = gmethods.[foundIdx]
-            gmethods.[foundIdx] <- struct (b, i, prependInstrsToMethod instrs m)
-        else
-            let body =
-                mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
-
-            let struct (b, i) = nextOrderKey ()
-            lock gmethods (fun () -> gmethods.Add(struct (b, i, mkILClassCtor body)))
+                let struct (b, i) = nextOrderKey ()
+                gmethods.Add(struct (b, i, mkILClassCtor body)))
 
         this
 
@@ -2158,7 +2134,7 @@ and [<AllowNullLiteral>] BatchAddContext(batchIndex: int) =
 
     member _.BatchIndex = batchIndex
 
-    member _.NextIntra() = Interlocked.Increment(&intraCounter)
+    member _.NextIntraBatchIndex() = Interlocked.Increment(&intraCounter)
 
 and ParallelCodeGenContext private () =
     static let current = new ThreadLocal<BatchAddContext>()
@@ -2238,7 +2214,7 @@ and TypeDefsBuilder() =
             match ParallelCodeGenContext.CurrentBatch with
             | Some ctx ->
                 // Inside a parallel file batch: file-scoped deterministic counter.
-                let i = ctx.NextIntra()
+                let i = ctx.NextIntraBatchIndex()
                 ctx.BatchIndex, if addAtEnd then Int32.MaxValue - i else i
             | None ->
                 // Sequential phase: batchIndex 0 keeps it before any parallel batches.
