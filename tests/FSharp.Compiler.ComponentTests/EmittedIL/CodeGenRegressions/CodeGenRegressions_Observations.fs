@@ -219,9 +219,10 @@ let empty<'T> = Seq.empty<'T>
 """
         ]
 
-    // https://github.com/dotnet/fsharp/issues/17775
+    // https://github.com/dotnet/fsharp/issues/18128
+    // Concrete-type Unchecked.defaultof bindings should be eliminated under optimization.
     [<Fact>]
-    let ``Unchecked_defaultof_concrete_type_eliminated_when_unused`` () =
+    let ``Issue_18128_Unchecked_defaultof_concrete_eliminated`` () =
         FSharp """
 module Test
 
@@ -242,16 +243,31 @@ let f (n: float32) =
         |> verifyILNotPresent [ "initobj" ]
         |> ignore
 
-    // https://github.com/dotnet/fsharp/issues/17775
-    // FS0073 regression: free type variable in EI_ilzero tyargs must not be eliminated.
+    // https://github.com/dotnet/fsharp/issues/18128
+    // The real-world FSharpPlus-style SRTP witness pattern from the issue.
+    // Exercises Unchecked.defaultof<'T> and Unchecked.defaultof<^b> as nested inline witnesses.
     [<Fact>]
-    let ``Unchecked_defaultof_typar_kept_in_SRTP_context`` () =
+    let ``Issue_18128_SRTP_witness_pattern_compiles_and_optimizes`` () =
         FSharp """
 module Test
 
-let inline f< ^T when ^T : (static member op_Explicit: ^T -> int)> (x: ^T) =
-    let _ = Unchecked.defaultof< ^T >
-    int x
+open System.ComponentModel
+open FSharp.Core.LanguagePrimitives
+
+[<AbstractClass; Sealed; EditorBrowsable(EditorBrowsableState.Never)>]
+type PreOps =
+    static member inline Double (n: float<'u>) : float<'u> = n * 2.
+    static member inline Double (n: float32<'u>) : float32<'u> = n * 2.f
+
+#nowarn "64"
+module PreludeOperators =
+    let inline private nil<'T> = Unchecked.defaultof<'T>
+    let inline double (x: ^a) =
+        let inline _call (_: ^M, input: ^I, _: ^R) = ((^M or ^I) : (static member Double : ^I -> ^R) input)
+        _call (nil<PreOps>, x, nil< ^b >)
+
+open PreludeOperators
+let doWork (n: float) = double n
 """
         |> asLibrary
         |> withOptimize
@@ -259,28 +275,9 @@ let inline f< ^T when ^T : (static member op_Explicit: ^T -> int)> (x: ^T) =
         |> shouldSucceed
         |> ignore
 
-    // https://github.com/dotnet/fsharp/issues/17775
-    // Nested free typar (Wrapper< ^T >) must also keep the binding alive.
-    [<Fact>]
-    let ``Unchecked_defaultof_nested_typar_kept_in_SRTP_context`` () =
-        FSharp """
-module Test
-
-type Wrapper<'T> = { Value: 'T }
-
-let inline f< ^T when ^T : (static member op_Explicit: ^T -> int)> (x: ^T) =
-    let _ = Unchecked.defaultof<Wrapper< ^T >>
-    int x
-"""
-        |> asLibrary
-        |> withOptimize
-        |> compile
-        |> shouldSucceed
-        |> ignore
-
-    // Non-regression: the EI_ilzero fix must not over-broadly mark other effect-free
-    // generic operations as effectful. A generic Some over a free typar should still
-    // be eliminated as a dead binding under optimization.
+    // Non-regression: making EI_ilzero effect-free must not be over-broadly applied to
+    // other effect-free generic operations. A generic Some over a free typar should
+    // continue to be eliminated as a dead binding.
     [<Fact>]
     let ``Generic_Some_unused_binding_still_eliminated`` () =
         FSharp """

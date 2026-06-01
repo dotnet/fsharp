@@ -1619,17 +1619,7 @@ let IlAssemblyCodeInstrHasEffect i =
     | EI_ilzero _ -> false
     | _ -> true
 
-let tyargsContainFreeTypars tyargs =
-    match tyargs with
-    | [] -> false
-    | _ -> not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
-
-let ILAsmHasEffect instrs tyargs =
-    instrs |> List.exists (function
-        // EI_ilzero<'T> embeds the type into IL; eliminating the expression would orphan
-        // free typars referenced only through tyargs and trip FS0073 in IlxGen.
-        | EI_ilzero _ -> tyargsContainFreeTypars tyargs
-        | i -> IlAssemblyCodeInstrHasEffect i)
+let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
 
 let rec ExprHasEffect g expr = 
     match stripDebugPoints expr with 
@@ -1640,7 +1630,7 @@ let rec ExprHasEffect g expr =
     | Expr.Const _ -> false
     // type applications do not have effects, with the exception of type functions
     | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect g f0
-    | Expr.Op (op, tyargs, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op tyargs
+    | Expr.Op (op, _, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op
     | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
     | Expr.Let (bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
@@ -1652,7 +1642,7 @@ and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
 
 and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 
-and OpHasEffect g m op tyargs =
+and OpHasEffect g m op =
     match op with 
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
@@ -1666,7 +1656,7 @@ and OpHasEffect g m op tyargs =
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
-    | TOp.ILAsm (instrs, _) -> ILAsmHasEffect instrs tyargs
+    | TOp.ILAsm (instrs, _) -> IlAssemblyCodeHasEffect instrs
     | TOp.TupleFieldGet _ -> false
     | TOp.ExnFieldGet (ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet _ -> false
@@ -2581,7 +2571,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect g m newOp tyargs
+          HasEffect = OpHasEffect g m newOp
           MightMakeCriticalTailcall = false
           Info = ValueOfExpr newExpr }
 
@@ -2653,7 +2643,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
 
-    let effect = OpHasEffect g m op tyargs
+    let effect = OpHasEffect g m op
     let cost, value_ = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
