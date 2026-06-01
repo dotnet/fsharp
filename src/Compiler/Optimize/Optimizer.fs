@@ -2642,7 +2642,6 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let argsFSize = AddFunctionSizes arginfos
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
-
     let effect = OpHasEffect g m op
     let cost, value_ = 
       match op with

@@ -289,12 +289,12 @@ let doWork (n: float) = double n
         ]
         |> ignore
 
-    // Soundness: eliminating an unused Unchecked.defaultof<T> binding must not introduce
-    // a cctor trigger that the unoptimised code did not have. defaultof of a reference type
-    // emits ldnull (never newobj), so f's body reduces cleanly to the return constant with
-    // no reference to WithCctor.
+    // Soundness pin: optimizing away an unused `Unchecked.defaultof<T>` must not introduce
+    // a new reference to T in the enclosing method. `defaultof` of a reference type lowers
+    // to `ldnull` (not `newobj`), so the binding's removal cannot suppress an observable
+    // cctor call - f's body should contain no reference to WithCctor at all.
     [<Fact>]
-    let ``Issue_18128_eliminated_defaultof_does_not_run_cctor`` () =
+    let ``Issue_18128_eliminated_defaultof_leaves_no_reference_to_T_in_caller`` () =
         FSharp """
 module Test
 
