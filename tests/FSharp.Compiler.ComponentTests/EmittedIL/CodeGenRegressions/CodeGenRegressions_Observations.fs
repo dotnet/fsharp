@@ -221,6 +221,8 @@ let empty<'T> = Seq.empty<'T>
 
     // https://github.com/dotnet/fsharp/issues/18128
     // Concrete-type Unchecked.defaultof bindings should be eliminated under optimization.
+    // Pins both the absence of initobj and that no decimal local slot is allocated for
+    // any of the three discarded bindings.
     [<Fact>]
     let ``Issue_18128_Unchecked_defaultof_concrete_eliminated`` () =
         FSharp """
@@ -240,12 +242,13 @@ let f (n: float32) =
         |> withOptimize
         |> compile
         |> shouldSucceed
-        |> verifyILNotPresent [ "initobj" ]
+        |> verifyILNotPresent [ "initobj"; "valuetype [runtime]System.Decimal" ]
         |> ignore
 
     // https://github.com/dotnet/fsharp/issues/18128
-    // The real-world FSharpPlus-style SRTP witness pattern from the issue.
-    // Exercises Unchecked.defaultof<'T> and Unchecked.defaultof<^b> as nested inline witnesses.
+    // The real-world FSharpPlus-style SRTP witness pattern from the issue. After elimination,
+    // doWork reduces to a direct double-precision multiplication; the nil<PreOps> and nil<^b>
+    // witness bindings are gone.
     [<Fact>]
     let ``Issue_18128_SRTP_witness_pattern_compiles_and_optimizes`` () =
         FSharp """
@@ -273,26 +276,46 @@ let doWork (n: float) = double n
         |> withOptimize
         |> compile
         |> shouldSucceed
+        |> verifyIL [
+            """.method public static float64  doWork(float64 n) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.r8     2
+    IL_000a:  mul
+    IL_000b:  ret
+  }"""
+        ]
         |> ignore
 
-    // Non-regression: making EI_ilzero effect-free must not be over-broadly applied to
-    // other effect-free generic operations. A generic Some over a free typar should
-    // continue to be eliminated as a dead binding.
+    // Soundness: eliminating an unused Unchecked.defaultof<T> binding must not introduce
+    // a cctor trigger that the unoptimised code did not have. defaultof of a reference type
+    // emits ldnull (never newobj), so f's body reduces cleanly to the return constant with
+    // no reference to WithCctor.
     [<Fact>]
-    let ``Generic_Some_unused_binding_still_eliminated`` () =
+    let ``Issue_18128_eliminated_defaultof_does_not_run_cctor`` () =
         FSharp """
 module Test
 
-open System
+type WithCctor() =
+    static do failwith "cctor must not run"
 
-let f<'T> (x: 'T) =
-    Console.WriteLine "before"
-    let _ = Some x
-    Console.WriteLine "after"
+let f () =
+    let _ = Unchecked.defaultof<WithCctor>
+    42
 """
         |> asLibrary
         |> withOptimize
         |> compile
         |> shouldSucceed
-        |> verifyILNotPresent [ "FSharpOption" ]
+        |> verifyIL [
+            """.method public static int32  f() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.s   42
+    IL_0002:  ret
+  }"""
+        ]
         |> ignore
