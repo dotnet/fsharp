@@ -334,6 +334,97 @@ let inline myFunc x y = x - y"""
         else
             Assert.NotEqual(mvid1,mvid2)
 
+    // https://github.com/dotnet/fsharp/issues/19732
+    // Differential test: compile the same multi-file project once fully sequentially
+    // and once fully parallel, with --deterministic. If the MVIDs differ, the
+    // compiler is non-deterministic with respect to its own internal parallelism.
+    // This is a hard, repeatable signal — no need to retry across runs.
+    [<Fact>]
+    let ``Parallel and sequential compilation must produce identical assemblies`` () =
+        let outputDir = DirectoryInfo(Path.Combine(Path.GetTempPath(), "fsharp-determinism-seqpar"))
+        if outputDir.Exists then outputDir.Delete(true)
+        outputDir.Create()
+
+        let makeFile i =
+            let src =
+                (sprintf
+                    """
+module File%d
+
+let processTuple%d (a: int, b: string) =
+    let inner x = x + a
+    let nested () = inner 42
+    (nested (), b.Length)
+
+let anon%d () =
+    {| Name = "f%d"; Index = %d; Children = [| 1; 2; 3 |] |}
+
+let anon%db () =
+    {| Tag = "T%d"; Value = %d * 7; Extras = "x" |}
+
+let useAnon%d () =
+    let r = anon%d ()
+    let r2 = anon%db ()
+    let composed (k: int) =
+        let h x = x + r.Index + r2.Value + k
+        h 100
+    composed 0 + r.Name.Length
+
+[<Struct>]
+type Rec%d = { X: int; Y: string }
+
+let mkRec%d () = { X = %d; Y = "rec%d" }
+"""
+                    i i i i i i i i i i i i i i i)
+
+            FsSourceWithFileName $"File%d{i}.fs" src
+
+        let additionalFiles = [ for i in 2..12 -> makeFile i ]
+
+        let compileWith parallelism =
+            FSharp
+                """
+module File1
+
+let processTuple1 (a: int, b: string) =
+    let inner x = x + a
+    let nested () = inner 42
+    (nested (), b.Length)
+
+let anon1 () =
+    {| Name = "f1"; Index = 1; Children = [| 1; 2; 3 |] |}
+
+let anon1b () =
+    {| Tag = "T1"; Value = 7; Extras = "x" |}
+
+let useAnon1 () =
+    let r = anon1 ()
+    let r2 = anon1b ()
+    let composed (k: int) =
+        let h x = x + r.Index + r2.Value + k
+        h 100
+    composed 0 + r.Name.Length
+
+[<Struct>]
+type Rec1 = { X: int; Y: string }
+
+let mkRec1 () = { X = 1; Y = "rec1" }
+"""
+            |> withAdditionalSourceFiles additionalFiles
+            |> asLibrary
+            |> withOptimize
+            |> withName "DetTest"
+            |> withOutputDirectory (Some outputDir)
+            |> withOptions ("--deterministic" :: "--nowarn:75" :: parallelism)
+            |> compileGuid
+
+        let seqMvid = compileWith [ "--parallelcompilation-"; "--test:ParallelOff" ]
+        let parMvid = compileWith [ "--parallelcompilation+" ]
+
+        outputDir.Delete(true)
+
+        Assert.Equal(seqMvid, parMvid)
+
     [<Fact>]
     let ``Reference assemblies MVID must change when literal constant value changes`` () =
         let codeWithLiteral42 = """
