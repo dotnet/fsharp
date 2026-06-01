@@ -123,7 +123,9 @@ stages:
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
           - script: .\eng\test-determinism.cmd -configuration Release
-            displayName: Determinism tests with Release configuration
+            displayName: Determinism tests (race detector — same flags both builds)
+          - script: .\eng\test-determinism.cmd -configuration Release -mode seq-vs-par
+            displayName: Determinism tests (1-shot diff — sequential vs parallel)
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
             inputs:
