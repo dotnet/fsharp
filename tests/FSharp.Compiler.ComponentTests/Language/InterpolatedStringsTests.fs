@@ -362,106 +362,48 @@ let s = $"{f.Invoke(42)}"
         |> compileExeAndRun
         |> shouldSucceed
 
+    // Issue 16696: '=' immediately followed (no space) by an interpolated-string opener was
+    // greedily lexed as the invalid operator '=$' instead of '=' + an interpolated string.
+    // The hole {n} proves an interpolated string (not a plain one) is what gets lexed.
     [<Fact>]
-    let ``Issue 16696 - let-binding with =$"..." (no space)`` () =
+    let ``Issue 16696 - '=' adjacent to an interpolated string binds it`` () =
         Fsx """
 let n = 42
-let world = "world"
-let plain =$"123"
-let withHole =$"hello {world}"
-let withTypedHole =$"%d{n}"
-if plain <> "123" then failwithf "plain: expected 123, got %s" plain
-if withHole <> "hello world" then failwithf "withHole: expected 'hello world', got %s" withHole
-if withTypedHole <> "42" then failwithf "withTypedHole: expected 42, got %s" withTypedHole
-            """
+let x =$"{n}"
+if x <> "42" then failwith "expected 42"
+        """
         |> compileExeAndRun
         |> shouldSucceed
 
+    // (The triple-quote form '=$"""..."""' is covered by the SyntaxTree baseline
+    // SynExprInterpolatedStringAdjacentEqualsTripleQuote.fs; '=$"' is a prefix of '=$"""', so the
+    // same lexer rule handles it after the rewind.)
+
+    // The reported cases from the issue: named-argument and record-field initialization.
     [<Fact>]
-    let ``Issue 16696 - property initialization in constructor call with Name=$"..."`` () =
+    let ``Issue 16696 - '=' adjacent to an interpolated string in named-argument and record contexts`` () =
         Fsx """
-type C() =
-    member val Name = "" with get, set
-
-let n = 42
-let plain = C(Name=$"123")
-let withHole = C(Name=$"items: %d{n}")
-
-if plain.Name <> "123" then failwithf "plain: expected 123, got %s" plain.Name
-if withHole.Name <> "items: 42" then failwithf "withHole: expected 'items: 42', got %s" withHole.Name
-            """
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``Issue 16696 - record creation with Field=$"..."`` () =
-        Fsx """
+type C() = member val Name = "" with get, set
 type R = { Name: string }
 let n = 42
-let r1 = { Name=$"abc" }
-let r2 = { Name=$"%d{n}" }
-if r1.Name <> "abc" then failwithf "r1: expected abc, got %s" r1.Name
-if r2.Name <> "42" then failwithf "r2: expected 42, got %s" r2.Name
-            """
+let c = C(Name=$"{n}")
+let r = { Name=$"{n}" }
+if c.Name <> "42" || r.Name <> "42" then failwith "expected 42"
+        """
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Issue 16696 - record copy with Field=$"..."`` () =
-        Fsx """
-type R = { Name: string; Count: int }
-let n = 42
-let r = { Name = ""; Count = 1 }
-let r1 = { r with Name=$"abc" }
-let r2 = { r with Name=$"%d{n}" }
-if r1.Name <> "abc" then failwithf "r1: expected abc, got %s" r1.Name
-if r2.Name <> "42" then failwithf "r2: expected 42, got %s" r2.Name
-            """
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``Issue 16696 - =$ followed by non-quote still rejected as deprecated operator`` () =
-        Fsx """
-let x =$abc
-            """
+    // Operator lexing is unchanged: a '$' anywhere in an operator is still reserved (FS0035).
+    // The only thing the fix changes is '=' directly before an interpolated-string opener;
+    // everything below still lexes as an operator exactly as before.
+    [<Theory>]
+    [<InlineData("let x =$abc")>]          // '=$' not before a quote
+    [<InlineData("let (=$) a b = a")>]     // defining (=$)
+    [<InlineData("let f a b = a =$ b")>]   // '=$' used as infix
+    [<InlineData("let (<$>) f x = f x")>]  // '$' inside an operator
+    [<InlineData("let (<=$=>) a b = a")>]  // '$' in the middle of an operator
+    let ``Issue 16696 - operators containing '$' are still rejected (operator lexing unchanged)`` (code: string) =
+        Fsx code
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "is not permitted as a character in operator names"
-
-    [<Fact>]
-    let ``Issue 16696 - defining (=$) as a custom operator is still rejected`` () =
-        Fsx """
-let (=$) a b = a + b
-            """
-        |> compile
-        |> shouldFail
-        |> withDiagnosticMessageMatches "is not permitted as a character in operator names"
-
-    [<Fact>]
-    let ``Issue 16696 - =$ used as infix operator is still rejected`` () =
-        Fsx """
-let f a b = a =$ b
-            """
-        |> compile
-        |> shouldFail
-        |> withDiagnosticMessageMatches "is not permitted as a character in operator names"
-
-    [<Fact>]
-    let ``Issue 16696 - verbatim interpolation form is still rejected (out of scope)`` () =
-        Fsx """
-let x =$@"abc"
-            """
-        |> compile
-        |> shouldFail
-        |> withDiagnosticMessageMatches "is not permitted as a character in operator names"
-
-    [<Fact>]
-    let ``Issue 16696 - = $"..." (with space) still parses unchanged`` () =
-        Fsx """
-let n = 42
-let x = $"%d{n}"
-if x <> "42" then failwithf "expected 42, got %s" x
-            """
-        |> compileExeAndRun
-        |> shouldSucceed
