@@ -1996,14 +1996,48 @@ let MergePropertyDefs m ilPropertyDefs =
 
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
-    let gmethods = ResizeArray<ILMethodDef>(tdef.Methods.AsList())
-    let gfields = ResizeArray<ILFieldDef>(tdef.Fields.AsList())
+    // Methods/fields/events are added from multiple parallel codegen threads (per-file
+    // batches) for the same TypeDef (e.g. StartupCode$, AnonymousType$, derived
+    // augmentations). Tag each addition with (batchIndex, intraIndex) and emit in
+    // that order at Close.
+    let initialMethods =
+        tdef.Methods.AsList() |> List.mapi (fun i m -> struct (0, i, m))
+
+    let gmethods = ResizeArray<struct (int * int * ILMethodDef)>(initialMethods)
+
+    let initialFields = tdef.Fields.AsList() |> List.mapi (fun i f -> struct (0, i, f))
+
+    let gfields = ResizeArray<struct (int * int * ILFieldDef)>(initialFields)
 
     let gproperties: Dictionary<PropKey, int * ILPropertyDef> =
         Dictionary<_, _>(3, HashIdentity.Structural)
 
-    let gevents = ResizeArray<ILEventDef>(tdef.Events.AsList())
+    let initialEvents = tdef.Events.AsList() |> List.mapi (fun i e -> struct (0, i, e))
+
+    let gevents = ResizeArray<struct (int * int * ILEventDef)>(initialEvents)
     let gnested = TypeDefsBuilder()
+
+    // Sequential-phase counter shared across methods/fields/events; this just needs to
+    // produce a monotonically increasing intra-batch index per builder, so a single
+    // counter is sufficient and avoids byref-of-class-field complications.
+    let mutable seqCounter =
+        max 0 (max initialMethods.Length (max initialFields.Length initialEvents.Length))
+
+    let nextOrderKey () =
+        match ParallelCodeGenContext.CurrentBatch with
+        | Some ctx -> struct ((ctx: BatchAddContext).BatchIndex, ctx.NextIntra())
+        | None ->
+            let i = Interlocked.Increment(&seqCounter)
+            struct (0, i)
+
+    let sortByKey (xs: ResizeArray<struct (int * int * 'T)>) =
+        xs
+        |> Seq.toArray
+        |> Array.sortWith (fun struct (b1, i1, _) struct (b2, i2, _) ->
+            let c = compare b1 b2
+            if c <> 0 then c else compare i1 i2)
+        |> Array.map (fun struct (_, _, x) -> x)
+        |> Array.toList
 
     member _.Close(g: TcGlobals) =
 
@@ -2023,17 +2057,21 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                 tdef.CustomAttrs
 
         tdef.With(
-            methods = mkILMethods (ResizeArray.toList gmethods),
-            fields = mkILFields (ResizeArray.toList gfields),
+            methods = mkILMethods (sortByKey gmethods),
+            fields = mkILFields (sortByKey gfields),
             properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
-            events = mkILEvents (ResizeArray.toList gevents),
+            events = mkILEvents (sortByKey gevents),
             nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close(g)),
             customAttrs = storeILCustomAttrs attrs
         )
 
-    member _.AddEventDef edef = gevents.Add edef
+    member _.AddEventDef edef =
+        let struct (b, i) = nextOrderKey ()
+        lock gevents (fun () -> gevents.Add(struct (b, i, edef)))
 
-    member _.AddFieldDef ilFieldDef = gfields.Add ilFieldDef
+    member _.AddFieldDef ilFieldDef =
+        let struct (b, i) = nextOrderKey ()
+        lock gfields (fun () -> gfields.Add(struct (b, i, ilFieldDef)))
 
     member _.AddMethodDef ilMethodDef =
         let discard =
@@ -2042,11 +2080,13 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            gmethods.Add ilMethodDef
+            let struct (b, i) = nextOrderKey ()
+            lock gmethods (fun () -> gmethods.Add(struct (b, i, ilMethodDef)))
 
     member _.NestedTypeDefs = gnested
 
-    member _.GetCurrentFields() = gfields |> Seq.readonly
+    member _.GetCurrentFields() =
+        gfields |> Seq.map (fun struct (_, _, f) -> f) |> Seq.readonly
 
     /// Merge Get and Set property nodes, which we generate independently for F# code
     /// when we come across their corresponding methods.
@@ -2060,32 +2100,65 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             AddPropertyDefToHash m gproperties pdef
 
     member _.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        match ResizeArray.tryFindIndex cond gmethods with
-        | Some idx -> gmethods[idx] <- appendInstrsToMethod instrs gmethods[idx]
-        | None ->
+        let foundIdx =
+            let mutable idx = -1
+            let mutable i = 0
+
+            while idx = -1 && i < gmethods.Count do
+                let struct (_, _, m) = gmethods.[i]
+
+                if cond m then
+                    idx <- i
+
+                i <- i + 1
+
+            idx
+
+        if foundIdx >= 0 then
+            let struct (b, i, m) = gmethods.[foundIdx]
+            gmethods.[foundIdx] <- struct (b, i, appendInstrsToMethod instrs m)
+        else
             let body =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-            gmethods.Add(mkILClassCtor body)
+            let struct (b, i) = nextOrderKey ()
+            lock gmethods (fun () -> gmethods.Add(struct (b, i, mkILClassCtor body)))
 
     member this.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        match ResizeArray.tryFindIndex cond gmethods with
-        | Some idx -> gmethods[idx] <- prependInstrsToMethod instrs gmethods[idx]
-        | None ->
+        let foundIdx =
+            let mutable idx = -1
+            let mutable i = 0
+
+            while idx = -1 && i < gmethods.Count do
+                let struct (_, _, m) = gmethods.[i]
+
+                if cond m then
+                    idx <- i
+
+                i <- i + 1
+
+            idx
+
+        if foundIdx >= 0 then
+            let struct (b, i, m) = gmethods.[foundIdx]
+            gmethods.[foundIdx] <- struct (b, i, prependInstrsToMethod instrs m)
+        else
             let body =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-            gmethods.Add(mkILClassCtor body)
+            let struct (b, i) = nextOrderKey ()
+            lock gmethods (fun () -> gmethods.Add(struct (b, i, mkILClassCtor body)))
 
         this
 
     member _.ILTypeDef = tdef
 
-and [<AllowNullLiteral>] BatchAddContext() =
-    [<DefaultValue>]
-    val mutable IntraCounter: int
+and [<AllowNullLiteral>] BatchAddContext(batchIndex: int) =
+    let mutable intraCounter = 0
 
-    member val BatchIndex: int = 0 with get, set
+    member _.BatchIndex = batchIndex
+
+    member _.NextIntra() = Interlocked.Increment(&intraCounter)
 
 and ParallelCodeGenContext private () =
     static let current = new ThreadLocal<BatchAddContext>()
@@ -2097,7 +2170,7 @@ and ParallelCodeGenContext private () =
 
     static member WithBatch(batchIndex: int, action: unit -> unit) =
         let prev = current.Value
-        let ctx = BatchAddContext(BatchIndex = batchIndex)
+        let ctx = BatchAddContext(batchIndex)
         current.Value <- ctx
 
         try
@@ -2165,7 +2238,7 @@ and TypeDefsBuilder() =
             match ParallelCodeGenContext.CurrentBatch with
             | Some ctx ->
                 // Inside a parallel file batch: file-scoped deterministic counter.
-                let i = Interlocked.Increment(&ctx.IntraCounter)
+                let i = ctx.NextIntra()
                 ctx.BatchIndex, if addAtEnd then Int32.MaxValue - i else i
             | None ->
                 // Sequential phase: batchIndex 0 keeps it before any parallel batches.
@@ -12509,12 +12582,16 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
-        eenv.delayedFileGenReverse
-        |> Array.ofList
-        |> Array.rev
-        |> ArrayParallel.iteri (fun fileIdx genMeths ->
+        let allFileGens = eenv.delayedFileGenReverse |> Array.ofList |> Array.rev
+
+        let runFileBatch fileIdx genMeths =
             // Use 1-based batch index so it sorts after sequential (batch 0) additions.
-            ParallelCodeGenContext.WithBatch(fileIdx + 1, fun () -> genMeths |> Array.iter (fun gen -> gen ())))
+            ParallelCodeGenContext.WithBatch(fileIdx + 1, fun () -> genMeths |> Array.iter (fun gen -> gen ()))
+
+        if cenv.options.parallelIlxGenEnabled then
+            allFileGens |> ArrayParallel.iteri runFileBatch
+        else
+            allFileGens |> Array.iteri runFileBatch
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
@@ -12645,7 +12722,12 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let eenv =
         { eenv with
             cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
-            delayCodeGen = cenv.options.parallelIlxGenEnabled
+            // Always defer method body generation; this normalizes the timing of
+            // mgbuf.AddMethodDef calls between sequential and parallel codegen so
+            // that emitted IL is identical regardless of --parallelcompilation.
+            // The parallelism switch only controls whether the deferred bodies are
+            // forced sequentially or in parallel further down (see CodegenAssembly).
+            delayCodeGen = true
         }
 
     // Generate the PrivateImplementationDetails type

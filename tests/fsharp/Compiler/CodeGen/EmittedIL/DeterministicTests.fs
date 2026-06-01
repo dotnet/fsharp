@@ -335,70 +335,95 @@ let inline myFunc x y = x - y"""
             Assert.NotEqual(mvid1,mvid2)
 
     // https://github.com/dotnet/fsharp/issues/19732
-    // Multi-file optimized compilation exercises DetupleArgs and TLR (tuple-arg
-    // functions + nested lambdas). These passes iterate Val sets whose order
-    // depends on Val.Stamp, which is racy under parallel optimization.
-    // The fix sorts by source position (valSourceOrderKey) before iterating.
-    // Note: this in-process test is a regression guard; the full race requires
-    // large-scale parallel compilation tested by eng/test-determinism.ps1 in Release.
+    // Differential test: compile the same multi-file project once fully sequentially
+    // and once fully parallel, with --deterministic. If the MVIDs differ, the
+    // compiler is non-deterministic with respect to its own internal parallelism.
+    // This is a hard, repeatable signal — no need to retry across runs.
     [<Fact>]
-    let ``Optimized multi-file assembly should be deterministic`` () =
-        let outputDir = DirectoryInfo(Path.Combine(Path.GetTempPath(), "fsharp-determinism-test"))
+    let ``Parallel and sequential compilation must produce identical assemblies`` () =
+        let outputDir = DirectoryInfo(Path.Combine(Path.GetTempPath(), "fsharp-determinism-seqpar"))
         if outputDir.Exists then outputDir.Delete(true)
         outputDir.Create()
 
         let makeFile i =
-            FsSourceWithFileName
-                $"File%d{i}.fs"
-                $"""
-module File%d{i}
+            let src =
+                (sprintf
+                    """
+module File%d
 
-let processTuple%d{i} (a: int, b: string) =
+let processTuple%d (a: int, b: string) =
     let inner x = x + a
-    (inner 1, b.Length)
+    let nested () = inner 42
+    (nested (), b.Length)
 
-let callSite%d{i} () =
-    let r1 = processTuple%d{i} (42, "hello")
-    let r2 = processTuple%d{i} (99, "world")
-    let nested () =
-        let deep () = fst r1 + fst r2
-        deep ()
-    nested ()
+let anon%d () =
+    {| Name = "f%d"; Index = %d; Children = [| 1; 2; 3 |] |}
+
+let anon%db () =
+    {| Tag = "T%d"; Value = %d * 7; Extras = "x" |}
+
+let useAnon%d () =
+    let r = anon%d ()
+    let r2 = anon%db ()
+    let composed (k: int) =
+        let h x = x + r.Index + r2.Value + k
+        h 100
+    composed 0 + r.Name.Length
+
+[<Struct>]
+type Rec%d = { X: int; Y: string }
+
+let mkRec%d () = { X = %d; Y = "rec%d" }
 """
+                    i i i i i i i i i i i i i i i)
 
-        let additionalFiles = [ for i in 2..8 -> makeFile i ]
+            FsSourceWithFileName $"File%d{i}.fs" src
 
-        let getMvid () =
+        let additionalFiles = [ for i in 2..12 -> makeFile i ]
+
+        let compileWith parallelism =
             FSharp
                 """
 module File1
 
 let processTuple1 (a: int, b: string) =
     let inner x = x + a
-    (inner 1, b.Length)
+    let nested () = inner 42
+    (nested (), b.Length)
 
-let callSite1 () =
-    let r1 = processTuple1 (42, "hello")
-    let r2 = processTuple1 (99, "world")
-    let nested () =
-        let deep () = fst r1 + fst r2
-        deep ()
-    nested ()
+let anon1 () =
+    {| Name = "f1"; Index = 1; Children = [| 1; 2; 3 |] |}
+
+let anon1b () =
+    {| Tag = "T1"; Value = 7; Extras = "x" |}
+
+let useAnon1 () =
+    let r = anon1 ()
+    let r2 = anon1b ()
+    let composed (k: int) =
+        let h x = x + r.Index + r2.Value + k
+        h 100
+    composed 0 + r.Name.Length
+
+[<Struct>]
+type Rec1 = { X: int; Y: string }
+
+let mkRec1 () = { X = 1; Y = "rec1" }
 """
             |> withAdditionalSourceFiles additionalFiles
             |> asLibrary
             |> withOptimize
             |> withName "DetTest"
             |> withOutputDirectory (Some outputDir)
-            |> withOptions [ "--deterministic" ]
+            |> withOptions ("--deterministic" :: "--nowarn:75" :: parallelism)
             |> compileGuid
 
-        let mvids = [| for _ in 1..10 -> getMvid () |]
-
-        for i in 1 .. mvids.Length - 1 do
-            Assert.Equal(mvids.[0], mvids.[i])
+        let seqMvid = compileWith [ "--parallelcompilation-"; "--test:ParallelOff" ]
+        let parMvid = compileWith [ "--parallelcompilation+" ]
 
         outputDir.Delete(true)
+
+        Assert.Equal(seqMvid, parMvid)
 
     [<Fact>]
     let ``Reference assemblies MVID must change when literal constant value changes`` () =
