@@ -169,7 +169,7 @@ let [<Literal>] x = System.Int32.MaxValue + 1
         |> withResult {
             Error = Error 3177
             Range = { StartLine = 4
-                      StartColumn = 34
+                      StartColumn = 21
                       EndLine = 4
                       EndColumn = 46 }
             Message = "This literal expression or attribute argument results in an arithmetic overflow."

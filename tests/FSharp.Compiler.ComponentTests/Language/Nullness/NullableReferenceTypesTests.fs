@@ -124,9 +124,9 @@ let parsedDate3 = DateTime.Parse(null)
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-                [Error 3261, Line 3, Col 18, Line 3, Col 52, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-                 Error 3261, Line 4, Col 33, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-                 Error 3261, Line 5, Col 19, Line 5, Col 39, "Nullness warning: The type 'string' does not support 'null'."]
+                [Error 3261, Line 3, Col 27, Line 3, Col 32, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 4, Col 42, Line 4, Col 47, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 5, Col 28, Line 5, Col 33, "Nullness warning: The type 'string' does not support 'null'."]
 
 [<Fact>]
 let ``Downcasts and typetests with nullables``() = 
@@ -295,7 +295,7 @@ let getLength (x: string | null) = x.Length
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 3, Col 38, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
 
 [<Fact>]
 let ``Does report warning on obj to static member`` () =
@@ -318,13 +318,13 @@ Test.XString("x":(string|null))
     |> shouldFail
     |> withDiagnostics 
               [ Error 3261, Line 7, Col 8, Line 7, Col 9, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 7, Col 1, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 7, Col 6, Line 7, Col 7, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 8, Col 17, Line 8, Col 18, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 8, Col 10, Line 8, Col 19, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 8, Col 15, Line 8, Col 16, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 9, Col 8, Line 9, Col 23, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 9, Col 1, Line 9, Col 24, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 9, Col 6, Line 9, Col 7, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 11, Col 6, Line 11, Col 7, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 11, Col 1, Line 11, Col 8, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 11, Col 3, Line 11, Col 5, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 12, Col 14, Line 12, Col 18, "Nullness warning: The type 'string' does not support 'null'."
                 Error 3261, Line 13, Col 14, Line 13, Col 31, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
 
@@ -2061,8 +2061,8 @@ let processMyStr (x:mystring<mykg>) =
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 12, Col 27, Line 12, Col 39, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-        Error 3261, Line 12, Col 27, Line 12, Col 39, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+        Error 3261, Line 12, Col 29, Line 12, Col 37, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+        Error 3261, Line 12, Col 29, Line 12, Col 37, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
     ]
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
@@ -2218,8 +2218,8 @@ let processObj (x:obj) =
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 6, Col 27, Line 6, Col 39, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-        Error 3261, Line 6, Col 27, Line 6, Col 39, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+        Error 3261, Line 6, Col 29, Line 6, Col 37, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+        Error 3261, Line 6, Col 29, Line 6, Col 37, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
     ]
 
 [<Fact>]
@@ -2372,7 +2372,7 @@ let test () = consumeNonNull (MyClass.Create())
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 9, Col 31, Line 9, Col 47, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+        Error 3261, Line 9, Col 39, Line 9, Col 45, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
     ]
 
 [<Fact>]

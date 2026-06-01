@@ -878,7 +878,7 @@ val internal ResolvePartialLongIdentToClassOrRecdFields:
 val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
 /// Resolve a long identifier occurring in an expression position.
-/// Returns the terminal identifier range for diagnostics and expression ranges (#14284).
+/// Returns the terminal identifier range (#14284).
 val internal ResolveLongIdentAsExprAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
@@ -891,7 +891,7 @@ val internal ResolveLongIdentAsExprAndComputeRange:
         ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
-/// Returns the terminal identifier range for diagnostics and expression ranges (#14284).
+/// Returns the terminal identifier range (#14284).
 val internal ResolveExprDotLongIdentAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->

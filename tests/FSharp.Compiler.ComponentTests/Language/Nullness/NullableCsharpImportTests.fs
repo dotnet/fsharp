@@ -106,10 +106,10 @@ let y:System.Collections.Generic.LinkedListNode<string> = ll.First
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics 
-         [ Error 3261, Line 4, Col 59, Line 4, Col 66, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have compatible nullability."
-           Error 3261, Line 4, Col 59, Line 4, Col 66, "Nullness warning: A non-nullable 'System.Collections.Generic.LinkedListNode<string>' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
-           Error 3261, Line 5, Col 59, Line 5, Col 67, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have compatible nullability."
-           Error 3261, Line 5, Col 59, Line 5, Col 67, "Nullness warning: A non-nullable 'System.Collections.Generic.LinkedListNode<string>' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression." ]
+         [ Error 3261, Line 4, Col 62, Line 4, Col 66, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have compatible nullability."
+           Error 3261, Line 4, Col 62, Line 4, Col 66, "Nullness warning: A non-nullable 'System.Collections.Generic.LinkedListNode<string>' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+           Error 3261, Line 5, Col 62, Line 5, Col 67, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have compatible nullability."
+           Error 3261, Line 5, Col 62, Line 5, Col 67, "Nullness warning: A non-nullable 'System.Collections.Generic.LinkedListNode<string>' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression." ]
 
 [<FactForNETCOREAPP>]
 let ``Nullable directory info show warn on prop access`` () = 
@@ -123,7 +123,7 @@ let s : string = d.Name // should warn here!!
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 6, Col 18, Line 6, Col 24, "Nullness warning: The types 'DirectoryInfo' and 'DirectoryInfo | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 6, Col 20, Line 6, Col 24, "Nullness warning: The types 'DirectoryInfo' and 'DirectoryInfo | null' do not have compatible nullability."]
 
 [<Fact>]
 let ``Consumption of netstandard2 BCL api which is not annotated`` () = 
