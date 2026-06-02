@@ -1996,45 +1996,14 @@ let MergePropertyDefs m ilPropertyDefs =
 
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
-    // Methods/fields/events are added from multiple parallel codegen threads (per-file
-    // batches) for the same TypeDef (e.g. StartupCode$, AnonymousType$, derived
-    // augmentations). Tag each addition with (batchIndex, intraIndex) and emit in
-    // that order at Close.
-    let tagInitial xs =
-        xs |> List.mapi (fun i x -> struct (0, i, x))
-
-    let gmethods =
-        ResizeArray<struct (int * int * ILMethodDef)>(tagInitial (tdef.Methods.AsList()))
-
-    let gfields =
-        ResizeArray<struct (int * int * ILFieldDef)>(tagInitial (tdef.Fields.AsList()))
+    let gmethods = ResizeArray<ILMethodDef>(tdef.Methods.AsList())
+    let gfields = ResizeArray<ILFieldDef>(tdef.Fields.AsList())
 
     let gproperties: Dictionary<PropKey, int * ILPropertyDef> =
         Dictionary<_, _>(3, HashIdentity.Structural)
 
-    let gevents =
-        ResizeArray<struct (int * int * ILEventDef)>(tagInitial (tdef.Events.AsList()))
-
+    let gevents = ResizeArray<ILEventDef>(tdef.Events.AsList())
     let gnested = TypeDefsBuilder()
-
-    let mutable seqCounter =
-        max 0 (max gmethods.Count (max gfields.Count gevents.Count))
-
-    let nextOrderKey () =
-        match ParallelCodeGenContext.CurrentBatch with
-        | Some ctx -> struct ((ctx: BatchAddContext).BatchIndex, ctx.NextIntraBatchIndex())
-        | None ->
-            let i = Interlocked.Increment(&seqCounter)
-            struct (0, i)
-
-    let sortByKey (xs: ResizeArray<struct (int * int * 'T)>) =
-        xs
-        |> Seq.toArray
-        |> Array.sortWith (fun struct (b1, i1, _) struct (b2, i2, _) ->
-            let c = compare b1 b2
-            if c <> 0 then c else compare i1 i2)
-        |> Array.map (fun struct (_, _, x) -> x)
-        |> Array.toList
 
     member _.Close(g: TcGlobals) =
 
@@ -2054,21 +2023,17 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                 tdef.CustomAttrs
 
         tdef.With(
-            methods = mkILMethods (sortByKey gmethods),
-            fields = mkILFields (sortByKey gfields),
+            methods = mkILMethods (ResizeArray.toList gmethods),
+            fields = mkILFields (ResizeArray.toList gfields),
             properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
-            events = mkILEvents (sortByKey gevents),
+            events = mkILEvents (ResizeArray.toList gevents),
             nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close(g)),
             customAttrs = storeILCustomAttrs attrs
         )
 
-    member _.AddEventDef edef =
-        let struct (b, i) = nextOrderKey ()
-        lock gevents (fun () -> gevents.Add(struct (b, i, edef)))
+    member _.AddEventDef edef = gevents.Add edef
 
-    member _.AddFieldDef ilFieldDef =
-        let struct (b, i) = nextOrderKey ()
-        lock gfields (fun () -> gfields.Add(struct (b, i, ilFieldDef)))
+    member _.AddFieldDef ilFieldDef = gfields.Add ilFieldDef
 
     member _.AddMethodDef ilMethodDef =
         let discard =
@@ -2077,13 +2042,11 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            let struct (b, i) = nextOrderKey ()
-            lock gmethods (fun () -> gmethods.Add(struct (b, i, ilMethodDef)))
+            gmethods.Add ilMethodDef
 
     member _.NestedTypeDefs = gnested
 
-    member _.GetCurrentFields() =
-        gfields |> Seq.map (fun struct (_, _, f) -> f) |> Seq.readonly
+    member _.GetCurrentFields() = gfields |> Seq.readonly
 
     /// Merge Get and Set property nodes, which we generate independently for F# code
     /// when we come across their corresponding methods.
@@ -2096,86 +2059,44 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         if not discard then
             AddPropertyDefToHash m gproperties pdef
 
-    // Append/Prepend are only invoked from the main thread after the parallel
-    // codegen join (see CodegenAssembly), so they do not need to lock gmethods.
     member _.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        match gmethods |> Seq.tryFindIndex (fun struct (_, _, m) -> cond m) with
-        | Some idx ->
-            let struct (b, i, m) = gmethods.[idx]
-            gmethods.[idx] <- struct (b, i, appendInstrsToMethod instrs m)
+        match ResizeArray.tryFindIndex cond gmethods with
+        | Some idx -> gmethods[idx] <- appendInstrsToMethod instrs gmethods[idx]
         | None ->
             let body =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-            let struct (b, i) = nextOrderKey ()
-            gmethods.Add(struct (b, i, mkILClassCtor body))
+            gmethods.Add(mkILClassCtor body)
 
     member this.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        match gmethods |> Seq.tryFindIndex (fun struct (_, _, m) -> cond m) with
-        | Some idx ->
-            let struct (b, i, m) = gmethods.[idx]
-            gmethods.[idx] <- struct (b, i, prependInstrsToMethod instrs m)
+        match ResizeArray.tryFindIndex cond gmethods with
+        | Some idx -> gmethods[idx] <- prependInstrsToMethod instrs gmethods[idx]
         | None ->
             let body =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-            let struct (b, i) = nextOrderKey ()
-            gmethods.Add(struct (b, i, mkILClassCtor body))
+            gmethods.Add(mkILClassCtor body)
 
         this
 
     member _.ILTypeDef = tdef
 
-and [<AllowNullLiteral>] BatchAddContext(batchIndex: int) =
-    let mutable intraCounter = 0
-
-    member _.BatchIndex = batchIndex
-
-    member _.NextIntraBatchIndex() = Interlocked.Increment(&intraCounter)
-
-and ParallelCodeGenContext private () =
-    static let current = new ThreadLocal<BatchAddContext>()
-
-    static member CurrentBatch =
-        match current.Value with
-        | null -> None
-        | ctx -> Some ctx
-
-    static member WithBatch(batchIndex: int, action: unit -> unit) =
-        let prev = current.Value
-        let ctx = BatchAddContext(batchIndex)
-        current.Value <- ctx
-
-        try
-            action ()
-        finally
-            current.Value <- prev
-
 and TypeDefsBuilder() =
 
     let tdefs =
-        ConcurrentDictionary<string, list<int * int * (TypeDefBuilder * bool)>>(HashIdentity.Structural)
+        ConcurrentDictionary<string, list<int * (TypeDefBuilder * bool)>>(HashIdentity.Structural)
 
-    // Sequential phase counters (used outside any parallel batch context).
-    let mutable seqCountUp = -1
-    let mutable seqCountDown = Int32.MaxValue
+    let mutable countDown = Int32.MaxValue
+    let mutable countUp = -1
 
     member b.Close(g: TcGlobals) =
-        // Sort by (batchIndex, intraBatchIndex) to make emit order independent
-        // of ConcurrentDictionary bucket iteration (racy under per-process
-        // randomized string GetHashCode) and of thread-scheduling.
-        let allEntries =
-            [
-                for KeyValue(_, lst) in tdefs do
-                    yield! lst
-            ]
-            |> List.sortWith (fun (b1, i1, _) (b2, i2, _) ->
-                let c = compare b1 b2
-                if c <> 0 then c else compare i1 i2)
+        //The order we emit type definitions is not deterministic since it is using the reverse of a range from a hash table. We should use an approximation of source order.
+        // Ideally it shouldn't matter which order we use.
+        // However, for some tests FSI generated code appears sensitive to the order, especially for nested types.
 
         [
-            for _, _, (builder, eliminateIfEmpty) in allEntries do
-                let tdef = builder.Close(g)
+            for _, (b, eliminateIfEmpty) in tdefs.Values |> Seq.collect id |> Seq.sortBy fst do
+                let tdef = b.Close(g)
                 // Skip the <PrivateImplementationDetails$> type if it is empty
                 if
                     not eliminateIfEmpty
@@ -2190,7 +2111,7 @@ and TypeDefsBuilder() =
 
     member b.FindTypeDefBuilder nm =
         try
-            tdefs[nm] |> List.head |> (fun (_, _, x) -> fst x)
+            tdefs[nm] |> List.head |> snd |> fst
         with :? KeyNotFoundException ->
             failwith ("FindTypeDefBuilder: " + nm + " not found")
 
@@ -2201,26 +2122,15 @@ and TypeDefsBuilder() =
         b.FindNestedTypeDefsBuilder(tref.Enclosing).FindTypeDefBuilder(tref.Name)
 
     member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
-        let batchIdx, intraIdx =
-            match ParallelCodeGenContext.CurrentBatch with
-            | Some ctx ->
-                // Inside a parallel file batch: file-scoped deterministic counter.
-                let i = ctx.NextIntraBatchIndex()
-                ctx.BatchIndex, if addAtEnd then Int32.MaxValue - i else i
-            | None ->
-                // Sequential phase: batchIndex 0 keeps it before any parallel batches.
-                let i =
-                    if addAtEnd then
-                        Interlocked.Decrement(&seqCountDown)
-                    else
-                        Interlocked.Increment(&seqCountUp)
+        let idx =
+            if addAtEnd then
+                Interlocked.Decrement(&countDown)
+            else
+                Interlocked.Increment(&countUp)
 
-                0, i
+        let newVal = idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
 
-        let newVal =
-            batchIdx, intraIdx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
-
-        tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun _ oldList -> newVal :: oldList))
+        tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun key oldList -> newVal :: oldList))
         |> ignore
 
 type AnonTypeGenerationTable() =
@@ -12549,30 +12459,14 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
-        let allFileGens = eenv.delayedFileGenReverse |> Array.ofList |> Array.rev
-
-        let runFileBatch fileIdx genMeths =
-            // Use 1-based batch index so it sorts after sequential (batch 0) additions.
-            // Also set the per-file code-generation naming scope so compiler-generated names produced
-            // during this file's code generation are bucketed deterministically by file (see
-            // CodegenNamingScope), independent of whether code generation runs in parallel.
-            CodegenNamingScope.With(
-                fileIdx,
-                fun () -> ParallelCodeGenContext.WithBatch(fileIdx + 1, fun () -> genMeths |> Array.iter (fun gen -> gen ()))
-            )
-
-        if cenv.options.parallelIlxGenEnabled then
-            allFileGens |> ArrayParallel.iteri runFileBatch
-        else
-            allFileGens |> Array.iteri runFileBatch
+        eenv.delayedFileGenReverse
+        |> Array.ofList
+        |> Array.rev
+        |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen ()))
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
         let extraBindings = mgbuf.GrabExtraBindingsToGenerate()
-        // Stable order: ConcurrentStack.ToArray returns LIFO and PushRange calls
-        // interleave across parallel file gens, both of which are non-deterministic.
-        let extraBindings =
-            extraBindings |> Array.sortBy (fun (TBind(v, _, _)) -> valSourceOrderKey v)
         //printfn "#extraBindings = %d" extraBindings.Length
         if extraBindings.Length > 0 then
             let mexpr = TMDefs [ for b in extraBindings -> TMDefLet(b, range0) ]
@@ -12695,10 +12589,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let eenv =
         { eenv with
             cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
-            // Always defer body generation so the order of mgbuf.AddMethodDef calls
-            // is identical under --parallelcompilation+/-. CodegenAssembly forces
-            // the deferred batches sequentially or in parallel based on that flag.
-            delayCodeGen = true
+            delayCodeGen = cenv.options.parallelIlxGenEnabled
         }
 
     // Generate the PrivateImplementationDetails type

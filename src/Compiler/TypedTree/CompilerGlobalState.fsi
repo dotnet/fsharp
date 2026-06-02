@@ -37,19 +37,6 @@ and [<Sealed>] PerFileNamingScope =
     /// source-location marker baked into the generated name; the uniqueness bucket is this scope's file.
     member Fresh: name: string * m: range -> string
 
-/// Tracks, per thread, the index of the file currently being code-generated. IlxGen sets this around each
-/// file's code generation so that compiler-generated names produced during code generation are bucketed by
-/// the file emitting them rather than by their (possibly inlined) source location. See
-/// https://github.com/dotnet/fsharp/issues/19732.
-[<Sealed; AbstractClass>]
-type internal CodegenNamingScope =
-
-    /// The index of the file currently being code-generated on this thread, if any.
-    static member Current: int voption
-
-    /// Run 'action' with the current code-generation file scope set to 'fileScopeIndex'.
-    static member With: fileScopeIndex: int * action: (unit -> unit) -> unit
-
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
