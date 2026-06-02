@@ -5,6 +5,7 @@ module internal FSharp.Compiler.Detuple
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -496,7 +497,7 @@ type Transform =
 // transform - mkTransform - decided, create necessary stuff
 //-------------------------------------------------------------------------
 
-let mkTransform g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType list * Val list) list) =
+let mkTransform (scope: PerFileNamingScope) g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType list * Val list) list) =
     // Create formal choices for x1...xp under callPattern
     let transformedFormals =
         (callPattern, tyfringes)
@@ -547,12 +548,12 @@ let mkTransform g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType li
     let fCty = mkLambdaTy g tps argTys retTy
 
     let transformedVal =
-        // Ensure that we have an g.CompilerGlobalState
-        assert (g.CompilerGlobalState |> Option.isSome)
-
+        // Names are bucketed by the per-file optimization scope (not by f.Range, which may point at
+        // inlined source from another file) to keep compiler-generated names deterministic under
+        // parallel optimization. f.Range is still used as the Val's source location below.
         mkLocalVal
             f.Range
-            (g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(f.LogicalName, f.Range))
+            (scope.Fresh(f.LogicalName, f.Range))
             fCty
             valReprInfo
 
@@ -638,7 +639,7 @@ let decideFormalSuggestedCP g z tys vss =
 // transform - decideTransform
 //-------------------------------------------------------------------------
 
-let decideTransform g z v callPatterns (m, tps, vss: Val list list, retTy) =
+let decideTransform (scope: PerFileNamingScope) g z v callPatterns (m, tps, vss: Val list list, retTy) =
     let tys = List.map (typeOfLambdaArg m) vss
 
     // NOTE: 'a in arg types may have been instanced at different tuples...
@@ -664,7 +665,7 @@ let decideTransform g z v callPatterns (m, tps, vss: Val list list, retTy) =
     if isTrivialCP callPattern then
         None // no transform
     else
-        Some(v, mkTransform g v m tps tys retTy (callPattern, tyfringes))
+        Some(v, mkTransform scope g v m tps tys retTy (callPattern, tyfringes))
 
 
 //-------------------------------------------------------------------------
@@ -686,7 +687,7 @@ let eligibleVal g m (v: Val) =
     && not //  .IsCompiledAsTopLevel &&
         v.IsCompiledAsTopLevel
 
-let determineTransforms g (z: Results) =
+let determineTransforms (scope: PerFileNamingScope) g (z: Results) =
     let selectTransform (f: Val) sites =
         if not (eligibleVal g f.Range f) then
             None
@@ -702,7 +703,7 @@ let determineTransforms g (z: Results) =
                 | arg1 :: _ -> // consider f
                     let m = arg1.Range // mark of first arg, mostly for error reporting
                     let callPatterns = sitesCPs sites // callPatterns from sites
-                    decideTransform g z f callPatterns (m, tps, vss, retTy) // make transform (if required)
+                    decideTransform scope g z f callPatterns (m, tps, vss, retTy) // make transform (if required)
 
     // See https://github.com/dotnet/fsharp/issues/19732 for why we sort here.
     let vtransforms =
@@ -952,12 +953,12 @@ let passImplFile penv assembly =
 // entry point
 //-------------------------------------------------------------------------
 
-let DetupleImplFile ccu g expr =
+let DetupleImplFile (scope: PerFileNamingScope) ccu g expr =
     // Collect expr info - wanting usage contexts and bindings
     let z = GetUsageInfoOfImplFile g expr
 
     // For each Val, decide Some "transform", or None if not changing
-    let vtrans = determineTransforms g z
+    let vtrans = determineTransforms scope g z
 
     // Pass over term, rewriting bindings and fixing up call sites, under penv
     let penv =
