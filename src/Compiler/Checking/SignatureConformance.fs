@@ -16,6 +16,7 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -40,6 +41,20 @@ exception FieldNotContained of kind:TypeMismatchSource * DisplayEnv * InfoReader
 exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
+
+/// The set of well-known Val-level attributes whose presence on an implementation
+/// must be matched in the signature. These attributes change the contract observed
+/// by consumers of a value/member (inlining behaviour, dynamic dispatch, codegen),
+/// and tooling does not consult the implementation when a signature file is present
+/// (so attributes only on the impl are silently lost). Adding a new attribute here
+/// is the ONE PLACE required to enforce its presence in the signature.
+let private signatureEnforcedAttributes (g: TcGlobals) : (string * (Val -> bool)) list =
+    [
+      "NoDynamicInvocation",
+        (fun (v: Val) ->
+            ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_True v
+            || ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_False v)
+    ]
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
@@ -368,6 +383,13 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let mk_err kind denv f = ValueNotContained(kind,denv, infoReader, implModRef, implVal, sigVal, f)
             let err denv f = errorR(mk_err RegularMismatch denv f); false
             let m = implVal.Range
+
+            // Enforce that compiler-semantic attributes present on the implementation
+            // are also present on the signature. See `signatureEnforcedAttributes` for
+            // the list and rationale.
+            for (attrName, hasAttr) in signatureEnforcedAttributes g do
+                if hasAttr implVal && not (hasAttr sigVal) then
+                    errorR(Error (FSComp.SR.implAttributeMissingFromSignature(attrName, implVal.DisplayName), m))
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
             elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
