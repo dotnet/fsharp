@@ -3032,7 +3032,9 @@ and SolveTypeIsReferenceType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsReferenceType m)
     | _ ->
-        if isRefTy g ty then CompleteD
+        // Strip measure equations so we test the underlying erased representation — see dotnet/fsharp#19657.
+        let underlyingTy = stripTyEqnsAndMeasureEqns g ty
+        if isRefTy g underlyingTy then CompleteD
         else ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresReferenceSemantics(NicePrint.minimalStringOfType denv ty), m, m))
 
 and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 trace origTy =
