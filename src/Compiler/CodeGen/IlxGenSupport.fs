@@ -444,8 +444,9 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
                 yield! GetNullnessFromTType g t
         ]
     
-    // TODO: Anonymous type-tagged union
-    | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged unions not implemented yet"
+    | TType_anon_tt_union (unionInfo, _) ->
+        GetNullnessFromTType g unionInfo.CommonAncestorTy
+    
     | TType_forall _
     | TType_ucase _
     | TType_measure _ -> []
