@@ -1715,6 +1715,22 @@ let TryEliminateBinding cenv _env bind e2 _m =
               | _ -> None
 
         let (DebugPoints(e2, recreate0)) = e2
+
+        // 'let x = e1 in e2' where e1 has effects and x is not used in e2: lower to 'e1; e2'.
+        // The semantics is identical, but the resulting Expr.Sequential cannot be silently
+        // dropped by downstream passes that treat certain let-bindings as definitions to be
+        // substituted at use sites (e.g. state machine lowering of task { (receiver).UnitProp }
+        // would otherwise drop the side-effectful receiver expression). See issue #13099.
+        // Guarded by ExprHasEffect to avoid an unnecessary free-variable scan on the hot path
+        // when e1 is pure (in which case other rules can safely eliminate the binding).
+        let xUnusedInBody () =
+            let fvs = accFreeInExpr (CollectLocalsWithStackGuard()) e2 emptyFreeVars
+            not (Zset.contains vspec1 fvs.FreeLocals)
+
+        if ExprHasEffect g e1 && xUnusedInBody () then
+            Some (mkSequential e1.Range e1 e2 |> recreate0)
+        else
+
         match e2 with 
 
          // Immediate consumption of value as itself 'let x = e in x'
