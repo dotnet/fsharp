@@ -4089,7 +4089,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             match lid with
             | id :: rest ->
                 lookupField recdTy id
-                |?> List.map (fun x -> id, x, rest)
+                |?> List.map (fun x -> ResolutionInfo.Empty, None, id, x, rest)
             | _ -> NoResultsOrUsefulErrors
 
         let tyconSearch ad () =
@@ -4102,10 +4102,10 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 if isNil tcrefs then
                     NoResultsOrUsefulErrors
                 else
-                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo fieldId.idRange tcrefs None
+                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo tyconId.idRange tcrefs None
                     |?> List.choose (fun x ->
                         match x with
-                        | _, (Item.RecdField _ as item), rest -> Some (fieldId, item, rest)
+                        | resInfo, (Item.RecdField _ as item), rest -> Some (resInfo, Some tyconId, fieldId, item, rest)
                         | _ -> None)
             | _ -> NoResultsOrUsefulErrors
 
@@ -4114,11 +4114,11 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             | [] -> NoResultsOrUsefulErrors
             | modOrNsId :: rest ->
                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false ShouldNotifySink.Yes (ResolveFieldInModuleOrNamespace ncenv nenv ad)
-                |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
+                |?> List.map (fun (resInfo, FieldResolution(rfinfo, _), restAfterField) ->
                     let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
-                    fieldId, Item.RecdField rfinfo, restAfterField)
+                    resInfo, None, fieldId, Item.RecdField rfinfo, restAfterField)
 
-        let fieldId, item, rest =
+        let resInfo, tyconIdOpt, fieldId, item, rest =
             let search =
                 if isAnonRecdTy then
                     fieldSearch ()
@@ -4129,11 +4129,21 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             |> AtMostOneResult id.idRange
             |> ForceRaise
 
+        match tyconIdOpt with
+        | Some _ ->
+            ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
+        | None -> ()
+
         let idsBeforeField =
             if isAnonRecdTy then
                 []
             else
-                lid |> List.takeWhile (fun id -> not (equals id.idRange fieldId.idRange))
+                lid
+                |> List.takeWhile (fun id -> not (equals id.idRange fieldId.idRange))
+                // Mark the qualifier idents synthetic so a subsequent ResolveField call
+                // (e.g. via BuildFieldMap) does not double-emit the entity-path sink event
+                // we already emitted above.
+                |> List.map (fun id -> ident (id.idText, id.idRange.MakeSynthetic()))
 
         match rest with
         | [] -> idsBeforeField, [ (fieldId, item) ]
