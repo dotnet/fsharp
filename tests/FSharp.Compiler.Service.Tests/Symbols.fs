@@ -916,6 +916,76 @@ let _ = T().Prop
                 Assert.Equal(15, loc.StartColumn)
             | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
+    [<Fact>]
+    let ``IsAccessorProperty true for getter`` () =
+        let symbols = Checker.getSymbolUses """
+type MyClass() =
+    member _.Prop with get() = 42
+"""
+        let getter =
+            symbols
+            |> List.find (fun s -> s.Symbol.DisplayName = "get_Prop")
+        let mfv = getter.Symbol :?> FSharpMemberOrFunctionOrValue
+        Assert.True(mfv.IsAccessorProperty)
+
+    [<Fact>]
+    let ``IsAccessorProperty true for setter`` () =
+        let symbols = Checker.getSymbolUses """
+type MyClass() =
+    member val Prop = 0 with get, set
+"""
+        let setter =
+            symbols
+            |> List.tryFind (fun s -> s.Symbol.DisplayName = "set_Prop")
+        match setter with
+        | Some s ->
+            let mfv = s.Symbol :?> FSharpMemberOrFunctionOrValue
+            Assert.True(mfv.IsAccessorProperty)
+        | None -> Assert.Fail("set_Prop not found")
+
+    [<Fact>]
+    let ``IsAccessorProperty false for regular method`` () =
+        let symbols = Checker.getSymbolUses """
+type MyClass() =
+    member _.DoStuff() = 42
+"""
+        let doStuff =
+            symbols
+            |> List.find (fun s -> s.Symbol.DisplayName = "DoStuff")
+        let mfv = doStuff.Symbol :?> FSharpMemberOrFunctionOrValue
+        Assert.False(mfv.IsAccessorProperty)
+
+    [<Fact>]
+    let ``IsAccessorProperty false for function`` () =
+        let symbols = Checker.getSymbolUses """
+module M
+let myFunc x = x + 1
+"""
+        let func =
+            symbols
+            |> List.find (fun s -> s.Symbol.DisplayName = "myFunc")
+        let mfv = func.Symbol :?> FSharpMemberOrFunctionOrValue
+        Assert.False(mfv.IsAccessorProperty)
+
+    [<Fact>]
+    let ``Fable query pattern: filter accessor properties`` () =
+        let symbols = Checker.getSymbolUses """
+type MyClass() =
+    member _.Prop with get() = 42
+    member _.Method() = 42
+"""
+        let members =
+            symbols
+            |> List.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.IsAccessorProperty -> Some m
+                | _ -> None)
+        Assert.True(members.Length >= 1)
+        Assert.True(
+            members
+            |> List.forall (fun m ->
+                m.DisplayName.StartsWith("get_") || m.DisplayName.StartsWith("set_")))
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
