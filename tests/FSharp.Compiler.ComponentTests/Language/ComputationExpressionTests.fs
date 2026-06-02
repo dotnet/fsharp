@@ -2555,6 +2555,28 @@ let main _ =
         |> shouldSucceed
 
     // https://github.com/dotnet/fsharp/issues/19457 - regression guard:
+    // match! directly in the RHS of a plain let (at tail position) should NOT trigger
+    // the lift (which would cause infinite recursion). It should produce FS0750 instead.
+    [<Fact>]
+    let ``Issue 19457 - match bang at tail of plain let RHS does not cause infinite recursion`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let result =
+            match! Task.FromResult(Some 42) with
+            | Some x -> x
+            | None -> 0
+        return result
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // https://github.com/dotnet/fsharp/issues/19457 - regression guard:
     // let! outside any CE must still raise FS0750.
     [<Fact>]
     let ``Issue 19457 - let bang outside any CE still raises FS0750`` () =

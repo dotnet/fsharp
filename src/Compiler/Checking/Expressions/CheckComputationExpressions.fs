@@ -1009,15 +1009,9 @@ let requireBuilderMethod methodName ceenv m1 m2 =
     if not (hasBuilderMethod ceenv m1 methodName) then
         error (Error(FSComp.SR.tcRequireBuilderMethod methodName, m2))
 
-/// Detect whether an expression syntactically contains computation-expression-only constructs
-/// (such as let!, use!, do!, return, return!, yield, yield!, match!, while!) that can only
-/// be legally type-checked inside a CE translation. Used to decide whether to "lift" these
-/// constructs out of the RHS of a plain 'let' binding inside a CE so that the surrounding
-/// CE translator can process them. We only recurse through positions where the lifted
-/// construct would syntactically remain in CE-evaluation position (Sequential tail,
-/// LetOrUse body); branches that open a new scope (lambdas, match clauses, if branches,
-/// nested CEs) are intentionally not traversed.
-let rec private exprContainsCEOnlyConstruct expr =
+/// Check if an expression is or contains a CE-only construct at any position.
+/// Used for checking e1 of Sequential where the expression stays in place after lifting.
+let rec private containsCEConstructAtAnyPosition expr =
     match expr with
     | LetOrUse(_, true, _) -> true
     | SynExpr.DoBang _
@@ -1025,8 +1019,30 @@ let rec private exprContainsCEOnlyConstruct expr =
     | SynExpr.WhileBang _
     | SynExpr.YieldOrReturnFrom _
     | SynExpr.YieldOrReturn _ -> true
+    | LetOrUse({ Body = body; IsRecursive = false }, false, false) -> containsCEConstructAtAnyPosition body
+    | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> containsCEConstructAtAnyPosition e1 || containsCEConstructAtAnyPosition e2
+    | _ -> false
+
+/// Detect whether an expression syntactically contains computation-expression-only constructs
+/// in positions that liftCEFromBindingRhs can successfully handle. This prevents infinite
+/// recursion: liftCEFromBindingRhs threads through LetOrUse and Sequential(e2), applying
+/// its continuation k at the tail. If the tail IS a CE construct (e.g. match!, do!), wrapping
+/// it with k reproduces the original expression, causing unbounded recursion. Therefore we
+/// only detect CE constructs that are:
+/// 1. LetOrUse with bang (let!/use!) - liftCEFromBindingRhs threads through these
+/// 2. In e1 of Sequential - liftCEFromBindingRhs keeps e1 in place, so CE constructs there are safe
+/// Branches that open a new scope (lambdas, match clauses, if branches, nested CEs) are
+/// intentionally not traversed.
+let rec private exprContainsCEOnlyConstruct expr =
+    match expr with
+    // let!/use! bang bindings: liftCEFromBindingRhs handles SynExpr.LetOrUse by recursing into Body,
+    // so these are always in a liftable position.
+    | LetOrUse(_, true, _) -> true
+    // Sequential: e1 stays in place (any CE construct there is safe since liftCEFromBindingRhs
+    // only recurses into e2). For e2, apply the same tail-position rules recursively.
+    | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> containsCEConstructAtAnyPosition e1 || exprContainsCEOnlyConstruct e2
+    // Plain let: recurse into body (same tail-position rules apply to the body)
     | LetOrUse({ Body = body; IsRecursive = false }, false, false) -> exprContainsCEOnlyConstruct body
-    | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> exprContainsCEOnlyConstruct e1 || exprContainsCEOnlyConstruct e2
     | _ -> false
 
 /// Walk the binding RHS of a plain 'let p = rhs in body' that appears inside a computation expression,
