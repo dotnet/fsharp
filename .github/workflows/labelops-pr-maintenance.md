@@ -36,6 +36,8 @@ tools:
   bash: true
 
 safe-outputs:
+  noop:
+    report-as-issue: false
   max-patch-size: 10240
   add-comment:
     max: 5

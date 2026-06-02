@@ -151,6 +151,7 @@ module TcResolutionsExtensions =
                         | ItemOccurrence.UseInType
                         | ItemOccurrence.UseInAttribute
                         | ItemOccurrence.Use
+                        | ItemOccurrence.InvalidUse
                         | ItemOccurrence.Binding
                         | ItemOccurrence.Pattern
                         | ItemOccurrence.Open -> Some()
@@ -292,7 +293,18 @@ module TcResolutionsExtensions =
                             match minfos with
                             | [] -> add m SemanticClassificationType.Method
                             | _ ->
-                                if
+                                let isSynthesizedDelegateMemberInDecl =
+                                    minfos
+                                    |> List.forall (fun minfo ->
+                                        let name = minfo.LogicalName
+
+                                        (name = "Invoke" || name = "BeginInvoke" || name = "EndInvoke")
+                                        && minfo.ApparentEnclosingTyconRef.IsFSharpDelegateTycon
+                                        && rangeContainsRange minfo.ApparentEnclosingTyconRef.Range m)
+
+                                if isSynthesizedDelegateMemberInDecl then
+                                    ()
+                                elif
                                     minfos
                                     |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember)
                                 then
