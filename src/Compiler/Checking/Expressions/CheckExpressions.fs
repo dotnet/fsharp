@@ -2054,28 +2054,28 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), m)))
     Some(tinst, tcref, fldsmap, List.rev rfldsList)
 
-let ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m mDiag (cenv: cenv) env overallTy item =
+let ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m mItemIdent (cenv: cenv) env overallTy item =
     let g = cenv.g
     let ad = env.eAccessRights
     match item with
     | Item.ExnCase ecref ->
-        CheckEntityAttributes g ecref mDiag |> CommitOperationResult
+        CheckEntityAttributes g ecref mItemIdent |> CommitOperationResult
         UnifyTypes cenv env m overallTy g.exn_ty
-        CheckTyconAccessible cenv.amap mDiag ad ecref |> ignore
+        CheckTyconAccessible cenv.amap mItemIdent ad ecref |> ignore
         let mkf = makerForExnTag ecref
         mkf, recdFieldTysOfExnDefRef ecref, [ for f in (recdFieldsOfExnDefRef ecref) -> f.Id ]
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, mDiag)
+            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, mItemIdent)
             if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
                 errorR(diagnostic)
             else
                 warning(diagnostic)
 
         let ucref = ucinfo.UnionCaseRef
-        CheckUnionCaseAttributes g ucref mDiag |> CommitOperationResult
-        CheckUnionCaseAccessible cenv.amap mDiag ad ucref |> ignore
+        CheckUnionCaseAttributes g ucref mItemIdent |> CommitOperationResult
+        CheckUnionCaseAccessible cenv.amap mItemIdent ad ucref |> ignore
         let resTy = actualResultTyOfUnionCase ucinfo.TypeInst ucref
         let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
         UnifyTypes cenv env m overallTy resTy
@@ -2083,9 +2083,9 @@ let ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m mDiag (cenv: cenv)
         mkf, actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f.Id ]
     | _ -> invalidArg "item" "not a union case or exception reference"
 
-let ApplyUnionCaseOrExnTypes m mDiag (cenv: cenv) env overallTy c =
+let ApplyUnionCaseOrExnTypes m mItemIdent (cenv: cenv) env overallTy c =
   ApplyUnionCaseOrExn ((fun (a, b) mArgs args -> mkUnionCaseExpr(a, b, args, unionRanges m mArgs)),
-                       (fun a mArgs args -> mkExnExpr (a, args, unionRanges m mArgs))) m mDiag cenv env overallTy c
+                       (fun a mArgs args -> mkExnExpr (a, args, unionRanges m mArgs))) m mItemIdent cenv env overallTy c
 
 let UnionCaseOrExnCheck (env: TcEnv) numArgTys numArgs m =
   if numArgs <> numArgTys then error (UnionCaseWrongArguments(env.DisplayEnv, numArgTys, numArgs, m))
@@ -2096,6 +2096,7 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
     let mkf, argTys, _argNames =
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId ExtraDotAfterIdentifier.No with
         | Item.UnionCase _ | Item.ExnCase _ as item ->
+            // mItemIdent = m: pattern context has no separate terminal-ident range
             ApplyUnionCaseOrExn funcs m m cenv env ty1 item
         | _ -> error(Error(FSComp.SR.tcUnknownUnion(), m))
 
