@@ -5,7 +5,6 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 open System.IO
 open FSharp.Test
 open FSharp.Test.Compiler
-open TestFramework
 open Xunit
 
 
@@ -340,48 +339,77 @@ let inline myFunc x y = x - y"""
     // and once fully parallel, with --deterministic. If the MVIDs differ, the
     // compiler is non-deterministic with respect to its own internal parallelism.
     // This is a hard, repeatable signal — no need to retry across runs.
-    //
-    // 12 source files exercise enough independent codegen work (TLR-lifted helpers,
-    // anonymous records, struct records) to interleave on a typical CI worker;
-    // smaller projects do not reliably surface ordering races.
     [<Fact>]
     let ``Parallel and sequential compilation must produce identical assemblies`` () =
-        let outputDir = createTemporaryDirectory()
+        let outputDir = DirectoryInfo(Path.Combine(Path.GetTempPath(), "fsharp-determinism-seqpar"))
+        if outputDir.Exists then outputDir.Delete(true)
+        outputDir.Create()
 
-        let fileSource i =
-            $"""
-module File{i}
+        let makeFile i =
+            let src =
+                (sprintf
+                    """
+module File%d
 
-let processTuple{i} (a: int, b: string) =
+let processTuple%d (a: int, b: string) =
     let inner x = x + a
     let nested () = inner 42
     (nested (), b.Length)
 
-let anon{i} () =
-    {{| Name = "f{i}"; Index = {i}; Children = [| 1; 2; 3 |] |}}
+let anon%d () =
+    {| Name = "f%d"; Index = %d; Children = [| 1; 2; 3 |] |}
 
-let anon{i}b () =
-    {{| Tag = "T{i}"; Value = {i} * 7; Extras = "x" |}}
+let anon%db () =
+    {| Tag = "T%d"; Value = %d * 7; Extras = "x" |}
 
-let useAnon{i} () =
-    let r = anon{i} ()
-    let r2 = anon{i}b ()
+let useAnon%d () =
+    let r = anon%d ()
+    let r2 = anon%db ()
     let composed (k: int) =
         let h x = x + r.Index + r2.Value + k
         h 100
     composed 0 + r.Name.Length
 
 [<Struct>]
-type Rec{i} = {{ X: int; Y: string }}
+type Rec%d = { X: int; Y: string }
 
-let mkRec{i} () = {{ X = {i}; Y = "rec{i}" }}
+let mkRec%d () = { X = %d; Y = "rec%d" }
 """
+                    i i i i i i i i i i i i i i i)
 
-        let additionalFiles =
-            [ for i in 2..12 -> FsSourceWithFileName $"File%d{i}.fs" (fileSource i) ]
+            FsSourceWithFileName $"File%d{i}.fs" src
+
+        let additionalFiles = [ for i in 2..12 -> makeFile i ]
 
         let compileWith parallelism =
-            FSharp(fileSource 1)
+            FSharp
+                """
+module File1
+
+let processTuple1 (a: int, b: string) =
+    let inner x = x + a
+    let nested () = inner 42
+    (nested (), b.Length)
+
+let anon1 () =
+    {| Name = "f1"; Index = 1; Children = [| 1; 2; 3 |] |}
+
+let anon1b () =
+    {| Tag = "T1"; Value = 7; Extras = "x" |}
+
+let useAnon1 () =
+    let r = anon1 ()
+    let r2 = anon1b ()
+    let composed (k: int) =
+        let h x = x + r.Index + r2.Value + k
+        h 100
+    composed 0 + r.Name.Length
+
+[<Struct>]
+type Rec1 = { X: int; Y: string }
+
+let mkRec1 () = { X = 1; Y = "rec1" }
+"""
             |> withAdditionalSourceFiles additionalFiles
             |> asLibrary
             |> withOptimize
@@ -390,13 +418,12 @@ let mkRec{i} () = {{ X = {i}; Y = "rec{i}" }}
             |> withOptions ("--deterministic" :: "--nowarn:75" :: parallelism)
             |> compileGuid
 
-        try
-            // --test:ParallelOff also disables parallel parsing (which --parallelcompilation- does not).
-            let seqMvid = compileWith [ "--parallelcompilation-"; "--test:ParallelOff" ]
-            let parMvid = compileWith [ "--parallelcompilation+" ]
-            Assert.Equal(seqMvid, parMvid)
-        finally
-            try outputDir.Delete(true) with _ -> ()
+        let seqMvid = compileWith [ "--parallelcompilation-"; "--test:ParallelOff" ]
+        let parMvid = compileWith [ "--parallelcompilation+" ]
+
+        outputDir.Delete(true)
+
+        Assert.Equal(seqMvid, parMvid)
 
     [<Fact>]
     let ``Reference assemblies MVID must change when literal constant value changes`` () =
