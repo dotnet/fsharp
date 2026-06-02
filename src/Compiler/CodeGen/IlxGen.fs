@@ -2676,6 +2676,16 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     member cgbuf.EmitDebugPoint(m: range) =
         if mgbuf.cenv.options.generateDebugSymbols then
 
+            // A debug point must be at an empty stack position for the debugger to bind a breakpoint there,
+            // so spill anything still pending (e.g. a call argument) to temporaries and reload it afterwards.
+            let spilled =
+                [
+                    for ty in stack ->
+                        let idx = cgbuf.AllocLocal([], ty, false, true)
+                        cgbuf.EmitInstr(pop 1, Push0, mkStloc (uint16 idx))
+                        idx, ty
+                ]
+
             let attr = GenILSourceMarker g m
             let i = I_seqpoint attr
             hasDebugPoints <- true
@@ -2695,6 +2705,9 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
                 codebuf.Add i
 
             anyDocument <- Some attr.Document
+
+            for idx, ty in List.rev spilled do
+                cgbuf.EmitInstr(pop 0, Push [ ty ], mkLdloc (uint16 idx))
 
     // Emit FeeFee breakpoints for hidden code, see https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/
     member cgbuf.EmitStartOfHiddenCode() =
