@@ -1545,3 +1545,106 @@ let result = 1 -.- 2
         let rangeLength = range.EndColumn - range.StartColumn
 
         Assert.Equal(3, rangeLength)
+
+
+module NestedCopyAndUpdateSink =
+
+    let private symbolUses (source: string) =
+        getSymbolUsesFromSource source |> List.ofSeq
+
+    let private usesOf (name: string) (line: int) (source: string) =
+        symbolUses source
+        |> List.filter (fun s ->
+            s.Symbol.DisplayName = name && s.Range.StartLine = line)
+
+    [<Fact>]
+    let ``Both type qualifiers in nested update are classified`` () =
+        let source = """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20 }
+"""
+        let personUses = usesOf "Person" 5 source
+        Assert.True(personUses.Length >= 2, sprintf "expected >= 2 Person uses on line 5, got %d" personUses.Length)
+
+    [<Fact>]
+    let ``Three type qualifiers in nested update all classified`` () =
+        let source = """
+type Info = { X: int; Y: int; Z: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2; Z = 3 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20; Person.Info.Z = 30 }
+"""
+        let personUses = usesOf "Person" 5 source
+        Assert.True(personUses.Length >= 3, sprintf "expected >= 3 Person uses on line 5, got %d" personUses.Length)
+
+    [<Fact>]
+    let ``Triple nested qualifier all reported`` () =
+        let source = """
+type C = { V: int }
+type B = { C: C }
+type A = { B: B }
+let a = { B = { C = { V = 1 } } }
+let a2 = { a with A.B.C.V = 10 }
+"""
+        let aUses = usesOf "A" 6 source
+        Assert.True(aUses.Length >= 1, sprintf "expected >= 1 A use on line 6, got %d" aUses.Length)
+
+    [<Fact>]
+    let ``Mixed qualified and unqualified in nested update`` () =
+        let source = """
+type Info = { X: int; Y: int }
+type Person = { Name: string; Info: Info }
+let p = { Name = "test"; Info = { X = 1; Y = 2 } }
+let p2 = { p with Name = "new"; Person.Info.X = 10 }
+"""
+        let personUses = usesOf "Person" 5 source
+        Assert.True(personUses.Length >= 1, sprintf "expected >= 1 Person use on line 5, got %d" personUses.Length)
+
+    [<Fact>]
+    let ``Different type qualifiers each reported`` () =
+        let source = """
+type Inner1 = { A: int; B: int }
+type Inner2 = { C: int }
+type Outer = { I1: Inner1; I2: Inner2 }
+let o = { I1 = { A = 1; B = 2 }; I2 = { C = 3 } }
+let o2 = { o with Outer.I1.A = 10; Outer.I1.B = 20; Outer.I2.C = 30 }
+"""
+        let outerUses = usesOf "Outer" 6 source
+        let cols = outerUses |> List.map (fun s -> s.Range.StartColumn) |> List.distinct
+        Assert.True(cols.Length >= 3, sprintf "expected >= 3 distinct Outer uses on line 6, got %d (cols=%A)" cols.Length cols)
+
+    [<Fact>]
+    let ``Single type qualifier in nested update classified`` () =
+        let source = """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10 }
+"""
+        let personUses = usesOf "Person" 5 source
+        Assert.Equal(1, personUses.Length)
+
+    [<Fact>]
+    let ``Regular copy-and-update still works`` () =
+        let source = """
+type Info = { X: int; Y: int }
+let i = { X = 1; Y = 2 }
+let i2 = { i with X = 10; Y = 20 }
+"""
+        let infoUses = symbolUses source |> List.filter (fun s -> s.Symbol.DisplayName = "Info")
+        Assert.True(infoUses.Length >= 1)
+
+    [<Fact>]
+    let ``Qualifier ranges point to correct columns`` () =
+        let source = """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20 }
+"""
+        let personUses = usesOf "Person" 5 source
+        let cols = personUses |> List.map (fun s -> s.Range.StartColumn) |> List.sort
+        Assert.True(cols.Length >= 2, sprintf "expected >= 2 Person uses on line 5, got %d" cols.Length)
+        Assert.True(cols.[0] < cols.[1], "two Person tokens must have distinct start columns")
