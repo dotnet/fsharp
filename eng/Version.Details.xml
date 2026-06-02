@@ -74,6 +74,12 @@
       <Sha>
       </Sha>
     </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Security.Cryptography.Xml" Version="10.0.8">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
+    </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
     <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="11.0.0-beta.26279.5">
