@@ -36,7 +36,7 @@ type DependencyManagerInteractiveTests() =
         | Ok(value) -> value
         | Error ex -> raise ex
 
-    let getErrors ((_value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
+    let _getErrors ((_value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
         errors
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
@@ -64,7 +64,7 @@ type DependencyManagerInteractiveTests() =
     [<InlineData("""#r "#i "unknown:Astring" """, """ """)>]
     member _.``syntax produces error messages in FSharp 4.7``(code:string, message: string) =
         use script = new scriptHost()
-        let errors = script.Eval(code) |> getErrors
+        let errors = script.Eval(code) |> _getErrors
         Assert.Contains(message, errors |> Array.map(fun e -> e.Message))
 *)
     static member SdkDirOverrideTestData =
