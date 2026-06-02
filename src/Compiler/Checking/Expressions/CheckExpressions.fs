@@ -9679,6 +9679,7 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem mItemIdent delayed =
 
         PropagateThenTcDelayed cenv overallTy env tpenv mItem exprFlex exprTy ExprAtomicFlag.Atomic delayed
 
+// Get static F# field or literal
 and TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem mItemIdent delayed =
     let g = cenv.g
     let ad = env.eAccessRights
@@ -9692,7 +9693,7 @@ and TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem mItemIdent delayed
         if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
 
         // Set static F# field
-        CheckRecdFieldMutation mItem env.DisplayEnv rfinfo
+        CheckRecdFieldMutation mItemIdent env.DisplayEnv rfinfo
         UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
         let fieldTy = rfinfo.FieldType
         // Always allow subsumption on assignment to fields
@@ -9837,6 +9838,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
             TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItemIdent nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
 
     | Item.RecdField rfinfo ->
+        // Get or set instance F# field or literal
         RecdFieldInstanceChecks g cenv.amap ad mItemIdent rfinfo
         let tgtTy = rfinfo.DeclaringType
         let boxity = isStructTy g tgtTy
@@ -9872,6 +9874,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
             PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env objExpr') fieldTy ExprAtomicFlag.Atomic delayed
 
     | Item.ILField finfo ->
+        // Get or set instance IL field
         ILFieldInstanceChecks g cenv.amap ad mItemIdent finfo
         let exprTy = finfo.FieldType(cenv.amap, mItem)
 
@@ -9888,6 +9891,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
             PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env expr) exprTy ExprAtomicFlag.Atomic delayed
 
     | Item.Event einfo ->
+        // Instance IL event (fake up event-as-value)
         TcEventItemThen cenv overallTy env tpenv mItem mItemIdent mExprAndItem (Some(objExpr, objExprTy)) einfo delayed
 
     | Item.Trait traitInfo ->
@@ -9946,7 +9950,7 @@ and TcEventItemThen (cenv: cenv) overallTy env tpenv mItem mItemIdent mExprAndIt
 
     // This checks for and drops the 'object' sender
     let argsTy = ArgsTypeOfEventInfo cenv.infoReader mItem ad einfo
-    if not (slotSigHasVoidReturnTy (delInvokeMeth.GetSlotSig(cenv.amap, mItem))) then errorR (nonStandardEventError einfo.EventName mItem)
+    if not (slotSigHasVoidReturnTy (delInvokeMeth.GetSlotSig(cenv.amap, mItem))) then errorR (nonStandardEventError einfo.EventName mItemIdent)
     let delEventTy = mkIEventType g delTy argsTy
 
     let bindObjArgs f =
