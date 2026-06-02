@@ -1811,7 +1811,7 @@ let _x3 = curryN f3 1 2 3
     let private iwsamWarnings = [ "--nowarn:3536" ; "--nowarn:3535" ]
 
     [<TheoryForNETCOREAPP>]
-    [<InlineData("static abstract Name : string", "ITest.Name", "get_Name", 3, 15, 3, 19)>]
+    [<InlineData("static abstract Name : string", "ITest.Name", "get_Name", 3, 9, 3, 19)>]
     [<InlineData("static abstract Parse : string -> int", "ITest.Parse \"42\"", "Parse", 3, 9, 3, 25)>]
     let ``Direct call to static abstract on interface produces error 3866`` (memberDef: string, call: string, memberName: string, l1, c1, l2, c2) =
         Fsx $"type ITest =\n    {memberDef}\nlet x = {call}"

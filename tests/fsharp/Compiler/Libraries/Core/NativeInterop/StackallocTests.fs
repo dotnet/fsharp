@@ -69,7 +69,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.Object> 1
             """
             FSharpDiagnosticSeverity.Error
             1
-            (4, 33, 4, 43)
+            (4, 9, 4, 43)
             "A generic construct requires that the type 'System.Object' is an unmanaged type"
 
     [<Fact>]
@@ -82,7 +82,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.Collections.IEnumerable> 1
             """
             FSharpDiagnosticSeverity.Error
             1
-            (4, 33, 4, 43)
+            (4, 9, 4, 43)
             "A generic construct requires that the type 'System.Collections.IEnumerable' is an unmanaged type"
 
     [<Fact>]
@@ -95,7 +95,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
             """
             FSharpDiagnosticSeverity.Error
             1
-            (4, 33, 4, 43)
+            (4, 9, 4, 43)
             "A generic construct requires that the type 'System.EventHandler' is an unmanaged type"
 
     [<Fact>]
@@ -149,7 +149,7 @@ let _ = NativeInterop.NativePtr.stackalloc<C> 1
             """
             FSharpDiagnosticSeverity.Error
             1
-            (10, 33, 10, 43)
+            (10, 9, 10, 43)
             "A generic construct requires that the type 'C' is an unmanaged type"
 
     [<Fact>]
@@ -164,7 +164,7 @@ let _ = NativeInterop.NativePtr.stackalloc<R> 1
             """
             FSharpDiagnosticSeverity.Error
             1
-            (6, 33, 6, 43)
+            (6, 9, 6, 43)
             "A generic construct requires that the type 'R' is an unmanaged type"
             
     [<Fact>]

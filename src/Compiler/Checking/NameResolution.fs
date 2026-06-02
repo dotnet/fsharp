@@ -4320,7 +4320,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                callSink (item, emptyTyparInst)
                AfterResolution.DoNothing
 
-    success (tinstEnclosing, item, itemIdentRange, rest, afterResolution)
+    success (tinstEnclosing, item, itemRange, itemIdentRange, rest, afterResolution)
 
 [<return: Struct>]
 let (|NonOverridable|_|) namedItem =
@@ -4389,7 +4389,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing
 
-    item, itemIdentRange, rest, afterResolution
+    item, itemRange, itemIdentRange, rest, afterResolution
 
 
 //-------------------------------------------------------------------------

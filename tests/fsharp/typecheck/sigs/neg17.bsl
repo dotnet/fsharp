@@ -1,9 +1,9 @@
 
 neg17.fs(84,17,84,33): typecheck error FS0292: The type definitions for type 'PrivateUnionType' in the signature and implementation are not compatible because the accessibility specified in the signature is more than that specified in the implementation
 
-neg17b.fs(7,19,7,31): typecheck error FS1094: The value 'privateValue' is not accessible from this code location
+neg17b.fs(7,17,7,31): typecheck error FS1094: The value 'privateValue' is not accessible from this code location
 
-neg17b.fs(8,20,8,43): typecheck error FS1092: The type 'PrivateUnionType' is not accessible from this code location
+neg17b.fs(8,18,8,43): typecheck error FS1092: The type 'PrivateUnionType' is not accessible from this code location
 
 neg17b.fs(11,26,11,41): typecheck error FS0039: The type 'Type' does not define a field, constructor, or member named 'PrivateProperty'.
 

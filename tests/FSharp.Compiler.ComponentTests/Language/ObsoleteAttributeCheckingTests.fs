@@ -889,7 +889,7 @@ type ButtonExtensions =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 17, Col 16, Line 17, Col 19, "This construct is deprecated. Use B instead")
+            (Error 101, Line 17, Col 9, Line 17, Col 19, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]

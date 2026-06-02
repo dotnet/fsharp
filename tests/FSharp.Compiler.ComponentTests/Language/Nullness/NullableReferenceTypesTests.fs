@@ -67,7 +67,7 @@ let main _args =
     |> withDiagnostics 
             [ Error 3265, Line 8, Col 13, Line 8, Col 60, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
               Error 3265, Line 11, Col 13, Line 11, Col 50, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
-              Error 3261, Line 15, Col 16, Line 15, Col 17, "Nullness warning: The types 'R' and 'R | null' do not have compatible nullability."]
+              Error 3261, Line 15, Col 14, Line 15, Col 17, "Nullness warning: The types 'R' and 'R | null' do not have compatible nullability."]
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Report warning when generic type instance creates a null-disallowed type`` () =
@@ -124,9 +124,9 @@ let parsedDate3 = DateTime.Parse(null)
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-                [Error 3261, Line 3, Col 27, Line 3, Col 32, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-                 Error 3261, Line 4, Col 42, Line 4, Col 47, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-                 Error 3261, Line 5, Col 28, Line 5, Col 33, "Nullness warning: The type 'string' does not support 'null'."]
+                [Error 3261, Line 3, Col 18, Line 3, Col 52, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 4, Col 33, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 5, Col 19, Line 5, Col 39, "Nullness warning: The type 'string' does not support 'null'."]
 
 [<Fact>]
 let ``Downcasts and typetests with nullables``() = 
@@ -295,7 +295,7 @@ let getLength (x: string | null) = x.Length
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 3, Col 38, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
 
 [<Fact>]
 let ``Does report warning on obj to static member`` () =
@@ -318,13 +318,13 @@ Test.XString("x":(string|null))
     |> shouldFail
     |> withDiagnostics 
               [ Error 3261, Line 7, Col 8, Line 7, Col 9, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 7, Col 6, Line 7, Col 7, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 7, Col 1, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 8, Col 17, Line 8, Col 18, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 8, Col 15, Line 8, Col 16, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 8, Col 10, Line 8, Col 19, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 9, Col 8, Line 9, Col 23, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 9, Col 6, Line 9, Col 7, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 9, Col 1, Line 9, Col 24, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 11, Col 6, Line 11, Col 7, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 11, Col 3, Line 11, Col 5, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 11, Col 1, Line 11, Col 8, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 12, Col 14, Line 12, Col 18, "Nullness warning: The type 'string' does not support 'null'."
                 Error 3261, Line 13, Col 14, Line 13, Col 31, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
 
@@ -1072,7 +1072,7 @@ myNullReturningFunction myValOfY                     |> ignore
     |> shouldFail
     |> withDiagnostics     
                 [Error 3261, Line 17, Col 25, Line 17, Col 34, "Nullness warning: The type 'string' does not support 'null'."
-                 Error 193, Line 19, Col 42, Line 19, Col 45, "The type 'System.DateTime' does not have 'null' as a proper value"
+                 Error 193, Line 19, Col 26, Line 19, Col 45, "The type 'System.DateTime' does not have 'null' as a proper value"
                  Error 1, Line 20, Col 25, Line 20, Col 36, "The type '{| Anon: 'a |}' does not have 'null' as a proper value"
                  Error 1, Line 21, Col 26, Line 21, Col 31, "The type ''a * 'b * 'c' does not have 'null' as a proper value"
                  Error 1, Line 23, Col 25, Line 23, Col 33, "The type 'Y' does not have 'null' as a proper value"]
@@ -1335,7 +1335,7 @@ let bar = foo |> Option.ofObj // Should produce FS3262, but did not
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3262, Line 4, Col 25, Line 4, Col 30, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
+    |> withDiagnostics [Error 3262, Line 4, Col 18, Line 4, Col 30, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
 
 [<Fact>]
 let ``Useless null check when used in multi piping`` () = 
@@ -1347,7 +1347,7 @@ let myFunc whateverArg =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3262, Line 4, Col 37, Line 4, Col 42, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
+    |> withDiagnostics [Error 3262, Line 4, Col 30, Line 4, Col 42, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
 
 [<Fact>]
 let ``Useless null check when used in more exotic pipes`` () = 
@@ -1362,9 +1362,9 @@ let pointfree = intToint >> string >> Option.ofObj
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics 
-        [ Error 3262, Line 3, Col 52, Line 3, Col 57, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
+        [ Error 3262, Line 3, Col 45, Line 3, Col 57, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
           Error 3262, Line 4, Col 60, Line 4, Col 61, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
-          Error 3262, Line 6, Col 46, Line 6, Col 51, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
+          Error 3262, Line 6, Col 39, Line 6, Col 51, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
 
 [<Fact>]
 let ``Regression: Useless usage in nested calls`` () = 
@@ -1813,7 +1813,7 @@ let ``Type extension not null constraint rejects nullable type arg at call site`
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 8, Col 55, Line 8, Col 60, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."
+        Error 3261, Line 8, Col 47, Line 8, Col 60, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."
     ]
 
 [<Fact>]
@@ -2061,8 +2061,8 @@ let processMyStr (x:mystring<mykg>) =
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 12, Col 29, Line 12, Col 37, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-        Error 3261, Line 12, Col 29, Line 12, Col 37, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+        Error 3261, Line 12, Col 27, Line 12, Col 39, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+        Error 3261, Line 12, Col 27, Line 12, Col 39, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
     ]
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
@@ -2218,8 +2218,8 @@ let processObj (x:obj) =
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 6, Col 29, Line 6, Col 37, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-        Error 3261, Line 6, Col 29, Line 6, Col 37, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+        Error 3261, Line 6, Col 27, Line 6, Col 39, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+        Error 3261, Line 6, Col 27, Line 6, Col 39, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
     ]
 
 [<Fact>]
@@ -2372,7 +2372,7 @@ let test () = consumeNonNull (MyClass.Create())
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 9, Col 39, Line 9, Col 45, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
+        Error 3261, Line 9, Col 31, Line 9, Col 47, "Nullness warning: The type 'MyClass' supports 'null' but a non-null type is expected."
     ]
 
 [<Fact>]

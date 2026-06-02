@@ -1,7 +1,7 @@
 
 test.fsx(11,20,11,21): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(14,33,14,41): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(14,20,14,41): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(20,21,20,24): typecheck error FS3388: This expression implicitly converts type 'int * int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 
@@ -65,17 +65,17 @@ test.fsx(61,32,61,33): typecheck error FS3389: This expression uses a built-in i
 
 test.fsx(61,32,61,33): typecheck error FS3388: This expression implicitly converts type 'int' to type 'float'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(63,35,63,43): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(63,22,63,43): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(63,35,63,43): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(63,22,63,43): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(64,41,64,49): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(64,28,64,49): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(64,41,64,49): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(64,28,64,49): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(64,63,64,71): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(64,50,64,71): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(64,63,64,71): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(64,50,64,71): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(67,20,67,23): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 
@@ -251,7 +251,7 @@ test.fsx(258,30,258,38): typecheck error FS3388: This expression implicitly conv
 
 test.fsx(260,36,260,38): typecheck error FS3388: This expression implicitly converts type 'Numerics.BigInteger' to type 'IComparable'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(263,58,263,63): typecheck error FS3388: This expression implicitly converts type 'string' to type 'IComparable<string>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(263,44,263,63): typecheck error FS3388: This expression implicitly converts type 'string' to type 'IComparable<string>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(275,35,275,36): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 

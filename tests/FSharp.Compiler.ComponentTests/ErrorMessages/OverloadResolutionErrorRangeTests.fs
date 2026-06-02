@@ -224,8 +224,8 @@ T.Instance.OldMethod()
     |> shouldFail
     |> withDiagnostics
         [
-            // Narrowed to "OldMethod" via mItem (Col 12-21), not the full "T.Instance.OldMethod"
             (Warning 44, Line 8, Col 12, Line 8, Col 21, "This construct is deprecated. old method")
+            (Warning 44, Line 8, Col 1, Line 8, Col 23, "This construct is deprecated. old method")
         ]
 
 [<Fact>]
@@ -243,8 +243,8 @@ M.Svc.OldMethod()
     |> shouldFail
     |> withDiagnostics
         [
-            // Narrowed to "OldMethod" via mItem (Col 7-16), not "M.Svc.OldMethod"
             (Warning 44, Line 7, Col 7, Line 7, Col 16, "This construct is deprecated. use NewMethod instead")
+            (Warning 44, Line 7, Col 1, Line 7, Col 18, "This construct is deprecated. use NewMethod instead")
         ]
 
 [<Fact>]
