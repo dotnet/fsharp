@@ -721,7 +721,7 @@ type Exception with
 
             os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2) |> ignore
 
-            if m.StartLine <> m2.StartLine then
+            if m.StartLine <> m2.StartLine || m.EndLine <> m2.EndLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
         | ConstraintSolverNullnessWarningWithType(denv, ty, _, m, m2) ->
@@ -735,7 +735,7 @@ type Exception with
             let t = NicePrint.minimalStringOfType denv ty
             os.Append(ConstraintSolverNullnessWarningWithTypeE().Format(t)) |> ignore
 
-            if m.StartLine <> m2.StartLine then
+            if m.StartLine <> m2.StartLine || m.EndLine <> m2.EndLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
         | ConstraintSolverNullnessWarningOnDotAccess(denv, objTy, memberName, bindingName, m, m2) ->
@@ -751,6 +751,8 @@ type Exception with
 
             if m.StartLine <> m2.StartLine || m.EndLine <> m2.EndLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m2)) |> ignore
+            else
+                os.Append(".") |> ignore
 
         | ConstraintSolverNullnessWarning(msg, m, m2) ->
             os.Append(ConstraintSolverNullnessWarningE().Format(msg)) |> ignore

@@ -1658,6 +1658,9 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                     // may feasibly convert to Head. 
                     match FindUniqueFeasibleSupertype g amap m ty1 ty2 with 
                     | None -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv, ty1, ty2, m, m2))
+                    // Use csenvOuter (not the stripped csenv) because this is
+                    // still the outer-level subsumption traversal walking up the
+                    // type hierarchy, not recursion into inner type arguments.
                     | Some t -> SolveTypeSubsumesType csenvOuter ndeep m2 trace cxsln ty1 t
 
 and SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m2 trace cxsln ty1 ty2 = 

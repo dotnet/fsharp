@@ -2494,7 +2494,7 @@ let f (x: string | null) =
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 3, Col 5, Line 3, Col 6,
-            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string | null'.. See also test.fs(3,4)-(4,15)."
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string | null'. See also test.fs(3,4)-(4,15)."
     ]
 
 [<Fact>]
@@ -2527,6 +2527,18 @@ let f () =
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 4, Col 19, Line 4, Col 20,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - inref receiver shows binding name`` () =
+    FSharp """module MyLib
+let useIt (s: inref<string | null>) = s.Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 2, Col 39, Line 2, Col 40,
             "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
     ]
 

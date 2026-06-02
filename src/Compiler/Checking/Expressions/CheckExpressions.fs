@@ -10434,16 +10434,23 @@ and TcMethodApplication
             match objArgs with
             | [objExpr] ->
                 // Receiver may be wrapped in a debug point and/or an interface
-                // upcast (Expr.Op(TOp.Coerce, ...)). Drill through both. Filter
-                // out compiler-generated vals (e.g. _arg1, matchValue,
+                // upcast (Expr.Op(TOp.Coerce, ...)) or a byref dereference
+                // (LByrefGet for inref/byref parameters). Drill through all.
+                // Filter out compiler-generated vals (e.g. _arg1, matchValue,
                 // copyOfStruct, tupledArg) so internal names never leak into
                 // user-facing nullness warnings.
+                // Note: Expr.Let wrapping is intentionally not drilled through;
+                // the fallback to the anonymous message is safe for those cases.
                 let rec tryGetBindingName expr =
                     match stripDebugPoints expr with
                     | Expr.Val (vref, _, _) when not vref.IsCompilerGenerated ->
                         Some vref.DisplayName
                     | Expr.Op (TOp.Coerce, _, [innerExpr], _) ->
                         tryGetBindingName innerExpr
+                    | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], _) when not vref.IsCompilerGenerated ->
+                        Some vref.DisplayName
+                    | Expr.Op (TOp.LValueOp (LAddrOf _, vref), _, [], _) when not vref.IsCompilerGenerated ->
+                        Some vref.DisplayName
                     | _ -> None
                 let bindingName = tryGetBindingName objExpr
                 Some { ObjExprRange = objExpr.Range; MemberName = methodName; BindingName = bindingName }
