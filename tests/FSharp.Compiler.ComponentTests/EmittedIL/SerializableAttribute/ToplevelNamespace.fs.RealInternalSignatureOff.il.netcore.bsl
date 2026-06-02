@@ -131,14 +131,13 @@
     .maxstack  5
     .locals init (class XYZ.Expr V_0,
              class XYZ.Expr V_1,
-             class [runtime]System.Collections.IComparer V_2,
-             int32 V_3,
-             int32 V_4)
+             int32 V_2,
+             int32 V_3)
     IL_0000:  ldarg.0
-    IL_0001:  brfalse.s  IL_002f
+    IL_0001:  brfalse.s  IL_002c
 
     IL_0003:  ldarg.1
-    IL_0004:  brfalse.s  IL_002d
+    IL_0004:  brfalse.s  IL_002a
 
     IL_0006:  ldarg.0
     IL_0007:  pop
@@ -147,33 +146,33 @@
     IL_000a:  ldarg.1
     IL_000b:  stloc.1
     IL_000c:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-    IL_0011:  stloc.2
+    IL_0011:  pop
     IL_0012:  ldloc.0
     IL_0013:  ldfld      int32 XYZ.Expr::item
-    IL_0018:  stloc.3
+    IL_0018:  stloc.2
     IL_0019:  ldloc.1
     IL_001a:  ldfld      int32 XYZ.Expr::item
-    IL_001f:  stloc.s    V_4
+    IL_001f:  stloc.3
+    IL_0020:  ldloc.2
     IL_0021:  ldloc.3
-    IL_0022:  ldloc.s    V_4
-    IL_0024:  cgt
-    IL_0026:  ldloc.3
-    IL_0027:  ldloc.s    V_4
-    IL_0029:  clt
-    IL_002b:  sub
-    IL_002c:  ret
+    IL_0022:  cgt
+    IL_0024:  ldloc.2
+    IL_0025:  ldloc.3
+    IL_0026:  clt
+    IL_0028:  sub
+    IL_0029:  ret
 
-    IL_002d:  ldc.i4.1
-    IL_002e:  ret
+    IL_002a:  ldc.i4.1
+    IL_002b:  ret
 
-    IL_002f:  ldarg.1
-    IL_0030:  brfalse.s  IL_0034
+    IL_002c:  ldarg.1
+    IL_002d:  brfalse.s  IL_0031
 
-    IL_0032:  ldc.i4.m1
-    IL_0033:  ret
+    IL_002f:  ldc.i4.m1
+    IL_0030:  ret
 
-    IL_0034:  ldc.i4.0
-    IL_0035:  ret
+    IL_0031:  ldc.i4.0
+    IL_0032:  ret
   } 
 
   .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
@@ -833,14 +832,13 @@
       .maxstack  5
       .locals init (class XYZ.ABC/Expr V_0,
                class XYZ.ABC/Expr V_1,
-               class [runtime]System.Collections.IComparer V_2,
-               int32 V_3,
-               int32 V_4)
+               int32 V_2,
+               int32 V_3)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_002f
+      IL_0001:  brfalse.s  IL_002c
 
       IL_0003:  ldarg.1
-      IL_0004:  brfalse.s  IL_002d
+      IL_0004:  brfalse.s  IL_002a
 
       IL_0006:  ldarg.0
       IL_0007:  pop
@@ -849,33 +847,33 @@
       IL_000a:  ldarg.1
       IL_000b:  stloc.1
       IL_000c:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0011:  stloc.2
+      IL_0011:  pop
       IL_0012:  ldloc.0
       IL_0013:  ldfld      int32 XYZ.ABC/Expr::item
-      IL_0018:  stloc.3
+      IL_0018:  stloc.2
       IL_0019:  ldloc.1
       IL_001a:  ldfld      int32 XYZ.ABC/Expr::item
-      IL_001f:  stloc.s    V_4
+      IL_001f:  stloc.3
+      IL_0020:  ldloc.2
       IL_0021:  ldloc.3
-      IL_0022:  ldloc.s    V_4
-      IL_0024:  cgt
-      IL_0026:  ldloc.3
-      IL_0027:  ldloc.s    V_4
-      IL_0029:  clt
-      IL_002b:  sub
-      IL_002c:  ret
+      IL_0022:  cgt
+      IL_0024:  ldloc.2
+      IL_0025:  ldloc.3
+      IL_0026:  clt
+      IL_0028:  sub
+      IL_0029:  ret
 
-      IL_002d:  ldc.i4.1
-      IL_002e:  ret
+      IL_002a:  ldc.i4.1
+      IL_002b:  ret
 
-      IL_002f:  ldarg.1
-      IL_0030:  brfalse.s  IL_0034
+      IL_002c:  ldarg.1
+      IL_002d:  brfalse.s  IL_0031
 
-      IL_0032:  ldc.i4.m1
-      IL_0033:  ret
+      IL_002f:  ldc.i4.m1
+      IL_0030:  ret
 
-      IL_0034:  ldc.i4.0
-      IL_0035:  ret
+      IL_0031:  ldc.i4.0
+      IL_0032:  ret
     } 
 
     .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
@@ -1535,14 +1533,13 @@
         .maxstack  5
         .locals init (class XYZ.ABC/ABC/Expr V_0,
                  class XYZ.ABC/ABC/Expr V_1,
-                 class [runtime]System.Collections.IComparer V_2,
-                 int32 V_3,
-                 int32 V_4)
+                 int32 V_2,
+                 int32 V_3)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_002f
+        IL_0001:  brfalse.s  IL_002c
 
         IL_0003:  ldarg.1
-        IL_0004:  brfalse.s  IL_002d
+        IL_0004:  brfalse.s  IL_002a
 
         IL_0006:  ldarg.0
         IL_0007:  pop
@@ -1551,33 +1548,33 @@
         IL_000a:  ldarg.1
         IL_000b:  stloc.1
         IL_000c:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_0011:  stloc.2
+        IL_0011:  pop
         IL_0012:  ldloc.0
         IL_0013:  ldfld      int32 XYZ.ABC/ABC/Expr::item
-        IL_0018:  stloc.3
+        IL_0018:  stloc.2
         IL_0019:  ldloc.1
         IL_001a:  ldfld      int32 XYZ.ABC/ABC/Expr::item
-        IL_001f:  stloc.s    V_4
+        IL_001f:  stloc.3
+        IL_0020:  ldloc.2
         IL_0021:  ldloc.3
-        IL_0022:  ldloc.s    V_4
-        IL_0024:  cgt
-        IL_0026:  ldloc.3
-        IL_0027:  ldloc.s    V_4
-        IL_0029:  clt
-        IL_002b:  sub
-        IL_002c:  ret
+        IL_0022:  cgt
+        IL_0024:  ldloc.2
+        IL_0025:  ldloc.3
+        IL_0026:  clt
+        IL_0028:  sub
+        IL_0029:  ret
 
-        IL_002d:  ldc.i4.1
-        IL_002e:  ret
+        IL_002a:  ldc.i4.1
+        IL_002b:  ret
 
-        IL_002f:  ldarg.1
-        IL_0030:  brfalse.s  IL_0034
+        IL_002c:  ldarg.1
+        IL_002d:  brfalse.s  IL_0031
 
-        IL_0032:  ldc.i4.m1
-        IL_0033:  ret
+        IL_002f:  ldc.i4.m1
+        IL_0030:  ret
 
-        IL_0034:  ldc.i4.0
-        IL_0035:  ret
+        IL_0031:  ldc.i4.0
+        IL_0032:  ret
       } 
 
       .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
@@ -2209,6 +2206,7 @@
   } 
 
 } 
+
 
 
 

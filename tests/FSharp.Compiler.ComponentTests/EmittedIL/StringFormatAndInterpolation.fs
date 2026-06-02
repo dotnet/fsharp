@@ -114,8 +114,7 @@ IL_0019:  ret"""]
 
         compilation |> compile |> shouldSucceed |> verifyIL ["""
 .locals init (class InterpolatedStringByefLikes/Foo V_0,
-        valuetype [runtime]System.ReadOnlySpan`1<char> V_1,
-        class [runtime]System.Text.StringBuilder V_2)
+        valuetype [runtime]System.ReadOnlySpan`1<char> V_1)
 IL_0000:  newobj     instance void InterpolatedStringByefLikes/Foo::.ctor()
 IL_0005:  stloc.0
 IL_0006:  ldstr      "foo"
@@ -128,6 +127,6 @@ IL_001b:  ldloc.0
 IL_001c:  ldfld      class [runtime]System.Text.StringBuilder InterpolatedStringByefLikes/Foo::sb
 IL_0021:  ldloc.1
 IL_0022:  callvirt   instance class [runtime]System.Text.StringBuilder [runtime]System.Text.StringBuilder::Append(valuetype [runtime]System.ReadOnlySpan`1<char>)
-IL_0027:  stloc.2
+IL_0027:  pop
 IL_0028:  ldc.i4.0
 IL_0029:  ret"""]

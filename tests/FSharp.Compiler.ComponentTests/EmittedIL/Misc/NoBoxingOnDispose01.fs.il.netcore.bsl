@@ -37,35 +37,33 @@
   {
     
     .maxstack  3
-    .locals init (valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!!T> V_0,
-             !!T V_1)
+    .locals init (valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!!T> V_0)
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  callvirt   instance valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!0> class [runtime]System.Collections.Generic.List`1<!!T>::GetEnumerator()
     IL_0007:  stloc.0
     .try
     {
-      IL_0008:  br.s       IL_0013
+      IL_0008:  br.s       IL_0012
 
       IL_000a:  ldloca.s   V_0
       IL_000c:  call       instance !0 valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!!T>::get_Current()
-      IL_0011:  stloc.1
-      IL_0012:  nop
-      IL_0013:  ldloca.s   V_0
-      IL_0015:  call       instance bool valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!!T>::MoveNext()
-      IL_001a:  brtrue.s   IL_000a
+      IL_0011:  pop
+      IL_0012:  ldloca.s   V_0
+      IL_0014:  call       instance bool valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!!T>::MoveNext()
+      IL_0019:  brtrue.s   IL_000a
 
-      IL_001c:  leave.s    IL_002c
+      IL_001b:  leave.s    IL_002b
 
     }  
     finally
     {
-      IL_001e:  ldloca.s   V_0
-      IL_0020:  constrained. valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!!T>
-      IL_0026:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_002b:  endfinally
+      IL_001d:  ldloca.s   V_0
+      IL_001f:  constrained. valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!!T>
+      IL_0025:  callvirt   instance void [runtime]System.IDisposable::Dispose()
+      IL_002a:  endfinally
     }  
-    IL_002c:  ret
+    IL_002b:  ret
   } 
 
 } 
@@ -82,6 +80,7 @@
   } 
 
 } 
+
 
 
 

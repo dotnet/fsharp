@@ -606,8 +606,7 @@
     {
       
       .maxstack  4
-      .locals init (int32 V_0,
-               int32 V_1)
+      .locals init (int32 V_0)
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  stloc.0
@@ -619,7 +618,7 @@
                                                                                                                                                                                  !0)
       IL_000c:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityERComparer()
       IL_0011:  callvirt   instance int32 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_0016:  stloc.1
+      IL_0016:  pop
       IL_0017:  ldloc.0
       IL_0018:  ldc.i4.1
       IL_0019:  add

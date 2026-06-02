@@ -55,12 +55,11 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
-      .locals init (valuetype assembly/C& V_0,
-               class [runtime]System.Collections.IComparer V_1)
+      .locals init (valuetype assembly/C& V_0)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0008:  stloc.1
+      IL_0008:  pop
       IL_0009:  ldarg.0
       IL_000a:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
       IL_000f:  ldloc.0

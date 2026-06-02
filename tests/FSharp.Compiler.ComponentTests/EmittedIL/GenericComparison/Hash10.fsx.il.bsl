@@ -45,8 +45,7 @@
                uint8[] V_1,
                uint16 V_2,
                uint8 V_3,
-               int32 V_4,
-               int32 V_5)
+               int32 V_4)
       IL_0000:  nop
       IL_0001:  ldc.i4.s   101
       IL_0003:  newarr     [runtime]System.Byte
@@ -77,20 +76,20 @@
       IL_0021:  stloc.0
       IL_0022:  ldc.i4.0
       IL_0023:  stloc.s    V_4
-      IL_0025:  br.s       IL_0035
+      IL_0025:  br.s       IL_0034
 
       IL_0027:  ldloc.0
       IL_0028:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashIntrinsic<uint8[]>(!!0)
-      IL_002d:  stloc.s    V_5
-      IL_002f:  ldloc.s    V_4
-      IL_0031:  ldc.i4.1
-      IL_0032:  add
-      IL_0033:  stloc.s    V_4
-      IL_0035:  ldloc.s    V_4
-      IL_0037:  ldc.i4     0x989681
-      IL_003c:  blt.s      IL_0027
+      IL_002d:  pop
+      IL_002e:  ldloc.s    V_4
+      IL_0030:  ldc.i4.1
+      IL_0031:  add
+      IL_0032:  stloc.s    V_4
+      IL_0034:  ldloc.s    V_4
+      IL_0036:  ldc.i4     0x989681
+      IL_003b:  blt.s      IL_0027
 
-      IL_003e:  ret
+      IL_003d:  ret
     } 
 
   } 

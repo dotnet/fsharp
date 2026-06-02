@@ -44,8 +44,7 @@
       .locals init (int32[] V_0,
                int32[] V_1,
                uint64 V_2,
-               int32 V_3,
-               int32 V_4)
+               int32 V_3)
       IL_0000:  nop
       IL_0001:  ldc.i4.s   101
       IL_0003:  conv.i8
@@ -82,20 +81,20 @@
       IL_0027:  stloc.0
       IL_0028:  ldc.i4.0
       IL_0029:  stloc.3
-      IL_002a:  br.s       IL_0038
+      IL_002a:  br.s       IL_0037
 
       IL_002c:  ldloc.0
       IL_002d:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashIntrinsic<int32[]>(!!0)
-      IL_0032:  stloc.s    V_4
-      IL_0034:  ldloc.3
-      IL_0035:  ldc.i4.1
-      IL_0036:  add
-      IL_0037:  stloc.3
-      IL_0038:  ldloc.3
-      IL_0039:  ldc.i4     0x989681
-      IL_003e:  blt.s      IL_002c
+      IL_0032:  pop
+      IL_0033:  ldloc.3
+      IL_0034:  ldc.i4.1
+      IL_0035:  add
+      IL_0036:  stloc.3
+      IL_0037:  ldloc.3
+      IL_0038:  ldc.i4     0x989681
+      IL_003d:  blt.s      IL_002c
 
-      IL_0040:  ret
+      IL_003f:  ret
     } 
 
   } 

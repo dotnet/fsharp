@@ -105,27 +105,11 @@
     IL_0072:  ret
   } 
 
-  .method assembly specialname static class [runtime]System.Tuple`4<int32,int32,int32,int32> get_arg@1() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     class [runtime]System.Tuple`4<int32,int32,int32,int32> '<StartupCode$assembly>'.$assembly::arg@1
-    IL_0005:  ret
-  } 
-
-  .property class [runtime]System.Tuple`4<int32,int32,int32,int32>
-          arg@1()
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class [runtime]System.Tuple`4<int32,int32,int32,int32> assembly::get_arg@1()
-  } 
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
        extends [runtime]System.Object
 {
-  .field static assembly class [runtime]System.Tuple`4<int32,int32,int32,int32> arg@1
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -137,11 +121,12 @@
     .maxstack  8
     IL_0000:  ldc.i4.1
     IL_0001:  call       class [runtime]System.Tuple`4<int32,int32,int32,int32> assembly::F<int32>(!!0)
-    IL_0006:  stsfld     class [runtime]System.Tuple`4<int32,int32,int32,int32> '<StartupCode$assembly>'.$assembly::arg@1
-    IL_000b:  ret
+    IL_0006:  pop
+    IL_0007:  ret
   } 
 
 } 
+
 
 
 

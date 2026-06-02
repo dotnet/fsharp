@@ -22,8 +22,7 @@ let x () =
 {
   .custom instance void [runtime]System.Runtime.CompilerServices.SkipLocalsInitAttribute::.ctor() = ( 01 00 00 00 )
 
-  .maxstack  4
-  .locals (int32[] V_0)
+  .maxstack  8
 """
 
                       """
@@ -117,8 +116,7 @@ type X () =
   .custom instance void [runtime]System.Runtime.CompilerServices.SkipLocalsInitAttribute::.ctor() = ( 01 00 00 00 ) 
   
   .maxstack  4
-  .locals (int32[] V_0,
-           int32 V_1)
+  .locals (int32 V_0)
 """
            
                       """
@@ -158,8 +156,7 @@ IL_0009:  ret
         
                      """
 .locals (valuetype [runtime]System.Nullable`1<int64> V_0,
-         valuetype [runtime]System.Nullable`1<int64> V_1,
-         !!a V_2)
+         valuetype [runtime]System.Nullable`1<int64> V_1)
 IL_0000:  ldc.i4.1
 IL_0001:  ldc.i4.1
 IL_0002:  div
@@ -178,7 +175,7 @@ IL_0018:  stloc.0
 IL_0019:  ldarg.0
 IL_001a:  ldloc.0
 IL_001b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [runtime]System.Nullable`1<int64>,!!a>::Invoke(!0)
-IL_0020:  stloc.2
+IL_0020:  pop
 IL_0021:  ret"""]
 
     [<FSharp.Test.FactForNETCOREAPP>]
