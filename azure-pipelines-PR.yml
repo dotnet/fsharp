@@ -781,7 +781,7 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+          - script: .\Build.cmd $(_kind) -ci -pack -c $(_BuildConfig)
             env:
               NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
