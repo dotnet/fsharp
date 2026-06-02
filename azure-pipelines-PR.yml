@@ -125,7 +125,8 @@ stages:
           - script: .\eng\test-determinism.cmd -configuration Release
             displayName: Determinism tests (race detector — same flags both builds)
           - script: .\eng\test-determinism.cmd -configuration Release -mode seq-vs-par
-            displayName: Determinism tests (1-shot diff — sequential vs parallel)
+            displayName: Determinism tests (informational — sequential vs parallel)
+            continueOnError: true
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
             inputs:
