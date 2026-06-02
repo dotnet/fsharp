@@ -658,10 +658,7 @@ type CalledMeth<'T>
 
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
-                // For an indexer setter the ParamArray slot is the second-to-last unnamed called arg
-                // (the last one is the setter 'value'). When a named argument matched one of the indexer
-                // args, fewer unnamed called args remain and the setter degenerates to the non-ParamArray
-                // shape - fall back to the regular indexing in that case.
+                // x.Item(i, value = v) — named arg removes 'i' from unnamed, leaving < 2 unnamed called args.
                 let useIndexerSetterShape = isIndexerSetter && nUnnamedCalledArgs >= 2
                 let supportsParamArgs = 
                     allowParamArgs && 
