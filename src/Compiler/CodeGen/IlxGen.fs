@@ -2588,6 +2588,10 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
 
     let mutable hasStackAllocatedLocals = false
 
+    // An uninitialized reference-type 'this', pending for a chained base/self '.ctor', must not be
+    // spilled for a debug point: that produces unverifiable IL.
+    let mutable uninitializedThisOnStackCount = 0
+
     let codeLabelToPC: Dictionary<ILCodeLabel, int> = Dictionary<_, _>(10)
 
     let codeLabelToCodeLabel: Dictionary<ILCodeLabel, ILCodeLabel> =
@@ -2628,6 +2632,10 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
                 nstack <- nstack - 1
 
     member _.GetCurrentStack() = stack
+
+    member _.StartUninitializedThisOnStack() = uninitializedThisOnStackCount <- uninitializedThisOnStackCount + 1
+
+    member _.EndUninitializedThisOnStack() = uninitializedThisOnStackCount <- uninitializedThisOnStackCount - 1
 
     member _.AssertEmptyStack() =
         if not (isNil stack) then
@@ -2678,13 +2686,18 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
 
             // A debug point must be at an empty stack position for the debugger to bind a breakpoint there,
             // so spill anything still pending (e.g. a call argument) to temporaries and reload it afterwards.
+            // An uninitialized reference-type 'this' (pending for a chained '.ctor') can't be spilled, so
+            // leave the stack as-is in that case.
             let spilled =
-                [
-                    for ty in stack ->
-                        let idx = cgbuf.AllocLocal([], ty, false, true)
-                        cgbuf.EmitInstr(pop 1, Push0, mkStloc (uint16 idx))
-                        idx, ty
-                ]
+                if uninitializedThisOnStackCount > 0 then
+                    []
+                else
+                    [
+                        for ty in stack ->
+                            let idx = cgbuf.AllocLocal([], ty, false, true)
+                            cgbuf.EmitInstr(pop 1, Push0, mkStloc (uint16 idx))
+                            idx, ty
+                    ]
 
             let attr = GenILSourceMarker g m
             let i = I_seqpoint attr
@@ -4588,6 +4601,11 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                         ])
                     mkLdarg0
 
+            let pendingUninitializedThis = (isSuperInit || isSelfInit) && not valu
+
+            if pendingUninitializedThis then
+                cgbuf.StartUninitializedThisOnStack()
+
             if not cenv.g.generateWitnesses || witnessInfos.IsEmpty then
                 () // no witness args
             else
@@ -4626,6 +4644,9 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                         (Push [ (GenType cenv m eenv.tyenv actualRetTy) ])
 
                 CG.EmitInstr cgbuf (pop (nargs + (if mspec.CallingConv.IsStatic || newobj then 0 else 1))) pushes callInstr
+
+                if pendingUninitializedThis then
+                    cgbuf.EndUninitializedThisOnStack()
 
                 // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation. It will be popped again in most cases
                 if isSuperInit then
@@ -5679,6 +5700,11 @@ and GenILCall
                 ])
             mkLdarg0
 
+    let pendingUninitializedThis = isSuperInit && not valu
+
+    if pendingUninitializedThis then
+        cgbuf.StartUninitializedThisOnStack()
+
     GenExprs cenv cgbuf eenv argExprs
 
     let il =
@@ -5696,6 +5722,9 @@ and GenILCall
                     I_call(tail, ilMethSpec, None)
 
     CG.EmitInstr cgbuf (pop (argExprs.Length + (if isSuperInit then 1 else 0))) (if isSuperInit then Push0 else Push ilReturnTys) il
+
+    if pendingUninitializedThis then
+        cgbuf.EndUninitializedThisOnStack()
 
     // Load the 'this' pointer as the pretend 'result' of the isSuperInit operation.
     // It will be immediately popped in most cases, but may also be used as the target of some "property set" operations.
