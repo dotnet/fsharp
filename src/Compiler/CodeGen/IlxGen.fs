@@ -2633,9 +2633,11 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
 
     member _.GetCurrentStack() = stack
 
-    member _.StartUninitializedThisOnStack() = uninitializedThisOnStackCount <- uninitializedThisOnStackCount + 1
+    member _.StartUninitializedThisOnStack() =
+        uninitializedThisOnStackCount <- uninitializedThisOnStackCount + 1
 
-    member _.EndUninitializedThisOnStack() = uninitializedThisOnStackCount <- uninitializedThisOnStackCount - 1
+    member _.EndUninitializedThisOnStack() =
+        uninitializedThisOnStackCount <- uninitializedThisOnStackCount - 1
 
     member _.AssertEmptyStack() =
         if not (isNil stack) then
@@ -4588,18 +4590,14 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
             // ok, now we're ready to generate
             // For a value type the constructor 'this' is a managed pointer, so track it as a byref.
+            let thisTy =
+                if valu then
+                    ILType.Byref mspec.DeclaringType
+                else
+                    mspec.DeclaringType
+
             if isSuperInit || isSelfInit then
-                CG.EmitInstr
-                    cgbuf
-                    (pop 0)
-                    (Push
-                        [
-                            (if valu then
-                                 ILType.Byref mspec.DeclaringType
-                             else
-                                 mspec.DeclaringType)
-                        ])
-                    mkLdarg0
+                CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
 
             let pendingUninitializedThis = (isSuperInit || isSelfInit) && not valu
 
@@ -4650,17 +4648,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
                 // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation. It will be popped again in most cases
                 if isSuperInit then
-                    CG.EmitInstr
-                        cgbuf
-                        (pop 0)
-                        (Push
-                            [
-                                (if valu then
-                                     ILType.Byref mspec.DeclaringType
-                                 else
-                                     mspec.DeclaringType)
-                            ])
-                        mkLdarg0
+                    CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
 
                 // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
                 // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
@@ -5685,20 +5673,16 @@ and GenILCall
         (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
         && ilMethRef.CallingConv.IsInstance
 
+    let thisTy =
+        if valu then
+            ILType.Byref ilMethSpec.DeclaringType
+        else
+            ilMethSpec.DeclaringType
+
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
     if isSuperInit then
-        CG.EmitInstr
-            cgbuf
-            (pop 0)
-            (Push
-                [
-                    (if valu then
-                         ILType.Byref ilMethSpec.DeclaringType
-                     else
-                         ilMethSpec.DeclaringType)
-                ])
-            mkLdarg0
+        CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
 
     let pendingUninitializedThis = isSuperInit && not valu
 
@@ -5729,17 +5713,7 @@ and GenILCall
     // Load the 'this' pointer as the pretend 'result' of the isSuperInit operation.
     // It will be immediately popped in most cases, but may also be used as the target of some "property set" operations.
     if isSuperInit then
-        CG.EmitInstr
-            cgbuf
-            (pop 0)
-            (Push
-                [
-                    (if valu then
-                         ILType.Byref ilMethSpec.DeclaringType
-                     else
-                         ilMethSpec.DeclaringType)
-                ])
-            mkLdarg0
+        CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
 
     CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel
 
