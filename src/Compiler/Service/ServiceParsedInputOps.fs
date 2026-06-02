@@ -2608,11 +2608,42 @@ module ParsedInput =
         (entity: ShortIdents)
         (insertionPoint: OpenStatementInsertionPoint)
         =
-        match tryFindNearestPointAndModules currentLine parsedInput insertionPoint with
-        | Some(scope, _, point), modules -> findBestPositionToInsertOpenDeclaration modules scope point entity
-        | _ ->
-            // we failed to find insertion point because ast is empty for some reason, return top left point in this case
-            {
-                ScopeKind = ScopeKind.TopModule
-                Pos = mkPos 1 0
-            }
+        let ctx =
+            match tryFindNearestPointAndModules currentLine parsedInput insertionPoint with
+            | Some(scope, _, point), modules -> findBestPositionToInsertOpenDeclaration modules scope point entity
+            | _ ->
+                // we failed to find insertion point because ast is empty for some reason, return top left point in this case
+                {
+                    ScopeKind = ScopeKind.TopModule
+                    Pos = mkPos 1 0
+                }
+
+        // In .fsx scripts, `#r` / `#load` must precede any `open`.
+        if parsedInput.FileName.EndsWith(".fsx", StringComparison.OrdinalIgnoreCase) then
+            let topModuleKind, topDecls =
+                match parsedInput with
+                | ParsedInput.ImplFile(ParsedImplFileInput(contents = SynModuleOrNamespace(kind = k; decls = decls) :: _)) -> Some k, decls
+                | _ -> None, []
+
+            let rec lastLeadingHashEndLine acc decls =
+                match decls with
+                | SynModuleDecl.HashDirective(_, range) :: rest -> lastLeadingHashEndLine (max acc range.EndLine) rest
+                | _ -> acc
+
+            let lastHashLine = lastLeadingHashEndLine 0 topDecls
+            let isAnonModule = topModuleKind = Some SynModuleOrNamespaceKind.AnonModule
+
+            if lastHashLine > 0 && lastHashLine >= ctx.Pos.Line then
+                {
+                    ScopeKind = ScopeKind.HashDirective
+                    Pos = mkPos (lastHashLine + 1) 0
+                }
+            elif lastHashLine = 0 && isAnonModule && ctx.Pos.Line > 1 then
+                {
+                    ScopeKind = ScopeKind.TopModule
+                    Pos = mkPos 1 0
+                }
+            else
+                ctx
+        else
+            ctx
