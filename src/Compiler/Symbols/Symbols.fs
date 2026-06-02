@@ -2011,6 +2011,9 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V v -> v.IsPropertySetterMethod
         | _ -> false
 
+    member x.IsAccessorProperty =
+        x.IsPropertyGetterMethod || x.IsPropertySetterMethod
+
     member _.IsInstanceMember = 
         if isUnresolved() then false else 
         match d with 
