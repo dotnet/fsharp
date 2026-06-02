@@ -4576,7 +4576,17 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
             // ok, now we're ready to generate
             // For a value type the constructor 'this' is a managed pointer, so track it as a byref.
             if isSuperInit || isSelfInit then
-                CG.EmitInstr cgbuf (pop 0) (Push [ (if valu then ILType.Byref mspec.DeclaringType else mspec.DeclaringType) ]) mkLdarg0
+                CG.EmitInstr
+                    cgbuf
+                    (pop 0)
+                    (Push
+                        [
+                            (if valu then
+                                 ILType.Byref mspec.DeclaringType
+                             else
+                                 mspec.DeclaringType)
+                        ])
+                    mkLdarg0
 
             if not cenv.g.generateWitnesses || witnessInfos.IsEmpty then
                 () // no witness args
@@ -4619,7 +4629,17 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
                 // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation. It will be popped again in most cases
                 if isSuperInit then
-                    CG.EmitInstr cgbuf (pop 0) (Push [ (if valu then ILType.Byref mspec.DeclaringType else mspec.DeclaringType) ]) mkLdarg0
+                    CG.EmitInstr
+                        cgbuf
+                        (pop 0)
+                        (Push
+                            [
+                                (if valu then
+                                     ILType.Byref mspec.DeclaringType
+                                 else
+                                     mspec.DeclaringType)
+                            ])
+                        mkLdarg0
 
                 // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
                 // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
@@ -5647,7 +5667,17 @@ and GenILCall
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
     if isSuperInit then
-        CG.EmitInstr cgbuf (pop 0) (Push [ (if valu then ILType.Byref ilMethSpec.DeclaringType else ilMethSpec.DeclaringType) ]) mkLdarg0
+        CG.EmitInstr
+            cgbuf
+            (pop 0)
+            (Push
+                [
+                    (if valu then
+                         ILType.Byref ilMethSpec.DeclaringType
+                     else
+                         ilMethSpec.DeclaringType)
+                ])
+            mkLdarg0
 
     GenExprs cenv cgbuf eenv argExprs
 
@@ -5670,7 +5700,17 @@ and GenILCall
     // Load the 'this' pointer as the pretend 'result' of the isSuperInit operation.
     // It will be immediately popped in most cases, but may also be used as the target of some "property set" operations.
     if isSuperInit then
-        CG.EmitInstr cgbuf (pop 0) (Push [ (if valu then ILType.Byref ilMethSpec.DeclaringType else ilMethSpec.DeclaringType) ]) mkLdarg0
+        CG.EmitInstr
+            cgbuf
+            (pop 0)
+            (Push
+                [
+                    (if valu then
+                         ILType.Byref ilMethSpec.DeclaringType
+                     else
+                         ilMethSpec.DeclaringType)
+                ])
+            mkLdarg0
 
     CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel
 
