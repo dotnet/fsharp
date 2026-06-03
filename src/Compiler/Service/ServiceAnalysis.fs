@@ -14,6 +14,25 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
+/// Controls whether analysis (unused opens, unused declarations) runs on files that contain errors.
+[<RequireQualifiedAccess>]
+type AnalysisScope =
+    /// Run analysis on all files regardless of error diagnostics (historical FCS default).
+    | AllFiles
+    /// Skip analysis on files that contain any Error-severity diagnostic, avoiding false positives.
+    | FilesWithoutErrors
+
+[<AutoOpen>]
+module private AnalysisScopeHelpers =
+    let shouldRunAnalysis (analysisScope: AnalysisScope) (checkFileResults: FSharpCheckFileResults) =
+        match analysisScope with
+        | AnalysisScope.AllFiles -> true
+        | AnalysisScope.FilesWithoutErrors ->
+            not (
+                checkFileResults.Diagnostics
+                |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+            )
+
 module UnusedOpens =
 
     let symbolHash =
@@ -301,15 +320,13 @@ module UnusedOpens =
 
     /// Get the open statements whose contents are not referred to anywhere in the symbol uses.
     /// Async to allow cancellation.
-    let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
+    let getUnusedOpens
+        (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string, analysisScope: AnalysisScope)
+        : Async<range list> =
         async {
             use! _holder = Cancellable.UseToken()
 
-            let hasErrors =
-                checkFileResults.Diagnostics
-                |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-
-            if hasErrors then
+            if not (shouldRunAnalysis analysisScope checkFileResults) then
                 return []
             elif checkFileResults.OpenDeclarations.Length = 0 then
                 return []
@@ -470,13 +487,9 @@ module UnusedDeclarations =
         |> Seq.filter (fun (_, defSus) -> defSus |> Seq.forall (fun (_, isUsed) -> not isUsed))
         |> Seq.map (fun (m, _) -> m)
 
-    let getUnusedDeclarations (checkFileResults: FSharpCheckFileResults, isScriptFile: bool) =
+    let getUnusedDeclarations (checkFileResults: FSharpCheckFileResults, isScriptFile: bool, analysisScope: AnalysisScope) =
         async {
-            let hasErrors =
-                checkFileResults.Diagnostics
-                |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-
-            if hasErrors then
+            if not (shouldRunAnalysis analysisScope checkFileResults) then
                 return Seq.empty
             else
                 let! ct = Async.CancellationToken

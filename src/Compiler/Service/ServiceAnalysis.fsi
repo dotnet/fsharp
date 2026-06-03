@@ -5,11 +5,20 @@ namespace FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
+/// Controls whether analysis (unused opens, unused declarations) runs on files that contain errors.
+[<RequireQualifiedAccess>]
+type AnalysisScope =
+    /// Run analysis on all files regardless of error diagnostics (historical FCS default).
+    | AllFiles
+    /// Skip analysis on files that contain any Error-severity diagnostic, avoiding false positives.
+    | FilesWithoutErrors
+
 module public UnusedOpens =
 
     /// Get all unused open declarations in a file
     val getUnusedOpens:
-        checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) -> Async<range list>
+        checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) * analysisScope: AnalysisScope ->
+            Async<range list>
 
 module public SimplifyNames =
 
@@ -30,4 +39,6 @@ module public SimplifyNames =
 module public UnusedDeclarations =
 
     /// Get all unused declarations in a file
-    val getUnusedDeclarations: checkFileResults: FSharpCheckFileResults * isScriptFile: bool -> Async<seq<range>>
+    val getUnusedDeclarations:
+        checkFileResults: FSharpCheckFileResults * isScriptFile: bool * analysisScope: AnalysisScope ->
+            Async<seq<range>>

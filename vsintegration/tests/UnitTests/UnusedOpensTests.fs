@@ -36,7 +36,7 @@ let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int *
         | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> checkFileResults
 
-    let unusedOpenRanges = UnusedOpens.getUnusedOpens (checkFileResults, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
+    let unusedOpenRanges = UnusedOpens.getUnusedOpens (checkFileResults, (fun lineNum -> sourceLines.[Line.toZ lineNum]), AnalysisScope.AllFiles) |> Async.RunSynchronously
     
     unusedOpenRanges 
     |> List.map (fun x -> x.StartLine, (x.StartColumn, x.EndColumn))
@@ -788,7 +788,7 @@ module Nested =
 
 open Nested
 """
-    => [ ]
+    => [ 10, (5, 11) ]
 
 [<Fact>]
 let ``used inner module open declaration in rec module``() =
@@ -970,14 +970,14 @@ let _ = d.["x"]
 """
     => []
 
-// This test exercises the Error-diagnostic guard in UnusedOpens.getUnusedOpens.
+// This test exercises the Error-diagnostic guard in UnusedOpens.getUnusedOpens with AnalysisScope.FilesWithoutErrors.
 // Without the guard, the snippet below produced [ 10, (5, 11) ] because the
 // `'open' must come first in rec` parse error left symbol uses incomplete and
-// the analysis flagged the open as unused. With the guard, the file's Error
+// the analysis flagged the open as unused. With FilesWithoutErrors, the file's Error
 // diagnostic suppresses the analysis and the range list is empty.
 [<Fact>]
-let ``unused opens analysis - parse error in rec module suppresses analysis (guard regression)``() =
-    """
+let ``unused opens analysis - parse error in rec module suppresses analysis with FilesWithoutErrors``() =
+    let source = """
 module rec TopModule
 
 module Nested =
@@ -988,14 +988,29 @@ module Nested =
 
 open Nested
 """
-    => [ ]
+    let sourceLines = source.Split ([|"\r\n"; "\n"; "\r"|], System.StringSplitOptions.None)
+
+    let _, checkFileAnswer =
+        checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions)
+        |> Async.RunSynchronously
+
+    let checkFileResults =
+        match checkFileAnswer with
+        | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
+        | FSharpCheckFileAnswer.Succeeded(r) -> r
+
+    let unusedOpenRanges =
+        UnusedOpens.getUnusedOpens (checkFileResults, (fun lineNum -> sourceLines.[Line.toZ lineNum]), AnalysisScope.FilesWithoutErrors)
+        |> Async.RunSynchronously
+
+    Assert.Equal<(int * (int * int)) list>([], unusedOpenRanges |> List.map (fun x -> x.StartLine, (x.StartColumn, x.EndColumn)))
 
 // Verifies UnusedDeclarations.getUnusedDeclarations returns an empty seq<range>
-// when the file has any Error-severity diagnostic. The let-binding `unused`
-// would normally be flagged as an unused declaration, but the type error must
-// suppress the analysis.
+// when the file has any Error-severity diagnostic and AnalysisScope.FilesWithoutErrors is used.
+// The let-binding `unused` would normally be flagged as an unused declaration,
+// but the type error combined with FilesWithoutErrors must suppress the analysis.
 [<Fact>]
-let ``unused declarations analysis - file with type error returns empty``() =
+let ``unused declarations analysis - file with type error returns empty with FilesWithoutErrors``() =
     let source = """
 module M
 let unused = 42
@@ -1016,7 +1031,7 @@ let _ = 1 + "not an int"
     Assert.True(hasError, "expected source to contain at least one Error diagnostic")
 
     let unused =
-        UnusedDeclarations.getUnusedDeclarations(checkFileResults, false)
+        UnusedDeclarations.getUnusedDeclarations(checkFileResults, false, AnalysisScope.FilesWithoutErrors)
         |> Async.RunSynchronously
         |> Seq.toList
     Assert.Equal<range list>([], unused)
@@ -1046,9 +1061,38 @@ let _ = 1
     Assert.False(hasError, "expected clean source to have no Error diagnostics")
 
     let unused =
-        UnusedDeclarations.getUnusedDeclarations(checkFileResults, false)
+        UnusedDeclarations.getUnusedDeclarations(checkFileResults, false, AnalysisScope.FilesWithoutErrors)
         |> Async.RunSynchronously
         |> Seq.toList
     Assert.NotEmpty(unused)
 
+// Verifies that default AnalysisScope (AllFiles) does NOT suppress analysis on errored files,
+// preserving historical FCS behavior for API consumers like Rider.
+[<Fact>]
+let ``unused declarations analysis - default AllFiles scope does not suppress on errors``() =
+    let source = """
+module M
+let private unused = 42
+let _ = 1 + "not an int"
+"""
+    let _, checkFileAnswer =
+        checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions)
+        |> Async.RunSynchronously
+
+    let checkFileResults =
+        match checkFileAnswer with
+        | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
+        | FSharpCheckFileAnswer.Succeeded(r) -> r
+
+    let hasError =
+        checkFileResults.Diagnostics
+        |> Array.exists (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
+    Assert.True(hasError, "expected source to contain at least one Error diagnostic")
+
+    // With default (AllFiles), unused declarations are still reported even with errors
+    let unused =
+        UnusedDeclarations.getUnusedDeclarations(checkFileResults, false)
+        |> Async.RunSynchronously
+        |> Seq.toList
+    Assert.NotEmpty(unused)
 

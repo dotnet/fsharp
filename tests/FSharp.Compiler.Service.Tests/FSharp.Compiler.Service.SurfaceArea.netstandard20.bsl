@@ -3057,6 +3057,29 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Int32 GetHashCode(System.C
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Int32 Tag
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: Int32 get_Tag()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity: System.String ToString()
+FSharp.Compiler.EditorServices.AnalysisScope+Tags: Int32 AllFiles
+FSharp.Compiler.EditorServices.AnalysisScope+Tags: Int32 FilesWithoutErrors
+FSharp.Compiler.EditorServices.AnalysisScope: Boolean Equals(FSharp.Compiler.EditorServices.AnalysisScope)
+FSharp.Compiler.EditorServices.AnalysisScope: Boolean Equals(FSharp.Compiler.EditorServices.AnalysisScope, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.AnalysisScope: Boolean Equals(System.Object)
+FSharp.Compiler.EditorServices.AnalysisScope: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.AnalysisScope: Boolean IsAllFiles
+FSharp.Compiler.EditorServices.AnalysisScope: Boolean IsFilesWithoutErrors
+FSharp.Compiler.EditorServices.AnalysisScope: Boolean get_IsAllFiles()
+FSharp.Compiler.EditorServices.AnalysisScope: Boolean get_IsFilesWithoutErrors()
+FSharp.Compiler.EditorServices.AnalysisScope: FSharp.Compiler.EditorServices.AnalysisScope AllFiles
+FSharp.Compiler.EditorServices.AnalysisScope: FSharp.Compiler.EditorServices.AnalysisScope FilesWithoutErrors
+FSharp.Compiler.EditorServices.AnalysisScope: FSharp.Compiler.EditorServices.AnalysisScope get_AllFiles()
+FSharp.Compiler.EditorServices.AnalysisScope: FSharp.Compiler.EditorServices.AnalysisScope get_FilesWithoutErrors()
+FSharp.Compiler.EditorServices.AnalysisScope: FSharp.Compiler.EditorServices.AnalysisScope+Tags
+FSharp.Compiler.EditorServices.AnalysisScope: Int32 CompareTo(FSharp.Compiler.EditorServices.AnalysisScope)
+FSharp.Compiler.EditorServices.AnalysisScope: Int32 CompareTo(System.Object)
+FSharp.Compiler.EditorServices.AnalysisScope: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.EditorServices.AnalysisScope: Int32 GetHashCode()
+FSharp.Compiler.EditorServices.AnalysisScope: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.AnalysisScope: Int32 Tag
+FSharp.Compiler.EditorServices.AnalysisScope: Int32 get_Tag()
+FSharp.Compiler.EditorServices.AnalysisScope: System.String ToString()
 FSharp.Compiler.EditorServices.AssemblyContent: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol] GetAssemblyContent(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.EditorServices.IAssemblyContentCache,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol]],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol]], FSharp.Compiler.EditorServices.AssemblyContentType, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpAssembly])
 FSharp.Compiler.EditorServices.AssemblyContent: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol] GetAssemblySignatureContent(FSharp.Compiler.EditorServices.AssemblyContentType, FSharp.Compiler.Symbols.FSharpAssemblySignature)
 FSharp.Compiler.EditorServices.AssemblyContentType+Tags: Int32 Full
@@ -4784,8 +4807,8 @@ FSharp.Compiler.EditorServices.UnresolvedSymbol: System.String get_FullName()
 FSharp.Compiler.EditorServices.UnresolvedSymbol: System.String[] Namespace
 FSharp.Compiler.EditorServices.UnresolvedSymbol: System.String[] get_Namespace()
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Void .ctor(System.String, System.String, System.String[])
-FSharp.Compiler.EditorServices.UnusedDeclarations: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] getUnusedDeclarations(FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, Boolean)
-FSharp.Compiler.EditorServices.UnusedOpens: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range]] getUnusedOpens(FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String])
+FSharp.Compiler.EditorServices.UnusedDeclarations: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] getUnusedDeclarations(FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, Boolean, FSharp.Compiler.EditorServices.AnalysisScope)
+FSharp.Compiler.EditorServices.UnusedOpens: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range]] getUnusedOpens(FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String], FSharp.Compiler.EditorServices.AnalysisScope)
 FSharp.Compiler.EditorServices.XmlDocComment: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] IsBlank(System.String)
 FSharp.Compiler.EditorServices.XmlDocParser: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.XmlDocable] GetXmlDocables(FSharp.Compiler.Text.ISourceText, FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.XmlDocable: Boolean Equals(FSharp.Compiler.EditorServices.XmlDocable)

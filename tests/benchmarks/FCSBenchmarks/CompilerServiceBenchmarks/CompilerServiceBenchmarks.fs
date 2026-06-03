@@ -259,7 +259,7 @@ type CompilerServiceBenchmarks() =
         | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
         | FSharpCheckFileAnswer.Succeeded results ->
             let sourceLines = source.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
-            let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
+            let decls = UnusedOpens.getUnusedOpens(results, (fun lineNum -> sourceLines.[Line.toZ lineNum]), AnalysisScope.AllFiles) |> Async.RunSynchronously
             ignore decls              
 
     [<Benchmark>]
@@ -268,5 +268,5 @@ type CompilerServiceBenchmarks() =
         match checkResult with
         | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
         | FSharpCheckFileAnswer.Succeeded results ->
-            let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunSynchronously
+            let decls = UnusedDeclarations.getUnusedDeclarations(results, true, AnalysisScope.AllFiles) |> Async.RunSynchronously
             ignore decls // should be 16                

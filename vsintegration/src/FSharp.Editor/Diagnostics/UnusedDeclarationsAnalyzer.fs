@@ -31,7 +31,12 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
 
                     let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof (UnusedDeclarationsAnalyzer))
 
-                    let! unusedRanges = UnusedDeclarations.getUnusedDeclarations (checkResults, (isScriptFile document.FilePath))
+                    let! unusedRanges =
+                        UnusedDeclarations.getUnusedDeclarations (
+                            checkResults,
+                            (isScriptFile document.FilePath),
+                            AnalysisScope.FilesWithoutErrors
+                        )
 
                     let! sourceText = document.GetTextAsync()
 
