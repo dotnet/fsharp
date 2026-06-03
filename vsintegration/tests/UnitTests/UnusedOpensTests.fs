@@ -36,7 +36,7 @@ let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int *
         | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> checkFileResults
 
-    let unusedOpenRanges = UnusedOpens.getUnusedOpens (checkFileResults, (fun lineNum -> sourceLines.[Line.toZ lineNum]), AnalysisScope.AllFiles) |> Async.RunSynchronously
+    let unusedOpenRanges = UnusedOpens.getUnusedOpens (checkFileResults, (fun lineNum -> sourceLines.[Line.toZ lineNum])) |> Async.RunSynchronously
     
     unusedOpenRanges 
     |> List.map (fun x -> x.StartLine, (x.StartColumn, x.EndColumn))

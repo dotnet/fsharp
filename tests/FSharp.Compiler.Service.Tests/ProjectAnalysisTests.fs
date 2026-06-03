@@ -5579,7 +5579,7 @@ type UseTheThings(i:int) =
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
     //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
     let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
-    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1]), AnalysisScope.AllFiles) |> Async.RunImmediate
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1])) |> Async.RunImmediate
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines[uo.StartLine-1] ]
     let expected =
           [(((4, 5), (4, 23)), "open System.Collections // unused");
@@ -5664,7 +5664,7 @@ type UseTheThings(i:int) =
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
     //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
     let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
-    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1]), AnalysisScope.AllFiles) |> Async.RunImmediate
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1])) |> Async.RunImmediate
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines[uo.StartLine-1] ]
     let expected =
           [(((4, 5), (4, 23)), "open System.Collections // unused");
@@ -5742,7 +5742,7 @@ module M2 =
             | _, FSharpCheckFileAnswer.Succeeded(res) -> res
             | _ -> failwithf "Parsing aborted unexpectedly..."
     let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
-    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1]), AnalysisScope.AllFiles) |> Async.RunImmediate
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1])) |> Async.RunImmediate
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines[uo.StartLine-1] ]
     let expected =
           [(((2, 5), (2, 23)), "open System.Collections // unused");

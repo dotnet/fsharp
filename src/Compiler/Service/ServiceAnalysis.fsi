@@ -13,11 +13,12 @@ type AnalysisScope =
     /// Skip analysis on files that contain any Error-severity diagnostic, avoiding false positives.
     | FilesWithoutErrors
 
-module public UnusedOpens =
+[<AbstractClass; Sealed>]
+type UnusedOpens =
 
     /// Get all unused open declarations in a file
-    val getUnusedOpens:
-        checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) * analysisScope: AnalysisScope ->
+    static member getUnusedOpens:
+        checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) * ?analysisScope: AnalysisScope ->
             Async<range list>
 
 module public SimplifyNames =
@@ -36,9 +37,10 @@ module public SimplifyNames =
     val getSimplifiableNames:
         checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) -> Async<seq<SimplifiableRange>>
 
-module public UnusedDeclarations =
+[<AbstractClass; Sealed>]
+type UnusedDeclarations =
 
     /// Get all unused declarations in a file
-    val getUnusedDeclarations:
-        checkFileResults: FSharpCheckFileResults * isScriptFile: bool * analysisScope: AnalysisScope ->
+    static member getUnusedDeclarations:
+        checkFileResults: FSharpCheckFileResults * isScriptFile: bool * ?analysisScope: AnalysisScope ->
             Async<seq<range>>

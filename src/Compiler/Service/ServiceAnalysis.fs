@@ -33,7 +33,7 @@ module private AnalysisScopeHelpers =
                 |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
             )
 
-module UnusedOpens =
+module private UnusedOpensInternal =
 
     let symbolHash =
         HashIdentity.FromFunctions (fun (x: FSharpSymbol) -> x.GetEffectivelySameAsHash()) (fun x y -> x.IsEffectivelySameAs(y))
@@ -343,6 +343,16 @@ module UnusedOpens =
                     return! filterOpenStatements symbolUses openStatements
         }
 
+[<AbstractClass; Sealed>]
+type UnusedOpens =
+
+    /// Get all unused open declarations in a file
+    static member getUnusedOpens
+        (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string, ?analysisScope: AnalysisScope)
+        : Async<range list> =
+        let analysisScope = defaultArg analysisScope AnalysisScope.AllFiles
+        UnusedOpensInternal.getUnusedOpens (checkFileResults, getSourceLineStr, analysisScope)
+
 module SimplifyNames =
     type SimplifiableRange = { Range: range; RelativeName: string }
 
@@ -430,7 +440,7 @@ module SimplifyNames =
             return (result :> seq<_>)
         }
 
-module UnusedDeclarations =
+module private UnusedDeclarationsInternal =
     let isPotentiallyUnusedDeclaration (symbol: FSharpSymbol) : bool =
         match symbol with
 
@@ -497,3 +507,13 @@ module UnusedDeclarations =
                 let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
                 return unusedRanges
         }
+
+[<AbstractClass; Sealed>]
+type UnusedDeclarations =
+
+    /// Get all unused declarations in a file
+    static member getUnusedDeclarations
+        (checkFileResults: FSharpCheckFileResults, isScriptFile: bool, ?analysisScope: AnalysisScope)
+        : Async<seq<range>> =
+        let analysisScope = defaultArg analysisScope AnalysisScope.AllFiles
+        UnusedDeclarationsInternal.getUnusedDeclarations (checkFileResults, isScriptFile, analysisScope)
