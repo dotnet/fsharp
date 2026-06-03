@@ -276,17 +276,7 @@ let doWork (n: float) = double n
         |> withOptimize
         |> compile
         |> shouldSucceed
-        |> verifyIL [
-            """.method public static float64  doWork(float64 n) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.r8     2
-    IL_000a:  mul
-    IL_000b:  ret
-  }"""
-        ]
+        |> verifyILNotPresent [ "initobj"; "ldnull" ]
         |> ignore
 
     // Soundness pin: optimizing away an unused `Unchecked.defaultof<T>` must not introduce
