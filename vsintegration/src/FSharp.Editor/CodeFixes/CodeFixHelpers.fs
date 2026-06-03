@@ -73,7 +73,7 @@ module internal CodeFixHelpers =
 
         TelemetryReporter.ReportSingleEvent(TelemetryEvents.CodefixActivated, props)
 
-    let createTextChangeCodeFix (codeFix, context: CodeFixContext) =
+    let createTextChangeCodeFix (codeFix: FSharpCodeFix, context: CodeFixContext) =
         CodeAction.Create(
             codeFix.Message,
             (fun cancellationToken ->
