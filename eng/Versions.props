@@ -89,7 +89,6 @@
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
     <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
-    <SystemSecurityCryptographyXmlVersion>10.0.8</SystemSecurityCryptographyXmlVersion>
     <!-- System.* packages from dotnet/runtime are managed in Version.Details.xml / Version.Details.props for source-build. -->
   </PropertyGroup>
 

@@ -1091,7 +1091,7 @@ let _ = 1 + "not an int"
 
     // With default (AllFiles), unused declarations are still reported even with errors
     let unused =
-        UnusedDeclarations.getUnusedDeclarations(checkFileResults, false)
+        UnusedDeclarations.getUnusedDeclarations(checkFileResults, false, AnalysisScope.AllFiles)
         |> Async.RunSynchronously
         |> Seq.toList
     Assert.NotEmpty(unused)
