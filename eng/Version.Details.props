@@ -6,7 +6,7 @@ This file should be imported by eng/Versions.props
 <Project>
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
-    <MicrosoftDotNetArcadeSdkPackageVersion>11.0.0-beta.26272.4</MicrosoftDotNetArcadeSdkPackageVersion>
+    <MicrosoftDotNetArcadeSdkPackageVersion>11.0.0-beta.26279.5</MicrosoftDotNetArcadeSdkPackageVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildPackageVersion>18.8.0-preview-26265-07</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>18.8.0-preview-26265-07</MicrosoftBuildFrameworkPackageVersion>
@@ -32,6 +32,7 @@ This file should be imported by eng/Versions.props
     <SystemCompositionPackageVersion>10.0.2</SystemCompositionPackageVersion>
     <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.2</SystemDiagnosticsDiagnosticSourcePackageVersion>
     <SystemReflectionMetadataPackageVersion>10.0.2</SystemReflectionMetadataPackageVersion>
+    <SystemSecurityCryptographyXmlPackageVersion>10.0.8</SystemSecurityCryptographyXmlPackageVersion>
   </PropertyGroup>
   <!--Property group for alternate package version names-->
   <PropertyGroup>
@@ -62,5 +63,6 @@ This file should be imported by eng/Versions.props
     <SystemCompositionVersion>$(SystemCompositionPackageVersion)</SystemCompositionVersion>
     <SystemDiagnosticsDiagnosticSourceVersion>$(SystemDiagnosticsDiagnosticSourcePackageVersion)</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemReflectionMetadataVersion>$(SystemReflectionMetadataPackageVersion)</SystemReflectionMetadataVersion>
+    <SystemSecurityCryptographyXmlVersion>$(SystemSecurityCryptographyXmlPackageVersion)</SystemSecurityCryptographyXmlVersion>
   </PropertyGroup>
 </Project>
