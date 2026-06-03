@@ -50,23 +50,24 @@
       
       .maxstack  5
       .locals init (valuetype assembly/T& V_0,
-               int32 V_1,
-               int32 V_2)
+               class [runtime]System.Collections.IComparer V_1,
+               int32 V_2,
+               int32 V_3)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0008:  pop
+      IL_0008:  stloc.1
       IL_0009:  ldarg.0
       IL_000a:  ldfld      int32 assembly/T::i
-      IL_000f:  stloc.1
+      IL_000f:  stloc.2
       IL_0010:  ldloc.0
       IL_0011:  ldfld      int32 assembly/T::i
-      IL_0016:  stloc.2
-      IL_0017:  ldloc.1
-      IL_0018:  ldloc.2
+      IL_0016:  stloc.3
+      IL_0017:  ldloc.2
+      IL_0018:  ldloc.3
       IL_0019:  cgt
-      IL_001b:  ldloc.1
-      IL_001c:  ldloc.2
+      IL_001b:  ldloc.2
+      IL_001c:  ldloc.3
       IL_001d:  clt
       IL_001f:  sub
       IL_0020:  ret
@@ -324,7 +325,6 @@
   } 
 
 } 
-
 
 
 

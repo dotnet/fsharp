@@ -229,10 +229,11 @@
     .method public hidebysig virtual instance string ToString() cil managed
     {
       
-      .maxstack  8
+      .maxstack  3
+      .locals init (valuetype MyTestModule/Myassembly V_0)
       IL_0000:  ldarg.0
       IL_0001:  ldobj      MyTestModule/Myassembly
-      IL_0006:  pop
+      IL_0006:  stloc.0
       IL_0007:  ldarg.0
       IL_0008:  call       instance int32 MyTestModule/Myassembly::get_Tag()
       IL_000d:  switch     ( 

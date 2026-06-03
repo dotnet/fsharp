@@ -184,7 +184,7 @@
         IL_002b:  ret
 
         IL_002c:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_0031:  pop
+        IL_0031:  stloc.1
         IL_0032:  ldarg.0
         IL_0033:  ldfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item2
         IL_0038:  stloc.s    V_4
@@ -467,10 +467,20 @@
       } 
     } 
 
+    .field static assembly bool arg@1
+    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .field static assembly valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<int32> x@1
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .field static assembly valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<int32> y@1
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .method assembly specialname static bool get_arg@1() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldsfld     bool assembly/EqualsMicroPerfAndCodeGenerationTests::arg@1
+      IL_0005:  ret
+    } 
+
     .method assembly specialname static valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<int32> get_x@1() cil managed
     {
       
@@ -517,10 +527,15 @@
       IL_0022:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_0027:  call       instance bool valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<int32>::Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!0>,
                                                                                                                                     class [runtime]System.Collections.IEqualityComparer)
-      IL_002c:  pop
-      IL_002d:  ret
+      IL_002c:  stsfld     bool assembly/EqualsMicroPerfAndCodeGenerationTests::arg@1
+      IL_0031:  ret
     } 
 
+    .property bool arg@1()
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+      .get bool assembly/EqualsMicroPerfAndCodeGenerationTests::get_arg@1()
+    } 
     .property valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<int32>
             x@1()
     {

@@ -67,18 +67,19 @@
   {
     
     .maxstack  4
-    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
-             class [runtime]System.Exception V_1)
+    .locals init (int32 V_0,
+             class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1,
+             class [runtime]System.Exception V_2)
     .try
     {
       IL_0000:  nop
       IL_0001:  call       int32 assembly::TestFunction1()
-      IL_0006:  pop
+      IL_0006:  stloc.0
       IL_0007:  ldstr      "Hello"
       IL_000c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_0011:  stloc.0
+      IL_0011:  stloc.1
       IL_0012:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-      IL_0017:  ldloc.0
+      IL_0017:  ldloc.1
       IL_0018:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_001d:  pop
@@ -88,12 +89,12 @@
     catch [runtime]System.Object 
     {
       IL_0020:  castclass  [runtime]System.Exception
-      IL_0025:  stloc.1
+      IL_0025:  stloc.2
       IL_0026:  ldstr      "World"
       IL_002b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_0030:  stloc.0
+      IL_0030:  stloc.1
       IL_0031:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-      IL_0036:  ldloc.0
+      IL_0036:  ldloc.1
       IL_0037:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_003c:  pop

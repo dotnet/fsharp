@@ -97,21 +97,22 @@
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  5
-        .locals init (int32 V_0,
-                 int32 V_1)
+        .locals init (class [runtime]System.Collections.IComparer V_0,
+                 int32 V_1,
+                 int32 V_2)
         IL_0000:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_0005:  pop
+        IL_0005:  stloc.0
         IL_0006:  ldarg.0
         IL_0007:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeRecord::V@
-        IL_000c:  stloc.0
+        IL_000c:  stloc.1
         IL_000d:  ldarga.s   obj
         IL_000f:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeRecord::V@
-        IL_0014:  stloc.1
-        IL_0015:  ldloc.0
-        IL_0016:  ldloc.1
+        IL_0014:  stloc.2
+        IL_0015:  ldloc.1
+        IL_0016:  ldloc.2
         IL_0017:  cgt
-        IL_0019:  ldloc.0
-        IL_001a:  ldloc.1
+        IL_0019:  ldloc.1
+        IL_001a:  ldloc.2
         IL_001b:  clt
         IL_001d:  sub
         IL_001e:  ret

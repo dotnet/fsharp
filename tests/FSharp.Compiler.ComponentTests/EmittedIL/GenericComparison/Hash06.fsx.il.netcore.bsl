@@ -162,13 +162,14 @@
         .locals init (class assembly/HashMicroPerfAndCodeGenerationTests/Key V_0,
                  class assembly/HashMicroPerfAndCodeGenerationTests/Key V_1,
                  int32 V_2,
-                 int32 V_3,
-                 int32 V_4)
+                 class [runtime]System.Collections.IComparer V_3,
+                 int32 V_4,
+                 int32 V_5)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_005c
+        IL_0001:  brfalse.s  IL_0062
 
         IL_0003:  ldarg.1
-        IL_0004:  brfalse.s  IL_005a
+        IL_0004:  brfalse.s  IL_0060
 
         IL_0006:  ldarg.0
         IL_0007:  pop
@@ -177,63 +178,63 @@
         IL_000a:  ldarg.1
         IL_000b:  stloc.1
         IL_000c:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_0011:  pop
+        IL_0011:  stloc.3
         IL_0012:  ldloc.0
         IL_0013:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/Key::item1
-        IL_0018:  stloc.3
-        IL_0019:  ldloc.1
-        IL_001a:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/Key::item1
-        IL_001f:  stloc.s    V_4
-        IL_0021:  ldloc.3
+        IL_0018:  stloc.s    V_4
+        IL_001a:  ldloc.1
+        IL_001b:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/Key::item1
+        IL_0020:  stloc.s    V_5
         IL_0022:  ldloc.s    V_4
-        IL_0024:  cgt
-        IL_0026:  ldloc.3
-        IL_0027:  ldloc.s    V_4
-        IL_0029:  clt
-        IL_002b:  sub
-        IL_002c:  stloc.2
-        IL_002d:  ldloc.2
-        IL_002e:  ldc.i4.0
-        IL_002f:  bge.s      IL_0033
+        IL_0024:  ldloc.s    V_5
+        IL_0026:  cgt
+        IL_0028:  ldloc.s    V_4
+        IL_002a:  ldloc.s    V_5
+        IL_002c:  clt
+        IL_002e:  sub
+        IL_002f:  stloc.2
+        IL_0030:  ldloc.2
+        IL_0031:  ldc.i4.0
+        IL_0032:  bge.s      IL_0036
 
-        IL_0031:  ldloc.2
-        IL_0032:  ret
+        IL_0034:  ldloc.2
+        IL_0035:  ret
 
-        IL_0033:  ldloc.2
-        IL_0034:  ldc.i4.0
-        IL_0035:  ble.s      IL_0039
+        IL_0036:  ldloc.2
+        IL_0037:  ldc.i4.0
+        IL_0038:  ble.s      IL_003c
 
-        IL_0037:  ldloc.2
-        IL_0038:  ret
+        IL_003a:  ldloc.2
+        IL_003b:  ret
 
-        IL_0039:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_003e:  pop
-        IL_003f:  ldloc.0
-        IL_0040:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/Key::item2
-        IL_0045:  stloc.3
-        IL_0046:  ldloc.1
-        IL_0047:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/Key::item2
-        IL_004c:  stloc.s    V_4
-        IL_004e:  ldloc.3
-        IL_004f:  ldloc.s    V_4
-        IL_0051:  cgt
-        IL_0053:  ldloc.3
-        IL_0054:  ldloc.s    V_4
-        IL_0056:  clt
-        IL_0058:  sub
-        IL_0059:  ret
+        IL_003c:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+        IL_0041:  stloc.3
+        IL_0042:  ldloc.0
+        IL_0043:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/Key::item2
+        IL_0048:  stloc.s    V_4
+        IL_004a:  ldloc.1
+        IL_004b:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/Key::item2
+        IL_0050:  stloc.s    V_5
+        IL_0052:  ldloc.s    V_4
+        IL_0054:  ldloc.s    V_5
+        IL_0056:  cgt
+        IL_0058:  ldloc.s    V_4
+        IL_005a:  ldloc.s    V_5
+        IL_005c:  clt
+        IL_005e:  sub
+        IL_005f:  ret
 
-        IL_005a:  ldc.i4.1
-        IL_005b:  ret
+        IL_0060:  ldc.i4.1
+        IL_0061:  ret
 
-        IL_005c:  ldarg.1
-        IL_005d:  brfalse.s  IL_0061
+        IL_0062:  ldarg.1
+        IL_0063:  brfalse.s  IL_0067
 
-        IL_005f:  ldc.i4.m1
-        IL_0060:  ret
+        IL_0065:  ldc.i4.m1
+        IL_0066:  ret
 
-        IL_0061:  ldc.i4.0
-        IL_0062:  ret
+        IL_0067:  ldc.i4.0
+        IL_0068:  ret
       } 
 
       .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
@@ -561,7 +562,8 @@
     {
       
       .maxstack  4
-      .locals init (int32 V_0)
+      .locals init (int32 V_0,
+               int32 V_1)
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  stloc.0
@@ -572,7 +574,7 @@
       IL_0007:  call       class assembly/HashMicroPerfAndCodeGenerationTests/Key assembly/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
                                                                                                                                        int32)
       IL_000c:  callvirt   instance int32 [runtime]System.Object::GetHashCode()
-      IL_0011:  pop
+      IL_0011:  stloc.1
       IL_0012:  ldloc.0
       IL_0013:  ldc.i4.1
       IL_0014:  add

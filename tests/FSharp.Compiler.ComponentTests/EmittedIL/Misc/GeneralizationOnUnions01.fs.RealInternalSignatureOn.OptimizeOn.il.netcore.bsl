@@ -166,10 +166,11 @@
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
-      .maxstack  8
+      .maxstack  3
+      .locals init (class assembly/Weirdo V_0)
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  assembly/Weirdo
-      IL_0006:  pop
+      IL_0006:  stloc.0
       IL_0007:  ldarg.0
       IL_0008:  brfalse.s  IL_0016
 
@@ -381,7 +382,6 @@
   } 
 
 } 
-
 
 
 

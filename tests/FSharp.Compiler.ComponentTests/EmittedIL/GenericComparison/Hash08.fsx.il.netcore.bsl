@@ -113,8 +113,9 @@
         
         .maxstack  5
         .locals init (int32 V_0,
-                 int32 V_1,
-                 int32 V_2)
+                 class [runtime]System.Collections.IComparer V_1,
+                 int32 V_2,
+                 int32 V_3)
         IL_0000:  ldarg.0
         IL_0001:  brfalse.s  IL_0050
 
@@ -122,18 +123,18 @@
         IL_0004:  brfalse.s  IL_004e
 
         IL_0006:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_000b:  pop
+        IL_000b:  stloc.1
         IL_000c:  ldarg.0
         IL_000d:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_0012:  stloc.1
+        IL_0012:  stloc.2
         IL_0013:  ldarg.1
         IL_0014:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_0019:  stloc.2
-        IL_001a:  ldloc.1
-        IL_001b:  ldloc.2
+        IL_0019:  stloc.3
+        IL_001a:  ldloc.2
+        IL_001b:  ldloc.3
         IL_001c:  cgt
-        IL_001e:  ldloc.1
-        IL_001f:  ldloc.2
+        IL_001e:  ldloc.2
+        IL_001f:  ldloc.3
         IL_0020:  clt
         IL_0022:  sub
         IL_0023:  stloc.0
@@ -152,18 +153,18 @@
         IL_002f:  ret
 
         IL_0030:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_0035:  pop
+        IL_0035:  stloc.1
         IL_0036:  ldarg.0
         IL_0037:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_003c:  stloc.1
+        IL_003c:  stloc.2
         IL_003d:  ldarg.1
         IL_003e:  ldfld      int32 assembly/HashMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_0043:  stloc.2
-        IL_0044:  ldloc.1
-        IL_0045:  ldloc.2
+        IL_0043:  stloc.3
+        IL_0044:  ldloc.2
+        IL_0045:  ldloc.3
         IL_0046:  cgt
-        IL_0048:  ldloc.1
-        IL_0049:  ldloc.2
+        IL_0048:  ldloc.2
+        IL_0049:  ldloc.3
         IL_004a:  clt
         IL_004c:  sub
         IL_004d:  ret
@@ -462,7 +463,8 @@
     {
       
       .maxstack  4
-      .locals init (int32 V_0)
+      .locals init (int32 V_0,
+               int32 V_1)
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  stloc.0
@@ -474,7 +476,7 @@
                                                                                                 int32)
       IL_000c:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityERComparer()
       IL_0011:  callvirt   instance int32 assembly/HashMicroPerfAndCodeGenerationTests/KeyR::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_0016:  pop
+      IL_0016:  stloc.1
       IL_0017:  ldloc.0
       IL_0018:  ldc.i4.1
       IL_0019:  add

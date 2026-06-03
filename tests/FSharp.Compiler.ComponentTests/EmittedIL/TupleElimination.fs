@@ -92,22 +92,24 @@ public static Tuple<long, int> v()
 {
   
   .maxstack  4
-  .locals init (int32 V_0)
+  .locals init (string V_0,
+           valuetype [runtime]System.DateTime V_1,
+           int32 V_2)
   IL_0000:  ldstr      ""
   IL_0005:  callvirt   instance string [runtime]System.String::ToString()
-  IL_000a:  pop
+  IL_000a:  stloc.0
   IL_000b:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
-  IL_0010:  pop
+  IL_0010:  stloc.1
   IL_0011:  ldstr      "3"
   IL_0016:  callvirt   instance string [runtime]System.String::ToString()
-  IL_001b:  pop
+  IL_001b:  stloc.0
   IL_001c:  call       int32 TupleElimination::f()
-  IL_0021:  stloc.0
+  IL_0021:  stloc.2
   IL_0022:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
-  IL_0027:  pop
+  IL_0027:  stloc.1
   IL_0028:  ldc.i4.2
   IL_0029:  conv.i8
-  IL_002a:  ldloc.0
+  IL_002a:  ldloc.2
   IL_002b:  newobj     instance void class [runtime]System.Tuple`2<int64,int32>::.ctor(!0,
                                                                                               !1)
   IL_0030:  ret
@@ -132,30 +134,32 @@ public static int w()
 {
   
   .maxstack  4
-  .locals init (int32 V_0,
-           class [runtime]System.Tuple`2<int32,int32> V_1)
+  .locals init (string V_0,
+           valuetype [runtime]System.DateTime V_1,
+           int32 V_2,
+           class [runtime]System.Tuple`2<int32,int32> V_3)
   IL_0000:  ldstr      ""
   IL_0005:  callvirt   instance string [runtime]System.String::ToString()
-  IL_000a:  pop
+  IL_000a:  stloc.0
   IL_000b:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
-  IL_0010:  pop
+  IL_0010:  stloc.1
   IL_0011:  ldstr      "3"
   IL_0016:  callvirt   instance string [runtime]System.String::ToString()
-  IL_001b:  pop
+  IL_001b:  stloc.0
   IL_001c:  call       int32 TupleElimination::f()
-  IL_0021:  stloc.0
+  IL_0021:  stloc.2
   IL_0022:  ldc.i4.2
-  IL_0023:  ldloc.0
+  IL_0023:  ldloc.2
   IL_0024:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
                                                                                               !1)
-  IL_0029:  stloc.1
+  IL_0029:  stloc.3
   IL_002a:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
-  IL_002f:  pop
-  IL_0030:  ldloc.1
+  IL_002f:  stloc.1
+  IL_0030:  ldloc.3
   IL_0031:  call       class [runtime]System.Tuple`2<int32,int32> TupleElimination/Test::test(class [runtime]System.Tuple`2<int32,int32>)
   IL_0036:  pop
   IL_0037:  ldc.i4.2
-  IL_0038:  ldloc.0
+  IL_0038:  ldloc.2
   IL_0039:  add
   IL_003a:  ret
 }
@@ -177,21 +181,23 @@ public static int x()
 {
   
   .maxstack  4
-  .locals init (int32 V_0)
+  .locals init (string V_0,
+           valuetype [runtime]System.DateTime V_1,
+           int32 V_2)
   IL_0000:  ldstr      ""
   IL_0005:  callvirt   instance string [runtime]System.String::ToString()
-  IL_000a:  pop
+  IL_000a:  stloc.0
   IL_000b:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
-  IL_0010:  pop
+  IL_0010:  stloc.1
   IL_0011:  ldstr      "3"
   IL_0016:  callvirt   instance string [runtime]System.String::ToString()
-  IL_001b:  pop
+  IL_001b:  stloc.0
   IL_001c:  call       int32 TupleElimination::f()
-  IL_0021:  stloc.0
+  IL_0021:  stloc.2
   IL_0022:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
-  IL_0027:  pop
+  IL_0027:  stloc.1
   IL_0028:  ldc.i4.2
-  IL_0029:  ldloc.0
+  IL_0029:  ldloc.2
   IL_002a:  add
   IL_002b:  ret
 }
@@ -342,16 +348,18 @@ public static int z()
   
   .maxstack  4
   .locals init (class [runtime]System.Tuple`2<int32,int32> V_0,
-           int32 V_1,
-           int32 V_2)
+           string V_1,
+           valuetype [runtime]System.DateTime V_2,
+           int32 V_3,
+           int32 V_4)
   IL_0000:  ldstr      ""
   IL_0005:  callvirt   instance string [runtime]System.String::ToString()
-  IL_000a:  pop
+  IL_000a:  stloc.1
   IL_000b:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
-  IL_0010:  pop
+  IL_0010:  stloc.2
   IL_0011:  ldstr      "3"
   IL_0016:  callvirt   instance string [runtime]System.String::ToString()
-  IL_001b:  pop
+  IL_001b:  stloc.1
   IL_001c:  ldc.i4.2
   IL_001d:  call       int32 TupleElimination::f()
   IL_0022:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
@@ -360,16 +368,16 @@ public static int z()
   IL_002c:  stloc.0
   IL_002d:  ldloc.0
   IL_002e:  call       instance !1 class [runtime]System.Tuple`2<int32,int32>::get_Item2()
-  IL_0033:  stloc.1
+  IL_0033:  stloc.3
   IL_0034:  ldloc.0
   IL_0035:  call       instance !0 class [runtime]System.Tuple`2<int32,int32>::get_Item1()
-  IL_003a:  stloc.2
-  IL_003b:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
-  IL_0040:  pop
-  IL_0041:  ldloc.2
-  IL_0042:  ldloc.1
-  IL_0043:  add
-  IL_0044:  ret
+  IL_003a:  stloc.s    V_4
+  IL_003c:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
+  IL_0041:  stloc.2
+  IL_0042:  ldloc.s    V_4
+  IL_0044:  ldloc.3
+  IL_0045:  add
+  IL_0046:  ret
 }""" ]
 
     [<Fact>]
@@ -560,7 +568,8 @@ public static int y()
   .maxstack  5
   .locals init (int32 V_0,
            int32 V_1,
-           int32 V_2)
+           int32 V_2,
+           string V_3)
   IL_0000:  ldc.i4.0
   IL_0001:  stloc.0
   IL_0002:  ldc.i4.0
@@ -572,7 +581,7 @@ public static int y()
 
   IL_000d:  ldstr      ""
   IL_0012:  callvirt   instance string [runtime]System.String::ToString()
-  IL_0017:  pop
+  IL_0017:  stloc.3
   IL_0018:  ldc.i4.1
   IL_0019:  stloc.0
   IL_001a:  call       int32 TupleElimination::f()
@@ -619,7 +628,7 @@ public static int y()
   
   IL_005c:  ldstr      ""
   IL_0061:  callvirt   instance string [runtime]System.String::ToString()
-  IL_0066:  pop
+  IL_0066:  stloc.3
   IL_0067:  ldc.i4.6
   IL_0068:  stloc.0
   IL_0069:  ldc.i4.5

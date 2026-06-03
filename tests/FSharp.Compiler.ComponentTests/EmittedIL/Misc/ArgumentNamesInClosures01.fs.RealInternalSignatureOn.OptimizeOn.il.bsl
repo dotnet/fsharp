@@ -71,11 +71,14 @@
       .method public strict virtual instance int32 Invoke(class M/C i_want_to_see_this_identifier) cil managed
       {
         
-        .maxstack  8
-        IL_0000:  ldarg.1
-        IL_0001:  tail.
-        IL_0003:  callvirt   instance int32 [runtime]System.Object::GetHashCode()
-        IL_0008:  ret
+        .maxstack  5
+        .locals init (object V_0)
+        IL_0000:  ldnull
+        IL_0001:  stloc.0
+        IL_0002:  ldarg.1
+        IL_0003:  tail.
+        IL_0005:  callvirt   instance int32 [runtime]System.Object::GetHashCode()
+        IL_000a:  ret
       } 
 
       .method private specialname rtspecialname static void  .cctor() cil managed
@@ -118,11 +121,14 @@
   .method public static int32  I(class M/C i_want_to_see_this_identifier) cil managed
   {
     
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  tail.
-    IL_0003:  callvirt   instance int32 [runtime]System.Object::GetHashCode()
-    IL_0008:  ret
+    .maxstack  3
+    .locals init (object V_0)
+    IL_0000:  ldnull
+    IL_0001:  stloc.0
+    IL_0002:  ldarg.0
+    IL_0003:  tail.
+    IL_0005:  callvirt   instance int32 [runtime]System.Object::GetHashCode()
+    IL_000a:  ret
   } 
 
 } 
@@ -139,7 +145,6 @@
   } 
 
 } 
-
 
 
 

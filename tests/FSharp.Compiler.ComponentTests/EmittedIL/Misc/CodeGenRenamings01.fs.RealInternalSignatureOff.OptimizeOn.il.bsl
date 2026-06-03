@@ -287,6 +287,94 @@
     IL_0005:  ret
   } 
 
+  .method assembly specialname static int32 get_arg_0@30() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::arg_0@30
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 get_arg_1@30() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::arg_1@30
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 get_arg_2@30() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::arg_2@30
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 get_arg_3@30() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::arg_3@30
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_0@34-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_0@34-1'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_1@34-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_1@34-1'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_2@34-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_2@34-1'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_0@38-2'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_0@38-2'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_1@38-2'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_1@38-2'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_2@38-2'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_2@38-2'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_3@38-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_3@38-1'
+    IL_0005:  ret
+  } 
+
   .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>
           alist()
   {
@@ -347,6 +435,61 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
     .get int32[] assembly::get_a2()
   } 
+  .property int32 arg_0@30()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::get_arg_0@30()
+  } 
+  .property int32 arg_1@30()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::get_arg_1@30()
+  } 
+  .property int32 arg_2@30()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::get_arg_2@30()
+  } 
+  .property int32 arg_3@30()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::get_arg_3@30()
+  } 
+  .property int32 'arg_0@34-1'()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::'get_arg_0@34-1'()
+  } 
+  .property int32 'arg_1@34-1'()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::'get_arg_1@34-1'()
+  } 
+  .property int32 'arg_2@34-1'()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::'get_arg_2@34-1'()
+  } 
+  .property int32 'arg_0@38-2'()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::'get_arg_0@38-2'()
+  } 
+  .property int32 'arg_1@38-2'()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::'get_arg_1@38-2'()
+  } 
+  .property int32 'arg_2@38-2'()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::'get_arg_2@38-2'()
+  } 
+  .property int32 'arg_3@38-1'()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::'get_arg_3@38-1'()
+  } 
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
@@ -373,6 +516,28 @@
   .field static assembly int32[] a1@25
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32[] a2@26
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 arg_0@30
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 arg_1@30
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 arg_2@30
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 arg_3@30
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 'arg_0@34-1'
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 'arg_1@34-1'
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 'arg_2@34-1'
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 'arg_0@38-2'
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 'arg_1@38-2'
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 'arg_2@38-2'
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 'arg_3@38-1'
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -534,99 +699,98 @@
     IL_0139:  call       int32[0...,0...] assembly::get_a3()
     IL_013e:  ldc.i4.s   0
     IL_0140:  call       instance int32 [runtime]System.Array::GetLength(int32)
-    IL_0145:  pop
-    IL_0146:  call       int32[0...,0...] assembly::get_a3()
-    IL_014b:  ldc.i4.s   1
-    IL_014d:  call       instance int32 [runtime]System.Array::GetLength(int32)
-    IL_0152:  pop
-    IL_0153:  call       int32[0...,0...] assembly::get_a3()
-    IL_0158:  ldc.i4.0
-    IL_0159:  callvirt   instance int32 [netstandard]System.Array::GetLowerBound(int32)
-    IL_015e:  pop
-    IL_015f:  call       int32[0...,0...] assembly::get_a3()
-    IL_0164:  ldc.i4.1
-    IL_0165:  callvirt   instance int32 [netstandard]System.Array::GetLowerBound(int32)
-    IL_016a:  pop
+    IL_0145:  stsfld     int32 '<StartupCode$assembly>'.$assembly::arg_0@30
+    IL_014a:  call       int32[0...,0...] assembly::get_a3()
+    IL_014f:  ldc.i4.s   1
+    IL_0151:  call       instance int32 [runtime]System.Array::GetLength(int32)
+    IL_0156:  stsfld     int32 '<StartupCode$assembly>'.$assembly::arg_1@30
+    IL_015b:  call       int32[0...,0...] assembly::get_a3()
+    IL_0160:  ldc.i4.0
+    IL_0161:  callvirt   instance int32 [netstandard]System.Array::GetLowerBound(int32)
+    IL_0166:  stsfld     int32 '<StartupCode$assembly>'.$assembly::arg_2@30
     IL_016b:  call       int32[0...,0...] assembly::get_a3()
-    IL_0170:  ldc.i4.0
-    IL_0171:  ldc.i4.0
-    IL_0172:  call       int32[0...,0...] assembly::get_a3()
-    IL_0177:  ldc.i4.0
-    IL_0178:  ldc.i4.0
-    IL_0179:  call       instance int32 int32[0...,0...]::Get(int32,
+    IL_0170:  ldc.i4.1
+    IL_0171:  callvirt   instance int32 [netstandard]System.Array::GetLowerBound(int32)
+    IL_0176:  stsfld     int32 '<StartupCode$assembly>'.$assembly::arg_3@30
+    IL_017b:  call       int32[0...,0...] assembly::get_a3()
+    IL_0180:  ldc.i4.0
+    IL_0181:  ldc.i4.0
+    IL_0182:  call       int32[0...,0...] assembly::get_a3()
+    IL_0187:  ldc.i4.0
+    IL_0188:  ldc.i4.0
+    IL_0189:  call       instance int32 int32[0...,0...]::Get(int32,
                                                               int32)
-    IL_017e:  call       instance void int32[0...,0...]::Set(int32,
+    IL_018e:  call       instance void int32[0...,0...]::Set(int32,
                                                              int32,
                                                              int32)
-    IL_0183:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_0188:  ldc.i4.s   0
-    IL_018a:  call       instance int32 [runtime]System.Array::GetLength(int32)
-    IL_018f:  pop
-    IL_0190:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_0195:  ldc.i4.s   1
-    IL_0197:  call       instance int32 [runtime]System.Array::GetLength(int32)
-    IL_019c:  pop
-    IL_019d:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_01a2:  ldc.i4.s   2
-    IL_01a4:  call       instance int32 [runtime]System.Array::GetLength(int32)
-    IL_01a9:  pop
-    IL_01aa:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_01af:  ldc.i4.0
-    IL_01b0:  ldc.i4.0
-    IL_01b1:  ldc.i4.0
-    IL_01b2:  call       int32[0...,0...,0...] assembly::get_array3D()
-    IL_01b7:  ldc.i4.0
-    IL_01b8:  ldc.i4.0
-    IL_01b9:  ldc.i4.0
-    IL_01ba:  call       instance int32 int32[0...,0...,0...]::Get(int32,
+    IL_0193:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_0198:  ldc.i4.s   0
+    IL_019a:  call       instance int32 [runtime]System.Array::GetLength(int32)
+    IL_019f:  stsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_0@34-1'
+    IL_01a4:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_01a9:  ldc.i4.s   1
+    IL_01ab:  call       instance int32 [runtime]System.Array::GetLength(int32)
+    IL_01b0:  stsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_1@34-1'
+    IL_01b5:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_01ba:  ldc.i4.s   2
+    IL_01bc:  call       instance int32 [runtime]System.Array::GetLength(int32)
+    IL_01c1:  stsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_2@34-1'
+    IL_01c6:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_01cb:  ldc.i4.0
+    IL_01cc:  ldc.i4.0
+    IL_01cd:  ldc.i4.0
+    IL_01ce:  call       int32[0...,0...,0...] assembly::get_array3D()
+    IL_01d3:  ldc.i4.0
+    IL_01d4:  ldc.i4.0
+    IL_01d5:  ldc.i4.0
+    IL_01d6:  call       instance int32 int32[0...,0...,0...]::Get(int32,
                                                                    int32,
                                                                    int32)
-    IL_01bf:  call       instance void int32[0...,0...,0...]::Set(int32,
+    IL_01db:  call       instance void int32[0...,0...,0...]::Set(int32,
                                                                   int32,
                                                                   int32,
                                                                   int32)
-    IL_01c4:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_01c9:  ldc.i4.s   0
-    IL_01cb:  call       instance int32 [runtime]System.Array::GetLength(int32)
-    IL_01d0:  pop
-    IL_01d1:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_01d6:  ldc.i4.s   1
-    IL_01d8:  call       instance int32 [runtime]System.Array::GetLength(int32)
-    IL_01dd:  pop
-    IL_01de:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_01e3:  ldc.i4.s   2
-    IL_01e5:  call       instance int32 [runtime]System.Array::GetLength(int32)
-    IL_01ea:  pop
-    IL_01eb:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_01f0:  ldc.i4.s   3
-    IL_01f2:  call       instance int32 [runtime]System.Array::GetLength(int32)
-    IL_01f7:  pop
-    IL_01f8:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_01fd:  ldc.i4.0
-    IL_01fe:  ldc.i4.0
-    IL_01ff:  ldc.i4.0
-    IL_0200:  ldc.i4.0
-    IL_0201:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
-    IL_0206:  ldc.i4.0
-    IL_0207:  ldc.i4.0
-    IL_0208:  ldc.i4.0
-    IL_0209:  ldc.i4.0
-    IL_020a:  call       instance int32 int32[0...,0...,0...,0...]::Get(int32,
+    IL_01e0:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_01e5:  ldc.i4.s   0
+    IL_01e7:  call       instance int32 [runtime]System.Array::GetLength(int32)
+    IL_01ec:  stsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_0@38-2'
+    IL_01f1:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_01f6:  ldc.i4.s   1
+    IL_01f8:  call       instance int32 [runtime]System.Array::GetLength(int32)
+    IL_01fd:  stsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_1@38-2'
+    IL_0202:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_0207:  ldc.i4.s   2
+    IL_0209:  call       instance int32 [runtime]System.Array::GetLength(int32)
+    IL_020e:  stsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_2@38-2'
+    IL_0213:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_0218:  ldc.i4.s   3
+    IL_021a:  call       instance int32 [runtime]System.Array::GetLength(int32)
+    IL_021f:  stsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_3@38-1'
+    IL_0224:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_0229:  ldc.i4.0
+    IL_022a:  ldc.i4.0
+    IL_022b:  ldc.i4.0
+    IL_022c:  ldc.i4.0
+    IL_022d:  call       int32[0...,0...,0...,0...] assembly::get_array4D()
+    IL_0232:  ldc.i4.0
+    IL_0233:  ldc.i4.0
+    IL_0234:  ldc.i4.0
+    IL_0235:  ldc.i4.0
+    IL_0236:  call       instance int32 int32[0...,0...,0...,0...]::Get(int32,
                                                                         int32,
                                                                         int32,
                                                                         int32)
-    IL_020f:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Set<int32>(!!0[0...,0...,0...,0...],
+    IL_023b:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Set<int32>(!!0[0...,0...,0...,0...],
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   !!0)
-    IL_0214:  nop
-    IL_0215:  ret
+    IL_0240:  nop
+    IL_0241:  ret
   } 
 
 } 
-
 
 
 

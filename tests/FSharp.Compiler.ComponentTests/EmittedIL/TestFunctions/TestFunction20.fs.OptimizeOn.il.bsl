@@ -48,7 +48,8 @@
     {
       
       .maxstack  4
-      .locals init (int32 V_0)
+      .locals init (int32 V_0,
+               int32 V_1)
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -70,7 +71,7 @@
       IL_0026:  callvirt   instance int32 assembly/D::f(int32)
       IL_002b:  ldloc.0
       IL_002c:  add
-      IL_002d:  pop
+      IL_002d:  stloc.1
       IL_002e:  ret
     } 
 
