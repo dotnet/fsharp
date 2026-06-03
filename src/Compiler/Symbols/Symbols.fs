@@ -2011,7 +2011,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V v -> v.IsPropertySetterMethod
         | _ -> false
 
-    member x.IsAccessorProperty =
+    member x.IsPropertyAccessor =
         x.IsPropertyGetterMethod || x.IsPropertySetterMethod
 
     member _.IsInstanceMember = 

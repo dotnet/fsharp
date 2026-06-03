@@ -917,7 +917,7 @@ let _ = T().Prop
             | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
     [<Fact>]
-    let ``IsAccessorProperty true for getter`` () =
+    let ``IsPropertyAccessor true for getter`` () =
         let _, checkResults = getParseAndCheckResults """
 module M
 type MyClass() =
@@ -930,10 +930,10 @@ type MyClass() =
                 | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "get_Prop" -> Some m
                 | _ -> None)
             |> Seq.head
-        Assert.True(mfv.IsAccessorProperty)
+        Assert.True(mfv.IsPropertyAccessor)
 
     [<Fact>]
-    let ``IsAccessorProperty true for setter`` () =
+    let ``IsPropertyAccessor true for setter`` () =
         let _, checkResults = getParseAndCheckResults """
 module M
 type MyClass() =
@@ -946,11 +946,11 @@ type MyClass() =
                 | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "set_Prop" -> Some m
                 | _ -> None)
         match setter with
-        | Some mfv -> Assert.True(mfv.IsAccessorProperty)
+        | Some mfv -> Assert.True(mfv.IsPropertyAccessor)
         | None -> Assert.Fail("set_Prop not found")
 
     [<Fact>]
-    let ``IsAccessorProperty false for regular method`` () =
+    let ``IsPropertyAccessor false for regular method`` () =
         let _, checkResults = getParseAndCheckResults """
 module M
 type MyClass() =
@@ -963,10 +963,10 @@ type MyClass() =
                 | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "DoStuff" -> Some m
                 | _ -> None)
             |> Seq.head
-        Assert.False(mfv.IsAccessorProperty)
+        Assert.False(mfv.IsPropertyAccessor)
 
     [<Fact>]
-    let ``IsAccessorProperty false for function`` () =
+    let ``IsPropertyAccessor false for function`` () =
         let _, checkResults = getParseAndCheckResults """
 module M
 let myFunc x = x + 1
@@ -978,7 +978,7 @@ let myFunc x = x + 1
                 | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "myFunc" -> Some m
                 | _ -> None)
             |> Seq.head
-        Assert.False(mfv.IsAccessorProperty)
+        Assert.False(mfv.IsPropertyAccessor)
 
     [<Fact>]
     let ``Fable query pattern: filter accessor properties`` () =
@@ -992,7 +992,7 @@ type MyClass() =
             checkResults.GetAllUsesOfAllSymbolsInFile()
             |> Seq.choose (fun s ->
                 match s.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as m when m.IsAccessorProperty -> Some m
+                | :? FSharpMemberOrFunctionOrValue as m when m.IsPropertyAccessor -> Some m
                 | _ -> None)
             |> List.ofSeq
         Assert.True(members.Length >= 1)

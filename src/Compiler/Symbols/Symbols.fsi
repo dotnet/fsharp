@@ -902,7 +902,7 @@ type FSharpMemberOrFunctionOrValue =
     member IsPropertySetterMethod: bool
 
     /// Indicates if this is an accessor method for a property, i.e. either a getter or a setter.
-    member IsAccessorProperty: bool
+    member IsPropertyAccessor: bool
 
     /// Indicates if this is an add method for an event
     member IsEventAddMethod: bool
