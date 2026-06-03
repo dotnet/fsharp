@@ -1625,14 +1625,12 @@ let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect in
 /// (e.g. SRTP witnesses like nil<^b>), eliminating the binding would orphan
 /// the type vars and trip FS0073 in IlxGen. Treat as effectful in that case.
 let ILAsmWithIlzeroHasEffect instrs tyargs =
-    let hasIlzero = instrs |> List.exists (function EI_ilzero _ -> true | _ -> false)
+    let ilzeroHasFreeTypars =
+        instrs |> List.exists (function EI_ilzero _ -> true | _ -> false)
+        && not (List.isEmpty tyargs)
+        && not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
 
-    if hasIlzero then
-        match tyargs with
-        | [] -> false
-        | _ -> not (Zset.isEmpty (freeInTypes CollectTyparsNoCaching tyargs).FreeTypars)
-    else
-        IlAssemblyCodeHasEffect instrs
+    IlAssemblyCodeHasEffect instrs || ilzeroHasFreeTypars
 
 let rec ExprHasEffect g expr = 
     match stripDebugPoints expr with 
