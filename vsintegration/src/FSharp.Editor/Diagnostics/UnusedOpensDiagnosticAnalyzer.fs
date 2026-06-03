@@ -33,7 +33,7 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
                     UnusedOpens.getUnusedOpens (
                         checkResults,
                         (fun lineNumber -> sourceText.Lines[Line.toZ lineNumber].ToString()),
-                        AnalysisScope.FilesWithoutErrors
+                        includeFilesWithErrors = false
                     )
 
                 return (ValueSome unusedOpens)

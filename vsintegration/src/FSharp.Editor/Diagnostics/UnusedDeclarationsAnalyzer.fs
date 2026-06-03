@@ -35,7 +35,7 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
                         UnusedDeclarations.getUnusedDeclarations (
                             checkResults,
                             (isScriptFile document.FilePath),
-                            AnalysisScope.FilesWithoutErrors
+                            includeFilesWithErrors = false
                         )
 
                     let! sourceText = document.GetTextAsync()

@@ -14,25 +14,6 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
-/// Controls whether analysis (unused opens, unused declarations) runs on files that contain errors.
-[<RequireQualifiedAccess>]
-type AnalysisScope =
-    /// Run analysis on all files regardless of error diagnostics (historical FCS default).
-    | AllFiles
-    /// Skip analysis on files that contain any Error-severity diagnostic, avoiding false positives.
-    | FilesWithoutErrors
-
-[<AutoOpen>]
-module private AnalysisScopeHelpers =
-    let shouldRunAnalysis (analysisScope: AnalysisScope) (checkFileResults: FSharpCheckFileResults) =
-        match analysisScope with
-        | AnalysisScope.AllFiles -> true
-        | AnalysisScope.FilesWithoutErrors ->
-            not (
-                checkFileResults.Diagnostics
-                |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
-            )
-
 module private UnusedOpensInternal =
 
     let symbolHash =
@@ -320,15 +301,11 @@ module private UnusedOpensInternal =
 
     /// Get the open statements whose contents are not referred to anywhere in the symbol uses.
     /// Async to allow cancellation.
-    let getUnusedOpens
-        (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string, analysisScope: AnalysisScope)
-        : Async<range list> =
+    let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         async {
             use! _holder = Cancellable.UseToken()
 
-            if not (shouldRunAnalysis analysisScope checkFileResults) then
-                return []
-            elif checkFileResults.OpenDeclarations.Length = 0 then
+            if checkFileResults.OpenDeclarations.Length = 0 then
                 return []
             else
                 let! ct = Async.CancellationToken
@@ -348,10 +325,18 @@ type UnusedOpens =
 
     /// Get all unused open declarations in a file
     static member getUnusedOpens
-        (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string, ?analysisScope: AnalysisScope)
+        (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string, ?includeFilesWithErrors: bool)
         : Async<range list> =
-        let analysisScope = defaultArg analysisScope AnalysisScope.AllFiles
-        UnusedOpensInternal.getUnusedOpens (checkFileResults, getSourceLineStr, analysisScope)
+        let includeFilesWithErrors = defaultArg includeFilesWithErrors true
+
+        if
+            not includeFilesWithErrors
+            && checkFileResults.Diagnostics
+               |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+        then
+            async.Return []
+        else
+            UnusedOpensInternal.getUnusedOpens (checkFileResults, getSourceLineStr)
 
 module SimplifyNames =
     type SimplifiableRange = { Range: range; RelativeName: string }
@@ -497,15 +482,12 @@ module private UnusedDeclarationsInternal =
         |> Seq.filter (fun (_, defSus) -> defSus |> Seq.forall (fun (_, isUsed) -> not isUsed))
         |> Seq.map (fun (m, _) -> m)
 
-    let getUnusedDeclarations (checkFileResults: FSharpCheckFileResults, isScriptFile: bool, analysisScope: AnalysisScope) =
+    let getUnusedDeclarations (checkFileResults: FSharpCheckFileResults, isScriptFile: bool) =
         async {
-            if not (shouldRunAnalysis analysisScope checkFileResults) then
-                return Seq.empty
-            else
-                let! ct = Async.CancellationToken
-                let allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
-                let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
-                return unusedRanges
+            let! ct = Async.CancellationToken
+            let allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+            let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
+            return unusedRanges
         }
 
 [<AbstractClass; Sealed>]
@@ -513,7 +495,15 @@ type UnusedDeclarations =
 
     /// Get all unused declarations in a file
     static member getUnusedDeclarations
-        (checkFileResults: FSharpCheckFileResults, isScriptFile: bool, ?analysisScope: AnalysisScope)
+        (checkFileResults: FSharpCheckFileResults, isScriptFile: bool, ?includeFilesWithErrors: bool)
         : Async<seq<range>> =
-        let analysisScope = defaultArg analysisScope AnalysisScope.AllFiles
-        UnusedDeclarationsInternal.getUnusedDeclarations (checkFileResults, isScriptFile, analysisScope)
+        let includeFilesWithErrors = defaultArg includeFilesWithErrors true
+
+        if
+            not includeFilesWithErrors
+            && checkFileResults.Diagnostics
+               |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+        then
+            async.Return Seq.empty
+        else
+            UnusedDeclarationsInternal.getUnusedDeclarations (checkFileResults, isScriptFile)

@@ -5,20 +5,15 @@ namespace FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
-/// Controls whether analysis (unused opens, unused declarations) runs on files that contain errors.
-[<RequireQualifiedAccess>]
-type AnalysisScope =
-    /// Run analysis on all files regardless of error diagnostics (historical FCS default).
-    | AllFiles
-    /// Skip analysis on files that contain any Error-severity diagnostic, avoiding false positives.
-    | FilesWithoutErrors
-
 [<AbstractClass; Sealed>]
 type UnusedOpens =
 
-    /// Get all unused open declarations in a file
+    /// Get all unused open declarations in a file.
+    /// Set <paramref name="includeFilesWithErrors"/> to <c>false</c> to skip analysis on files with any Error-severity diagnostic.
     static member getUnusedOpens:
-        checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) * ?analysisScope: AnalysisScope ->
+        checkFileResults: FSharpCheckFileResults *
+        getSourceLineStr: (int -> string) *
+        ?includeFilesWithErrors: bool ->
             Async<range list>
 
 module public SimplifyNames =
@@ -40,7 +35,8 @@ module public SimplifyNames =
 [<AbstractClass; Sealed>]
 type UnusedDeclarations =
 
-    /// Get all unused declarations in a file
+    /// Get all unused declarations in a file.
+    /// Set <paramref name="includeFilesWithErrors"/> to <c>false</c> to skip analysis on files with any Error-severity diagnostic.
     static member getUnusedDeclarations:
-        checkFileResults: FSharpCheckFileResults * isScriptFile: bool * ?analysisScope: AnalysisScope ->
+        checkFileResults: FSharpCheckFileResults * isScriptFile: bool * ?includeFilesWithErrors: bool ->
             Async<seq<range>>
