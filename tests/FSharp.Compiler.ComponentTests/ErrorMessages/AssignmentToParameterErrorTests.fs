@@ -27,6 +27,14 @@ module ``FS0027 on function parameters (issue 15803)`` =
         |> withDiagnosticMessageMatches "mutable"
 
     [<Fact>]
+    let ``FS0027 on parameter suggests plain let shadowing`` () =
+        FSharp "let f (x: int) = x <- 5"
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 27
+        |> withDiagnosticMessageMatches "'let x = \.\.\.'"
+
+    [<Fact>]
     let ``FS0027 on local let binding still suggests 'let mutable'`` () =
         FSharp """
 let f () =

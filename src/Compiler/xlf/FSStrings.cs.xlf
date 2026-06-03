@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSStrings.resx">
     <body>
@@ -293,8 +293,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ValNotMutableParameter">
-        <source>The parameter '{0}' is not mutable. Either shadow it with a mutable binding (e.g. 'let mutable {1} = {2}'), or change its type to 'byref&lt;_&gt;'.</source>
-        <target state="new">The parameter '{0}' is not mutable. Either shadow it with a mutable binding (e.g. 'let mutable {1} = {2}'), or change its type to 'byref&lt;_&gt;'.</target>
+        <source>The parameter '{0}' is not mutable. Consider shadowing it with a local binding, e.g. 'let {1} = ...' or 'let mutable {1} = ...' if you need to reassign it later.</source>
+        <target state="new">The parameter '{0}' is not mutable. Consider shadowing it with a local binding, e.g. 'let {1} = ...' or 'let mutable {1} = ...' if you need to reassign it later.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction">
