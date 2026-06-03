@@ -105,10 +105,12 @@ printfn "RESULT_MARKER_18086"
 printfn "RESULT_MARKER_18086_DEFAULT"
 """
         let result = runFsiScript [] script
+        Assert.Equal(0, result.ExitCode)
         Assert.Contains("RESULT_MARKER_18086_DEFAULT", result.StdOut)
 
     [<Fact>]
     let ``FSI quiet mode still prints user printfn output to stdout`` () =
         let script = """printfn "hello from quiet script" """
         let result = runFsiScript ["--quiet"] script
+        Assert.Equal(0, result.ExitCode)
         Assert.Contains("hello from quiet script", result.StdOut)
