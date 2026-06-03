@@ -48,6 +48,8 @@ Before submitting: `./build.sh -c Release --testcoreclr`
 .fs: implementation
 .fsi: declarations, API docs, context comments
 
+Abbreviations (`ad`, `cenv`, `m`, `tcref`, `eenv`, `cgbuf`, `ncenv`, `tau`, …): see `docs/coding-standards.md` for the canonical glossary before guessing what a short identifier means.
+
 ## Rules
 
 Public API change → update .fsi
