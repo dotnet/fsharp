@@ -2652,5 +2652,8 @@ module ParsedInput =
 
         // For .fsx scripts, ensure the open is placed after any #r directives.
         match tryFindLastHashRLineInScript parsedInput with
-        | Some lastRLine when ctx.Pos.Line <= lastRLine -> { ctx with Pos = mkPos (lastRLine + 1) 0 }
+        | Some lastRLine when ctx.Pos.Line <= lastRLine ->
+            { ctx with
+                Pos = mkPos (lastRLine + 1) 0
+            }
         | _ -> ctx
