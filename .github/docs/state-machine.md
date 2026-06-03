@@ -10,7 +10,7 @@ Auto-generated documentation of all agentic workflows in this repository.
 | **labelops-pr-maintenance** | ⏰ every 3h | PRs with AI-Auto-Resolve-* labels, CI status | comment, push, labels, dispatch | `AI-Auto-Resolve-CI`, `AI-Auto-Resolve-Conflicts`, `AI-needs-CI-fix-input` |
 | **regression-pr-shepherd** | ⏰ every 4h | PRs with `AI-Issue-Regression-PR` | comment, push, remove-labels | `AI-Issue-Regression-PR`, `AI-thinks-issue-fixed` |
 | **labelops-flake-fix** | 🤖 dispatched by labelops-pr-maintenance | Test results, PR diffs | PR, comment, issue | `Flaky`, `automation` |
-| **labelops-pr-security-scan** | ⏰ every 1h | PR diffs, file lists | labels, comment | `AI-Tooling-Check-Scanned-Clean`, `AI-Tooling-Check-Bypassed`, `⚠️ Affects-*`, `⚠️ Suspicious-Prompting`, `⚠️ Scope-Review-Needed` |
+| **labelops-pr-security-scan** | ⏰ every 1h | PR diffs, file lists, repo rules | labels, comment | `AI-Tooling-Check-Scanned-Clean`, `AI-Tooling-Check-Bypassed`, `⚠️ Affects-*`, `⚠️ Suspicious-Prompting`, `⚠️ Scope-Review-Needed` |
 | **aw-auto-update** | ⏰ every 24h | `.github/workflows/*` files | agent-session | `automation` |
 
 ## Issue Lifecycle
@@ -134,10 +134,20 @@ stateDiagram-v2
     [*] --> ScanQueue: ⏰ labelops-pr-security-scan (1h)
 
     state "Per-PR Classification" as ScanLoop {
-        ScanQueue --> CheckMemory: 🤖 security-scan reads state.json
+        ScanQueue --> ReadRules: 🤖 security-scan reads repo rules
+        ReadRules --> CheckDraft: 🤖 security-scan checks isDraft
+
+        state draftcheck <<choice>>
+        CheckDraft --> draftcheck
+        draftcheck --> SkipDraft: draft PR
+        draftcheck --> CheckMemory: non-draft PR
+
+        SkipDraft --> [*]: skip
+
+        CheckMemory --> CheckMemory2: 🤖 security-scan reads state.json
 
         state memcheck <<choice>>
-        CheckMemory --> memcheck
+        CheckMemory2 --> memcheck
         memcheck --> AlreadyScanned: sha unchanged
         memcheck --> ClassifyOrigin: new or updated PR
 
@@ -245,7 +255,7 @@ stateDiagram-v2
 aw-auto-update.md: da8c5e340a43d73616e3a0203c7e56de9ca4b82ee78b1902afe466a49a08bc17
 labelops-flake-fix.md: 7dca5b8faa60f947204f8925c6238fbecf42aa8cbf3144a166120501b0eef1e4
 labelops-pr-maintenance.md: 59ba52fc625e0b9112c31864e92154cdf09acf0bc0f2b167aa30a0d76baa898f
-labelops-pr-security-scan.md: 4e0ee1ccd6212be30f8ccd334ecbc47123655e2507b5968c1bf2c1678a1ed306
+labelops-pr-security-scan.md: 675430850eaf8edaa86b4d26c9d381ac48e13536469f17748e7104f6e75937c2
 regression-pr-shepherd.md: 18a65fe1cdf8aa219158f1d610db14078e5ff2f1ac912df2566bf796792395b5
 repo-assist.md: 3775b51d142d22c98e87e48e8ac9d46cdf69e9c8306d5787758a35578dcb1119
 -->
