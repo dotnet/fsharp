@@ -4131,11 +4131,18 @@ let formatAvailableNames (names: string array) =
 /// E.g. `match x with | null -> ... | y -> ...` narrows `inputTy` of the y-clause to non-null.
 let EliminateNullnessFromInputType (g: TcGlobals) (inputTy: TType) (pat: Pattern) (whenExprOpt: Expr option) : TType =
     let removeNull t =
-        // Strip type equations (including abbreviations) and set nullness to non-null.
-        // For type abbreviations like `type objnull = obj | null`, we need to expand
-        // the abbreviation and apply non-null to the underlying type.
-        let stripped = stripTyEqns g t
-        replaceNullnessOfTy KnownWithoutNull stripped
+        // Try clearing outer nullness first — preserves aliases (#19646):
+        //   `string | null` → `string`  (not `System.String`)
+        //   `type MyStr = string` → `MyStr`
+        // Fall back to stripTyEqns for abbreviations encoding nullness in RHS (#18488):
+        //   `type objnull = obj | null` — replaceNullness alone is a no-op (combineNullness)
+        let nonNullOriginal = replaceNullnessOfTy KnownWithoutNull t
+
+        match (nullnessOfTy g nonNullOriginal).TryEvaluate() with
+        | ValueSome NullnessInfo.WithoutNull -> nonNullOriginal
+        | _ ->
+            let stripped = stripTyEqns g t
+            replaceNullnessOfTy KnownWithoutNull stripped
     let rec isWild (p: Pattern) =
         match p with
         | TPat_wild _ -> true

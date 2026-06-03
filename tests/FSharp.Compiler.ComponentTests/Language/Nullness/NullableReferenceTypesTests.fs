@@ -2744,3 +2744,25 @@ let g (s: string | null) = f s"""
         Error 3261, Line 3, Col 30, Line 3, Col 31,
             "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
     ]
+
+// https://github.com/dotnet/fsharp/issues/19646
+// After `| null -> … | s -> …`, `s` must keep its type alias, not the BCL type.
+[<Theory>]
+[<InlineData("", "string", "'string'")>]
+[<InlineData("type MyStr = string", "MyStr", "'MyStr'")>]
+[<InlineData("open System\ntype MyUri = Uri", "MyUri", "'MyUri'")>]
+let ``Issue 19646 - type alias is preserved after null pattern``
+    (typeDef: string, paramTypeName: string, expectedSubstring: string) =
+    FSharp $"""module Test
+
+{typeDef}
+
+let test (x: {paramTypeName} | null) : int =
+    match x with
+    | null -> 0
+    | s -> s
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches expectedSubstring
