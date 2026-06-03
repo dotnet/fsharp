@@ -10278,9 +10278,16 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
     // enclosing type they inherit its class typar, conflicting with their own method typars. See #17607.
     // Note: also matches `do let x = …` and `copyOfStruct` vals — safe because at module scope cloc == moduleCloc.
     let effectiveCloc =
-        if v.IsCompiledAsTopLevel && not v.IsMemberOrModuleBinding then eenv.moduleCloc else cloc
+        if v.IsCompiledAsTopLevel && not v.IsMemberOrModuleBinding then
+            eenv.moduleCloc
+        else
+            cloc
 
-    ComputeAndAddStorageForLocalValWithValReprInfo (cenv, eenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal) effectiveCloc v eenv
+    ComputeAndAddStorageForLocalValWithValReprInfo
+        (cenv, eenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal)
+        effectiveCloc
+        v
+        eenv
 
 //--------------------------------------------------------------------------
 // Generate stack save/restore and assertions - pulled into letrec by alloc*
@@ -10775,7 +10782,10 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
         mgbuf.GenerateAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
 
     let withQName (loc: CompileLocation) =
-        { loc with TopImplQualifiedName = qname.Text; Range = m }
+        { loc with
+            TopImplQualifiedName = qname.Text
+            Range = m
+        }
 
     let eenv =
         { eenv with

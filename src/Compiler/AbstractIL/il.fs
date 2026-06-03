@@ -3377,7 +3377,10 @@ let mkILSimpleTypar nm =
 
 /// Returns gp with all constraints cleared, including IsUnmanagedAttribute (carried via CustomAttrsStored).
 let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
-    { mkILSimpleTypar gp.Name with Variance = gp.Variance; MetadataIndex = gp.MetadataIndex }
+    { mkILSimpleTypar gp.Name with
+        Variance = gp.Variance
+        MetadataIndex = gp.MetadataIndex
+    }
 
 let genericParamOfGenericActual (_ga: ILType) = mkILSimpleTypar "T"
 
