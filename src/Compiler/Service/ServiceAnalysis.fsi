@@ -11,9 +11,7 @@ type UnusedOpens =
     /// Get all unused open declarations in a file.
     /// Set <paramref name="includeFilesWithErrors"/> to <c>false</c> to skip analysis on files with any Error-severity diagnostic.
     static member getUnusedOpens:
-        checkFileResults: FSharpCheckFileResults *
-        getSourceLineStr: (int -> string) *
-        ?includeFilesWithErrors: bool ->
+        checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) * ?includeFilesWithErrors: bool ->
             Async<range list>
 
 module public SimplifyNames =
