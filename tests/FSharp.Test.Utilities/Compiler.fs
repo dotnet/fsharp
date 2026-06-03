@@ -30,13 +30,54 @@ module rec Compiler =
     let shouldUpdateBaselines =
         Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") <> null
 
+    let private baselineFailureMessage (expectedFile: string) (outFile: string) (diff: string) =
+        $"""Baseline mismatch for {expectedFile}
+to update the baseline:
+$ cp {outFile} {expectedFile}
+to compare:
+$ code --diff {outFile} {expectedFile}
+(or set TEST_UPDATE_BSL=1 and re-run to update the baseline automatically)
+{diff}"""
+
+    let private baselineOutputFile (expectedFile: string) =
+        if Path.GetExtension(expectedFile) = ".bsl" then
+            Path.ChangeExtension(expectedFile, ".out")
+        else
+            expectedFile + ".out"
+
+    let checkBaselineWith (compare: string -> string -> string option) (expected: string) (expectedFile: string) =
+        let outFile = baselineOutputFile expectedFile
+        let baselineContent =
+            if FileSystem.FileExistsShim expectedFile then File.ReadAllText expectedFile else ""
+        let diff = compare baselineContent expected
+
+        match diff with
+        | None ->
+            if FileSystem.FileExistsShim outFile then
+                FileSystem.FileDeleteShim outFile
+        | Some diff ->
+            if shouldUpdateBaselines then
+                if FileSystem.FileExistsShim outFile then
+                    FileSystem.FileDeleteShim outFile
+                File.WriteAllText(expectedFile, expected)
+            else
+                File.WriteAllText(outFile, expected)
+
+            Assert.True(false, baselineFailureMessage expectedFile outFile diff)
+
+    let checkBaseline (expected: string) (expectedFile: string) =
+        let compare fileContent produced =
+            let e = normalizeNewlines fileContent
+            let a = normalizeNewlines produced
+            if e = a then None else Some $"Expected:\n{e}\nActual:\n{a}"
+        checkBaselineWith compare expected expectedFile
+
     [<AutoOpen>]
     type SourceUtilities () =
         static member getCurrentMethodName([<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string) = memberName
 
     type BaselineFile =
         {
-            FilePath: string
             BslSource: string
             Content: string option
         }
@@ -251,8 +292,6 @@ module rec Compiler =
             | Some s -> s
             | None -> sourceFilePath + sourceBaselineSuffix + ".il.bsl"
 
-        let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
-        let ilOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
         let fsBslSource = readFileOrDefault fsBslFilePath
         let ilBslSource = readFileOrDefault ilBslFilePath
 
@@ -262,8 +301,8 @@ module rec Compiler =
                 Some
                     {
                         SourceFilename = Some sourceFilePath
-                        FSBaseline = { FilePath = fsOutFilePath; BslSource = fsBslFilePath; Content = fsBslSource }
-                        ILBaseline = { FilePath = ilOutFilePath; BslSource = ilBslFilePath; Content = ilBslSource }
+                        FSBaseline = { BslSource = fsBslFilePath; Content = fsBslSource }
+                        ILBaseline = { BslSource = ilBslFilePath; Content = ilBslSource }
                     }
             Options           = Compiler.defaultOptions
             OutputType        = Library
@@ -1220,36 +1259,6 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let convenienceBaselineInstructions baseline expected actual =
-        $"""to update baseline:
-$ cp {baseline.FilePath} {baseline.BslSource}
-to compare baseline:
-$ code --diff {baseline.FilePath} {baseline.BslSource}
-Expected:
-{expected}
-Actual:
-{actual}"""
-    let updateBaseLineIfEnvironmentSaysSo baseline =
-        if shouldUpdateBaselines then
-            if FileSystem.FileExistsShim baseline.FilePath then
-                FileSystem.CopyShim(baseline.FilePath, baseline.BslSource, true)
-
-    let assertBaseline expected actual baseline fOnFail =
-        if expected <> actual then
-            fOnFail()
-            updateBaseLineIfEnvironmentSaysSo baseline
-            createBaselineErrors baseline actual
-            Assert.True((expected = actual), convenienceBaselineInstructions baseline expected actual)
-        elif FileSystem.FileExistsShim baseline.FilePath then
-            FileSystem.FileDeleteShim baseline.FilePath
-
-
-    let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
-        printfn $"creating baseline error file for convenience: {baselineFile.FilePath}, expected: {baselineFile.BslSource}"
-        let file = FileSystem.OpenFileForWriteShim(baselineFile.FilePath)
-        file.SetLength(0)
-        file.WriteAllText(actualErrors)
-
     /// Turn our ErrorInfo back into a genuine FSharpDiagnostic
     let private toFSharpDiagnostic (ei: ErrorInfo) : FSharpDiagnostic =
 
@@ -1309,19 +1318,8 @@ Actual:
                 match o.Compilation with
                 | FS fs -> fs
                 | _     -> failwith "verifyBaseline only supports F#"
-        let expected =
-            fsSource.Baseline.Value.FSBaseline.Content
-            |> Option.defaultValue ""
-            |> normalizeNewlines
-
         // 4) Compare or update
-        if expected <> formattedActual then
-            // same update mechanism you already have:
-            fsSource.CreateOutputDirectory()
-            createBaselineErrors fsSource.Baseline.Value.FSBaseline formattedActual
-            updateBaseLineIfEnvironmentSaysSo fsSource.Baseline.Value.FSBaseline
-            let msg = convenienceBaselineInstructions fsSource.Baseline.Value.FSBaseline expected formattedActual
-            Assert.True(false, msg)
+        checkBaseline formattedActual fsSource.Baseline.Value.FSBaseline.BslSource
 
         // 5) Return the original result for fluent chaining
         cResult
@@ -1387,14 +1385,8 @@ Actual:
                 | None ->  String.Empty
             let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual [] p [expectedIL]
 
-            if not success then
-                // Failed try update baselines if required
-                // If we are here then the il file has been produced we can write it back to the baseline location
-                // if the environment variable TEST_UPDATE_BSL has been set
-                updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
-                createBaselineErrors baseline.ILBaseline actualIL
-                let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
-                Assert.Fail(errorMsg)
+            let compare _ _ = if success then None else Some errorMsg
+            checkBaselineWith compare actualIL baseline.ILBaseline.BslSource
 
     let verifyILBaseline (compilationResult: CompilationResult) : CompilationResult =
         match compilationResult with
@@ -2011,22 +2003,9 @@ Actual:
                 |> String.Concat
 
             let withResultsMatchingFile (path:string) (result:CompilationResult) =
-                let expectedContent = File.ReadAllText(path) |> normalizeNewLines
-                let actualErrors = renderToString result
-
-                match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
-                | None -> ()
-                | Some diff ->
-                    if shouldUpdateBaselines then
-                        File.WriteAllText(path, actualErrors)
-
-                    printfn $"{Path.GetFullPath path} \n {diff}"
-                    printfn "==========================EXPECTED==========================="
-                    printfn "%s" expectedContent
-                    printfn "===========================ACTUAL============================"
-                    printfn "%s" actualErrors
-                    Assert.True(String.IsNullOrEmpty(diff), path)
-
+                let compare fileContent produced =
+                    Assert.shouldBeSameMultilineStringSets (normalizeNewLines fileContent) produced
+                checkBaselineWith compare (renderToString result) path
                 result
 
         let checkCodes (expected: int list) (selector: CompilationOutput -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
