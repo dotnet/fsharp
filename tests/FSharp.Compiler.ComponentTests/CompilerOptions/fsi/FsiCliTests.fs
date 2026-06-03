@@ -92,6 +92,7 @@ module FsiCliTests =
 printfn "RESULT_MARKER_18086"
 """
         let result = runFsiScript ["--quiet"] script
+        Assert.Equal(0, result.ExitCode)
         Assert.Contains("RESULT_MARKER_18086", result.StdOut)
         Assert.DoesNotContain("Determining projects to restore", result.StdOut)
         Assert.DoesNotContain("Restored ", result.StdOut)

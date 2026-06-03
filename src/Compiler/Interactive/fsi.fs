@@ -2819,10 +2819,7 @@ type internal FsiDynamicCompiler
 
                             if result.Success then
 
-                                // Issue #18086: under --quiet (tcConfigB.noFeedback), NuGet/MSBuild
-                                // restore chatter and warnings must not pollute stdout. Route what
-                                // would have gone to stdout to stderr instead so the information is
-                                // still discoverable for users who redirect stderr.
+                                // Under --quiet, route NuGet restore stdout to stderr.
                                 let stdOutSink: System.IO.TextWriter =
                                     if tcConfigB.noFeedback then Console.Error else Console.Out
 
