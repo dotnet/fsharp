@@ -99,6 +99,31 @@ function Test-ServerAlive([string]$sock) {
     try { (Send-Request $sock @{ command = 'ping' } 2000) -match '"ok"' } catch { $false }
 }
 
+function Get-ServerBinaryPath {
+    # Ask MSBuild for the configured output path (honors BaseOutputPath etc.). Project settings only - no build required.
+    $p = & dotnet msbuild $ServerProject /p:Configuration=Release -getProperty:TargetPath 2>$null
+    if ($LASTEXITCODE -eq 0 -and $p) { $p.Trim() } else { $null }
+}
+
+function Find-ServerBinary {
+    $p = Get-ServerBinaryPath
+    if ($p -and (Test-Path $p)) { $p } else { $null }
+}
+
+function Build-DiagServer {
+    # Visible foreground build so the agent sees nuget restore + compile progress on a cold clone (can be 10+ min).
+    Write-Host "[fsharp-diag] Building server (first call after clone can take 10+ min for nuget restore + FSharp.Compiler.Service build)..." -ForegroundColor Yellow
+    $build = Start-Process -FilePath 'dotnet' `
+        -ArgumentList @('build','-c','Release', $ServerProject) `
+        -NoNewWindow -Wait -PassThru
+    if ($build.ExitCode -ne 0) {
+        throw "Server build failed (dotnet build exit $($build.ExitCode))."
+    }
+    $dll = Find-ServerBinary
+    if (-not $dll) { throw "Build reported success but FSharpDiagServer.dll not found (MSBuild TargetPath: $(Get-ServerBinaryPath))." }
+    $dll
+}
+
 function Start-DiagServer([string]$root, [string]$sock) {
     if (Test-ServerAlive $sock) { return }
     New-Item -ItemType Directory -Force -Path $SockDir | Out-Null
@@ -111,13 +136,17 @@ function Start-DiagServer([string]$root, [string]$sock) {
         # Re-check after acquiring the lock - peer may have started a server while we waited.
         if (Test-ServerAlive $sock) { return }
         if (Test-Path $sock) { Remove-Item -Force $sock }
+
+        # Ensure server binary exists. Build is foreground + visible so the agent sees progress.
+        $dll = Find-ServerBinary
+        if (-not $dll) { $dll = Build-DiagServer }
+
         $log = Get-LogPath $root
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName = 'dotnet'
         # ArgumentList (Collection<string>) handles per-platform quoting (incl. spaces in paths).
-        foreach ($a in @('run','-c','Release','--project',$ServerProject,'--','--repo-root',$root)) {
-            [void]$psi.ArgumentList.Add($a)
-        }
+        # Launch via prebuilt dll so startup is bound by server init (~70s), not by build (~minutes).
+        foreach ($a in @($dll, '--repo-root', $root)) { [void]$psi.ArgumentList.Add($a) }
         $psi.RedirectStandardOutput = $true
         $psi.RedirectStandardError  = $true
         $psi.UseShellExecute        = $false

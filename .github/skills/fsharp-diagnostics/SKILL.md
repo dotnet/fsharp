@@ -49,4 +49,4 @@ GetErrors -Ping
 GetErrors -Shutdown
 ```
 
-First call starts server (~70s cold start, set initial_wait=600). Auto-shuts down after 4h idle. ~3 GB RAM.
+First call on a fresh clone runs `dotnet build -c Release` for the server (~5–15 min for nuget restore + FSharp.Compiler.Service build); set `initial_wait=900`. After that the prebuilt server starts in ~70s (`initial_wait=180`). Auto-shuts down after 4h idle. ~3 GB RAM.
