@@ -41,21 +41,17 @@ type DeferredCustomOpSink =
         mutable Resolved: (MethInfo * TyparInstantiation) option
     }
 
-/// Sink wrapper that forwards every notification to the supplied `forwardTo` and additionally
-/// records the singleton `Item.MethodGroup` resolution that lands at one of the tracked
-/// synthetic call ranges. Last-write-wins, validated by `MethInfosEquivByNameAndSig` against
-/// the deferred entry's candidates so unrelated notifications at the same range are ignored.
-type private CustomOpResolutionCapturingSink
-    (
-        g: TcGlobals,
-        amap: ImportMap,
-        forwardTo: ITypecheckResultsSink option,
-        deferredSinksBySyntheticRange: Dictionary<range, DeferredCustomOpSink list>
-    ) =
-
-    let matchesCandidate (mi: MethInfo) (entry: DeferredCustomOpSink) =
-        entry.Candidates
-        |> List.exists (fun c -> MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange c mi)
+/// Sink wrapper that forwards every notification to `forwardTo` and additionally records
+/// the singleton `Item.MethodGroup` resolution that lands at one of the tracked synthetic
+/// call ranges. Last-write-wins, validated by `MethInfosEquivByNameAndSig` against the
+/// deferred entry's candidates so unrelated notifications at the same range are ignored.
+/// `forwardTo` is non-optional: callers must gate construction on a real outer sink.
+let private makeCustomOpResolutionCapturingSink
+    (g: TcGlobals)
+    (amap: ImportMap)
+    (forwardTo: ITypecheckResultsSink)
+    (deferredSinksBySyntheticRange: Dictionary<range, DeferredCustomOpSink list>)
+    : ITypecheckResultsSink =
 
     let tryCapture (m: range) (item: Item) (tpinst: TyparInstantiation) =
         match item with
@@ -63,48 +59,45 @@ type private CustomOpResolutionCapturingSink
             match deferredSinksBySyntheticRange.TryGetValue m with
             | true, entries ->
                 for entry in entries do
-                    if matchesCandidate mi entry then
+                    if
+                        entry.Candidates
+                        |> List.exists (fun c -> MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange c mi)
+                    then
                         entry.Resolved <- Some(mi, tpinst)
             | false, _ -> ()
         | _ -> ()
 
-    interface ITypecheckResultsSink with
+    { new ITypecheckResultsSink with
         member _.NotifyEnvWithScope(m, nenv, ad) =
-            forwardTo |> Option.iter (fun s -> s.NotifyEnvWithScope(m, nenv, ad))
+            forwardTo.NotifyEnvWithScope(m, nenv, ad)
 
         member _.NotifyExprHasType(ty, nenv, ad, m) =
-            forwardTo |> Option.iter (fun s -> s.NotifyExprHasType(ty, nenv, ad, m))
+            forwardTo.NotifyExprHasType(ty, nenv, ad, m)
 
         member _.NotifyExprHasTypeSynthetic(ty, nenv, ad, m) =
-            forwardTo
-            |> Option.iter (fun s -> s.NotifyExprHasTypeSynthetic(ty, nenv, ad, m))
+            forwardTo.NotifyExprHasTypeSynthetic(ty, nenv, ad, m)
 
         member _.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace) =
             tryCapture m item tpinst
-
-            forwardTo
-            |> Option.iter (fun s -> s.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace))
+            forwardTo.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace)
 
         member _.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace) =
             tryCapture m item tpinst
-
-            forwardTo
-            |> Option.iter (fun s ->
-                s.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace))
+            forwardTo.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace)
 
         member _.NotifyFormatSpecifierLocation(m, numArgs) =
-            forwardTo |> Option.iter (fun s -> s.NotifyFormatSpecifierLocation(m, numArgs))
+            forwardTo.NotifyFormatSpecifierLocation(m, numArgs)
 
         member _.NotifyRelatedSymbolUse(m, item, kind) =
-            forwardTo |> Option.iter (fun s -> s.NotifyRelatedSymbolUse(m, item, kind))
+            forwardTo.NotifyRelatedSymbolUse(m, item, kind)
 
         member _.NotifyOpenDeclaration openDeclaration =
-            forwardTo |> Option.iter (fun s -> s.NotifyOpenDeclaration openDeclaration)
+            forwardTo.NotifyOpenDeclaration openDeclaration
 
-        member _.CurrentSourceText = forwardTo |> Option.bind (fun s -> s.CurrentSourceText)
+        member _.CurrentSourceText = forwardTo.CurrentSourceText
 
-        member _.FormatStringCheckContext =
-            forwardTo |> Option.bind (fun s -> s.FormatStringCheckContext)
+        member _.FormatStringCheckContext = forwardTo.FormatStringCheckContext
+    }
 
 /// Eagerly sink an `Item.CustomOperation` at the keyword range using the fallback `MethInfo`
 /// (`opDatas[0]`) and enqueue the entry for later upgrade once overload resolution finishes.
@@ -158,11 +151,8 @@ let captureCustomOperationOverloads
     (queue: ResizeArray<DeferredCustomOpSink>)
     (action: unit -> 'T)
     : 'T =
-    if queue.Count = 0 || sink.CurrentSink.IsNone then
-        action ()
-    else
-        let oldSinkOpt = sink.CurrentSink
-
+    match sink.CurrentSink with
+    | Some oldSink when queue.Count > 0 ->
         let deferredSinksBySyntheticRange =
             let d = Dictionary<range, DeferredCustomOpSink list>(Range.comparer)
 
@@ -177,18 +167,15 @@ let captureCustomOperationOverloads
             d
 
         let captureSink =
-            CustomOpResolutionCapturingSink(g, amap, oldSinkOpt, deferredSinksBySyntheticRange) :> ITypecheckResultsSink
+            makeCustomOpResolutionCapturingSink g amap oldSink deferredSinksBySyntheticRange
 
         let result =
             use _holder = WithNewTypecheckResultsSink(captureSink, sink)
             action ()
 
-        let isDifferentOverload (entry: DeferredCustomOpSink) (resolved: MethInfo) =
-            not (MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange resolved entry.Fallback)
-
         for entry in queue do
             match entry.Resolved with
-            | Some(resolved, tpinst) when isDifferentOverload entry resolved ->
+            | Some(resolved, tpinst) when not (MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange resolved entry.Fallback) ->
                 let item = Item.CustomOperation(entry.OpName, entry.UsageText, Some resolved)
 
                 CallNameResolutionSinkReplacing
@@ -197,3 +184,4 @@ let captureCustomOperationOverloads
             | _ -> ()
 
         result
+    | _ -> action ()
