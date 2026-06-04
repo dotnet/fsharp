@@ -60,13 +60,21 @@ type NiceNameGenerator() =
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
 type StableNiceNameGenerator() = 
 
-    let niceNames = ConcurrentDictionary<string * int64, string>(max Environment.ProcessorCount 1, 127)
+    // The value is wrapped in Lazy<_> so the inner counter-incrementing factory runs exactly once
+    // per cache key, even when ConcurrentDictionary.GetOrAdd's value-factory is invoked on multiple
+    // threads under contention. Without the Lazy wrapper, spurious factory invocations would
+    // increment the counter and produce non-deterministic suffixes. See
+    // https://github.com/dotnet/fsharp/issues/19732.
+    let niceNames = ConcurrentDictionary<string * int64, Lazy<string>>(max Environment.ProcessorCount 1, 127)
     let innerGenerator = NiceNameGenerator()
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let key = basicName, uniq
-        niceNames.GetOrAdd(key, fun (basicName, _) -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
+        let lazyName =
+            niceNames.GetOrAdd(key, fun (basicName, _) ->
+                lazy innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
+        lazyName.Value
 
     /// Stable variant of GetUniqueCompilerGeneratedName whose first-time uniqueness counter buckets by
     /// 'scopeFileIndex' (the emitting file) rather than by m.FileIndex. The (basicName, uniq) -> name
@@ -74,7 +82,10 @@ type StableNiceNameGenerator() =
     member _.GetUniqueInScope (scopeFileIndex: int, name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let key = basicName, uniq
-        niceNames.GetOrAdd(key, fun (basicName, _) -> innerGenerator.FreshCompilerGeneratedNameInScope(scopeFileIndex, basicName, m))
+        let lazyName =
+            niceNames.GetOrAdd(key, fun (basicName, _) ->
+                lazy innerGenerator.FreshCompilerGeneratedNameInScope(scopeFileIndex, basicName, m))
+        lazyName.Value
 
 /// A compiler-generated-name allocation scope bound to a single ImplFile being optimized or emitted.
 ///
