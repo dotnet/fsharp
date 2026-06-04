@@ -4449,7 +4449,17 @@ and p_ValInfo (v: ValInfo) st =
     p_bool v.ValMakesNoCriticalTailcalls st
 
 and p_ModuleInfo x st = 
-    p_array (p_tup2 (p_vref "opttab") p_ValInfo) (x.ValInfos.Entries |> Seq.toArray) st
+    // Sort entries by stable identity (logical-name + full linkage key) so the pickled bytes
+    // do not depend on the hash-table iteration order of ValInfos. The unpickled side reads
+    // them as a flat array so order does not affect correctness. See
+    // https://github.com/dotnet/fsharp/issues/19732.
+    let entries =
+        x.ValInfos.Entries
+        |> Seq.toArray
+        |> Array.sortBy (fun (vref: ValRef, _) ->
+            let k = vref.Deref.GetLinkageFullKey()
+            struct (vref.LogicalName, k.PartialKey.MemberParentMangledName, k.PartialKey.LogicalName))
+    p_array (p_tup2 (p_vref "opttab") p_ValInfo) entries st
     p_namemap p_LazyModuleInfo x.ModuleOrNamespaceInfos st
 
 and p_LazyModuleInfo x st = 
