@@ -22,35 +22,19 @@ type NiceNameGenerator() =
     // Cache this as a delegate.
     let basicNameCountsAddDelegate = Func<struct (string * int), int ref>(fun _ -> ref 0)
 
-    let incrementBucket basicName (fileIndex: int) =
-        let key = struct (basicName, fileIndex)
+    let increment basicName (m: range) =
+        let key = struct (basicName, m.FileIndex)
         let countCell = basicNameCounts.GetOrAdd(key, basicNameCountsAddDelegate)
         Interlocked.Increment(countCell)
-
-    let increment basicName (m: range) = incrementBucket basicName m.FileIndex
-
-    let mkName basicName (m: range) count =
-        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count - 1) with 0 -> "" | n -> "-" + string n))
-
+   
     member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
         let count = increment basicName m
-        mkName basicName m count
+        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count - 1) with 0 -> "" | n -> "-" + string n))
 
     member this.FreshCompilerGeneratedName (name, m: range) =
         this.FreshCompilerGeneratedNameOfBasicName (GetBasicNameOfPossibleCompilerGeneratedName name, m)
 
     member _.IncrementOnly(name: string, m: range) = increment name m
-
-    /// Allocate a fresh compiler-generated name whose uniqueness counter is bucketed by an
-    /// explicit per-file scope (see PerFileNamingScope) rather than by the file index of 'm'.
-    /// 'm' is used only for the human-readable start-line marker baked into the generated name,
-    /// so passing a range that points at inlined source code can no longer make compiler-generated
-    /// names non-deterministic under parallel optimization. See
-    /// https://github.com/dotnet/fsharp/issues/19732.
-    member _.FreshCompilerGeneratedNameInScope (scopeFileIndex: int, name: string, m: range) =
-        let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-        let count = incrementBucket basicName scopeFileIndex
-        mkName basicName m count
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
@@ -60,35 +44,13 @@ type NiceNameGenerator() =
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
 type StableNiceNameGenerator() = 
 
-    // The value is wrapped in Lazy<_> so the inner counter-incrementing factory runs exactly once
-    // per cache key, even when ConcurrentDictionary.GetOrAdd's value-factory is invoked on multiple
-    // threads under contention. Without the Lazy wrapper, spurious factory invocations would
-    // increment the counter and produce non-deterministic suffixes. See
-    // https://github.com/dotnet/fsharp/issues/19732.
-    let niceNames = ConcurrentDictionary<string * int64, Lazy<string>>(max Environment.ProcessorCount 1, 127)
+    let niceNames = ConcurrentDictionary<string * int64, string>(max Environment.ProcessorCount 1, 127)
     let innerGenerator = NiceNameGenerator()
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let key = basicName, uniq
-        let lazyName =
-            niceNames.GetOrAdd(key, fun (basicName, _) ->
-                lazy innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
-        lazyName.Value
-
-/// A compiler-generated-name allocation scope bound to a single ImplFile being optimized. The
-/// constructor is not part of the public signature: a scope can only be obtained from
-/// CompilerGlobalState.NewFileScope so a call site can't accidentally bucket names by the wrong
-/// (e.g. inlined-source) file and reintroduce the non-determinism fixed by
-/// https://github.com/dotnet/fsharp/issues/19732.
-[<Sealed>]
-type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
-
-    /// Allocate a fresh compiler-generated name within this file's scope. 'm' contributes only the
-    /// source-location marker in the generated name; the determinism-critical uniqueness bucket is
-    /// fixed by this scope's file and never by 'm'.
-    member _.Fresh (name: string, m: range) =
-        nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
+        niceNames.GetOrAdd(key, fun (basicName, _) -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
 
 type internal CompilerGlobalState () =
     /// A global generator of compiler generated names
@@ -105,12 +67,6 @@ type internal CompilerGlobalState () =
     member _.StableNameGenerator = globalStableNameGenerator
 
     member _.IlxGenNiceNameGenerator = ilxgenGlobalNng
-
-    /// Create a per-file naming scope tied to a single ImplFile. Names allocated through the returned
-    /// scope are bucketed by 'fileRange.FileIndex', so parallel optimization of different files cannot
-    /// race on a shared name-counter bucket. See https://github.com/dotnet/fsharp/issues/19732.
-    member _.NewFileScope (fileRange: range) =
-        PerFileNamingScope(globalNng, fileRange.FileIndex)
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64

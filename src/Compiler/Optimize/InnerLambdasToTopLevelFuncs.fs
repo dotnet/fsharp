@@ -818,7 +818,7 @@ let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =
 // REVIEW: could do better here by preserving names
 let MakeSimpleArityInfo tps n = ValReprInfo (ValReprInfo.InferTyparInfo tps, List.replicate n ValReprInfo.unnamedTopArg, ValReprInfo.unnamedRetVal)
 
-let CreateNewValuesForTLR (scope: PerFileNamingScope) g tlrS arityM fclassM envPackM =
+let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
 
     let createFHat (f: Val) =
         let wf = Zmap.force f arityM ("createFHat - wf", (valL >> showL))
@@ -837,18 +837,14 @@ let CreateNewValuesForTLR (scope: PerFileNamingScope) g tlrS arityM fclassM envP
         let fHatArity = MakeSimpleArityInfo newTps (envp.ep_aenvs.Length + wf)
 
         let fHatName =
-            // Names are bucketed by the per-file optimization scope (not by m, which may point at
-            // inlined source from another file) to keep compiler-generated names deterministic under
-            // parallel optimization. m is still used as the new Val's source location below.
-            scope.Fresh(name, m)
+            // Ensure that we have an g.CompilerGlobalState
+            assert(g.CompilerGlobalState |> Option.isSome)
+            g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(name, m)
 
         let fHat = mkLocalNameTypeArity f.IsCompilerGenerated m fHatName fHatTy (Some fHatArity)
         fHat
 
-    // See https://github.com/dotnet/fsharp/issues/19732 for why we sort here.
-    let fs =
-        Zset.elements tlrS
-        |> List.sortWith (fun v1 v2 -> compare (valSourceOrderKey v1) (valSourceOrderKey v2))
+    let fs = Zset.elements tlrS
     let ffHats = List.map (fun f -> f, createFHat f) fs
     let fHatM = Zmap.ofList valOrder ffHats
     fHatM
@@ -1349,7 +1345,7 @@ let RecreateUniqueBounds g expr =
 // entry point
 //-------------------------------------------------------------------------
 
-let MakeTopLevelRepresentationDecisions (scope: PerFileNamingScope) ccu g expr =
+let MakeTopLevelRepresentationDecisions ccu g expr =
    try
       // pass1: choose the f to be TLR with arity(f)
       let tlrS, topValS, arityM = Pass1_DetermineTLRAndArities.DetermineTLRAndArities g expr
@@ -1359,7 +1355,7 @@ let MakeTopLevelRepresentationDecisions (scope: PerFileNamingScope) ccu g expr =
 
       // pass3
       let envPackM = ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap
-      let fHatM = CreateNewValuesForTLR scope g tlrS arityM fclassM envPackM
+      let fHatM = CreateNewValuesForTLR g tlrS arityM fclassM envPackM
 
       // pass4: rewrite
       if verboseTLR then dprintf "TransExpr(rw)------\n"
