@@ -40,7 +40,8 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
 
                         return
                             unusedRanges
-                            |> Seq.map (fun m -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
+                            |> Seq.map (fun m ->
+                                Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
                             |> Seq.toImmutableArray
                 }
                 |> CancellableTask.start cancellationToken
