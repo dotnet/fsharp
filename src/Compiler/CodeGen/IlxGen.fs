@@ -12534,10 +12534,12 @@ let rec private sortTypeDef (td: ILTypeDef) =
         |> List.sortBy (fun (p: ILPropertyDef) -> p.Name)
         |> mkILProperties
 
+    // Recurse into nested types but preserve their declared order, same reasoning as top-level
+    // in DeterministicallySortIlModule: declaration order is deterministic, only the WITHIN-type
+    // member order is racy. Reordering nested types also drifts EmittedIL baselines.
     let sortedNested =
         td.NestedTypes.AsArray()
         |> Array.map sortTypeDef
-        |> Array.sortBy (fun (t: ILTypeDef) -> t.Name)
         |> mkILTypeDefsFromArray
 
     td.With(
@@ -12549,10 +12551,14 @@ let rec private sortTypeDef (td: ILTypeDef) =
     )
 
 let DeterministicallySortIlModule (m: ILModuleDef) =
+    // Sort each TypeDef's members but keep the top-level TypeDef order as IlxGen produced it.
+    // Top-level order is declaration order (deterministic from typecheck); the within-type race
+    // is what parallel codegen introduces, so that's where the sort needs to apply. Reordering
+    // top-level TypeDefs also drifts many tests/EmittedIL baselines whose expected ordering
+    // mirrors source declaration order. See https://github.com/dotnet/fsharp/issues/19732.
     let sortedTypes =
         m.TypeDefs.AsArray()
         |> Array.map sortTypeDef
-        |> Array.sortBy (fun (t: ILTypeDef) -> t.Name)
         |> mkILTypeDefsFromArray
 
     { m with TypeDefs = sortedTypes }
