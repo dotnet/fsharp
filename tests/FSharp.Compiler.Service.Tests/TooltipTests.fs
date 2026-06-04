@@ -4,6 +4,7 @@
 #nowarn "57"
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
 open FSharp.Compiler.EditorServices
@@ -1053,3 +1054,57 @@ let _ = b { for x in ["a";"b"] do
     Assert.Contains("string", firstParamType secondMfv)
 
     Assert.NotEqual<string>(firstParamType firstMfv, firstParamType secondMfv)
+
+// When `Item.MethodGroup` arrives at the synthetic call range with *more than one* MethInfo
+// (the unrefined group fired by `ResolveExprDotLongIdentAndComputeRange` BEFORE
+// `AfterResolution.RecordResolution` settles), our wrapper's `[ mi ]` singleton pattern
+// must NOT match — capturing the unrefined list would replay the wrong overload (or all of
+// them). When overload resolution then fails (broken user code) and the refined singleton
+// notification never arrives, the dictionary slot stays at the pre-populated `Fallback`,
+// so the drain's `MethInfosUseIdenticalDefinitions` check returns true → no `Replacing`
+// → the early-sunk `Item.CustomOperation(opName, _, Some Fallback)` record stays at the
+// keyword. This is the right error-recovery behaviour: the user still sees *a* MethInfo
+// in QuickInfo / Find-All-References instead of nothing.
+[<Fact>]
+let ``Broken overloaded CE custom op call falls back to the eager opDatas[0] sink record`` () =
+    // The for-loop iterates over a list whose element type matches NEITHER overload's outer
+    // type, so F# overload resolution cannot pick a single overload. We expect:
+    //   * A type-error diagnostic.
+    //   * The keyword still has an Item.CustomOperation symbol-use record (the fallback) —
+    //     we just don't know which overload was picked, because none was.
+    let source = """
+module M
+type FooBuilder() =
+    member _.Yield _ = 1
+    member _.For(xs, body) = xs |> Seq.iter body
+    [<CustomOperation "pick">]
+    member _.Pick(_, x: int) = x
+    [<CustomOperation "pick">]
+    member _.Pick(_, x: string) = x
+
+let b = FooBuilder()
+let _ = b { for x in [true] do pick true }
+"""
+    let _, checkResults = getParseAndCheckResults source
+
+    // We expect a type-check error from overload resolution failing.
+    let errors =
+        checkResults.Diagnostics
+        |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
+    Assert.NotEmpty errors
+
+    // But the symbol-use record at the keyword 'pick' must still exist (the eager fallback
+    // sunk by enqueueDeferredCustomOpSink) — the wrapper just didn't get a chance to upgrade
+    // it. Without this graceful fallback, IDE features at the keyword would go blank on
+    // broken CE code.
+    let pickKeywordUses =
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.filter (fun u ->
+            match u.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                mfv.LogicalName = "Pick" && not u.IsFromDefinition
+            | _ -> false)
+        |> List.ofSeq
+
+    Assert.Equal(1, pickKeywordUses.Length)

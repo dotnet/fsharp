@@ -41,10 +41,20 @@ type DeferredCustomOpSink =
 
 /// Sink wrapper that forwards every notification to `forwardTo` and additionally records,
 /// for every tracked synthetic call range, the singleton `Item.MethodGroup` resolution that
-/// lands at it. The synthetic range can collide with outer-comprehension calls (e.g. `For`)
-/// at the same range, so we also check the method name matches the expected fallback's
-/// `LogicalName` — that's an O(1) string compare, no `MethInfosEquivByNameAndSig` on the
-/// hot path.
+/// lands at it.
+///
+/// We deliberately only match the *singleton* `[ mi ]` pattern (= the refined notification
+/// fired by `AfterResolution.RecordResolution`'s `callSinkWithSpecificOverload` once
+/// overload resolution has settled, see `NameResolution.fs:4300-4314`). The earlier
+/// *unrefined* `Item.MethodGroup(name, [...allCandidates...], _)` notification arrives
+/// before overload resolution picks one — capturing it would replay the wrong record.
+/// If the refined notification never fires (overload resolution failed on broken user code),
+/// the dict slot stays at `Fallback` and the drain's identity check decides to leave the
+/// eager fallback sink record in place — graceful degradation rather than blanking the IDE.
+///
+/// The synthetic range can also collide with outer-comprehension calls (e.g. `For`) at the
+/// same range, so we also check the method name matches the expected fallback's
+/// `LogicalName` — an O(1) string compare, no `MethInfosEquivByNameAndSig` on the hot path.
 ///
 /// `forwardTo` is non-optional: callers must gate construction on a real outer sink.
 let private makeCustomOpResolutionCapturingSink
