@@ -7,7 +7,7 @@ module internal FSharp.Compiler.CheckComputationExpressions
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.CheckComputationExpressionOverloads
+open FSharp.Compiler.CheckComputationExpressionsCustomOps
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckBasics
@@ -63,7 +63,7 @@ type ComputationExpressionContext<'a> =
         mWhole: range
         emptyVarSpace: LazyWithContext<list<Val> * TcEnv, range>
         /// Queue of custom-operation keyword usages whose `Item.CustomOperation` sink record
-        /// is upgraded after overload resolution. See `CheckComputationExpressionOverloads`.
+        /// is upgraded after overload resolution. See `CheckComputationExpressionsCustomOps`.
         deferredCustomOpSinks: ResizeArray<DeferredCustomOpSink>
     }
 
@@ -206,6 +206,10 @@ let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
     | [] -> false
     | _ -> true
+
+/// Project the `MethInfo` out of every `opData` 9-tuple produced by `getCustomOperationMethods` below.
+let inline methInfosOfOpDatas opDatas =
+    opDatas |> List.map (fun (_, _, _, _, _, _, _, _, mi: MethInfo) -> mi)
 
 let getCustomOperationMethods (cenv: TcFileState) (env: TcEnv) ad mBuilderVal builderTy =
     let allMethInfos =
@@ -3037,7 +3041,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     /// Queue of `Item.CustomOperation` sink records whose final `MethInfo` depends on
     /// the overload resolution that happens inside the `TcExpr` call below. See
-    /// `enqueueCustomOperationSink` and `DeferredCustomOpSink`.
+    /// `enqueueDeferredCustomOpSink` and `DeferredCustomOpSink` in `CheckComputationExpressionsCustomOps`.
     let deferredCustomOpSinks = ResizeArray<DeferredCustomOpSink>()
 
     let ceenv =
@@ -3134,8 +3138,8 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         // Install a sink wrapper to capture the resolved MethInfo for each enqueued
         // custom-operation keyword, then drain the queue once TcExpr has resolved them.
         // No-op when no custom operations are present, or when no IDE sink is listening.
-        // See `CheckComputationExpressionOverloads.withCapturingTcSink` and #11612 / #15206.
-        withCapturingTcSink cenv.g cenv.amap cenv.tcSink deferredCustomOpSinks (fun () ->
+        // See `CheckComputationExpressionsCustomOps.captureCustomOperationOverloads` and #11612 / #15206.
+        captureCustomOperationOverloads cenv.g cenv.amap cenv.tcSink deferredCustomOpSinks (fun () ->
             TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr)
 
     // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals

@@ -6,7 +6,7 @@
 /// behave the same way they do for regular overloaded method calls.
 ///
 /// See https://github.com/dotnet/fsharp/issues/11612 and https://github.com/dotnet/fsharp/issues/15206.
-module internal FSharp.Compiler.CheckComputationExpressionOverloads
+module internal FSharp.Compiler.CheckComputationExpressionsCustomOps
 
 open System.Collections.Generic
 open FSharp.Compiler.AccessibilityLogic
@@ -35,11 +35,6 @@ type DeferredCustomOpSink =
         mutable Resolved: (MethInfo * TyparInstantiation) option
     }
 
-/// Project the `MethInfo` out of every `opData` tuple returned by `getCustomOperationMethods`
-/// (a 9-tuple whose last field is the `MethInfo`).
-let inline methInfosOfOpDatas opDatas =
-    opDatas |> List.map (fun (_, _, _, _, _, _, _, _, mi: MethInfo) -> mi)
-
 /// Sink wrapper that forwards every notification to the supplied `forwardTo` and additionally
 /// records the singleton `Item.MethodGroup` resolution that lands at one of the tracked
 /// synthetic call ranges. Last-write-wins, validated by `MethInfosEquivByNameAndSig` against
@@ -57,57 +52,48 @@ type private CustomOpResolutionCapturingSink
         |> List.exists (fun c -> MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange c mi)
 
     let tryCapture (m: range) (item: Item) (tpinst: TyparInstantiation) =
-        match deferredSinksBySyntheticRange.TryGetValue m, item with
-        | (true, entries), Item.MethodGroup(_, [ mi ], _) ->
-            for entry in entries do
-                if matchesCandidate mi entry then
-                    entry.Resolved <- Some(mi, tpinst)
+        match item with
+        | Item.MethodGroup(_, [ mi ], _) ->
+            match deferredSinksBySyntheticRange.TryGetValue m with
+            | true, entries ->
+                for entry in entries do
+                    if matchesCandidate mi entry then
+                        entry.Resolved <- Some(mi, tpinst)
+            | false, _ -> ()
         | _ -> ()
 
     interface ITypecheckResultsSink with
         member _.NotifyEnvWithScope(m, nenv, ad) =
-            match forwardTo with
-            | Some s -> s.NotifyEnvWithScope(m, nenv, ad)
-            | None -> ()
+            forwardTo |> Option.iter (fun s -> s.NotifyEnvWithScope(m, nenv, ad))
 
         member _.NotifyExprHasType(ty, nenv, ad, m) =
-            match forwardTo with
-            | Some s -> s.NotifyExprHasType(ty, nenv, ad, m)
-            | None -> ()
+            forwardTo |> Option.iter (fun s -> s.NotifyExprHasType(ty, nenv, ad, m))
 
         member _.NotifyExprHasTypeSynthetic(ty, nenv, ad, m) =
-            match forwardTo with
-            | Some s -> s.NotifyExprHasTypeSynthetic(ty, nenv, ad, m)
-            | None -> ()
+            forwardTo
+            |> Option.iter (fun s -> s.NotifyExprHasTypeSynthetic(ty, nenv, ad, m))
 
         member _.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace) =
             tryCapture m item tpinst
 
-            match forwardTo with
-            | Some s -> s.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace)
-            | None -> ()
+            forwardTo
+            |> Option.iter (fun s -> s.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace))
 
         member _.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace) =
             tryCapture m item tpinst
 
-            match forwardTo with
-            | Some s -> s.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace)
-            | None -> ()
+            forwardTo
+            |> Option.iter (fun s ->
+                s.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace))
 
         member _.NotifyFormatSpecifierLocation(m, numArgs) =
-            match forwardTo with
-            | Some s -> s.NotifyFormatSpecifierLocation(m, numArgs)
-            | None -> ()
+            forwardTo |> Option.iter (fun s -> s.NotifyFormatSpecifierLocation(m, numArgs))
 
         member _.NotifyRelatedSymbolUse(m, item, kind) =
-            match forwardTo with
-            | Some s -> s.NotifyRelatedSymbolUse(m, item, kind)
-            | None -> ()
+            forwardTo |> Option.iter (fun s -> s.NotifyRelatedSymbolUse(m, item, kind))
 
         member _.NotifyOpenDeclaration openDeclaration =
-            match forwardTo with
-            | Some s -> s.NotifyOpenDeclaration openDeclaration
-            | None -> ()
+            forwardTo |> Option.iter (fun s -> s.NotifyOpenDeclaration openDeclaration)
 
         member _.CurrentSourceText = forwardTo |> Option.bind (fun s -> s.CurrentSourceText)
 
@@ -159,7 +145,7 @@ let enqueueDeferredCustomOpSink
 /// Nested CEs: the inner call captures *this* wrapper as its own `forwardTo` via
 /// `sink.CurrentSink`, so notifications chain outer→inner correctly. Do not forward
 /// through `sink` directly inside the wrapper or it would recurse.
-let withCapturingTcSink
+let captureCustomOperationOverloads
     (g: TcGlobals)
     (amap: ImportMap)
     (sink: TcResultsSink)
