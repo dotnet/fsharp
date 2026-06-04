@@ -3171,8 +3171,8 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
         | LinearOpExpr _
         | Expr.Match _ -> GenLinearExpr cenv cgbuf eenv expr sequel false id |> ignore<FakeUnit>
 
-        | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-            if equals m range0 then
+        | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden, m), innerExpr) ->
+            if isHidden then
                 cgbuf.EmitStartOfHiddenCode()
             else
                 CG.EmitDebugPoint cgbuf m
@@ -3736,8 +3736,8 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
                          GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
                          Fake))
 
-    | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-        if equals m range0 then
+    | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden, m), innerExpr) ->
+        if isHidden then
             cgbuf.EmitStartOfHiddenCode()
         else
             CG.EmitDebugPoint cgbuf m
@@ -10641,10 +10641,20 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
     let _, body =
         CodeGenMethod cenv cgbuf.mgbuf ([], eenv.staticInitializationName, eenv, 0, None, codeGenInitFunc, m)
 
-    if CheckCodeDoesSomething body.Code then
+    let codeDoesSomething = CheckCodeDoesSomething body.Code
+
+    // Keep the init method if it carries a visible debug point, so steppable bindings like 'let i = ()' survive.
+    let hasVisibleDebugPoint =
+        body.Code.Instrs
+        |> Array.exists (function
+            | I_seqpoint sp -> sp.Line <> FeeFee cenv
+            | _ -> false)
+
+    if codeDoesSomething || hasVisibleDebugPoint then
         // We are here because the module we just grabbed has an interesting static initializer
         let feefee, seqpt =
-            if body.Code.Instrs.Length > 0 then
+            // Without real init code, the .cctor's FeeFee marker would just add a stray hidden sequence point.
+            if codeDoesSomething && body.Code.Instrs.Length > 0 then
                 match body.Code.Instrs[0] with
                 | I_seqpoint sp as i -> [ FeeFeeInstr cenv sp.Document ], [ i ]
                 | _ -> [], []
