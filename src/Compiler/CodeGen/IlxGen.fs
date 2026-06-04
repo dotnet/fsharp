@@ -1276,6 +1276,12 @@ and IlxGenEnv =
         /// Used by state machine lowering to resolve otherwise-free expand variables
         /// when the state machine is inside a lambda whose outer let-binding provides the definition.
         resumableCodeDefinitions: ValMap<Expr>
+
+        /// Per-file naming scope for the ImplFile currently being emitted. Used at compiler-generated-name
+        /// allocation sites (e.g. closure type names) so the StableNiceNameGenerator's uniqueness counter
+        /// buckets by this emitting file rather than by an inlined source range. None on the global empty
+        /// env and during paths that bypass GenImplFile. See https://github.com/dotnet/fsharp/issues/19732.
+        codegenScope: PerFileNamingScope option
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -7143,7 +7149,10 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let cloName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            match eenv.codegenScope with
+            | Some scope -> scope.StableUniqueName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            | None ->
+                g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -10767,6 +10776,13 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
                     TopImplQualifiedName = qname.Text
                     Range = m
                 }
+            codegenScope =
+                // Pin a per-file naming scope so closure type names and TLR/Detuple Val.CompiledName
+                // calls inside this file's codegen bucket their stable counter by the emitting file,
+                // not by the (possibly inlined) source range. See https://github.com/dotnet/fsharp/issues/19732.
+                match cenv.g.CompilerGlobalState with
+                | Some state -> Some(state.NewFileScope qname.Range)
+                | None -> None
         }
 
     cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
@@ -12451,10 +12467,96 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
         Some tref
 
+/// Visit every top-level Val that Val.CompiledName routes through StableNiceNameGenerator, in
+/// source-deterministic order (files in source order from ParseAndCheckInputs, then a deterministic
+/// depth-first traversal of every binding site in the file's IR). Calling .CompiledName on each Val
+/// populates the niceNames cache deterministically before the parallel codegen iter runs, so
+/// subsequent racy GetUniqueCompilerGeneratedName calls on different codegen threads hit the cache
+/// instead of incrementing the bucket counter in non-deterministic order. This is the cure for the
+/// parallel-codegen race that produced different '@N' suffixes across rebuilds for compiler-generated
+/// names like 'contains', 'func1', 'f@284' etc. See https://github.com/dotnet/fsharp/issues/19732.
+///
+/// The race manifests in IlxGen.ComputeStorageForValWithValReprInfo (called from AllocValForBind
+/// during the parallel method-body emit) so the walk must visit *every* binding site, not just the
+/// module-spine bindings — TLR-lifted vals live as Expr.Let bindings inside method bodies.
+let PrimeStableNamesForCodegen (g: TcGlobals) (implFiles: CheckedImplFileAfterOptimization list) =
+    match g.CompilerGlobalState with
+    | None -> ()
+    | Some _ ->
+        let primeVal (v: Val) =
+            // Mirrors the predicate in Val.CompiledName that routes through StableNiceNameGenerator.
+            if v.IsCompiledAsTopLevel && not v.IsMember && (v.IsCompilerGenerated || not v.IsMemberOrModuleBinding) then
+                v.CompiledName g.CompilerGlobalState |> ignore
+
+        let folder =
+            { ExprFolder0 with
+                valBindingSiteIntercept = fun st (_isRec, v) -> primeVal v; st }
+
+        for implFile in implFiles do
+            FoldImplFile folder () implFile.ImplFile |> ignore
+
+/// Post-IlxGen pass that re-orders the members of every emitted ILTypeDef into a deterministic
+/// alphabetical order. IlxGen adds method/field/event/property/nested-type defs to the assembly
+/// builder in non-deterministic order under parallel codegen — the builder's internal lists
+/// reflect whichever thread emitted first. Sorting them after IlxGen finishes (but before
+/// ILBinaryWriter consumes the module) makes the #String/#Blob/#TypeDef/#MethodDef metadata
+/// streams byte-identical across runs without changing IL semantics, since tokens are assigned
+/// by the writer based on input order and references inside the same assembly are re-resolved
+/// against that order. See https://github.com/dotnet/fsharp/issues/19732.
+let private methodOrderKey (m: ILMethodDef) =
+    struct (m.Name, m.GenericParams.Length, m.Parameters.Length)
+
+let rec private sortTypeDef (td: ILTypeDef) =
+    let sortedMethods =
+        td.Methods.AsArray()
+        |> Array.sortBy methodOrderKey
+        |> mkILMethodsFromArray
+    let sortedFields =
+        td.Fields.AsList()
+        |> List.sortBy (fun (f: ILFieldDef) -> f.Name)
+        |> mkILFields
+    let sortedEvents =
+        td.Events.AsList()
+        |> List.sortBy (fun (e: ILEventDef) -> e.Name)
+        |> mkILEvents
+    let sortedProperties =
+        td.Properties.AsList()
+        |> List.sortBy (fun (p: ILPropertyDef) -> p.Name)
+        |> mkILProperties
+    let sortedNested =
+        td.NestedTypes.AsArray()
+        |> Array.map sortTypeDef
+        |> Array.sortBy (fun (t: ILTypeDef) -> t.Name)
+        |> mkILTypeDefsFromArray
+    td.With(
+        methods = sortedMethods,
+        fields = sortedFields,
+        events = sortedEvents,
+        properties = sortedProperties,
+        nestedTypes = sortedNested
+    )
+
+let DeterministicallySortIlModule (m: ILModuleDef) =
+    let sortedTypes =
+        m.TypeDefs.AsArray()
+        |> Array.map sortTypeDef
+        |> Array.sortBy (fun (t: ILTypeDef) -> t.Name)
+        |> mkILTypeDefsFromArray
+    { m with TypeDefs = sortedTypes }
+
 let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some(firstImplFiles, lastImplFile) ->
+
+        // Prime the StableNiceNameGenerator's niceNames cache by visiting every top-level Val
+        // in source-deterministic order (files in source order from ParseAndCheckInputs, then
+        // module-binding-list order which is single-threaded per file in typecheck and TLR
+        // pass4_rewrite). This pins the suffix assignment for every Val whose CompiledName routes
+        // through StableNiceNameGenerator, so the later parallel codegen calls hit the cache
+        // and return deterministic names regardless of thread scheduling.
+        // See https://github.com/dotnet/fsharp/issues/19732.
+        PrimeStableNamesForCodegen cenv.g implFiles
 
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
@@ -12529,6 +12631,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         realsig = g.realsig
         initClassFieldSpec = None
         resumableCodeDefinitions = ValMap<_>.Empty
+        codegenScope = None
     }
 
 type IlxGenResults =

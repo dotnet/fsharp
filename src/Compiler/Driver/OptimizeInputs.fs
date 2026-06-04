@@ -443,7 +443,7 @@ let ApplyAllOptimizations
     // each value. This keeps those names deterministic under parallel optimization.
     // See https://github.com/dotnet/fsharp/issues/19732.
     let mkFileNamingScope (file: CheckedImplFile) =
-        tcGlobals.CompilerGlobalState.Value.NiceNameGenerator.NewFileScope(file.QualifiedNameOfFile.Range)
+        tcGlobals.CompilerGlobalState.Value.NewFileScope(file.QualifiedNameOfFile.Range)
 
     let detuple
         ({

@@ -1115,6 +1115,13 @@ let main6
     match dynamicAssemblyCreator with
     | None ->
         try
+            // Re-order the in-memory IL module so each TypeDef's methods/fields/etc. and the
+            // top-level type list are in deterministic (alphabetical) order before ILBinaryWriter
+            // turns them into PE metadata streams. Without this, parallel codegen leaves builders
+            // in thread-arrival order, making byte layout (#String/#Blob/#TypeDef tables) non-
+            // reproducible even when the underlying IL semantics are identical. See
+            // https://github.com/dotnet/fsharp/issues/19732.
+            let ilxMainModule = DeterministicallySortIlModule ilxMainModule
             match tcConfig.emitMetadataAssembly with
             | MetadataAssemblyGeneration.None -> ()
             | _ ->
