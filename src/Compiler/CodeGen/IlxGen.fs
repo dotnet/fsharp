@@ -12538,9 +12538,7 @@ let rec private sortTypeDef (td: ILTypeDef) =
     // in DeterministicallySortIlModule: declaration order is deterministic, only the WITHIN-type
     // member order is racy. Reordering nested types also drifts EmittedIL baselines.
     let sortedNested =
-        td.NestedTypes.AsArray()
-        |> Array.map sortTypeDef
-        |> mkILTypeDefsFromArray
+        td.NestedTypes.AsArray() |> Array.map sortTypeDef |> mkILTypeDefsFromArray
 
     td.With(
         methods = sortedMethods,
@@ -12557,9 +12555,7 @@ let DeterministicallySortIlModule (m: ILModuleDef) =
     // top-level TypeDefs also drifts many tests/EmittedIL baselines whose expected ordering
     // mirrors source declaration order. See https://github.com/dotnet/fsharp/issues/19732.
     let sortedTypes =
-        m.TypeDefs.AsArray()
-        |> Array.map sortTypeDef
-        |> mkILTypeDefsFromArray
+        m.TypeDefs.AsArray() |> Array.map sortTypeDef |> mkILTypeDefsFromArray
 
     { m with TypeDefs = sortedTypes }
 
