@@ -164,7 +164,7 @@ let captureCustomOperationOverloads
         let oldSinkOpt = sink.CurrentSink
 
         let deferredSinksBySyntheticRange =
-            let d = Dictionary<range, DeferredCustomOpSink list>(HashIdentity.Structural)
+            let d = Dictionary<range, DeferredCustomOpSink list>(Range.comparer)
 
             for entry in queue do
                 let existing =
