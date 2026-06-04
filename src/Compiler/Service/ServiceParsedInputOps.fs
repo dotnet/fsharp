@@ -2602,58 +2602,17 @@ module ParsedInput =
 
         mkPos line ctx.Pos.Column
 
-    let private tryFindLastHashRLineInScript (parsedInput: ParsedInput) =
-        if
-            not (
-                parsedInput.FileName.EndsWith(".fsx", System.StringComparison.OrdinalIgnoreCase)
-                || parsedInput.FileName.EndsWith(".fsscript", System.StringComparison.OrdinalIgnoreCase)
-            )
-        then
-            None
-        else
-            match parsedInput with
-            | ParsedInput.SigFile _ -> None
-            | ParsedInput.ImplFile(ParsedImplFileInput(hashDirectives = fileHashes; contents = contents)) ->
-                let mutable lastLine = 0
-
-                let consider (ParsedHashDirective(ident, _, r)) =
-                    if ident = "r" && r.EndLine > lastLine then
-                        lastLine <- r.EndLine
-
-                fileHashes |> List.iter consider
-
-                let rec walkDecl (decl: SynModuleDecl) =
-                    match decl with
-                    | SynModuleDecl.HashDirective(hashDirective = hd) -> consider hd
-                    | SynModuleDecl.NestedModule(decls = decls) -> List.iter walkDecl decls
-                    | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(decls = decls)) -> List.iter walkDecl decls
-                    | _ -> ()
-
-                for SynModuleOrNamespace(decls = decls) in contents do
-                    List.iter walkDecl decls
-
-                if lastLine > 0 then Some lastLine else None
-
     let FindNearestPointToInsertOpenDeclaration
         (currentLine: int)
         (parsedInput: ParsedInput)
         (entity: ShortIdents)
         (insertionPoint: OpenStatementInsertionPoint)
         =
-        let ctx =
-            match tryFindNearestPointAndModules currentLine parsedInput insertionPoint with
-            | Some(scope, _, point), modules -> findBestPositionToInsertOpenDeclaration modules scope point entity
-            | _ ->
-                // we failed to find insertion point because ast is empty for some reason, return top left point in this case
-                {
-                    ScopeKind = ScopeKind.TopModule
-                    Pos = mkPos 1 0
-                }
-
-        // For .fsx scripts, ensure the open is placed after any #r directives.
-        match tryFindLastHashRLineInScript parsedInput with
-        | Some lastRLine when ctx.Pos.Line <= lastRLine ->
-            { ctx with
-                Pos = mkPos (lastRLine + 1) 0
+        match tryFindNearestPointAndModules currentLine parsedInput insertionPoint with
+        | Some(scope, _, point), modules -> findBestPositionToInsertOpenDeclaration modules scope point entity
+        | _ ->
+            // we failed to find insertion point because ast is empty for some reason, return top left point in this case
+            {
+                ScopeKind = ScopeKind.TopModule
+                Pos = mkPos 1 0
             }
-        | _ -> ctx
