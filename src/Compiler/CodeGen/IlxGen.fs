@@ -1276,12 +1276,6 @@ and IlxGenEnv =
         /// Used by state machine lowering to resolve otherwise-free expand variables
         /// when the state machine is inside a lambda whose outer let-binding provides the definition.
         resumableCodeDefinitions: ValMap<Expr>
-
-        /// Per-file naming scope for the ImplFile currently being emitted. Used at compiler-generated-name
-        /// allocation sites (e.g. closure type names) so the StableNiceNameGenerator's uniqueness counter
-        /// buckets by this emitting file rather than by an inlined source range. None on the global empty
-        /// env and during paths that bypass GenImplFile. See https://github.com/dotnet/fsharp/issues/19732.
-        codegenScope: PerFileNamingScope option
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -7150,14 +7144,11 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            match eenv.codegenScope with
-            | Some scope -> scope.StableUniqueName(basenameSafeForUseAsTypename, expr.Range, uniq)
-            | None ->
-                g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(
-                    basenameSafeForUseAsTypename,
-                    expr.Range,
-                    uniq
-                )
+            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(
+                basenameSafeForUseAsTypename,
+                expr.Range,
+                uniq
+            )
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -10781,13 +10772,6 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
                     TopImplQualifiedName = qname.Text
                     Range = m
                 }
-            codegenScope =
-                // Pin a per-file naming scope so closure type names and TLR/Detuple Val.CompiledName
-                // calls inside this file's codegen bucket their stable counter by the emitting file,
-                // not by the (possibly inlined) source range. See https://github.com/dotnet/fsharp/issues/19732.
-                match cenv.g.CompilerGlobalState with
-                | Some state -> Some(state.NewFileScope qname.Range)
-                | None -> None
         }
 
     cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
@@ -12603,7 +12587,6 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         realsig = g.realsig
         initClassFieldSpec = None
         resumableCodeDefinitions = ValMap<_>.Empty
-        codegenScope = None
     }
 
 type IlxGenResults =

@@ -76,40 +76,19 @@ type StableNiceNameGenerator() =
                 lazy innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
         lazyName.Value
 
-    /// Stable variant of GetUniqueCompilerGeneratedName whose first-time uniqueness counter buckets by
-    /// 'scopeFileIndex' (the emitting file) rather than by m.FileIndex. The (basicName, uniq) -> name
-    /// mapping is still cached globally so the same closure uniq returns the same name from anywhere.
-    member _.GetUniqueInScope (scopeFileIndex: int, name, m: range, uniq) =
-        let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-        let key = basicName, uniq
-        let lazyName =
-            niceNames.GetOrAdd(key, fun (basicName, _) ->
-                lazy innerGenerator.FreshCompilerGeneratedNameInScope(scopeFileIndex, basicName, m))
-        lazyName.Value
-
-/// A compiler-generated-name allocation scope bound to a single ImplFile being optimized or emitted.
-///
-/// The constructor is intentionally not part of the public signature: a scope can only be obtained
-/// from CompilerGlobalState.NewFileScope at the per-file boundary of the parallel optimizer or codegen.
-/// This makes it impossible for a call site to accidentally bucket names by the wrong (e.g.
-/// inlined-source) file and thereby reintroduce the non-determinism fixed by
+/// A compiler-generated-name allocation scope bound to a single ImplFile being optimized. The
+/// constructor is not part of the public signature: a scope can only be obtained from
+/// CompilerGlobalState.NewFileScope so a call site can't accidentally bucket names by the wrong
+/// (e.g. inlined-source) file and reintroduce the non-determinism fixed by
 /// https://github.com/dotnet/fsharp/issues/19732.
 [<Sealed>]
-type PerFileNamingScope internal (nng: NiceNameGenerator, sng: StableNiceNameGenerator, fileIndex: int) =
-
-    member _.FileIndex = fileIndex
+type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
 
     /// Allocate a fresh compiler-generated name within this file's scope. 'm' contributes only the
     /// source-location marker in the generated name; the determinism-critical uniqueness bucket is
     /// fixed by this scope's file and never by 'm'.
     member _.Fresh (name: string, m: range) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
-
-    /// Stable compiler-generated name where the (basicName, uniq) -> name mapping is cached globally,
-    /// but the first-time uniqueness counter buckets by THIS scope's emitting file rather than by
-    /// m.FileIndex (which may be inlined source from another file).
-    member _.StableUniqueName (name: string, m: range, uniq: int64) =
-        sng.GetUniqueInScope(fileIndex, name, m, uniq)
 
 type internal CompilerGlobalState () =
     /// A global generator of compiler generated names
@@ -128,10 +107,10 @@ type internal CompilerGlobalState () =
     member _.IlxGenNiceNameGenerator = ilxgenGlobalNng
 
     /// Create a per-file naming scope tied to a single ImplFile. Names allocated through the returned
-    /// scope are bucketed by 'fileRange.FileIndex', so parallel optimization or codegen of different
-    /// files cannot race on a shared name-counter bucket. See https://github.com/dotnet/fsharp/issues/19732.
+    /// scope are bucketed by 'fileRange.FileIndex', so parallel optimization of different files cannot
+    /// race on a shared name-counter bucket. See https://github.com/dotnet/fsharp/issues/19732.
     member _.NewFileScope (fileRange: range) =
-        PerFileNamingScope(globalNng, globalStableNameGenerator, fileRange.FileIndex)
+        PerFileNamingScope(globalNng, fileRange.FileIndex)
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64

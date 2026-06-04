@@ -30,26 +30,16 @@ type StableNiceNameGenerator =
     new: unit -> StableNiceNameGenerator
     member GetUniqueCompilerGeneratedName: name: string * m: range * uniq: int64 -> string
 
-/// A compiler-generated-name allocation scope bound to a single ImplFile being optimized or emitted.
-///
-/// Instances can only be obtained from CompilerGlobalState.NewFileScope at the per-file boundary of
-/// the parallel optimizer or codegen; the constructor is deliberately not exposed. This prevents a
-/// call site from bucketing names by the wrong (e.g. inlined-source) file, which would reintroduce
-/// the non-determinism fixed by https://github.com/dotnet/fsharp/issues/19732.
+/// A compiler-generated-name allocation scope bound to a single ImplFile being optimized.
+/// Instances can only be obtained from CompilerGlobalState.NewFileScope so a call site can't
+/// accidentally bucket names by the wrong (e.g. inlined-source) file and reintroduce the
+/// non-determinism fixed by https://github.com/dotnet/fsharp/issues/19732.
 [<Sealed>]
 type PerFileNamingScope =
-
-    /// FileIndex of the emitting ImplFile this scope is bound to.
-    member FileIndex: int
 
     /// Allocate a fresh compiler-generated name within this file's scope. 'm' contributes only the
     /// source-location marker baked into the generated name; the uniqueness bucket is this scope's file.
     member Fresh: name: string * m: range -> string
-
-    /// Stable compiler-generated name where the (basicName, uniq) -> name mapping is cached globally,
-    /// but the first-time uniqueness counter buckets by THIS scope's emitting file rather than by
-    /// m.FileIndex (which may be inlined source from another file).
-    member StableUniqueName: name: string * m: range * uniq: int64 -> string
 
 type internal CompilerGlobalState =
 
@@ -66,7 +56,7 @@ type internal CompilerGlobalState =
 
     /// Create a per-file naming scope for the ImplFile identified by 'fileRange'. All names allocated
     /// through the returned scope are bucketed by that file's FileIndex, guaranteeing determinism
-    /// under parallel optimization and codegen. See https://github.com/dotnet/fsharp/issues/19732.
+    /// under parallel optimization. See https://github.com/dotnet/fsharp/issues/19732.
     member NewFileScope: fileRange: range -> PerFileNamingScope
 
 type Unique = int64
