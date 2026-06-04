@@ -997,3 +997,59 @@ let _ = b { for x in [1] do create 1 "" "" }
 
     // Sanity: each usage must resolve to a *different* overload (different MethInfo).
     Assert.NotEqual<string>(lastParamType firstMfv, lastParamType secondMfv)
+
+// Covers the join/zip/groupJoin code path which enqueues with `mOpCore.MakeSynthetic()`
+// in `mkJoinExpr`/`mkZipExpr` rather than `mClause.MakeSynthetic()` used by the unary
+// `ConsumeCustomOpClauses` path. Validates that the deferred-sink mechanism also picks
+// the resolved overload here.
+[<Fact>]
+let ``GetAllUsesOfAllSymbolsInFile reports resolved overload for IsLikeZip CE custom operation`` () =
+    let source = """
+module M
+type ZBuilder() =
+    member _.Yield (x: 'a) = [x]
+    member _.For(xs: 'a list, body: 'a -> 'b list) = xs |> List.collect body
+    [<CustomOperation("select")>]
+    member _.Select(xs: 'a list, [<ProjectionParameter>] f: 'a -> 'b) = List.map f xs
+    [<CustomOperation("myzip", IsLikeZip = true)>]
+    member _.MyZip(outer: int list, inner: int list, resultSelector: int -> int -> 'r) =
+        List.map2 resultSelector outer inner
+    [<CustomOperation("myzip", IsLikeZip = true)>]
+    member _.MyZip(outer: string list, inner: string list, resultSelector: string -> string -> 'r) =
+        List.map2 resultSelector outer inner
+
+let b = ZBuilder()
+let _ = b { for x in [1;2] do
+            myzip y in [3;4]
+            select (x + y) }
+let _ = b { for x in ["a";"b"] do
+            myzip y in ["c";"d"]
+            select (x + y) }
+"""
+    let _, checkResults = getParseAndCheckResults source
+
+    let myzipKeywordUses =
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.filter (fun u ->
+            match u.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                mfv.LogicalName = "MyZip" && not u.IsFromDefinition
+            | _ -> false)
+        |> Seq.sortBy (fun u -> u.Range.StartLine)
+        |> List.ofSeq
+
+    Assert.Equal(2, myzipKeywordUses.Length)
+
+    let firstParamType (mfv: FSharpMemberOrFunctionOrValue) =
+        mfv.CurriedParameterGroups
+        |> Seq.collect id
+        |> Seq.head
+        |> fun p -> p.Type.Format(FSharpDisplayContext.Empty)
+
+    let firstMfv = myzipKeywordUses[0].Symbol :?> FSharpMemberOrFunctionOrValue
+    Assert.Contains("int", firstParamType firstMfv)
+
+    let secondMfv = myzipKeywordUses[1].Symbol :?> FSharpMemberOrFunctionOrValue
+    Assert.Contains("string", firstParamType secondMfv)
+
+    Assert.NotEqual<string>(firstParamType firstMfv, firstParamType secondMfv)

@@ -98,6 +98,11 @@ type ComputationExpressionContext<'a> =
 
 let inline noTailCall ceenv = { ceenv with tailCall = false }
 
+/// Project the `MethInfo` out of every `opData` tuple returned by `getCustomOperationMethods`
+/// (a 9-tuple whose last field is the `MethInfo`).
+let inline methInfosOfOpDatas opDatas =
+    opDatas |> List.map (fun (_, _, _, _, _, _, _, _, mi: MethInfo) -> mi)
+
 /// Enqueue a deferred `Item.CustomOperation` sink record for `nm.idRange`. The actual sink
 /// call will fire after overload resolution of the synthesized `mkSynCall` completes
 /// (see `TcComputationExpression` for the wrapper that captures the resolution).
@@ -1202,15 +1207,13 @@ let rec TryTranslateComputationExpression
                     // Defer the resolution of the custom operation sink record until after
                     // overload resolution. See enqueueCustomOperationSink for the rationale
                     // (https://github.com/dotnet/fsharp/issues/11612, #15206).
-                    let candidates = opDatas |> List.map (fun (_, _, _, _, _, _, _, _, mi) -> mi)
-
                     enqueueCustomOperationSink
                         ceenv
                         nm
                         opName
                         (fun () -> customOpUsageText ceenv nm)
                         (mOpCore.MakeSynthetic())
-                        candidates
+                        (methInfosOfOpDatas opDatas)
                         methInfo
 
                     let mkJoinExpr keySelector1 keySelector2 innerPat e =
@@ -2513,9 +2516,14 @@ and ConsumeCustomOpClauses
         // The fallback methInfo (opDatas[0]) is recorded if no resolution is captured (error
         // recovery paths, e.g. isLikeZip/Join/GroupJoin or wrong-arg-count, may not produce
         // a resolvable call).
-        let candidates = opDatas |> List.map (fun (_, _, _, _, _, _, _, _, mi) -> mi)
-
-        enqueueCustomOperationSink ceenv nm opName (fun () -> customOpUsageText ceenv nm) (mClause.MakeSynthetic()) candidates methInfo
+        enqueueCustomOperationSink
+            ceenv
+            nm
+            opName
+            (fun () -> customOpUsageText ceenv nm)
+            (mClause.MakeSynthetic())
+            (methInfosOfOpDatas opDatas)
+            methInfo
 
         if isLikeZip || isLikeJoin || isLikeGroupJoin then
             errorR (Error(FSComp.SR.tcBinaryOperatorRequiresBody (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
@@ -3041,53 +3049,66 @@ type private CustomOpResolutionCapturingSink
     (
         g: TcGlobals,
         amap: ImportMap,
-        m: range,
         forwardTo: ITypecheckResultsSink option,
         deferredSinksBySyntheticRange: Dictionary<range, DeferredCustomOpSink list>
     ) =
 
-    let matchesCandidate (mi: MethInfo) (candidates: MethInfo list) =
-        candidates
-        |> List.exists (fun c -> MethInfosEquivByNameAndSig EraseAll true g amap m c mi)
+    let matchesCandidate (mi: MethInfo) (entry: DeferredCustomOpSink) =
+        entry.Candidates
+        |> List.exists (fun c -> MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange c mi)
 
-    let tryCapture (range: range) (item: Item) (tpinst: TyparInstantiation) =
-        match deferredSinksBySyntheticRange.TryGetValue range, item with
+    let tryCapture (m: range) (item: Item) (tpinst: TyparInstantiation) =
+        match deferredSinksBySyntheticRange.TryGetValue m, item with
         | (true, entries), Item.MethodGroup(_, [ mi ], _) ->
             for entry in entries do
-                if matchesCandidate mi entry.Candidates then
+                if matchesCandidate mi entry then
                     entry.Resolved <- Some(mi, tpinst)
         | _ -> ()
 
-    let forward f = forwardTo |> Option.iter f
-
     interface ITypecheckResultsSink with
         member _.NotifyEnvWithScope(m, nenv, ad) =
-            forward (fun s -> s.NotifyEnvWithScope(m, nenv, ad))
+            match forwardTo with
+            | Some s -> s.NotifyEnvWithScope(m, nenv, ad)
+            | None -> ()
 
         member _.NotifyExprHasType(ty, nenv, ad, m) =
-            forward (fun s -> s.NotifyExprHasType(ty, nenv, ad, m))
+            match forwardTo with
+            | Some s -> s.NotifyExprHasType(ty, nenv, ad, m)
+            | None -> ()
 
         member _.NotifyExprHasTypeSynthetic(ty, nenv, ad, m) =
-            forward (fun s -> s.NotifyExprHasTypeSynthetic(ty, nenv, ad, m))
+            match forwardTo with
+            | Some s -> s.NotifyExprHasTypeSynthetic(ty, nenv, ad, m)
+            | None -> ()
 
         member _.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace) =
             tryCapture m item tpinst
-            forward (fun s -> s.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace))
+
+            match forwardTo with
+            | Some s -> s.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace)
+            | None -> ()
 
         member _.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace) =
             tryCapture m item tpinst
 
-            forward (fun s ->
-                s.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace))
+            match forwardTo with
+            | Some s -> s.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace)
+            | None -> ()
 
         member _.NotifyFormatSpecifierLocation(m, numArgs) =
-            forward (fun s -> s.NotifyFormatSpecifierLocation(m, numArgs))
+            match forwardTo with
+            | Some s -> s.NotifyFormatSpecifierLocation(m, numArgs)
+            | None -> ()
 
         member _.NotifyRelatedSymbolUse(m, item, kind) =
-            forward (fun s -> s.NotifyRelatedSymbolUse(m, item, kind))
+            match forwardTo with
+            | Some s -> s.NotifyRelatedSymbolUse(m, item, kind)
+            | None -> ()
 
         member _.NotifyOpenDeclaration openDeclaration =
-            forward (fun s -> s.NotifyOpenDeclaration openDeclaration)
+            match forwardTo with
+            | Some s -> s.NotifyOpenDeclaration openDeclaration
+            | None -> ()
 
         member _.CurrentSourceText = forwardTo |> Option.bind (fun s -> s.CurrentSourceText)
 
@@ -3103,9 +3124,12 @@ type private CustomOpResolutionCapturingSink
 /// correct, and *not* calling `Replacing` here preserves the original sink ordering
 /// that other tests / consumers rely on.
 let private drainDeferredCustomOpSinks (g: TcGlobals) (amap: ImportMap) (sink: TcResultsSink) (entries: ResizeArray<DeferredCustomOpSink>) =
+    let isDifferentOverload (entry: DeferredCustomOpSink) (resolved: MethInfo) =
+        not (MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange resolved entry.Fallback)
+
     for entry in entries do
         match entry.Resolved with
-        | Some(resolved, tpinst) when not (MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange resolved entry.Fallback) ->
+        | Some(resolved, tpinst) when isDifferentOverload entry resolved ->
             let item = Item.CustomOperation(entry.OpName, entry.UsageText, Some resolved)
 
             CallNameResolutionSinkReplacing sink (entry.KeywordRange, entry.NameEnv, item, tpinst, ItemOccurrence.Use, entry.AccessRights)
@@ -3278,15 +3302,21 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         | _ -> env
 
     let lambdaExpr, tpenv =
-        if deferredCustomOpSinks.Count = 0 then
-            // No custom-operation keyword usages — skip the sink wrapping/draining overhead
-            // entirely. This is the common case for async/task/seq/option/list CEs.
+        // Skip the sink wrapping/draining overhead entirely when either:
+        //  - there are no custom-operation keyword usages (most async/task/seq/option/list CEs), or
+        //  - no IDE sink is listening (e.g. plain `dotnet build`), so the resolved sink record
+        //    we would replay has no consumer.
+        if deferredCustomOpSinks.Count = 0 || cenv.tcSink.CurrentSink.IsNone then
             TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
         else
             // Wrap cenv.tcSink with a local sink that captures the resolved MethInfo for each
             // synthesized custom-operation call site. Forwarding goes through the *captured*
             // old sink (oldSinkOpt), never through cenv.tcSink, to avoid recursion through
             // the wrapper we just installed. See #11612 / #15206.
+            //
+            // Nested CEs: an inner `TcComputationExpression` will capture *this* wrapper as
+            // its own `oldSinkOpt` and chain outer→inner correctly. Do not "optimise" by
+            // forwarding directly to `cenv.tcSink` here — that would recurse into the wrapper.
             let oldSinkOpt = cenv.tcSink.CurrentSink
 
             let deferredSinksBySyntheticRange =
@@ -3303,8 +3333,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                 d
 
             let captureSink =
-                CustomOpResolutionCapturingSink(cenv.g, cenv.amap, mWhole, oldSinkOpt, deferredSinksBySyntheticRange)
-                :> ITypecheckResultsSink
+                CustomOpResolutionCapturingSink(cenv.g, cenv.amap, oldSinkOpt, deferredSinksBySyntheticRange) :> ITypecheckResultsSink
 
             let lambdaExpr, tpenv =
                 use _holder = WithNewTypecheckResultsSink(captureSink, cenv.tcSink)
