@@ -44,14 +44,11 @@ module internal ExprConstruction =
             member _.Compare(v1, v2) = compareBy v1 v2 _.Stamp
         }
 
-    /// Stable, source-position-derived sort key for Vals. The first four components
-    /// are build-stable; v.Stamp is the final tiebreaker, which works in practice
-    /// because synthetic Vals at the same source location are typically created
-    /// together by a single pass (so their relative stamp order is fixed) even when
-    /// the absolute stamps differ across builds. The differential test
-    /// `Parallel and sequential compilation must produce identical assemblies`
-    /// (DeterministicTests.fs) guards against regressions in IL emit order.
-    /// See https://github.com/dotnet/fsharp/issues/19732.
+    // Source-position-derived order key for Vals. Used to walk Val collections
+    // in a stable, build-independent order before calling NiceNameGenerator
+    // from parallel optimizer passes. Stamp is the final tiebreaker for
+    // synthetic Vals at the same location; stamps are fixed within a single
+    // process so the order is total. See https://github.com/dotnet/fsharp/issues/19732.
     let valSourceOrderKey (v: Val) =
         let r = v.Range
         struct (r.FileIndex, r.StartLine, r.StartColumn, v.LogicalName, v.Stamp)

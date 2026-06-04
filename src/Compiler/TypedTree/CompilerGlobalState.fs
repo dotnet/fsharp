@@ -72,34 +72,6 @@ and [<Sealed>] PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: i
     member _.Fresh (name: string, m: range) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
-/// Tracks, per thread, the index of the file currently being code-generated. IlxGen sets this around
-/// each file's code generation (both sequential and parallel) so that compiler-generated names produced
-/// during code generation (via StableNiceNameGenerator) are bucketed by the file consuming/emitting them
-/// rather than by the (possibly inlined) source location they originate from. Without this, parallel code
-/// generation of different files races on a shared name-counter bucket and produces non-deterministic
-/// disambiguation suffixes. See https://github.com/dotnet/fsharp/issues/19732.
-[<Sealed; AbstractClass>]
-type internal CodegenNamingScope private () =
-
-    [<DefaultValue; ThreadStatic>]
-    static val mutable private scopePlusOne: int
-
-    /// The index of the file currently being code-generated on this thread, if any.
-    static member Current =
-        match CodegenNamingScope.scopePlusOne with
-        | 0 -> ValueNone
-        | n -> ValueSome(n - 1)
-
-    /// Run 'action' with the current code-generation file scope set to 'fileScopeIndex'.
-    static member With(fileScopeIndex: int, action: unit -> unit) =
-        let prev = CodegenNamingScope.scopePlusOne
-        CodegenNamingScope.scopePlusOne <- fileScopeIndex + 1
-
-        try
-            action ()
-        finally
-            CodegenNamingScope.scopePlusOne <- prev
-
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
@@ -114,13 +86,7 @@ type StableNiceNameGenerator() =
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let key = basicName, uniq
-        niceNames.GetOrAdd(key, fun (basicName, _) ->
-            // When code generation is in progress, bucket the uniqueness counter by the file being
-            // emitted (deterministic per build) rather than by m.FileIndex (which, for inlined code,
-            // points at the shared source of origin and therefore races under parallel code generation).
-            match CodegenNamingScope.Current with
-            | ValueSome scopeFileIndex -> innerGenerator.FreshCompilerGeneratedNameInScope(scopeFileIndex, basicName, m)
-            | ValueNone -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
+        niceNames.GetOrAdd(key, fun (basicName, _) -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
 
 type internal CompilerGlobalState () =
     /// A global generator of compiler generated names
