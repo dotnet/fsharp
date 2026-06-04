@@ -12516,49 +12516,6 @@ let PrimeStableNamesForCodegen (g: TcGlobals) (implFiles: CheckedImplFileAfterOp
 /// streams byte-identical across runs without changing IL semantics, since tokens are assigned
 /// by the writer based on input order and references inside the same assembly are re-resolved
 /// against that order. See https://github.com/dotnet/fsharp/issues/19732.
-let private methodOrderKey (m: ILMethodDef) =
-    struct (m.Name, m.GenericParams.Length, m.Parameters.Length)
-
-let rec private sortTypeDef (td: ILTypeDef) =
-    let sortedMethods =
-        td.Methods.AsArray() |> Array.sortBy methodOrderKey |> mkILMethodsFromArray
-
-    let sortedFields =
-        td.Fields.AsList() |> List.sortBy (fun (f: ILFieldDef) -> f.Name) |> mkILFields
-
-    let sortedEvents =
-        td.Events.AsList() |> List.sortBy (fun (e: ILEventDef) -> e.Name) |> mkILEvents
-
-    let sortedProperties =
-        td.Properties.AsList()
-        |> List.sortBy (fun (p: ILPropertyDef) -> p.Name)
-        |> mkILProperties
-
-    // Recurse into nested types but preserve their declared order, same reasoning as top-level
-    // in DeterministicallySortIlModule: declaration order is deterministic, only the WITHIN-type
-    // member order is racy. Reordering nested types also drifts EmittedIL baselines.
-    let sortedNested =
-        td.NestedTypes.AsArray() |> Array.map sortTypeDef |> mkILTypeDefsFromArray
-
-    td.With(
-        methods = sortedMethods,
-        fields = sortedFields,
-        events = sortedEvents,
-        properties = sortedProperties,
-        nestedTypes = sortedNested
-    )
-
-let DeterministicallySortIlModule (m: ILModuleDef) =
-    // Sort each TypeDef's members but keep the top-level TypeDef order as IlxGen produced it.
-    // Top-level order is declaration order (deterministic from typecheck); the within-type race
-    // is what parallel codegen introduces, so that's where the sort needs to apply. Reordering
-    // top-level TypeDefs also drifts many tests/EmittedIL baselines whose expected ordering
-    // mirrors source declaration order. See https://github.com/dotnet/fsharp/issues/19732.
-    let sortedTypes =
-        m.TypeDefs.AsArray() |> Array.map sortTypeDef |> mkILTypeDefsFromArray
-
-    { m with TypeDefs = sortedTypes }
-
 let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
@@ -12579,7 +12536,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         eenv.delayedFileGenReverse
         |> Array.ofList
         |> Array.rev
-        |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen ()))
+        |> Array.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen ()))
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.

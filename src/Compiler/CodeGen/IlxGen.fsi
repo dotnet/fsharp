@@ -119,10 +119,3 @@ val ReportStatistics: TextWriter -> unit
 
 /// Determine if an F#-declared value, method or function is compiled as a method.
 val IsFSharpValCompiledAsMethod: TcGlobals -> Val -> bool
-
-/// Re-order every TypeDef's methods/fields/events/properties/nested-types and the top-level
-/// TypeDefs list of an ILModuleDef into a deterministic (alphabetical) order. Run between
-/// IlxGen and ILBinaryWriter to make the PE metadata stream layout byte-reproducible across
-/// parallel-codegen runs even when AssemblyBuilders received their members in thread-arrival
-/// order. See https://github.com/dotnet/fsharp/issues/19732.
-val DeterministicallySortIlModule: ILModuleDef -> ILModuleDef
