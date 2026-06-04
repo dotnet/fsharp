@@ -7149,10 +7149,15 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let cloName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
+
             match eenv.codegenScope with
             | Some scope -> scope.StableUniqueName(basenameSafeForUseAsTypename, expr.Range, uniq)
             | None ->
-                g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+                g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(
+                    basenameSafeForUseAsTypename,
+                    expr.Range,
+                    uniq
+                )
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -12485,12 +12490,20 @@ let PrimeStableNamesForCodegen (g: TcGlobals) (implFiles: CheckedImplFileAfterOp
     | Some _ ->
         let primeVal (v: Val) =
             // Mirrors the predicate in Val.CompiledName that routes through StableNiceNameGenerator.
-            if v.IsCompiledAsTopLevel && not v.IsMember && (v.IsCompilerGenerated || not v.IsMemberOrModuleBinding) then
+            if
+                v.IsCompiledAsTopLevel
+                && not v.IsMember
+                && (v.IsCompilerGenerated || not v.IsMemberOrModuleBinding)
+            then
                 v.CompiledName g.CompilerGlobalState |> ignore
 
         let folder =
             { ExprFolder0 with
-                valBindingSiteIntercept = fun st (_isRec, v) -> primeVal v; st }
+                valBindingSiteIntercept =
+                    fun st (_isRec, v) ->
+                        primeVal v
+                        st
+            }
 
         for implFile in implFiles do
             FoldImplFile folder () implFile.ImplFile |> ignore
@@ -12508,26 +12521,25 @@ let private methodOrderKey (m: ILMethodDef) =
 
 let rec private sortTypeDef (td: ILTypeDef) =
     let sortedMethods =
-        td.Methods.AsArray()
-        |> Array.sortBy methodOrderKey
-        |> mkILMethodsFromArray
+        td.Methods.AsArray() |> Array.sortBy methodOrderKey |> mkILMethodsFromArray
+
     let sortedFields =
-        td.Fields.AsList()
-        |> List.sortBy (fun (f: ILFieldDef) -> f.Name)
-        |> mkILFields
+        td.Fields.AsList() |> List.sortBy (fun (f: ILFieldDef) -> f.Name) |> mkILFields
+
     let sortedEvents =
-        td.Events.AsList()
-        |> List.sortBy (fun (e: ILEventDef) -> e.Name)
-        |> mkILEvents
+        td.Events.AsList() |> List.sortBy (fun (e: ILEventDef) -> e.Name) |> mkILEvents
+
     let sortedProperties =
         td.Properties.AsList()
         |> List.sortBy (fun (p: ILPropertyDef) -> p.Name)
         |> mkILProperties
+
     let sortedNested =
         td.NestedTypes.AsArray()
         |> Array.map sortTypeDef
         |> Array.sortBy (fun (t: ILTypeDef) -> t.Name)
         |> mkILTypeDefsFromArray
+
     td.With(
         methods = sortedMethods,
         fields = sortedFields,
@@ -12542,6 +12554,7 @@ let DeterministicallySortIlModule (m: ILModuleDef) =
         |> Array.map sortTypeDef
         |> Array.sortBy (fun (t: ILTypeDef) -> t.Name)
         |> mkILTypeDefsFromArray
+
     { m with TypeDefs = sortedTypes }
 
 let CodegenAssembly cenv eenv mgbuf implFiles =

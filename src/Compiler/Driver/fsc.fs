@@ -1122,6 +1122,7 @@ let main6
             // reproducible even when the underlying IL semantics are identical. See
             // https://github.com/dotnet/fsharp/issues/19732.
             let ilxMainModule = DeterministicallySortIlModule ilxMainModule
+
             match tcConfig.emitMetadataAssembly with
             | MetadataAssemblyGeneration.None -> ()
             | _ ->
