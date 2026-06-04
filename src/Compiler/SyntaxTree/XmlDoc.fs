@@ -97,7 +97,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
                 if paramsWithDocs.Length > 0 then
 
-                    for p in paramNames do
+                    for p in paramNames |> List.distinct do
                         if not (paramsWithDocs |> List.contains p) then
                             warning (Error(FSComp.SR.xmlDocMissingParameter p, doc.Range))
 
@@ -129,6 +129,7 @@ and XmlDocStatics() =
 type XmlDocCollector() =
     let mutable savedLines = ResizeArray<string * range>()
     let mutable savedGrabPoints = Dictionary<pos, struct (int * int * bool)>()
+    let checkedGrabPoints = HashSet<pos>()
     let mutable currentGrabPointCommentsCount = 0
     let mutable delayedGrabPoint = ValueNone
     let mutable lastNonCommentTokenLine = 0
@@ -185,6 +186,10 @@ type XmlDocCollector() =
         | true, struct (startIndex, endIndex, _) -> savedGrabPoints[grabPointPos] <- struct (startIndex, endIndex, isValid)
         | _ -> ()
 
+    /// Returns true the first time a grab point is checked, false on subsequent calls.
+    /// Dedupes xmldoc validation when bindings share a grab point (e.g. property get/set).
+    member _.MarkAsChecked(grabPointPos) = checkedGrabPoints.Add(grabPointPos)
+
     member _.HasComments grabPointPos =
         savedGrabPoints.TryGetValue grabPointPos |> fst
 
@@ -232,7 +237,7 @@ type PreXmlDoc =
                 let m = Array.reduce unionRanges (Array.map snd preLines)
                 let doc = XmlDoc(lines, m)
 
-                if check then
+                if check && collector.MarkAsChecked(pos) then
                     doc.Check(paramNamesOpt)
 
                 doc

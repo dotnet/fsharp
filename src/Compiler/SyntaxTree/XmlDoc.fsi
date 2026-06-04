@@ -77,7 +77,7 @@ type public PreXmlDoc =
     /// Wrap a PreXmlDoc with additional parameter names that should be considered valid
     /// when the doc is checked. Used for property get/set pairs so that each accessor's
     /// xmldoc validation sees the union of both accessors' parameter names.
-    static member WithExtraParamsForCheck: doc: PreXmlDoc * extraParamNames: string list -> PreXmlDoc
+    static member internal WithExtraParamsForCheck: doc: PreXmlDoc * extraParamNames: string list -> PreXmlDoc
 
     /// Create a PreXmlDoc from a collection of unprocessed lines
     static member Create: unprocessedLines: string[] * range: range -> PreXmlDoc

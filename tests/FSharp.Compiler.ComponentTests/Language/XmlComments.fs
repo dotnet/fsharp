@@ -309,6 +309,27 @@ type MyClass() =
          |> withDiagnostics []
 
     [<Fact>]
+    let ``Two get-set properties each missing a param both warn`` () =
+        Fsx """
+type MyClass() =
+    /// <summary>P1</summary>
+    /// <param name="a">a</param>
+    member _.P1 with get(a: int) = a and set (a: int) (b: int) = ()
+    /// <summary>P2</summary>
+    /// <param name="x">x</param>
+    member _.P2 with get(x: int) = x and set (x: int) (y: int) = ()
+        """
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics
+                [ (Warning 3390, Line 3, Col 5, Line 4, Col 34,
+                   "This XML comment is incomplete: no documentation for parameter 'b'")
+                  (Warning 3390, Line 6, Col 5, Line 7, Col 34,
+                   "This XML comment is incomplete: no documentation for parameter 'y'") ]
+
+    [<Fact>]
     let ``Actually missing param doc still warns for get-set`` () =
         Fsx """
 type MyClass() =
@@ -380,3 +401,63 @@ type A =
          |> compile
          |> shouldSucceed
          |> withDiagnostics []
+
+module XmlCommentCheckingGetSetPropertyRawFsc =
+
+    open System
+    open System.IO
+    open FSharp.Test
+    open FSharp.Test.Utilities
+    open TestFramework
+
+    // #13684: in-process diagnostics dedupe by range+message, so the raw fsc subprocess is the only backstop.
+    let private paramLine name =
+        sprintf "    /// <param name=\"%s\">_</param>\n" name
+
+    let private sourceFor (paramNames: string) =
+        let paramDocLines =
+            paramNames.Split(' ') |> Array.map paramLine |> String.concat ""
+
+        "module Repro\n\n"
+        + "type MyClass() =\n"
+        + "    /// <summary>A property</summary>\n"
+        + paramDocLines
+        + "    member _.Item\n"
+        + "        with get(index: int) = index\n"
+        + "        and set (index: int) (value: int) = ()\n"
+
+    let private countWarnings (needle: string) (combined: string) =
+        combined.Split([| '\n'; '\r' |], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.filter (fun line -> line.Contains "FS3390" && line.Contains needle)
+        |> Array.length
+
+    let private compileWithWarnon3390 (source: string) =
+        let dir = createTemporaryDirectory().FullName
+        let src = Path.Combine(dir, "Repro.fs")
+        File.WriteAllText(src, source)
+        let outDll = Path.Combine(dir, "Out.dll")
+        let defaultOpts = CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
+
+        runFscProcess [
+            "--target:library"
+            "--warnon:3390"
+            yield! defaultOpts |> Array.map Commands.quotepath
+            $"-o:{Commands.quotepath outDll}"
+            Commands.quotepath src
+        ]
+
+    [<TheoryForNETCOREAPP>]
+    [<InlineData("index", "'value'")>]
+    [<InlineData("index value ghost", "'ghost'")>]
+    [<InlineData("value", "'index'")>]
+    [<InlineData("index index value", "multiple documentation entries for parameter 'index'")>]
+    let ``Property get-set XmlDoc warnings are not duplicated in raw fsc output``
+        (paramNames: string, needle: string)
+        =
+        let result = compileWithWarnon3390 (sourceFor paramNames)
+        let occurrences = countWarnings needle (result.StdOut + "\n" + result.StdErr)
+
+        if occurrences <> 1 then
+            failwithf
+                "Expected exactly one FS3390 warning matching %s in raw fsc output, got %d.\nstdout:\n%s\nstderr:\n%s"
+                needle occurrences result.StdOut result.StdErr
