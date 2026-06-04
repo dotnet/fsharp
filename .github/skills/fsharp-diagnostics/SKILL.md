@@ -9,40 +9,44 @@ description: "Always invoke after editing .fs files. Provides fast parse/typeche
 
 ## Setup (run once per shell session)
 
-```bash
-GetErrors() { "$(git rev-parse --show-toplevel)/.github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.sh" "$@"; }
+Works on macOS, Linux, and Windows — requires pwsh 7+ (`brew install powershell` / `winget install Microsoft.PowerShell` / `apt install powershell`).
+
+```pwsh
+function GetErrors { & "$(git rev-parse --show-toplevel)/.github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.ps1" @args }
 ```
+
+If your shell is bash/zsh and you don't want to switch, the script also runs as `pwsh -File <path>/get-fsharp-errors.ps1 ...`.
 
 ## Parse first, typecheck second
 
-```bash
-GetErrors --parse-only src/Compiler/Checking/CheckBasics.fs
+```pwsh
+GetErrors -ParseOnly src/Compiler/Checking/CheckBasics.fs
 ```
 If errors → fix syntax. Do NOT typecheck until parse is clean.
-```bash
+```pwsh
 GetErrors src/Compiler/Checking/CheckBasics.fs
 ```
 
 ## Find references for a single symbol (line 1-based, col 0-based)
 
 Before renaming or to understand call sites:
-```bash
-GetErrors --find-refs src/Compiler/Checking/CheckBasics.fs 30 5
+```pwsh
+GetErrors -FindRefs src/Compiler/Checking/CheckBasics.fs 30 5
 ```
 
 ## Type hints for a range selection (begin and end line numbers, 1-based)
 
 To see inferred types as inline `// (name: Type)` comments:
-```bash
-GetErrors --type-hints src/Compiler/TypedTree/TypedTreeOps.fs 1028 1032
+```pwsh
+GetErrors -TypeHints src/Compiler/TypedTree/TypedTreeOps.Transforms.fs 100 120
 ```
 
 ## Other
 
-```bash
-GetErrors --check-project   # typecheck entire project
-GetErrors --ping
-GetErrors --shutdown
+```pwsh
+GetErrors -CheckProject   # typecheck entire project
+GetErrors -Ping
+GetErrors -Shutdown
 ```
 
 First call starts server (~70s cold start, set initial_wait=600). Auto-shuts down after 4h idle. ~3 GB RAM.
