@@ -23,7 +23,7 @@ $ServerProject     = (Resolve-Path (Join-Path $ScriptDir '..' 'server')).Path
 $SockDir           = Join-Path $HOME '.fsharp-diag'
 $StartTimeoutSec   = 180   # > documented 70s cold start, covers slow nuget restore
 $ConnectTimeoutMs  = 5000
-$IoTimeoutMs       = 600000  # 10 min for checkProject; safe upper bound
+$IoTimeoutMs       = 1800000  # 30 min - covers cold-clone warmup (nuget restore + FCS in-memory typecheck of ~2M lines)
 
 function Show-Usage {
     @"
@@ -159,10 +159,20 @@ function Start-DiagServer([string]$root, [string]$sock) {
         # Poll for a LIVE server (file existence is insufficient - server may be mid-bind).
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         while ($sw.Elapsed.TotalSeconds -lt $StartTimeoutSec) {
-            if (Test-ServerAlive $sock) { return }
+            if (Test-ServerAlive $sock) { break }
             Start-Sleep -Milliseconds 500
         }
-        throw "Server failed to start within ${StartTimeoutSec}s. Check log: $log"
+        if (-not (Test-ServerAlive $sock)) {
+            throw "Server failed to bind socket within ${StartTimeoutSec}s. Check log: $log"
+        }
+        # Pre-warm the in-memory project so the agent's first real request doesn't hang.
+        # On a fresh clone this triggers the target project's nuget restore + FCS type-check (5-15 min).
+        Write-Host "[fsharp-diag] Server bound; warming up in-memory FSharp.Compiler.Service project (5-15 min on cold clone)..." -ForegroundColor Yellow
+        $resp = Send-Request $sock @{ command = 'warmup' }
+        if ($resp -notmatch '"warmed"') {
+            throw "Warmup failed: $resp"
+        }
+        Write-Host "[fsharp-diag] Warmup complete." -ForegroundColor Green
     } finally {
         if ($lock) { $lock.Dispose(); Remove-Item -Force $lockPath -ErrorAction SilentlyContinue }
     }
@@ -202,16 +212,22 @@ $payload =
     elseif ($Rest -and $Rest.Count -ge 1) { @{ command = 'check'; file = (Resolve-AbsFile $Rest[0]) } }
     else   { Show-Usage; exit 1 }
 
-# Skip server start for -Shutdown (would be pointless) and ensure friendly error if absent.
-if (-not $Shutdown) { Start-DiagServer $root $sock }
+# Ping and Shutdown are liveness ops - never trigger a build or 10+ min warmup.
+# Real commands always go through Start-DiagServer (build + spawn + warmup if needed).
+if ($Ping -or $Shutdown) {
+    try {
+        Send-Request $sock $payload 2000
+    } catch {
+        Write-Output '{ "status":"not_running" }'
+    }
+    exit 0
+}
+
+Start-DiagServer $root $sock
 
 try {
     Send-Request $sock $payload
 } catch {
-    if ($Shutdown) {
-        Write-Output '{ "status":"not_running" }'
-    } else {
-        Write-Error "Cannot reach diagnostics server at $sock`: $($_.Exception.Message)"
-        exit 1
-    }
+    Write-Error "Cannot reach diagnostics server at $sock`: $($_.Exception.Message)"
+    exit 1
 }
