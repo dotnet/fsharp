@@ -62,8 +62,6 @@ type ComputationExpressionContext<'a> =
         origComp: SynExpr
         mWhole: range
         emptyVarSpace: LazyWithContext<list<Val> * TcEnv, range>
-        /// Queue of custom-operation keyword usages whose `Item.CustomOperation` sink record
-        /// is upgraded after overload resolution. See `CheckComputationExpressionsCustomOps`.
         deferredCustomOpSinks: ResizeArray<DeferredCustomOpSink>
     }
 
@@ -1130,8 +1128,6 @@ let rec TryTranslateComputationExpression
                 | Some opDatas ->
                     let opName, _, _, _, _, _, _, _, methInfo = opDatas[0]
 
-                    // Defer the resolution of the custom operation sink record until after
-                    // overload resolution (https://github.com/dotnet/fsharp/issues/11612, #15206).
                     enqueueDeferredCustomOpSink
                         ceenv.cenv.tcSink
                         ceenv.env.NameEnv
@@ -2438,8 +2434,6 @@ and ConsumeCustomOpClauses
 
         let isLikeGroupJoin = customOperationIsLikeZip ceenv nm
 
-        // Defer the resolution of the custom operation sink record until after overload
-        // resolution of the synthesized call has picked an overload. See #11612 / #15206.
         enqueueDeferredCustomOpSink
             ceenv.cenv.tcSink
             ceenv.env.NameEnv
@@ -3033,9 +3027,6 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let origComp = comp
 
-    /// Queue of `Item.CustomOperation` sink records whose final `MethInfo` depends on
-    /// the overload resolution that happens inside the `TcExpr` call below. See
-    /// `enqueueDeferredCustomOpSink` and `DeferredCustomOpSink` in `CheckComputationExpressionsCustomOps`.
     let deferredCustomOpSinks = ResizeArray<DeferredCustomOpSink>()
 
     let ceenv =
@@ -3129,10 +3120,6 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         | _ -> env
 
     let lambdaExpr, tpenv =
-        // Install a sink wrapper to capture the resolved MethInfo for each enqueued
-        // custom-operation keyword, then drain the queue once TcExpr has resolved them.
-        // No-op when no custom operations are present, or when no IDE sink is listening.
-        // See `CheckComputationExpressionsCustomOps.captureCustomOperationOverloads` and #11612 / #15206.
         captureCustomOperationOverloads cenv.tcSink deferredCustomOpSinks (fun () ->
             TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr)
 
