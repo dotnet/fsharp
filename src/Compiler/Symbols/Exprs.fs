@@ -523,11 +523,10 @@ module FSharpExprConvert =
                 | TType_app (_, tinst, _)
                 | TType_ucase (_, tinst)
                 | TType_anon (_, tinst)
+                | TType_anon_tt_union (_, tinst)
                 | TType_tuple (_, tinst) -> tinst |> List.exists hasConditionalTypar
                 | TType_fun (domainTy, rangeTy, _) -> hasConditionalTypar domainTy || hasConditionalTypar rangeTy
                 | TType_forall (_, bodyTy) -> hasConditionalTypar bodyTy
-                // TODO: Anonymous type-tagged union
-                | TType_anon_tt_union (_, _) -> failwith "Anonymous type-tagged union not implemented yet"
                 | TType_measure _ -> false
 
             let witnessExprs =
