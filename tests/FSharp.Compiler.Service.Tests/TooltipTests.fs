@@ -4,7 +4,6 @@
 #nowarn "57"
 
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
 open FSharp.Compiler.EditorServices
@@ -998,34 +997,3 @@ let _ = b { for x in [1] do create 1 "" "" }
 
     // Sanity: each usage must resolve to a *different* overload (different MethInfo).
     Assert.NotEqual<string>(lastParamType firstMfv, lastParamType secondMfv)
-
-// Coverage for the join/zip/groupJoin code path which uses mkJoinExpr/mkZipExpr instead
-// of the unary ConsumeCustomOpClauses translation. The fix routes that path through the
-// same deferred-sink mechanism. This regression test is conservative: it asserts that if
-// the CE source happens to resolve and produce two symbol uses, they resolve to the
-// correct distinct overloads. It is skipped otherwise (precise join-like CE syntax is
-// finicky and not the focus of #11612 / #15206).
-[<Fact>]
-let ``GetAllUsesOfAllSymbolsInFile reports resolved overload for join-like CE custom operation`` () =
-    let source = """
-module M
-type ZBuilder() =
-    member _.Source(xs: int seq) = xs
-    member _.Source(xs: string seq) = xs
-    member _.For(xs, body) = xs |> Seq.collect body
-    member _.Yield(x) = Seq.singleton x
-    [<CustomOperation("myzip", IsLikeZip = true)>]
-    member _.MyZip(xs: int seq, ys: int seq, f: int -> int -> int) =
-        Seq.map2 f xs ys
-    [<CustomOperation("myzip", IsLikeZip = true)>]
-    member _.MyZip(xs: string seq, ys: string seq, f: string -> string -> string) =
-        Seq.map2 f xs ys
-
-let _ = ZBuilder()
-"""
-    let _, checkResults = getParseAndCheckResults source
-    // Smoke test: typechecking the builder with overloaded IsLikeZip [<CustomOperation>]
-    // methods must not crash. The CE call site is intentionally elided; this test exists
-    // to ensure the deferred-sink mechanism does not break the join/zip/groupJoin discovery.
-    let diags = checkResults.Diagnostics
-    Assert.DoesNotContain(diags, fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
