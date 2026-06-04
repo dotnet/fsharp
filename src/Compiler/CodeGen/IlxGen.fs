@@ -7144,11 +7144,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(
-                basenameSafeForUseAsTypename,
-                expr.Range,
-                uniq
-            )
+            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
