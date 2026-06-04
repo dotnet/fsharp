@@ -17,7 +17,7 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.module assembly.exe
+.module assembly.dll
 
 .imagebase {value}
 .file alignment 0x00000200
@@ -29,22 +29,22 @@
 
 
 
-.class public abstract auto ansi sealed Experiment.Test
+.class public abstract auto ansi sealed assembly
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class sequential ansi serializable sealed nested public Repro
+  .class sequential ansi serializable sealed nested public Flags
          extends [runtime]System.ValueType
-         implements class [runtime]System.IEquatable`1<valuetype Experiment.Test/Repro>,
+         implements class [runtime]System.IEquatable`1<valuetype assembly/Flags>,
                     [runtime]System.Collections.IStructuralEquatable,
-                    class [runtime]System.IComparable`1<valuetype Experiment.Test/Repro>,
+                    class [runtime]System.IComparable`1<valuetype assembly/Flags>,
                     [runtime]System.IComparable,
                     [runtime]System.Collections.IStructuralComparable
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .field assembly int32 hash@
-    .method public hidebysig specialname instance int32  get_hash() cil managed
+    .field assembly int64 bits@
+    .method public hidebysig specialname instance int64  get_bits() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -52,25 +52,25 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0001:  ldfld      int64 assembly/Flags::bits@
       IL_0006:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  CompareTo(valuetype Experiment.Test/Repro obj) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(valuetype assembly/Flags obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  5
       .locals init (class [runtime]System.Collections.IComparer V_0,
-               int32 V_1,
-               int32 V_2)
+               int64 V_1,
+               int64 V_2)
       IL_0000:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
       IL_0005:  stloc.0
       IL_0006:  ldarg.0
-      IL_0007:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0007:  ldfld      int64 assembly/Flags::bits@
       IL_000c:  stloc.1
       IL_000d:  ldarga.s   obj
-      IL_000f:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_000f:  ldfld      int64 assembly/Flags::bits@
       IL_0014:  stloc.2
       IL_0015:  ldloc.1
       IL_0016:  ldloc.2
@@ -89,8 +89,8 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  unbox.any  Experiment.Test/Repro
-      IL_0007:  call       instance int32 Experiment.Test/Repro::CompareTo(valuetype Experiment.Test/Repro)
+      IL_0002:  unbox.any  assembly/Flags
+      IL_0007:  call       instance int32 assembly/Flags::CompareTo(valuetype assembly/Flags)
       IL_000c:  ret
     } 
 
@@ -99,17 +99,17 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  5
-      .locals init (valuetype Experiment.Test/Repro V_0,
-               int32 V_1,
-               int32 V_2)
+      .locals init (valuetype assembly/Flags V_0,
+               int64 V_1,
+               int64 V_2)
       IL_0000:  ldarg.1
-      IL_0001:  unbox.any  Experiment.Test/Repro
+      IL_0001:  unbox.any  assembly/Flags
       IL_0006:  stloc.0
       IL_0007:  ldarg.0
-      IL_0008:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0008:  ldfld      int64 assembly/Flags::bits@
       IL_000d:  stloc.1
       IL_000e:  ldloca.s   V_0
-      IL_0010:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0010:  ldfld      int64 assembly/Flags::bits@
       IL_0015:  stloc.2
       IL_0016:  ldloc.1
       IL_0017:  ldloc.2
@@ -126,24 +126,33 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  7
-      .locals init (int32 V_0)
+      .locals init (int32 V_0,
+               int64 V_1)
       IL_0000:  ldc.i4.0
       IL_0001:  stloc.0
       IL_0002:  ldc.i4     0x9e3779b9
       IL_0007:  ldarg.0
-      IL_0008:  ldfld      int32 Experiment.Test/Repro::hash@
-      IL_000d:  ldloc.0
-      IL_000e:  ldc.i4.6
-      IL_000f:  shl
-      IL_0010:  ldloc.0
-      IL_0011:  ldc.i4.2
-      IL_0012:  shr
-      IL_0013:  add
-      IL_0014:  add
-      IL_0015:  add
-      IL_0016:  stloc.0
-      IL_0017:  ldloc.0
-      IL_0018:  ret
+      IL_0008:  ldfld      int64 assembly/Flags::bits@
+      IL_000d:  stloc.1
+      IL_000e:  ldloc.1
+      IL_000f:  conv.i4
+      IL_0010:  ldloc.1
+      IL_0011:  ldc.i4.s   32
+      IL_0013:  shr
+      IL_0014:  conv.i4
+      IL_0015:  xor
+      IL_0016:  ldloc.0
+      IL_0017:  ldc.i4.6
+      IL_0018:  shl
+      IL_0019:  ldloc.0
+      IL_001a:  ldc.i4.2
+      IL_001b:  shr
+      IL_001c:  add
+      IL_001d:  add
+      IL_001e:  add
+      IL_001f:  stloc.0
+      IL_0020:  ldloc.0
+      IL_0021:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode() cil managed
@@ -153,19 +162,19 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 Experiment.Test/Repro::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_0006:  call       instance int32 assembly/Flags::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool Equals(valuetype Experiment.Test/Repro obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool Equals(valuetype assembly/Flags obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0001:  ldfld      int64 assembly/Flags::bits@
       IL_0006:  ldarga.s   obj
-      IL_0008:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0008:  ldfld      int64 assembly/Flags::bits@
       IL_000d:  ceq
       IL_000f:  ret
     } 
@@ -175,18 +184,18 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
-      .locals init (valuetype Experiment.Test/Repro V_0)
+      .locals init (valuetype assembly/Flags V_0)
       IL_0000:  ldarg.1
-      IL_0001:  isinst     Experiment.Test/Repro
+      IL_0001:  isinst     assembly/Flags
       IL_0006:  brfalse.s  IL_001f
 
       IL_0008:  ldarg.1
-      IL_0009:  unbox.any  Experiment.Test/Repro
+      IL_0009:  unbox.any  assembly/Flags
       IL_000e:  stloc.0
       IL_000f:  ldarg.0
-      IL_0010:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0010:  ldfld      int64 assembly/Flags::bits@
       IL_0015:  ldloca.s   V_0
-      IL_0017:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0017:  ldfld      int64 assembly/Flags::bits@
       IL_001c:  ceq
       IL_001e:  ret
 
@@ -194,62 +203,126 @@
       IL_0020:  ret
     } 
 
-    .method public specialname rtspecialname instance void  .ctor(int32 length) cil managed
+    .method public specialname rtspecialname instance void  .ctor(int64 bits) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      int64 assembly/Flags::bits@
+      IL_0007:  ret
+    } 
+
+    .method public specialname rtspecialname 
+            instance void  .ctor(bool a,
+                                 bool b,
+                                 bool c) cil managed
     {
       
       .maxstack  5
-      .locals init (int32 V_0,
-               valuetype Experiment.Test/Repro& V_1,
-               int32 V_2,
-               int32 V_3,
-               valuetype Experiment.Test/Repro& V_4)
+      .locals init (valuetype assembly/Flags& V_0,
+               valuetype assembly/Flags& V_1,
+               valuetype assembly/Flags& V_2,
+               int64 V_3,
+               valuetype assembly/Flags& V_4,
+               int64 V_5,
+               valuetype assembly/Flags& V_6,
+               int64 V_7,
+               valuetype assembly/Flags& V_8,
+               int64 V_9,
+               valuetype assembly/Flags& V_10,
+               int64 V_11,
+               valuetype assembly/Flags& V_12,
+               int64 V_13,
+               valuetype assembly/Flags& V_14)
       IL_0000:  ldarg.0
-      IL_0001:  stloc.1
-      IL_0002:  ldloc.1
-      IL_0003:  ldc.i4.0
-      IL_0004:  stloc.0
-      IL_0005:  stloc.1
-      IL_0006:  ldc.i4.0
-      IL_0007:  stloc.3
-      IL_0008:  ldarg.1
-      IL_0009:  ldc.i4.1
-      IL_000a:  sub
-      IL_000b:  stloc.2
-      IL_000c:  ldloc.2
-      IL_000d:  ldloc.3
-      IL_000e:  blt.s      IL_001f
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  ldarg.1
+      IL_0004:  brfalse.s  IL_000d
 
-      IL_0010:  ldc.i4.s   26
-      IL_0012:  ldloc.0
-      IL_0013:  mul
-      IL_0014:  stloc.0
-      IL_0015:  ldloc.3
-      IL_0016:  ldc.i4.1
-      IL_0017:  add
-      IL_0018:  stloc.3
-      IL_0019:  ldloc.3
-      IL_001a:  ldloc.2
-      IL_001b:  ldc.i4.1
-      IL_001c:  add
-      IL_001d:  bne.un.s   IL_0010
+      IL_0006:  stloc.1
+      IL_0007:  ldloc.1
+      IL_0008:  ldc.i4.1
+      IL_0009:  conv.i8
+      IL_000a:  nop
+      IL_000b:  br.s       IL_0012
 
-      IL_001f:  ldloc.1
-      IL_0020:  stloc.s    V_4
-      IL_0022:  ldloc.s    V_4
-      IL_0024:  ldloc.0
-      IL_0025:  stfld      int32 Experiment.Test/Repro::hash@
-      IL_002a:  ret
+      IL_000d:  stloc.2
+      IL_000e:  ldloc.2
+      IL_000f:  ldc.i4.0
+      IL_0010:  conv.i8
+      IL_0011:  nop
+      IL_0012:  stloc.3
+      IL_0013:  stloc.s    V_4
+      IL_0015:  ldloc.s    V_4
+      IL_0017:  ldloc.3
+      IL_0018:  ldarg.2
+      IL_0019:  brfalse.s  IL_0028
+
+      IL_001b:  stloc.s    V_5
+      IL_001d:  stloc.s    V_6
+      IL_001f:  ldloc.s    V_6
+      IL_0021:  ldloc.s    V_5
+      IL_0023:  ldc.i4.2
+      IL_0024:  conv.i8
+      IL_0025:  nop
+      IL_0026:  br.s       IL_0033
+
+      IL_0028:  stloc.s    V_7
+      IL_002a:  stloc.s    V_8
+      IL_002c:  ldloc.s    V_8
+      IL_002e:  ldloc.s    V_7
+      IL_0030:  ldc.i4.0
+      IL_0031:  conv.i8
+      IL_0032:  nop
+      IL_0033:  or
+      IL_0034:  stloc.s    V_9
+      IL_0036:  stloc.s    V_10
+      IL_0038:  ldloc.s    V_10
+      IL_003a:  ldloc.s    V_9
+      IL_003c:  ldarg.3
+      IL_003d:  brfalse.s  IL_004c
+
+      IL_003f:  stloc.s    V_11
+      IL_0041:  stloc.s    V_12
+      IL_0043:  ldloc.s    V_12
+      IL_0045:  ldloc.s    V_11
+      IL_0047:  ldc.i4.4
+      IL_0048:  conv.i8
+      IL_0049:  nop
+      IL_004a:  br.s       IL_0057
+
+      IL_004c:  stloc.s    V_13
+      IL_004e:  stloc.s    V_14
+      IL_0050:  ldloc.s    V_14
+      IL_0052:  ldloc.s    V_13
+      IL_0054:  ldc.i4.0
+      IL_0055:  conv.i8
+      IL_0056:  nop
+      IL_0057:  or
+      IL_0058:  call       instance void assembly/Flags::.ctor(int64)
+      IL_005d:  ret
     } 
 
-    .method public hidebysig virtual final instance bool  Equals(valuetype Experiment.Test/Repro obj) cil managed
+    .method public hidebysig specialname instance int64  get_Bits() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int64 assembly/Flags::bits@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig virtual final instance bool  Equals(valuetype assembly/Flags obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0001:  ldfld      int64 assembly/Flags::bits@
       IL_0006:  ldarga.s   obj
-      IL_0008:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0008:  ldfld      int64 assembly/Flags::bits@
       IL_000d:  ceq
       IL_000f:  ret
     } 
@@ -259,21 +332,21 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
-      .locals init (valuetype Experiment.Test/Repro V_0,
-               valuetype Experiment.Test/Repro V_1)
+      .locals init (valuetype assembly/Flags V_0,
+               valuetype assembly/Flags V_1)
       IL_0000:  ldarg.1
-      IL_0001:  isinst     Experiment.Test/Repro
+      IL_0001:  isinst     assembly/Flags
       IL_0006:  brfalse.s  IL_0021
 
       IL_0008:  ldarg.1
-      IL_0009:  unbox.any  Experiment.Test/Repro
+      IL_0009:  unbox.any  assembly/Flags
       IL_000e:  stloc.0
       IL_000f:  ldloc.0
       IL_0010:  stloc.1
       IL_0011:  ldarg.0
-      IL_0012:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0012:  ldfld      int64 assembly/Flags::bits@
       IL_0017:  ldloca.s   V_1
-      IL_0019:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0019:  ldfld      int64 assembly/Flags::bits@
       IL_001e:  ceq
       IL_0020:  ret
 
@@ -281,40 +354,23 @@
       IL_0022:  ret
     } 
 
-    .property instance int32 hash()
+    .property instance int64 bits()
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 ) 
-      .get instance int32 Experiment.Test/Repro::get_hash()
+      .get instance int64 assembly/Flags::get_bits()
     } 
-  } 
-
-  .method public static int32  test() cil managed
-  {
-    
-    .maxstack  3
-    .locals init (valuetype Experiment.Test/Repro V_0)
-    IL_0000:  ldc.i4.s   42
-    IL_0002:  newobj     instance void Experiment.Test/Repro::.ctor(int32)
-    IL_0007:  stloc.0
-    IL_0008:  ldloca.s   V_0
-    IL_000a:  ldfld      int32 Experiment.Test/Repro::hash@
-    IL_000f:  ret
+    .property instance int64 Bits()
+    {
+      .get instance int64 assembly/Flags::get_Bits()
+    } 
   } 
 
 } 
 
-.class private abstract auto ansi sealed '<StartupCode$assembly>.$Experiment'.Test
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
        extends [runtime]System.Object
 {
-  .method public static void  main@() cil managed
-  {
-    .entrypoint
-    
-    .maxstack  8
-    IL_0000:  ret
-  } 
-
 } 
 
 
