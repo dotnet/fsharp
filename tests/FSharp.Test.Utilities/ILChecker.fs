@@ -65,12 +65,19 @@ module ILChecker =
 
         let unifyImageBase ilCode = replace ilCode ("\.imagebase\s*0x\d*", ".imagebase {value}")
 
+        // Different ildasm versions print whole-number float literals differently:
+        // Windows ildasm 5.x emits `ldc.r8 10.`, Linux emits `ldc.r8 10`. Normalize both
+        // to the dotted form so shared .bsl files round-trip across platforms.
+        let unifyFloatLiterals ilCode =
+            Regex.Replace(ilCode, "(ldc\.r8\s+-?\d+)(?!\.)(\s|$)", "$1.$2", RegexOptions.Multiline)
+
         let unifyingAssemblyNames (text: string) =
             match assemblyName with
             | Some name -> text.Replace(name, "assembly")
             | None -> text
             |> unifyRuntimeAssemblyName
             |> unifyImageBase
+            |> unifyFloatLiterals
 
         let stripManagedResources (text: string) =
             let result = Regex.Replace(text, "\.mresource public .*\r?\n{\s*}\r?\n", "", RegexOptions.Multiline)
