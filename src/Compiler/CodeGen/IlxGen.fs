@@ -1264,9 +1264,8 @@ and IlxGenEnv =
         /// Delay code gen for files.
         delayCodeGen: bool
 
-        /// Collection of code-gen functions where each inner array represents codegen (method bodies) functions for a single file.
-        /// Each entry is (FileIndex, genMethods[]) — FileIndex is the file's actual index used for CodegenNamingScope bucketing.
-        delayedFileGenReverse: list<int * (unit -> unit)[]>
+        /// Collection of code-gen functions where each inner array represents codegen (method bodies) functions for a single file
+        delayedFileGenReverse: list<(unit -> unit)[]>
 
         /// Other information from the emit of this assembly
         intraAssemblyInfo: IlxGenIntraAssemblyInfo
@@ -11036,7 +11035,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
 
     let eenvfinal =
         { eenvafter with
-            delayedFileGenReverse = (m.FileIndex, cenv.delayedGenMethods |> Array.ofSeq) :: eenvafter.delayedFileGenReverse
+            delayedFileGenReverse = (cenv.delayedGenMethods |> Array.ofSeq) :: eenvafter.delayedFileGenReverse
         }
 
     cenv.delayedGenMethods.Clear()
@@ -12552,16 +12551,14 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
 
         let allFileGens = eenv.delayedFileGenReverse |> Array.ofList |> Array.rev
 
-        let runFileBatch batchIndex (fileIndex, genMeths) =
+        let runFileBatch fileIdx genMeths =
             // Use 1-based batch index so it sorts after sequential (batch 0) additions.
             // Also set the per-file code-generation naming scope so compiler-generated names produced
             // during this file's code generation are bucketed deterministically by file (see
             // CodegenNamingScope), independent of whether code generation runs in parallel.
-            // fileIndex is the actual FileIndex of the source file (not the positional array index),
-            // which ensures CodegenNamingScope buckets match the FileIndex used by the optimizer.
             CodegenNamingScope.With(
-                fileIndex,
-                fun () -> ParallelCodeGenContext.WithBatch(batchIndex + 1, fun () -> genMeths |> Array.iter (fun gen -> gen ()))
+                fileIdx,
+                fun () -> ParallelCodeGenContext.WithBatch(fileIdx + 1, fun () -> genMeths |> Array.iter (fun gen -> gen ()))
             )
 
         if cenv.options.parallelIlxGenEnabled then

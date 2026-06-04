@@ -108,25 +108,19 @@ type internal CodegenNamingScope private () =
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
 type StableNiceNameGenerator() = 
 
-    let niceNames = ConcurrentDictionary<string * int64, Lazy<string>>(max Environment.ProcessorCount 1, 127)
+    let niceNames = ConcurrentDictionary<string * int64, string>(max Environment.ProcessorCount 1, 127)
     let innerGenerator = NiceNameGenerator()
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let key = basicName, uniq
-        let lazyName =
-            niceNames.GetOrAdd(key, fun (basicName, _) ->
-                // Capture the scope at the point the Lazy is created (i.e. first insertion).
-                // Using Lazy ensures the counter-incrementing factory runs exactly once per key,
-                // even when ConcurrentDictionary.GetOrAdd calls the valueFactory on multiple threads.
-                // Without Lazy, spurious factory invocations would increment the counter and produce
-                // non-deterministic suffixes in subsequent names sharing the same bucket.
-                let scopeAtCreation = CodegenNamingScope.Current
-                lazy
-                    match scopeAtCreation with
-                    | ValueSome scopeFileIndex -> innerGenerator.FreshCompilerGeneratedNameInScope(scopeFileIndex, basicName, m)
-                    | ValueNone -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
-        lazyName.Value
+        niceNames.GetOrAdd(key, fun (basicName, _) ->
+            // When code generation is in progress, bucket the uniqueness counter by the file being
+            // emitted (deterministic per build) rather than by m.FileIndex (which, for inlined code,
+            // points at the shared source of origin and therefore races under parallel code generation).
+            match CodegenNamingScope.Current with
+            | ValueSome scopeFileIndex -> innerGenerator.FreshCompilerGeneratedNameInScope(scopeFileIndex, basicName, m)
+            | ValueNone -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
 
 type internal CompilerGlobalState () =
     /// A global generator of compiler generated names
