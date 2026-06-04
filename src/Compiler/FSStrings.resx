@@ -789,6 +789,12 @@
   <data name="NONTERM.classMemberSpfn" xml:space="preserve">
     <value> in member signature</value>
   </data>
+    <data name="NONTERM.classMemberSpfnGetSetElements" xml:space="preserve">
+    <value> in property definition</value>
+  </data>
+  <data name="NONTERM.autoPropsDefnDecl" xml:space="preserve">
+    <value> in auto property definition</value>
+  </data>
   <data name="NONTERM.valSpfn" xml:space="preserve">
     <value> in value signature</value>
   </data>

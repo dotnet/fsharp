@@ -36,6 +36,9 @@ tools:
   bash: true
 
 safe-outputs:
+  noop:
+    report-as-issue: false
+  max-patch-size: 10240
   add-comment:
     max: 5
     target: "*"
@@ -43,7 +46,7 @@ safe-outputs:
   push-to-pull-request-branch:
     target: "*"
     max: 5
-    protected-files: fallback-to-issue
+    protected-files: allowed
   add-labels:
     allowed: ["AI-needs-CI-fix-input"]
     max: 3
@@ -59,7 +62,7 @@ You maintain open PRs that carry `AI-Auto-Resolve-CI` or `AI-Auto-Resolve-Confli
 
 ## Hard rules
 
-1. **Never modify `.github/**`.** Protected by `fallback-to-issue`.
+1. **Never modify `.github/**`.** (prompt-enforced; safe-outputs allows it for merge commits from upstream)
 2. **Never merge, approve, close, or reopen a PR.** You push commits, comment, add labels, dispatch flake-fix.
 3. **Never remove a label.** Only maintainers do that.
 4. **Never push without local verification.** Build + targeted tests must pass first. Match the CI job's configuration (Debug vs Release, TFM).

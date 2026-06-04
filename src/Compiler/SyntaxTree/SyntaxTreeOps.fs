@@ -740,6 +740,48 @@ module SynInfo =
             let argInfos = infosForObjArgs @ infosForArgs
             SynValData(Some memFlags, SynValInfo(argInfos, retInfo), None)
 
+    let private isReturnTargetedAttribute (a: SynAttribute) =
+        match a.Target with
+        | Some id -> id.idText = "return"
+        | None -> false
+
+    /// Rotate any `[<return: X>]` attributes from a binding's prefix attribute list into the
+    /// arity-info return position (`SynValInfo.retInfo`). Without this, downstream code that
+    /// reads `Val.Attribs` would incorrectly see them alongside method-targeted attributes
+    /// (see issues #17904 and #19020).
+    let RotateReturnAttributes (attrs: SynAttributes) (valSynData: SynValData) : SynAttributes * SynValData =
+        // Fast path: avoid all allocation when there's nothing to rotate (the common case).
+        let hasReturn =
+            attrs
+            |> List.exists (fun lst -> lst.Attributes |> List.exists isReturnTargetedAttribute)
+
+        if not hasReturn then
+            attrs, valSynData
+        else
+            let mutable returnTargeted = []
+
+            let newAttrs =
+                attrs
+                |> List.choose (fun lst ->
+                    let ret, kept = lst.Attributes |> List.partition isReturnTargetedAttribute
+                    returnTargeted <- returnTargeted @ ret
+
+                    if List.isEmpty kept then
+                        None
+                    else
+                        Some { lst with Attributes = kept })
+
+            let (SynValData(memFlags, SynValInfo(args, SynArgInfo(retAttrs, opt, retId)), thisIdOpt)) =
+                valSynData
+
+            let retList: SynAttributeList =
+                {
+                    Attributes = returnTargeted
+                    Range = (List.head returnTargeted).Range
+                }
+
+            newAttrs, SynValData(memFlags, SynValInfo(args, SynArgInfo(retList :: retAttrs, opt, retId)), thisIdOpt)
+
 let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
     let rhsExpr =
         List.foldBack (fun (c, e1) e2 -> SynExpr.LibraryOnlyStaticOptimization(c, e1, e2, mRhs)) staticOptimizations rhsExpr
@@ -758,6 +800,8 @@ let mkSynBinding
     =
     let info =
         SynInfo.InferSynValData(memberFlagsOpt, Some headPat, Option.map snd retInfo, origRhsExpr)
+
+    let attrs, info = SynInfo.RotateReturnAttributes attrs info
 
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
@@ -1105,6 +1149,21 @@ let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
                                          GetKeyword = Some mGet
                                          SetKeyword = Some mSet
                                      }) ->
+            // Each accessor's xmlDoc must validate against the union of both accessors'
+            // parameter names; otherwise documenting the full property triggers spurious
+            // 'unknown parameter' / 'no documentation for parameter' warnings on the
+            // accessor that does not own that name. See issue #13684.
+            let argNamesOf (SynBinding(valData = SynValData(valInfo = info))) = info.ArgNames
+            let getArgs = argNamesOf getBinding
+            let setArgs = argNamesOf setBinding
+
+            let rewrap extra (SynBinding(a, k, isInline, isMutable, attrs, xmlDoc, vd, hp, ri, e, mB, sp, t)) =
+                let xmlDoc' = PreXmlDoc.WithExtraParamsForCheck(xmlDoc, extra)
+                SynBinding(a, k, isInline, isMutable, attrs, xmlDoc', vd, hp, ri, e, mB, sp, t)
+
+            let getBinding = rewrap setArgs getBinding
+            let setBinding = rewrap getArgs setBinding
+
             if Position.posLt mGet.Start mSet.Start then
                 [ SynMemberDefn.Member(getBinding, m); SynMemberDefn.Member(setBinding, m) ]
             else
