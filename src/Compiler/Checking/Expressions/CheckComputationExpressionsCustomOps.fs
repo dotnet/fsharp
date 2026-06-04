@@ -16,17 +16,17 @@ module internal FSharp.Compiler.CheckComputationExpressionsCustomOps
 
 open System.Collections.Generic
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
 /// Information about a `[<CustomOperation>]` keyword usage whose `Item.CustomOperation`
 /// sink record needs to be upgraded once normal overload resolution picks an overload.
+/// Fully immutable: captured resolutions live in the side dictionary set up by
+/// `captureCustomOperationOverloads`, keyed by `SyntheticCallRange`.
 [<NoComparison; NoEquality>]
 type DeferredCustomOpSink =
     {
@@ -34,37 +34,30 @@ type DeferredCustomOpSink =
         OpName: string
         UsageText: unit -> string option
         SyntheticCallRange: range
-        Candidates: MethInfo list
         Fallback: MethInfo
         NameEnv: NameResolutionEnv
         AccessRights: AccessorDomain
-        mutable Resolved: (MethInfo * TyparInstantiation) option
     }
 
-/// Sink wrapper that forwards every notification to `forwardTo` and additionally records
-/// the singleton `Item.MethodGroup` resolution that lands at one of the tracked synthetic
-/// call ranges. Last-write-wins, validated by `MethInfosEquivByNameAndSig` against the
-/// deferred entry's candidates so unrelated notifications at the same range are ignored.
+/// Sink wrapper that forwards every notification to `forwardTo` and additionally records,
+/// for every tracked synthetic call range, the singleton `Item.MethodGroup` resolution that
+/// lands at it. The synthetic range can collide with outer-comprehension calls (e.g. `For`)
+/// at the same range, so we also check the method name matches the expected fallback's
+/// `LogicalName` — that's an O(1) string compare, no `MethInfosEquivByNameAndSig` on the
+/// hot path.
+///
 /// `forwardTo` is non-optional: callers must gate construction on a real outer sink.
 let private makeCustomOpResolutionCapturingSink
-    (g: TcGlobals)
-    (amap: ImportMap)
     (forwardTo: ITypecheckResultsSink)
-    (deferredSinksBySyntheticRange: Dictionary<range, DeferredCustomOpSink list>)
+    (capturedResolutions: Dictionary<range, string * MethInfo * TyparInstantiation>)
     : ITypecheckResultsSink =
 
     let tryCapture (m: range) (item: Item) (tpinst: TyparInstantiation) =
         match item with
-        | Item.MethodGroup(_, [ mi ], _) ->
-            match deferredSinksBySyntheticRange.TryGetValue m with
-            | true, entries ->
-                for entry in entries do
-                    if
-                        entry.Candidates
-                        |> List.exists (fun c -> MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange c mi)
-                    then
-                        entry.Resolved <- Some(mi, tpinst)
-            | false, _ -> ()
+        | Item.MethodGroup(name, [ mi ], _) ->
+            match capturedResolutions.TryGetValue m with
+            | true, (expectedName, _, _) when name = expectedName -> capturedResolutions[m] <- (expectedName, mi, tpinst)
+            | _ -> ()
         | _ -> ()
 
     { new ITypecheckResultsSink with
@@ -112,7 +105,6 @@ let enqueueDeferredCustomOpSink
     opName
     usageText
     syntheticCallRange
-    candidates
     (fallback: MethInfo)
     =
     let fallbackItem = Item.CustomOperation(opName, usageText, Some fallback)
@@ -125,17 +117,17 @@ let enqueueDeferredCustomOpSink
             OpName = opName
             UsageText = usageText
             SyntheticCallRange = syntheticCallRange
-            Candidates = candidates
             Fallback = fallback
             NameEnv = nenv
             AccessRights = ad
-            Resolved = None
         }
 
 /// Run `action` (typically the `TcExpr` of the desugared CE lambda) with a sink wrapper
 /// installed that captures the resolved `MethInfo` for each enqueued custom-operation
 /// keyword. After `action` returns, replace each early sink record whose captured overload
-/// is signature-different from the fallback with one carrying the resolved overload.
+/// is a *different* method definition from the fallback with one carrying the resolved
+/// overload. Single-overload CEs leave the eager fallback record untouched (`Replacing`
+/// would reorder it and break `Test Project12 all symbols`).
 ///
 /// Short-circuits the wrapping and draining entirely when no custom operations were
 /// enqueued (most async/task/seq/option/list CEs) or when no IDE sink is listening
@@ -144,44 +136,40 @@ let enqueueDeferredCustomOpSink
 /// Nested CEs: the inner call captures *this* wrapper as its own `forwardTo` via
 /// `sink.CurrentSink`, so notifications chain outer→inner correctly. Do not forward
 /// through `sink` directly inside the wrapper or it would recurse.
-let captureCustomOperationOverloads
-    (g: TcGlobals)
-    (amap: ImportMap)
-    (sink: TcResultsSink)
-    (queue: ResizeArray<DeferredCustomOpSink>)
-    (action: unit -> 'T)
-    : 'T =
+let captureCustomOperationOverloads (sink: TcResultsSink) (queue: ResizeArray<DeferredCustomOpSink>) (action: unit -> 'T) : 'T =
     match sink.CurrentSink with
     | Some oldSink when queue.Count > 0 ->
-        let deferredSinksBySyntheticRange =
-            let d = Dictionary<range, DeferredCustomOpSink list>(Range.comparer)
+        // The capture dict serves both as the "tracked ranges" set and the result buffer.
+        // Each entry is `(expectedMethodName, capturedOrFallback, tpinst)`:
+        //   * expectedMethodName comes from `Fallback.LogicalName` and is fixed for the entry —
+        //     used in the wrapper to filter out unrelated MethodGroup notifications that share
+        //     the synthetic range (e.g. an enclosing `For` call in a join/zip clause).
+        //   * the second/third positions start as the fallback and are overwritten by the
+        //     wrapper when the resolved overload's MethodGroup notification arrives.
+        // Drain decides whether to call `Replacing` by comparing the captured method against
+        // the fallback with `MethInfo.MethInfosUseIdenticalDefinitions` (cheap def-equality,
+        // not the deep `MethInfosEquivByNameAndSig`).
+        let capturedResolutions =
+            Dictionary<range, string * MethInfo * TyparInstantiation>(Range.comparer)
 
-            for entry in queue do
-                let existing =
-                    match d.TryGetValue entry.SyntheticCallRange with
-                    | true, xs -> xs
-                    | false, _ -> []
+        for entry in queue do
+            capturedResolutions[entry.SyntheticCallRange] <- (entry.Fallback.LogicalName, entry.Fallback, emptyTyparInst)
 
-                d[entry.SyntheticCallRange] <- entry :: existing
-
-            d
-
-        let captureSink =
-            makeCustomOpResolutionCapturingSink g amap oldSink deferredSinksBySyntheticRange
+        let captureSink = makeCustomOpResolutionCapturingSink oldSink capturedResolutions
 
         let result =
             use _holder = WithNewTypecheckResultsSink(captureSink, sink)
             action ()
 
         for entry in queue do
-            match entry.Resolved with
-            | Some(resolved, tpinst) when not (MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange resolved entry.Fallback) ->
+            let _, resolved, tpinst = capturedResolutions[entry.SyntheticCallRange]
+
+            if not (MethInfo.MethInfosUseIdenticalDefinitions resolved entry.Fallback) then
                 let item = Item.CustomOperation(entry.OpName, entry.UsageText, Some resolved)
 
                 CallNameResolutionSinkReplacing
                     sink
                     (entry.KeywordRange, entry.NameEnv, item, tpinst, ItemOccurrence.Use, entry.AccessRights)
-            | _ -> ()
 
         result
     | _ -> action ()

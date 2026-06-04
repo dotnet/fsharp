@@ -207,10 +207,6 @@ let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     | [] -> false
     | _ -> true
 
-/// Project the `MethInfo` out of every `opData` 9-tuple produced by `getCustomOperationMethods` below.
-let inline methInfosOfOpDatas opDatas =
-    opDatas |> List.map (fun (_, _, _, _, _, _, _, _, mi: MethInfo) -> mi)
-
 let getCustomOperationMethods (cenv: TcFileState) (env: TcEnv) ad mBuilderVal builderTy =
     let allMethInfos =
         AllMethInfosOfTypeInScope
@@ -1145,7 +1141,6 @@ let rec TryTranslateComputationExpression
                         opName
                         (fun () -> customOpUsageText ceenv nm)
                         (mOpCore.MakeSynthetic())
-                        (methInfosOfOpDatas opDatas)
                         methInfo
 
                     let mkJoinExpr keySelector1 keySelector2 innerPat e =
@@ -2454,7 +2449,6 @@ and ConsumeCustomOpClauses
             opName
             (fun () -> customOpUsageText ceenv nm)
             (mClause.MakeSynthetic())
-            (methInfosOfOpDatas opDatas)
             methInfo
 
         if isLikeZip || isLikeJoin || isLikeGroupJoin then
@@ -3139,7 +3133,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         // custom-operation keyword, then drain the queue once TcExpr has resolved them.
         // No-op when no custom operations are present, or when no IDE sink is listening.
         // See `CheckComputationExpressionsCustomOps.captureCustomOperationOverloads` and #11612 / #15206.
-        captureCustomOperationOverloads cenv.g cenv.amap cenv.tcSink deferredCustomOpSinks (fun () ->
+        captureCustomOperationOverloads cenv.tcSink deferredCustomOpSinks (fun () ->
             TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr)
 
     // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals
