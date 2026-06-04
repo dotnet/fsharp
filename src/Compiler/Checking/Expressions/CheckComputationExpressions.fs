@@ -13,6 +13,7 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
@@ -21,6 +22,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
@@ -40,6 +42,36 @@ type CompExprTranslationPass =
 type CustomOperationsMode =
     | Allowed
     | Denied
+
+/// Information about a `[<CustomOperation>]` keyword usage whose `Item.CustomOperation`
+/// sink record needs to be deferred until normal overload resolution picks the actual
+/// `MethInfo`. See https://github.com/dotnet/fsharp/issues/11612 and #15206.
+[<NoComparison; NoEquality>]
+type DeferredCustomOpSink =
+    {
+        /// Source range of the operator keyword (where the tooltip / find-references will land).
+        KeywordRange: range
+        /// Custom operation name (the `[<CustomOperation "name">]` argument, or method name).
+        OpName: string
+        /// Usage-text factory for the rendered tooltip.
+        UsageText: unit -> string option
+        /// Synthetic range used by `mkSynCall` for the synthesized `builder.MethName(args)` call;
+        /// this is the range at which overload resolution will notify the chosen `MethInfo`.
+        SyntheticCallRange: range
+        /// Display name passed to `mkSynCall` (used to disambiguate the captured notification).
+        MethodDisplayName: string
+        /// All `MethInfo` candidates registered for this keyword (used to validate that the captured
+        /// resolution corresponds to one of the actual overloads).
+        Candidates: MethInfo list
+        /// Fallback `MethInfo` used when no resolution is captured (e.g. error-recovery paths).
+        Fallback: MethInfo
+        /// Name-environment in scope at the keyword (used for the eventual sink call).
+        NameEnv: NameResolutionEnv
+        /// Access rights in scope at the keyword.
+        AccessRights: AccessorDomain
+        /// Mutable cell into which the sink wrapper writes the resolved `MethInfo` (last-write-wins).
+        Resolved: (MethInfo * TyparInstantiation) option ref
+    }
 
 [<NoComparison; NoEquality>]
 type ComputationExpressionContext<'a> =
@@ -61,9 +93,54 @@ type ComputationExpressionContext<'a> =
         origComp: SynExpr
         mWhole: range
         emptyVarSpace: LazyWithContext<list<Val> * TcEnv, range>
+        /// Queue of custom-operation keyword usages whose `Item.CustomOperation` sink record
+        /// is deferred until after overload resolution of the desugared call. See #11612 / #15206.
+        deferredCustomOpSinks: ResizeArray<DeferredCustomOpSink>
     }
 
 let inline noTailCall ceenv = { ceenv with tailCall = false }
+
+/// Enqueue a deferred `Item.CustomOperation` sink record for `nm.idRange`. The actual sink
+/// call will fire after overload resolution of the synthesized `mkSynCall` completes
+/// (see `TcComputationExpression` for the wrapper that captures the resolution).
+///
+/// The early sink call (with the `opDatas[0]` fallback `MethInfo`) still happens at the
+/// original site so existing tests / consumers that depend on the early ordering of
+/// `Item.CustomOperation` records in `TcResolutions` continue to work. The late drain only
+/// fires `CallNameResolutionSinkReplacing` when the wrapper actually captured a resolution
+/// different from the fallback.
+let enqueueCustomOperationSink
+    (ceenv: ComputationExpressionContext<_>)
+    (nm: Ident)
+    opName
+    usageText
+    syntheticCallRange
+    methodDisplayName
+    candidates
+    (fallback: MethInfo)
+    =
+    // Record the early Item.CustomOperation sink call exactly as the original (pre-fix) code
+    // did, using opDatas[0] as the placeholder MethInfo. This preserves ordering for any
+    // consumer that walks TcResolutions and relies on the original sequence.
+    let fallbackItem = Item.CustomOperation(opName, usageText, Some fallback)
+
+    CallNameResolutionSink
+        ceenv.cenv.tcSink
+        (nm.idRange, ceenv.env.NameEnv, fallbackItem, emptyTyparInst, ItemOccurrence.Use, ceenv.env.eAccessRights)
+
+    ceenv.deferredCustomOpSinks.Add
+        {
+            KeywordRange = nm.idRange
+            OpName = opName
+            UsageText = usageText
+            SyntheticCallRange = syntheticCallRange
+            MethodDisplayName = methodDisplayName
+            Candidates = candidates
+            Fallback = fallback
+            NameEnv = ceenv.env.NameEnv
+            AccessRights = ceenv.env.eAccessRights
+            Resolved = ref None
+        }
 
 let inline TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: TcEnv) m ad nm ty =
     AllMethInfosOfTypeInScope collectionSettings cenv.infoReader env.NameEnv (Some nm) ad IgnoreOverrides m ty
@@ -1126,15 +1203,20 @@ let rec TryTranslateComputationExpression
                 | Some opDatas ->
                     let opName, _, _, _, _, _, _, _, methInfo = opDatas[0]
 
-                    // Record the resolution of the custom operation for posterity
-                    let item =
-                        Item.CustomOperation(opName, (fun () -> customOpUsageText ceenv nm), Some methInfo)
+                    // Defer the resolution of the custom operation sink record until after
+                    // overload resolution. See enqueueCustomOperationSink for the rationale
+                    // (https://github.com/dotnet/fsharp/issues/11612, #15206).
+                    let candidates = opDatas |> List.map (fun (_, _, _, _, _, _, _, _, mi) -> mi)
 
-                    // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
-                    // of type variables in the quick info provided in the IDE.
-                    CallNameResolutionSink
-                        cenv.tcSink
-                        (nm.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ceenv.env.eAccessRights)
+                    enqueueCustomOperationSink
+                        ceenv
+                        nm
+                        opName
+                        (fun () -> customOpUsageText ceenv nm)
+                        (mOpCore.MakeSynthetic())
+                        methInfo.DisplayName
+                        candidates
+                        methInfo
 
                     let mkJoinExpr keySelector1 keySelector2 innerPat e =
                         let mSynthetic = mOpCore.MakeSynthetic()
@@ -2431,15 +2513,22 @@ and ConsumeCustomOpClauses
 
         let isLikeGroupJoin = customOperationIsLikeZip ceenv nm
 
-        // Record the resolution of the custom operation for posterity
-        let item =
-            Item.CustomOperation(opName, (fun () -> customOpUsageText ceenv nm), Some methInfo)
+        // Defer the resolution of the custom operation sink record until after overload
+        // resolution of the synthesized call has picked an overload. See #11612 / #15206.
+        // The fallback methInfo (opDatas[0]) is recorded if no resolution is captured (error
+        // recovery paths, e.g. isLikeZip/Join/GroupJoin or wrong-arg-count, may not produce
+        // a resolvable call).
+        let candidates = opDatas |> List.map (fun (_, _, _, _, _, _, _, _, mi) -> mi)
 
-        // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
-        // of type variables in the quick info provided in the IDE.
-        CallNameResolutionSink
-            ceenv.cenv.tcSink
-            (nm.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ceenv.env.eAccessRights)
+        enqueueCustomOperationSink
+            ceenv
+            nm
+            opName
+            (fun () -> customOpUsageText ceenv nm)
+            (mClause.MakeSynthetic())
+            methInfo.DisplayName
+            candidates
+            methInfo
 
         if isLikeZip || isLikeJoin || isLikeGroupJoin then
             errorR (Error(FSComp.SR.tcBinaryOperatorRequiresBody (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
@@ -2952,6 +3041,94 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
 
                             translatedCtxt fillExpr)
 
+/// Sink wrapper used by `TcComputationExpression` to capture the resolved `MethInfo`
+/// for synthesized custom-operation calls. The wrapper forwards every notification
+/// to the original sink (captured **before** installation, to avoid recursion) and
+/// in addition records the singleton method-group resolution that lands at one of
+/// the tracked synthetic call ranges.
+///
+/// Last-write-wins: type inference may notify the method group multiple times
+/// (unrefined first, refined later via `AfterResolution.RecordResolution`); we
+/// always keep the most recent singleton resolution that matches a candidate.
+type private CustomOpResolutionCapturingSink
+    (g: TcGlobals, amap: ImportMap, m: range, forwardTo: ITypecheckResultsSink option, tracked: Dictionary<range, DeferredCustomOpSink list>)
+    =
+
+    let matchesCandidate (mi: MethInfo) (candidates: MethInfo list) =
+        candidates
+        |> List.exists (fun c -> MethInfosEquivByNameAndSig EraseAll true g amap m c mi)
+
+    let tryCapture (range: range) (item: Item) (tpinst: TyparInstantiation) =
+        match tracked.TryGetValue range with
+        | false, _ -> ()
+        | true, entries ->
+            match item with
+            | Item.MethodGroup(_, [ mi ], _) ->
+                for entry in entries do
+                    if matchesCandidate mi entry.Candidates then
+                        entry.Resolved.Value <- Some(mi, tpinst)
+            | _ -> ()
+
+    interface ITypecheckResultsSink with
+        member _.NotifyEnvWithScope(m, nenv, ad) =
+            forwardTo |> Option.iter (fun s -> s.NotifyEnvWithScope(m, nenv, ad))
+
+        member _.NotifyExprHasType(ty, nenv, ad, m) =
+            forwardTo |> Option.iter (fun s -> s.NotifyExprHasType(ty, nenv, ad, m))
+
+        member _.NotifyExprHasTypeSynthetic(ty, nenv, ad, m) =
+            forwardTo
+            |> Option.iter (fun s -> s.NotifyExprHasTypeSynthetic(ty, nenv, ad, m))
+
+        member _.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace) =
+            tryCapture m item tpinst
+
+            forwardTo
+            |> Option.iter (fun s -> s.NotifyNameResolution(endPos, item, tpinst, occurrenceType, nenv, ad, m, replace))
+
+        member _.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace) =
+            tryCapture m item tpinst
+
+            forwardTo
+            |> Option.iter (fun s ->
+                s.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurrenceType, nenv, ad, m, replace))
+
+        member _.NotifyFormatSpecifierLocation(m, numArgs) =
+            forwardTo |> Option.iter (fun s -> s.NotifyFormatSpecifierLocation(m, numArgs))
+
+        member _.NotifyRelatedSymbolUse(m, item, kind) =
+            forwardTo |> Option.iter (fun s -> s.NotifyRelatedSymbolUse(m, item, kind))
+
+        member _.NotifyOpenDeclaration openDeclaration =
+            forwardTo |> Option.iter (fun s -> s.NotifyOpenDeclaration openDeclaration)
+
+        member _.CurrentSourceText =
+            match forwardTo with
+            | Some s -> s.CurrentSourceText
+            | None -> None
+
+        member _.FormatStringCheckContext =
+            match forwardTo with
+            | Some s -> s.FormatStringCheckContext
+            | None -> None
+
+/// Drain the deferred custom-operation sink queue: for each enqueued entry whose
+/// wrapper captured an overload resolution that is *different* from the fallback that
+/// was eagerly sunk in `enqueueCustomOperationSink`, replace the keyword's sink record
+/// with one carrying the resolved `MethInfo` (and any captured `TyparInstantiation`).
+/// Entries with no captured resolution, or whose captured resolution is signature-
+/// equivalent to the fallback, are left as-is — the eagerly-sunk fallback is already
+/// correct, and *not* calling `Replacing` here preserves the original sink ordering
+/// that other tests / consumers rely on.
+let private drainDeferredCustomOpSinks (g: TcGlobals) (amap: ImportMap) (sink: TcResultsSink) (entries: ResizeArray<DeferredCustomOpSink>) =
+    for entry in entries do
+        match entry.Resolved.Value with
+        | Some(resolved, tpinst) when not (MethInfosEquivByNameAndSig EraseAll true g amap entry.KeywordRange resolved entry.Fallback) ->
+            let item = Item.CustomOperation(entry.OpName, entry.UsageText, Some resolved)
+
+            CallNameResolutionSinkReplacing sink (entry.KeywordRange, entry.NameEnv, item, tpinst, ItemOccurrence.Use, entry.AccessRights)
+        | _ -> ()
+
 /// Used for all computation expressions except sequence expressions
 let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv (mWhole, interpExpr: Expr, builderTy, comp: SynExpr) =
     let overallTy = overallTy.Commit
@@ -3023,6 +3200,11 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let origComp = comp
 
+    /// Queue of `Item.CustomOperation` sink records whose final `MethInfo` depends on
+    /// the overload resolution that happens inside the `TcExpr` call below. See
+    /// `enqueueCustomOperationSink` and `DeferredCustomOpSink`.
+    let deferredCustomOpSinks = ResizeArray<DeferredCustomOpSink>()
+
     let ceenv =
         {
             cenv = cenv
@@ -3040,6 +3222,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             origComp = origComp
             mWhole = mWhole
             emptyVarSpace = LazyWithContext.NotLazy([], env)
+            deferredCustomOpSinks = deferredCustomOpSinks
         }
 
     /// Inside the 'query { ... }' use a modified name environment that contains fake 'CustomOperation' entries
@@ -3113,7 +3296,37 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         | _ -> env
 
     let lambdaExpr, tpenv =
-        TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
+        // Wrap cenv.tcSink with a local sink that captures the resolved MethInfo for each
+        // synthesized custom-operation call site. Forwarding goes through the *captured*
+        // old sink (oldSinkOpt), never through cenv.tcSink, to avoid recursion through
+        // the wrapper we just installed. See #11612 / #15206.
+        let oldSinkOpt = cenv.tcSink.CurrentSink
+
+        let tracked =
+            let d = Dictionary<range, DeferredCustomOpSink list>(HashIdentity.Structural)
+
+            for entry in deferredCustomOpSinks do
+                let existing =
+                    match d.TryGetValue entry.SyntheticCallRange with
+                    | true, xs -> xs
+                    | false, _ -> []
+
+                d[entry.SyntheticCallRange] <- entry :: existing
+
+            d
+
+        let captureSink =
+            CustomOpResolutionCapturingSink(cenv.g, cenv.amap, mWhole, oldSinkOpt, tracked) :> ITypecheckResultsSink
+
+        let lambdaExpr, tpenv =
+            use _holder = WithNewTypecheckResultsSink(captureSink, cenv.tcSink)
+            TcExpr cenv (MustEqual(mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
+
+        // Drain deferred sink records now that overload resolution has captured each
+        // resolved MethInfo (or fell back to opDatas[0] for error-recovery paths).
+        drainDeferredCustomOpSinks cenv.g cenv.amap cenv.tcSink deferredCustomOpSinks
+
+        lambdaExpr, tpenv
 
     // For queries, transfer HasBeenReferenced from compiler-generated varSpace Vals to user Vals
     if isQuery then
