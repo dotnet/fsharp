@@ -5,6 +5,12 @@
 /// (instead of the first-registered overload), so QuickInfo and `GetAllUsesOfAllSymbolsInFile`
 /// behave the same way they do for regular overloaded method calls.
 ///
+/// The "emit a fallback `Item.X` early then `CallNameResolutionSinkReplacing` once the
+/// final resolution is known" idiom is the cross-range generalisation of what
+/// `TcMethodItemThen` (in `CheckExpressions.fs`) already does at a single range for
+/// type-providers static arguments. Here the early sink lands at the keyword range while
+/// overload resolution fires at a different synthetic call range, hence the sink wrapper.
+///
 /// See https://github.com/dotnet/fsharp/issues/11612 and https://github.com/dotnet/fsharp/issues/15206.
 module internal FSharp.Compiler.CheckComputationExpressionsCustomOps
 
