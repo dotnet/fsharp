@@ -222,10 +222,10 @@ module internal TypeRemapping =
             | Some tcrefR -> TType_ucase(UnionCaseRef(tcrefR, n), remapTypesAux tyenv tinst)
             | None -> TType_ucase(UnionCaseRef(tcref, n), remapTypesAux tyenv tinst)
 
-          // Remap single disjoint?
-        | TType_anon_tt_union (_, l) as ty ->
+        // Remap single disjoint?
+        | TType_anon_tt_union(_, l) as ty ->
             match l with
-            | [singleCase] -> singleCase
+            | [ singleCase ] -> singleCase
             | _ -> ty
 
         | TType_anon(anonInfo, l) as ty ->
@@ -1028,8 +1028,7 @@ module internal TypeDecomposition =
 
         | TType_tuple(tupInfo, l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
 
-        | TType_anon_tt_union(unionInfo, _) ->
-            stripTyEqnsAndErase eraseFuncAndTuple g unionInfo.CommonAncestorTy
+        | TType_anon_tt_union(unionInfo, _) -> stripTyEqnsAndErase eraseFuncAndTuple g unionInfo.CommonAncestorTy
 
         | ty -> ty
 
@@ -1221,7 +1220,7 @@ module internal TypeDecomposition =
         |> (function
         | TType_app(tcref, _, _) -> tcref.IsFSharpEnumTycon
         | _ -> false)
-        
+
     let isAnonTtUnionTy g ty =
         ty
         |> stripTyEqns g
@@ -1366,18 +1365,20 @@ module internal TypeDecomposition =
 
     let tryUnsortedAnonTtUnionTyCases g ty =
         let ty = ty |> stripTyEqns g
+
         match ty with
-        | TType_anon_tt_union (unionInfo, tys) ->
+        | TType_anon_tt_union(unionInfo, tys) ->
             let sigma = unionInfo.UnsortedCaseSourceIndices
+
             let unsortedTyps =
                 tys
                 |> List.indexed
                 |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
                 |> List.map snd
 
-            ValueSome (unsortedTyps)
+            ValueSome(unsortedTyps)
         | _ -> ValueNone
-        
+
     let tryNiceEntityRefOfTy ty =
         let ty = stripTyparEqnsAux KnownWithoutNull false ty
 
@@ -1659,8 +1660,7 @@ module internal TypeEquivalence =
             | EraseNone -> measureAEquiv g aenv m1 m2
             | _ -> true
 
-        | TType_anon_tt_union (_, l1), TType_anon_tt_union (_, l2) ->
-            ListSet.equals (typeAEquivAux erasureFlag g aenv) l1 l2
+        | TType_anon_tt_union(_, l1), TType_anon_tt_union(_, l2) -> ListSet.equals (typeAEquivAux erasureFlag g aenv) l1 l2
 
         | _ -> false
 

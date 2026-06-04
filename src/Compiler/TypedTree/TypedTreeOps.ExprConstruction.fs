@@ -1252,8 +1252,7 @@ module internal TypeTesters =
             | TType_ucase(_, b)
             | TType_anon(_, b)
             | TType_tuple(_, b)
-            | TType_anon_tt_union (_, b) ->
-                List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
+            | TType_anon_tt_union(_, b) -> List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
 
             | TType_fun(domainTy, rangeTy, nullness) ->
                 match checkForNullness, nullness.Evaluate() with

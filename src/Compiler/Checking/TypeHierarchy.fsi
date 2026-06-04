@@ -121,8 +121,7 @@ val ExistsHeadTypeInEntireHierarchy:
     g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> tcrefToLookFor: TyconRef -> bool
 
 /// Check if one (nominal) type is a subtype of another
-val isSubTypeOf:
-    g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> typeToLookFor: TType -> bool
+val isSubTypeOf: g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> typeToLookFor: TType -> bool
 
 /// Check if one (nominal) type is a supertype of another
 val isSuperTypeOf:

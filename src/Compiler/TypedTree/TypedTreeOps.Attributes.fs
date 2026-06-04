@@ -1618,8 +1618,10 @@ module internal DebugPrint =
 
         | TType_tuple(_tupInfo, tys) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
 
-        | TType_anon_tt_union (_, tys) ->
-            leftL (tagText "(") ^^ sepListL (wordL (tagText "|")) (List.map (auxTypeAtomL env) tys) ^^ rightL (tagText ")")
+        | TType_anon_tt_union(_, tys) ->
+            leftL (tagText "(")
+            ^^ sepListL (wordL (tagText "|")) (List.map (auxTypeAtomL env) tys)
+            ^^ rightL (tagText ")")
 
         | TType_fun(domainTy, rangeTy, nullness) ->
             let coreL =
