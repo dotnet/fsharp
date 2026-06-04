@@ -43,18 +43,185 @@ exception InterfaceNotRevealed of DisplayEnv * TType * range
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
 /// The set of well-known Val-level attributes whose presence on an implementation
-/// must be matched in the signature. These attributes change the contract observed
-/// by consumers of a value/member (inlining behaviour, dynamic dispatch, codegen),
-/// and tooling does not consult the implementation when a signature file is present
-/// (so attributes only on the impl are silently lost). Adding a new attribute here
-/// is the ONE PLACE required to enforce its presence in the signature.
-let private signatureEnforcedAttributes (g: TcGlobals) : (string * (Val -> bool)) list =
+/// must be observed by consumers of the corresponding signature. When such an
+/// attribute appears in the .fs but not in the .fsi, F# tooling that skips the
+/// implementation when a signature is present cannot see it, and the contract a
+/// consumer typechecks against silently diverges from the contract the runtime
+/// actually exposes.
+///
+/// Each row is `(flag, displayName)`. `flag` may be a bitwise OR of related bits
+/// when an attribute has multiple representations on the flags enum (e.g.
+/// `NoDynamicInvocationAttribute_True ||| NoDynamicInvocationAttribute_False`
+/// for three-state booleans); the display name then refers to the attribute as
+/// a whole. Adding a new row here is the ONE PLACE required to extend
+/// enforcement; the all-up mask below is derived from it.
+///
+/// Each row must be justified by a concrete consumer-side compile/typecheck
+/// code-path that reads the attribute off the .fsi-derived Val.
+let private signatureEnforcedValAttribs : (WellKnownValAttributes * string) list =
     [
-      "NoDynamicInvocation",
-        (fun (v: Val) ->
-            ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_True v
-            || ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_False v)
+      // Three-state bool. Compiler substitutes a no-op/throw body for callers when
+      // the attribute is on; missing on .fsi makes the consumer see the real body.
+      // CodeGen/IlxGen.fs (NoDynamicInvocation lowering).
+      WellKnownValAttributes.NoDynamicInvocationAttribute_True
+      ||| WellKnownValAttributes.NoDynamicInvocationAttribute_False,
+      "NoDynamicInvocation"
+
+      // Consumer call sites without explicit type arguments are rejected with
+      // tcFunctionRequiresExplicitTypeArguments / FS0685.
+      // Checking/Expressions/CheckExpressions.fs and Checking/AttributeChecking.fs.
+      WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute,
+      "RequiresExplicitTypeArguments"
+
+      // BuildPossiblyConditionalMethodCall erases consumer calls whose Conditional
+      // symbol is not defined; missing on .fsi changes consumer codegen entirely.
+      // Checking/Expressions/CheckExpressions.fs (BuildPossiblyConditionalMethodCall).
+      WellKnownValAttributes.ConditionalAttribute,
+      "Conditional"
+
+      // Disables eager constraint application in overload resolution and lambda
+      // propagation at the consumer call site (Tasks/RFC FS-1087); missing on
+      // .fsi silently changes overload-resolution behaviour for callers.
+      // Checking/MethodCalls.fs, Checking/Expressions/CheckExpressions.fs.
+      WellKnownValAttributes.NoEagerConstraintApplicationAttribute,
+      "NoEagerConstraintApplication"
+
+      // IsGeneralizableValue gates whether `let v = SomeMod.foo<_>` may generalize
+      // in the consumer; missing on .fsi loses the consumer's ability to do so.
+      // Checking/Expressions/CheckExpressions.fs (IsGeneralizableValue).
+      WellKnownValAttributes.GeneralizableValueAttribute,
+      "GeneralizableValue"
+
+      // Drives a consumer-side warning when a nullable value flows into a parameter
+      // that the author marked as non-nullable; missing on .fsi loses the call-site
+      // diagnostic. Checking/Expressions/CheckExpressions.fs.
+      WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute,
+      "WarnOnWithoutNullArgument"
+
+      // Determines IsFSharpEventProperty: consumer name-resolution treats the
+      // member as a .NET event and accepts `+=`/`-=`. Missing on .fsi causes the
+      // consumer to reject the event operators on the member.
+      // Checking/infos.fs (IsFSharpEventProperty), Checking/NameResolution.fs.
+      WellKnownValAttributes.CLIEventAttribute,
+      "CLIEvent"
     ]
+
+/// Bitwise OR of every flag in `signatureEnforcedValAttribs`. Used as a single
+/// O(1) early-exit on the happy path: when an implementation Val has none of
+/// the enforced bits set there is nothing to report and the per-row scan and
+/// per-row signature lookups are skipped entirely.
+let private signatureEnforcedValAttribsMask : WellKnownValAttributes =
+    (WellKnownValAttributes.None, signatureEnforcedValAttribs)
+    ||> List.fold (fun acc (flag, _) ->
+        LanguagePrimitives.EnumOfValue
+            (LanguagePrimitives.EnumToValue acc ||| LanguagePrimitives.EnumToValue flag))
+
+/// The set of well-known Entity-level attributes whose presence on an
+/// implementation type/module must be observed by consumers of the
+/// corresponding signature. Same shape and rationale as
+/// `signatureEnforcedValAttribs` above, but applied to entity declarations.
+///
+/// Each row must be justified by a concrete consumer-side compile/typecheck
+/// code-path that reads the attribute off the .fsi-derived Entity.
+let private signatureEnforcedEntityAttribs : (WellKnownEntityAttributes * string) list =
+    [
+      // Changes consumer name resolution: union cases / record fields / module
+      // members must be qualified. Checking/NameResolution.fs gates on this.
+      WellKnownEntityAttributes.RequireQualifiedAccessAttribute,
+      "RequireQualifiedAccess"
+
+      // Auto-opens the entity into the consumer's scope whenever its parent is
+      // opened. Missing on .fsi means consumer code does not see the names.
+      // Checking/NameResolution.fs (CanAutoOpenTyconRef).
+      WellKnownEntityAttributes.AutoOpenAttribute,
+      "AutoOpen"
+
+      // Consumer comparison constraint solver fails for the type when set.
+      // Checking/ConstraintSolver.fs.
+      WellKnownEntityAttributes.NoComparisonAttribute,
+      "NoComparison"
+
+      // Consumer equality constraint solver fails for the type when set.
+      // Checking/ConstraintSolver.fs, Checking/AugmentWithHashCompare.fs.
+      WellKnownEntityAttributes.NoEqualityAttribute,
+      "NoEquality"
+
+      // Consumer's `new()` constraint and object-expression instantiation reject
+      // abstract types. Checking/ConstraintSolver.fs, Checking/Expressions/CheckExpressions.fs.
+      WellKnownEntityAttributes.AbstractClassAttribute,
+      "AbstractClass"
+
+      // Three-state. Consumer downcast / `:?` test / static-class checks rely on
+      // sealedness; explicit `false` is a semantic override of the default.
+      // TypedTreeOps.Attributes.fs (isSealedTy / SealedAttribute decoder).
+      WellKnownEntityAttributes.SealedAttribute_True
+      ||| WellKnownEntityAttributes.SealedAttribute_False,
+      "Sealed"
+
+      // Consumer's `new()` constraint accepts records only when CLIMutable is
+      // present. Checking/ConstraintSolver.fs, Optimize/Optimizer.fs.
+      WellKnownEntityAttributes.CLIMutableAttribute,
+      "CLIMutable"
+
+      // Three-state. Consumer nullness analysis admits / rejects `null` based on
+      // this; explicit `false` is a semantic override.
+      // TypedTreeOps.Attributes.fs (TyconRefAllowsNull), ConstraintSolver.fs.
+      WellKnownEntityAttributes.AllowNullLiteralAttribute_True
+      ||| WellKnownEntityAttributes.AllowNullLiteralAttribute_False,
+      "AllowNullLiteral"
+
+      // Three-state. Controls whether union helper properties / `Is*` / `Tag` are
+      // emitted and visible to consumers. Checking/PostInferenceChecks.fs.
+      WellKnownEntityAttributes.DefaultAugmentationAttribute_True
+      ||| WellKnownEntityAttributes.DefaultAugmentationAttribute_False,
+      "DefaultAugmentation"
+
+      // Consumer use-site emits an obsolete warning / error.
+      // Checking/AttributeChecking.fs (CheckFSharpAttributes).
+      WellKnownEntityAttributes.ObsoleteAttribute,
+      "Obsolete"
+
+      // Consumer use-site emits a user message / hidden / error.
+      // Checking/AttributeChecking.fs.
+      WellKnownEntityAttributes.CompilerMessageAttribute,
+      "CompilerMessage"
+
+      // Consumer use-site emits an Experimental warning.
+      // Checking/AttributeChecking.fs.
+      WellKnownEntityAttributes.ExperimentalAttribute,
+      "Experimental"
+
+      // Consumer use-site emits a PossibleUnverifiableCode warning.
+      // Checking/AttributeChecking.fs.
+      WellKnownEntityAttributes.UnverifiableAttribute,
+      "Unverifiable"
+
+      // IDE / name-resolution unseen-filtering hides items marked Never.
+      // Checking/AttributeChecking.fs (CheckFSharpAttributesForHidden / ForUnseen).
+      WellKnownEntityAttributes.EditorBrowsableAttribute,
+      "EditorBrowsable"
+
+      // Consumer code applying `[<MyAttr>]` validates target / AllowMultiple /
+      // Inherited against the attribute type's AttributeUsage decoration.
+      // Checking/Expressions/CheckExpressions.fs (CheckAttributeUsage).
+      WellKnownEntityAttributes.AttributeUsageAttribute,
+      "AttributeUsage"
+
+      // Consumer codegen decision: `MemberIsCompiledAsInstance` and union-case
+      // null-as-true-value erasure depend on this. Missing on .fsi causes the
+      // consumer to emit wrong IL / mismatched static vs instance dispatch.
+      // TypedTreeOps.Attributes.fs.
+      WellKnownEntityAttributes.CompilationRepresentation_PermitNull,
+      "CompilationRepresentation(UseNullAsTrueValue)"
+    ]
+
+/// O(1) early-exit mask for `signatureEnforcedEntityAttribs`. See
+/// `signatureEnforcedValAttribsMask`.
+let private signatureEnforcedEntityAttribsMask : WellKnownEntityAttributes =
+    (WellKnownEntityAttributes.None, signatureEnforcedEntityAttribs)
+    ||> List.fold (fun acc (flag, _) ->
+        LanguagePrimitives.EnumOfValue
+            (LanguagePrimitives.EnumToValue acc ||| LanguagePrimitives.EnumToValue flag))
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
@@ -141,6 +308,17 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             fixup (sigAttribs @ keptImplAttribs)
             true
 
+        // Per-entity enforcement of compiler-semantic attributes. Called for both
+        // types (from `checkTypeDef`) and modules (from `checkModuleOrNamespace`)
+        // so that, for example, `[<AutoOpen>]` on a nested module is enforced too.
+        // Fast O(1) early-exit via the all-up mask; per-attribute loop only on miss.
+        let checkEnforcedEntityAttribs (implEntity: Entity) (sigEntity: Entity) (m: range) =
+            if EntityHasWellKnownAttribute g signatureEnforcedEntityAttribsMask implEntity then
+                for (flag, attrName) in signatureEnforcedEntityAttribs do
+                    if EntityHasWellKnownAttribute g flag implEntity
+                       && not (EntityHasWellKnownAttribute g flag sigEntity) then
+                        warning(Error (FSComp.SR.implAttributeMissingFromSignature(attrName, implEntity.DisplayName), m))
+
         let rec checkTypars m (aenv: TypeEquivEnv) (implTypars: Typars) (sigTypars: Typars) = 
             if implTypars.Length <> sigTypars.Length then 
                 errorR (Error(FSComp.SR.typrelSigImplNotCompatibleParamCountsDiffer(), m)) 
@@ -200,6 +378,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // Propagate defn location information from implementation to signature . 
             sigTycon.SetOtherRange (implTycon.Range, true)
             implTycon.SetOtherRange (sigTycon.Range, false)
+
+            // Enforce that compiler-semantic entity attributes present on the
+            // implementation are also present on the signature. See
+            // `signatureEnforcedEntityAttribs` for the list and rationale.
+            // Emitted as a warning (will become an error in a future F# version).
+            checkEnforcedEntityAttribs implTycon sigTycon m
             
             if implTycon.LogicalName <> sigTycon.LogicalName then 
                 errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(), sigTycon.LogicalName, implTycon.LogicalName), m))
@@ -385,11 +569,17 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let m = implVal.Range
 
             // Enforce that compiler-semantic attributes present on the implementation
-            // are also present on the signature. See `signatureEnforcedAttributes` for
-            // the list and rationale.
-            for (attrName, hasAttr) in signatureEnforcedAttributes g do
-                if hasAttr implVal && not (hasAttr sigVal) then
-                    errorR(Error (FSComp.SR.implAttributeMissingFromSignature(attrName, implVal.DisplayName), m))
+            // are also present on the signature. See `signatureEnforcedValAttribs`
+            // for the list and rationale. Emitted as a warning (will become an error
+            // in a future F# version) so existing libraries are not broken in-place.
+            // Fast O(1) early-exit: if the implementation does not have ANY of the
+            // enforced bits set, the per-attribute scan and the per-attribute
+            // signature lookup are skipped entirely.
+            if ValHasWellKnownAttribute g signatureEnforcedValAttribsMask implVal then
+                for (flag, attrName) in signatureEnforcedValAttribs do
+                    if ValHasWellKnownAttribute g flag implVal
+                       && not (ValHasWellKnownAttribute g flag sigVal) then
+                        warning(Error (FSComp.SR.implAttributeMissingFromSignature(attrName, implVal.DisplayName), m))
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
             elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
@@ -775,6 +965,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // Propagate defn location information from implementation to signature . 
             sigModRef.SetOtherRange (implModRef.Range, true)
             implModRef.Deref.SetOtherRange (sigModRef.Range, false)
+            // Enforce consumer-visible compiler-semantic attributes on the module
+            // itself (e.g. [<AutoOpen>] on a nested module). Same rationale as
+            // checkTypeDef. Emitted as a warning (will become an error later).
+            checkEnforcedEntityAttribs implModRef.Deref sigModRef implModRef.Range
             checkModuleOrNamespaceContents implModRef.Range aenv infoReader implModRef sigModRef.ModuleOrNamespaceType &&
             checkAttribs aenv implModRef.Attribs sigModRef.Attribs implModRef.Deref.SetAttribs
 

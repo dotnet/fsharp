@@ -803,8 +803,8 @@
         <note />
       </trans-unit>
       <trans-unit id="implAttributeMissingFromSignature">
-        <source>The attribute '{0}' is present on '{1}' in the implementation but not in the signature. Add the attribute to the signature, because tooling skips the implementation when a signature file is present.</source>
-        <target state="new">The attribute '{0}' is present on '{1}' in the implementation but not in the signature. Add the attribute to the signature, because tooling skips the implementation when a signature file is present.</target>
+        <source>This will become an error in future versions of F#. The attribute '{0}' is present on '{1}' in the implementation but not in the signature. Code that consumes this signature depends on this attribute, so add it to the signature. Tooling skips the implementation when a signature file is present.</source>
+        <target state="new">This will become an error in future versions of F#. The attribute '{0}' is present on '{1}' in the implementation but not in the signature. Code that consumes this signature depends on this attribute, so add it to the signature. Tooling skips the implementation when a signature file is present.</target>
         <note />
       </trans-unit>
       <trans-unit id="implMissingInlineIfLambda">
