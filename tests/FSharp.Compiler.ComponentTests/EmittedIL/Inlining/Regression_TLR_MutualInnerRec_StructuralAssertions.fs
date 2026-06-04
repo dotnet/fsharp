@@ -135,6 +135,39 @@ let main _argv = Inner.run()
 """
         |> compileAssertNoClosuresAndRun realsig [ "static int32  a@"; "static int32  b@" ]
 
+    /// Regression for FS2014 "duplicate entry 'capture@N' in method table" on bootstrap
+    /// (FSharp.Build, FSharp.DependencyManager.Nuget). Multiple files in a namespace each
+    /// containing inner-rec functions with the same compiler-generated name would route to
+    /// the assembly-wide <PrivateImplementationDetails$Asm> type and collide. The fix routes
+    /// namespace-level TLR-lifted vals to the per-file init class instead.
+    [<Theory; InlineData(true); InlineData(false)>]
+    let ``Namespace-level inner-rec in multiple files does not collide`` (realsig: bool) =
+        let src1 = """namespace Mine
+type A() =
+    static member Run() =
+        let rec capture x = if x = 0 then 0 else capture (x - 1)
+        capture 10
+
+type B() =
+    static member Run() =
+        let rec capture y = if y = 0 then 1 else capture (y - 1)
+        capture 20
+"""
+        let src2 = """namespace Mine
+type C() =
+    static member Run() =
+        let rec capture z = if z = 0 then 2 else capture (z - 1)
+        capture 30
+"""
+        FSharp src1
+        |> withAdditionalSourceFile (SourceCodeFileKind.Create("B.fs", src2))
+        |> withRealInternalSignature realsig
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILNotPresent [ "PrivateImplementationDetails" ]
+
     [<Theory; InlineData(true); InlineData(false)>]
     let ``Value recursion is not broken by TLR`` (realsig: bool) =
         """module Sample
