@@ -11,6 +11,13 @@ open FSharp.Compiler.Tokenization
 
 #nowarn "1182" // Unused bindings when ignored parsed results etc.
 
+/// Virtual source filename used by tests that don't need a real on-disk path.
+/// Path.Combine keeps this OS-neutral for any test that compares the resulting range filename.
+let private testFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Test.fsx")
+
+/// Parses and type-checks an inline source snippet against the shared `testFile` identifier.
+let private parseAndCheck (source: string) = parseAndCheckScript (testFile, source)
+
 let stringMethods =
     [
         "Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith";
@@ -541,99 +548,35 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
                      (4, 82, 4, 84, 1);
                      (4, 108, 4, 110, 1)|]
 
-[<Fact>]
-let ``Format specifier locations not duplicated in seq CE (implicit yield)`` () =
-    // Regression for issue #16419: in `seq { e }` with implicit-yield, the body 'e' was
-    // type-checked twice (once as a statement via TryTcStmt, once as a yielded expression).
-    // Both passes used to notify the sink, leading to duplicate format-specifier entries
-    // when 'e' contained a printf-style format string.
-    let input = "let _ = seq { sprintf \"%d\" 1 }"
-    let file = "/home/user/Test.fsx"
-    let _parseResult, typeCheckResults = parseAndCheckScript(file, input)
-
-    let percentD =
-        typeCheckResults.GetFormatSpecifierLocationsAndArity()
-        |> Array.filter (fun (r, _) -> r.StartColumn = 23)
-
-    Assert.Equal(1, percentD.Length)
-
-[<Fact>]
-let ``Format specifier locations not duplicated in seq CE with multiple specifiers`` () =
-    let input = "let _ = seq { sprintf \"%d %s %A\" 1 \"x\" 2 }"
-    let file = "/home/user/Test.fsx"
-    let _parseResult, typeCheckResults = parseAndCheckScript(file, input)
-
+// Regression for issue #16419: in `seq { e }` with implicit-yield, the body 'e' was
+// type-checked twice (once as a statement via TryTcStmt, once as a yielded expression).
+// Both passes used to notify the sink, leading to duplicate format-specifier entries
+// when 'e' contained a printf-style format string.
+[<Theory>]
+[<InlineData("let _ = seq { sprintf \"%d\" 1 }", 1)>]
+[<InlineData("let _ = seq { sprintf \"%d %s %A\" 1 \"x\" 2 }", 3)>]
+[<InlineData("let _ = seq { printfn \"%d\" 1 }", 1)>]
+let ``Format specifier locations are not duplicated in seq computation expression`` (source: string, expectedCount: int) =
+    let _, typeCheckResults = parseAndCheck source
     let locs = typeCheckResults.GetFormatSpecifierLocationsAndArity()
-    // Three format specifiers: %d %s %A, each must appear exactly once.
-    Assert.Equal(3, locs.Length)
+    Assert.Equal(expectedCount, locs.Length)
 
-[<Fact>]
-let ``Format specifier locations not duplicated in seq CE with non-yielded statement-typed body`` () =
-    // Body returns unit so TryTcStmt succeeds and TcExprFlex is NOT taken; assert single emission.
-    let input = "let _ = seq { printfn \"%d\" 1 }"
-    let file = "/home/user/Test.fsx"
-    let _parseResult, typeCheckResults = parseAndCheckScript(file, input)
-    let locs = typeCheckResults.GetFormatSpecifierLocationsAndArity()
-    Assert.Equal(1, locs.Length)
-
-// The following tests validate that caching the implicit-yield first-pass typecheck
-// does not break expected-type-driven inference (subsumption, type-directed
-// conversion, overload resolution, nullness flex). They are aligned with the
-// behavior of `seq { yield expr }` (no implicit yield) and the legacy `seq { e1; e2 }`
-// implicit-yield path which uses the same cache mechanism.
-
-[<Fact>]
-let ``Implicit-yield seq subsumption int to obj`` () =
-    let input = "let xs : seq<obj> = seq { 1 }\nlet ys : seq<obj> = seq { yield 1 }"
-    let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
-    Assert.False(parseResult.ParseHadErrors)
+// Validates that caching the implicit-yield first-pass typecheck does not break
+// expected-type-driven inference (subsumption, type-directed conversion,
+// nullness flex, overload resolution).
+[<Theory>]
+[<InlineData("let xs : seq<obj> = seq { 1 }")>]
+[<InlineData("let ys : seq<obj> = seq { yield 1 }")>]
+[<InlineData("let xs : seq<obj> = seq { \"hi\" }")>]
+[<InlineData("#nowarn \"0025\"\nlet xs : seq<string | null> = seq { \"hi\" }")>]
+[<InlineData("type T() =\n    static member M(x: int) = \"int\"\n    static member M(x: string) = \"string\"\nlet xs : seq<string> = seq { T.M(1) }")>]
+let ``Implicit-yield in seq preserves expected-type-driven inference`` (source: string) =
+    let _, typeCheckResults = parseAndCheck source
     let errors =
         typeCheckResults.Diagnostics
         |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
-    Assert.Equal<_ seq>(Seq.empty, errors |> Array.map (fun d -> d.Message))
-
-[<Fact>]
-let ``Implicit-yield seq subsumption string to obj`` () =
-    let input = "let xs : seq<obj> = seq { \"hi\" }"
-    let file = "/home/user/Test.fsx"
-    let _parseResult, typeCheckResults = parseAndCheckScript(file, input)
-    let errors =
-        typeCheckResults.Diagnostics
-        |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
-    Assert.Equal<_ seq>(Seq.empty, errors |> Array.map (fun d -> d.Message))
-
-[<Fact>]
-let ``Implicit-yield seq with nullable element type`` () =
-    let input =
-        """
-#nowarn "0025"
-let xs : seq<string | null> = seq { "hi" }
-"""
-    let file = "/home/user/Test.fsx"
-    let _parseResult, typeCheckResults = parseAndCheckScript(file, input)
-    let errors =
-        typeCheckResults.Diagnostics
-        |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
-    Assert.Equal<_ seq>(Seq.empty, errors |> Array.map (fun d -> d.Message))
-
-[<Fact>]
-let ``Implicit-yield seq with overloaded function`` () =
-    // Test that overload resolution still picks the right overload when the body
-    // is a method call on an expected element type.
-    let input =
-        """
-type T() =
-    static member M(x: int) = "int"
-    static member M(x: string) = "string"
-let xs : seq<string> = seq { T.M(1) }
-"""
-    let file = "/home/user/Test.fsx"
-    let _parseResult, typeCheckResults = parseAndCheckScript(file, input)
-    let errors =
-        typeCheckResults.Diagnostics
-        |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
-    Assert.Equal<_ seq>(Seq.empty, errors |> Array.map (fun d -> d.Message))
+        |> Array.map (fun d -> d.Message)
+    Assert.Equal<_ seq>(Array.empty, errors)
 
 #if ASSUME_PREVIEW_FSHARP_CORE
 [<Fact>]
