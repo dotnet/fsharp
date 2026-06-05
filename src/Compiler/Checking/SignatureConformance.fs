@@ -42,99 +42,50 @@ exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
-/// Small DSL used to declare the signature-enforcement policy below: one row per
-/// attribute, one line per row. Each row is `(flag-or-mask, displayName, phase)`;
-/// `phase` documents which consumer compile-stage actually reads the attribute
-/// so reviewers can argue per-row. The phase value is stripped at list-build time
-/// (it is documentation only) and the row reduces to the underlying `(flag, name)`
-/// pair used by the O(1) enforcement loop.
-[<RequireQualifiedAccess>]
-type private EnforcedPhase =
-    /// Read during consumer typecheck: CheckExpressions / CheckDeclarations /
-    /// NameResolution / ConstraintSolver / AttributeChecking / MethodCalls / infos.
-    | TypeCheck
-    /// Read during consumer codegen: Optimizer and/or IlxGen.
-    | CodeGen
-    /// Read during both typecheck and codegen / optimizer.
-    | TypeCheckAndCodeGen
-    /// Not read directly; consumer observes the synthesized result (e.g. presence
-    /// or absence of helper members generated from the attribute).
-    | Indirect
+type private V = WellKnownValAttributes
+type private E = WellKnownEntityAttributes
 
-[<AutoOpen>]
-module private SignatureEnforcement =
-    /// Short local aliases used by the per-row policy below; full names are
-    /// `WellKnownValAttributes` / `WellKnownEntityAttributes`.
-    type V = WellKnownValAttributes
-    type E = WellKnownEntityAttributes
+/// Val attributes that must be mirrored in the .fsi when present in the .fs,
+/// because the F# compiler/IDE reads them off the signature when typechecking
+/// or compiling consumer code. One row = one rule.
+let private signatureEnforcedValAttribs : (V * string) list = [
+    V.NoDynamicInvocationAttribute_True ||| V.NoDynamicInvocationAttribute_False, "NoDynamicInvocation"
+    V.RequiresExplicitTypeArgumentsAttribute,                                     "RequiresExplicitTypeArguments"
+    V.ConditionalAttribute,                                                       "Conditional"
+    V.NoEagerConstraintApplicationAttribute,                                      "NoEagerConstraintApplication"
+    V.GeneralizableValueAttribute,                                                "GeneralizableValue"
+    V.WarnOnWithoutNullArgumentAttribute,                                         "WarnOnWithoutNullArgument"
+    V.CLIEventAttribute,                                                          "CLIEvent"
+]
 
-    /// Single-bit Val attribute.
-    let inline valOne (flag: V) name (_phase: EnforcedPhase) = flag, name
-    /// Three-state Val attribute (`_True ||| _False`).
-    let inline valPair (t: V) (f: V) name (_phase: EnforcedPhase) = t ||| f, name
-    /// Single-bit Entity attribute.
-    let inline entOne (flag: E) name (_phase: EnforcedPhase) = flag, name
-    /// Three-state Entity attribute (`_True ||| _False`).
-    let inline entPair (t: E) (f: E) name (_phase: EnforcedPhase) = t ||| f, name
+/// Entity (type/module) attributes with the same rule as above.
+let private signatureEnforcedEntityAttribs : (E * string) list = [
+    E.RequireQualifiedAccessAttribute,                                                  "RequireQualifiedAccess"
+    E.AutoOpenAttribute,                                                                "AutoOpen"
+    E.NoComparisonAttribute,                                                            "NoComparison"
+    E.NoEqualityAttribute,                                                              "NoEquality"
+    E.AbstractClassAttribute,                                                           "AbstractClass"
+    E.SealedAttribute_True ||| E.SealedAttribute_False,                                 "Sealed"
+    E.CLIMutableAttribute,                                                              "CLIMutable"
+    E.AllowNullLiteralAttribute_True ||| E.AllowNullLiteralAttribute_False,             "AllowNullLiteral"
+    E.DefaultAugmentationAttribute_True ||| E.DefaultAugmentationAttribute_False,       "DefaultAugmentation"
+    E.ObsoleteAttribute,                                                                "Obsolete"
+    E.CompilerMessageAttribute,                                                         "CompilerMessage"
+    E.ExperimentalAttribute,                                                            "Experimental"
+    E.UnverifiableAttribute,                                                            "Unverifiable"
+    E.EditorBrowsableAttribute,                                                         "EditorBrowsable"
+    E.AttributeUsageAttribute,                                                          "AttributeUsage"
+    E.CompilationRepresentation_PermitNull,                                             "CompilationRepresentation(UseNullAsTrueValue)"
+]
 
-    let inline private foldMask zero rows =
-        (zero, rows)
-        ||> List.fold (fun acc (flag, _) ->
-            LanguagePrimitives.EnumOfValue
-                (LanguagePrimitives.EnumToValue acc ||| LanguagePrimitives.EnumToValue flag))
+let private foldMask zero rows =
+    (zero, rows) ||> List.fold (fun acc (flag, _) ->
+        LanguagePrimitives.EnumOfValue
+            (LanguagePrimitives.EnumToValue acc ||| LanguagePrimitives.EnumToValue flag))
 
-    /// Compute the O(1) all-up mask for a Val-level enforcement policy.
-    let valMask (rows: (V * string) list) : V =
-        foldMask V.None rows
-
-    /// Compute the O(1) all-up mask for an Entity-level enforcement policy.
-    let entMask (rows: (E * string) list) : E =
-        foldMask E.None rows
-
-/// Signature-enforcement policy for Val-level attributes (one row = one rule).
-/// Reviewers: add / remove / re-classify a line here to change enforcement.
-/// Each row must be justified by a consumer-side compile-stage code-path that
-/// reads the attribute off the .fsi-derived Val.
-let private signatureEnforcedValAttribs : (V * string) list =
-    [
-        valPair V.NoDynamicInvocationAttribute_True V.NoDynamicInvocationAttribute_False  "NoDynamicInvocation"           EnforcedPhase.CodeGen   // IlxGen substitutes a stub body for callers
-        valOne  V.RequiresExplicitTypeArgumentsAttribute                                  "RequiresExplicitTypeArguments" EnforcedPhase.TypeCheck // CheckExpressions: rejects callers without explicit type args
-        valOne  V.ConditionalAttribute                                                    "Conditional"                   EnforcedPhase.TypeCheck // CheckExpressions: BuildPossiblyConditionalMethodCall erases the call
-        valOne  V.NoEagerConstraintApplicationAttribute                                   "NoEagerConstraintApplication"  EnforcedPhase.TypeCheck // MethodCalls / CheckExpressions: SRTP / overload resolution
-        valOne  V.GeneralizableValueAttribute                                             "GeneralizableValue"            EnforcedPhase.TypeCheck // CheckExpressions: IsGeneralizableValue, lets consumer `let` generalize
-        valOne  V.WarnOnWithoutNullArgumentAttribute                                      "WarnOnWithoutNullArgument"     EnforcedPhase.TypeCheck // CheckExpressions: nullness warning at the consumer call site
-        valOne  V.CLIEventAttribute                                                       "CLIEvent"                      EnforcedPhase.TypeCheck // NameResolution: consumer can use += / -= as event subscription
-    ]
-
-/// O(1) early-exit mask for `signatureEnforcedValAttribs`.
-let private signatureEnforcedValAttribsMask : V =
-    valMask signatureEnforcedValAttribs
-
-/// Signature-enforcement policy for Entity-level attributes (one row = one rule).
-/// Reviewers: add / remove / re-classify a line here to change enforcement.
-let private signatureEnforcedEntityAttribs : (E * string) list =
-    [
-        entOne  E.RequireQualifiedAccessAttribute                                         "RequireQualifiedAccess"                          EnforcedPhase.TypeCheck          // NameResolution: forces qualified access
-        entOne  E.AutoOpenAttribute                                                       "AutoOpen"                                        EnforcedPhase.TypeCheck          // NameResolution: auto-opens contents into consumer scope
-        entOne  E.NoComparisonAttribute                                                   "NoComparison"                                    EnforcedPhase.TypeCheck          // ConstraintSolver: rejects `comparison` constraint
-        entOne  E.NoEqualityAttribute                                                     "NoEquality"                                      EnforcedPhase.TypeCheck          // ConstraintSolver / AugmentWithHashCompare: rejects `equality` constraint
-        entOne  E.AbstractClassAttribute                                                  "AbstractClass"                                   EnforcedPhase.TypeCheck          // ConstraintSolver: rejects `new()` / object expression
-        entPair E.SealedAttribute_True E.SealedAttribute_False                            "Sealed"                                          EnforcedPhase.TypeCheck          // isSealedTy: gates consumer downcast / inherit
-        entOne  E.CLIMutableAttribute                                                     "CLIMutable"                                      EnforcedPhase.TypeCheckAndCodeGen // ConstraintSolver `new()` on record + Optimizer lowering
-        entPair E.AllowNullLiteralAttribute_True E.AllowNullLiteralAttribute_False        "AllowNullLiteral"                                EnforcedPhase.TypeCheck          // ConstraintSolver / nullness: admits / rejects `null`
-        entPair E.DefaultAugmentationAttribute_True E.DefaultAugmentationAttribute_False  "DefaultAugmentation"                             EnforcedPhase.Indirect           // Drives whether `Is*` / `Tag` helpers exist; consumer observes their presence
-        entOne  E.ObsoleteAttribute                                                       "Obsolete"                                        EnforcedPhase.TypeCheck          // AttributeChecking: use-site warning / error / IDE strike-through
-        entOne  E.CompilerMessageAttribute                                                "CompilerMessage"                                 EnforcedPhase.TypeCheck          // AttributeChecking: use-site message + IsHidden filters IntelliSense
-        entOne  E.ExperimentalAttribute                                                   "Experimental"                                    EnforcedPhase.TypeCheck          // AttributeChecking: use-site Experimental warning
-        entOne  E.UnverifiableAttribute                                                   "Unverifiable"                                    EnforcedPhase.TypeCheck          // AttributeChecking: use-site PossibleUnverifiableCode warning
-        entOne  E.EditorBrowsableAttribute                                                "EditorBrowsable"                                 EnforcedPhase.TypeCheck          // NameResolution unseen-filter: hides items marked Never (IDE)
-        entOne  E.AttributeUsageAttribute                                                 "AttributeUsage"                                  EnforcedPhase.TypeCheck          // CheckExpressions CheckAttributeUsage: validates target / AllowMultiple
-        entOne  E.CompilationRepresentation_PermitNull                                    "CompilationRepresentation(UseNullAsTrueValue)"   EnforcedPhase.CodeGen            // IlxGen MemberIsCompiledAsInstance + null-erased union codegen
-    ]
-
-/// O(1) early-exit mask for `signatureEnforcedEntityAttribs`.
-let private signatureEnforcedEntityAttribsMask : E =
-    entMask signatureEnforcedEntityAttribs
+/// O(1) early-exit masks: if no enforced bit is set on the impl, skip the loop.
+let private signatureEnforcedValAttribsMask    : V = foldMask V.None signatureEnforcedValAttribs
+let private signatureEnforcedEntityAttribsMask : E = foldMask E.None signatureEnforcedEntityAttribs
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
