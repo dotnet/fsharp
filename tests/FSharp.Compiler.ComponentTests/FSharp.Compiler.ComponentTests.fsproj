@@ -230,6 +230,7 @@
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\VeryLargeClasses.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
+    <Compile Include="EmittedIL\DebugPointsOnStack\DebugPointsOnStack.fs" />
     <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />
