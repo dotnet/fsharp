@@ -19,6 +19,14 @@ module SignatureEnforcedAttributes =
         |> ignoreWarnings
         |> compile
 
+    let private compileSigImplPreview (sigSrc: string) (implSrc: string) =
+        fsFromString (fsi sigSrc)
+        |> FS
+        |> withAdditionalSourceFile (fs implSrc)
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+
     [<Fact>]
     let ``NoDynamicInvocation in impl but not sig produces warning`` () =
         let sigSrc = """
@@ -269,3 +277,96 @@ let inline f (x: int) = x + 1
         |> asLibrary
         |> compile
         |> shouldSucceed
+
+    // -----------------------------------------------------------------------
+    // Module-level attribute
+    // -----------------------------------------------------------------------
+
+    [<Fact>]
+    let ``AutoOpen on top-level module in impl but not sig produces warning`` () =
+        let sigSrc = """
+module M.Sub
+val x: int
+"""
+        let implSrc = """
+[<AutoOpen>]
+module M.Sub
+let x = 1
+"""
+        compileSigImpl sigSrc implSrc
+        |> shouldSucceed
+        |> withWarningCode 3888
+        |> withDiagnosticMessageMatches "AutoOpen"
+
+    // -----------------------------------------------------------------------
+    // Diagnostic placement and range
+    // -----------------------------------------------------------------------
+
+    [<Fact>]
+    let ``Diagnostic squiggle is placed on the offending attribute in the .fs`` () =
+        let sigSrc = """
+module M
+val inline f: x: int -> int
+"""
+        // Line numbers (1-based) — line 1 is empty, line 2 `module M`, line 3 the attribute.
+        let implSrc = """
+module M
+[<NoDynamicInvocationAttribute>]
+let inline f (x: int) = x + 1
+"""
+        let result = compileSigImpl sigSrc implSrc |> shouldSucceed
+        // Verify a single FS3888 diagnostic and that its range targets the
+        // attribute on line 3, not the value identifier on line 4.
+        let diagnostics =
+            match result with
+            | CompilationResult.Success r -> r.Diagnostics
+            | CompilationResult.Failure r -> r.Diagnostics
+        let attribDiag =
+            diagnostics
+            |> List.filter (fun d -> match d.Error with Warning n -> n = 3888 | _ -> false)
+            |> List.exactlyOne
+        Assert.Equal(3, attribDiag.Range.StartLine)
+        Assert.Equal(3, attribDiag.Range.EndLine)
+
+    [<Fact>]
+    let ``Diagnostic on entity attribute targets the attribute in the .fs`` () =
+        let sigSrc = """
+module M
+type U = A | B
+"""
+        let implSrc = """
+module M
+[<RequireQualifiedAccess>]
+type U = A | B
+"""
+        let result = compileSigImpl sigSrc implSrc |> shouldSucceed
+        let diagnostics =
+            match result with
+            | CompilationResult.Success r -> r.Diagnostics
+            | CompilationResult.Failure r -> r.Diagnostics
+        let attribDiag =
+            diagnostics
+            |> List.filter (fun d -> match d.Error with Warning n -> n = 3888 | _ -> false)
+            |> List.exactlyOne
+        // Attribute is on line 3 (1-based, after the leading empty line + `module M`).
+        Assert.Equal(3, attribDiag.Range.StartLine)
+
+    // -----------------------------------------------------------------------
+    // Language feature: ErrorOnMissingSignatureAttribute (opt-in) escalates to error
+    // -----------------------------------------------------------------------
+
+    [<Fact>]
+    let ``With ErrorOnMissingSignatureAttribute opted in, missing attribute is an error`` () =
+        let sigSrc = """
+module M
+val inline f: x: int -> int
+"""
+        let implSrc = """
+module M
+[<NoDynamicInvocationAttribute>]
+let inline f (x: int) = x + 1
+"""
+        compileSigImplPreview sigSrc implSrc
+        |> shouldFail
+        |> withErrorCode 3888
+        |> withDiagnosticMessageMatches "NoDynamicInvocation"

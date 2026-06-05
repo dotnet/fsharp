@@ -45,70 +45,116 @@ exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 type private V = WellKnownValAttributes
 type private E = WellKnownEntityAttributes
 
-/// Val attributes that must be mirrored in the .fsi when present in the .fs,
-/// because the F# compiler/IDE reads them off the signature when typechecking
-/// or compiling consumer code. One row = one rule.
-let private signatureEnforcedValAttribs : V list = [
-    V.NoDynamicInvocationAttribute_True ||| V.NoDynamicInvocationAttribute_False
-    V.RequiresExplicitTypeArgumentsAttribute
-    V.ConditionalAttribute
-    V.NoEagerConstraintApplicationAttribute
-    V.GeneralizableValueAttribute
-    V.WarnOnWithoutNullArgumentAttribute
-    V.CLIEventAttribute
-]
+/// Encapsulates the policy of which compiler-semantic attributes the F#
+/// compiler enforces between an implementation and its signature, plus the
+/// matching logic. One row per attribute, no per-row metadata - if you need
+/// to argue about an entry, argue about the row's presence on the list.
+module private AttributeConformance =
 
-/// Entity (type/module) attributes with the same rule as above.
-let private signatureEnforcedEntityAttribs : E list = [
-    E.RequireQualifiedAccessAttribute
-    E.AutoOpenAttribute
-    E.NoComparisonAttribute
-    E.NoEqualityAttribute
-    E.AbstractClassAttribute
-    E.SealedAttribute_True ||| E.SealedAttribute_False
-    E.CLIMutableAttribute
-    E.AllowNullLiteralAttribute_True ||| E.AllowNullLiteralAttribute_False
-    E.DefaultAugmentationAttribute_True ||| E.DefaultAugmentationAttribute_False
-    E.ObsoleteAttribute
-    E.CompilerMessageAttribute
-    E.ExperimentalAttribute
-    E.UnverifiableAttribute
-    E.EditorBrowsableAttribute
-    E.AttributeUsageAttribute
-]
+    /// Val attributes that must be mirrored in the .fsi when present in the .fs,
+    /// because the F# compiler / IDE reads them off the signature when typechecking
+    /// or compiling consumer code. One row = one rule.
+    let private enforcedVals : V list = [
+        V.NoDynamicInvocationAttribute_True ||| V.NoDynamicInvocationAttribute_False
+        V.RequiresExplicitTypeArgumentsAttribute
+        V.ConditionalAttribute
+        V.NoEagerConstraintApplicationAttribute
+        V.GeneralizableValueAttribute
+        V.WarnOnWithoutNullArgumentAttribute
+        V.CLIEventAttribute
+    ]
 
-let private signatureEnforcedValAttribsMask    : V = List.reduce Flags.union signatureEnforcedValAttribs
-let private signatureEnforcedEntityAttribsMask : E = List.reduce Flags.union signatureEnforcedEntityAttribs
+    /// Entity (type/module) attributes with the same rule as above.
+    let private enforcedEntities : E list = [
+        E.RequireQualifiedAccessAttribute
+        E.AutoOpenAttribute
+        E.NoComparisonAttribute
+        E.NoEqualityAttribute
+        E.AbstractClassAttribute
+        E.SealedAttribute_True ||| E.SealedAttribute_False
+        E.CLIMutableAttribute
+        E.AllowNullLiteralAttribute_True ||| E.AllowNullLiteralAttribute_False
+        E.DefaultAugmentationAttribute_True ||| E.DefaultAugmentationAttribute_False
+        E.ObsoleteAttribute
+        E.CompilerMessageAttribute
+        E.ExperimentalAttribute
+        E.UnverifiableAttribute
+        E.EditorBrowsableAttribute
+        E.AttributeUsageAttribute
+    ]
 
-/// Derive the user-facing attribute name from the enum case (e.g.
-/// `AutoOpenAttribute` -> `"AutoOpen"`, `SealedAttribute_True ||| _False`
-/// -> `"Sealed"`). For OR-combined values picks the lowest set bit so paired
-/// `_True`/`_False` collapse to the same name.
-let inline private displayName< ^T when ^T : enum<uint64> > (flag: ^T) : string =
-    let v = LanguagePrimitives.EnumToValue flag
-    let lsb : ^T = LanguagePrimitives.EnumOfValue (v &&& (0uL - v))
-    let s = string lsb
-    let s = if s.EndsWith "_True"  then s.Substring(0, s.Length - 5)
-            elif s.EndsWith "_False" then s.Substring(0, s.Length - 6)
-            else s
-    if s.EndsWith "Attribute" then s.Substring(0, s.Length - 9) else s
+    let private enforcedValsMask     : V = List.reduce Flags.union enforcedVals
+    let private enforcedEntitiesMask : E = List.reduce Flags.union enforcedEntities
 
-/// Generic enforcement: warn for every flag in `policy` that is set on
-/// `impl` but missing from `sig'`. O(1) happy path: if impl carries no
-/// enforced flag at all the `sig'` lookup is skipped entirely.
-let inline private checkEnforcedAttribs
-    (enforcedFlagsOn: 'Subject -> 'F)
-    (policy: 'F list)
-    (displayNameOf: 'Subject -> string)
-    (impl: 'Subject) (sig': 'Subject) (m: range) =
-    let presentOnImplAndRequiredFromSig = enforcedFlagsOn impl
-    if not (Flags.isEmpty presentOnImplAndRequiredFromSig) then
-        let actuallyPresentInSig = enforcedFlagsOn sig'
-        if not (presentOnImplAndRequiredFromSig |> Flags.isSubsetOf actuallyPresentInSig) then
-            let missing = presentOnImplAndRequiredFromSig |> Flags.except actuallyPresentInSig
-            for flag in policy do
-                if flag |> Flags.intersects missing then
-                    warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, displayNameOf impl), m))
+    /// User-facing name derived from the enum case: `AutoOpenAttribute` ->
+    /// `"AutoOpen"`, `SealedAttribute_True ||| _False` -> `"Sealed"`.
+    let inline private displayName< ^T when ^T : enum<uint64> > (flag: ^T) : string =
+        let v = LanguagePrimitives.EnumToValue flag
+        let lsb : ^T = LanguagePrimitives.EnumOfValue (v &&& (0uL - v))
+        let s = string lsb
+        let s = if s.EndsWith "_True"  then s.Substring(0, s.Length - 5)
+                elif s.EndsWith "_False" then s.Substring(0, s.Length - 6)
+                else s
+        if s.EndsWith "Attribute" then s.Substring(0, s.Length - 9) else s
+
+    /// Locate the impl-side Attrib whose classification overlaps `bits` so the
+    /// diagnostic squiggle points at the offending attribute in the .fs (rather
+    /// than at the value/type identifier). Falls back to the enclosing range.
+    let inline private rangeOfMissing
+        (classify: Attrib -> 'F)
+        (attribs: Attrib list)
+        (bits: 'F)
+        (fallback: range)
+        : range =
+        match attribs |> List.tryFind (fun a -> classify a |> Flags.intersects bits) with
+        | Some a -> a.Range
+        | None -> fallback
+
+    /// Generic enforcement loop. `emit` is supplied by the caller and is either
+    /// `errorR` or `warning` depending on the `ErrorOnMissingSignatureAttribute`
+    /// language feature.
+    let inline private checkEnforced
+        (emit: exn -> unit)
+        (enforcedFlagsOn: 'Subject -> 'F)
+        (policy: 'F list)
+        (attribsOf: 'Subject -> Attrib list)
+        (classify: Attrib -> 'F)
+        (displayNameOf: 'Subject -> string)
+        (impl: 'Subject) (sig': 'Subject) (fallback: range) =
+        let presentOnImplAndRequiredFromSig = enforcedFlagsOn impl
+        if not (Flags.isEmpty presentOnImplAndRequiredFromSig) then
+            let actuallyPresentInSig = enforcedFlagsOn sig'
+            if not (presentOnImplAndRequiredFromSig |> Flags.isSubsetOf actuallyPresentInSig) then
+                let missing = presentOnImplAndRequiredFromSig |> Flags.except actuallyPresentInSig
+                let implAttribs = attribsOf impl
+                for flag in policy do
+                    if flag |> Flags.intersects missing then
+                        let m = rangeOfMissing classify implAttribs flag fallback
+                        emit(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, displayNameOf impl), m))
+
+    let private emitter (g: TcGlobals) : exn -> unit =
+        if g.langVersion.SupportsFeature LanguageFeature.ErrorOnMissingSignatureAttribute then errorR
+        else warning
+
+    let checkVal (g: TcGlobals) (implVal: Val) (sigVal: Val) (fallback: range) =
+        let enforcedFlagsOnVal (v: Val) =
+            ValHasWellKnownAttribute g enforcedValsMask v |> ignore // forceload
+            v.ValAttribs.Flags |> Flags.intersect enforcedValsMask
+        checkEnforced (emitter g) enforcedFlagsOnVal enforcedVals
+            (fun (v: Val)    -> v.Attribs)
+            (classifyValAttrib g)
+            (fun (v: Val)    -> v.DisplayName)
+            implVal sigVal fallback
+
+    let checkEntity (g: TcGlobals) (implEntity: Entity) (sigEntity: Entity) (fallback: range) =
+        let enforcedFlagsOnEntity (e: Entity) =
+            EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
+            e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
+        checkEnforced (emitter g) enforcedFlagsOnEntity enforcedEntities
+            (fun (e: Entity) -> e.Attribs)
+            (classifyEntityAttrib g)
+            (fun (e: Entity) -> e.DisplayName)
+            implEntity sigEntity fallback
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
@@ -197,19 +243,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
         // Pull the enforcement-relevant subset of an Entity's / Val's flags,
         // forcing the cached `Flags` to be populated as a side-effect.
-        let enforcedFlagsOnEntity (e: Entity) : WellKnownEntityAttributes =
-            EntityHasWellKnownAttribute g signatureEnforcedEntityAttribsMask e |> ignore  // forceload
-            e.EntityAttribs.Flags |> Flags.intersect signatureEnforcedEntityAttribsMask
-
-        let enforcedFlagsOnVal (v: Val) : WellKnownValAttributes =
-            ValHasWellKnownAttribute g signatureEnforcedValAttribsMask v |> ignore  // forceload
-            v.ValAttribs.Flags |> Flags.intersect signatureEnforcedValAttribsMask
-
         let checkEnforcedEntityAttribs implEntity sigEntity m =
-            checkEnforcedAttribs enforcedFlagsOnEntity signatureEnforcedEntityAttribs (fun (e: Entity) -> e.DisplayName) implEntity sigEntity m
+            AttributeConformance.checkEntity g implEntity sigEntity m
 
         let checkEnforcedValAttribs implVal sigVal m =
-            checkEnforcedAttribs enforcedFlagsOnVal    signatureEnforcedValAttribs    (fun (v: Val)    -> v.DisplayName) implVal sigVal m
+            AttributeConformance.checkVal g implVal sigVal m
 
         let rec checkTypars m (aenv: TypeEquivEnv) (implTypars: Typars) (sigTypars: Typars) = 
             if implTypars.Length <> sigTypars.Length then 
