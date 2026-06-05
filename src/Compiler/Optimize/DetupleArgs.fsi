@@ -3,11 +3,10 @@
 module internal FSharp.Compiler.Detuple
 
 open Internal.Utilities.Collections
-open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
-val DetupleImplFile: PerFileNamingScope -> CcuThunk -> TcGlobals -> CheckedImplFile -> CheckedImplFile
+val DetupleImplFile: CcuThunk -> TcGlobals -> CheckedImplFile -> CheckedImplFile
 
 module GlobalUsageAnalysis =
     val GetValsBoundInExpr: Expr -> Zset<Val>

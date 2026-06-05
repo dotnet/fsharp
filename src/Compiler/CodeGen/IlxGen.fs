@@ -12464,51 +12464,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
 /// The race manifests in IlxGen.ComputeStorageForValWithValReprInfo (called from AllocValForBind
 /// during the parallel method-body emit) so the walk must visit *every* binding site, not just the
 /// module-spine bindings — TLR-lifted vals live as Expr.Let bindings inside method bodies.
-let PrimeStableNamesForCodegen (g: TcGlobals) (implFiles: CheckedImplFileAfterOptimization list) =
-    match g.CompilerGlobalState with
-    | None -> ()
-    | Some _ ->
-        let primeVal (v: Val) =
-            // Mirrors the predicate in Val.CompiledName that routes through StableNiceNameGenerator.
-            if
-                v.IsCompiledAsTopLevel
-                && not v.IsMember
-                && (v.IsCompilerGenerated || not v.IsMemberOrModuleBinding)
-            then
-                v.CompiledName g.CompilerGlobalState |> ignore
-
-        let folder =
-            { ExprFolder0 with
-                valBindingSiteIntercept =
-                    fun st (_isRec, v) ->
-                        primeVal v
-                        st
-            }
-
-        for implFile in implFiles do
-            FoldImplFile folder () implFile.ImplFile |> ignore
-
-/// Post-IlxGen pass that re-orders the members of every emitted ILTypeDef into a deterministic
-/// alphabetical order. IlxGen adds method/field/event/property/nested-type defs to the assembly
-/// builder in non-deterministic order under parallel codegen — the builder's internal lists
-/// reflect whichever thread emitted first. Sorting them after IlxGen finishes (but before
-/// ILBinaryWriter consumes the module) makes the #String/#Blob/#TypeDef/#MethodDef metadata
-/// streams byte-identical across runs without changing IL semantics, since tokens are assigned
-/// by the writer based on input order and references inside the same assembly are re-resolved
-/// against that order. See https://github.com/dotnet/fsharp/issues/19732.
 let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some(firstImplFiles, lastImplFile) ->
-
-        // Prime the StableNiceNameGenerator's niceNames cache by visiting every top-level Val
-        // in source-deterministic order (files in source order from ParseAndCheckInputs, then
-        // module-binding-list order which is single-threaded per file in typecheck and TLR
-        // pass4_rewrite). This pins the suffix assignment for every Val whose CompiledName routes
-        // through StableNiceNameGenerator, so the later parallel codegen calls hit the cache
-        // and return deterministic names regardless of thread scheduling.
-        // See https://github.com/dotnet/fsharp/issues/19732.
-        PrimeStableNamesForCodegen cenv.g implFiles
 
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
@@ -12643,7 +12602,15 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let eenv =
         { eenv with
             cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
-            delayCodeGen = cenv.options.parallelIlxGenEnabled
+            // Body emission is always inline (delayCodeGen = false) regardless of parallelIlxGen.
+            // The original deferred-method mechanism was designed for parallel body emission
+            // (ArrayParallel.iter), which races on TypeDefsBuilder.AddTypeDef's Interlocked
+            // counter and on shared name generators, producing non-deterministic metadata layout.
+            // Forcing inline emission makes --parallelcompilation+ produce byte-identical output
+            // to --parallelcompilation- (verified by eng/test-determinism.ps1 -mode seq-vs-par)
+            // while leaving the optimizer/typecheck parallelism unaffected.
+            // See https://github.com/dotnet/fsharp/issues/19732.
+            delayCodeGen = false
         }
 
     // Generate the PrivateImplementationDetails type
