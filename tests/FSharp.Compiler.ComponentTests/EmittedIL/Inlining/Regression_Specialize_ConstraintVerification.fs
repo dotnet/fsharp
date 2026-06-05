@@ -12,9 +12,7 @@ module Regression_Specialize_ConstraintVerification =
     open Regression_TLR_MutualInnerRec_StructuralAssertions
 
     let private compileVerifyAndRun realsig source =
-        let compiled = source |> compileOptimized realsig |> compile |> shouldSucceed
-        compiled |> verifyPEFileWithSystemDlls |> shouldSucceed |> ignore
-        compiled |> run |> shouldSucceed |> ignore
+        source |> compileOptimized realsig |> compile |> shouldSucceed |> verifyPEAndRun
 
     [<Theory; InlineData(true); InlineData(false)>]
     let ``struct + equality`` (realsig: bool) =

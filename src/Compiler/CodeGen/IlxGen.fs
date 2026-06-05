@@ -12584,10 +12584,12 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
 //-------------------------------------------------------------------------
 
 let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
+    let ccuLoc = CompLocForCcu ccu
+
     {
         tyenv = TypeReprEnv.Empty
-        cloc = CompLocForCcu ccu
-        moduleCloc = CompLocForCcu ccu
+        cloc = ccuLoc
+        moduleCloc = ccuLoc
         initClassCompLoc = None
         initFieldName = CompilerGeneratedName "init"
         staticInitializationName = CompilerGeneratedName "staticInitialization"
@@ -12670,9 +12672,11 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let mgbuf = AssemblyBuilder(cenv, anonTypeTable)
 
     let eenv =
+        let fragLoc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+
         { eenv with
-            cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
-            moduleCloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+            cloc = fragLoc
+            moduleCloc = fragLoc
             delayCodeGen = cenv.options.parallelIlxGenEnabled
         }
 

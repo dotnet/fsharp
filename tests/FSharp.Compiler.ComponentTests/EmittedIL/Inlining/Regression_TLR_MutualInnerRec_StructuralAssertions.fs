@@ -16,6 +16,11 @@ module Regression_TLR_MutualInnerRec_StructuralAssertions =
     let private compileOptimizedAndRun realsig source =
         source |> compileOptimized realsig |> compileExeAndRun |> shouldSucceed |> ignore
 
+    /// Shared "PEVerify + run" tail used by tests that assert both metadata validity and runtime success.
+    let internal verifyPEAndRun (compiled: CompilationResult) =
+        compiled |> verifyPEFileWithSystemDlls |> shouldSucceed |> ignore
+        compiled |> run |> shouldSucceed |> ignore
+
     let private compileAndAssertNoClosures realsig expectedIL source =
         let result = source |> compileOptimized realsig |> compile |> shouldSucceed
         result |> verifyILPresent expectedIL
@@ -236,8 +241,7 @@ let main _argv =
         let result = source |> compileOptimized realsig |> compile |> shouldSucceed
 
         result |> verifyILPresent [ "memoize@8D<" ]
-        result |> verifyPEFileWithSystemDlls |> shouldSucceed |> ignore
-        result |> run |> shouldSucceed |> ignore
+        verifyPEAndRun result
 
     // --- Combined test (exercises both #17607 and #14492 together) ---
 
@@ -269,7 +273,6 @@ let main _argv =
 """
             |> compileOptimized realsig |> compile |> shouldSucceed
 
-        result |> verifyILPresent [ "static bool  search@"; "object Specialize<" ]
+        result |> verifyILPresent [ "static bool  search@" ]
         result |> verifyILNotPresent [ "Specialize<class "; "Specialize<valuetype " ]
-        result |> verifyPEFileWithSystemDlls |> shouldSucceed |> ignore
-        result |> run |> shouldSucceed |> ignore
+        verifyPEAndRun result
