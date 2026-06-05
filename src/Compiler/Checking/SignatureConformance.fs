@@ -137,24 +137,30 @@ module private AttributeConformance =
         else warning
 
     let checkVal (g: TcGlobals) (implVal: Val) (sigVal: Val) (fallback: range) =
-        let enforcedFlagsOnVal (v: Val) =
-            ValHasWellKnownAttribute g enforcedValsMask v |> ignore // forceload
-            v.ValAttribs.Flags |> Flags.intersect enforcedValsMask
-        checkEnforced (emitter g) enforcedFlagsOnVal enforcedVals
-            (fun (v: Val)    -> v.Attribs)
-            (classifyValAttrib g)
-            (fun (v: Val)    -> v.DisplayName)
-            implVal sigVal fallback
+        // External consumers cannot see non-public values, so a consumer-visible
+        // attribute missing from the .fsi is irrelevant for them.
+        if implVal.Accessibility.IsPublic then
+            let enforcedFlagsOnVal (v: Val) =
+                ValHasWellKnownAttribute g enforcedValsMask v |> ignore // forceload
+                v.ValAttribs.Flags |> Flags.intersect enforcedValsMask
+            checkEnforced (emitter g) enforcedFlagsOnVal enforcedVals
+                (fun (v: Val)    -> v.Attribs)
+                (classifyValAttrib g)
+                (fun (v: Val)    -> v.DisplayName)
+                implVal sigVal fallback
 
     let checkEntity (g: TcGlobals) (implEntity: Entity) (sigEntity: Entity) (fallback: range) =
-        let enforcedFlagsOnEntity (e: Entity) =
-            EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
-            e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
-        checkEnforced (emitter g) enforcedFlagsOnEntity enforcedEntities
-            (fun (e: Entity) -> e.Attribs)
-            (classifyEntityAttrib g)
-            (fun (e: Entity) -> e.DisplayName)
-            implEntity sigEntity fallback
+        // External consumers cannot see non-public entities, so a consumer-visible
+        // attribute missing from the .fsi is irrelevant for them.
+        if implEntity.Accessibility.IsPublic then
+            let enforcedFlagsOnEntity (e: Entity) =
+                EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
+                e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
+            checkEnforced (emitter g) enforcedFlagsOnEntity enforcedEntities
+                (fun (e: Entity) -> e.Attribs)
+                (classifyEntityAttrib g)
+                (fun (e: Entity) -> e.DisplayName)
+                implEntity sigEntity fallback
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *

@@ -1233,14 +1233,17 @@ namespace Microsoft.FSharp.Core
 
         /// Represents a byref that can be written
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+        [<Sealed>]
         type Out
 
         /// Represents a byref that can be read
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+        [<Sealed>]
         type In
 
         /// Represents a byref that can be both read and written
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+        [<Sealed>]
         type InOut
 
     /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
