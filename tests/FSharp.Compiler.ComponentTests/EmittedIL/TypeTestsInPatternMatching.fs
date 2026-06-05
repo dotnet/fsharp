@@ -382,3 +382,93 @@ let TestEmptyStringEq(x: string) =
   } 
 """
        ]
+
+    // https://github.com/dotnet/fsharp/issues/19873
+    // Trade-off recorded: when the empty-string optimization moved from BuildSwitch to the Optimizer,
+    // `--optimize-` (debug) builds no longer get the null+Length form because F#'s `(=)` operator is
+    // only inlined when `LocalOptimizationsEnabled = true`. Debug builds now emit a plain
+    // `String.Equals(s, "")` call. JIT tiered compilation reaches the same fast path; debug-mode IL
+    // size is not a perf concern. Locked in so a future change can revisit consciously.
+    [<Fact>]
+    let ``Test codegen for empty string pattern under --optimize-``() =
+        FSharp """
+module Test
+let TestEmptyStringPattern(x: string) =
+    match x with
+    | "" -> "empty"
+    | _ -> "other"
+         """
+         |> withNoOptimize
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+                      """
+      .method public static string  TestEmptyStringPattern(string x) cil managed
+  {
+    
+    .maxstack  4
+    .locals init (string V_0)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldstr      ""
+    IL_0008:  call       bool [netstandard]System.String::Equals(string,
+                                                                 string)
+    IL_000d:  brfalse.s  IL_0015
+
+    IL_000f:  ldstr      "empty"
+    IL_0014:  ret
+
+    IL_0015:  ldstr      "other"
+    IL_001a:  ret
+  } 
+"""
+       ]
+
+    // https://github.com/dotnet/fsharp/issues/19873
+    // Trade-off recorded: `null | "" -> _` patterns previously elided the inner null check via
+    // BuildSwitch's `isNullFiltered` flag (so the IL emitted only the `null` pattern's `brfalse`
+    // followed by a bare `s.Length = 0`). After moving the optimization to the Optimizer, the
+    // optimizer has no view of the enclosing null-filtered context and so re-emits the null check.
+    // The result is two back-to-back `brfalse.s` on the same argument. JIT trivially eliminates the
+    // redundant branch; we accept the few extra IL bytes in exchange for clean quotations.
+    [<Fact>]
+    let ``Test codegen for null-or-empty-string pattern``() =
+        FSharp """
+module Test
+let TestNullOrEmpty(x: string) =
+    match x with
+    | null | "" -> "empty"
+    | _ -> "other"
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+                      """
+      .method public static string  TestNullOrEmpty(string x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_0014
+
+    IL_0003:  ldarg.0
+    IL_0004:  brfalse.s  IL_0011
+
+    IL_0006:  ldarg.0
+    IL_0007:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_000c:  ldc.i4.0
+    IL_000d:  ceq
+    IL_000f:  br.s       IL_0012
+
+    IL_0011:  ldc.i4.0
+    IL_0012:  brfalse.s  IL_001a
+
+    IL_0014:  ldstr      "empty"
+    IL_0019:  ret
+
+    IL_001a:  ldstr      "other"
+    IL_001f:  ret
+  } 
+"""
+       ]

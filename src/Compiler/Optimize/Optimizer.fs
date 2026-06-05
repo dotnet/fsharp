@@ -2293,6 +2293,7 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
 
 let IsILMethodRefSystemStringEquals (mref: ILMethodRef) =
     mref.Name = "Equals" &&
+    mref.CallingConv.IsStatic &&
     mref.DeclaringTypeRef.Name = "System.String" &&
     (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.Boolean") &&
     (mref.ArgCount = 2 &&

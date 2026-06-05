@@ -811,7 +811,7 @@ let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
                         let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
                         mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String _ as c)  ->
-                        // Empty-string is detected by the Optimizer (`OptimizeStringEqualsEmpty`)
+                        // Empty-string is detected by the Optimizer (`MakeOptimizedStringEqualsEmptyCall`)
                         // and rewritten to a null-safe length check at that point. Pattern-match
                         // compilation keeps the F# `=` form so quotations see the original shape.
                         mkCallEqualsOperator g m g.string_ty testexpr (Expr.Const (c, m, g.string_ty))
