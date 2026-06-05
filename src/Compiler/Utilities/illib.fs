@@ -135,9 +135,11 @@ module internal PervasiveAutoOpens =
 
     let notFound () = raise (KeyNotFoundException())
 
+#if !FSHARPCORE_USE_PACKAGE
+// TODO For 11.x, remove shimming to rely fully on shipped FSharp.Core variant
     type Async with
 
-        static member RunImmediate(computation: Async<'T>, ?cancellationToken) =
+        static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
 
             let ts = TaskCompletionSource<'T>()
@@ -150,6 +152,7 @@ module internal PervasiveAutoOpens =
                 task.Result
             with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
                 raise (ex.InnerExceptions[0])
+#endif
 
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =

@@ -4618,7 +4618,7 @@ module internal Project35b =
     let args2 = Array.append args [| "-r:notexist.dll" |]
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projPath, args2) with SourceFiles = fileNames }
 #else
-    let options =  checker.GetProjectOptionsFromScript(fileName1, fileSource1) |> Async.RunImmediate |> fst
+    let options =  checker.GetProjectOptionsFromScript(fileName1, fileSource1) |> Async.RunSynchronouslyImmediate |> fst
 #endif
 
 [<Fact(Skip = "Flaky, reenable when stable")>]
@@ -5594,7 +5594,7 @@ type UseTheThings(i:int) =
         |> function
             | _, FSharpCheckFileAnswer.Succeeded(res) -> res
             | _ -> failwithf "Parsing aborted unexpectedly..."
-    //let symbolUses = fileCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunImmediate |> Array.indexed
+    //let symbolUses = fileCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronouslyImmediate |> Array.indexed
     // Fragments used to check hash codes:
     //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
@@ -5679,7 +5679,7 @@ type UseTheThings(i:int) =
         |> function
             | _, FSharpCheckFileAnswer.Succeeded(res) -> res
             | _ -> failwithf "Parsing aborted unexpectedly..."
-    //let symbolUses = fileCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunImmediate |> Array.indexed
+    //let symbolUses = fileCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronouslyImmediate |> Array.indexed
     // Fragments used to check hash codes:
     //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()

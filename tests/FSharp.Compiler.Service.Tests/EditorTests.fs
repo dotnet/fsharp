@@ -58,7 +58,7 @@ let ``Intro test`` () =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
     let identToken = FSharpTokenTag.IDENT
-//    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunImmediate
+//    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronouslyImmediate
 
     // So we check that the messages are the same
     for msg in typeCheckResults.Diagnostics do
@@ -1646,7 +1646,7 @@ let _ = RegexTypedStatic.IsMatch<"ABC" >(  (*$*) ) // TEST: no assert on Ctrl-sp
 [<Fact>]
 let ``Test TPProject all symbols`` () =
 
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronouslyImmediate
     let allSymbolUses = wholeProjectResults.GetAllUsesOfAllSymbols()
     let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.Range, attribsOfSymbol s.Symbol ]
     //printfn "allSymbolUsesInfo = \n----\n%A\n----" allSymbolUsesInfo
@@ -1684,8 +1684,8 @@ let ``Test TPProject all symbols`` () =
 
 [<Fact>]
 let ``Test TPProject errors`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
-    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronouslyImmediate
+    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunSynchronouslyImmediate
     let typeCheckResults =
         match typeCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
@@ -1715,8 +1715,8 @@ let internal extractToolTipText (ToolTipText(els)) =
 
 [<Fact>]
 let ``Test TPProject quick info`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
-    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronouslyImmediate
+    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunSynchronouslyImmediate
     let typeCheckResults =
         match typeCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
@@ -1749,8 +1749,8 @@ let ``Test TPProject quick info`` () =
 
 [<Fact>]
 let ``Test TPProject param info`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
-    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronouslyImmediate
+    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunSynchronouslyImmediate
     let typeCheckResults =
         match typeCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res

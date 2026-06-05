@@ -177,7 +177,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
                 Directory.Delete(path, true)
 
 #else
-    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunImmediate
+    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunSynchronouslyImmediate
     //printfn "projectOptions = %A" projectOptions
 #endif
 
