@@ -7143,6 +7143,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let cloName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
+
             g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
@@ -12451,10 +12452,63 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
         Some tref
 
+/// Visit every top-level Val that Val.CompiledName routes through StableNiceNameGenerator, in
+/// source-deterministic order (files in source order from ParseAndCheckInputs, then a deterministic
+/// depth-first traversal of every binding site in the file's IR). Calling .CompiledName on each Val
+/// populates the niceNames cache deterministically before the parallel codegen iter runs, so
+/// subsequent racy GetUniqueCompilerGeneratedName calls on different codegen threads hit the cache
+/// instead of incrementing the bucket counter in non-deterministic order. This is the cure for the
+/// parallel-codegen race that produced different '@N' suffixes across rebuilds for compiler-generated
+/// names like 'contains', 'func1', 'f@284' etc. See https://github.com/dotnet/fsharp/issues/19732.
+///
+/// The race manifests in IlxGen.ComputeStorageForValWithValReprInfo (called from AllocValForBind
+/// during the parallel method-body emit) so the walk must visit *every* binding site, not just the
+/// module-spine bindings — TLR-lifted vals live as Expr.Let bindings inside method bodies.
+let PrimeStableNamesForCodegen (g: TcGlobals) (implFiles: CheckedImplFileAfterOptimization list) =
+    match g.CompilerGlobalState with
+    | None -> ()
+    | Some _ ->
+        let primeVal (v: Val) =
+            // Mirrors the predicate in Val.CompiledName that routes through StableNiceNameGenerator.
+            if
+                v.IsCompiledAsTopLevel
+                && not v.IsMember
+                && (v.IsCompilerGenerated || not v.IsMemberOrModuleBinding)
+            then
+                v.CompiledName g.CompilerGlobalState |> ignore
+
+        let folder =
+            { ExprFolder0 with
+                valBindingSiteIntercept =
+                    fun st (_isRec, v) ->
+                        primeVal v
+                        st
+            }
+
+        for implFile in implFiles do
+            FoldImplFile folder () implFile.ImplFile |> ignore
+
+/// Post-IlxGen pass that re-orders the members of every emitted ILTypeDef into a deterministic
+/// alphabetical order. IlxGen adds method/field/event/property/nested-type defs to the assembly
+/// builder in non-deterministic order under parallel codegen — the builder's internal lists
+/// reflect whichever thread emitted first. Sorting them after IlxGen finishes (but before
+/// ILBinaryWriter consumes the module) makes the #String/#Blob/#TypeDef/#MethodDef metadata
+/// streams byte-identical across runs without changing IL semantics, since tokens are assigned
+/// by the writer based on input order and references inside the same assembly are re-resolved
+/// against that order. See https://github.com/dotnet/fsharp/issues/19732.
 let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some(firstImplFiles, lastImplFile) ->
+
+        // Prime the StableNiceNameGenerator's niceNames cache by visiting every top-level Val
+        // in source-deterministic order (files in source order from ParseAndCheckInputs, then
+        // module-binding-list order which is single-threaded per file in typecheck and TLR
+        // pass4_rewrite). This pins the suffix assignment for every Val whose CompiledName routes
+        // through StableNiceNameGenerator, so the later parallel codegen calls hit the cache
+        // and return deterministic names regardless of thread scheduling.
+        // See https://github.com/dotnet/fsharp/issues/19732.
+        PrimeStableNamesForCodegen cenv.g implFiles
 
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
@@ -12462,7 +12516,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         eenv.delayedFileGenReverse
         |> Array.ofList
         |> Array.rev
-        |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen ()))
+        |> Array.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen ()))
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
