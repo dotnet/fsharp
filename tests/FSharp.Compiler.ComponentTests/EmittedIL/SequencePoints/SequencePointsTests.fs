@@ -9,7 +9,8 @@ open FSharp.Test.Compiler
 
 [<AbstractClass; Sealed>]
 type private Baseline =
-    static member verify(source, [<CallerMemberName; Optional; DefaultParameterValue("")>] name: string) =
+    static member verify(source: string, [<CallerMemberName; Optional; DefaultParameterValue("")>] name: string) =
+        let source = source.Trim()
         let moduleName = StackTrace().GetFrame(1).GetMethod().DeclaringType.Name
         FSharp source
         |> asLibrary

@@ -1,3 +1,11 @@
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+    ()
+--------------------------------------------------------------------------------
+
 Module::.cctor
   <hidden>
     IL_0000:  ldc.i4.0
@@ -7,7 +15,7 @@ Module::.cctor
     IL_000c:  ret
 
 Module::staticInitialization@
-  (7,5-7,7)  ()
+  (6,5-6,7)  ()
     IL_0000:  ldnull
-    IL_0001:  stsfld i@4
+    IL_0001:  stsfld i@3
     IL_0006:  ret

@@ -1,3 +1,10 @@
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+--------------------------------------------------------------------------------
+
 Module::.cctor
   <hidden>
     IL_0000:  ldc.i4.0
