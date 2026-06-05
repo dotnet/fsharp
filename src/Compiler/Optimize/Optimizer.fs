@@ -4459,6 +4459,22 @@ and p_ModuleInfo x st =
         |> Array.sortBy (fun (vref: ValRef, _) ->
             let k = vref.Deref.GetLinkageFullKey()
             struct (vref.LogicalName, k.PartialKey.MemberParentMangledName, k.PartialKey.LogicalName))
+        // Canonicalize ValMakesNoCriticalTailcalls against the final, fully-merged Val flag
+        // before pickling. Under parallel optimization (ParallelOptimization.optimizeFilesInParallel)
+        // a ValInfo is constructed via mkValInfo (line 554) capturing v.MakesNoCriticalTailcalls
+        // at one moment, while another parallel OptimizeImplFile task may later call
+        // v.SetMakesNoCriticalTailcalls() (line 3849) or, via RemapOptimizationInfo (line 1513),
+        // raise the bit on the shared mutable Val. The Val flag is an idempotent OR, so the
+        // post-optimization Val state is the canonical merged truth. Reading it here removes
+        // a race that produces one-byte differences in FSharpOptimizationCompressedData under
+        // high CPU concurrency, without serializing the optimizer pipeline.
+        // See https://github.com/dotnet/fsharp/issues/19732.
+        |> Array.map (fun (vref, vinfo) ->
+            let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
+            if merged = vinfo.ValMakesNoCriticalTailcalls then
+                vref, vinfo
+            else
+                vref, { vinfo with ValMakesNoCriticalTailcalls = merged })
     p_array (p_tup2 (p_vref "opttab") p_ValInfo) entries st
     p_namemap p_LazyModuleInfo x.ModuleOrNamespaceInfos st
 
