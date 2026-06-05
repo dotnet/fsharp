@@ -517,25 +517,6 @@ let main1
     | Some parallelReferenceResolution -> tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
     | None -> ()
 
-    // --deterministic+ guarantees byte-identical output across runs. Parallel typecheck/optimize/codegen
-    // pipelines race on shared mutable state (compiler-generated name caches, ConcurrentDictionary
-    // enumeration, optimizer ValHash) and produce non-deterministic metadata layout even when IL is
-    // identical. Force every parallel pipeline off under deterministic mode so determinism is correct
-    // by construction. See https://github.com/dotnet/fsharp/issues/19732.
-    if tcConfigB.deterministic then
-        tcConfigB.parallelIlxGen <- false
-        tcConfigB.parallelReferenceResolution <- ParallelReferenceResolution.Off
-
-        tcConfigB.typeCheckingConfig <-
-            { tcConfigB.typeCheckingConfig with
-                Mode = TypeCheckingMode.Sequential
-            }
-
-        tcConfigB.optSettings <-
-            { tcConfigB.optSettings with
-                processingMode = Optimizer.OptimizationProcessingMode.Sequential
-            }
-
     if tcConfigB.utf8output && Console.OutputEncoding <> Encoding.UTF8 then
         let previousEncoding = Console.OutputEncoding
         Console.OutputEncoding <- Encoding.UTF8
