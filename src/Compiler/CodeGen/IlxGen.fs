@@ -10645,10 +10645,11 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
 
     // Keep the init method if it carries a visible debug point, so steppable bindings like 'let i = ()' survive.
     let hasVisibleDebugPoint =
-        body.Code.Instrs
-        |> Array.exists (function
-            | I_seqpoint sp -> sp.Line <> FeeFee cenv
-            | _ -> false)
+        not cenv.options.localOptimizationsEnabled
+        && body.Code.Instrs
+           |> Array.exists (function
+               | I_seqpoint sp -> sp.Line <> FeeFee cenv
+               | _ -> false)
 
     if codeDoesSomething || hasVisibleDebugPoint then
         // We are here because the module we just grabbed has an interesting static initializer
