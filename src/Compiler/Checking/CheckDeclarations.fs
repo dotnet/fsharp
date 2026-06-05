@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.CheckDeclarations
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Threading
 
@@ -49,37 +48,20 @@ open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.TypeProviders
 #endif
 
-/// A diagnostics-logger wrapper used while type-checking an `inherit` clause. It drops any
-/// `UndefinedName` diagnostic whose `(id.idRange, id.idText)` key has already been seen in
-/// the same `cenv`, so duplicate FS0039s caused by re-resolution across Phase 1F / Phase 2A
-/// are suppressed. All other diagnostics are forwarded unchanged. See issue #16432.
-type private InheritDedupDiagnosticsLogger
-    (seen: ConcurrentDictionary<struct (range * string), unit>, inner: DiagnosticsLogger) =
-    inherit DiagnosticsLogger("InheritDedupDiagnosticsLogger")
-
-    // Only `WrappedError` is unwrapped here: it is the single wrapper that the
-    // `inherit` type-checking path can place around an `UndefinedName`. Other diagnostic
-    // exception families (`StopProcessingExn`/`ReportedError` short-circuit before reaching
-    // the sink, and `DiagnosticWithSuggestions` etc. are peer errors, not wrappers).
-    let rec isDuplicateUndefinedName (e: exn) =
-        match e with
-        | UndefinedName(_, _, id, _) -> not (seen.TryAdd(struct (id.idRange, id.idText), ()))
-        | WrappedError(inner, _) -> isDuplicateUndefinedName inner
-        | _ -> false
-
-    override _.DiagnosticSink(diagnostic: PhasedDiagnostic) =
-        if not (isDuplicateUndefinedName diagnostic.Exception) then
-            inner.DiagnosticSink diagnostic
-
-    override _.ErrorCount = inner.ErrorCount
-
-    override _.CheckForRealErrorsIgnoringWarnings = inner.CheckForRealErrorsIgnoringWarnings
-
+/// Helper for marking inherit-clause failures so later passes can skip duplicate work.
+/// See `isUndefinedNameFailure` below.
 type cenv = TcFileState
 
-let private useInheritDedupLogger (cenv: cenv) =
-    UseTransformedDiagnosticsLogger(fun inner ->
-        InheritDedupDiagnosticsLogger(cenv.reportedUndefinedNames, inner) :> DiagnosticsLogger)
+/// Recognises a recoverable `UndefinedName` failure (possibly wrapped). Used by the inherit-clause
+/// type-checking path to mark a `(tycon, range)` pair as already-reported so later passes
+/// (Phase 1F, Phase 2A) can skip re-resolving the same syntactic clause. See issue dotnet/fsharp#16432.
+let private isUndefinedNameFailure (e: exn) =
+    let rec loop (e: exn) =
+        match e with
+        | UndefinedName _ -> true
+        | WrappedError(inner, _) -> loop inner
+        | _ -> false
+    loop e
 
 //-------------------------------------------------------------------------
 // Mutually recursive shapes
@@ -1397,16 +1379,24 @@ module MutRecBindingChecking =
                             
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
-                            use _ = useInheritDedupLogger cenv
+                            // If Phase 1D/1F already reported `UndefinedName` for this exact syntactic
+                            // inherit clause, short-circuit: the user has seen the FS0039 once and we
+                            // would only re-emit the same diagnostic by trying to re-resolve here.
+                            // Non-`UndefinedName` failures (and the success path) still go through
+                            // normal type-checking below, so IDE `ItemOccurrence.Use` sink events
+                            // for valid types are preserved. See issue dotnet/fsharp#16432.
                             let inheritsExpr, tpenv =
-                                try
-                                   let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
-                                   let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
-                                   let mTcNew = unionRanges synBaseTy.Range arg.Range
-                                   TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg mTcNew
-                                with RecoverableException e ->
-                                    errorRecovery e m
+                                if cenv.inheritResolutionFailed.ContainsKey(struct (tcref.Stamp, synBaseTy.Range)) then
                                     mkUnit g m, tpenv
+                                else
+                                    try
+                                       let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
+                                       let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
+                                       let mTcNew = unionRanges synBaseTy.Range arg.Range
+                                       TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg mTcNew
+                                    with RecoverableException e ->
+                                        errorRecovery e m
+                                        mkUnit g m, tpenv
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envInstance | None -> envInstance
                             let envNonRec = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envNonRec | None -> envNonRec
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
@@ -3349,9 +3339,30 @@ module EstablishTypeDefinitionCores =
                         let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
 
                         let inherits = inherits |> List.map (fun (ty, m, _) -> (ty, m)) 
+                        // Resolve each inherit type. If a previous pass already failed with `UndefinedName`
+                        // for this clause, skip re-resolution entirely (returns the recovery type used
+                        // by `TcTypeAndRecover`). This avoids the duplicate FS0039 (#16432) without
+                        // any diagnostic-sink trickery and prevents the duplicate work too. Failures
+                        // that are NOT `UndefinedName` (e.g. constraint or type-provider errors that
+                        // only surface in the `CheckCxs` second pass) are NOT marked, so they continue
+                        // to flow through the normal recovery path.
                         let inheritedTys =
-                            use _ = useInheritDedupLogger cenv
-                            fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv inherits)
+                            inherits
+                            |> List.mapFold (fun tpenv (ty, m) ->
+                                let key = struct (tcref.Stamp, ty.Range)
+                                if cenv.inheritResolutionFailed.ContainsKey key then
+                                    (g.obj_ty_ambivalent, m), tpenv
+                                else
+                                    try
+                                        let resolved, tpenv = TcType cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv ty
+                                        (resolved, m), tpenv
+                                    with RecoverableException e ->
+                                        errorRecovery e ty.Range
+                                        if isUndefinedNameFailure e then
+                                            cenv.inheritResolutionFailed.TryAdd(key, ()) |> ignore
+                                        (g.obj_ty_ambivalent, m), tpenv
+                            ) tpenv
+                            |> fst
                         let implementedTys, inheritedTys =   
                             match kind with 
                             | SynTypeDefnKind.Interface -> 

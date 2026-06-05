@@ -274,11 +274,12 @@ type TcFileState =
         /// we're always dealing with the same instance and the updates don't get lost
         argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
-        /// Tracks (range, identifier-text) keys of `UndefinedName` diagnostics that have already
-        /// been reported during this cenv's lifetime so they can be deduplicated when the same
-        /// identifier is re-resolved by multiple passes (e.g. Phase 1F vs. Phase 2A of an
-        /// `inherit` clause). See issue dotnet/fsharp#16432.
-        reportedUndefinedNames: ConcurrentDictionary<struct (range * string), unit>
+        /// Marks `(tycon.Stamp, synBaseTy.Range)` pairs for which the inherit-clause type
+        /// failed to resolve with an `UndefinedName` diagnostic in an earlier pass. Subsequent
+        /// passes (Phase 1F, Phase 2A) consult this marker to skip re-resolving the same
+        /// syntactic inherit clause, eliminating the redundant work and the duplicate FS0039.
+        /// See issue dotnet/fsharp#16432.
+        inheritResolutionFailed: ConcurrentDictionary<struct (Stamp * range), unit>
 
         // forward call
         TcPat:
