@@ -33,43 +33,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit f8@40
-         extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<char,char,char>
-  {
-    .field static assembly initonly class assembly/f8@40 @_instance
-    .method assembly specialname rtspecialname instance void  .ctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<char,char,char>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance char Invoke(char x, char y) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ldarg.2
-      IL_0002:  add.ovf.un
-      IL_0003:  conv.ovf.u2.un
-      IL_0004:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/f8@40::.ctor()
-      IL_0005:  stsfld     class assembly/f8@40 assembly/f8@40::@_instance
-      IL_000a:  ret
-    } 
-
-  } 
-
   .class auto ansi serializable sealed nested assembly beforefieldinit f10@48
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<char,char,char>
   {
@@ -176,6 +139,43 @@
       .maxstack  10
       IL_0000:  newobj     instance void assembly/f12@56::.ctor()
       IL_0005:  stsfld     class assembly/f12@56 assembly/f12@56::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit f8@40
+         extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<char,char,char>
+  {
+    .field static assembly initonly class assembly/f8@40 @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<char,char,char>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance char Invoke(char x, char y) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ldarg.2
+      IL_0002:  add.ovf.un
+      IL_0003:  conv.ovf.u2.un
+      IL_0004:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/f8@40::.ctor()
+      IL_0005:  stsfld     class assembly/f8@40 assembly/f8@40::@_instance
       IL_000a:  ret
     } 
 
@@ -843,7 +843,6 @@
   } 
 
 } 
-
 
 
 

@@ -101,6 +101,15 @@
 
   } 
 
+  .class interface abstract auto ansi serializable nested public ITestInterface
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public hidebysig abstract virtual instance int32  M(int32 A_1) cil managed
+    {
+    } 
+
+  } 
+
   .class sequential ansi serializable sealed nested public S
          extends [runtime]System.ValueType
          implements class [runtime]System.IEquatable`1<valuetype Program/S>,
@@ -262,15 +271,6 @@
 
   } 
 
-  .class interface abstract auto ansi serializable nested public ITestInterface
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public hidebysig abstract virtual instance int32  M(int32 A_1) cil managed
-    {
-    } 
-
-  } 
-
   .class auto autochar serializable sealed nested assembly beforefieldinit specialname a@49
          extends [runtime]System.Object
          implements Program/ITestInterface
@@ -375,7 +375,6 @@
   } 
 
 } 
-
 
 
 
