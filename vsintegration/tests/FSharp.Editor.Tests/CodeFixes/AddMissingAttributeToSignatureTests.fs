@@ -452,3 +452,73 @@ let inline f (x: int) = x + 1
 """
     let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
     Assert.Contains("[<Microsoft.FSharp.Core.NoDynamicInvocationAttribute>]", fsi)
+
+[<Fact>]
+let ``Obsolete in .fs gets qualified as System.Obsolete in .fsi`` () =
+    let fsiCode = """
+module M
+type T = class end
+"""
+    let fsCode = """
+module M
+open System
+[<Obsolete("old")>]
+type T() = class end
+"""
+    let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
+    Assert.Contains("[<System.Obsolete(\"old\")>]", fsi)
+    Assert.DoesNotContain("[<Obsolete(\"old\")>]", fsi)
+
+[<Fact>]
+let ``AttributeUsage with AttributeTargets enum gets head AND enum qualified`` () =
+    let fsiCode = """
+module M
+type MyAttr =
+    inherit System.Attribute
+    new: unit -> MyAttr
+"""
+    let fsCode = """
+module M
+open System
+[<AttributeUsage(AttributeTargets.Method)>]
+type MyAttr() =
+    inherit Attribute()
+"""
+    let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
+    Assert.Contains("[<System.AttributeUsage(System.AttributeTargets.Method)>]", fsi)
+
+[<Fact>]
+let ``Qualified EditorBrowsable head with bare enum arg still qualifies the enum`` () =
+    // Regression: previously the head check `head.Contains(".")` short-
+    // circuited the WHOLE canonicalization, leaving the bare enum reference
+    // in place. Now the enum-arg rewrite runs independently of head qualification.
+    let fsiCode = """
+module M
+type T = class end
+"""
+    let fsCode = """
+module M
+open System.ComponentModel
+[<System.ComponentModel.EditorBrowsable(EditorBrowsableState.Never)>]
+type T() = class end
+"""
+    let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
+    Assert.Contains("[<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]", fsi)
+
+[<Fact>]
+let ``Already-qualified enum reference is not double-qualified`` () =
+    // Regression: a naive `Replace` would turn
+    // `System.ComponentModel.EditorBrowsableState.Never` into
+    // `System.ComponentModel.System.ComponentModel.EditorBrowsableState.Never`.
+    let fsiCode = """
+module M
+type T = class end
+"""
+    let fsCode = """
+module M
+[<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+type T() = class end
+"""
+    let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
+    Assert.Contains("[<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]", fsi)
+    Assert.DoesNotContain("System.ComponentModel.System.ComponentModel.", fsi)

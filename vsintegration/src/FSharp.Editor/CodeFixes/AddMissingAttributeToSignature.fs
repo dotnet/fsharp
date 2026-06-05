@@ -44,8 +44,8 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
     /// Split an attribute body like `Conditional("DEBUG.V1")` into
     /// `("Conditional", "(\"DEBUG.V1\")")` - the head ends at the first
-    /// `(` or whitespace. The head is what we test for `.` qualification;
-    /// the rest is preserved verbatim.
+    /// `(` or whitespace. Only the head is tested for qualification; the
+    /// rest is preserved verbatim except for boundary-aware enum rewrites.
     let splitAttribHead (text: string) : struct (string * string) =
         let mutable i = 0
         while i < text.Length
@@ -54,32 +54,51 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             i <- i + 1
         struct (text.Substring(0, i), text.Substring(i))
 
+    /// Boundary-aware token qualification: rewrite `simple.` to `qualified.`
+    /// only when `simple` is not already preceded by another identifier or `.`
+    /// (i.e. is not already qualified, and is not a substring of a longer
+    /// identifier like `MyEditorBrowsableState`). Implemented with a regex
+    /// `(?<![\w\.])` negative lookbehind.
+    let qualifyEnumToken (simple: string) (qualified: string) (text: string) : string =
+        let pattern = $@"(?<![\w\.]){System.Text.RegularExpressions.Regex.Escape(simple)}\."
+        let replacement = qualified + "."
+        System.Text.RegularExpressions.Regex.Replace(text, pattern, replacement)
+
     /// Canonicalize attribute names whose `[<X>]` form in the .fs requires an
-    /// `open` of a namespace that the .fsi may not have. For these names we
-    /// emit the fully-qualified form so the inserted .fsi compiles regardless.
-    /// Only the attribute TYPE HEAD is checked for qualification - args may
-    /// freely contain `.` (e.g. enum-value references). For attributes with
-    /// known enum-typed arguments (EditorBrowsable's
-    /// `EditorBrowsableState.X`), the enum reference is also qualified.
+    /// `open` of a namespace that the .fsi may not have. Two independent
+    /// rewrites:
+    ///   1. ATTRIBUTE HEAD - qualified only when the user wrote a bare name
+    ///      (head has no dot).
+    ///   2. ENUM ARGS - boundary-aware token rewrite runs regardless of head
+    ///      qualification, so `[<System.ComponentModel.EditorBrowsable(
+    ///      EditorBrowsableState.Never)>]` still gets the enum reference
+    ///      qualified.
+    /// All edits are token-boundary aware so we don't double-qualify
+    /// `System.ComponentModel.EditorBrowsableState` -> `System.ComponentModel
+    /// .System.ComponentModel.EditorBrowsableState`.
     let canonicalizeAttribName (attribText: string) : string =
         let struct (head, rest) = splitAttribHead attribText
-        if head.Contains(".") then attribText
-        else
-            let qualifiedHead, qualifiedRest =
+        let qualifiedHead =
+            if head.Contains(".") then
+                head
+            else
                 match head with
-                | "Conditional" | "ConditionalAttribute" ->
-                    "System.Diagnostics." + head, rest
-                | "EditorBrowsable" | "EditorBrowsableAttribute" ->
-                    // Also qualify the EditorBrowsableState enum reference so
-                    // the .fsi compiles without `open System.ComponentModel`.
-                    let qualifiedRest =
-                        rest.Replace("EditorBrowsableState.", "System.ComponentModel.EditorBrowsableState.")
-                    "System.ComponentModel." + head, qualifiedRest
-                | "NoEagerConstraintApplication" | "NoEagerConstraintApplicationAttribute" ->
-                    "Microsoft.FSharp.Core.CompilerServices." + head, rest
-                | _ ->
-                    head, rest
-            qualifiedHead + qualifiedRest
+                | "Conditional"                    | "ConditionalAttribute"                    -> "System.Diagnostics." + head
+                | "EditorBrowsable"                | "EditorBrowsableAttribute"                -> "System.ComponentModel." + head
+                | "NoEagerConstraintApplication"   | "NoEagerConstraintApplicationAttribute"   -> "Microsoft.FSharp.Core.CompilerServices." + head
+                | "Obsolete"                       | "ObsoleteAttribute"                       -> "System." + head
+                | "AttributeUsage"                 | "AttributeUsageAttribute"                 -> "System." + head
+                | "Unverifiable"                   | "UnverifiableAttribute"                   -> "Microsoft.FSharp.Core.CompilerServices." + head
+                | _                                                                            -> head
+
+        // Enum-arg rewrites: applied to `rest` whether or not the head was
+        // already qualified, with negative-lookbehind boundaries to be safe.
+        let qualifiedRest =
+            rest
+            |> qualifyEnumToken "EditorBrowsableState" "System.ComponentModel.EditorBrowsableState"
+            |> qualifyEnumToken "AttributeTargets"     "System.AttributeTargets"
+
+        qualifiedHead + qualifiedRest
 
     /// Leading whitespace of the .fsi sig line, so the inserted attribute lines
     /// up with the declaration it attaches to.
