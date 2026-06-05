@@ -82,7 +82,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             let diagFsRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, attribSpan, sourceText)
 
             let symbolUse =
-                checkResults.GetAllUsesOfAllSymbolsInFile()
+                checkResults.GetAllUsesOfAllSymbolsInFile(context.CancellationToken)
                 |> Seq.filter (fun (u: FSharp.Compiler.Symbols.FSharpSymbolUse) ->
                     u.IsFromDefinition
                     && u.Symbol.SignatureLocation.IsSome
@@ -96,24 +96,27 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             | Some sigRange ->
                 match tryFindSigDocument document.Project.Solution sigRange.FileName with
                 | Some sigDoc ->
-                    let! sigSourceText = sigDoc.GetTextAsync(context.CancellationToken)
-                    let sigSpan = RoslynHelpers.FSharpRangeToTextSpan(sigSourceText, sigRange)
-                    let sigLineStart = sigSourceText.Lines.GetLineFromPosition(sigSpan.Start).Start
-                    let indent = indentOfLine sigSourceText sigLineStart
-                    let lineBreak = lineBreakAt sigSourceText sigLineStart
-                    let insertion = $"{indent}{bracketed}{lineBreak}"
-
+                    // Title can be computed up-front; the actual offset / indent
+                    // / line-break are recomputed inside the CodeAction so a
+                    // .fsi edit happening between lightbulb registration and
+                    // application does not desynchronise the insertion.
                     let action =
                         CodeAction.Create(
                             $"Add {bracketed} to signature",
                             (fun cancellationToken ->
                                 cancellableTask {
                                     let! current = sigDoc.GetTextAsync(cancellationToken)
-                                    let updated = current.WithChanges(TextChange(TextSpan(sigLineStart, 0), insertion))
+                                    let currentSigSpan = RoslynHelpers.FSharpRangeToTextSpan(current, sigRange)
+                                    let currentLineStart = current.Lines.GetLineFromPosition(currentSigSpan.Start).Start
+                                    let currentIndent = indentOfLine current currentLineStart
+                                    let currentLineBreak = lineBreakAt current currentLineStart
+                                    let currentInsertion = $"{currentIndent}{bracketed}{currentLineBreak}"
+                                    let updated = current.WithChanges(TextChange(TextSpan(currentLineStart, 0), currentInsertion))
                                     return sigDoc.WithText(updated).Project.Solution
                                 }
                                 |> CancellableTask.start cancellationToken),
-                            equivalenceKey = $"{CodeFix.AddMissingAttributeToSignature}:{bracketed}:{sigRange.FileName}:{sigRange.StartLine}"
+                            equivalenceKey =
+                                $"{CodeFix.AddMissingAttributeToSignature}:{bracketed}:{sigRange.FileName}:{sigRange.StartLine}:{sigRange.StartColumn}:{sigRange.EndLine}:{sigRange.EndColumn}"
                         )
 
                     context.RegisterCodeFix(action, context.Diagnostics)

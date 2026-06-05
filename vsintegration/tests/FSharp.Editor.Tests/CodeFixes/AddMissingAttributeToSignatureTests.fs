@@ -244,3 +244,132 @@ let inline f (x: int) = x + 1
     // Both attributes should be present on the val in the .fsi.
     Assert.Contains("[<NoDynamicInvocationAttribute>]", fsi)
     Assert.Contains("""[<System.Obsolete("old")>]""", fsi)
+
+// -------------------------------------------------------------------------
+// Strengthened multi-attribute: exact text instead of Contains
+// -------------------------------------------------------------------------
+
+[<Fact>]
+let ``Stacked [<A>][<B>] both missing: first fix yields exact expected .fsi`` () =
+    let fsiCode = """
+module M
+val inline f: x: int -> int
+"""
+    let fsCode = """
+module M
+[<NoDynamicInvocationAttribute>]
+[<RequiresExplicitTypeArguments>]
+let inline f (x: int) = x + 1
+"""
+    let expected = """
+module M
+[<NoDynamicInvocationAttribute>]
+val inline f: x: int -> int
+"""
+    let actual = tryFixSigAt 0 fsiCode fsCode
+    Assert.Equal<string>(expected, actual |> Option.defaultValue "")
+
+[<Fact>]
+let ``Semicolon [<A; B>] both missing: first fix yields exact expected .fsi`` () =
+    let fsiCode = """
+module M
+val inline f: x: int -> int
+"""
+    let fsCode = """
+module M
+[<NoDynamicInvocationAttribute; RequiresExplicitTypeArguments>]
+let inline f (x: int) = x + 1
+"""
+    let expected = """
+module M
+[<NoDynamicInvocationAttribute>]
+val inline f: x: int -> int
+"""
+    let actual = tryFixSigAt 0 fsiCode fsCode
+    Assert.Equal<string>(expected, actual |> Option.defaultValue "")
+
+// -------------------------------------------------------------------------
+// Symbol-lookup edge cases (top-level module, member-in-type)
+// -------------------------------------------------------------------------
+
+[<Fact>]
+let ``Top-level module attribute is inserted on the .fsi module line`` () =
+    let fsiCode = """
+module M.Sub
+val x: int
+"""
+    let fsCode = """
+[<AutoOpen>]
+module M.Sub
+let x = 1
+"""
+    let expected = """
+[<AutoOpen>]
+module M.Sub
+val x: int
+"""
+    let actual = tryFixSig fsiCode fsCode
+    Assert.Equal<string>(expected, actual |> Option.defaultValue "")
+
+[<Fact>]
+let ``Member inside type with NoDynamicInvocation: fix targets the member sig line`` () =
+    let fsiCode = """
+module M
+type T =
+    new: unit -> T
+    member inline F: x: int -> int
+"""
+    let fsCode = """
+module M
+type T() =
+    [<NoDynamicInvocationAttribute>]
+    member inline _.F(x: int) = x + 1
+"""
+    let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
+    // The inserted attribute should be on the line directly above
+    // `member inline F:` in the .fsi (not above `new:` and not above `type T =`).
+    let lines = fsi.Split([| '\n' |])
+    let memberLineIdx =
+        lines
+        |> Array.findIndex (fun line -> line.TrimStart().StartsWith("member inline F:"))
+    let prevLine = lines.[memberLineIdx - 1].TrimEnd()
+    Assert.Equal("    [<NoDynamicInvocationAttribute>]", prevLine)
+
+// -------------------------------------------------------------------------
+// CodeAction title contract
+// -------------------------------------------------------------------------
+
+[<Fact>]
+let ``CodeAction title includes the bracketed attribute text`` () =
+    let fsiCode = """
+module M
+val inline f: x: int -> int
+"""
+    let fsCode = """
+module M
+[<NoDynamicInvocationAttribute>]
+let inline f (x: int) = x + 1
+"""
+    let documents = RoslynTestHelpers.GetFsiAndFsDocuments fsiCode fsCode |> Seq.toList
+    let fsDoc = documents |> List.find (fun d -> not d.IsFSharpSignatureFile)
+    let sourceText = fsDoc.GetTextAsync().Result
+    let _, checkResults =
+        fsDoc.GetFSharpParseAndCheckResultsAsync "test"
+        |> Microsoft.VisualStudio.FSharp.Editor.CancellableTasks.CancellableTask.runSynchronouslyWithoutCancellation
+    let diagnostic =
+        checkResults.Diagnostics
+        |> Array.find (fun d -> d.ErrorNumber = 3888)
+        |> Diagnostic.ofFSharpDiagnostic sourceText fsDoc.FilePath
+    let mutable captured : CodeAction option = None
+    let register = System.Action<CodeAction, ImmutableArray<Diagnostic>>(fun a _ -> captured <- Some a)
+    let ctx =
+        CodeFixContext(
+            fsDoc,
+            diagnostic.Location.SourceSpan,
+            ImmutableArray.Create diagnostic,
+            register,
+            CancellationToken.None
+        )
+    codeFix.RegisterCodeFixesAsync(ctx).Wait()
+    let action = captured |> Option.defaultWith (fun () -> failwith "expected a code-fix to be registered")
+    Assert.Equal("Add [<NoDynamicInvocationAttribute>] to signature", action.Title)
