@@ -71,8 +71,10 @@ type FactForNETCOREAPPSkipOnSignedBuildAttribute() as this =
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 
+#if !FSHARPCORE_USE_PACKAGE
+// TODO For 11.x, remove shimming to rely fully on shipped FSharp.Core variant
     type Async with
-        static member RunImmediate (computation: Async<'T>, ?cancellationToken) =
+        static member RunSynchronouslyImmediate (computation: Async<'T>, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
             let ts = TaskCompletionSource<'T>()
             let task = ts.Task
@@ -83,6 +85,7 @@ module Utilities =
                 (fun _ -> ts.SetCanceled()),
                 cancellationToken)
             task.Result
+#endif
 
     [<RequireQualifiedAccess>]
     type TargetFramework =
