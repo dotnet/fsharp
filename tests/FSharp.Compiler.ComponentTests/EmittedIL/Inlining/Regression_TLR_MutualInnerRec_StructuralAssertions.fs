@@ -25,9 +25,8 @@ module Regression_TLR_MutualInnerRec_StructuralAssertions =
     let private compileAssertNoClosuresAndRun realsig expectedIL source =
         source |> compileAndAssertNoClosures realsig expectedIL |> run |> shouldSucceed |> ignore
 
-    /// Source template: an inline constrained function is called inside a memoize closure.
-    /// The inline expands into the closure body, attaching constrained type params
-    /// to the closure class. EraseClosures must strip them from Specialize<T>.
+    // Inline constrained call inside a memoize closure — the inline expands into the closure body,
+    // attaching constraints to the closure class typars; EraseClosures must strip them.
     let internal closureWithConstraint constraintClause inlineBody typeAnnotation callValue =
         $"""module Test
 open System
@@ -135,11 +134,7 @@ let main _argv = Inner.run()
 """
         |> compileAssertNoClosuresAndRun realsig [ "static int32  a@"; "static int32  b@" ]
 
-    /// Regression for FS2014 "duplicate entry 'capture@N' in method table" on bootstrap
-    /// (FSharp.Build, FSharp.DependencyManager.Nuget). Multiple files in a namespace each
-    /// containing inner-rec functions with the same compiler-generated name would route to
-    /// the assembly-wide <PrivateImplementationDetails$Asm> type and collide. The fix routes
-    /// namespace-level TLR-lifted vals to the per-file init class instead.
+    // Regression for FS2014 duplicate generated method names across namespace-only files (see IlxGen.AllocValReprWithinExpr).
     [<Theory; InlineData(true); InlineData(false)>]
     let ``Namespace-level inner-rec in multiple files does not collide`` (realsig: bool) =
         let src1 = """namespace Mine
@@ -213,17 +208,13 @@ let main _argv =
             |> compile
             |> shouldSucceed
 
-        // Specialize method typars are unconstrained (CASE 1b fix)
         result |> verifyILPresent [ "object Specialize<" ]
         result |> verifyILNotPresent [ "Specialize<class "; "Specialize<valuetype " ]
-        // T-suffix closure class typars are unconstrained (CASE 1a fix)
         result |> verifyILNotPresent [ "T<class "; "T<valuetype " ]
 
-    /// >5 curried params on the inner closure forces CASE 2a term-splitting in
-    /// EraseClosures, producing a D-suffixed nested type. Module-level memoize creates
-    /// FSharpTypeFunc with Specialize<>. Constraint stripping is verified.
+    // >5 curried params forces EraseClosures CASE 2a term-splitting, producing a D-suffixed nested type.
     [<Theory; InlineData(true); InlineData(false)>]
-    let ``Issue 14492: >5 params closure chain produces D-suffix and unconstrained Specialize`` (realsig: bool) =
+    let ``Issue 14492: >5 params chain produces D-suffix nested type (CASE 2a)`` (realsig: bool) =
         let source =
             """module Sample
 open System
@@ -244,21 +235,13 @@ let main _argv =
 
         let result = source |> compileOptimized realsig |> compile |> shouldSucceed
 
-        // Specialize<a,b> exists with NO IL constraints (stripped by fix)
-        result |> verifyILPresent [ "object Specialize<" ]
-        result |> verifyILNotPresent [ "Specialize<class "; "Specialize<valuetype " ]
-
-        // D-suffixed nested type from term split (>5 params)
         result |> verifyILPresent [ "memoize@8D<" ]
-
         result |> verifyPEFileWithSystemDlls |> shouldSucceed |> ignore
         result |> run |> shouldSucceed |> ignore
 
     // --- Combined test (exercises both #17607 and #14492 together) ---
 
-    /// Combines both fixes: TLR inside generic class (#17607) + constrained inline
-    /// inside closure (#14492). The inner rec is TLR-lifted to moduleCloc, and the
-    /// inline worker's constraint must be stripped from the closure's Specialize<>.
+    // TLR inside generic class (#17607) + constrained inline inside closure (#14492).
     [<Theory; InlineData(true); InlineData(false)>]
     let ``Combined: TLR in generic class with constrained inline closure`` (realsig: bool) =
         let result =
@@ -286,6 +269,7 @@ let main _argv =
 """
             |> compileOptimized realsig |> compile |> shouldSucceed
 
-        result |> verifyILPresent [ "static bool  search@" ]
+        result |> verifyILPresent [ "static bool  search@"; "object Specialize<" ]
+        result |> verifyILNotPresent [ "Specialize<class "; "Specialize<valuetype " ]
         result |> verifyPEFileWithSystemDlls |> shouldSucceed |> ignore
         result |> run |> shouldSucceed |> ignore

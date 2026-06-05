@@ -990,9 +990,9 @@ let test() =
     |> shouldSucceed
     |> ignore
 
-// Verify M(()) and M() produce identical IL method signatures
+// Regression for #19615: M(()) emits explicit Unit argument, distinct from a no-arg M().
 [<Fact>]
-let ``Unit param - M(()) and M() produce same IL method signature`` () =
+let ``Unit param - M(()) emits Unit argument distinct from M(int)`` () =
     FSharp """
 module Test
 type D() =

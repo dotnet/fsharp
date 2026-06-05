@@ -486,9 +486,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
         | _ :: _, [], _ ->
             let nowReturnTy = (mkTyOfLambdas cenv laterStruct)
 
-            // Strip constraints: both the Specialize override method-typars (CASE 1b) and the
-            // later closure class-typars (CASE 1a) must be unconstrained — the override must match
-            // its base signature, and the class must accept any T that Specialize passes. See #14492.
+            // Both Specialize<> and the T-suffixed closure type must be unconstrained (#14492).
             let unconstrainedGenParams = tyargsl |> List.map stripILGenericParamConstraints
 
             // CASE 1a. Split a type abstraction.

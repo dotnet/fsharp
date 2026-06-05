@@ -192,9 +192,7 @@ module Pass1_DetermineTLRAndArities =
             let nFormals = vss.Length
             let nMaxApplied = GetMaxNumArgsAtUses xinfo f
             let arity = min nFormals nMaxApplied
-            if atTopLevel then
-                Some (f, arity)
-            elif arity <> 0 || not (isNil tps) then
+            if atTopLevel || arity <> 0 || not (isNil tps) then
                 Some (f, arity)
             else
                 None

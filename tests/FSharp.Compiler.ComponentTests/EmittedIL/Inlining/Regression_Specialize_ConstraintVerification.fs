@@ -4,23 +4,9 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-/// Inline functions with constrained type params, when inlined into closures,
-/// attach those constraints to the closure class's generic params. The closure's
-/// Specialize<T> override (from FSharpFunc) must be unconstrained to match the base.
-/// If constraints leak, the JIT throws at type-load time:
-///   "TypeLoadException: Method 'Specialize' on type '...' tried to implicitly
-///    override a method with weaker type parameter constraints."
-///
-/// Each test exercises a different ILGenericParameterDef field stripped by mkILSimpleTypar:
-///   struct       → HasNotNullableValueTypeConstraint
-///   not struct   → HasReferenceTypeConstraint
-///   unmanaged    → CustomAttrsStored (IsUnmanagedAttribute)
-///   new()        → HasDefaultConstructorConstraint
-///   :> interface → Constraints list
-///   comparison   → SRTP resolved to specific IL calls
-///
-/// Pipeline: compile (optimized) → ILVerify (metadata) → run (TypeLoadException guard).
-/// See #14492.
+/// Each test exercises one ILGenericParameterDef field cleared by stripILGenericParamConstraints.
+/// If a constraint leaks onto the closure's Specialize<T> override the JIT throws TypeLoadException
+/// ("weaker type parameter constraints"). See #14492.
 module Regression_Specialize_ConstraintVerification =
 
     open Regression_TLR_MutualInnerRec_StructuralAssertions

@@ -1207,7 +1207,7 @@ and IlxGenEnv =
         /// Indicates the default "place" for stuff we're currently generating
         cloc: CompileLocation
 
-        /// Always points to the enclosing module (non-generic). Used for TLR-lifted vals.
+        /// Non-generic enclosing module (never narrowed by AddEnclosingToEnv). Routing target for TLR lifts.
         moduleCloc: CompileLocation
 
         /// Indicates the default "place" for initialization stuff we're currently generating
@@ -1302,8 +1302,6 @@ let EnvForTycon tps eenv =
         tyenv = eenv.tyenv.ForTycon tps
     }
 
-/// Narrows cloc into a nested type scope. moduleCloc is intentionally NOT updated:
-/// TLR-lifted vals must stay in the module class, not in a generic enclosing type.
 let AddEnclosingToEnv eenv enclosing name ns =
     { eenv with
         cloc =
@@ -10332,15 +10330,8 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
         else
             NoShadowLocal, eenv
 
-    // TLR-lifted inner functions must go in the module class — if emitted inside a generic
-    // enclosing type they inherit its class typar, conflicting with their own method typars. See #17607.
-    // Note: also matches `do let x = …` and `copyOfStruct` vals — safe because at module scope cloc == moduleCloc.
-    //
-    // When moduleCloc has empty Enclosing (namespace-level, types-only file), routing to moduleCloc would
-    // land the val in the assembly-wide <PrivateImplementationDetails$AsmName> type, where vals with the
-    // same compiler-generated name from different files collide (FS2014 "duplicate entry in method table").
-    // In that case we route to the per-file init class instead (TypeNameForInitClass embeds the
-    // TopImplQualifiedName, giving per-file isolation).
+    // TLR lifts avoid generic enclosing scopes (#17607); namespace-root lifts use the per-file
+    // init class to avoid generated-name collisions in the shared <PrivateImplementationDetails$Asm>.
     let effectiveCloc =
         if v.IsCompiledAsTopLevel && not v.IsMemberOrModuleBinding then
             if eenv.moduleCloc.Enclosing.IsEmpty then
