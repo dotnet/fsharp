@@ -135,23 +135,20 @@ module internal PervasiveAutoOpens =
 
     let notFound () = raise (KeyNotFoundException())
 
-#if !FSHARPCORE_USE_PACKAGE
-// TODO For 11.x, remove shimming to rely fully on shipped FSharp.Core variant
+#if !FSHARPCORE_USE_PACKAGE // TODO For 11.x, remove shimming to rely fully on shipped FSharp.Core variant
     type Async with
-
         static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken) =
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let tcs = TaskCompletionSource<'T>()
 
-            let ts = TaskCompletionSource<'T>()
-
-            let task = ts.Task
-
-            Async.StartWithContinuations(computation, ts.SetResult, ts.SetException, (fun _ -> ts.SetCanceled()), cancellationToken)
-
-            try
-                task.Result
-            with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
-                raise (ex.InnerExceptions[0])
+            Async.StartWithContinuations(
+                computation,
+                tcs.SetResult,
+                tcs.SetException,
+                (fun _ -> tcs.SetCanceled()),
+                ?cancellationToken = cancellationToken
+            )
+            // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
+            tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
 #endif
 
 [<AbstractClass>]
