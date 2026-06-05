@@ -48,18 +48,25 @@ open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.TypeProviders
 #endif
 
-/// Helper for marking inherit-clause failures so later passes can skip duplicate work.
-/// See `isUndefinedNameFailure` below.
 type cenv = TcFileState
 
 /// Recognises a recoverable `UndefinedName` failure (possibly wrapped). Used by the inherit-clause
 /// type-checking path to mark a `(tycon, range)` pair as already-reported so later passes
 /// (Phase 1F, Phase 2A) can skip re-resolving the same syntactic clause. See issue dotnet/fsharp#16432.
+///
+/// `UndefinedName` may arrive wrapped by `WrappedError` or by any of the constraint-solver
+/// wrappers (`ErrorFromAddingTypeEquation`, `ErrorFromAddingConstraint`, `ErrorFromApplyingDefault`)
+/// — these are common when the inherit clause carries type arguments and the failure surfaces
+/// during the `CheckCxs` second pass. All such wrappers are unwrapped so the marker is set in
+/// every case.
 let private isUndefinedNameFailure (e: exn) =
     let rec loop (e: exn) =
         match e with
         | UndefinedName _ -> true
         | WrappedError(inner, _) -> loop inner
+        | ErrorFromAddingTypeEquation(error = inner) -> loop inner
+        | ErrorFromAddingConstraint(error = inner) -> loop inner
+        | ErrorFromApplyingDefault(error = inner) -> loop inner
         | _ -> false
     loop e
 
