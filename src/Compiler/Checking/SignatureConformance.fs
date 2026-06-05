@@ -179,17 +179,17 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             true
 
         // Per-entity enforcement. Set-op shape:
-        //   implOnEnforced = impl.Flags ∩ enforced
-        //   sigOnEnforced  = sig.Flags  ∩ enforced
-        //   warn for every enforced row not in (implOnEnforced ⊆ sigOnEnforced).
-        // O(1) happy path: mask check skips Vals/Entities with no enforced bit at all.
+        //   presentOnImplAndRequiredFromSig = impl.Flags ∩ enforced
+        //   actuallyPresentInSig            = sig.Flags  ∩ enforced
+        //   warn for every enforced row in (presentOnImplAndRequiredFromSig \ actuallyPresentInSig).
+        // O(1) happy path: mask check skips entities with no enforced bit at all.
         let checkEnforcedEntityAttribs (implEntity: Entity) (sigEntity: Entity) (m: range) =
             if EntityHasWellKnownAttribute g signatureEnforcedEntityAttribsMask implEntity then
                 EntityHasWellKnownAttribute g signatureEnforcedEntityAttribsMask sigEntity |> ignore
-                let implOnEnforced = implEntity.EntityAttribs.Flags |> Flags.intersect signatureEnforcedEntityAttribsMask
-                let sigOnEnforced  = sigEntity.EntityAttribs.Flags  |> Flags.intersect signatureEnforcedEntityAttribsMask
-                if not (implOnEnforced |> Flags.isSubsetOf sigOnEnforced) then
-                    let missing = implOnEnforced |> Flags.except sigOnEnforced
+                let presentOnImplAndRequiredFromSig = implEntity.EntityAttribs.Flags |> Flags.intersect signatureEnforcedEntityAttribsMask
+                let actuallyPresentInSig            = sigEntity.EntityAttribs.Flags  |> Flags.intersect signatureEnforcedEntityAttribsMask
+                if not (presentOnImplAndRequiredFromSig |> Flags.isSubsetOf actuallyPresentInSig) then
+                    let missing = presentOnImplAndRequiredFromSig |> Flags.except actuallyPresentInSig
                     for flag in signatureEnforcedEntityAttribs do
                         if flag |> Flags.intersects missing then
                             warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implEntity.DisplayName), m))
@@ -446,10 +446,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // Same set-op shape as `checkEnforcedEntityAttribs`, applied to Val.
             if ValHasWellKnownAttribute g signatureEnforcedValAttribsMask implVal then
                 ValHasWellKnownAttribute g signatureEnforcedValAttribsMask sigVal |> ignore
-                let implOnEnforced = implVal.ValAttribs.Flags |> Flags.intersect signatureEnforcedValAttribsMask
-                let sigOnEnforced  = sigVal.ValAttribs.Flags  |> Flags.intersect signatureEnforcedValAttribsMask
-                if not (implOnEnforced |> Flags.isSubsetOf sigOnEnforced) then
-                    let missing = implOnEnforced |> Flags.except sigOnEnforced
+                let presentOnImplAndRequiredFromSig = implVal.ValAttribs.Flags |> Flags.intersect signatureEnforcedValAttribsMask
+                let actuallyPresentInSig            = sigVal.ValAttribs.Flags  |> Flags.intersect signatureEnforcedValAttribsMask
+                if not (presentOnImplAndRequiredFromSig |> Flags.isSubsetOf actuallyPresentInSig) then
+                    let missing = presentOnImplAndRequiredFromSig |> Flags.except actuallyPresentInSig
                     for flag in signatureEnforcedValAttribs do
                         if flag |> Flags.intersects missing then
                             warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implVal.DisplayName), m))
