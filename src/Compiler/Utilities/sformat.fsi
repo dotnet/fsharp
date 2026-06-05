@@ -97,10 +97,8 @@ type internal Layout =
 
 #else
 /// Data representing structured layouts of terms.
-[<NoEquality; NoComparison>]
 type internal Layout
 
-[<NoComparison>]
 type internal TextTag
 
 [<Class>]
@@ -110,10 +108,8 @@ type internal TaggedText =
 #endif
 
 #if COMPILER
-[<AutoOpen>]
 module public TaggedText =
 #else
-[<AutoOpen>]
 module internal TaggedText =
 #endif
     val tagText: string -> TaggedText
@@ -240,7 +236,6 @@ type internal IEnvironment =
 /// A joint is either unbreakable, breakable or broken.
 /// If a joint is broken the RHS layout occurs on the next line with optional indentation.
 /// A layout can be squashed to for given width which forces breaks as required.
-[<AutoOpen>]
 module internal Layout =
     /// The empty layout
     val emptyL: Layout
