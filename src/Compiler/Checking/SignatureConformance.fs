@@ -48,44 +48,56 @@ type private E = WellKnownEntityAttributes
 /// Val attributes that must be mirrored in the .fsi when present in the .fs,
 /// because the F# compiler/IDE reads them off the signature when typechecking
 /// or compiling consumer code. One row = one rule.
-let private signatureEnforcedValAttribs : (V * string) list = [
-    V.NoDynamicInvocationAttribute_True ||| V.NoDynamicInvocationAttribute_False, "NoDynamicInvocation"
-    V.RequiresExplicitTypeArgumentsAttribute,                                     "RequiresExplicitTypeArguments"
-    V.ConditionalAttribute,                                                       "Conditional"
-    V.NoEagerConstraintApplicationAttribute,                                      "NoEagerConstraintApplication"
-    V.GeneralizableValueAttribute,                                                "GeneralizableValue"
-    V.WarnOnWithoutNullArgumentAttribute,                                         "WarnOnWithoutNullArgument"
-    V.CLIEventAttribute,                                                          "CLIEvent"
+let private signatureEnforcedValAttribs : V list = [
+    V.NoDynamicInvocationAttribute_True ||| V.NoDynamicInvocationAttribute_False
+    V.RequiresExplicitTypeArgumentsAttribute
+    V.ConditionalAttribute
+    V.NoEagerConstraintApplicationAttribute
+    V.GeneralizableValueAttribute
+    V.WarnOnWithoutNullArgumentAttribute
+    V.CLIEventAttribute
 ]
 
 /// Entity (type/module) attributes with the same rule as above.
-let private signatureEnforcedEntityAttribs : (E * string) list = [
-    E.RequireQualifiedAccessAttribute,                                                  "RequireQualifiedAccess"
-    E.AutoOpenAttribute,                                                                "AutoOpen"
-    E.NoComparisonAttribute,                                                            "NoComparison"
-    E.NoEqualityAttribute,                                                              "NoEquality"
-    E.AbstractClassAttribute,                                                           "AbstractClass"
-    E.SealedAttribute_True ||| E.SealedAttribute_False,                                 "Sealed"
-    E.CLIMutableAttribute,                                                              "CLIMutable"
-    E.AllowNullLiteralAttribute_True ||| E.AllowNullLiteralAttribute_False,             "AllowNullLiteral"
-    E.DefaultAugmentationAttribute_True ||| E.DefaultAugmentationAttribute_False,       "DefaultAugmentation"
-    E.ObsoleteAttribute,                                                                "Obsolete"
-    E.CompilerMessageAttribute,                                                         "CompilerMessage"
-    E.ExperimentalAttribute,                                                            "Experimental"
-    E.UnverifiableAttribute,                                                            "Unverifiable"
-    E.EditorBrowsableAttribute,                                                         "EditorBrowsable"
-    E.AttributeUsageAttribute,                                                          "AttributeUsage"
-    E.CompilationRepresentation_PermitNull,                                             "CompilationRepresentation(UseNullAsTrueValue)"
+let private signatureEnforcedEntityAttribs : E list = [
+    E.RequireQualifiedAccessAttribute
+    E.AutoOpenAttribute
+    E.NoComparisonAttribute
+    E.NoEqualityAttribute
+    E.AbstractClassAttribute
+    E.SealedAttribute_True ||| E.SealedAttribute_False
+    E.CLIMutableAttribute
+    E.AllowNullLiteralAttribute_True ||| E.AllowNullLiteralAttribute_False
+    E.DefaultAugmentationAttribute_True ||| E.DefaultAugmentationAttribute_False
+    E.ObsoleteAttribute
+    E.CompilerMessageAttribute
+    E.ExperimentalAttribute
+    E.UnverifiableAttribute
+    E.EditorBrowsableAttribute
+    E.AttributeUsageAttribute
 ]
 
-let private foldMask zero rows =
-    (zero, rows) ||> List.fold (fun acc (flag, _) ->
+let inline private foldMask zero rows =
+    (zero, rows) ||> List.fold (fun acc flag ->
         LanguagePrimitives.EnumOfValue
             (LanguagePrimitives.EnumToValue acc ||| LanguagePrimitives.EnumToValue flag))
 
 /// O(1) early-exit masks: if no enforced bit is set on the impl, skip the loop.
 let private signatureEnforcedValAttribsMask    : V = foldMask V.None signatureEnforcedValAttribs
 let private signatureEnforcedEntityAttribsMask : E = foldMask E.None signatureEnforcedEntityAttribs
+
+/// Derive the user-facing attribute name from the enum case (e.g.
+/// `AutoOpenAttribute` -> `"AutoOpen"`, `SealedAttribute_True ||| _False`
+/// -> `"Sealed"`). For OR-combined values picks the lowest set bit so paired
+/// `_True`/`_False` collapse to the same name.
+let inline private displayName< ^T when ^T : enum<uint64> > (flag: ^T) : string =
+    let v = LanguagePrimitives.EnumToValue flag
+    let lsb : ^T = LanguagePrimitives.EnumOfValue (v &&& (0uL - v))
+    let s = string lsb
+    let s = if s.EndsWith "_True"  then s.Substring(0, s.Length - 5)
+            elif s.EndsWith "_False" then s.Substring(0, s.Length - 6)
+            else s
+    if s.EndsWith "Attribute" then s.Substring(0, s.Length - 9) else s
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
@@ -178,10 +190,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         // Fast O(1) early-exit via the all-up mask; per-attribute loop only on miss.
         let checkEnforcedEntityAttribs (implEntity: Entity) (sigEntity: Entity) (m: range) =
             if EntityHasWellKnownAttribute g signatureEnforcedEntityAttribsMask implEntity then
-                for (flag, attrName) in signatureEnforcedEntityAttribs do
+                for flag in signatureEnforcedEntityAttribs do
                     if EntityHasWellKnownAttribute g flag implEntity
                        && not (EntityHasWellKnownAttribute g flag sigEntity) then
-                        warning(Error (FSComp.SR.implAttributeMissingFromSignature(attrName, implEntity.DisplayName), m))
+                        warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implEntity.DisplayName), m))
 
         let rec checkTypars m (aenv: TypeEquivEnv) (implTypars: Typars) (sigTypars: Typars) = 
             if implTypars.Length <> sigTypars.Length then 
@@ -440,10 +452,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // enforced bits set, the per-attribute scan and the per-attribute
             // signature lookup are skipped entirely.
             if ValHasWellKnownAttribute g signatureEnforcedValAttribsMask implVal then
-                for (flag, attrName) in signatureEnforcedValAttribs do
+                for flag in signatureEnforcedValAttribs do
                     if ValHasWellKnownAttribute g flag implVal
                        && not (ValHasWellKnownAttribute g flag sigVal) then
-                        warning(Error (FSComp.SR.implAttributeMissingFromSignature(attrName, implVal.DisplayName), m))
+                        warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implVal.DisplayName), m))
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
             elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
