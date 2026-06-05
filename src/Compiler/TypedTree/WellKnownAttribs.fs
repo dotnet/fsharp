@@ -118,6 +118,18 @@ type internal WellKnownValAttributes =
     | TailCallAttribute = (1uL <<< 40)
     | NotComputed = (1uL <<< 63)
 
+/// Plain set operations on `'F when 'F :> System.Enum` flag values backed by uint64.
+module internal Flags =
+    let inline private bits (f: ^F when ^F : enum<uint64>) = LanguagePrimitives.EnumToValue f
+    let inline private ofBits<'F when 'F : enum<uint64>> (v: uint64) : 'F = LanguagePrimitives.EnumOfValue v
+
+    let inline isEmpty (flags: 'F when 'F : enum<uint64>) = bits flags = 0uL
+    let inline union (a: 'F when 'F : enum<uint64>) (b: 'F) : 'F = ofBits<'F> (bits a ||| bits b)
+    let inline intersect (other: 'F when 'F : enum<uint64>) (flags: 'F) : 'F = ofBits<'F> (bits flags &&& bits other)
+    let inline except (b: 'F when 'F : enum<uint64>) (a: 'F) : 'F = ofBits<'F> (bits a &&& ~~~ (bits b))
+    let inline intersects (other: 'F when 'F : enum<uint64>) (flags: 'F) = bits flags &&& bits other <> 0uL
+    let inline isSubsetOf (superset: 'F when 'F : enum<uint64>) (subset: 'F) = bits subset &&& ~~~ (bits superset) = 0uL
+
 /// Generic wrapper for an item list together with cached well-known attribute flags.
 /// Used for O(1) lookup of well-known attributes on entities and vals.
 [<Struct; NoEquality; NoComparison>]

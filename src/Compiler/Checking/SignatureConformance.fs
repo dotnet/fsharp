@@ -77,14 +77,8 @@ let private signatureEnforcedEntityAttribs : E list = [
     E.AttributeUsageAttribute
 ]
 
-let inline private foldMask zero rows =
-    (zero, rows) ||> List.fold (fun acc flag ->
-        LanguagePrimitives.EnumOfValue
-            (LanguagePrimitives.EnumToValue acc ||| LanguagePrimitives.EnumToValue flag))
-
-/// O(1) early-exit masks: if no enforced bit is set on the impl, skip the loop.
-let private signatureEnforcedValAttribsMask    : V = foldMask V.None signatureEnforcedValAttribs
-let private signatureEnforcedEntityAttribsMask : E = foldMask E.None signatureEnforcedEntityAttribs
+let private signatureEnforcedValAttribsMask    : V = List.reduce Flags.union signatureEnforcedValAttribs
+let private signatureEnforcedEntityAttribsMask : E = List.reduce Flags.union signatureEnforcedEntityAttribs
 
 /// Derive the user-facing attribute name from the enum case (e.g.
 /// `AutoOpenAttribute` -> `"AutoOpen"`, `SealedAttribute_True ||| _False`
@@ -184,22 +178,20 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             fixup (sigAttribs @ keptImplAttribs)
             true
 
-        // Per-entity enforcement. Truly O(1) happy path: a single mask check
-        // on impl plus (on hit) one mask check on sig and one bitwise diff to
-        // confirm sig already carries every enforced bit the impl carries.
-        // The per-row loop runs only when at least one enforced bit is on the
-        // impl AND missing from the sig.
+        // Per-entity enforcement. Set-op shape:
+        //   implOnEnforced = impl.Flags ∩ enforced
+        //   sigOnEnforced  = sig.Flags  ∩ enforced
+        //   warn for every enforced row not in (implOnEnforced ⊆ sigOnEnforced).
+        // O(1) happy path: mask check skips Vals/Entities with no enforced bit at all.
         let checkEnforcedEntityAttribs (implEntity: Entity) (sigEntity: Entity) (m: range) =
             if EntityHasWellKnownAttribute g signatureEnforcedEntityAttribsMask implEntity then
-                // Force the cached flags to be computed on both sides.
                 EntityHasWellKnownAttribute g signatureEnforcedEntityAttribsMask sigEntity |> ignore
-                let mask = LanguagePrimitives.EnumToValue signatureEnforcedEntityAttribsMask
-                let impl = LanguagePrimitives.EnumToValue implEntity.EntityAttribs.Flags &&& mask
-                let sig' = LanguagePrimitives.EnumToValue sigEntity.EntityAttribs.Flags  &&& mask
-                let missing = impl &&& ~~~sig'
-                if missing <> 0uL then
+                let implOnEnforced = implEntity.EntityAttribs.Flags |> Flags.intersect signatureEnforcedEntityAttribsMask
+                let sigOnEnforced  = sigEntity.EntityAttribs.Flags  |> Flags.intersect signatureEnforcedEntityAttribsMask
+                if not (implOnEnforced |> Flags.isSubsetOf sigOnEnforced) then
+                    let missing = implOnEnforced |> Flags.except sigOnEnforced
                     for flag in signatureEnforcedEntityAttribs do
-                        if missing &&& LanguagePrimitives.EnumToValue flag <> 0uL then
+                        if flag |> Flags.intersects missing then
                             warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implEntity.DisplayName), m))
 
         let rec checkTypars m (aenv: TypeEquivEnv) (implTypars: Typars) (sigTypars: Typars) = 
@@ -451,18 +443,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let err denv f = errorR(mk_err RegularMismatch denv f); false
             let m = implVal.Range
 
-            // Enforce consumer-visible compiler-semantic attributes; truly O(1)
-            // happy path. The per-attribute loop runs only when at least one
-            // enforced bit is on the impl AND missing from the sig.
+            // Same set-op shape as `checkEnforcedEntityAttribs`, applied to Val.
             if ValHasWellKnownAttribute g signatureEnforcedValAttribsMask implVal then
                 ValHasWellKnownAttribute g signatureEnforcedValAttribsMask sigVal |> ignore
-                let mask = LanguagePrimitives.EnumToValue signatureEnforcedValAttribsMask
-                let impl = LanguagePrimitives.EnumToValue implVal.ValAttribs.Flags &&& mask
-                let sig' = LanguagePrimitives.EnumToValue sigVal.ValAttribs.Flags  &&& mask
-                let missing = impl &&& ~~~sig'
-                if missing <> 0uL then
+                let implOnEnforced = implVal.ValAttribs.Flags |> Flags.intersect signatureEnforcedValAttribsMask
+                let sigOnEnforced  = sigVal.ValAttribs.Flags  |> Flags.intersect signatureEnforcedValAttribsMask
+                if not (implOnEnforced |> Flags.isSubsetOf sigOnEnforced) then
+                    let missing = implOnEnforced |> Flags.except sigOnEnforced
                     for flag in signatureEnforcedValAttribs do
-                        if missing &&& LanguagePrimitives.EnumToValue flag <> 0uL then
+                        if flag |> Flags.intersects missing then
                             warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implVal.DisplayName), m))
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)

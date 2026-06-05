@@ -116,6 +116,27 @@ type internal WellKnownValAttributes =
     | TailCallAttribute = (1uL <<< 40)
     | NotComputed = (1uL <<< 63)
 
+/// Plain set operations on `'F when 'F :> System.Enum` flag values backed by uint64.
+module internal Flags =
+    /// True iff no bits are set.
+    val inline isEmpty<'F when 'F: enum<uint64>> : flags: 'F -> bool
+
+    /// `a` ∪ `b`.
+    val inline union<'F when 'F: enum<uint64>> : a: 'F -> b: 'F -> 'F
+
+    /// `a` ∩ `b`. Pipe-friendly: `flags |> Flags.intersect scope`.
+    val inline intersect<'F when 'F: enum<uint64>> : other: 'F -> flags: 'F -> 'F
+
+    /// `a` \ `b`. Pipe-friendly: `a |> Flags.except b` = bits in `a` not in `b`.
+    val inline except<'F when 'F: enum<uint64>> : b: 'F -> a: 'F -> 'F
+
+    /// True iff `a` ∩ `b` ≠ ∅. Pipe-friendly: `flags |> Flags.intersects mask`.
+    val inline intersects<'F when 'F: enum<uint64>> : other: 'F -> flags: 'F -> bool
+
+    /// True iff every bit set in `subset` is also set in `superset`.
+    /// Pipe-friendly: `subset |> Flags.isSubsetOf superset`.
+    val inline isSubsetOf<'F when 'F: enum<uint64>> : superset: 'F -> subset: 'F -> bool
+
 /// Generic wrapper for an item list together with cached well-known attribute flags.
 /// Used for O(1) lookup of well-known attributes on entities and vals.
 [<Struct; NoEquality; NoComparison>]
