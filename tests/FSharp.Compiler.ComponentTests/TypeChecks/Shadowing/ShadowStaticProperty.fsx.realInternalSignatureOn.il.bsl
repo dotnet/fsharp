@@ -109,21 +109,6 @@
     } 
   } 
 
-  .class abstract auto ansi sealed nested public Exts
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .method public static void  Foo.X.Static(int32 v) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       void assembly/Foo::set_X(int32)
-      IL_0006:  ret
-    } 
-
-  } 
-
   .class abstract auto ansi sealed nested public Exts2
          extends [runtime]System.Object
   {
@@ -137,6 +122,21 @@
       IL_0002:  mul
       IL_0003:  call       void assembly/Foo::set_X(int32)
       IL_0008:  ret
+    } 
+
+  } 
+
+  .class abstract auto ansi sealed nested public Exts
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+    .method public static void  Foo.X.Static(int32 v) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       void assembly/Foo::set_X(int32)
+      IL_0006:  ret
     } 
 
   } 
@@ -198,6 +198,7 @@
   } 
 
 } 
+
 
 
 

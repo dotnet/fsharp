@@ -42,20 +42,20 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable sealed nested public ByteEnum
-           extends [runtime]System.Enum
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-      .field public specialname rtspecialname uint8 value__
-      .field public static literal valuetype assembly/String/ByteEnum Byte = uint8(0x01)
-    } 
-
     .class auto ansi serializable sealed nested public CharEnum
            extends [runtime]System.Enum
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
       .field public specialname rtspecialname char value__
       .field public static literal valuetype assembly/String/CharEnum Char = char(0x0061)
+    } 
+
+    .class auto ansi serializable sealed nested public SByteEnum
+           extends [runtime]System.Enum
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+      .field public specialname rtspecialname int8 value__
+      .field public static literal valuetype assembly/String/SByteEnum SByte = int8(0x01)
     } 
 
     .class auto ansi serializable sealed nested public Int16Enum
@@ -82,12 +82,12 @@
       .field public static literal valuetype assembly/String/Int64Enum Int64 = int64(0x1)
     } 
 
-    .class auto ansi serializable sealed nested public SByteEnum
+    .class auto ansi serializable sealed nested public ByteEnum
            extends [runtime]System.Enum
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-      .field public specialname rtspecialname int8 value__
-      .field public static literal valuetype assembly/String/SByteEnum SByte = int8(0x01)
+      .field public specialname rtspecialname uint8 value__
+      .field public static literal valuetype assembly/String/ByteEnum Byte = uint8(0x01)
     } 
 
     .class auto ansi serializable sealed nested public UInt16Enum
@@ -535,6 +535,7 @@
   } 
 
 } 
+
 
 
 

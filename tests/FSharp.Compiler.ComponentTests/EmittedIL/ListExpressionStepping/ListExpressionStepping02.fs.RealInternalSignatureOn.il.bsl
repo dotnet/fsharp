@@ -84,6 +84,53 @@
 
     } 
 
+    .class auto ansi serializable sealed nested assembly beforefieldinit xs1@19<a>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<!a,int32>,class [runtime]System.Tuple`2<!a,int32>>
+    {
+      .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a> @_instance
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<!a,int32>,class [runtime]System.Tuple`2<!a,int32>>::.ctor()
+        IL_0006:  ret
+      } 
+
+      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
+      {
+        
+        .maxstack  7
+        .locals init (!a V_0,
+                 int32 V_1)
+        IL_0000:  ldarg.1
+        IL_0001:  call       instance !0 class [runtime]System.Tuple`2<!a,int32>::get_Item1()
+        IL_0006:  stloc.0
+        IL_0007:  ldarg.1
+        IL_0008:  call       instance !1 class [runtime]System.Tuple`2<!a,int32>::get_Item2()
+        IL_000d:  stloc.1
+        IL_000e:  ldloc.0
+        IL_000f:  ldloc.1
+        IL_0010:  ldc.i4.1
+        IL_0011:  add
+        IL_0012:  newobj     instance void class [runtime]System.Tuple`2<!a,int32>::.ctor(!0,
+                                                                                                 !1)
+        IL_0017:  ret
+      } 
+
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        
+        .maxstack  10
+        IL_0000:  newobj     instance void class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a>::.ctor()
+        IL_0005:  stsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a>::@_instance
+        IL_000a:  ret
+      } 
+
+    } 
+
     .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 stage #2 at line 24@24'<a>
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`3<!a,int32,int32>,class [runtime]System.Tuple`3<!a,int32,int32>>
     {
@@ -132,53 +179,6 @@
         .maxstack  10
         IL_0000:  newobj     instance void class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!a>::.ctor()
         IL_0005:  stsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!a>::@_instance
-        IL_000a:  ret
-      } 
-
-    } 
-
-    .class auto ansi serializable sealed nested assembly beforefieldinit xs1@19<a>
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<!a,int32>,class [runtime]System.Tuple`2<!a,int32>>
-    {
-      .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a> @_instance
-      .method assembly specialname rtspecialname instance void  .ctor() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<!a,int32>,class [runtime]System.Tuple`2<!a,int32>>::.ctor()
-        IL_0006:  ret
-      } 
-
-      .method public strict virtual instance class [runtime]System.Tuple`2<!a,int32> Invoke(class [runtime]System.Tuple`2<!a,int32> tupledArg) cil managed
-      {
-        
-        .maxstack  7
-        .locals init (!a V_0,
-                 int32 V_1)
-        IL_0000:  ldarg.1
-        IL_0001:  call       instance !0 class [runtime]System.Tuple`2<!a,int32>::get_Item1()
-        IL_0006:  stloc.0
-        IL_0007:  ldarg.1
-        IL_0008:  call       instance !1 class [runtime]System.Tuple`2<!a,int32>::get_Item2()
-        IL_000d:  stloc.1
-        IL_000e:  ldloc.0
-        IL_000f:  ldloc.1
-        IL_0010:  ldc.i4.1
-        IL_0011:  add
-        IL_0012:  newobj     instance void class [runtime]System.Tuple`2<!a,int32>::.ctor(!0,
-                                                                                                 !1)
-        IL_0017:  ret
-      } 
-
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a>::.ctor()
-        IL_0005:  stsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a>::@_instance
         IL_000a:  ret
       } 
 
@@ -496,6 +496,7 @@
   } 
 
 } 
+
 
 
 

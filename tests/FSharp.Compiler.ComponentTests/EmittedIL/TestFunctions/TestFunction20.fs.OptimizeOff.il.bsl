@@ -110,6 +110,41 @@
     } 
   } 
 
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@14-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2
+    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  ldarg.1
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/'assembly@14-1'::clo2
+      IL_000d:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class assembly/D arg20) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/'assembly@14-1'::clo2
+      IL_0006:  ldarg.1
+      IL_0007:  tail.
+      IL_0009:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+      IL_000e:  ret
+    } 
+
+  } 
+
   .class auto ansi serializable sealed nested assembly beforefieldinit assembly@14
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
@@ -144,41 +179,6 @@
       IL_000d:  ldloc.0
       IL_000e:  newobj     instance void assembly/'assembly@14-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_0013:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@14-1'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2
-    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/'assembly@14-1'::clo2
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class assembly/D arg20) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/'assembly@14-1'::clo2
-      IL_0006:  ldarg.1
-      IL_0007:  tail.
-      IL_0009:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-      IL_000e:  ret
     } 
 
   } 
@@ -229,6 +229,7 @@
   } 
 
 } 
+
 
 
 

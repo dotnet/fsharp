@@ -33,40 +33,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable nested public A
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .field assembly string x
-    .method public specialname rtspecialname instance void  .ctor(string x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  pop
-      IL_0008:  ldarg.0
-      IL_0009:  ldarg.1
-      IL_000a:  stfld      string ABC/A::x
-      IL_000f:  ret
-    } 
-
-    .method public hidebysig specialname instance string  get_X() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      string ABC/A::x
-      IL_0006:  ret
-    } 
-
-    .property instance string X()
-    {
-      .get instance string ABC/A::get_X()
-    } 
-  } 
-
   .class auto autochar serializable sealed nested public beforefieldinit Expr
          extends [runtime]System.Object
          implements class [runtime]System.IEquatable`1<class ABC/Expr>,
@@ -731,44 +697,44 @@
     } 
   } 
 
+  .class auto ansi serializable nested public A
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .field assembly string x
+    .method public specialname rtspecialname instance void  .ctor(string x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  pop
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  stfld      string ABC/A::x
+      IL_000f:  ret
+    } 
+
+    .method public hidebysig specialname instance string  get_X() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      string ABC/A::x
+      IL_0006:  ret
+    } 
+
+    .property instance string X()
+    {
+      .get instance string ABC/A::get_X()
+    } 
+  } 
+
   .class abstract auto ansi sealed nested public ABC
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable nested public A
-           extends [runtime]System.Object
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-      .field assembly string x
-      .method public specialname rtspecialname instance void  .ctor(string x) cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-        IL_0006:  ldarg.0
-        IL_0007:  pop
-        IL_0008:  ldarg.0
-        IL_0009:  ldarg.1
-        IL_000a:  stfld      string ABC/ABC/A::x
-        IL_000f:  ret
-      } 
-
-      .method public hidebysig specialname instance string  get_X() cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      string ABC/ABC/A::x
-        IL_0006:  ret
-      } 
-
-      .property instance string X()
-      {
-        .get instance string ABC/ABC/A::get_X()
-      } 
-    } 
-
     .class auto autochar serializable sealed nested public beforefieldinit Expr
            extends [runtime]System.Object
            implements class [runtime]System.IEquatable`1<class ABC/ABC/Expr>,
@@ -1430,6 +1396,40 @@
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                     int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 ) 
         .get instance int32 ABC/ABC/MyExn::get_Data0()
+      } 
+    } 
+
+    .class auto ansi serializable nested public A
+           extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+      .field assembly string x
+      .method public specialname rtspecialname instance void  .ctor(string x) cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+        IL_0006:  ldarg.0
+        IL_0007:  pop
+        IL_0008:  ldarg.0
+        IL_0009:  ldarg.1
+        IL_000a:  stfld      string ABC/ABC/A::x
+        IL_000f:  ret
+      } 
+
+      .method public hidebysig specialname instance string  get_X() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      string ABC/ABC/A::x
+        IL_0006:  ret
+      } 
+
+      .property instance string X()
+      {
+        .get instance string ABC/ABC/A::get_X()
       } 
     } 
 

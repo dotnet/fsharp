@@ -2003,7 +2003,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         Dictionary<_, _>(3, HashIdentity.Structural)
 
     let gevents = ResizeArray<ILEventDef>(tdef.Events.AsList())
-    let gnested = TypeDefsBuilder(stableSort = true)
+    let gnested = TypeDefsBuilder()
 
     member _.Close(g: TcGlobals) =
 
@@ -2081,64 +2081,21 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     member _.ILTypeDef = tdef
 
-and TypeDefsBuilder(?stableSort: bool) =
+and TypeDefsBuilder() =
 
-    let stableSort = defaultArg stableSort false
-
-    // Each entry is (addAtEndBucket, insertionIdx, (TypeDefBuilder, eliminateIfEmpty)).
-    // - addAtEndBucket: 0 for AddTypeDef(addAtEnd=false), 1 for AddTypeDef(addAtEnd=true).
-    //   This preserves the legacy contract that "append-at-end" types (PrivateImplementationDetails,
-    //   anonymous record types, raw-data value types) sort after all the "main" types.
-    // - insertionIdx: legacy counter value used as the primary sort key when stableSort=false
-    //   (preserves the original behavior, where addAtEnd entries sort by reverse insertion order
-    //   via countDown decrementing), and as a tiebreaker when stableSort=true and two entries
-    //   share the same bucket AND tdef.Name.
     let tdefs =
-        ConcurrentDictionary<string, list<struct (int * int * (TypeDefBuilder * bool))>>(HashIdentity.Structural)
+        ConcurrentDictionary<string, list<int * (TypeDefBuilder * bool)>>(HashIdentity.Structural)
 
     let mutable countDown = Int32.MaxValue
     let mutable countUp = -1
 
     member b.Close(g: TcGlobals) =
-        // When stableSort is enabled (for nested-type builders), sort by
-        // (addAtEndBucket, tdef.Name, insertionIdx) so the final ILTypeDef order is fully
-        // determined by the type's name regardless of when AddTypeDef happens to be called.
-        // The order in which AddTypeDef is called for nested types is observably non-deterministic
-        // under parallel codegen / typecheck pipelines: closure types added during a forced
-        // InterruptibleLazy method body (.cctor closures forced via mgbuf.AddExplicitInitToCctor
-        // during GenImplFile vs. .ctor closures forced later via the delayedFileGenReverse iter,
-        // anonymous-type factories under ConcurrentDictionary, MemoizationTable-backed value-type
-        // generators, etc.) race on the Interlocked counter that previously served as the sort key.
-        // Compiler-generated nested types embed their source position in their name (e.g.
-        // "-cctor@144", "MatchBraces@260") so the stable order remains a close approximation of
-        // source order.
-        //
-        // For the top-level (root) builder, stableSort is disabled and the legacy insertion-order
-        // sort is used. Top-level type defs are added sequentially during GenImplFile (per-file
-        // List.fold) so insertion order is already deterministic, and reordering top-level types
-        // alphabetically would drift many EmittedIL baselines whose expected text mirrors source
-        // declaration order.
-        //
-        // See https://github.com/dotnet/fsharp/issues/19732.
+        //The order we emit type definitions is not deterministic since it is using the reverse of a range from a hash table. We should use an approximation of source order.
+        // Ideally it shouldn't matter which order we use.
+        // However, for some tests FSI generated code appears sensitive to the order, especially for nested types.
+
         [
-            let sorted = tdefs.Values |> Seq.collect id |> Seq.toArray
-
-            let cmp =
-                if stableSort then
-                    fun (struct (b1, i1, (db1: TypeDefBuilder, _))) (struct (b2, i2, (db2: TypeDefBuilder, _))) ->
-                        let c = compare b1 b2
-
-                        if c <> 0 then
-                            c
-                        else
-                            let c = compare db1.ILTypeDef.Name db2.ILTypeDef.Name
-                            if c <> 0 then c else compare i1 i2
-                else
-                    fun (struct (_, i1, _)) (struct (_, i2, _)) -> compare i1 i2
-
-            Array.sortInPlaceWith cmp sorted
-
-            for struct (_, _, (b, eliminateIfEmpty)) in sorted do
+            for _, (b, eliminateIfEmpty) in tdefs.Values |> Seq.collect id |> Seq.sortBy fst do
                 let tdef = b.Close(g)
                 // Skip the <PrivateImplementationDetails$> type if it is empty
                 if
@@ -2154,8 +2111,7 @@ and TypeDefsBuilder(?stableSort: bool) =
 
     member b.FindTypeDefBuilder nm =
         try
-            let (struct (_, _, (db, _))) = tdefs[nm] |> List.head
-            db
+            tdefs[nm] |> List.head |> snd |> fst
         with :? KeyNotFoundException ->
             failwith ("FindTypeDefBuilder: " + nm + " not found")
 
@@ -2166,18 +2122,15 @@ and TypeDefsBuilder(?stableSort: bool) =
         b.FindNestedTypeDefsBuilder(tref.Enclosing).FindTypeDefBuilder(tref.Name)
 
     member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
-        let bucket = if addAtEnd then 1 else 0
-
         let idx =
             if addAtEnd then
                 Interlocked.Decrement(&countDown)
             else
                 Interlocked.Increment(&countUp)
 
-        let newVal =
-            struct (bucket, idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty))
+        let newVal = idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
 
-        tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun _key oldList -> newVal :: oldList))
+        tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun key oldList -> newVal :: oldList))
         |> ignore
 
 type AnonTypeGenerationTable() =

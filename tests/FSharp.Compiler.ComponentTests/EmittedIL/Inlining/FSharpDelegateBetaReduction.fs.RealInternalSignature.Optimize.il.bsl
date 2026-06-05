@@ -33,11 +33,11 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class abstract auto ansi sealed nested public DelegateImmediateInvoke1
+  .class abstract auto ansi sealed nested public DelegateImmediateInvoke4
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable sealed nested public Foo
+    .class auto ansi serializable sealed nested public Foo`1<T>
            extends [runtime]System.MulticastDelegate
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
@@ -45,13 +45,14 @@
       {
       } 
 
-      .method public hidebysig strict virtual instance void  Invoke() runtime managed
+      .method public hidebysig strict virtual instance void  Invoke(!T A_1) runtime managed
       {
       } 
 
       .method public hidebysig strict virtual 
               instance class [runtime]System.IAsyncResult 
-              BeginInvoke(class [runtime]System.AsyncCallback callback,
+              BeginInvoke(!T A_1,
+                          class [runtime]System.AsyncCallback callback,
                           object objects) runtime managed
       {
       } 
@@ -62,15 +63,41 @@
 
     } 
 
-    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname f@7
-           extends [runtime]System.Object
+    .method public static void  f() cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-      .method assembly static void  Invoke() cil managed
+      
+      .maxstack  8
+      IL_0000:  ret
+    } 
+
+  } 
+
+  .class abstract auto ansi sealed nested public DelegateImmediateInvoke3
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+    .class auto ansi serializable sealed nested public Foo`1<T>
+           extends [runtime]System.MulticastDelegate
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+      .method public hidebysig specialname rtspecialname instance void  .ctor(object 'object', native int 'method') runtime managed
       {
-        
-        .maxstack  8
-        IL_0000:  ret
+      } 
+
+      .method public hidebysig strict virtual instance void  Invoke(!T A_1) runtime managed
+      {
+      } 
+
+      .method public hidebysig strict virtual 
+              instance class [runtime]System.IAsyncResult 
+              BeginInvoke(!T A_1,
+                          class [runtime]System.AsyncCallback callback,
+                          object objects) runtime managed
+      {
+      } 
+
+      .method public hidebysig strict virtual instance void  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
+      {
       } 
 
     } 
@@ -79,13 +106,7 @@
     {
       
       .maxstack  8
-      IL_0000:  ldnull
-      IL_0001:  ldftn      void Program/DelegateImmediateInvoke1/f@7::Invoke()
-      IL_0007:  newobj     instance void Program/DelegateImmediateInvoke1/Foo::.ctor(object,
-                                                                                     native int)
-      IL_000c:  tail.
-      IL_000e:  callvirt   instance void Program/DelegateImmediateInvoke1/Foo::Invoke()
-      IL_0013:  ret
+      IL_0000:  ret
     } 
 
   } 
@@ -147,11 +168,11 @@
 
   } 
 
-  .class abstract auto ansi sealed nested public DelegateImmediateInvoke3
+  .class abstract auto ansi sealed nested public DelegateImmediateInvoke1
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable sealed nested public Foo`1<T>
+    .class auto ansi serializable sealed nested public Foo
            extends [runtime]System.MulticastDelegate
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
@@ -159,14 +180,13 @@
       {
       } 
 
-      .method public hidebysig strict virtual instance void  Invoke(!T A_1) runtime managed
+      .method public hidebysig strict virtual instance void  Invoke() runtime managed
       {
       } 
 
       .method public hidebysig strict virtual 
               instance class [runtime]System.IAsyncResult 
-              BeginInvoke(!T A_1,
-                          class [runtime]System.AsyncCallback callback,
+              BeginInvoke(class [runtime]System.AsyncCallback callback,
                           object objects) runtime managed
       {
       } 
@@ -177,41 +197,15 @@
 
     } 
 
-    .method public static void  f() cil managed
+    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname f@7
+           extends [runtime]System.Object
     {
-      
-      .maxstack  8
-      IL_0000:  ret
-    } 
-
-  } 
-
-  .class abstract auto ansi sealed nested public DelegateImmediateInvoke4
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable sealed nested public Foo`1<T>
-           extends [runtime]System.MulticastDelegate
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-      .method public hidebysig specialname rtspecialname instance void  .ctor(object 'object', native int 'method') runtime managed
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+      .method assembly static void  Invoke() cil managed
       {
-      } 
-
-      .method public hidebysig strict virtual instance void  Invoke(!T A_1) runtime managed
-      {
-      } 
-
-      .method public hidebysig strict virtual 
-              instance class [runtime]System.IAsyncResult 
-              BeginInvoke(!T A_1,
-                          class [runtime]System.AsyncCallback callback,
-                          object objects) runtime managed
-      {
-      } 
-
-      .method public hidebysig strict virtual instance void  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
-      {
+        
+        .maxstack  8
+        IL_0000:  ret
       } 
 
     } 
@@ -220,7 +214,13 @@
     {
       
       .maxstack  8
-      IL_0000:  ret
+      IL_0000:  ldnull
+      IL_0001:  ldftn      void Program/DelegateImmediateInvoke1/f@7::Invoke()
+      IL_0007:  newobj     instance void Program/DelegateImmediateInvoke1/Foo::.ctor(object,
+                                                                                     native int)
+      IL_000c:  tail.
+      IL_000e:  callvirt   instance void Program/DelegateImmediateInvoke1/Foo::Invoke()
+      IL_0013:  ret
     } 
 
   } 
@@ -239,6 +239,7 @@
   } 
 
 } 
+
 
 
 
