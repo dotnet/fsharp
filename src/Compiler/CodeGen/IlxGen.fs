@@ -2083,17 +2083,26 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
 and TypeDefsBuilder() =
 
+    // Sort key for an entry: (addAtEnd, fileIndex, startLine, startColumn, name, idx)
+    // - addAtEnd=false entries sort first, in source-position order (so user-declared nested
+    //   types preserve declaration order, and compiler-generated closures interleave at their
+    //   originating expression's source position regardless of when they were emitted).
+    // - addAtEnd=true entries (PrivateImplementationDetails, anonymous record types, raw-data
+    //   value types) sort last; we order them by name to canonicalize across runs since these
+    //   types have no meaningful user-source position. The auxiliary types are reached via
+    //   memoization tables whose first-writer wins under parallel codegen, so insertion idx is
+    //   not stable for them.
+    // - idx remains as a final tiebreaker for entries that share an identical (addAtEnd, range,
+    //   name) — currently impossible since name is unique per parent, but kept for safety.
     let tdefs =
-        ConcurrentDictionary<string, list<int * (TypeDefBuilder * bool)>>(HashIdentity.Structural)
+        ConcurrentDictionary<string, list<struct (bool * int * int * int * string * int) * (TypeDefBuilder * bool)>>(
+            HashIdentity.Structural
+        )
 
     let mutable countDown = Int32.MaxValue
     let mutable countUp = -1
 
     member b.Close(g: TcGlobals) =
-        //The order we emit type definitions is not deterministic since it is using the reverse of a range from a hash table. We should use an approximation of source order.
-        // Ideally it shouldn't matter which order we use.
-        // However, for some tests FSI generated code appears sensitive to the order, especially for nested types.
-
         [
             for _, (b, eliminateIfEmpty) in tdefs.Values |> Seq.collect id |> Seq.sortBy fst do
                 let tdef = b.Close(g)
@@ -2121,14 +2130,21 @@ and TypeDefsBuilder() =
     member b.FindNestedTypeDefBuilder(tref: ILTypeRef) =
         b.FindNestedTypeDefsBuilder(tref.Enclosing).FindTypeDefBuilder(tref.Name)
 
-    member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
+    member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards, m: range) =
         let idx =
             if addAtEnd then
                 Interlocked.Decrement(&countDown)
             else
                 Interlocked.Increment(&countUp)
 
-        let newVal = idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
+        let sortKey =
+            if addAtEnd then
+                // No meaningful source position — canonicalize by name across runs.
+                struct (true, 0, 0, 0, tdef.Name, idx)
+            else
+                struct (false, m.FileIndex, m.StartLine, m.StartColumn, tdef.Name, idx)
+
+        let newVal = sortKey, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
 
         tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun key oldList -> newVal :: oldList))
         |> ignore
@@ -2355,7 +2371,7 @@ type AnonTypeGenerationTable() =
 
             let ilTypeDef = ilTypeDef.WithSealed(true).WithSerializable(true)
 
-            mgbuf.AddTypeDef(ilTypeRef, ilTypeDef, false, true, None)
+            mgbuf.AddTypeDef(ilTypeRef, ilTypeDef, false, true, None, range0)
 
             let extraBindings =
                 [|
@@ -2428,7 +2444,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                 let vtdef =
                     vtdef.WithAccess(ComputeTypeAccess vtref true taccessInternal cenv.g.realsig)
 
-                mgbuf.AddTypeDef(vtref, vtdef, false, true, None)
+                mgbuf.AddTypeDef(vtref, vtdef, false, true, None, range0)
                 vtspec),
             keyComparer = HashIdentity.Structural
         )
@@ -2492,8 +2508,8 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
     member _.GrabExtraBindingsToGenerate() =
         anonTypeTable.GrabExtraBindingsToGenerate()
 
-    member _.AddTypeDef(tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
-        gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards)
+    member _.AddTypeDef(tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards, m: range) =
+        gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards, m)
 
     member _.FindNestedTypeDefBuilder(tref: ILTypeRef) = gtdefs.FindNestedTypeDefBuilder(tref)
 
@@ -6480,7 +6496,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             .WithEncoding(ILDefaultPInvokeEncoding.Auto)
             .WithInitSemantics(ILTypeInit.BeforeField)
 
-    cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
+    cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None, m)
 
     CountClosure()
 
@@ -6635,7 +6651,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
              Some cloinfo.cloSpec)
 
     for cloTypeDef in cloTypeDefs do
-        cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
+        cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None, m)
 
     CountClosure()
     GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloinfo.cloWitnessInfos
@@ -6833,7 +6849,7 @@ and GenSequenceExpr
              Some ilxCloSpec)
 
     for cloTypeDef in cloTypeDefs do
-        cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
+        cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None, m)
 
     CountClosure()
 
@@ -7063,7 +7079,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars e
         CountClosure()
 
         for cloTypeDef in cloTypeDefs do
-            cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
+            cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None, m)
 
         cloinfo, m
 
@@ -7462,7 +7478,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
              None)
 
     for cloTypeDef in cloTypeDefs do
-        cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None)
+        cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None, m)
 
     CountClosure()
 
@@ -10549,7 +10565,7 @@ and GenTypeDefForCompLoc
              initTrigger)
 
     let tdef = tdef.WithSealed(true).WithAbstract(true)
-    mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None)
+    mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None, cloc.Range)
 
 and GenImplFileContents cenv cgbuf qname lazyInitInfo eenv mty def =
     // REVIEW: the scopeMarks are used for any shadow locals we create for the module bindings
@@ -12161,7 +12177,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let tdef = tdef.WithHasSecurity(not (List.isEmpty securityAttrs))
             let tdef = tdef.With(securityDecls = secDecls)
-            mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards)
+            mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards, m)
 
             // If a non-generic type is written with "static let" and "static do" (i.e. it has a ".cctor")
             // then the code for the .cctor is placed into .cctor for the backing static class for the file.
@@ -12449,7 +12465,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
             )
 
         let tdef = tdef.WithSerializable(true)
-        mgbuf.AddTypeDef(tref, tdef, false, false, None)
+        mgbuf.AddTypeDef(tref, tdef, false, false, None, m)
         Some tref
 
 /// Visit every top-level Val that Val.CompiledName routes through StableNiceNameGenerator, in
