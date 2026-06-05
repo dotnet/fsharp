@@ -32,7 +32,7 @@
       "cats": []
     },
     "19880": {
-      "sha": "308ea9bdb2d5fe19348e8935978a9b4d6e6d3ad8",
+      "sha": "c76c1813b867819ba07b2c3efa1f42c44de5d534",
       "cats": []
     },
     "19879": {
@@ -92,8 +92,9 @@
       "cats": []
     },
     "19820": {
-      "sha": "9079cd44348b78d67ebe1ae8846fee9a3f2adac9",
+      "sha": "734fd98ddd671f0039fa95fd98840f2b7ccfa740",
       "cats": [
+        "Affects-Bootstrap",
         "Affects-Compiler-Output"
       ]
     },
@@ -170,7 +171,7 @@
       "cats": []
     },
     "19897": {
-      "sha": "e1a3f86ce87d77c9ebf4099bdd4b776384d6249b",
+      "sha": "23d894679dd1bbaecfdff729ff35c9d9476fbfa4",
       "cats": [
         "Affects-Bootstrap",
         "Affects-Compiler-Output"
