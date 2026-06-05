@@ -373,3 +373,59 @@ let inline f (x: int) = x + 1
     codeFix.RegisterCodeFixesAsync(ctx).Wait()
     let action = captured |> Option.defaultWith (fun () -> failwith "expected a code-fix to be registered")
     Assert.Equal("Add [<NoDynamicInvocationAttribute>] to signature", action.Title)
+
+// -------------------------------------------------------------------------
+// Canonicalization: attributes whose .fs form needs an `open` get qualified
+// so the inserted .fsi compiles without extra opens
+// -------------------------------------------------------------------------
+
+[<Fact>]
+let ``Conditional in .fs gets qualified as System.Diagnostics.Conditional in .fsi`` () =
+    let fsiCode = """
+module M
+type T =
+    new: unit -> T
+    member F: x: int -> unit
+"""
+    // .fs has `open System.Diagnostics`; .fsi does NOT - the inserted
+    // attribute must qualify, otherwise the .fsi fails to compile.
+    let fsCode = """
+module M
+open System.Diagnostics
+type T() =
+    [<Conditional("DEBUG")>]
+    member _.F(x: int) = ()
+"""
+    let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
+    Assert.Contains("[<System.Diagnostics.Conditional(\"DEBUG\")>]", fsi)
+    // The bare Conditional form should NOT be present.
+    Assert.DoesNotContain("[<Conditional(\"DEBUG\")>]", fsi)
+
+[<Fact>]
+let ``EditorBrowsable in .fs gets qualified as System.ComponentModel.EditorBrowsable in .fsi`` () =
+    let fsiCode = """
+module M
+type T = class end
+"""
+    let fsCode = """
+module M
+open System.ComponentModel
+[<EditorBrowsable(EditorBrowsableState.Never)>]
+type T() = class end
+"""
+    let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
+    Assert.Contains("[<System.ComponentModel.EditorBrowsable(", fsi)
+
+[<Fact>]
+let ``Already-qualified attribute name is left alone (no double-qualify)`` () =
+    let fsiCode = """
+module M
+val inline f: x: int -> int
+"""
+    let fsCode = """
+module M
+[<Microsoft.FSharp.Core.NoDynamicInvocationAttribute>]
+let inline f (x: int) = x + 1
+"""
+    let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
+    Assert.Contains("[<Microsoft.FSharp.Core.NoDynamicInvocationAttribute>]", fsi)
