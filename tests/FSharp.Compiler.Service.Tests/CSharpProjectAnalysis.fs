@@ -33,7 +33,7 @@ let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlag
                for libDir in libDirs do
                  yield "-I:"+libDir
                yield! otherFlags |]) with SourceFiles = [| fileName1 |] }
-    let results = checker.ParseAndCheckProject(options) |> Async.RunImmediate
+    let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
     if results.HasCriticalErrors then
         let builder = System.Text.StringBuilder()
         for err in results.Diagnostics do

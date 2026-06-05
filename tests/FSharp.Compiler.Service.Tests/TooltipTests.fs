@@ -31,7 +31,7 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource (expectedCon
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     match checkResult with
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
@@ -272,8 +272,8 @@ let testToolTipSquashing source =
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
-        |> Async.RunImmediate
-        
+        |> Async.RunSynchronouslyImmediate
+
     match checkResult with
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
         // Get the tooltip for `bar`
