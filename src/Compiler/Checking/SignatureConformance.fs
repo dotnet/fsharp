@@ -42,186 +42,99 @@ exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
-/// The set of well-known Val-level attributes whose presence on an implementation
-/// must be observed by consumers of the corresponding signature. When such an
-/// attribute appears in the .fs but not in the .fsi, F# tooling that skips the
-/// implementation when a signature is present cannot see it, and the contract a
-/// consumer typechecks against silently diverges from the contract the runtime
-/// actually exposes.
-///
-/// Each row is `(flag, displayName)`. `flag` may be a bitwise OR of related bits
-/// when an attribute has multiple representations on the flags enum (e.g.
-/// `NoDynamicInvocationAttribute_True ||| NoDynamicInvocationAttribute_False`
-/// for three-state booleans); the display name then refers to the attribute as
-/// a whole. Adding a new row here is the ONE PLACE required to extend
-/// enforcement; the all-up mask below is derived from it.
-///
-/// Each row must be justified by a concrete consumer-side compile/typecheck
-/// code-path that reads the attribute off the .fsi-derived Val.
-let private signatureEnforcedValAttribs : (WellKnownValAttributes * string) list =
+/// Small DSL used to declare the signature-enforcement policy below: one row per
+/// attribute, one line per row. Each row is `(flag-or-mask, displayName, phase)`;
+/// `phase` documents which consumer compile-stage actually reads the attribute
+/// so reviewers can argue per-row. The phase value is stripped at list-build time
+/// (it is documentation only) and the row reduces to the underlying `(flag, name)`
+/// pair used by the O(1) enforcement loop.
+[<RequireQualifiedAccess>]
+type private EnforcedPhase =
+    /// Read during consumer typecheck: CheckExpressions / CheckDeclarations /
+    /// NameResolution / ConstraintSolver / AttributeChecking / MethodCalls / infos.
+    | TypeCheck
+    /// Read during consumer codegen: Optimizer and/or IlxGen.
+    | CodeGen
+    /// Read during both typecheck and codegen / optimizer.
+    | TypeCheckAndCodeGen
+    /// Not read directly; consumer observes the synthesized result (e.g. presence
+    /// or absence of helper members generated from the attribute).
+    | Indirect
+
+[<AutoOpen>]
+module private SignatureEnforcement =
+    /// Short local aliases used by the per-row policy below; full names are
+    /// `WellKnownValAttributes` / `WellKnownEntityAttributes`.
+    type V = WellKnownValAttributes
+    type E = WellKnownEntityAttributes
+
+    /// Single-bit Val attribute.
+    let inline valOne (flag: V) name (_phase: EnforcedPhase) = flag, name
+    /// Three-state Val attribute (`_True ||| _False`).
+    let inline valPair (t: V) (f: V) name (_phase: EnforcedPhase) = t ||| f, name
+    /// Single-bit Entity attribute.
+    let inline entOne (flag: E) name (_phase: EnforcedPhase) = flag, name
+    /// Three-state Entity attribute (`_True ||| _False`).
+    let inline entPair (t: E) (f: E) name (_phase: EnforcedPhase) = t ||| f, name
+
+    let inline private foldMask zero rows =
+        (zero, rows)
+        ||> List.fold (fun acc (flag, _) ->
+            LanguagePrimitives.EnumOfValue
+                (LanguagePrimitives.EnumToValue acc ||| LanguagePrimitives.EnumToValue flag))
+
+    /// Compute the O(1) all-up mask for a Val-level enforcement policy.
+    let valMask (rows: (V * string) list) : V =
+        foldMask V.None rows
+
+    /// Compute the O(1) all-up mask for an Entity-level enforcement policy.
+    let entMask (rows: (E * string) list) : E =
+        foldMask E.None rows
+
+/// Signature-enforcement policy for Val-level attributes (one row = one rule).
+/// Reviewers: add / remove / re-classify a line here to change enforcement.
+/// Each row must be justified by a consumer-side compile-stage code-path that
+/// reads the attribute off the .fsi-derived Val.
+let private signatureEnforcedValAttribs : (V * string) list =
     [
-      // Three-state bool. Compiler substitutes a no-op/throw body for callers when
-      // the attribute is on; missing on .fsi makes the consumer see the real body.
-      // CodeGen/IlxGen.fs (NoDynamicInvocation lowering).
-      WellKnownValAttributes.NoDynamicInvocationAttribute_True
-      ||| WellKnownValAttributes.NoDynamicInvocationAttribute_False,
-      "NoDynamicInvocation"
-
-      // Consumer call sites without explicit type arguments are rejected with
-      // tcFunctionRequiresExplicitTypeArguments / FS0685.
-      // Checking/Expressions/CheckExpressions.fs and Checking/AttributeChecking.fs.
-      WellKnownValAttributes.RequiresExplicitTypeArgumentsAttribute,
-      "RequiresExplicitTypeArguments"
-
-      // BuildPossiblyConditionalMethodCall erases consumer calls whose Conditional
-      // symbol is not defined; missing on .fsi changes consumer codegen entirely.
-      // Checking/Expressions/CheckExpressions.fs (BuildPossiblyConditionalMethodCall).
-      WellKnownValAttributes.ConditionalAttribute,
-      "Conditional"
-
-      // Disables eager constraint application in overload resolution and lambda
-      // propagation at the consumer call site (Tasks/RFC FS-1087); missing on
-      // .fsi silently changes overload-resolution behaviour for callers.
-      // Checking/MethodCalls.fs, Checking/Expressions/CheckExpressions.fs.
-      WellKnownValAttributes.NoEagerConstraintApplicationAttribute,
-      "NoEagerConstraintApplication"
-
-      // IsGeneralizableValue gates whether `let v = SomeMod.foo<_>` may generalize
-      // in the consumer; missing on .fsi loses the consumer's ability to do so.
-      // Checking/Expressions/CheckExpressions.fs (IsGeneralizableValue).
-      WellKnownValAttributes.GeneralizableValueAttribute,
-      "GeneralizableValue"
-
-      // Drives a consumer-side warning when a nullable value flows into a parameter
-      // that the author marked as non-nullable; missing on .fsi loses the call-site
-      // diagnostic. Checking/Expressions/CheckExpressions.fs.
-      WellKnownValAttributes.WarnOnWithoutNullArgumentAttribute,
-      "WarnOnWithoutNullArgument"
-
-      // Determines IsFSharpEventProperty: consumer name-resolution treats the
-      // member as a .NET event and accepts `+=`/`-=`. Missing on .fsi causes the
-      // consumer to reject the event operators on the member.
-      // Checking/infos.fs (IsFSharpEventProperty), Checking/NameResolution.fs.
-      WellKnownValAttributes.CLIEventAttribute,
-      "CLIEvent"
+        valPair V.NoDynamicInvocationAttribute_True V.NoDynamicInvocationAttribute_False  "NoDynamicInvocation"           EnforcedPhase.CodeGen   // IlxGen substitutes a stub body for callers
+        valOne  V.RequiresExplicitTypeArgumentsAttribute                                  "RequiresExplicitTypeArguments" EnforcedPhase.TypeCheck // CheckExpressions: rejects callers without explicit type args
+        valOne  V.ConditionalAttribute                                                    "Conditional"                   EnforcedPhase.TypeCheck // CheckExpressions: BuildPossiblyConditionalMethodCall erases the call
+        valOne  V.NoEagerConstraintApplicationAttribute                                   "NoEagerConstraintApplication"  EnforcedPhase.TypeCheck // MethodCalls / CheckExpressions: SRTP / overload resolution
+        valOne  V.GeneralizableValueAttribute                                             "GeneralizableValue"            EnforcedPhase.TypeCheck // CheckExpressions: IsGeneralizableValue, lets consumer `let` generalize
+        valOne  V.WarnOnWithoutNullArgumentAttribute                                      "WarnOnWithoutNullArgument"     EnforcedPhase.TypeCheck // CheckExpressions: nullness warning at the consumer call site
+        valOne  V.CLIEventAttribute                                                       "CLIEvent"                      EnforcedPhase.TypeCheck // NameResolution: consumer can use += / -= as event subscription
     ]
 
-/// Bitwise OR of every flag in `signatureEnforcedValAttribs`. Used as a single
-/// O(1) early-exit on the happy path: when an implementation Val has none of
-/// the enforced bits set there is nothing to report and the per-row scan and
-/// per-row signature lookups are skipped entirely.
-let private signatureEnforcedValAttribsMask : WellKnownValAttributes =
-    (WellKnownValAttributes.None, signatureEnforcedValAttribs)
-    ||> List.fold (fun acc (flag, _) ->
-        LanguagePrimitives.EnumOfValue
-            (LanguagePrimitives.EnumToValue acc ||| LanguagePrimitives.EnumToValue flag))
+/// O(1) early-exit mask for `signatureEnforcedValAttribs`.
+let private signatureEnforcedValAttribsMask : V =
+    valMask signatureEnforcedValAttribs
 
-/// The set of well-known Entity-level attributes whose presence on an
-/// implementation type/module must be observed by consumers of the
-/// corresponding signature. Same shape and rationale as
-/// `signatureEnforcedValAttribs` above, but applied to entity declarations.
-///
-/// Each row must be justified by a concrete consumer-side compile/typecheck
-/// code-path that reads the attribute off the .fsi-derived Entity.
-let private signatureEnforcedEntityAttribs : (WellKnownEntityAttributes * string) list =
+/// Signature-enforcement policy for Entity-level attributes (one row = one rule).
+/// Reviewers: add / remove / re-classify a line here to change enforcement.
+let private signatureEnforcedEntityAttribs : (E * string) list =
     [
-      // Changes consumer name resolution: union cases / record fields / module
-      // members must be qualified. Checking/NameResolution.fs gates on this.
-      WellKnownEntityAttributes.RequireQualifiedAccessAttribute,
-      "RequireQualifiedAccess"
-
-      // Auto-opens the entity into the consumer's scope whenever its parent is
-      // opened. Missing on .fsi means consumer code does not see the names.
-      // Checking/NameResolution.fs (CanAutoOpenTyconRef).
-      WellKnownEntityAttributes.AutoOpenAttribute,
-      "AutoOpen"
-
-      // Consumer comparison constraint solver fails for the type when set.
-      // Checking/ConstraintSolver.fs.
-      WellKnownEntityAttributes.NoComparisonAttribute,
-      "NoComparison"
-
-      // Consumer equality constraint solver fails for the type when set.
-      // Checking/ConstraintSolver.fs, Checking/AugmentWithHashCompare.fs.
-      WellKnownEntityAttributes.NoEqualityAttribute,
-      "NoEquality"
-
-      // Consumer's `new()` constraint and object-expression instantiation reject
-      // abstract types. Checking/ConstraintSolver.fs, Checking/Expressions/CheckExpressions.fs.
-      WellKnownEntityAttributes.AbstractClassAttribute,
-      "AbstractClass"
-
-      // Three-state. Consumer downcast / `:?` test / static-class checks rely on
-      // sealedness; explicit `false` is a semantic override of the default.
-      // TypedTreeOps.Attributes.fs (isSealedTy / SealedAttribute decoder).
-      WellKnownEntityAttributes.SealedAttribute_True
-      ||| WellKnownEntityAttributes.SealedAttribute_False,
-      "Sealed"
-
-      // Consumer's `new()` constraint accepts records only when CLIMutable is
-      // present. Checking/ConstraintSolver.fs, Optimize/Optimizer.fs.
-      WellKnownEntityAttributes.CLIMutableAttribute,
-      "CLIMutable"
-
-      // Three-state. Consumer nullness analysis admits / rejects `null` based on
-      // this; explicit `false` is a semantic override.
-      // TypedTreeOps.Attributes.fs (TyconRefAllowsNull), ConstraintSolver.fs.
-      WellKnownEntityAttributes.AllowNullLiteralAttribute_True
-      ||| WellKnownEntityAttributes.AllowNullLiteralAttribute_False,
-      "AllowNullLiteral"
-
-      // Three-state. Controls whether union helper properties / `Is*` / `Tag` are
-      // emitted and visible to consumers. Checking/PostInferenceChecks.fs.
-      WellKnownEntityAttributes.DefaultAugmentationAttribute_True
-      ||| WellKnownEntityAttributes.DefaultAugmentationAttribute_False,
-      "DefaultAugmentation"
-
-      // Consumer use-site emits an obsolete warning / error.
-      // Checking/AttributeChecking.fs (CheckFSharpAttributes).
-      WellKnownEntityAttributes.ObsoleteAttribute,
-      "Obsolete"
-
-      // Consumer use-site emits a user message / hidden / error.
-      // Checking/AttributeChecking.fs.
-      WellKnownEntityAttributes.CompilerMessageAttribute,
-      "CompilerMessage"
-
-      // Consumer use-site emits an Experimental warning.
-      // Checking/AttributeChecking.fs.
-      WellKnownEntityAttributes.ExperimentalAttribute,
-      "Experimental"
-
-      // Consumer use-site emits a PossibleUnverifiableCode warning.
-      // Checking/AttributeChecking.fs.
-      WellKnownEntityAttributes.UnverifiableAttribute,
-      "Unverifiable"
-
-      // IDE / name-resolution unseen-filtering hides items marked Never.
-      // Checking/AttributeChecking.fs (CheckFSharpAttributesForHidden / ForUnseen).
-      WellKnownEntityAttributes.EditorBrowsableAttribute,
-      "EditorBrowsable"
-
-      // Consumer code applying `[<MyAttr>]` validates target / AllowMultiple /
-      // Inherited against the attribute type's AttributeUsage decoration.
-      // Checking/Expressions/CheckExpressions.fs (CheckAttributeUsage).
-      WellKnownEntityAttributes.AttributeUsageAttribute,
-      "AttributeUsage"
-
-      // Consumer codegen decision: `MemberIsCompiledAsInstance` and union-case
-      // null-as-true-value erasure depend on this. Missing on .fsi causes the
-      // consumer to emit wrong IL / mismatched static vs instance dispatch.
-      // TypedTreeOps.Attributes.fs.
-      WellKnownEntityAttributes.CompilationRepresentation_PermitNull,
-      "CompilationRepresentation(UseNullAsTrueValue)"
+        entOne  E.RequireQualifiedAccessAttribute                                         "RequireQualifiedAccess"                          EnforcedPhase.TypeCheck          // NameResolution: forces qualified access
+        entOne  E.AutoOpenAttribute                                                       "AutoOpen"                                        EnforcedPhase.TypeCheck          // NameResolution: auto-opens contents into consumer scope
+        entOne  E.NoComparisonAttribute                                                   "NoComparison"                                    EnforcedPhase.TypeCheck          // ConstraintSolver: rejects `comparison` constraint
+        entOne  E.NoEqualityAttribute                                                     "NoEquality"                                      EnforcedPhase.TypeCheck          // ConstraintSolver / AugmentWithHashCompare: rejects `equality` constraint
+        entOne  E.AbstractClassAttribute                                                  "AbstractClass"                                   EnforcedPhase.TypeCheck          // ConstraintSolver: rejects `new()` / object expression
+        entPair E.SealedAttribute_True E.SealedAttribute_False                            "Sealed"                                          EnforcedPhase.TypeCheck          // isSealedTy: gates consumer downcast / inherit
+        entOne  E.CLIMutableAttribute                                                     "CLIMutable"                                      EnforcedPhase.TypeCheckAndCodeGen // ConstraintSolver `new()` on record + Optimizer lowering
+        entPair E.AllowNullLiteralAttribute_True E.AllowNullLiteralAttribute_False        "AllowNullLiteral"                                EnforcedPhase.TypeCheck          // ConstraintSolver / nullness: admits / rejects `null`
+        entPair E.DefaultAugmentationAttribute_True E.DefaultAugmentationAttribute_False  "DefaultAugmentation"                             EnforcedPhase.Indirect           // Drives whether `Is*` / `Tag` helpers exist; consumer observes their presence
+        entOne  E.ObsoleteAttribute                                                       "Obsolete"                                        EnforcedPhase.TypeCheck          // AttributeChecking: use-site warning / error / IDE strike-through
+        entOne  E.CompilerMessageAttribute                                                "CompilerMessage"                                 EnforcedPhase.TypeCheck          // AttributeChecking: use-site message + IsHidden filters IntelliSense
+        entOne  E.ExperimentalAttribute                                                   "Experimental"                                    EnforcedPhase.TypeCheck          // AttributeChecking: use-site Experimental warning
+        entOne  E.UnverifiableAttribute                                                   "Unverifiable"                                    EnforcedPhase.TypeCheck          // AttributeChecking: use-site PossibleUnverifiableCode warning
+        entOne  E.EditorBrowsableAttribute                                                "EditorBrowsable"                                 EnforcedPhase.TypeCheck          // NameResolution unseen-filter: hides items marked Never (IDE)
+        entOne  E.AttributeUsageAttribute                                                 "AttributeUsage"                                  EnforcedPhase.TypeCheck          // CheckExpressions CheckAttributeUsage: validates target / AllowMultiple
+        entOne  E.CompilationRepresentation_PermitNull                                    "CompilationRepresentation(UseNullAsTrueValue)"   EnforcedPhase.CodeGen            // IlxGen MemberIsCompiledAsInstance + null-erased union codegen
     ]
 
-/// O(1) early-exit mask for `signatureEnforcedEntityAttribs`. See
-/// `signatureEnforcedValAttribsMask`.
-let private signatureEnforcedEntityAttribsMask : WellKnownEntityAttributes =
-    (WellKnownEntityAttributes.None, signatureEnforcedEntityAttribs)
-    ||> List.fold (fun acc (flag, _) ->
-        LanguagePrimitives.EnumOfValue
-            (LanguagePrimitives.EnumToValue acc ||| LanguagePrimitives.EnumToValue flag))
+/// O(1) early-exit mask for `signatureEnforcedEntityAttribs`.
+let private signatureEnforcedEntityAttribsMask : E =
+    entMask signatureEnforcedEntityAttribs
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
