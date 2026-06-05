@@ -11,8 +11,6 @@ open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
-
 open CancellableTasks
 
 /// Code-fix for FS3888 (attribute present in the .fs implementation but
@@ -24,25 +22,39 @@ open CancellableTasks
 type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    static let br = Environment.NewLine
-
     /// Look up the .fsi document in the solution by file path; the path comes
     /// from the F# symbol's `SignatureLocation` which is an absolute file name.
+    /// On Windows file paths are case-insensitive; elsewhere they are case-sensitive.
     let tryFindSigDocument (solution: Solution) (sigFilePath: string) =
+        let pathComparison =
+            if Environment.OSVersion.Platform = PlatformID.Win32NT then
+                StringComparison.OrdinalIgnoreCase
+            else
+                StringComparison.Ordinal
         solution.Projects
         |> Seq.collect (fun p -> p.Documents)
         |> Seq.tryFind (fun d ->
             not (isNull d.FilePath)
-            && String.Equals(d.FilePath, sigFilePath, StringComparison.OrdinalIgnoreCase))
+            && String.Equals(d.FilePath, sigFilePath, pathComparison))
 
-    /// Indentation = leading whitespace of the target line in the .fsi, so the
-    /// inserted attribute lines up with the declaration it attaches to.
+    /// Leading whitespace of the .fsi sig line, so the inserted attribute lines
+    /// up with the declaration it attaches to.
     let indentOfLine (sigSourceText: SourceText) (lineStart: int) =
         let line = sigSourceText.Lines.GetLineFromPosition(lineStart).ToString()
         let mutable i = 0
         while i < line.Length && (line.[i] = ' ' || line.[i] = '\t') do
             i <- i + 1
         line.Substring(0, i)
+
+    /// Line break that matches the .fsi file's existing convention - avoids
+    /// inserting CRLF into an LF-only file (or vice versa).
+    let lineBreakAt (sigSourceText: SourceText) (lineStart: int) =
+        let line = sigSourceText.Lines.GetLineFromPosition(lineStart)
+        let lbLen = line.EndIncludingLineBreak - line.End
+        if lbLen > 0 then
+            sigSourceText.ToString(TextSpan(line.End, lbLen))
+        else
+            Environment.NewLine
 
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS3888"
 
@@ -51,29 +63,36 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
-            // The diagnostic range covers ONE attribute (e.g. `NoDynamicInvocation(false)`)
-            // without surrounding `[< >]` brackets and without sibling attributes in
-            // a `[<A; B>]` list - see SynAttribute.Range in SyntaxTree.fsi.
+            // SynAttribute.Range covers ONE attribute body (e.g.
+            // `NoDynamicInvocation(false)`) WITHOUT the surrounding `[< >]`
+            // brackets and WITHOUT sibling attributes in a `[<A; B>]` list,
+            // so wrap before inserting.
             let attribSpan = context.Span
             let attribText = sourceText.GetSubText(attribSpan).ToString()
             let bracketed = $"[<{attribText}>]"
 
-            // The symbol the attribute is attached to sits at the next
-            // non-whitespace position after the attribute's closing `>]`.
-            // Skip past `>]` and any whitespace to reach the val/type/member ident.
-            let mutable pos = attribSpan.End
-            while pos < sourceText.Length
-                  && (Char.IsWhiteSpace(sourceText.[pos]) || sourceText.[pos] = '>' || sourceText.[pos] = ']' || sourceText.[pos] = ';') do
-                pos <- pos + 1
+            // Find the declaration symbol the attribute is attached to.
+            // Position-based lookup is unreliable: skipping `>]`/`;`/whitespace
+            // lands on `let`/`type`/`module` (keywords, no symbol use) or, in
+            // multi-attribute cases like `[<A; B>]` / `[<A>]\n[<B>]`, on a
+            // sibling attribute. Enumerate all symbol uses in the file and pick
+            // the first definition whose range starts AFTER the diagnostic
+            // attribute and which has a `SignatureLocation`.
+            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync "AddMissingAttributeToSignature"
+            let diagFsRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, attribSpan, sourceText)
 
-            let! symbolUseOpt = getSymbolUsesOfSymbolAtLocationInDocument (document, pos)
+            let symbolUse =
+                checkResults.GetAllUsesOfAllSymbolsInFile()
+                |> Seq.filter (fun (u: FSharp.Compiler.Symbols.FSharpSymbolUse) ->
+                    u.IsFromDefinition
+                    && u.Symbol.SignatureLocation.IsSome
+                    && (u.Range.StartLine > diagFsRange.EndLine
+                        || (u.Range.StartLine = diagFsRange.EndLine
+                            && u.Range.StartColumn >= diagFsRange.EndColumn)))
+                |> Seq.sortBy (fun u -> u.Range.StartLine, u.Range.StartColumn)
+                |> Seq.tryHead
 
-            let sigLocation =
-                symbolUseOpt
-                |> Option.bind (fun uses -> uses |> Array.tryHead)
-                |> Option.bind (fun u -> u.Symbol.SignatureLocation)
-
-            match sigLocation with
+            match symbolUse |> Option.bind (fun u -> u.Symbol.SignatureLocation) with
             | Some sigRange ->
                 match tryFindSigDocument document.Project.Solution sigRange.FileName with
                 | Some sigDoc ->
@@ -81,7 +100,8 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                     let sigSpan = RoslynHelpers.FSharpRangeToTextSpan(sigSourceText, sigRange)
                     let sigLineStart = sigSourceText.Lines.GetLineFromPosition(sigSpan.Start).Start
                     let indent = indentOfLine sigSourceText sigLineStart
-                    let insertion = $"{indent}{bracketed}{br}"
+                    let lineBreak = lineBreakAt sigSourceText sigLineStart
+                    let insertion = $"{indent}{bracketed}{lineBreak}"
 
                     let action =
                         CodeAction.Create(
@@ -93,7 +113,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                                     return sigDoc.WithText(updated).Project.Solution
                                 }
                                 |> CancellableTask.start cancellationToken),
-                            equivalenceKey = $"{CodeFix.AddMissingAttributeToSignature}:{bracketed}"
+                            equivalenceKey = $"{CodeFix.AddMissingAttributeToSignature}:{bracketed}:{sigRange.FileName}:{sigRange.StartLine}"
                         )
 
                     context.RegisterCodeFix(action, context.Diagnostics)
