@@ -51,14 +51,19 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
-            // The diagnostic span is the attribute text in the .fs.
+            // The diagnostic range covers ONE attribute (e.g. `NoDynamicInvocation(false)`)
+            // without surrounding `[< >]` brackets and without sibling attributes in
+            // a `[<A; B>]` list - see SynAttribute.Range in SyntaxTree.fsi.
             let attribSpan = context.Span
             let attribText = sourceText.GetSubText(attribSpan).ToString()
+            let bracketed = $"[<{attribText}>]"
 
             // The symbol the attribute is attached to sits at the next
-            // non-whitespace position after the attribute closing `>]`.
+            // non-whitespace position after the attribute's closing `>]`.
+            // Skip past `>]` and any whitespace to reach the val/type/member ident.
             let mutable pos = attribSpan.End
-            while pos < sourceText.Length && Char.IsWhiteSpace(sourceText.[pos]) do
+            while pos < sourceText.Length
+                  && (Char.IsWhiteSpace(sourceText.[pos]) || sourceText.[pos] = '>' || sourceText.[pos] = ']' || sourceText.[pos] = ';') do
                 pos <- pos + 1
 
             let! symbolUseOpt = getSymbolUsesOfSymbolAtLocationInDocument (document, pos)
@@ -76,11 +81,11 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                     let sigSpan = RoslynHelpers.FSharpRangeToTextSpan(sigSourceText, sigRange)
                     let sigLineStart = sigSourceText.Lines.GetLineFromPosition(sigSpan.Start).Start
                     let indent = indentOfLine sigSourceText sigLineStart
-                    let insertion = $"{indent}{attribText}{br}"
+                    let insertion = $"{indent}{bracketed}{br}"
 
                     let action =
                         CodeAction.Create(
-                            $"Add {attribText} to signature",
+                            $"Add {bracketed} to signature",
                             (fun cancellationToken ->
                                 cancellableTask {
                                     let! current = sigDoc.GetTextAsync(cancellationToken)
@@ -88,7 +93,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                                     return sigDoc.WithText(updated).Project.Solution
                                 }
                                 |> CancellableTask.start cancellationToken),
-                            equivalenceKey = $"{CodeFix.AddMissingAttributeToSignature}:{attribText}"
+                            equivalenceKey = $"{CodeFix.AddMissingAttributeToSignature}:{bracketed}"
                         )
 
                     context.RegisterCodeFix(action, context.Diagnostics)
