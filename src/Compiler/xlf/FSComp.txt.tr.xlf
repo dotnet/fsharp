@@ -1874,7 +1874,7 @@
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define a field, constructor, or member named '{1}'.</source>
-        <target state="new">The type '{0}' does not have a field, property, or member named '{1}'.</target>
+        <target state="new">The type '{0}' does not define a field, constructor, or member named '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -2269,7 +2269,7 @@
       </trans-unit>
       <trans-unit id="tastNamespaceAndModuleWithSameNameInAssembly">
         <source>The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</source>
-        <target state="new">Bir ad alanı ve '{0}' adlı modülün ikisi birden bu bütünleştirilmiş kodun iki yerinde geçiyor</target>
+        <target state="new">The name '{0}' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastTwoModulesWithSameNameInAssembly">
@@ -3374,12 +3374,12 @@
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenFunction">
         <source>Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
-        <target state="new">'{0}' işlecini destekleyen bir tür bekleniyor ancak bir işlev türü verildi. Bir işlevde bağımsız değişkeniniz eksik olabilir.</target>
+        <target state="new">Expecting a type supporting the operator '{0}' but given a function type. You may be missing an argument to a function, or the operator may not be in scope. Check that you have opened the correct module or namespace.</target>
         <note />
       </trans-unit>
       <trans-unit id="csExpectTypeWithOperatorButGivenTuple">
         <source>Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</source>
-        <target state="new">'{0}' işlecini destekleyen bir tür bekleniyor ancak bir demet türü verildi.</target>
+        <target state="new">Operator '{0}' cannot be applied to a tuple type. You may have an unintended extra comma creating a tuple, or the operator may not be in scope. Check that you have opened the correct module or namespace.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
@@ -4359,7 +4359,7 @@
       </trans-unit>
       <trans-unit id="tcNotSufficientlyGenericBecauseOfScope">
         <source>This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</source>
-        <target state="new">Bu kod yeterince genel değil. Tür değişkeni {0}, kapsamını kaçıracağı için genelleştirilemedi.</target>
+        <target state="new">This code is not sufficiently generic. The type variable {0} could not be generalized because it would escape its scope. Consider adding a type annotation, converting the value to a function, or making the definition 'inline'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyRequiresExplicitTypeParameters">
@@ -8972,21 +8972,21 @@
           <target state="new">This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</target>
           <note />
         </trans-unit>
-        <trans-unit id="parsLetBangCannotBeLastInCE">
-          <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
-          <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
-          <note />
-        </trans-unit>
-        <trans-unit id="tcListLiteralWithSingleTupleElement">
-          <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
-          <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
-          <note />
-        </trans-unit>
-        <trans-unit id="featureExceptionFieldSerializationSupport">
-          <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
-          <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
-          <note />
-        </trans-unit>
+      <trans-unit id="parsLetBangCannotBeLastInCE">
+        <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
+        <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcListLiteralWithSingleTupleElement">
+        <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
+        <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureExceptionFieldSerializationSupport">
+        <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
+        <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
