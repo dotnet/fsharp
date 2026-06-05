@@ -348,3 +348,37 @@ let TestEmptyStringPattern(x: string) =
   } 
 """
        ]
+
+    // https://github.com/dotnet/fsharp/issues/19873
+    // Side effect of moving the empty-string optimization to the Optimizer (was previously only
+    // applied for `match`): `if s = ""` now produces the same null-safe length-check IL.
+    [<Fact>]
+    let ``Test codegen for if-then-else with literal empty-string equality``() =
+        FSharp """
+module Test
+let TestEmptyStringEq(x: string) =
+    if x = "" then "empty" else "other"
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+                      """
+      .method public static string  TestEmptyStringEq(string x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_0011
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_0009:  brtrue.s   IL_0011
+
+    IL_000b:  ldstr      "empty"
+    IL_0010:  ret
+
+    IL_0011:  ldstr      "other"
+    IL_0016:  ret
+  } 
+"""
+       ]

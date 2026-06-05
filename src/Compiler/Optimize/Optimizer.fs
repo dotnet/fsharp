@@ -2291,6 +2291,15 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
         //printfn "Not eliminating because no Run found"
         None
 
+let IsILMethodRefSystemStringEquals (mref: ILMethodRef) =
+    mref.Name = "Equals" &&
+    mref.DeclaringTypeRef.Name = "System.String" &&
+    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.Boolean") &&
+    (mref.ArgCount = 2 &&
+        mref.ArgTypes
+        |> List.forall (fun ilTy ->
+            ilTy.IsNominal && ilTy.TypeRef.Name = "System.String"))
+
 let IsILMethodRefSystemStringConcat (mref: ILMethodRef) =
     mref.Name = "Concat" &&
     mref.DeclaringTypeRef.Name = "System.String" &&
@@ -2540,6 +2549,18 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
     | _ ->
         OptimizeExpr cenv env expr
 
+/// Rewrite `System.String.Equals(x, "")` (or `Equals("", x)`) into the null-safe length check
+/// `if x = null then false else x.Length = 0`. Equivalent semantics — `String.Equals` returns false
+/// on null. This optimization originally lived in `BuildSwitch` for `match s with "" -> _` but was
+/// moved here so that quotations capture the original `op_Equality(_, "")` shape (issue #19873).
+and MakeOptimizedStringEqualsEmptyCall cenv env m nonEmptyArg =
+    let g = cenv.g
+    let _, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m nonEmptyArg
+    let lengthIsZero = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
+    let nullSafe = mkLazyAnd g m (mkNonNullTest g m vExpr) lengthIsZero
+    let optimized = mkLetBind m bind nullSafe
+    OptimizeExpr cenv env optimized
+
 /// Optimize/analyze an application of an intrinsic operator to arguments
 and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
@@ -2610,6 +2631,16 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args 
       when IsILMethodRefSystemStringConcat ilMethRef ->
         MakeOptimizedSystemStringConcatCall cenv env m args
+
+    // Optimize `String.Equals(x, "")` (and `String.Equals("", x)`) into the null-safe length check
+    // `if x <> null then x.Length = 0 else false`. Mirrors the original BuildSwitch lowering for
+    // `match s with "" -> _`. Done here (post-inlining) so quotations capture the un-optimized shape.
+    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [arg1; Expr.Const(Const.String "", _, _)]
+      when IsILMethodRefSystemStringEquals ilMethRef ->
+        MakeOptimizedStringEqualsEmptyCall cenv env m arg1
+    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [Expr.Const(Const.String "", _, _); arg2]
+      when IsILMethodRefSystemStringEquals ilMethRef ->
+        MakeOptimizedStringEqualsEmptyCall cenv env m arg2
 
     | _ -> 
         // Reductions

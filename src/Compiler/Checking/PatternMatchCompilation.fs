@@ -810,14 +810,10 @@ let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
                         let test = mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)
                         let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
                         mkLetBind m bind finalTest
-                    | DecisionTreeTest.Const (Const.String "")  ->
-                        // Optimize empty string check to use null-safe length check
-                        let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
-                        let test = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
-                        // Skip null check if we're in a null-filtered context
-                        let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
-                        mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String _ as c)  ->
+                        // Empty-string is detected by the Optimizer (`OptimizeStringEqualsEmpty`)
+                        // and rewritten to a null-safe length check at that point. Pattern-match
+                        // compilation keeps the F# `=` form so quotations see the original shape.
                         mkCallEqualsOperator g m g.string_ty testexpr (Expr.Const (c, m, g.string_ty))
                     | DecisionTreeTest.Const (Const.Decimal _ as c)  ->
                         mkCallEqualsOperator g m g.decimal_ty testexpr (Expr.Const (c, m, g.decimal_ty))

@@ -2210,6 +2210,21 @@ $ code --diff {outFile} {expectedFile}
         let withEvalTypeEquals t (result: CompilationResult) : CompilationResult =
             assertEvalOutput (fun (x: FsiValue) -> x.ReflectionType) t result
 
+        /// Snapshot the captured stdout of an executed test program and diff it against a `.bsl` baseline file.
+        /// Combine with `compileExeAndRun`. Useful for locking in textual representations such as `sprintf "%A" <@ ... @>`
+        /// to detect accidental changes in the F# representation of quotations, error messages, printf output, etc.
+        /// Update with `TEST_UPDATE_BSL=1`.
+        let verifyOutputAgainstBaseline (baselineFilePath: string) (result: CompilationResult) : CompilationResult =
+            match result.RunOutput with
+            | None ->
+                failwith "Execution output is missing; verifyOutputAgainstBaseline requires a run result (use compileExeAndRun)."
+            | Some (ExecutionOutput e) ->
+                let actual = e.StdOut |> normalizeNewlines
+                checkBaseline actual baselineFilePath
+            | Some _ ->
+                failwith "verifyOutputAgainstBaseline only supports ExecutionOutput; received EvalOutput."
+            result
+
     let signatureText (pageWidth: int option) (checkResults: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults) =
         checkResults.GenerateSignature(?pageWidth = pageWidth)
         |> Option.defaultWith (fun _ -> failwith "Unable to generate signature text.")
