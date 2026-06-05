@@ -93,6 +93,23 @@ let inline private displayName< ^T when ^T : enum<uint64> > (flag: ^T) : string 
             else s
     if s.EndsWith "Attribute" then s.Substring(0, s.Length - 9) else s
 
+/// Generic enforcement: warn for every flag in `policy` that is set on
+/// `impl` but missing from `sig'`. O(1) happy path: if impl carries no
+/// enforced flag at all the `sig'` lookup is skipped entirely.
+let inline private checkEnforcedAttribs
+    (enforcedFlagsOn: 'Subject -> 'F)
+    (policy: 'F list)
+    (displayNameOf: 'Subject -> string)
+    (impl: 'Subject) (sig': 'Subject) (m: range) =
+    let presentOnImplAndRequiredFromSig = enforcedFlagsOn impl
+    if not (Flags.isEmpty presentOnImplAndRequiredFromSig) then
+        let actuallyPresentInSig = enforcedFlagsOn sig'
+        if not (presentOnImplAndRequiredFromSig |> Flags.isSubsetOf actuallyPresentInSig) then
+            let missing = presentOnImplAndRequiredFromSig |> Flags.except actuallyPresentInSig
+            for flag in policy do
+                if flag |> Flags.intersects missing then
+                    warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, displayNameOf impl), m))
+
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
     implTycon:Tycon *
@@ -188,18 +205,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             ValHasWellKnownAttribute g signatureEnforcedValAttribsMask v |> ignore  // forceload
             v.ValAttribs.Flags |> Flags.intersect signatureEnforcedValAttribsMask
 
-        // Per-entity enforcement: warn for every enforced flag present on the
-        // impl but missing from the sig. O(1) happy path: if impl carries no
-        // enforced flag at all the comparison reduces to a single empty-check.
-        let checkEnforcedEntityAttribs (implEntity: Entity) (sigEntity: Entity) (m: range) =
-            let presentOnImplAndRequiredFromSig = enforcedFlagsOnEntity implEntity
-            if not (Flags.isEmpty presentOnImplAndRequiredFromSig) then
-                let actuallyPresentInSig = enforcedFlagsOnEntity sigEntity
-                if not (presentOnImplAndRequiredFromSig |> Flags.isSubsetOf actuallyPresentInSig) then
-                    let missing = presentOnImplAndRequiredFromSig |> Flags.except actuallyPresentInSig
-                    for flag in signatureEnforcedEntityAttribs do
-                        if flag |> Flags.intersects missing then
-                            warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implEntity.DisplayName), m))
+        let checkEnforcedEntityAttribs implEntity sigEntity m =
+            checkEnforcedAttribs enforcedFlagsOnEntity signatureEnforcedEntityAttribs (fun (e: Entity) -> e.DisplayName) implEntity sigEntity m
+
+        let checkEnforcedValAttribs implVal sigVal m =
+            checkEnforcedAttribs enforcedFlagsOnVal    signatureEnforcedValAttribs    (fun (v: Val)    -> v.DisplayName) implVal sigVal m
 
         let rec checkTypars m (aenv: TypeEquivEnv) (implTypars: Typars) (sigTypars: Typars) = 
             if implTypars.Length <> sigTypars.Length then 
@@ -450,15 +460,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let err denv f = errorR(mk_err RegularMismatch denv f); false
             let m = implVal.Range
 
-            // Same shape as `checkEnforcedEntityAttribs`, applied to Val.
-            let presentOnImplAndRequiredFromSig = enforcedFlagsOnVal implVal
-            if not (Flags.isEmpty presentOnImplAndRequiredFromSig) then
-                let actuallyPresentInSig = enforcedFlagsOnVal sigVal
-                if not (presentOnImplAndRequiredFromSig |> Flags.isSubsetOf actuallyPresentInSig) then
-                    let missing = presentOnImplAndRequiredFromSig |> Flags.except actuallyPresentInSig
-                    for flag in signatureEnforcedValAttribs do
-                        if flag |> Flags.intersects missing then
-                            warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implVal.DisplayName), m))
+            checkEnforcedValAttribs implVal sigVal m
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
             elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
