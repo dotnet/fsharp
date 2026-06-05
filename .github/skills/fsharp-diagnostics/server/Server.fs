@@ -68,6 +68,14 @@ let startServer (config: ServerConfig) =
                     match command with
                     | "ping" -> return $"""{{ "status":"ok", "pid":{Environment.ProcessId} }}"""
 
+                    | "warmup" ->
+                        // Forces the lazy DesignTimeBuild + FCS project load so the next real
+                        // request doesn't hang for 5-15 min on a cold clone.
+                        let! optionsResult = getOptions ()
+                        match optionsResult with
+                        | Ok _ -> return """{ "status":"warmed" }"""
+                        | Error msg -> return $"""{{ "error":"warmup failed: {msg}" }}"""
+
                     | "parseOnly" ->
                         let file = doc.RootElement.GetProperty("file").GetString()
 

@@ -2819,8 +2819,12 @@ type internal FsiDynamicCompiler
 
                             if result.Success then
 
+                                // Under --quiet, route NuGet restore stdout to stderr.
+                                let stdOutSink: System.IO.TextWriter =
+                                    if tcConfigB.noFeedback then Console.Error else Console.Out
+
                                 for line in result.StdOut do
-                                    Console.Out.WriteLine(line)
+                                    stdOutSink.WriteLine(line)
 
                                 for line in result.StdError do
                                     Console.Error.WriteLine(line)

@@ -151,6 +151,7 @@ module TcResolutionsExtensions =
                         | ItemOccurrence.UseInType
                         | ItemOccurrence.UseInAttribute
                         | ItemOccurrence.Use
+                        | ItemOccurrence.InvalidUse
                         | ItemOccurrence.Binding
                         | ItemOccurrence.Pattern
                         | ItemOccurrence.Open -> Some()

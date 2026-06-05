@@ -4130,11 +4130,18 @@ let formatAvailableNames (names: string array) =
 /// E.g. `match x with | null -> ... | y -> ...` narrows `inputTy` of the y-clause to non-null.
 let EliminateNullnessFromInputType (g: TcGlobals) (inputTy: TType) (pat: Pattern) (whenExprOpt: Expr option) : TType =
     let removeNull t =
-        // Strip type equations (including abbreviations) and set nullness to non-null.
-        // For type abbreviations like `type objnull = obj | null`, we need to expand
-        // the abbreviation and apply non-null to the underlying type.
-        let stripped = stripTyEqns g t
-        replaceNullnessOfTy KnownWithoutNull stripped
+        // Try clearing outer nullness first — preserves aliases (#19646):
+        //   `string | null` → `string`  (not `System.String`)
+        //   `type MyStr = string` → `MyStr`
+        // Fall back to stripTyEqns for abbreviations encoding nullness in RHS (#18488):
+        //   `type objnull = obj | null` — replaceNullness alone is a no-op (combineNullness)
+        let nonNullOriginal = replaceNullnessOfTy KnownWithoutNull t
+
+        match (nullnessOfTy g nonNullOriginal).TryEvaluate() with
+        | ValueSome NullnessInfo.WithoutNull -> nonNullOriginal
+        | _ ->
+            let stripped = stripTyEqns g t
+            replaceNullnessOfTy KnownWithoutNull stripped
     let rec isWild (p: Pattern) =
         match p with
         | TPat_wild _ -> true
@@ -11883,9 +11890,14 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         let rhsExpr = mkTypeLambda m generalizedTypars (rhsExpr, tauTy)
 
         match checkedPat with
-        // Don't introduce temporary or 'let' for 'match against wild' or 'match against unit'
+        // Don't introduce temporary or 'let' for 'match against wild' or 'match against unit',
+        // unless the RHS is a byref-like value (e.g. `let _ = &s`). For byref-like RHS we
+        // must keep a real `Expr.Let` so that PostInferenceChecks treats the binding as
+        // permitting byref expressions, matching the behaviour of `let v = &s`.
+        // See issue dotnet/fsharp#18841.
 
-        | TPat_wild _ | TPat_const (Const.Unit, _) when not isUse && not isFixed && isNil generalizedTypars ->
+        | TPat_wild _ | TPat_const (Const.Unit, _)
+            when not isUse && not isFixed && isNil generalizedTypars && not (isByrefLikeTy g m tauTy) ->
             let mkSequentialBind (tm, tmty) = mkSequential m rhsExpr tm, tmty
             (buildExpr >> mkSequentialBind, env, tpenv)
         | _ ->
