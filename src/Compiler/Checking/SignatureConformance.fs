@@ -137,9 +137,10 @@ module private AttributeConformance =
         else warning
 
     let checkVal (g: TcGlobals) (implVal: Val) (sigVal: Val) (fallback: range) =
-        // External consumers cannot see non-public values, so a consumer-visible
-        // attribute missing from the .fsi is irrelevant for them.
-        if implVal.Accessibility.IsPublic then
+        // External consumers see what the .fsi declares. Check the SIG's
+        // accessibility (not the impl's) because the impl may default to
+        // public in the .fs source even when the .fsi narrows it to internal.
+        if sigVal.Accessibility.IsPublic then
             let enforcedFlagsOnVal (v: Val) =
                 ValHasWellKnownAttribute g enforcedValsMask v |> ignore // forceload
                 v.ValAttribs.Flags |> Flags.intersect enforcedValsMask
@@ -150,9 +151,10 @@ module private AttributeConformance =
                 implVal sigVal fallback
 
     let checkEntity (g: TcGlobals) (implEntity: Entity) (sigEntity: Entity) (fallback: range) =
-        // External consumers cannot see non-public entities, so a consumer-visible
-        // attribute missing from the .fsi is irrelevant for them.
-        if implEntity.Accessibility.IsPublic then
+        // External consumers see what the .fsi declares. Check the SIG's
+        // accessibility (not the impl's) because the impl may default to
+        // public in the .fs source even when the .fsi narrows it to internal.
+        if sigEntity.Accessibility.IsPublic then
             let enforcedFlagsOnEntity (e: Entity) =
                 EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
                 e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
