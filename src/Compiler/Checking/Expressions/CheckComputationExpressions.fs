@@ -2704,7 +2704,9 @@ and TranslateComputationExpressionBind
 and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp varSpace innerComp =
     match innerComp with
     | SynExpr.YieldOrReturn((false, _), returnExpr, m, _) ->
-        let returnExpr = SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), false, returnExpr)
+        let returnExpr =
+            SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), false, returnExpr)
+
         Some(returnExpr, None)
 
     | SynExpr.Match(spMatch, expr, clauses, m, trivia) ->
