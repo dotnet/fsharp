@@ -184,16 +184,23 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             fixup (sigAttribs @ keptImplAttribs)
             true
 
-        // Per-entity enforcement of compiler-semantic attributes. Called for both
-        // types (from `checkTypeDef`) and modules (from `checkModuleOrNamespace`)
-        // so that, for example, `[<AutoOpen>]` on a nested module is enforced too.
-        // Fast O(1) early-exit via the all-up mask; per-attribute loop only on miss.
+        // Per-entity enforcement. Truly O(1) happy path: a single mask check
+        // on impl plus (on hit) one mask check on sig and one bitwise diff to
+        // confirm sig already carries every enforced bit the impl carries.
+        // The per-row loop runs only when at least one enforced bit is on the
+        // impl AND missing from the sig.
         let checkEnforcedEntityAttribs (implEntity: Entity) (sigEntity: Entity) (m: range) =
             if EntityHasWellKnownAttribute g signatureEnforcedEntityAttribsMask implEntity then
-                for flag in signatureEnforcedEntityAttribs do
-                    if EntityHasWellKnownAttribute g flag implEntity
-                       && not (EntityHasWellKnownAttribute g flag sigEntity) then
-                        warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implEntity.DisplayName), m))
+                // Force the cached flags to be computed on both sides.
+                EntityHasWellKnownAttribute g signatureEnforcedEntityAttribsMask sigEntity |> ignore
+                let mask = LanguagePrimitives.EnumToValue signatureEnforcedEntityAttribsMask
+                let impl = LanguagePrimitives.EnumToValue implEntity.EntityAttribs.Flags &&& mask
+                let sig' = LanguagePrimitives.EnumToValue sigEntity.EntityAttribs.Flags  &&& mask
+                let missing = impl &&& ~~~sig'
+                if missing <> 0uL then
+                    for flag in signatureEnforcedEntityAttribs do
+                        if missing &&& LanguagePrimitives.EnumToValue flag <> 0uL then
+                            warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implEntity.DisplayName), m))
 
         let rec checkTypars m (aenv: TypeEquivEnv) (implTypars: Typars) (sigTypars: Typars) = 
             if implTypars.Length <> sigTypars.Length then 
@@ -444,18 +451,19 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let err denv f = errorR(mk_err RegularMismatch denv f); false
             let m = implVal.Range
 
-            // Enforce that compiler-semantic attributes present on the implementation
-            // are also present on the signature. See `signatureEnforcedValAttribs`
-            // for the list and rationale. Emitted as a warning (will become an error
-            // in a future F# version) so existing libraries are not broken in-place.
-            // Fast O(1) early-exit: if the implementation does not have ANY of the
-            // enforced bits set, the per-attribute scan and the per-attribute
-            // signature lookup are skipped entirely.
+            // Enforce consumer-visible compiler-semantic attributes; truly O(1)
+            // happy path. The per-attribute loop runs only when at least one
+            // enforced bit is on the impl AND missing from the sig.
             if ValHasWellKnownAttribute g signatureEnforcedValAttribsMask implVal then
-                for flag in signatureEnforcedValAttribs do
-                    if ValHasWellKnownAttribute g flag implVal
-                       && not (ValHasWellKnownAttribute g flag sigVal) then
-                        warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implVal.DisplayName), m))
+                ValHasWellKnownAttribute g signatureEnforcedValAttribsMask sigVal |> ignore
+                let mask = LanguagePrimitives.EnumToValue signatureEnforcedValAttribsMask
+                let impl = LanguagePrimitives.EnumToValue implVal.ValAttribs.Flags &&& mask
+                let sig' = LanguagePrimitives.EnumToValue sigVal.ValAttribs.Flags  &&& mask
+                let missing = impl &&& ~~~sig'
+                if missing <> 0uL then
+                    for flag in signatureEnforcedValAttribs do
+                        if missing &&& LanguagePrimitives.EnumToValue flag <> 0uL then
+                            warning(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, implVal.DisplayName), m))
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
             elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
