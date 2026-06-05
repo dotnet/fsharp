@@ -439,7 +439,23 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                     let genResultTy = NewInferenceType g
                     let mExpr = expr.Range
                     UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
-                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
+
+                    // Cache the result of the first type-check so that re-checking 'comp' below as a yielded
+                    // expression reuses it instead of running side-effecting checks (e.g. format string parsing)
+                    // a second time. See also TcExprSequentialOrImplicitYield which uses the same cache.
+                    let cachedExpr =
+                        match expr with
+                        | Expr.DebugPoint(_, e) -> e
+                        | _ -> expr
+
+                    env.eCachedImplicitYieldExpressions.Add(comp.Range, (comp, _ty, cachedExpr))
+
+                    let expr, tpenv =
+                        try
+                            TcExprFlex cenv flex true genResultTy env tpenv comp
+                        finally
+                            env.eCachedImplicitYieldExpressions.Remove comp.Range
+
                     let exprTy = tyOfExpr cenv.g expr
                     AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
 
