@@ -414,7 +414,30 @@ open System.ComponentModel
 type T() = class end
 """
     let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
-    Assert.Contains("[<System.ComponentModel.EditorBrowsable(", fsi)
+    // Both the attribute head AND its enum-typed argument must be qualified
+    // so the .fsi compiles without `open System.ComponentModel`.
+    Assert.Contains("[<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]", fsi)
+
+[<Fact>]
+let ``Conditional with a dotted string argument is still canonicalized`` () =
+    // Regression: an earlier `attribText.Contains(".")` check would skip
+    // canonicalization for `Conditional("DEBUG.V1")` because of the `.` in
+    // the argument. Now only the attribute HEAD is checked for qualification.
+    let fsiCode = """
+module M
+type T =
+    new: unit -> T
+    member F: x: int -> unit
+"""
+    let fsCode = """
+module M
+open System.Diagnostics
+type T() =
+    [<Conditional("DEBUG.V1")>]
+    member _.F(x: int) = ()
+"""
+    let fsi = tryFixSig fsiCode fsCode |> Option.defaultValue ""
+    Assert.Contains("[<System.Diagnostics.Conditional(\"DEBUG.V1\")>]", fsi)
 
 [<Fact>]
 let ``Already-qualified attribute name is left alone (no double-qualify)`` () =

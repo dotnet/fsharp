@@ -23,21 +23,63 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
     inherit CodeFixProvider()
 
     /// Look up the .fsi document in the solution by file path; uses Roslyn's
-    /// path index instead of walking projects/documents linearly. Prefer the
-    /// current document's project first (typical case - same project), then
-    /// fall back to any project that contains a document with the path.
+    /// path index instead of walking projects/documents linearly. Path is
+    /// normalized via `Path.GetFullPath` to handle slash/case/relative-segment
+    /// differences between FCS and Roslyn. Prefer the current document's
+    /// project first (typical case - same project).
     let tryFindSigDocument (document: Document) (sigFilePath: string) =
         let solution = document.Project.Solution
-        let docIds = solution.GetDocumentIdsWithFilePath(sigFilePath)
+        let normalizedPath =
+            try System.IO.Path.GetFullPath(sigFilePath)
+            with _ -> sigFilePath
+        let docIds = solution.GetDocumentIdsWithFilePath(normalizedPath)
         if docIds.IsEmpty then None
         else
-            // Prefer same project for cross-project independence.
             let preferred =
                 docIds
                 |> Seq.tryFind (fun id -> id.ProjectId = document.Project.Id)
             (preferred |> Option.defaultValue docIds.[0])
             |> solution.GetDocument
             |> Option.ofObj
+
+    /// Split an attribute body like `Conditional("DEBUG.V1")` into
+    /// `("Conditional", "(\"DEBUG.V1\")")` - the head ends at the first
+    /// `(` or whitespace. The head is what we test for `.` qualification;
+    /// the rest is preserved verbatim.
+    let splitAttribHead (text: string) : struct (string * string) =
+        let mutable i = 0
+        while i < text.Length
+              && text.[i] <> '('
+              && not (Char.IsWhiteSpace(text.[i])) do
+            i <- i + 1
+        struct (text.Substring(0, i), text.Substring(i))
+
+    /// Canonicalize attribute names whose `[<X>]` form in the .fs requires an
+    /// `open` of a namespace that the .fsi may not have. For these names we
+    /// emit the fully-qualified form so the inserted .fsi compiles regardless.
+    /// Only the attribute TYPE HEAD is checked for qualification - args may
+    /// freely contain `.` (e.g. enum-value references). For attributes with
+    /// known enum-typed arguments (EditorBrowsable's
+    /// `EditorBrowsableState.X`), the enum reference is also qualified.
+    let canonicalizeAttribName (attribText: string) : string =
+        let struct (head, rest) = splitAttribHead attribText
+        if head.Contains(".") then attribText
+        else
+            let qualifiedHead, qualifiedRest =
+                match head with
+                | "Conditional" | "ConditionalAttribute" ->
+                    "System.Diagnostics." + head, rest
+                | "EditorBrowsable" | "EditorBrowsableAttribute" ->
+                    // Also qualify the EditorBrowsableState enum reference so
+                    // the .fsi compiles without `open System.ComponentModel`.
+                    let qualifiedRest =
+                        rest.Replace("EditorBrowsableState.", "System.ComponentModel.EditorBrowsableState.")
+                    "System.ComponentModel." + head, qualifiedRest
+                | "NoEagerConstraintApplication" | "NoEagerConstraintApplicationAttribute" ->
+                    "Microsoft.FSharp.Core.CompilerServices." + head, rest
+                | _ ->
+                    head, rest
+            qualifiedHead + qualifiedRest
 
     /// Leading whitespace of the .fsi sig line, so the inserted attribute lines
     /// up with the declaration it attaches to.
@@ -68,31 +110,6 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             result <- lineBreakOf lines.[i]
             i <- i - 1
         result |> Option.defaultValue Environment.NewLine
-
-    /// Canonicalize attribute names whose `[<X>]` form in the .fs requires an
-    /// `open` of a namespace that the .fsi may not have. For these names we
-    /// emit the fully-qualified form so the inserted .fsi compiles regardless.
-    /// Only applied to bare (un-dotted) attribute names - if the user already
-    /// wrote a qualified name we leave it alone.
-    let canonicalizeAttribName (attribText: string) : string =
-        if attribText.Contains(".") then attribText
-        else
-            let knownFqns =
-                [
-                    "Conditional",                  "System.Diagnostics.Conditional"
-                    "EditorBrowsable",              "System.ComponentModel.EditorBrowsable"
-                    "NoEagerConstraintApplication", "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplication"
-                ]
-            let matches (simple: string) =
-                attribText = simple
-                || attribText = simple + "Attribute"
-                || attribText.StartsWith(simple + "(", StringComparison.Ordinal)
-                || attribText.StartsWith(simple + "Attribute(", StringComparison.Ordinal)
-            knownFqns
-            |> List.tryPick (fun (simple, full) ->
-                if matches simple then Some (full + attribText.Substring(simple.Length))
-                else None)
-            |> Option.defaultValue attribText
 
     /// Safe wrapper around `FSharpRangeToTextSpan` that returns None when the
     /// range is out of bounds (e.g. .fsi was truncated between registration
@@ -134,46 +151,69 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync "AddMissingAttributeToSignature"
             let diagFsRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, attribSpan, sourceText)
 
+            // Materialize the filtered candidates once: avoids enumerating the
+            // sequence twice (Seq.isEmpty + Seq.minBy would otherwise re-run
+            // the F# checker's symbol-use iteration).
+            let candidates =
+                checkResults.GetAllUsesOfAllSymbolsInFile(context.CancellationToken)
+                |> Seq.filter (fun (u: FSharp.Compiler.Symbols.FSharpSymbolUse) ->
+                    u.IsFromDefinition
+                    && u.Symbol.SignatureLocation.IsSome
+                    && (u.Range.StartLine > diagFsRange.EndLine
+                        || (u.Range.StartLine = diagFsRange.EndLine
+                            && u.Range.StartColumn >= diagFsRange.EndColumn)))
+                |> Seq.toArray
+
             let symbolUse =
-                let candidates =
-                    checkResults.GetAllUsesOfAllSymbolsInFile(context.CancellationToken)
-                    |> Seq.filter (fun (u: FSharp.Compiler.Symbols.FSharpSymbolUse) ->
-                        u.IsFromDefinition
-                        && u.Symbol.SignatureLocation.IsSome
-                        && (u.Range.StartLine > diagFsRange.EndLine
-                            || (u.Range.StartLine = diagFsRange.EndLine
-                                && u.Range.StartColumn >= diagFsRange.EndColumn)))
-                if Seq.isEmpty candidates then None
-                else Some (candidates |> Seq.minBy (fun u -> u.Range.StartLine, u.Range.StartColumn))
+                if candidates.Length = 0 then None
+                else
+                    // Sort tie-broken by (line, col, end-line, end-col, symbol full name)
+                    // so the selection is fully deterministic for overloads /
+                    // type+ctor pairs that share a start position.
+                    candidates
+                    |> Array.minBy (fun u ->
+                        u.Range.StartLine, u.Range.StartColumn,
+                        u.Range.EndLine,   u.Range.EndColumn,
+                        u.Symbol.FullName)
+                    |> Some
 
             match symbolUse |> Option.bind (fun u -> u.Symbol.SignatureLocation) with
             | Some sigRange ->
                 match tryFindSigDocument document sigRange.FileName with
                 | Some sigDoc ->
-                    // The actual offset / indent / line-break are recomputed
-                    // inside the CodeAction so a .fsi edit happening between
-                    // lightbulb registration and application does not
-                    // desynchronise the insertion. The .fsi span lookup is
-                    // wrapped to bail out gracefully if the file was truncated.
+                    // Capture the DocumentId, not the Document - Documents are
+                    // immutable snapshots, so re-resolving via the current
+                    // workspace solution at apply time observes any intervening
+                    // .fsi edits. The .fsi span lookup is wrapped to bail out
+                    // gracefully if the file was truncated.
+                    let sigDocId = sigDoc.Id
+                    let normalizedSigPath =
+                        try System.IO.Path.GetFullPath(sigRange.FileName)
+                        with _ -> sigRange.FileName
+
                     let action =
                         CodeAction.Create(
                             $"Add {bracketed} to signature",
                             (fun cancellationToken ->
                                 cancellableTask {
-                                    let! current = sigDoc.GetTextAsync(cancellationToken)
-                                    match tryFSharpRangeToTextSpan current sigRange with
-                                    | None -> return sigDoc.Project.Solution
-                                    | Some currentSigSpan ->
-                                        let currentLineStart = current.Lines.GetLineFromPosition(currentSigSpan.Start).Start
-                                        let currentIndent = indentOfLine current currentLineStart
-                                        let currentLineBreak = lineBreakAt current currentLineStart
-                                        let currentInsertion = $"{currentIndent}{bracketed}{currentLineBreak}"
-                                        let updated = current.WithChanges(TextChange(TextSpan(currentLineStart, 0), currentInsertion))
-                                        return sigDoc.WithText(updated).Project.Solution
+                                    let currentSolution = document.Project.Solution.Workspace.CurrentSolution
+                                    match currentSolution.GetDocument(sigDocId) |> Option.ofObj with
+                                    | None -> return currentSolution
+                                    | Some liveSigDoc ->
+                                        let! current = liveSigDoc.GetTextAsync(cancellationToken)
+                                        match tryFSharpRangeToTextSpan current sigRange with
+                                        | None -> return currentSolution
+                                        | Some currentSigSpan ->
+                                            let currentLineStart = current.Lines.GetLineFromPosition(currentSigSpan.Start).Start
+                                            let currentIndent = indentOfLine current currentLineStart
+                                            let currentLineBreak = lineBreakAt current currentLineStart
+                                            let currentInsertion = $"{currentIndent}{bracketed}{currentLineBreak}"
+                                            let updated = current.WithChanges(TextChange(TextSpan(currentLineStart, 0), currentInsertion))
+                                            return liveSigDoc.WithText(updated).Project.Solution
                                 }
                                 |> CancellableTask.start cancellationToken),
                             equivalenceKey =
-                                $"{CodeFix.AddMissingAttributeToSignature}:{bracketed}:{sigRange.FileName}:{sigRange.StartLine}:{sigRange.StartColumn}:{sigRange.EndLine}:{sigRange.EndColumn}"
+                                $"{CodeFix.AddMissingAttributeToSignature}:{bracketed}:{normalizedSigPath}:{sigRange.StartLine}:{sigRange.StartColumn}:{sigRange.EndLine}:{sigRange.EndColumn}"
                         )
 
                     context.RegisterCodeFix(action, context.Diagnostics)
