@@ -1488,6 +1488,7 @@ type TcGlobals(
 
   member val attrib_ExtensionAttribute = findSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
   member val attrib_DecimalConstantAttribute = findSysAttrib "System.Runtime.CompilerServices.DecimalConstantAttribute"
+  member val attrib_OverloadResolutionPriorityAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute"
   member val attribs_Unsupported = v_attribs_Unsupported
 
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"

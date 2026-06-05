@@ -28,6 +28,9 @@ module internal ILExtensions =
 
     val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
+    val TryDecodeILAttributeOpt:
+        BuiltinAttribInfo option -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+
     val inline hasFlag: flags: ^F -> flag: ^F -> bool when ^F: enum<uint64>
 
     /// Compute well-known attribute flags for an ILAttributes collection.
@@ -69,6 +72,8 @@ module internal ILExtensions =
 
     val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
 
+    val TryFindFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> Attrib option
+
     [<return: Struct>]
     val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
 
@@ -91,6 +96,8 @@ module internal ILExtensions =
     val (|AttribStringArg|_|): (AttribExpr -> string voption)
 
     val (|AttribElemStringArg|_|): (ILAttribElem -> string option)
+
+    val TryFindFSharpInt32AttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> int32 option
 
 [<AutoOpen>]
 module internal AttributeHelpers =
