@@ -135,7 +135,6 @@ module internal PervasiveAutoOpens =
 
     let notFound () = raise (KeyNotFoundException())
 
-#if !FSHARPCORE_USE_PACKAGE // TODO For 11.x, remove shimming to rely fully on shipped FSharp.Core variant
     type Async with
         static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken) =
             let tcs = TaskCompletionSource<'T>()
@@ -149,7 +148,6 @@ module internal PervasiveAutoOpens =
             )
             // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
             tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
-#endif
 
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
