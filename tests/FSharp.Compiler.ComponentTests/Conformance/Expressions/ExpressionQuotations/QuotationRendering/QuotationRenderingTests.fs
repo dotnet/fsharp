@@ -3,14 +3,14 @@
 // Snapshot tests for the F# rendering of quoted expressions (sprintf "%A" <@ ... @>).
 //
 // Each test compiles a tiny program that prints the rendered quotation, executes it, and diffs
-// the captured stdout against a .bsl file in this folder. Update baselines with TEST_UPDATE_BSL=1.
+// stdout against the matching .bsl file in this folder. Regenerate baselines with TEST_UPDATE_BSL=1.
 //
-// Purpose: detect accidental leakage of pattern-match-compilation lowerings (range checks, jump
-// tables, null+Length rewrites, etc.) into the public quotation AST. The quotation translator
-// runs after PatternMatchCompilation, so any rewrite that lives in PatternMatchCompilation will
-// also show up here as a (potentially surprising) shape change.
+// Purpose: detect accidental leakage of pattern-match-compilation lowerings (jump tables, null
+// + Length rewrites, raw IL asm, ...) into the public quotation AST. The quotation translator
+// runs *after* PatternMatchCompilation, so any rewrite done there shows up here as a (potentially
+// surprising) shape change.
 //
-// Related: https://github.com/dotnet/fsharp/issues/19873, PR https://github.com/dotnet/fsharp/pull/19532
+// Related: https://github.com/dotnet/fsharp/issues/19873
 
 namespace Conformance.Expressions.ExpressionQuotations
 
@@ -22,96 +22,112 @@ module QuotationRendering =
 
     let private baselineDir = __SOURCE_DIRECTORY__
 
-    /// Compile a snippet that builds a quotation `q` and prints it with `printfn "%A" q`,
-    /// then diff its stdout against `<bslName>.bsl`.
-    let private renderingShouldMatch (bslName: string) (quoteBody: string) =
-        let program = "module Test\n[<EntryPoint>]\nlet main _ =\n    let q = " + quoteBody + "\n    printfn \"%A\" q\n    0\n"
-        let bslPath = Path.Combine(baselineDir, bslName + ".bsl")
+    /// Wrap a quotation expression in the smallest compilable program that prints its rendering.
+    let private printerProgram quoteExpr =
+        $"module Test\nprintfn \"%%A\" {quoteExpr}\n"
 
-        FSharp program
+    /// Compile, run, diff stdout against <name>.bsl. Use TEST_UPDATE_BSL=1 to regenerate.
+    let private quoteShouldRender name quoteExpr =
+        FSharp (printerProgram quoteExpr)
         |> asExe
         |> ignoreWarnings
         |> compileExeAndRun
         |> shouldSucceed
-        |> verifyOutputAgainstBaseline bslPath
+        |> verifyOutputAgainstBaseline (Path.Combine(baselineDir, name + ".bsl"))
         |> ignore
 
-    // ----------------------------------------------------------------------
-    // The "leaky" cases: PatternMatchCompilation rewrites that show up in quotations.
-    // ----------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
+    // Regression: shapes the empty-string optimization used to leak (#19873).
+    // After moving the rewrite out of BuildSwitch the baselines render `op_Equality`
+    // rather than the null + Length lowering. A leak resurfacing here will fail
+    // the test with a diff.
+    // ---------------------------------------------------------------------------
+    module Regression =
 
-    // https://github.com/dotnet/fsharp/issues/19873
-    // Empty-string match leaks `IfThenElse (op_Inequality(x,null), x.Length = 0, false)`.
-    [<Fact>]
-    let ``Match empty string`` () =
-        renderingShouldMatch "EmptyStringMatch" "<@ fun (x: string) -> match x with \"\" -> 1 | _ -> 0 @>"
+        [<Fact>]
+        let ``match x with empty string`` () =
+            quoteShouldRender "EmptyString"
+                """<@ fun (x: string) -> match x with "" -> 1 | _ -> 0 @>"""
 
-    // pezipink's second example in #19873 — the same lowering also appears for plain `s = ""`.
-    [<Fact>]
-    let ``If-then-else with literal empty string equality`` () =
-        renderingShouldMatch "IfThenElseLiteralEqEmpty" "<@ fun (s: string) -> if s = \"\" then 1 else 0 @>"
+        [<Fact>]
+        let ``match x with null or empty string`` () =
+            quoteShouldRender "NullOrEmpty"
+                """<@ fun (x: string) -> match x with null | "" -> 1 | _ -> 0 @>"""
 
-    // null | "" -> ... should consolidate to a single null check, then a length check.
-    [<Fact>]
-    let ``Match null or empty string`` () =
-        renderingShouldMatch "NullOrEmptyMatch" "<@ fun (x: string) -> match x with null | \"\" -> 1 | _ -> 0 @>"
+    // ---------------------------------------------------------------------------
+    // Reference: PatternMatchCompilation lowerings that have *never* leaked.
+    // These baselines prove that compactification (consecutive int → TDSwitch → jump
+    // table), char tables, and per-type `mkILAsmCeq` paths all survive as clean
+    // `op_Equality` chains in quotations. If a future BuildSwitch optimization
+    // changes this, the diff is the smoking gun.
+    // ---------------------------------------------------------------------------
+    module NoLeakReference =
 
-    // Array-length match also lowers to null + Length check inline.
-    // This is a pre-existing leakage: BuildSwitch lowers `match a with [| _ |] -> _` into raw
-    // `I_ldlen` inline IL via `mkLdlen` before the quotation translator runs. The translator
-    // then rejects the raw IL with FS0452. When the optimization is moved to a later phase,
-    // this test should be flipped to assert successful compilation and a clean rendering.
-    [<Fact>]
-    let ``Match array length fails in quotation (FS0452)`` () =
-        FSharp """module Test
+        [<Fact>]
+        let ``match x with non-empty string`` () =
+            quoteShouldRender "NonEmptyString"
+                """<@ fun (x: string) -> match x with "a" -> 1 | "b" -> 2 | _ -> 0 @>"""
+
+        /// Two-or-more consecutive ints trigger BuildSwitch's compactify branch.
+        /// We want to verify the resulting TDSwitch still renders as op_Equality calls
+        /// (not as an opaque jump-table marker) inside quotations.
+        [<Fact>]
+        let ``match i with consecutive ints`` () =
+            quoteShouldRender "ConsecutiveInts"
+                """<@ fun (i: int) -> match i with 1 -> "a" | 2 -> "b" | 3 -> "c" | _ -> "z" @>"""
+
+        [<Fact>]
+        let ``match c with chars`` () =
+            quoteShouldRender "Chars"
+                """<@ fun (c: char) -> match c with 'a' -> 1 | 'b' -> 2 | _ -> 0 @>"""
+
+        /// Int64/Float/Decimal each take a different BuildSwitch arm but all rely on
+        /// QuotationTranslator's `[AI_ceq]` → `op_Equality` recovery to render cleanly.
+        [<Fact>]
+        let ``match i with int64`` () =
+            quoteShouldRender "Int64"
+                """<@ fun (i: int64) -> match i with 1L -> "a" | _ -> "b" @>"""
+
+        [<Fact>]
+        let ``match f with float`` () =
+            quoteShouldRender "Float"
+                """<@ fun (f: float) -> match f with 1.0 -> "a" | _ -> "b" @>"""
+
+        [<Fact>]
+        let ``match d with decimal`` () =
+            quoteShouldRender "Decimal"
+                """<@ fun (d: decimal) -> match d with 1m -> "a" | _ -> "b" @>"""
+
+    // ---------------------------------------------------------------------------
+    // Side effect of the fix: pezipink's second example in #19873 — `if s = ""`
+    // was already rendering cleanly in quotations (no BuildSwitch path involved)
+    // and continues to do so even after the Optimizer-level rewrite, because the
+    // Optimizer skips Expr.Quote bodies.
+    // ---------------------------------------------------------------------------
+    module SideEffect =
+
+        [<Fact>]
+        let ``if s = empty string`` () =
+            quoteShouldRender "IfEqualEmpty"
+                """<@ fun (s: string) -> if s = "" then 1 else 0 @>"""
+
+    // ---------------------------------------------------------------------------
+    // Pre-existing leakage: array-length patterns lower to raw `I_ldlen` IL via
+    // `mkLdlen` *before* the quotation translator runs, which then rejects them
+    // with FS0452. This was broken before #19189 and is left untouched. If a
+    // future change moves this lowering out of BuildSwitch, flip to `shouldSucceed`
+    // and add an `ArrayLength.bsl` baseline.
+    // ---------------------------------------------------------------------------
+    module PreExistingError =
+
+        [<Fact>]
+        let ``match a with array length`` () =
+            FSharp """module Test
 let q = <@ fun (a: int[]) -> match a with [| _ |] -> 1 | _ -> 0 @>
 """
-        |> asLibrary
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 452
-        |> withDiagnosticMessageMatches "Quotations cannot contain inline assembly code or pattern matching on arrays"
-        |> ignore
-
-    // ----------------------------------------------------------------------
-    // Reference cases: confirm other PatternMatchCompilation optimizations do
-    // NOT leak. These baselines should be a clean if/then/else chain of
-    // op_Equality calls regardless of compactification or jump-table lowering.
-    // ----------------------------------------------------------------------
-
-    [<Fact>]
-    let ``Match non-empty strings`` () =
-        renderingShouldMatch "NonEmptyStringMatch" "<@ fun (x: string) -> match x with \"foo\" -> 1 | \"bar\" -> 2 | _ -> 0 @>"
-
-    // Consecutive ints 1..10 — PatternMatchCompilation compactifies them into a TDSwitch
-    // which (in IL) eventually becomes a switch table. The quotation should *not* see that;
-    // it should be a chain of op_Equality tests.
-    [<Fact>]
-    let ``Match consecutive ints 1 to 10`` () =
-        renderingShouldMatch "ConsecutiveIntMatch"
-            "<@ fun (i: int) -> match i with 1 -> \"one\" | 2 -> \"two\" | 3 -> \"three\" | 4 -> \"four\" | 5 -> \"five\" | 6 -> \"six\" | 7 -> \"seven\" | 8 -> \"eight\" | 9 -> \"nine\" | 10 -> \"ten\" | _ -> \"other\" @>"
-
-    [<Fact>]
-    let ``Match sparse ints`` () =
-        renderingShouldMatch "SparseIntMatch"
-            "<@ fun (i: int) -> match i with 1 -> \"a\" | 5 -> \"b\" | 10 -> \"c\" | _ -> \"other\" @>"
-
-    [<Fact>]
-    let ``Match chars`` () =
-        renderingShouldMatch "CharMatch"
-            "<@ fun (c: char) -> match c with 'a' -> 1 | 'b' -> 2 | 'c' -> 3 | _ -> 0 @>"
-
-    [<Fact>]
-    let ``Match int64`` () =
-        renderingShouldMatch "Int64Match"
-            "<@ fun (i: int64) -> match i with 1L -> \"a\" | 2L -> \"b\" | 3L -> \"c\" | _ -> \"other\" @>"
-
-    [<Fact>]
-    let ``Match float`` () =
-        renderingShouldMatch "FloatMatch"
-            "<@ fun (f: float) -> match f with 1.0 -> \"a\" | 2.0 -> \"b\" | _ -> \"other\" @>"
-
-    [<Fact>]
-    let ``Match decimal`` () =
-        renderingShouldMatch "DecimalMatch"
-            "<@ fun (d: decimal) -> match d with 1m -> \"a\" | 2m -> \"b\" | _ -> \"other\" @>"
+            |> asLibrary
+            |> typecheck
+            |> shouldFail
+            |> withErrorCode 452
+            |> withDiagnosticMessageMatches "Quotations cannot contain inline assembly code or pattern matching on arrays"
+            |> ignore
