@@ -1996,57 +1996,13 @@ let MergePropertyDefs m ilPropertyDefs =
 
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
-    // Methods, fields and events are stored with a monotonically increasing insertion
-    // index. On Close() they are sorted by (Name, insertion index) so that within each
-    // type the IL emission order is independent of whether the surrounding method body
-    // was emitted inline (sequential codegen) or via the deferred queue at IlxGen.fs:12516
-    // (parallel codegen). The insertion-index tiebreaker preserves source-order grouping
-    // for methods that legitimately share a name (e.g. overloaded constructors and
-    // generic re-instantiations). Method ordering has no IL semantics — metadata tokens
-    // are assigned by the writer based on input order and any references inside the same
-    // assembly are re-resolved against that order.
-    // See https://github.com/dotnet/fsharp/issues/19732.
-    let mutable methodIdx = 0
-    let mutable fieldIdx = 0
-    let mutable eventIdx = 0
-
-    let gmethods =
-        let initial = tdef.Methods.AsList()
-
-        let xs = ResizeArray<struct (string * int) * ILMethodDef>(initial.Length)
-
-        for m in initial do
-            let k = methodIdx
-            methodIdx <- methodIdx + 1
-            xs.Add(struct (m.Name, k), m)
-
-        xs
-
-    let gfields =
-        let initial = tdef.Fields.AsList()
-        let xs = ResizeArray<struct (string * int) * ILFieldDef>(initial.Length)
-
-        for f in initial do
-            let k = fieldIdx
-            fieldIdx <- fieldIdx + 1
-            xs.Add(struct (f.Name, k), f)
-
-        xs
+    let gmethods = ResizeArray<ILMethodDef>(tdef.Methods.AsList())
+    let gfields = ResizeArray<ILFieldDef>(tdef.Fields.AsList())
 
     let gproperties: Dictionary<PropKey, int * ILPropertyDef> =
         Dictionary<_, _>(3, HashIdentity.Structural)
 
-    let gevents =
-        let initial = tdef.Events.AsList()
-        let xs = ResizeArray<struct (string * int) * ILEventDef>(initial.Length)
-
-        for e in initial do
-            let k = eventIdx
-            eventIdx <- eventIdx + 1
-            xs.Add(struct (e.Name, k), e)
-
-        xs
-
+    let gevents = ResizeArray<ILEventDef>(tdef.Events.AsList())
     let gnested = TypeDefsBuilder()
 
     member _.Close(g: TcGlobals) =
@@ -2066,45 +2022,31 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             else
                 tdef.CustomAttrs
 
-        let sortedMethods = gmethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
-
-        let sortedFields = gfields |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
-
-        let sortedEvents = gevents |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
-
         tdef.With(
-            methods = mkILMethods sortedMethods,
-            fields = mkILFields sortedFields,
+            methods = mkILMethods (ResizeArray.toList gmethods),
+            fields = mkILFields (ResizeArray.toList gfields),
             properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
-            events = mkILEvents sortedEvents,
+            events = mkILEvents (ResizeArray.toList gevents),
             nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close(g)),
             customAttrs = storeILCustomAttrs attrs
         )
 
-    member _.AddEventDef(edef: ILEventDef) =
-        let k = eventIdx
-        eventIdx <- eventIdx + 1
-        gevents.Add(struct (edef.Name, k), edef)
+    member _.AddEventDef edef = gevents.Add edef
 
-    member _.AddFieldDef(ilFieldDef: ILFieldDef) =
-        let k = fieldIdx
-        fieldIdx <- fieldIdx + 1
-        gfields.Add(struct (ilFieldDef.Name, k), ilFieldDef)
+    member _.AddFieldDef ilFieldDef = gfields.Add ilFieldDef
 
-    member _.AddMethodDef(ilMethodDef: ILMethodDef) =
+    member _.AddMethodDef ilMethodDef =
         let discard =
             match tdefDiscards with
             | Some(mdefDiscard, _) -> mdefDiscard ilMethodDef
             | None -> false
 
         if not discard then
-            let k = methodIdx
-            methodIdx <- methodIdx + 1
-            gmethods.Add(struct (ilMethodDef.Name, k), ilMethodDef)
+            gmethods.Add ilMethodDef
 
     member _.NestedTypeDefs = gnested
 
-    member _.GetCurrentFields() = gfields |> Seq.map snd |> Seq.readonly
+    member _.GetCurrentFields() = gfields |> Seq.readonly
 
     /// Merge Get and Set property nodes, which we generate independently for F# code
     /// when we come across their corresponding methods.
@@ -2118,56 +2060,22 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             AddPropertyDefToHash m gproperties pdef
 
     member _.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        let findIdx =
-            let mutable found = -1
-            let mutable i = 0
-
-            for _, md in gmethods do
-                if found < 0 && cond md then
-                    found <- i
-
-                i <- i + 1
-
-            if found >= 0 then Some found else None
-
-        match findIdx with
-        | Some idx ->
-            let k, md = gmethods[idx]
-            gmethods[idx] <- (k, appendInstrsToMethod instrs md)
+        match ResizeArray.tryFindIndex cond gmethods with
+        | Some idx -> gmethods[idx] <- appendInstrsToMethod instrs gmethods[idx]
         | None ->
             let body =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-            let cctor = mkILClassCtor body
-            let k = methodIdx
-            methodIdx <- methodIdx + 1
-            gmethods.Add(struct (cctor.Name, k), cctor)
+            gmethods.Add(mkILClassCtor body)
 
     member this.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        let findIdx =
-            let mutable found = -1
-            let mutable i = 0
-
-            for _, md in gmethods do
-                if found < 0 && cond md then
-                    found <- i
-
-                i <- i + 1
-
-            if found >= 0 then Some found else None
-
-        match findIdx with
-        | Some idx ->
-            let k, md = gmethods[idx]
-            gmethods[idx] <- (k, prependInstrsToMethod instrs md)
+        match ResizeArray.tryFindIndex cond gmethods with
+        | Some idx -> gmethods[idx] <- prependInstrsToMethod instrs gmethods[idx]
         | None ->
             let body =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
-            let cctor = mkILClassCtor body
-            let k = methodIdx
-            methodIdx <- methodIdx + 1
-            gmethods.Add(struct (cctor.Name, k), cctor)
+            gmethods.Add(mkILClassCtor body)
 
         this
 
@@ -2175,26 +2083,17 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
 and TypeDefsBuilder() =
 
-    // Sort key for an entry: (addAtEnd, fileIndex, startLine, startColumn, name, idx)
-    // - addAtEnd=false entries sort first, in source-position order (so user-declared nested
-    //   types preserve declaration order, and compiler-generated closures interleave at their
-    //   originating expression's source position regardless of when they were emitted).
-    // - addAtEnd=true entries (PrivateImplementationDetails, anonymous record types, raw-data
-    //   value types) sort last; we order them by name to canonicalize across runs since these
-    //   types have no meaningful user-source position. The auxiliary types are reached via
-    //   memoization tables whose first-writer wins under parallel codegen, so insertion idx is
-    //   not stable for them.
-    // - idx remains as a final tiebreaker for entries that share an identical (addAtEnd, range,
-    //   name) — currently impossible since name is unique per parent, but kept for safety.
     let tdefs =
-        ConcurrentDictionary<string, list<struct (bool * int * int * int * string * int) * (TypeDefBuilder * bool)>>(
-            HashIdentity.Structural
-        )
+        ConcurrentDictionary<string, list<int * (TypeDefBuilder * bool)>>(HashIdentity.Structural)
 
     let mutable countDown = Int32.MaxValue
     let mutable countUp = -1
 
     member b.Close(g: TcGlobals) =
+        //The order we emit type definitions is not deterministic since it is using the reverse of a range from a hash table. We should use an approximation of source order.
+        // Ideally it shouldn't matter which order we use.
+        // However, for some tests FSI generated code appears sensitive to the order, especially for nested types.
+
         [
             for _, (b, eliminateIfEmpty) in tdefs.Values |> Seq.collect id |> Seq.sortBy fst do
                 let tdef = b.Close(g)
@@ -2222,23 +2121,16 @@ and TypeDefsBuilder() =
     member b.FindNestedTypeDefBuilder(tref: ILTypeRef) =
         b.FindNestedTypeDefsBuilder(tref.Enclosing).FindTypeDefBuilder(tref.Name)
 
-    member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards, m: range) =
+    member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
         let idx =
             if addAtEnd then
                 Interlocked.Decrement(&countDown)
             else
                 Interlocked.Increment(&countUp)
 
-        let sortKey =
-            if addAtEnd then
-                // No meaningful source position — canonicalize by name across runs.
-                struct (true, 0, 0, 0, tdef.Name, idx)
-            else
-                struct (false, m.FileIndex, m.StartLine, m.StartColumn, tdef.Name, idx)
+        let newVal = idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
 
-        let newVal = sortKey, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
-
-        tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun _key oldList -> newVal :: oldList))
+        tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun key oldList -> newVal :: oldList))
         |> ignore
 
 type AnonTypeGenerationTable() =
@@ -2463,7 +2355,7 @@ type AnonTypeGenerationTable() =
 
             let ilTypeDef = ilTypeDef.WithSealed(true).WithSerializable(true)
 
-            mgbuf.AddTypeDef(ilTypeRef, ilTypeDef, false, true, None, range0)
+            mgbuf.AddTypeDef(ilTypeRef, ilTypeDef, false, true, None)
 
             let extraBindings =
                 [|
@@ -2519,27 +2411,13 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         StampedDictionary<Val, string * Expr>(HashIdentity.Reference)
 
     // A memoization table for generating value types for big constant arrays
-    //
-    // primedRawTypeCounter is consulted by the factory before falling back to a fresh
-    // IncrementOnly call. PrimeStableNamesForCodegen populates it in source order so that
-    // the '@T' counter assigned to each (cloc, size) pair is independent of whether the
-    // surrounding method body is emitted inline (sequential codegen) or via the deferred
-    // queue (parallel codegen). The factory still owns AddTypeDef and runs lazily — calling
-    // GenerateRawDataValueType during priming would fail because the destination host type
-    // does not exist until GenImplFile creates it.
-    // See https://github.com/dotnet/fsharp/issues/19732.
-    let primedRawTypeCounter =
-        ConcurrentDictionary<CompileLocation * int, int>(HashIdentity.Structural)
-
     let rawDataValueTypeGenerator =
         MemoizationTable<CompileLocation * int, ILTypeSpec>(
             "rawDataValueTypeGenerator",
             (fun (cloc, size) ->
 
                 let unique =
-                    match primedRawTypeCounter.TryGetValue((cloc, size)) with
-                    | true, c -> c
-                    | _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@T", cloc.Range)
+                    g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@T", cloc.Range)
 
                 let name = CompilerGeneratedName $"T{unique}_{size}Bytes" // Type names ending ...$T<unique>_37Bytes
 
@@ -2550,39 +2428,10 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                 let vtdef =
                     vtdef.WithAccess(ComputeTypeAccess vtref true taccessInternal cenv.g.realsig)
 
-                mgbuf.AddTypeDef(vtref, vtdef, false, true, None, range0)
+                mgbuf.AddTypeDef(vtref, vtdef, false, true, None)
                 vtspec),
             keyComparer = HashIdentity.Structural
         )
-
-    // Stable per-source-location '@field' counter assignment and per-source-range ILFieldSpec
-    // memoization used by GenConstArray. Populated in source order at codegen entry by
-    // PrimeStableNamesForCodegen so the field name allocated to each TOp.Bytes / TOp.UInt16s /
-    // const-array site is independent of whether the surrounding method body is emitted inline
-    // (sequential codegen) or via the deferred queue (parallel codegen — IlxGen.fs:12516).
-    // Without this, top-walk emissions vs deferred-walk emissions within the same file's '@field'
-    // bucket race for the lower IncrementOnly counters and produce different field names across
-    // --parallelcompilation- and --parallelcompilation+ builds. The fieldSpecByRange cache lets two
-    // inlined copies of the same TOp.Bytes site share a single static data field (correct: same
-    // byte data, one field is enough). It is keyed by source range — not by counter — because the
-    // '@field' counter is per-FileIndex and could otherwise collide across files (e.g. file A's
-    // counter 1 and file B's counter 1 would alias to the same cached spec from whichever file's
-    // codegen ran first, silently dropping the second file's field def).
-    // See https://github.com/dotnet/fsharp/issues/19732.
-    let primedFieldCounterByRange =
-        ConcurrentDictionary<struct (int * int * int * int * int), int>(HashIdentity.Structural)
-
-    let fieldSpecByRange =
-        ConcurrentDictionary<struct (int * int * int * int * int), ILFieldSpec>(HashIdentity.Structural)
-
-    // Set of ILTypeRefs that PrimeStableNamesForCodegen has determined will host a static
-    // raw-data field once GenConstArray runs (whether inline during top-walk or via the
-    // deferred queue at IlxGen.fs:12516). Consulted by GenModuleBinding's GetCurrentFields
-    // check at IlxGen.fs:~10940 so that the InitClass-cctor-force is emitted for the same
-    // set of modules under --parallelcompilation- and --parallelcompilation+.
-    // See https://github.com/dotnet/fsharp/issues/19732.
-    let primedRawDataFieldHosts =
-        ConcurrentDictionary<ILTypeRef, unit>(HashIdentity.Structural)
 
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
@@ -2634,54 +2483,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
 
         rawDataValueTypeGenerator.Apply((cloc, size))
 
-    /// Pre-allocate the deterministic source-order counter for the (cloc, size) raw-data value type
-    /// without forcing the underlying rawDataValueTypeGenerator factory (which would prematurely
-    /// call AddTypeDef before the host type exists). Called from PrimeStableNamesForCodegen.
-    member _.PrimeRawDataValueTypeCounter(cloc: CompileLocation, size: int) =
-        let cloc =
-            if cenv.options.isInteractive then
-                CompLocForPrivateImplementationDetails cloc
-            else
-                cloc
-
-        primedRawTypeCounter.GetOrAdd(
-            (cloc, size),
-            (fun _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@T", cloc.Range))
-        )
-        |> ignore
-
-    /// Returns the stable '@field' counter for an array-literal expression at source range 'm'.
-    /// Source-order pre-population by PrimeStableNamesForCodegen guarantees that this returns
-    /// the same counter regardless of whether the surrounding method body is emitted inline
-    /// (sequential codegen) or via the deferred queue (parallel codegen). Falls back to a
-    /// direct IncrementOnly if priming did not cover the site (defensive only).
-    member _.GetOrAssignFieldCounter(m: range) =
-        let key = struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn)
-        primedFieldCounterByRange.GetOrAdd(key, (fun _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@field", m)))
-
-    /// Returns the static-field spec for an array-literal site at 'm', creating and registering it
-    /// the first time. Two inlined copies of the same TOp.Bytes site share the same source range
-    /// (and therefore the same static data field). The 'makeFspec' callback is invoked at most once
-    /// per source range and is responsible for emitting the field def and any associated type def.
-    member this.GetOrCreateRawDataFieldSpec(m: range, makeFspec: int -> ILFieldSpec) =
-        let key = struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn)
-
-        fieldSpecByRange.GetOrAdd(
-            key,
-            (fun _ ->
-                let counter = this.GetOrAssignFieldCounter(m)
-                makeFspec counter)
-        )
-
-    /// Records that an ILTypeRef will host a static raw-data field once codegen runs.
-    /// Called from PrimeStableNamesForCodegen for every TOp.Bytes / TOp.UInt16s site in source order.
-    member _.MarkRawDataFieldHost(tref: ILTypeRef) =
-        primedRawDataFieldHosts.TryAdd(tref, ()) |> ignore
-
-    /// True if PrimeStableNamesForCodegen recorded this ILTypeRef as a future raw-data field host.
-    member _.WillHaveRawDataFields(tref: ILTypeRef) =
-        primedRawDataFieldHosts.ContainsKey(tref)
-
     member _.GenerateAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         anonTypeTable.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo)
 
@@ -2691,8 +2492,8 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
     member _.GrabExtraBindingsToGenerate() =
         anonTypeTable.GrabExtraBindingsToGenerate()
 
-    member _.AddTypeDef(tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards, m: range) =
-        gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards, m)
+    member _.AddTypeDef(tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
+        gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards)
 
     member _.FindNestedTypeDefBuilder(tref: ILTypeRef) = gtdefs.FindNestedTypeDefBuilder(tref)
 
@@ -3044,7 +2845,7 @@ module CG =
 let GenString cenv cgbuf s =
     CG.EmitInstr cgbuf (pop 0) (Push [ cenv.g.ilg.typ_String ]) (I_ldstr s)
 
-let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (write: ByteBuffer -> 'a -> unit) (m: range) =
+let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (write: ByteBuffer -> 'a -> unit) =
     let g = cenv.g
     use buf = ByteBuffer.Create data.Length
     data |> Array.iter (write buf)
@@ -3054,25 +2855,23 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (w
     if data.Length = 0 then
         CG.EmitInstrs cgbuf (pop 0) (Push [ ilArrayType ]) [ mkLdcInt32 0; I_newarr(ILArrayShape.SingleDimensional, ilElementType) ]
     else
-        let fspec =
-            cgbuf.mgbuf.GetOrCreateRawDataFieldSpec(
-                m,
-                fun unique ->
-                    let vtspec = cgbuf.mgbuf.GenerateRawDataValueType(eenv.cloc, bytes.Length)
-                    let ilFieldName = CompilerGeneratedName $"field{unique}"
-                    let fty = ILType.Value vtspec
+        let vtspec = cgbuf.mgbuf.GenerateRawDataValueType(eenv.cloc, bytes.Length)
 
-                    let ilFieldDef =
-                        mkILStaticField (ilFieldName, fty, None, Some bytes, ILMemberAccess.Assembly)
+        let unique =
+            g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@field", eenv.cloc.Range)
 
-                    let ilFieldDef =
-                        ilFieldDef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ])
+        let ilFieldName = CompilerGeneratedName $"field{unique}"
+        let fty = ILType.Value vtspec
 
-                    let fspec = mkILFieldSpecInTy (mkILTyForCompLoc eenv.cloc, ilFieldName, fty)
-                    CountStaticFieldDef()
-                    cgbuf.mgbuf.AddFieldDef(fspec.DeclaringTypeRef, ilFieldDef)
-                    fspec
-            )
+        let ilFieldDef =
+            mkILStaticField (ilFieldName, fty, None, Some bytes, ILMemberAccess.Assembly)
+
+        let ilFieldDef =
+            ilFieldDef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ])
+
+        let fspec = mkILFieldSpecInTy (mkILTyForCompLoc eenv.cloc, ilFieldName, fty)
+        CountStaticFieldDef()
+        cgbuf.mgbuf.AddFieldDef(fspec.DeclaringTypeRef, ilFieldDef)
 
         CG.EmitInstrs
             cgbuf
@@ -3424,13 +3223,13 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             | TOp.Array, elems, [ elemTy ] -> GenNewArray cenv cgbuf eenv (elems, elemTy, m) sequel
             | TOp.Bytes bytes, [], [] ->
                 if cenv.options.emitConstantArraysUsingStaticDataBlobs then
-                    GenConstArray cenv cgbuf eenv g.ilg.typ_Byte bytes (fun buf b -> buf.EmitByte b) m
+                    GenConstArray cenv cgbuf eenv g.ilg.typ_Byte bytes (fun buf b -> buf.EmitByte b)
                     GenSequel cenv eenv.cloc cgbuf sequel
                 else
                     GenNewArraySimple cenv cgbuf eenv (List.ofArray (Array.map (mkByte g m) bytes), g.byte_ty, m) sequel
             | TOp.UInt16s arr, [], [] ->
                 if cenv.options.emitConstantArraysUsingStaticDataBlobs then
-                    GenConstArray cenv cgbuf eenv g.ilg.typ_UInt16 arr (fun buf b -> buf.EmitUInt16 b) m
+                    GenConstArray cenv cgbuf eenv g.ilg.typ_UInt16 arr (fun buf b -> buf.EmitUInt16 b)
                     GenSequel cenv eenv.cloc cgbuf sequel
                 else
                     GenNewArraySimple cenv cgbuf eenv (List.ofArray (Array.map (mkUInt16 g m) arr), g.uint16_ty, m) sequel
@@ -4140,17 +3939,10 @@ and GenNewArray cenv cgbuf eenv (elems: Expr list, elemTy, m) sequel =
         then
             let ilElemTy = GenType cenv m eenv.tyenv elemTy
 
-            GenConstArray
-                cenv
-                cgbuf
-                eenv
-                ilElemTy
-                elemsArray
-                (fun buf ->
-                    function
-                    | Expr.Const(c, _, _) -> write buf c
-                    | _ -> failwith "unreachable")
-                m
+            GenConstArray cenv cgbuf eenv ilElemTy elemsArray (fun buf ->
+                function
+                | Expr.Const(c, _, _) -> write buf c
+                | _ -> failwith "unreachable")
 
             GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -6688,7 +6480,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             .WithEncoding(ILDefaultPInvokeEncoding.Auto)
             .WithInitSemantics(ILTypeInit.BeforeField)
 
-    cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None, m)
+    cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
 
     CountClosure()
 
@@ -6843,7 +6635,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
              Some cloinfo.cloSpec)
 
     for cloTypeDef in cloTypeDefs do
-        cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None, m)
+        cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
 
     CountClosure()
     GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloinfo.cloWitnessInfos
@@ -7041,7 +6833,7 @@ and GenSequenceExpr
              Some ilxCloSpec)
 
     for cloTypeDef in cloTypeDefs do
-        cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None, m)
+        cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
 
     CountClosure()
 
@@ -7271,7 +7063,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars e
         CountClosure()
 
         for cloTypeDef in cloTypeDefs do
-            cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None, m)
+            cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
 
         cloinfo, m
 
@@ -7670,7 +7462,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
              None)
 
     for cloTypeDef in cloTypeDefs do
-        cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None, m)
+        cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None)
 
     CountClosure()
 
@@ -10757,7 +10549,7 @@ and GenTypeDefForCompLoc
              initTrigger)
 
     let tdef = tdef.WithSealed(true).WithAbstract(true)
-    mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None, cloc.Range)
+    mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None)
 
 and GenImplFileContents cenv cgbuf qname lazyInitInfo eenv mty def =
     // REVIEW: the scopeMarks are used for any shadow locals we create for the module bindings
@@ -10951,18 +10743,11 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
             GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenvinner mdef
             |> ignore
 
-            // Always emit the cctor force for every module, regardless of whether the module
-            // currently has any static fields. Under --parallelcompilation+ the field defs for
-            // raw-data static blobs created by GenConstArray (IlxGen.fs:~2870) inside
-            // member-method bodies are not added until the deferred iter at IlxGen.fs:12516 runs
-            // — which is long after this check. The original predicate
-            // `not (GetCurrentFields(tref) |> Seq.isEmpty)` saw an empty field set under parallel
-            // codegen and silently omitted the cctor force; the sequential codegen saw the field
-            // immediately and emitted it. Unconditionally calling
-            // GenForceWholeFileInitializationAsPartOfCCtor restores byte-identical output between
-            // the two modes for the cost of a small empty .cctor stub on modules that legitimately
-            // have no static state. See https://github.com/dotnet/fsharp/issues/19732.
-            GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
+            // If the module has a .cctor for some mutable fields, we need to ensure that when
+            // those fields are "touched" the InitClass .cctor is forced. The InitClass .cctor will
+            // then fill in the value of the mutable fields.
+            if not (cgbuf.mgbuf.GetCurrentFields(tref) |> Seq.isEmpty) then
+                GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
 
 /// Generate the namespace fragments in a single file
 and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: CheckedImplFileAfterOptimization) =
@@ -12376,7 +12161,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let tdef = tdef.WithHasSecurity(not (List.isEmpty securityAttrs))
             let tdef = tdef.With(securityDecls = secDecls)
-            mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards, m)
+            mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards)
 
             // If a non-generic type is written with "static let" and "static do" (i.e. it has a ".cctor")
             // then the code for the .cctor is placed into .cctor for the backing static class for the file.
@@ -12664,61 +12449,25 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
             )
 
         let tdef = tdef.WithSerializable(true)
-        mgbuf.AddTypeDef(tref, tdef, false, false, None, m)
+        mgbuf.AddTypeDef(tref, tdef, false, false, None)
         Some tref
 
-/// Source-order priming pass that runs once at the entry to CodegenAssembly, before
-/// any IlxGen file walk or deferred-method emission. It pre-populates the compiler's
-/// shared name caches so that names allocated later during the (parallel or sequential)
-/// codegen phase are stable in source order regardless of force/emission order:
+/// Visit every top-level Val that Val.CompiledName routes through StableNiceNameGenerator, in
+/// source-deterministic order (files in source order from ParseAndCheckInputs, then a deterministic
+/// depth-first traversal of every binding site in the file's IR). Calling .CompiledName on each Val
+/// populates the niceNames cache deterministically before the parallel codegen iter runs, so
+/// subsequent racy GetUniqueCompilerGeneratedName calls on different codegen threads hit the cache
+/// instead of incrementing the bucket counter in non-deterministic order. This is the cure for the
+/// parallel-codegen race that produced different '@N' suffixes across rebuilds for compiler-generated
+/// names like 'contains', 'func1', 'f@284' etc. See https://github.com/dotnet/fsharp/issues/19732.
 ///
-/// 1. Top-level Val.CompiledName  — Val.CompiledName routes through
-///    StableNiceNameGenerator for every Val matching the predicate below. Pinning the
-///    suffix in source order makes ComputeStorageForValWithValReprInfo (called from
-///    AllocValForBind during parallel method-body emit) deterministic.
-///
-/// 2. Closure type names (Expr.Lambda / Expr.TyLambda / Expr.Obj) — GetIlxClosureFreeVars
-///    (IlxGen.fs:~7140) calls StableNameGenerator.GetUniqueCompilerGeneratedName with a
-///    basename derived from the nearest non-compiler-generated Val on eenv.letBoundVars.
-///    The numeric '-N' suffix is allocated by NiceNameGenerator.FreshCompilerGeneratedNameOfBasicName
-///    which uses Interlocked.Increment on a per-(basicName, FileIndex) bucket. The bucket
-///    is shared across files for any basicName that recurs (e.g. '_fsyacc_reductions',
-///    'abstractLazyModulInfo'). Pinning the suffix here in source order, with a
-///    letBoundVars stack mirroring IlxGen's GenBindingAfterDebugPoint/GenLetRecBindings
-///    push semantics, gives every closure site a deterministic name regardless of whether
-///    the surrounding method body is emitted inline (sequential codegen) or via the
-///    deferred queue at IlxGen.fs:12516 (parallel codegen).
-///
-/// 3. Raw-data value types (T{N}_{size}Bytes) — GenConstArray (IlxGen.fs:~2850) calls
-///    mgbuf.GenerateRawDataValueType(cloc, size) which goes through a memoization keyed
-///    by (cloc, size). The factory calls IncrementOnly("@T", cloc.Range) so first-seen
-///    (cloc, size) wins the lower counters. Priming the memoization in source order
-///    populates the cache deterministically.
-///
-/// 4. '@field' counter (field{N} static-data fields) — GenConstArray uses
-///    mgbuf.GetOrAssignFieldCounter(m) which memoizes per source range. Walking every
-///    array-literal site in source order assigns counters in a deterministic order.
-///
-/// Anonymous record types are *not* primed here because they are emitted at the start of
-/// each GenImplFile (IlxGen.fs:~10761) in deterministic Stamp order, ahead of any deferred
-/// method body — that ordering is already independent of --parallelcompilation.
-///
-/// Over-priming (touching a Lambda/Obj that IlxGen eventually does not lower to a closure
-/// type) is harmless: the StableNameGenerator's Lazy<string> is forced once on insertion
-/// and any later GetUniqueCompilerGeneratedName call with the same (basename, uniq) returns
-/// the cached value. Under-priming would leave the race in place, so the walker is biased
-/// towards visiting every site IlxGen might consume.
-///
-/// See https://github.com/dotnet/fsharp/issues/19732 and PR #19810.
-let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles: CheckedImplFileAfterOptimization list) =
-    let g = cenv.g
-
+/// The race manifests in IlxGen.ComputeStorageForValWithValReprInfo (called from AllocValForBind
+/// during the parallel method-body emit) so the walk must visit *every* binding site, not just the
+/// module-spine bindings — TLR-lifted vals live as Expr.Let bindings inside method bodies.
+let PrimeStableNamesForCodegen (g: TcGlobals) (implFiles: CheckedImplFileAfterOptimization list) =
     match g.CompilerGlobalState with
     | None -> ()
-    | Some cgs ->
-
-        let stableNameGen = cgs.StableNameGenerator
-
+    | Some _ ->
         let primeVal (v: Val) =
             // Mirrors the predicate in Val.CompiledName that routes through StableNiceNameGenerator.
             if
@@ -12728,181 +12477,16 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             then
                 v.CompiledName g.CompilerGlobalState |> ignore
 
-        let primeClosureName (letBoundVars: ValRef list) (uniq: int64) (m: range) =
-            // Replicates the basename-selection in GetIlxClosureFreeVars (IlxGen.fs:~7132).
-            let boundvar =
-                letBoundVars |> List.tryFind (fun v -> not v.Deref.IsCompilerGenerated)
-
-            let basename =
-                match boundvar with
-                | Some v -> v.Deref.CompiledName g.CompilerGlobalState
-                | None -> "clo"
-
-            let basenameSafeForUseAsTypename = CleanUpGeneratedTypeName basename
-
-            stableNameGen.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, m, uniq)
-            |> ignore
-
-        // GenConstArray re-routes cloc through CompLocForPrivateImplementationDetails when
-        // running under FSI; PrimeRawDataValueTypeCounter performs the same rewrite internally,
-        // so the walker only needs to track the un-rewritten cloc.
-        let stackGuard = StackGuard("PrimeStableNamesForCodegen")
-
-        let rec walkExpr (letBoundVars: ValRef list) (cloc: CompileLocation) (expr: Expr) =
-            stackGuard.Guard
-            <| fun () ->
-                match stripDebugPoints expr with
-                | Expr.Const _
-                | Expr.Val _
-                | Expr.WitnessArg _ -> ()
-
-                | Expr.Lambda(uniq, _, _, _, body, m, _) ->
-                    primeClosureName letBoundVars uniq m
-                    walkExpr letBoundVars cloc body
-
-                | Expr.TyLambda(uniq, _, body, m, _) ->
-                    primeClosureName letBoundVars uniq m
-                    walkExpr letBoundVars cloc body
-
-                | Expr.Obj(uniq, _, _, basecall, overrides, iimpls, m) ->
-                    primeClosureName letBoundVars uniq m
-                    walkExpr letBoundVars cloc basecall
-
-                    for TObjExprMethod(_, _, _, _, e, _) in overrides do
-                        walkExpr letBoundVars cloc e
-
-                    for _, ims in iimpls do
-                        for TObjExprMethod(_, _, _, _, e, _) in ims do
-                            walkExpr letBoundVars cloc e
-
-                | Expr.Let(TBind(v, rhs, _), body, _, _) ->
-                    // Mirror GenBindingAfterDebugPoint (IlxGen.fs:~8648): RHS sees the let-bound
-                    // var on letBoundVars; the body does not.
-                    walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
-                    walkExpr letBoundVars cloc body
-
-                | Expr.LetRec(binds, body, _, _) ->
-                    // Mirror computeFixupsForOneRecursiveVar (IlxGen.fs:~8438): each rec bind's
-                    // RHS sees only its own bound var on letBoundVars, not its rec siblings.
-                    for TBind(v, rhs, _) in binds do
-                        walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
-
-                    walkExpr letBoundVars cloc body
-
-                | Expr.Op(op, _, args, m) ->
-                    match op with
-                    | TOp.Bytes bytes when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
-                        mgbuf.PrimeRawDataValueTypeCounter(cloc, bytes.Length)
-                        mgbuf.GetOrAssignFieldCounter(m) |> ignore
-                        mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
-                    | TOp.UInt16s arr when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
-                        mgbuf.PrimeRawDataValueTypeCounter(cloc, arr.Length * 2)
-                        mgbuf.GetOrAssignFieldCounter(m) |> ignore
-                        mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
-                    | _ -> ()
-
-                    for a in args do
-                        walkExpr letBoundVars cloc a
-
-                | Expr.App(f, _, _, args, _) ->
-                    walkExpr letBoundVars cloc f
-
-                    for a in args do
-                        walkExpr letBoundVars cloc a
-
-                | Expr.Sequential(e1, e2, _, _) ->
-                    walkExpr letBoundVars cloc e1
-                    walkExpr letBoundVars cloc e2
-
-                | Expr.Match(_, _, dt, targets, _, _) ->
-                    walkDtree letBoundVars cloc dt
-
-                    for TTarget(_, body, _) in targets do
-                        walkExpr letBoundVars cloc body
-
-                | Expr.StaticOptimization(_, e2, e3, _) ->
-                    walkExpr letBoundVars cloc e2
-                    walkExpr letBoundVars cloc e3
-
-                | Expr.TyChoose(_, body, _) -> walkExpr letBoundVars cloc body
-
-                | Expr.Quote(e, _, _, _, _) ->
-                    // Quotations are lowered by GenQuotation (IlxGen.fs:~5754) to a TOp.Bytes
-                    // expression whose pickled AST is materialized only at codegen time, so the
-                    // TOp.Bytes site is not visible to this AST walker. Mark the enclosing cloc as
-                    // a raw-data field host to make the line-10940 check consistent across
-                    // --parallelcompilation- and --parallelcompilation+ builds.
-                    if cenv.options.emitConstantArraysUsingStaticDataBlobs then
-                        mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
-
-                    walkExpr letBoundVars cloc e
-
-                | Expr.Link r -> walkExpr letBoundVars cloc r.Value
-
-                | Expr.DebugPoint(_, inner) -> walkExpr letBoundVars cloc inner
-
-        and walkDtree (letBoundVars: ValRef list) cloc dt =
-            match dt with
-            | TDBind(TBind(v, rhs, _), rest) ->
-                walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
-                walkDtree letBoundVars cloc rest
-            | TDSuccess(args, _) ->
-                for a in args do
-                    walkExpr letBoundVars cloc a
-            | TDSwitch(test, cases, dflt, _) ->
-                walkExpr letBoundVars cloc test
-
-                for TCase(_, sub) in cases do
-                    walkDtree letBoundVars cloc sub
-
-                match dflt with
-                | Some d -> walkDtree letBoundVars cloc d
-                | None -> ()
-
-        let rec walkModuleContents (cloc: CompileLocation) (x: ModuleOrNamespaceContents) =
-            match x with
-            | TMDefRec(_, _, _, mbinds, _) ->
-                for mb in mbinds do
-                    walkModuleBinding cloc mb
-            | TMDefLet(TBind(v, rhs, _), _) ->
-                primeVal v
-                walkExpr [ mkLocalValRef v ] cloc rhs
-            | TMDefDo(e, _) -> walkExpr [] cloc e
-            | TMDefOpens _ -> ()
-            | TMDefs defs ->
-                for d in defs do
-                    walkModuleContents cloc d
-
-        and walkModuleBinding (cloc: CompileLocation) (mb: ModuleOrNamespaceBinding) =
-            match mb with
-            | ModuleOrNamespaceBinding.Binding(TBind(v, rhs, _)) ->
-                primeVal v
-                walkExpr [ mkLocalValRef v ] cloc rhs
-            | ModuleOrNamespaceBinding.Module(mspec, mdef) ->
-                let cloc' =
-                    if mspec.IsNamespace then
-                        cloc
-                    else
-                        CompLocForFixedModule cloc.QualifiedNameOfFile cloc.TopImplQualifiedName mspec
-
-                walkModuleContents cloc' mdef
-
-        // Initial cloc derivation mirrors GenImplFile (IlxGen.fs:~10764): the file's contents are
-        // walked under cloc = CompLocForInitClass({fragmentCloc with TopImplQualifiedName = qname.Text;
-        // Range = qname.Range}). Nested module contents are walked under a freshly computed cloc.
-        let fragCloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+        let folder =
+            { ExprFolder0 with
+                valBindingSiteIntercept =
+                    fun st (_isRec, v) ->
+                        primeVal v
+                        st
+            }
 
         for implFile in implFiles do
-            let (CheckedImplFile(qname, _, contents, _, _, _, _)) = implFile.ImplFile
-
-            let fileCloc =
-                { fragCloc with
-                    TopImplQualifiedName = qname.Text
-                    Range = qname.Range
-                }
-
-            let initCloc = CompLocForInitClass fileCloc
-            walkModuleContents initCloc contents
+            FoldImplFile folder () implFile.ImplFile |> ignore
 
 /// Post-IlxGen pass that re-orders the members of every emitted ILTypeDef into a deterministic
 /// alphabetical order. IlxGen adds method/field/event/property/nested-type defs to the assembly
@@ -12924,7 +12508,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         // through StableNiceNameGenerator, so the later parallel codegen calls hit the cache
         // and return deterministic names regardless of thread scheduling.
         // See https://github.com/dotnet/fsharp/issues/19732.
-        PrimeStableNamesForCodegen cenv mgbuf implFiles
+        PrimeStableNamesForCodegen cenv.g implFiles
 
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
