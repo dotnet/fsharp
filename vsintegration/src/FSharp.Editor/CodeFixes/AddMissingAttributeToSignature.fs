@@ -203,6 +203,18 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                     |> Seq.filter (fun (u: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse) ->
                         u.IsFromDefinition
                         && u.Symbol.SignatureLocation.IsSome
+                        // The picked symbol's SignatureLocation must point to a
+                        // DIFFERENT file from the .fs (i.e. into the .fsi).
+                        // Counter-example: the wildcard self-identifier `_` in
+                        // `member _.F(x: int) = ...` is reported as a definition
+                        // symbol with SignatureLocation = its own .fs position.
+                        // Its column (11..18) is lower than the member identifier
+                        // F (col 13..) so the minBy tie-break used to pick it,
+                        // and the fix would silently modify the .fs instead of
+                        // the .fsi (the test then sees the .fsi unchanged).
+                        && (match u.Symbol.SignatureLocation with
+                            | Some sigLoc -> not (String.Equals(sigLoc.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase))
+                            | None -> false)
                         // Skip constructors: when the attribute is on a member inside
                         // `type T() = ...`, F# also reports a definition use of the
                         // implicit constructor at the member's line, but its
@@ -230,30 +242,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                         |> Some
 
                 match symbolUse |> Option.bind (fun u -> u.Symbol.SignatureLocation) with
-                | Some sigRange ->
-                    // The picked symbol's signature location MUST be in a different
-                    // file (the .fsi) than the current .fs. If it points back at
-                    // the .fs itself, F# could not resolve the sig pairing for this
-                    // member (e.g. instance member inside `type T() = ...`) and we
-                    // would silently modify the .fs file instead of the .fsi.
-                    // Fail loudly with the symbol/path info so we can adjust the
-                    // candidate filter for the real .fsi resolution.
-                    if String.Equals(sigRange.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase) then
-                        let pickedFullName =
-                            symbolUse
-                            |> Option.map (fun u -> u.Symbol.FullName)
-                            |> Option.defaultValue "<none>"
-
-                        failwithf
-                            "[AddMissingAttributeToSignature] sigRange points to .fs (not .fsi). pickedSymbol=%s sigFile=%s docFile=%s sigLine=%d:%d-%d:%d"
-                            pickedFullName
-                            sigRange.FileName
-                            document.FilePath
-                            sigRange.StartLine
-                            sigRange.StartColumn
-                            sigRange.EndLine
-                            sigRange.EndColumn
-
+                | Some sigRange when not (String.Equals(sigRange.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase)) ->
                     match tryFindSigDocument document sigRange.FileName with
                     | Some sigDoc ->
                         // Capture the DocumentId, not the Document - Documents are
@@ -276,33 +265,12 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                                 let currentSolution = document.Project.Solution
 
                                 match currentSolution.GetDocument(sigDocId) |> Option.ofObj with
-                                | None ->
-                                    failwithf
-                                        "[AddMissingAttributeToSignature] sigDocId not found in solution. sigDocId=%A sigFile=%s sigLine=%d:%d-%d:%d"
-                                        sigDocId
-                                        sigRange.FileName
-                                        sigRange.StartLine
-                                        sigRange.StartColumn
-                                        sigRange.EndLine
-                                        sigRange.EndColumn
-
-                                    return currentSolution
+                                | None -> return currentSolution
                                 | Some liveSigDoc ->
                                     let! current = liveSigDoc.GetTextAsync(cancellationToken)
 
                                     match tryFSharpRangeToTextSpan current sigRange with
-                                    | None ->
-                                        failwithf
-                                            "[AddMissingAttributeToSignature] sigRange out of bounds. sigFile=%s sigLine=%d:%d-%d:%d textLines=%d textLen=%d"
-                                            sigRange.FileName
-                                            sigRange.StartLine
-                                            sigRange.StartColumn
-                                            sigRange.EndLine
-                                            sigRange.EndColumn
-                                            current.Lines.Count
-                                            current.Length
-
-                                        return currentSolution
+                                    | None -> return currentSolution
                                     | Some currentSigSpan ->
                                         let currentLineStart = current.Lines.GetLineFromPosition(currentSigSpan.Start).Start
                                         let currentIndent = indentOfLine current currentLineStart
@@ -327,6 +295,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
                         context.RegisterCodeFix(action, context.Diagnostics)
                     | None -> ()
+                | Some _
                 | None -> ()
         }
         |> CancellableTask.startAsTask context.CancellationToken
