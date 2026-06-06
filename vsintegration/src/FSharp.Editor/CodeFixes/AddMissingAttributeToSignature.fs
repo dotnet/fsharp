@@ -235,32 +235,33 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                             with _ ->
                                 sigRange.FileName
 
+                        let createChangedSolution (cancellationToken: System.Threading.CancellationToken) : System.Threading.Tasks.Task<Solution> =
+                            task {
+                                let currentSolution = document.Project.Solution.Workspace.CurrentSolution
+
+                                match currentSolution.GetDocument(sigDocId) |> Option.ofObj with
+                                | None -> return currentSolution
+                                | Some liveSigDoc ->
+                                    let! current = liveSigDoc.GetTextAsync(cancellationToken)
+
+                                    match tryFSharpRangeToTextSpan current sigRange with
+                                    | None -> return currentSolution
+                                    | Some currentSigSpan ->
+                                        let currentLineStart = current.Lines.GetLineFromPosition(currentSigSpan.Start).Start
+                                        let currentIndent = indentOfLine current currentLineStart
+                                        let currentLineBreak = lineBreakAt current currentLineStart
+                                        let currentInsertion = $"{currentIndent}{bracketed}{currentLineBreak}"
+
+                                        let updated =
+                                            current.WithChanges(TextChange(TextSpan(currentLineStart, 0), currentInsertion))
+
+                                        return liveSigDoc.WithText(updated).Project.Solution
+                            }
+
                         let action =
                             CodeAction.Create(
                                 $"Add {bracketed} to signature",
-                                (fun cancellationToken ->
-                                    cancellableTask {
-                                        let currentSolution = document.Project.Solution.Workspace.CurrentSolution
-
-                                        match currentSolution.GetDocument(sigDocId) |> Option.ofObj with
-                                        | None -> return currentSolution
-                                        | Some liveSigDoc ->
-                                            let! current = liveSigDoc.GetTextAsync(cancellationToken)
-
-                                            match tryFSharpRangeToTextSpan current sigRange with
-                                            | None -> return currentSolution
-                                            | Some currentSigSpan ->
-                                                let currentLineStart = current.Lines.GetLineFromPosition(currentSigSpan.Start).Start
-                                                let currentIndent = indentOfLine current currentLineStart
-                                                let currentLineBreak = lineBreakAt current currentLineStart
-                                                let currentInsertion = $"{currentIndent}{bracketed}{currentLineBreak}"
-
-                                                let updated =
-                                                    current.WithChanges(TextChange(TextSpan(currentLineStart, 0), currentInsertion))
-
-                                                return liveSigDoc.WithText(updated).Project.Solution
-                                    }
-                                    |> CancellableTask.start cancellationToken),
+                                System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<Solution>>(createChangedSolution),
                                 equivalenceKey =
                                     $"{CodeFix.AddMissingAttributeToSignature}:{bracketed}:{normalizedSigPath}:{sigRange.StartLine}:{sigRange.StartColumn}:{sigRange.EndLine}:{sigRange.EndColumn}"
                             )
