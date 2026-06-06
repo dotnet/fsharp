@@ -1041,7 +1041,6 @@ type MethodBody =
     | NotAvailable
 
 /// Generic parameters.  Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
-[<NoComparison; NoEquality>]
 type ILGenericParameterDef =
     {
         Name: string

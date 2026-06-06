@@ -7,6 +7,8 @@
 
 namespace FSharp.Compiler.EditorServices
 
+
+#nowarn "3888" // see issue #19560: the .fsi may intentionally hide consumer-visible attributes
 open FSharp.Compiler.NicePrint
 open Internal.Utilities.Library  
 open Internal.Utilities.Library.Extras

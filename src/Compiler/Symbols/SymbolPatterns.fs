@@ -2,6 +2,8 @@
 
 namespace FSharp.Compiler.Symbols
 
+
+#nowarn "3888" // see issue #19560: the .fsi may intentionally hide consumer-visible attributes
 open FSharp.Compiler.Syntax
 
 /// Patterns over FSharpSymbol and derivatives.

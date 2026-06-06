@@ -6,7 +6,6 @@ open FSharp.Compiler.Text
 
 /// Represents collected XmlDoc lines
 [<Class>]
-[<RequireQualifiedAccess>]
 type public XmlDoc =
 
     new: unprocessedLines: string[] * range: range -> XmlDoc
