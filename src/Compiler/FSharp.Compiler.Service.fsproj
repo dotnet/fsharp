@@ -15,7 +15,7 @@
          do not yet carry every consumer-visible attribute on their public surface;
          tracked as a follow-up. Suppressed here to unblock the bootstrap build. -->
     <NoWarn>$(NoWarn);3888</NoWarn>
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);FS3888</WarningsNotAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);3888</WarningsNotAsErrors>
     <OtherFlags>$(OtherFlags) --nowarn:3888</OtherFlags>
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>

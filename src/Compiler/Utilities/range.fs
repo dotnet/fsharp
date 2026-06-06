@@ -3,8 +3,8 @@
 // Anything to do with special names of identifiers and other lexical rules
 namespace FSharp.Compiler.Text
 
-
 #nowarn "3888" // see issue #19560: the .fsi may intentionally hide consumer-visible attributes
+
 open System
 open System.IO
 open System.Collections.Concurrent
