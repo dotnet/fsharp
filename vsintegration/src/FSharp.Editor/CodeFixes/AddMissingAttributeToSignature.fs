@@ -11,6 +11,8 @@ open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 
+open FSharp.Compiler.Symbols
+
 open CancellableTasks
 
 /// Code-fix for FS3888 (attribute present in the .fs implementation but
@@ -201,6 +203,15 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                     |> Seq.filter (fun (u: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse) ->
                         u.IsFromDefinition
                         && u.Symbol.SignatureLocation.IsSome
+                        // Skip constructors: when the attribute is on a member inside
+                        // `type T() = ...`, F# also reports a definition use of the
+                        // implicit constructor at the member's line, but its
+                        // SignatureLocation points at the `new: ...` line in the
+                        // .fsi, not the member declaration. We always want the
+                        // member/property/value the attribute is attached to.
+                        && (match u.Symbol with
+                            | :? FSharpMemberOrFunctionOrValue as mfv -> not mfv.IsConstructor
+                            | _ -> true)
                         && (u.Range.StartLine > diagFsRange.EndLine
                             || (u.Range.StartLine = diagFsRange.EndLine
                                 && u.Range.StartColumn >= diagFsRange.EndColumn)))
@@ -235,7 +246,9 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                             with _ ->
                                 sigRange.FileName
 
-                        let createChangedSolution (cancellationToken: System.Threading.CancellationToken) : System.Threading.Tasks.Task<Solution> =
+                        let createChangedSolution
+                            (cancellationToken: System.Threading.CancellationToken)
+                            : System.Threading.Tasks.Task<Solution> =
                             task {
                                 let currentSolution = document.Project.Solution.Workspace.CurrentSolution
 
@@ -261,7 +274,9 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                         let action =
                             CodeAction.Create(
                                 $"Add {bracketed} to signature",
-                                System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<Solution>>(createChangedSolution),
+                                System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<Solution>>(
+                                    createChangedSolution
+                                ),
                                 equivalenceKey =
                                     $"{CodeFix.AddMissingAttributeToSignature}:{bracketed}:{normalizedSigPath}:{sigRange.StartLine}:{sigRange.StartColumn}:{sigRange.EndLine}:{sigRange.EndColumn}"
                             )
