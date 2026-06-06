@@ -8,6 +8,11 @@ open Internal.Utilities.Library
 #nowarn "49"
 #nowarn "343" // The type 'ILAssemblyRef' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'.
 #nowarn "346" // The struct, record or union type 'IlxExtensionType' has an explicit implementation of 'Object.Equals'. ...
+// 3888: ILAttribute is a DU with `Encoded`/`Decoded` cases used unqualified
+// across the compiler (e.g. EraseUnions.fs). Adding [<RequireQualifiedAccess>]
+// to the .fsi to satisfy FS3888 would break callers. Suppress as a
+// transitional measure until call sites are migrated to qualified forms.
+#nowarn "3888"
 
 open System
 open System.Diagnostics
