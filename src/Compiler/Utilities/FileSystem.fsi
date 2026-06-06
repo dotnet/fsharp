@@ -30,6 +30,7 @@ module internal Bytes =
 /// A view over bytes.
 /// May be backed by managed or unmanaged memory, or memory mapped file.
 [<AbstractClass>]
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type public ByteMemory =
 
     abstract Item: int -> byte with get
@@ -131,6 +132,7 @@ module internal FileSystemUtils =
     val isDll: fileName: string -> bool
 
 /// Type which we use to load assemblies.
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type public IAssemblyLoader =
     /// Used to load a dependency for F# Interactive and in an unused corner-case of type provider loading
     abstract AssemblyLoad: assemblyName: AssemblyName -> Assembly
@@ -139,11 +141,13 @@ type public IAssemblyLoader =
     abstract AssemblyLoadFrom: fileName: string -> Assembly
 
 /// Default implementation for IAssemblyLoader
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type DefaultAssemblyLoader =
     new: unit -> DefaultAssemblyLoader
     interface IAssemblyLoader
 
 /// Represents a shim for the file system
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type public IFileSystem =
 
     // Assembly loader.
@@ -219,6 +223,7 @@ type public IFileSystem =
     abstract ChangeExtensionShim: path: string * extension: string -> string
 
 /// Represents a default (memory-mapped) implementation of the file system
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type DefaultFileSystem =
     /// Create a default implementation of the file system
     new: unit -> DefaultFileSystem

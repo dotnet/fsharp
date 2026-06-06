@@ -192,6 +192,7 @@ type public MethodGroupItemParameter =
 /// Represents one method (or other item) in a method group. The item may represent either a method or 
 /// a single, non-overloaded item such as union case or a named function value.
 [<Sealed>]
+[<NoComparison; NoEquality>]
 type public MethodGroupItem = 
 
     /// The documentation for the item

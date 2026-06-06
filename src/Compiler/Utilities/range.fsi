@@ -151,6 +151,7 @@ type Position01 = Line0 * int
 /// Represents a range using zero-based line counting (used by Visual Studio)
 type Range01 = Position01 * Position01
 
+[<AutoOpen>]
 module Position =
     /// Create a position for the given line and column
     val mkPos: line:int -> column:int -> pos

@@ -19,6 +19,13 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 // Supporting all possible combinations of available library+compiler versions would complicate code in this source files too much at the moment.
 #nowarn "3261"
 #nowarn "3262"
+// 3888: TaggedText module is [<AutoOpen>] in this .fs but not in the .fsi.
+// Adding it to the .fsi makes TaggedText.equals shadow Range.equals across the
+// rest of the compiler (which currently relies on unqualified `equals`
+// resolving to FSharp.Compiler.Text.Range.equals). Renaming TaggedText.equals
+// is a public-API break. Suppress here as a transitional measure until
+// TaggedText.equals can be renamed in a separate change.
+#nowarn "3888"
 
 // Breakable block layout implementation.
 // This is a fresh implementation of preexisting ideas.
