@@ -12,6 +12,7 @@
          do not yet carry every consumer-visible attribute on their public surface;
          tracked as a follow-up. Suppressed here to unblock the bootstrap build. -->
     <NoWarn>$(NoWarn);3888</NoWarn>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);FS3888</WarningsNotAsErrors>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <!-- 3218: ArgumentsInSigAndImplMismatch -->
