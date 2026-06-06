@@ -297,6 +297,7 @@ let inline quadruple (x: int) = double (double x)
             |> withDebug
             |> withNoOptimize
             |> asLibrary
+            |> withName "Lib"
 
         lib
             |> compile
