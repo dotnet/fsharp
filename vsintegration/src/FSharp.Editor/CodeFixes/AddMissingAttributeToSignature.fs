@@ -203,15 +203,6 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                     |> Seq.filter (fun (u: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse) ->
                         u.IsFromDefinition
                         && u.Symbol.SignatureLocation.IsSome
-                        // The picked symbol's signature location must be in a DIFFERENT
-                        // file from the current .fs (i.e., in the .fsi). If it points
-                        // back at the .fs, this is a self-binding / parameter whose
-                        // "signature location" is just its definition (e.g. the `_` in
-                        // `member _.F` is reported as a value definition typed as T,
-                        // with SignatureLocation = the same `_` position in the .fs).
-                        && (match u.Symbol.SignatureLocation with
-                            | Some sigLoc -> not (String.Equals(sigLoc.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase))
-                            | None -> false)
                         // Skip constructors: when the attribute is on a member inside
                         // `type T() = ...`, F# also reports a definition use of the
                         // implicit constructor at the member's line, but its
@@ -259,7 +250,14 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                             (cancellationToken: System.Threading.CancellationToken)
                             : System.Threading.Tasks.Task<Solution> =
                             task {
-                                let currentSolution = document.Project.Solution.Workspace.CurrentSolution
+                                // Use the document's own solution snapshot rather than
+                                // workspace.CurrentSolution: in production both are
+                                // typically the same, but ad-hoc test workspaces and
+                                // some VS scenarios keep the workspace's current snapshot
+                                // ahead of (or behind) the captured document's snapshot,
+                                // so GetDocument(sigDocId) would return null and the fix
+                                // would silently return an unchanged solution.
+                                let currentSolution = document.Project.Solution
 
                                 match currentSolution.GetDocument(sigDocId) |> Option.ofObj with
                                 | None -> return currentSolution
