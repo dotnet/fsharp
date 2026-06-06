@@ -13,6 +13,7 @@
          tracked as a follow-up. Suppressed here to unblock the bootstrap build. -->
     <NoWarn>$(NoWarn);3888</NoWarn>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);FS3888</WarningsNotAsErrors>
+    <OtherFlags>$(OtherFlags) --nowarn:3888</OtherFlags>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <!-- 3218: ArgumentsInSigAndImplMismatch -->
