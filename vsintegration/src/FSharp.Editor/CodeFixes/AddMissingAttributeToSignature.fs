@@ -250,22 +250,36 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                             (cancellationToken: System.Threading.CancellationToken)
                             : System.Threading.Tasks.Task<Solution> =
                             task {
-                                // Use the document's own solution snapshot rather than
-                                // workspace.CurrentSolution: in production both are
-                                // typically the same, but ad-hoc test workspaces and
-                                // some VS scenarios keep the workspace's current snapshot
-                                // ahead of (or behind) the captured document's snapshot,
-                                // so GetDocument(sigDocId) would return null and the fix
-                                // would silently return an unchanged solution.
                                 let currentSolution = document.Project.Solution
 
                                 match currentSolution.GetDocument(sigDocId) |> Option.ofObj with
-                                | None -> return currentSolution
+                                | None ->
+                                    failwithf
+                                        "[AddMissingAttributeToSignature] sigDocId not found in solution. sigDocId=%A sigFile=%s sigLine=%d:%d-%d:%d"
+                                        sigDocId
+                                        sigRange.FileName
+                                        sigRange.StartLine
+                                        sigRange.StartColumn
+                                        sigRange.EndLine
+                                        sigRange.EndColumn
+
+                                    return currentSolution
                                 | Some liveSigDoc ->
                                     let! current = liveSigDoc.GetTextAsync(cancellationToken)
 
                                     match tryFSharpRangeToTextSpan current sigRange with
-                                    | None -> return currentSolution
+                                    | None ->
+                                        failwithf
+                                            "[AddMissingAttributeToSignature] sigRange out of bounds. sigFile=%s sigLine=%d:%d-%d:%d textLines=%d textLen=%d"
+                                            sigRange.FileName
+                                            sigRange.StartLine
+                                            sigRange.StartColumn
+                                            sigRange.EndLine
+                                            sigRange.EndColumn
+                                            current.Lines.Count
+                                            current.Length
+
+                                        return currentSolution
                                     | Some currentSigSpan ->
                                         let currentLineStart = current.Lines.GetLineFromPosition(currentSigSpan.Start).Start
                                         let currentIndent = indentOfLine current currentLineStart
