@@ -198,7 +198,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                 // the F# checker's symbol-use iteration).
                 let candidates =
                     checkResults.GetAllUsesOfAllSymbolsInFile(context.CancellationToken)
-                    |> Seq.filter (fun (u: FSharp.Compiler.Symbols.FSharpSymbolUse) ->
+                    |> Seq.filter (fun (u: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse) ->
                         u.IsFromDefinition
                         && u.Symbol.SignatureLocation.IsSome
                         && (u.Range.StartLine > diagFsRange.EndLine
