@@ -19,14 +19,6 @@ module SignatureEnforcedAttributes =
         |> ignoreWarnings
         |> compile
 
-    let private compileSigImplPreview (sigSrc: string) (implSrc: string) =
-        fsFromString (fsi sigSrc)
-        |> FS
-        |> withAdditionalSourceFile (fs implSrc)
-        |> asLibrary
-        |> withLangVersionPreview
-        |> compile
-
     [<Fact>]
     let ``NoDynamicInvocation in impl but not sig produces warning`` () =
         let sigSrc = """
@@ -352,21 +344,11 @@ type U = A | B
         Assert.Equal(3, attribDiag.Range.StartLine)
 
     // -----------------------------------------------------------------------
-    // Language feature: ErrorOnMissingSignatureAttribute (opt-in) escalates to error
     // -----------------------------------------------------------------------
-
-    [<Fact>]
-    let ``With ErrorOnMissingSignatureAttribute opted in, missing attribute is an error`` () =
-        let sigSrc = """
-module M
-val inline f: x: int -> int
-"""
-        let implSrc = """
-module M
-[<NoDynamicInvocationAttribute>]
-let inline f (x: int) = x + 1
-"""
-        compileSigImplPreview sigSrc implSrc
-        |> shouldFail
-        |> withErrorCode 3888
-        |> withDiagnosticMessageMatches "NoDynamicInvocation"
+    // Note: opt-in escalation of FS3888 to error (via the
+    // ErrorOnMissingSignatureAttribute language feature) is deferred -
+    // FSharp.Profiles.props sets <LangVersion>preview</LangVersion> for the
+    // F# self-build, which would unconditionally turn FS3888 into a hard
+    // error during the bootstrap build. The escalation should be gated on
+    // a project property that does NOT inherit from <LangVersion>preview</>.
+    // -----------------------------------------------------------------------
