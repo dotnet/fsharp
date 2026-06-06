@@ -203,6 +203,15 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                     |> Seq.filter (fun (u: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse) ->
                         u.IsFromDefinition
                         && u.Symbol.SignatureLocation.IsSome
+                        // The picked symbol's signature location must be in a DIFFERENT
+                        // file from the current .fs (i.e., in the .fsi). If it points
+                        // back at the .fs, this is a self-binding / parameter whose
+                        // "signature location" is just its definition (e.g. the `_` in
+                        // `member _.F` is reported as a value definition typed as T,
+                        // with SignatureLocation = the same `_` position in the .fs).
+                        && (match u.Symbol.SignatureLocation with
+                            | Some sigLoc -> not (String.Equals(sigLoc.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase))
+                            | None -> false)
                         // Skip constructors: when the attribute is on a member inside
                         // `type T() = ...`, F# also reports a definition use of the
                         // implicit constructor at the member's line, but its
