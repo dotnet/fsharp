@@ -231,6 +231,29 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
                 match symbolUse |> Option.bind (fun u -> u.Symbol.SignatureLocation) with
                 | Some sigRange ->
+                    // The picked symbol's signature location MUST be in a different
+                    // file (the .fsi) than the current .fs. If it points back at
+                    // the .fs itself, F# could not resolve the sig pairing for this
+                    // member (e.g. instance member inside `type T() = ...`) and we
+                    // would silently modify the .fs file instead of the .fsi.
+                    // Fail loudly with the symbol/path info so we can adjust the
+                    // candidate filter for the real .fsi resolution.
+                    if String.Equals(sigRange.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase) then
+                        let pickedFullName =
+                            symbolUse
+                            |> Option.map (fun u -> u.Symbol.FullName)
+                            |> Option.defaultValue "<none>"
+
+                        failwithf
+                            "[AddMissingAttributeToSignature] sigRange points to .fs (not .fsi). pickedSymbol=%s sigFile=%s docFile=%s sigLine=%d:%d-%d:%d"
+                            pickedFullName
+                            sigRange.FileName
+                            document.FilePath
+                            sigRange.StartLine
+                            sigRange.StartColumn
+                            sigRange.EndLine
+                            sigRange.EndColumn
+
                     match tryFindSigDocument document sigRange.FileName with
                     | Some sigDoc ->
                         // Capture the DocumentId, not the Document - Documents are
