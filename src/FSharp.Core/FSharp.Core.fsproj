@@ -8,6 +8,10 @@
     <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1</TargetFrameworks>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
+    <!-- 3888: implAttributeMissingFromSignature - new in this PR, FSharp.Core's own .fsi files
+         do not yet carry every consumer-visible attribute on their public surface;
+         tracked as a follow-up. Suppressed here to unblock the bootstrap build. -->
+    <NoWarn>$(NoWarn);3888</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <!-- 3218: ArgumentsInSigAndImplMismatch -->
