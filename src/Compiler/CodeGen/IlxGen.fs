@@ -2187,7 +2187,7 @@ and TypeDefsBuilder() =
     // - idx remains as a final tiebreaker for entries that share an identical (addAtEnd, range,
     //   name) — currently impossible since name is unique per parent, but kept for safety.
     let tdefs =
-        ConcurrentDictionary<string, list<struct (bool * int * int * int * string * int) * (TypeDefBuilder * bool)>>(
+        ConcurrentDictionary<string, list<struct (bool * int * int * int * int * int * string) * (TypeDefBuilder * bool)>>(
             HashIdentity.Structural
         )
 
@@ -2231,11 +2231,28 @@ and TypeDefsBuilder() =
 
         let sortKey =
             if addAtEnd then
-                // No meaningful source position — canonicalize by name across runs.
-                struct (true, 0, 0, 0, tdef.Name, idx)
+                // addAtEnd=true falls into two buckets:
+                //  * Sequential-end (m.FileIndex > 0): per-file StartupCode + user
+                //    modules, added during the sequential GenImplFile walk. Replicate
+                //    OLD Interlocked.Decrement-then-sort-ASC by sorting on idx so
+                //    later-inserted types come earlier (matches main's order so the
+                //    test framework's Array.last .fsx-entry-point heuristic in
+                //    CompilerAssert.fs:362 keeps finding the script's $Script$fsx type).
+                //  * Parallel-shared (m = range0): PrivateImplementationDetails,
+                //    anon-record carriers, T<N>_<size>Bytes raw-data types — added
+                //    eagerly at GenerateCode entry or racily during parallel body emit.
+                //    idx is racy under parallel emit; sort on tdef.Name instead.
+                //    Names are deterministic via PrimeStableNamesForCodegen pre-
+                //    population of primedRawTypeCounter/AnonTypeGenerationTable.
+                // Bucket 0 (sequential end) sorts before bucket 1 (parallel shared).
+                if m.FileIndex = 0 then
+                    struct (true, 1, 0, 0, 0, 0, tdef.Name)
+                else
+                    struct (true, 0, 0, 0, 0, idx, tdef.Name)
             else
-                struct (false, m.FileIndex, m.StartLine, m.StartColumn, tdef.Name, idx)
-
+                // User-declared types: source-position ASC. idx is a final tiebreaker
+                // for sites that legitimately share an exact range (rare).
+                struct (false, 0, m.FileIndex, m.StartLine, m.StartColumn, idx, tdef.Name)
         let newVal = sortKey, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
 
         tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun _key oldList -> newVal :: oldList))
