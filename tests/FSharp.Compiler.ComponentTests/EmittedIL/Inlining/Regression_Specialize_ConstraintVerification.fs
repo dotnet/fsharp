@@ -24,10 +24,20 @@ module Regression_Specialize_ConstraintVerification =
         closureWithConstraint "'a : not struct and 'a : equality" "obj.ReferenceEquals(a, b)" "string" "\"ok\""
         |> compileVerifyAndRun realsig
 
+    /// Specifically guards the `IsUnmanagedAttribute` (carried via CustomAttrsStored) clearing
+    /// in `stripILGenericParamConstraints` — leaks of that attribute onto the Specialize override
+    /// were the original #14492 trigger for unmanaged-constrained inlines.
     [<Theory; InlineData(true); InlineData(false)>]
     let ``unmanaged + equality`` (realsig: bool) =
-        closureWithConstraint "'a : unmanaged and 'a : equality" "a = b" "int" "42"
-        |> compileVerifyAndRun realsig
+        let source = closureWithConstraint "'a : unmanaged and 'a : equality" "a = b" "int" "42"
+        let compiled = source |> compileOptimized realsig |> compile |> shouldSucceed
+        compiled
+        |> verifyILNotPresent [
+            // No IsUnmanagedAttribute / modreq leakage onto the Specialize override / T-suffix class.
+            "Specialize<valuetype (class [runtime]System.ValueType modreq"
+            "T<valuetype (class [runtime]System.ValueType modreq"
+        ]
+        verifyPEAndRun compiled
 
     [<Theory; InlineData(true); InlineData(false)>]
     let ``default constructor`` (realsig: bool) =
