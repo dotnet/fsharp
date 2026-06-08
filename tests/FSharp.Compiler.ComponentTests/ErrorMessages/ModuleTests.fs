@@ -192,3 +192,99 @@ AutoOpen>] L1 = do ()
         |> withDiagnostics [
             Error 10, Line 3, Col 1, Line 3, Col 9, "Unexpected start of structured construct in attribute list"
         ]
+
+    [<Fact>]
+    let ``Recursive module with duplicate sibling modules emits FS0037`` () =
+        FSharp """
+module rec A
+
+module Foobar = let x = 1
+module Foobar = let y = 2
+"""
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 37
+        |> withDiagnosticMessageMatches "Foobar"
+        |> ignore
+
+    [<Fact>]
+    let ``Recursive namespace with duplicate sibling modules emits FS0037`` () =
+        FSharp """
+namespace rec N
+
+module Foobar = let x = 1
+module Foobar = let y = 2
+"""
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 37
+        |> withDiagnosticMessageMatches "Foobar"
+        |> ignore
+
+    [<Fact>]
+    let ``Recursive module nested cousins with same name compile`` () =
+        FSharp """
+module rec Outer
+
+module A =
+    module Inner = let x = 1
+
+module B =
+    module Inner = let y = 2
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive module nested siblings with duplicate name emit FS0037`` () =
+        FSharp """
+module rec Outer
+
+module Inner =
+    module Dup = let x = 1
+    module Dup = let y = 2
+"""
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 37
+        |> withDiagnosticMessageMatches "Dup"
+        |> ignore
+
+    [<Fact>]
+    let ``Non-recursive module with duplicate sibling modules still emits FS0037`` () =
+        FSharp """
+module A
+
+module Foobar = let x = 1
+module Foobar = let y = 2
+"""
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 37
+        |> withDiagnosticMessageMatches "Foobar"
+        |> ignore
+
+    [<Fact>]
+    let ``Single file with two namespace fragments and different modules compiles`` () =
+        FSharp """
+namespace N
+
+module M = let x = 1
+
+namespace N
+
+module M2 = let y = 2
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive module siblings differing only in case compile`` () =
+        FSharp """
+module rec A
+
+module Foobar = let x = 1
+module FooBar = let y = 2
+"""
+        |> typecheck
+        |> shouldSucceed
