@@ -63,6 +63,18 @@
     IL_002f:  ret
   } 
 
+  .method public static int32  TestFunction6() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  call       int32 assembly::f@10(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
+    IL_0006:  ldnull
+    IL_0007:  call       int32 assembly::f@10(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
+    IL_000c:  add
+    IL_000d:  ret
+  } 
+
   .method assembly static int32  f@10(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
   {
     
@@ -85,18 +97,6 @@
     IL_0020:  ret
   } 
 
-  .method public static int32  TestFunction6() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  call       int32 assembly::f@10(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
-    IL_0006:  ldnull
-    IL_0007:  call       int32 assembly::f@10(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
-    IL_000c:  add
-    IL_000d:  ret
-  } 
-
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
@@ -111,6 +111,7 @@
   } 
 
 } 
+
 
 
 
