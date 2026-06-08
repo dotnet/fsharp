@@ -107,6 +107,7 @@ type internal TaggedText =
     member Text: string
 #endif
 
+[<AutoOpen>]
 #if COMPILER
 module public TaggedText =
 #else

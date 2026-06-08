@@ -132,16 +132,11 @@ module private AttributeConformance =
                         let m = rangeOfMissing classify implAttribs flag fallback
                         emit(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, displayNameOf impl), m))
 
-    let private emitter (_g: TcGlobals) : exn -> unit =
-        // Always emit as a warning so it can be suppressed via #nowarn/<NoWarn>.
-        // The opt-in escalation to error (originally gated on the
-        // ErrorOnMissingSignatureAttribute language feature) is deferred:
-        // FSharp.Profiles.props sets <LangVersion>preview</LangVersion> for all
-        // non-Proto F# builds in this repo, which would unconditionally turn
-        // FS3888 into a hard error during the F# self-build and block all
-        // suppression mechanisms. Re-add the escalation through a project
-        // property that does NOT inherit from <LangVersion>preview</LangVersion>.
-        warning
+    let private emitter (g: TcGlobals) : exn -> unit =
+        if g.langVersion.SupportsFeature LanguageFeature.ErrorOnMissingSignatureAttribute then
+            errorR
+        else
+            warning
 
     let checkVal (g: TcGlobals) (implVal: Val) (sigVal: Val) (fallback: range) =
         // External consumers see what the .fsi declares. Check the SIG's

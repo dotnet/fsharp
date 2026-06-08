@@ -2,8 +2,6 @@
 
 namespace FSharp.Compiler.Xml
 
-#nowarn "3888" // see issue #19560: the .fsi may intentionally hide consumer-visible attributes
-
 open System
 open System.Collections.Generic
 open System.IO
@@ -17,7 +15,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 /// Represents collected XmlDoc lines
-[<RequireQualifiedAccess>]
 type XmlDoc(unprocessedLines: string[], range: range) =
     let rec processLines (lines: string list) =
         match lines with

@@ -34,7 +34,6 @@ let inline f (x: int) = x + 1
         |> shouldSucceed
         |> withWarningCode 3888
         |> withDiagnosticMessageMatches "NoDynamicInvocation"
-        |> withDiagnosticMessageMatches "will become an error"
 
     [<Fact>]
     let ``NoDynamicInvocation in both impl and sig compiles clean`` () =
@@ -112,7 +111,6 @@ type T() =
         |> shouldSucceed
         |> withWarningCode 3888
         |> withDiagnosticMessageMatches "NoDynamicInvocation"
-        |> withDiagnosticMessageMatches "will become an error"
 
     [<Fact>]
     let ``RequiresExplicitTypeArguments in impl but not sig produces warning`` () =
@@ -232,7 +230,6 @@ type R = { X: int }
 """
         compileSigImpl sigSrc implSrc
         |> withDiagnosticMessageMatches "NoEquality"
-        |> withDiagnosticMessageMatches "will become an error"
 
     [<Fact>]
     let ``Multiple enforced attributes on same val produce multiple warnings`` () =
@@ -343,12 +340,45 @@ type U = A | B
         // Attribute is on line 3 (1-based, after the leading empty line + `module M`).
         Assert.Equal(3, attribDiag.Range.StartLine)
 
-    // -----------------------------------------------------------------------
-    // -----------------------------------------------------------------------
-    // Note: opt-in escalation of FS3888 to error (via the
-    // ErrorOnMissingSignatureAttribute language feature) is deferred -
-    // FSharp.Profiles.props sets <LangVersion>preview</LangVersion> for the
-    // F# self-build, which would unconditionally turn FS3888 into a hard
-    // error during the bootstrap build. The escalation should be gated on
-    // a project property that does NOT inherit from <LangVersion>preview</>.
-    // -----------------------------------------------------------------------
+    [<Fact>]
+    let ``Under preview langversion FS3888 is an error (feature ErrorOnMissingSignatureAttribute)`` () =
+        let sigSrc = """
+module M
+val inline f: x: int -> int
+"""
+        let implSrc = """
+module M
+[<NoDynamicInvocationAttribute>]
+let inline f (x: int) = x + 1
+"""
+        fsFromString (fsi sigSrc)
+        |> FS
+        |> withAdditionalSourceFile (fs implSrc)
+        |> withLangVersionPreview
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3888
+        |> withDiagnosticMessageMatches "NoDynamicInvocation"
+
+    [<Fact>]
+    let ``Under default langversion FS3888 is a warning (feature off)`` () =
+        let sigSrc = """
+module M
+val inline f: x: int -> int
+"""
+        let implSrc = """
+module M
+[<NoDynamicInvocationAttribute>]
+let inline f (x: int) = x + 1
+"""
+        fsFromString (fsi sigSrc)
+        |> FS
+        |> withAdditionalSourceFile (fs implSrc)
+        |> withLangVersion90
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+        |> withWarningCode 3888
+        |> withDiagnosticMessageMatches "NoDynamicInvocation"
