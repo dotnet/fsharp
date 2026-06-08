@@ -5708,7 +5708,7 @@ arrowThenExprR:
       { let mArrow = rhs parseState 1
         let expr = $2 mArrow
         let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = mArrow }
-        SynExpr.YieldOrReturn((true, false), expr, (unionRanges mArrow expr.Range), trivia) }
+        SynExpr.YieldOrReturn((true, false), expr, expr.Range, trivia) }
 
 forLoopBinder:
   | parenPattern IN declExpr
