@@ -3172,7 +3172,11 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
         | Expr.Match _ -> GenLinearExpr cenv cgbuf eenv expr sequel false id |> ignore<FakeUnit>
 
         | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-            CG.EmitDebugPoint cgbuf m
+            if equals m range0 then
+                cgbuf.EmitStartOfHiddenCode()
+            else
+                CG.EmitDebugPoint cgbuf m
+
             GenExpr cenv cgbuf eenv innerExpr sequel
 
         | Expr.Const(c, m, ty) -> GenConstant cenv cgbuf eenv (c, m, ty) sequel
@@ -3733,7 +3737,11 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
                          Fake))
 
     | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-        CG.EmitDebugPoint cgbuf m
+        if equals m range0 then
+            cgbuf.EmitStartOfHiddenCode()
+        else
+            CG.EmitDebugPoint cgbuf m
+
         GenLinearExpr cenv cgbuf eenv innerExpr sequel true contf
 
     | LinearOpExpr(TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
@@ -5280,6 +5288,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
     GenExpr cenv cgbuf eenvinner loopBody discard
 
     //    v++ or v--
+    cgbuf.EmitStartOfHiddenCode()
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
     CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 1)
