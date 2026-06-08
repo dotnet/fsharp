@@ -2633,9 +2633,9 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
       when IsILMethodRefSystemStringConcat ilMethRef ->
         MakeOptimizedSystemStringConcatCall cenv env m args
 
-    // Optimize `String.Equals(x, "")` (and `String.Equals("", x)`) into the null-safe length check
-    // `if x <> null then x.Length = 0 else false`. Mirrors the original BuildSwitch lowering for
-    // `match s with "" -> _`. Done here (post-inlining) so quotations capture the un-optimized shape.
+    // See MakeOptimizedStringEqualsEmptyCall. Applied post-inlining (on the `String.Equals` shape
+    // that `(=)` lowers to) so `Expr.Quote` bodies, which the optimizer skips, keep the original
+    // `op_Equality(s, "")` form.
     | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [arg1; Expr.Const(Const.String "", _, _)]
       when IsILMethodRefSystemStringEquals ilMethRef ->
         MakeOptimizedStringEqualsEmptyCall cenv env m arg1

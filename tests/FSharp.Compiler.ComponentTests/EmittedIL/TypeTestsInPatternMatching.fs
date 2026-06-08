@@ -383,12 +383,9 @@ let TestEmptyStringEq(x: string) =
 """
        ]
 
-    // https://github.com/dotnet/fsharp/issues/19873
-    // Trade-off recorded: when the empty-string optimization moved from BuildSwitch to the Optimizer,
-    // `--optimize-` (debug) builds no longer get the null+Length form because F#'s `(=)` operator is
-    // only inlined when `LocalOptimizationsEnabled = true`. Debug builds now emit a plain
-    // `String.Equals(s, "")` call. JIT tiered compilation reaches the same fast path; debug-mode IL
-    // size is not a perf concern. Locked in so a future change can revisit consciously.
+    // Baseline for #19873: under `--optimize-` the null+Length form is not emitted, because F#'s
+    // `(=)` is only inlined when `LocalOptimizationsEnabled = true`; the call falls through to
+    // `String.Equals(s, "")`. JIT tiered compilation still reaches the fast path.
     [<Fact>]
     let ``Test codegen for empty string pattern under --optimize-``() =
         FSharp """
@@ -425,13 +422,9 @@ let TestEmptyStringPattern(x: string) =
 """
        ]
 
-    // https://github.com/dotnet/fsharp/issues/19873
-    // Trade-off recorded: `null | "" -> _` patterns previously elided the inner null check via
-    // BuildSwitch's `isNullFiltered` flag (so the IL emitted only the `null` pattern's `brfalse`
-    // followed by a bare `s.Length = 0`). After moving the optimization to the Optimizer, the
-    // optimizer has no view of the enclosing null-filtered context and so re-emits the null check.
-    // The result is two back-to-back `brfalse.s` on the same argument. JIT trivially eliminates the
-    // redundant branch; we accept the few extra IL bytes in exchange for clean quotations.
+    // Baseline for #19873: the optimizer can't see BuildSwitch's `isNullFiltered` flag, so the
+    // empty-string branch under `null | "" -> _` re-emits its own null check. Result: two
+    // back-to-back `brfalse.s` on the same argument (the JIT folds the duplicate).
     [<Fact>]
     let ``Test codegen for null-or-empty-string pattern``() =
         FSharp """
