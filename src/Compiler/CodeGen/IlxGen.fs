@@ -3172,7 +3172,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
         | Expr.Match _ -> GenLinearExpr cenv cgbuf eenv expr sequel false id |> ignore<FakeUnit>
 
         | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-            if equals m range0 then
+            if Range.equals m range0 then
                 cgbuf.EmitStartOfHiddenCode()
             else
                 CG.EmitDebugPoint cgbuf m
@@ -3737,7 +3737,7 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
                          Fake))
 
     | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-        if equals m range0 then
+        if Range.equals m range0 then
             cgbuf.EmitStartOfHiddenCode()
         else
             CG.EmitDebugPoint cgbuf m
