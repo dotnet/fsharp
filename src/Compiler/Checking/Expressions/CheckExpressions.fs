@@ -11256,6 +11256,47 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         // Use that as the single source of truth.
         let valAttribs = TcAttrs attrTgt false attrs
 
+        // CompiledName cannot be applied to a binding that destructures into multiple
+        // values (e.g. tuple/record/list patterns). Without this check the same compiled
+        // name silently propagates to every introduced value, producing duplicate IL
+        // entries (FS0192/FS2014) far from the source. See dotnet/fsharp#6131.
+        match valAttribs with
+        | ValAttribString g WellKnownValAttributes.CompiledNameAttribute _ ->
+            // Patterns that publish 0 or 1 vals and are not themselves a destructuring shape.
+            // These do not produce duplicate compiled names, so [<CompiledName>] is harmless
+            // (or a no-op for unit / wildcard) and must not trigger a spurious FS0755.
+            let rec isSimpleValBindingPat p =
+                match p with
+                | SynPat.Named _
+                | SynPat.Wild _
+                | SynPat.Null _
+                | SynPat.IsInst _
+                | SynPat.Const(SynConst.Unit, _) -> true
+                | SynPat.Typed(p, _, _)
+                | SynPat.Attrib(p, _, _)
+                | SynPat.Paren(p, _)
+                | SynPat.FromParseError(p, _) -> isSimpleValBindingPat p
+                | SynPat.As(l, r, _) -> isSimpleValBindingPat l && isSimpleValBindingPat r
+                | SynPat.LongIdent(argPats = argPats) ->
+                    // A long-id pattern such as `Some x` or `MyDU(a, b)` publishes one val per
+                    // val-shaped sub-pattern. It is simple only when every argument pattern is
+                    // itself simple - otherwise the destructure publishes multiple vals and the
+                    // CompiledName attribute would be silently propagated to each (FS0192/FS2014).
+                    argPats.Patterns |> List.forall isSimpleValBindingPat
+                | SynPat.Tuple _
+                | SynPat.Record _
+                | SynPat.ArrayOrList _
+                | SynPat.ListCons _
+                | SynPat.Ands _
+                | SynPat.Or _
+                | SynPat.Const _
+                | SynPat.OptionalVal _
+                | SynPat.QuoteExpr _
+                | SynPat.InstanceMember _ -> false
+            if not (isSimpleValBindingPat pat) then
+                errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(), pat.Range))
+        | _ -> ()
+
         let retAttribs =
             let (SynValData(_, SynValInfo(_, SynArgInfo(retAttrs, _, _)), _)) = valSynData
             retAttrs
