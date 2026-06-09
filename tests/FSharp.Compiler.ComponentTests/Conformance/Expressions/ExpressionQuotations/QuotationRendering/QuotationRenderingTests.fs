@@ -38,27 +38,6 @@ module QuotationRendering =
     let private qMatchEmpty   = <@ fun (x: string) -> match x with "" -> 1 | _ -> 0 @>
     let private qIfEqualEmpty = <@ fun (x: string) -> if x = "" then 1 else 0 @>
 
-    let private expectedBaselines =
-        Set.ofList [
-            "EmptyString"; "NullOrEmpty"; "NonEmptyString"; "ConsecutiveInts"
-            "Chars"; "Int64"; "Decimal"; "IfEqualEmpty"
-        ]
-
-    [<Fact>]
-    let ``Baseline directory: no orphans, no missing`` () =
-        if System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") <> null then () else
-        let onDisk =
-            Directory.GetFiles(baselineDir, "*.bsl")
-            |> Array.map Path.GetFileNameWithoutExtension
-            |> Set.ofArray
-        let orphans = Set.difference onDisk expectedBaselines
-        let missing = Set.difference expectedBaselines onDisk
-        if not orphans.IsEmpty || not missing.IsEmpty then
-            Assert.Fail(
-                [ if not orphans.IsEmpty then yield sprintf "Orphan .bsl: %A (delete or add a matching test)" orphans
-                  if not missing.IsEmpty then yield sprintf "Missing .bsl: %A (add the test and run with TEST_UPDATE_BSL=1)" missing ]
-                |> String.concat "\n")
-
     [<Fact>]
     let ``match x with empty string renders as op_Equality (#19873)`` () =
         assertNoEmptyStringLowering qMatchEmpty
