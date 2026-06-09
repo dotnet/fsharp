@@ -44,7 +44,7 @@ stateDiagram-v2
         ASM_ModeCheck --> ASM_Generate : ⚙️ FULL_REWRITE or changed SHAs
         ASM_Noop --> [*] : ⚙️ noop (report-as-issue: false)
         ASM_Generate --> ASM_Validate : ⚙️ build model, draft diagrams, run all structural + behavioral audits
-        ASM_Validate --> [*] : 🤖 create-pull-request (labels: automation, NO_RELEASE_NOTES; allowed-files: .github/docs/**; protected-files: allowed — src L32)
+        ASM_Validate --> [*] : 🤖 create-pull-request (labels: automation, NO_RELEASE_NOTES, allowed-files: .github/docs/**, protected-files: allowed — src L32)
     }
 
     state "aw-auto-update" as AWU {
@@ -73,7 +73,7 @@ stateDiagram-v2
         AWU_Decide --> AWU_HasChanges : ⚙️ CHANGED_FILES empty?
         AWU_HasChanges --> AWU_Noop : ⚙️ empty (normal steady state)
         AWU_HasChanges --> AWU_Session : ⚙️ non-empty — delegate to CCA
-        AWU_Session --> [*] : 🤖 create-agent-session (base: main, max: 1; CCA applies upgrade)
+        AWU_Session --> [*] : 🤖 create-agent-session (base: main, max: 1, CCA applies upgrade)
         AWU_Noop --> [*] : ⚙️ noop (report-as-issue: false — src L39)
     }
 ```
@@ -107,7 +107,7 @@ stateDiagram-v2
         direction LR
         [*] --> LFF_Validate : 👤 workflow_dispatch (inputs: failing_test, affected_prs, originating_pr)
         state LFF_InputOK <<choice>>
-        LFF_Validate --> LFF_InputOK : ⚙️ validate: affected_prs is JSON array of positive ints; originating_pr is positive int
+        LFF_Validate --> LFF_InputOK : ⚙️ validate: affected_prs is JSON array of positive ints, originating_pr is positive int
         LFF_InputOK --> [*] : ⚙️ invalid inputs — exit
         LFF_InputOK --> LFF_Reverify : ⚙️ valid
         state LFF_Confirmed <<choice>>
@@ -125,10 +125,10 @@ stateDiagram-v2
         state LFF_AnyFail <<choice>>
         LFF_AnyFail --> LFF_Quarantine : ⚙️ 0/N — no local repro, prefer quarantine (Option B)
         LFF_AnyFail --> LFF_DetermFix : ⚙️ 1-(N-1)/N — classic non-determinism, prefer fix (Option A)
-        LFF_DetermFix --> LFF_OpenPR : ⚙️ root cause fixed; 0/20 loop verified
+        LFF_DetermFix --> LFF_OpenPR : ⚙️ root cause fixed, 0/20 loop verified
         LFF_Quarantine --> LFF_TrackingIssue : ⚙️ add skip marker referencing tracking issue
-        LFF_TrackingIssue --> LFF_OpenPR : 🤖 create-issue (labels: Flaky, automation; max: 1)
-        LFF_OpenPR --> LFF_Comment : 🤖 create-pull-request (labels: automation, Flaky, NO_RELEASE_NOTES; max: 1; protected-files: fallback-to-issue)
+        LFF_TrackingIssue --> LFF_OpenPR : 🤖 create-issue (labels: Flaky, automation, max: 1)
+        LFF_OpenPR --> LFF_Comment : 🤖 create-pull-request (labels: automation, Flaky, NO_RELEASE_NOTES, max: 1, protected-files: fallback-to-issue)
         LFF_Comment --> [*] : 🤖 add-comment on originating PR (max: 1)
         LFF_NoopComment --> [*] : 🤖 add-comment explaining skip OR noop
     }
@@ -138,10 +138,10 @@ stateDiagram-v2
         [*] --> LPM_SelectPRs : ⏰ schedule (every 3h)
         [*] --> LPM_SelectPRs : 👤 workflow_dispatch (inputs: none)
         state LPM_HasPRs <<choice>>
-        LPM_SelectPRs --> LPM_HasPRs : ⚙️ gh pr list --search label:"AI-Auto-Resolve-*"; drop drafts, forks, AI-Issue-Regression-PR PRs, updated<10min; max 3 (seed=GITHUB_RUN_ID)
+        LPM_SelectPRs --> LPM_HasPRs : ⚙️ gh pr list --search label:"AI-Auto-Resolve-*", drop drafts, forks, AI-Issue-Regression-PR PRs, updated<10min, max 3 (seed=GITHUB_RUN_ID)
         LPM_HasPRs --> LPM_Noop : ⚙️ no eligible PRs
         LPM_HasPRs --> LPM_ClassifyPR : ⚙️ up to 3 PRs selected
-        LPM_ClassifyPR --> LPM_CICheck : ⚙️ classify: has_ci / has_conflicts / ci_blocked; stuck safeguard: LabelOps commit within 12h AND checks still red => skip CI
+        LPM_ClassifyPR --> LPM_CICheck : ⚙️ classify: has_ci / has_conflicts / ci_blocked, stuck safeguard: LabelOps commit within 12h AND checks still red => skip CI
         state LPM_NeedsCITriage <<choice>>
         LPM_CICheck --> LPM_NeedsCITriage : ⚙️ has_ci AND NOT ci_blocked?
         LPM_NeedsCITriage --> LPM_CITriage : ⚙️ yes
@@ -171,7 +171,7 @@ stateDiagram-v2
         LPM_MergeTree --> LPM_ConflictsExist : ⚙️ git merge-tree --write-tree --messages origin/main HEAD: any CONFLICT lines?
         LPM_ConflictsExist --> LPM_NextPR : ⚙️ no CONFLICT lines — PR merges cleanly
         LPM_ConflictsExist --> LPM_Resolve : ⚙️ conflicts exist
-        LPM_Resolve --> LPM_NextPR : 🤖 push-to-pull-request-branch + add-comment (files resolved; hide-older-comments: true)
+        LPM_Resolve --> LPM_NextPR : 🤖 push-to-pull-request-branch + add-comment (files resolved, hide-older-comments: true)
         state LPM_MorePRs <<choice>>
         LPM_NextPR --> LPM_MorePRs : ⚙️ more PRs remaining in batch (max 3)?
         LPM_MorePRs --> LPM_ClassifyPR : ⚙️ yes (next PR)
@@ -187,7 +187,7 @@ stateDiagram-v2
         LPSS_ReadRules --> LPSS_ReadMemory : ⚙️ get_file_contents .github/tooling-check-repo-rules.md from default branch
         LPSS_ReadMemory --> LPSS_ListPRs : ⚙️ load state.json from safety/scanned-PRs branch
         state LPSS_HasPRs <<choice>>
-        LPSS_ListPRs --> LPSS_HasPRs : ⚙️ paginate (perPage:30, newest-first); stop at 2026-05-12 cutoff; skip isDraft=true
+        LPSS_ListPRs --> LPSS_HasPRs : ⚙️ paginate (perPage:30, newest-first), stop at 2026-05-12 cutoff, skip isDraft=true
         LPSS_HasPRs --> LPSS_WriteMemory : ⚙️ no PRs to scan
         LPSS_HasPRs --> LPSS_PruneMemory : ⚙️ PRs found
         LPSS_PruneMemory --> LPSS_PerPR : ⚙️ remove closed PRs from state.json
@@ -268,24 +268,24 @@ stateDiagram-v2
         [*] --> RPS_ListPRs : ⏰ schedule (every 4h)
         [*] --> RPS_ListPRs : 👤 workflow_dispatch (inputs: none)
         state RPS_HasEligible <<choice>>
-        RPS_ListPRs --> RPS_HasEligible : ⚙️ gh pr list --label AI-Issue-Regression-PR; filter: title starts "Add regression test:", isDraft=false, headRepo=dotnet/fsharp
+        RPS_ListPRs --> RPS_HasEligible : ⚙️ gh pr list --label AI-Issue-Regression-PR, filter: title starts "Add regression test:", isDraft=false, headRepo=dotnet/fsharp
         RPS_HasEligible --> RPS_Noop : ⚙️ no eligible PRs
         RPS_HasEligible --> RPS_QuickTriage : ⚙️ up to 3 eligible PRs (priority: Cat A > Cat B > Cat C)
-        RPS_QuickTriage --> RPS_HasFeedback : ⚙️ quick triage: check mergeable state + check-run status; read memory for last processed timestamps
+        RPS_QuickTriage --> RPS_HasFeedback : ⚙️ quick triage: check mergeable state + check-run status, read memory for last processed timestamps
         state RPS_HasFeedback <<choice>>
         RPS_HasFeedback --> RPS_FixFeedback : ⚙️ new human review comments since last bot comment? => Category A
         RPS_HasFeedback --> RPS_HasCIFailure : ⚙️ no new review feedback
         state RPS_HasCIFailure <<choice>>
         RPS_HasCIFailure --> RPS_CITriage : ⚙️ yes => Category B (CI failure or merge conflict)
         RPS_HasCIFailure --> RPS_NextPR : ⚙️ no => Category C (healthy, skip)
-        RPS_FixFeedback --> RPS_SameFixCheck : ⚙️ read full PR diff + all review comments + linked issue; check: last commit msg matches feedback? (regression-pr-shepherd.md L152–154)
+        RPS_FixFeedback --> RPS_SameFixCheck : ⚙️ read full PR diff + all review comments + linked issue, check: last commit msg matches feedback? (regression-pr-shepherd.md L152–154)
         state RPS_SameFixCheck <<choice>>
         RPS_SameFixCheck --> RPS_NextPR : ⚙️ already pushed (last commit matches feedback — skip)
         RPS_SameFixCheck --> RPS_PushFix : ⚙️ not yet pushed
         RPS_PushFix --> RPS_NextPR : 🤖 push-to-pull-request-branch + add-comment (reply to review thread)
-        RPS_CITriage --> RPS_B0Conflict : ⚙️ fetch failed job logs; analyze failure type
+        RPS_CITriage --> RPS_B0Conflict : ⚙️ fetch failed job logs, analyze failure type
         state RPS_B0Conflict <<choice>>
-        RPS_B0Conflict --> RPS_RebaseResolve : ⚙️ yes => B0: merge conflict (rebase origin/main; resolve; verify scope is tests/ or vsintegration/tests/)
+        RPS_B0Conflict --> RPS_RebaseResolve : ⚙️ yes => B0: merge conflict (rebase origin/main, resolve, verify scope is tests/ or vsintegration/tests/)
         RPS_B0Conflict --> RPS_B1Infra : ⚙️ no
         state RPS_B1Infra <<choice>>
         RPS_B1Infra --> RPS_Retry : ⚙️ yes => B1: infrastructure or flaky failure — retry CI
@@ -305,7 +305,7 @@ stateDiagram-v2
         RPS_NextPR --> RPS_MorePRs : ⚙️ more PRs in batch (max 3)?
         RPS_MorePRs --> RPS_QuickTriage : ⚙️ yes (next PR)
         RPS_MorePRs --> RPS_Done : ⚙️ no
-        RPS_Done --> [*] : ⚙️ run complete; update memory
+        RPS_Done --> [*] : ⚙️ run complete, update memory
         RPS_Noop --> [*] : ⚙️ noop (report-as-issue: false — src L23)
     }
 
@@ -315,26 +315,26 @@ stateDiagram-v2
         [*] --> RA_PreStep : 👤 workflow_dispatch (inputs: none)
         [*] --> RA_PreStep : 👤 slash_command: /repo-assist
         [*] --> RA_PreStep : 👤 reaction: eyes
-        RA_PreStep --> RA_ReadMemory : ⚙️ fetch open issues + PRs; compute task weights; write task_selection.json (seed=GITHUB_RUN_ID)
+        RA_PreStep --> RA_ReadMemory : ⚙️ fetch open issues + PRs, compute task weights, write task_selection.json (seed=GITHUB_RUN_ID)
         RA_ReadMemory --> RA_CommandMode : ⚙️ read state.json from memory/repo-assist branch
         state RA_CommandMode <<choice>>
         RA_CommandMode --> RA_RunInstructions : 👤 instructions non-empty (slash_command or reaction with text)
         RA_CommandMode --> RA_T1 : ⚙️ instructions empty — non-command mode
         state RA_InstructionResult <<choice>>
-        RA_RunInstructions --> RA_InstructionResult : ⚙️ follow user instructions; apply guidelines
+        RA_RunInstructions --> RA_InstructionResult : ⚙️ follow user instructions, apply guidelines
         RA_InstructionResult --> [*] : ⚙️ no actionable work => noop
         RA_InstructionResult --> RA_CmdOutputs : ⚙️ work done
         RA_CmdOutputs --> [*] : 🤖 safe-outputs emitted (add-comment, create-pull-request, push-to-pull-request-branch, create-issue, update-issue, add-labels, or remove-labels)
-        RA_T1 --> RA_T3 : ⚙️ Task 1: Issue Investigation — comment or label bugs; add AI-thinks-issue-fixed or AI-thinks-windows-only (cursor c; up to 10 issues; cutoff 2024-01-01)
-        RA_T3 --> RA_T2 : ⚙️ Task 3: Revisit AI-thinks-windows-only — remove-labels if FCS-testable; investigate on Linux (cursor woc; up to 5 issues)
+        RA_T1 --> RA_T3 : ⚙️ Task 1: Issue Investigation — comment or label bugs, add AI-thinks-issue-fixed or AI-thinks-windows-only (cursor c, up to 10 issues, cutoff 2024-01-01)
+        RA_T3 --> RA_T2 : ⚙️ Task 3: Revisit AI-thinks-windows-only — remove-labels if FCS-testable, investigate on Linux (cursor woc, up to 5 issues)
         RA_T2 --> RA_T2_SkipCheck : ⚙️ Task 2: Step A — check skip conditions (repo-assist.md L296–306)
         state RA_T2_SkipCheck <<choice>>
         RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ skip (∨: closed|existing-PR|test-coverage|test-link|untestable|human-coverage)
         RA_T2_SkipCheck --> RA_T2_CreatePR : ⚙️ no skip condition met
         state RA_T2_CreatePR
-        RA_T2_CreatePR --> RA_TaskFinal : 🤖 create-pull-request (reviewers: [abonie, T-Gro]; auto-merge: true; allowed-files: ["tests/**", "vsintegration/tests/**"]) or remove-labels if test fails (cursor rtc; up to 5 issues)
-        RA_TaskFinal --> RA_WriteMemory : ⚙️ Task FINAL: update Monthly Activity Summary issue (update-issue; always runs every non-command run)
-        RA_WriteMemory --> [*] : 🤖 write state.json to memory/repo-assist branch; messages safe-output with run summary
+        RA_T2_CreatePR --> RA_TaskFinal : 🤖 create-pull-request (reviewers: [abonie, T-Gro], auto-merge: true, allowed-files: ["tests/**", "vsintegration/tests/**"]) or remove-labels if test fails (cursor rtc, up to 5 issues)
+        RA_TaskFinal --> RA_WriteMemory : ⚙️ Task FINAL: update Monthly Activity Summary issue (update-issue, always runs every non-command run)
+        RA_WriteMemory --> [*] : 🤖 write state.json to memory/repo-assist branch, messages safe-output with run summary
     }
 ```
 
@@ -420,23 +420,23 @@ stateDiagram-v2
 
     state "check_release_notes" as CRN {
         direction LR
-        [*] --> CRN_GetRef : 👤 pull_request_target (opened/synchronize/reopened/labeled/unlabeled; branches: main, release/*)
+        [*] --> CRN_GetRef : 👤 pull_request_target (opened/synchronize/reopened/labeled/unlabeled, branches: main, release/*)
         CRN_GetRef --> CRN_Checkout : ⚙️ actions/github-script@v3: get PR head ref + repository
-        CRN_Checkout --> CRN_CheckNotes : ⚙️ actions/checkout@v2 (PR head ref; fetch-depth: 0)
-        CRN_CheckNotes --> CRN_FindComment : ⚙️ if: success() || failure(); check modified paths vs release notes entries; NO_RELEASE_NOTES opt-out; exits 1 if notes missing and not opted out
-        CRN_FindComment --> CRN_CommentExists : ⚙️ if: success() || failure(); peter-evans/find-comment (body: DO_NOT_REMOVE: release_notes_check)
+        CRN_Checkout --> CRN_CheckNotes : ⚙️ actions/checkout@v2 (PR head ref, fetch-depth: 0)
+        CRN_CheckNotes --> CRN_FindComment : ⚙️ if: success() || failure(), check modified paths vs release notes entries, NO_RELEASE_NOTES opt-out, exits 1 if notes missing and not opted out
+        CRN_FindComment --> CRN_CommentExists : ⚙️ if: success() || failure(), peter-evans/find-comment (body: DO_NOT_REMOVE: release_notes_check)
         state CRN_CommentExists <<choice>>
         CRN_CommentExists --> CRN_CreateComment : ⚙️ comment-id == '' (no existing bot comment)
         CRN_CommentExists --> CRN_UpdateComment : ⚙️ comment-id != '' (existing bot comment found)
-        CRN_CreateComment --> [*] : ⚙️ if: comment-id == '' && (success() || failure()); actions/github-script@v6: createComment
-        CRN_UpdateComment --> [*] : ⚙️ if: comment-id != '' && (success() || failure()); actions/github-script@v6: updateComment
+        CRN_CreateComment --> [*] : ⚙️ if: comment-id == '' && (success() || failure()), actions/github-script@v6: createComment
+        CRN_UpdateComment --> [*] : ⚙️ if: comment-id != '' && (success() || failure()), actions/github-script@v6: updateComment
     }
 
     state "repository_lockdown_check" as RLC {
         direction LR
-        [*] --> RLC_CheckLockdown : 👤 pull_request_target (opened/synchronize/reopened; branches: main, release/*)
-        RLC_CheckLockdown --> RLC_FindComment : ⚙️ if: success() || failure(); check vars.LOCKDOWN (exits 1 if "true"; exits 0 otherwise)
-        RLC_FindComment --> RLC_CommentExists : ⚙️ if: success() || failure(); peter-evans/find-comment@v2 (body: DO_NOT_REMOVE: repository_lockdown)
+        [*] --> RLC_CheckLockdown : 👤 pull_request_target (opened/synchronize/reopened, branches: main, release/*)
+        RLC_CheckLockdown --> RLC_FindComment : ⚙️ if: success() || failure(), check vars.LOCKDOWN (exits 1 if "true", exits 0 otherwise)
+        RLC_FindComment --> RLC_CommentExists : ⚙️ if: success() || failure(), peter-evans/find-comment@v2 (body: DO_NOT_REMOVE: repository_lockdown)
         state RLC_CommentExists <<choice>>
         RLC_CommentExists --> RLC_NewComment : ⚙️ comment-id == '' (no existing comment)
         RLC_CommentExists --> RLC_OldComment : ⚙️ comment-id != '' (existing comment found)
@@ -484,7 +484,7 @@ stateDiagram-v2
         CMD_IsTestBaseline --> CMD_RunCmd : ⚙️ other command — skip .NET 9 runtime setup
         CMD_SetupRuntime --> CMD_RunCmd : ⚙️ .NET 9.0.x ready
         CMD_RunCmd --> CMD_CreatePatch : ⚙️ run command (continue-on-error: true): fantomas / xlf / ilverify / test-baseline
-        CMD_CreatePatch --> CMD_UploadArtifacts : ⚙️ if: command; write run_step_outcome + hasPatch to result file
+        CMD_CreatePatch --> CMD_UploadArtifacts : ⚙️ if: command, write run_step_outcome + hasPatch to result file
         CMD_UploadArtifacts --> CMD_RunSucceeded : ⚙️ actions/upload-artifact@v4 (cli-results: repo.patch + result)
         state CMD_RunSucceeded <<choice>>
         CMD_RunSucceeded --> [*] : ⚙️ run-parsed-command.result != 'success' — apply-and-report if: guard false
@@ -496,11 +496,11 @@ stateDiagram-v2
         state CMD_HasPatch <<choice>>
         CMD_HasPatch --> CMD_ValidatePaths : ⚙️ outcome == 'success' AND hasPatch == 'true'
         CMD_HasPatch --> CMD_GenReport : ⚙️ outcome != 'success' OR hasPatch == 'false'
-        CMD_ValidatePaths --> CMD_ApplyPush : ⚙️ if: outcome == 'success' && hasPatch == 'true'; reject .git paths; allow only src/ tests/ vsintegration/
-        CMD_ApplyPush --> CMD_CountStats : ⚙️ if: outcome == 'success' && hasPatch == 'true'; patch -p1 + git add -u + commit + push origin HEAD:branch
-        CMD_CountStats --> CMD_GenReport : ⚙️ if: outcome == 'success' && hasPatch == 'true'; git diff stats (files + lines)
-        CMD_GenReport --> CMD_CommentPR : ⚙️ if: always; build markdown report => GITHUB_STEP_SUMMARY + pr_report.md
-        CMD_CommentPR --> [*] : ⚙️ if: always; gh pr comment --body-file pr_report.md
+        CMD_ValidatePaths --> CMD_ApplyPush : ⚙️ if: outcome == 'success' && hasPatch == 'true', reject .git paths, allow only src/ tests/ vsintegration/
+        CMD_ApplyPush --> CMD_CountStats : ⚙️ if: outcome == 'success' && hasPatch == 'true', patch -p1 + git add -u + commit + push origin HEAD:branch
+        CMD_CountStats --> CMD_GenReport : ⚙️ if: outcome == 'success' && hasPatch == 'true', git diff stats (files + lines)
+        CMD_GenReport --> CMD_CommentPR : ⚙️ if: always, build markdown report => GITHUB_STEP_SUMMARY + pr_report.md
+        CMD_CommentPR --> [*] : ⚙️ if: always, gh pr comment --body-file pr_report.md
     }
 
     state "backport" as BKP {
@@ -535,11 +535,11 @@ stateDiagram-v2
     state "skill-validation" as SV {
         direction LR
         [*] --> SV_Checkout : 👤 pull_request (paths: .github/skills/**, .github/agents/**, skill-validation.yml)
-        [*] --> SV_Checkout : ⚙️ push (branches: main; same paths)
+        [*] --> SV_Checkout : ⚙️ push (branches: main, same paths)
         [*] --> SV_Checkout : 👤 workflow_dispatch (inputs: none)
         SV_Checkout --> SV_Download : ⚙️ actions/checkout@v4 (sparse-checkout: .github/skills, .github/agents)
         SV_Download --> SV_RunCheck : ⚙️ curl download skill-validator binary (dotnet/skills nightly release)
-        SV_RunCheck --> [*] : ⚙️ skill-validator check --skills + --agents --allow-repo-traversal; write GITHUB_STEP_SUMMARY; exit rc
+        SV_RunCheck --> [*] : ⚙️ skill-validator check --skills + --agents --allow-repo-traversal, write GITHUB_STEP_SUMMARY, exit rc
     }
 
     state "copilot-setup-steps" as CSS {

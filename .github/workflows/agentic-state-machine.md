@@ -265,6 +265,14 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
 
 40. **NEVER reference internal rules or extraction artifacts in output.** The generated doc must be self-contained. Do NOT write "per Rule 23", "excluded per Rule N", or reference `/tmp/*.txt` extraction files. If excluding a workflow, write `⚠️ Excluded — too complex for accurate automated documentation` without referencing rule numbers.
 
+41. **Mermaid edge-label sanitization — RENDER OR DIE.** Every Mermaid block in the output MUST parse cleanly under `mermaid.parse()`. The `stateDiagram-v2` lexer inside `state X { ... }` composite blocks has known fragilities that silently break rendering. NEVER emit the following characters or patterns inside an edge label (the text after ` : ` on any `A --> B : ...` line):
+    - **Semicolon `;`** — the lexer treats `;` as a statement separator inside composite blocks. If ANY character after `;` resembles a new identifier (especially a hyphenated identifier like `allowed-files`, `fetch-depth`, `AI-thinks-issue-fixed`), the lexer aborts with `Lexical error … Unrecognized text`. **Replace `;` with `,` always.** When listing config entries, comma-separate: `(labels: a, b, c, allowed-files: docs/**)` — never `(labels: a, b, c; allowed-files: docs/**)`.
+    - **HTML control characters `<` `>` `&`** at top level of labels — although currently tolerated by stateDiagram-v2, they are HTML-rendered downstream and may break in browser viewports. Prefer Unicode replacements: `<` → `≤` or `lt`; `>` → `≥` or `gt`; `&` → `and` or `+`. Only inside backticked code spans are HTML chars safe.
+    - **Unbalanced quotes/brackets/parens** in labels — every `(` needs a matching `)`, every `"` needs a closing `"`, every `[` needs `]`. Unbalanced delimiters break diagram rendering even when individual chars are tolerated.
+    - **Backslash `\`** — escape sequences are interpreted; avoid entirely.
+    - **Triple-period `...` immediately followed by a hyphenated identifier** — same lexer class as `;` issue.
+    **Post-draft MANDATORY check:** after emitting each Mermaid block, scan every line matching `--> .* : ` and verify no `;` appears in the label text. If found → replace with `,`. This is non-negotiable: a doc with one un-rendering Mermaid block fails Phase 3.5 with CRIT severity (verifier check (p)).
+
 
 </rules>
 
@@ -423,8 +431,57 @@ For every workflow where the manifest says `COMPLEX=true`:
     > (m) **Phantom state audit**: for every state referenced in a transition, verify it is declared (has `state X` or appears as a composite). Undefined state = HIGH.
     > (n) **Dead-trigger audit**: for each trigger in `on:`, check if ALL jobs gate it off (e.g., `if: event_name != 'X'`). If so, verify NO diagram entry path exists for that trigger. Modeled dead trigger = HIGH.
     > (o) **Prose-count audit**: scan the doc for every phrase matching "N guards/steps/nodes/labels/workflows" (any number). For each: count the actual items listed below or drawn in the diagram. If stated count ≠ actual count → MAJOR. Pay special attention to safeguard inventory headers ("N `if:` guards") and overview row step counts.
+    > (p) **Mermaid renderability — CRIT**: every ```` ```mermaid ``` ```` block in the doc MUST parse cleanly. Run this exact bash:
+    > ```bash
+    > # Phase 3.5 (p): Mermaid syntactic renderability check
+    > if ! command -v node >/dev/null; then echo "ERROR: node required for check (p)"; exit 1; fi
+    > mkdir -p /tmp/mermaid-check && cd /tmp/mermaid-check
+    > test -d node_modules || { npm init -y >/dev/null 2>&1; npm install --silent mermaid jsdom 2>&1 | tail -3; }
+    > cat > check.mjs <<'JS'
+    > import { JSDOM } from 'jsdom';
+    > const dom = new JSDOM('<!DOCTYPE html>');
+    > global.document = dom.window.document; global.window = dom.window;
+    > const m = (await import('mermaid')).default;
+    > m.initialize({ startOnLoad: false });
+    > const fs = await import('fs');
+    > const doc = fs.readFileSync(process.argv[2], 'utf8');
+    > const re = /```mermaid\n([\s\S]*?)```/g;
+    > let i = 0, mm, fails = 0;
+    > while ((mm = re.exec(doc)) !== null) {
+    >   i++;
+    >   try { await m.parse(mm[1]); }
+    >   catch (e) { fails++; console.log('CRIT\tmermaid-block-' + i + '\t' + String(e.message).replace(/\n/g,' | ').slice(0,200)); }
+    > }
+    > if (fails === 0) console.log('CLEAN');
+    > JS
+    > node check.mjs .github/docs/state-machine.md
+    > ```
+    > ANY parse failure = CRIT (the diagram cannot render in GitHub or browsers). Root-cause class: `;` inside edge labels in composite states triggers `Lexical error` when followed by hyphenated identifiers (see Rule 41). Fix by replacing `;` with `,` in every edge label.
     > Output format: one line per failure — `SEVERITY<tab>WORKFLOW<tab>FINDING` or `CLEAN` if all pass.
 13. **Fix all findings** from the subagent. If ≥3 findings, re-run the subagent after fixes. Repeat until CLEAN or ≤2 MINOR.
+
+## Phase 4: Mermaid sanitization (MANDATORY post-process)
+13a. Before emitting, run a final deterministic sanitization pass to strip lethal characters from every Mermaid edge label:
+```bash
+python3 - <<'PY'
+import re
+path = '.github/docs/state-machine.md'
+src = open(path).read()
+def sanitize_block(match):
+    out = []
+    for line in match.group(0).split('\n'):
+        m = re.match(r'^(\s*(?:\[\*\]|\S+) --> \S+ : )(.*)$', line)
+        if m:
+            label = m.group(2).replace(';', ',')
+            out.append(m.group(1) + label)
+        else:
+            out.append(line)
+    return '\n'.join(out)
+out = re.sub(r'```mermaid\n[\s\S]*?```', sanitize_block, src)
+open(path, 'w').write(out)
+PY
+```
+This is belt-and-suspenders: even if the model emits `;` somewhere, this step rewrites it. It MUST run before Phase 5 emits the final file. Re-run check (p) after sanitization to confirm zero parse failures.
 
 ## Phase 5: Emit
 14. Write final `.github/docs/state-machine.md` (overwriting the draft from Phase 3.5).
@@ -443,4 +500,5 @@ For every workflow where the manifest says `COMPLEX=true`:
 - **Terminal states → `[*]`.** Post-draft: verify every leaf state has `→ [*]`. Missing terminal exits = ERROR. Scan after drawing: every state that has no outgoing edge MUST have `--> [*]`. **NEVER use custom sink states** (like `Done`, `End`, `Finished`, `*_End`). The ONLY valid terminal is `[*]`. Custom sinks = ERROR.
 - **One entry arrow per filter value.** `branches: [main, release/*]` = TWO arrows.
 - Cross-workflow dispatches: handover annotation, not inline transition.
+- **Edge-label safety (Rule 41):** NEVER `;` in labels — use `,`. Avoid `<` `>` `&` outside backticks — use `≤` `≥` `and`. Match all `(`/`)`, `"`/`"`, `[`/`]`. NEVER `\`.
 </diagram-guidelines>
