@@ -252,3 +252,91 @@ match x with
 """
         |> eval
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/14572
+    // Verify that the per-submission dynamic assembly emitted by FSI in --multiemit+ mode
+    // carries a manifest-level DebuggableAttribute when --debug+ is in effect, so that the
+    // CLR's JIT does not optimize away locals (which would empty Locals/Autos/Watch in VS).
+    module DebuggableAttributeManifest =
+
+        let private reflectionHelperScript =
+            """
+let asm = System.Reflection.Assembly.GetExecutingAssembly()
+asm.GetCustomAttributes(typeof<System.Diagnostics.DebuggableAttribute>, false)
+|> Array.map (fun a -> int (a :?> System.Diagnostics.DebuggableAttribute).DebuggingFlags)
+"""
+
+        let private evalDebuggableFlags (session: FSharpScript) : int[] =
+            let result, errors = session.Eval(reflectionHelperScript)
+            Assert.Empty(errors)
+
+            match result with
+            | Result.Ok(Some v) -> v.ReflectionValue :?> int[]
+            | Result.Ok None -> failwith "Expected a value from reflection helper script"
+            | Result.Error ex -> raise ex
+
+        let private disableOptimizationsBit =
+            int System.Diagnostics.DebuggableAttribute.DebuggingModes.DisableOptimizations
+
+        [<Fact>]
+        let ``multi-emit submission with --debug+ has DebuggableAttribute with DisableOptimizations`` () =
+            let args: string array = [| "--multiemit+"; "--debug+" |]
+            use session = new FSharpScript(additionalArgs = args)
+            let flags = evalDebuggableFlags session
+
+            Assert.NotEmpty(flags)
+
+            Assert.True(
+                flags |> Array.exists (fun f -> f &&& disableOptimizationsBit <> 0),
+                $"Expected at least one DebuggableAttribute with DisableOptimizations bit set on the FSI submission's manifest, but got DebuggingFlags = %A{flags}"
+            )
+
+        [<Fact>]
+        let ``multi-emit submission with --debug- has no DebuggableAttribute`` () =
+            let args: string array = [| "--multiemit+"; "--debug-" |]
+            use session = new FSharpScript(additionalArgs = args)
+            let flags = evalDebuggableFlags session
+
+            Assert.Empty(flags)
+
+        [<Fact>]
+        let ``single-emit submission with --debug+ keeps DebuggableAttribute (regression)`` () =
+            // ilreflect.fs's mkDynamicAssemblyAndModule attaches DebuggableAttribute only when
+            // local optimizations are disabled. --optimize- gates that codepath, so include it
+            // here to make this a faithful regression test of the existing single-emit behavior.
+            let args: string array = [| "--multiemit-"; "--debug+"; "--optimize-" |]
+            use session = new FSharpScript(additionalArgs = args)
+            let flags = evalDebuggableFlags session
+
+            Assert.NotEmpty(flags)
+
+            Assert.True(
+                flags |> Array.exists (fun f -> f &&& disableOptimizationsBit <> 0),
+                $"Expected at least one DebuggableAttribute with DisableOptimizations bit set on the single-emit FSI submission's manifest, but got DebuggingFlags = %A{flags}"
+            )
+
+        [<Fact>]
+        let ``multi-emit + --debug+ does not duplicate user-declared DebuggableAttribute`` () =
+            let args: string array = [| "--multiemit+"; "--debug+" |]
+            use session = new FSharpScript(additionalArgs = args)
+
+            // User declares the attribute themselves in a prior submission. The fix must
+            // still emit exactly one DebuggableAttribute on subsequent submissions' manifests
+            // (i.e. the auto-attach must not introduce a duplicate when one is already present).
+            let userDecl, errors =
+                session.Eval(
+                    """
+[<assembly: System.Diagnostics.DebuggableAttribute(System.Diagnostics.DebuggableAttribute.DebuggingModes.Default)>]
+do ()
+"""
+                )
+
+            Assert.Empty(errors)
+
+            match userDecl with
+            | Result.Ok _ -> ()
+            | Result.Error ex -> raise ex
+
+            let flags = evalDebuggableFlags session
+
+            Assert.Equal(1, flags.Length)
