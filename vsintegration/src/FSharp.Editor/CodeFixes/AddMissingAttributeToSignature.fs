@@ -15,20 +15,13 @@ open FSharp.Compiler.Symbols
 
 open CancellableTasks
 
-/// Code-fix for FS3888 (attribute present in the .fs implementation but
-/// missing from the .fsi signature). Inserts the attribute text into the
-/// .fsi above the corresponding declaration. Cross-document: the diagnostic
-/// is in the .fs but the edit lands in the .fsi, so the fix returns a
-/// `ChangedSolution` rather than a `TextChange` against the current document.
+/// Code-fix for FS3888: inserts the missing attribute into the .fsi above the
+/// matching declaration. Cross-document fix (diagnostic in .fs, edit in .fsi).
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingAttributeToSignature); Shared>]
 type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    /// Look up the .fsi document in the solution by file path; uses Roslyn's
-    /// path index instead of walking projects/documents linearly. Path is
-    /// normalized via `Path.GetFullPath` to handle slash/case/relative-segment
-    /// differences between FCS and Roslyn. Prefer the current document's
-    /// project first (typical case - same project).
+    // Path normalized to handle slash/case/relative differences between FCS and Roslyn.
     let tryFindSigDocument (document: Document) (sigFilePath: string) =
         let solution = document.Project.Solution
 
@@ -49,10 +42,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             |> solution.GetDocument
             |> Option.ofObj
 
-    /// Split an attribute body like `Conditional("DEBUG.V1")` into
-    /// `("Conditional", "(\"DEBUG.V1\")")` - the head ends at the first
-    /// `(` or whitespace. Only the head is tested for qualification; the
-    /// rest is preserved verbatim except for boundary-aware enum rewrites.
+    // `Conditional("DEBUG")` -> `("Conditional", "(\"DEBUG\")")`.
     let splitAttribHead (text: string) : struct (string * string) =
         let mutable i = 0
 
@@ -61,28 +51,14 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
         struct (text.Substring(0, i), text.Substring(i))
 
-    /// Boundary-aware token qualification: rewrite `simple.` to `qualified.`
-    /// only when `simple` is not already preceded by another identifier or `.`
-    /// (i.e. is not already qualified, and is not a substring of a longer
-    /// identifier like `MyEditorBrowsableState`). Implemented with a regex
-    /// `(?<![\w\.])` negative lookbehind.
+    // Negative-lookbehind guards against re-qualifying already-qualified or substring-of-longer-identifier tokens.
     let qualifyEnumToken (simple: string) (qualified: string) (text: string) : string =
         let pattern = $@"(?<![\w\.]){System.Text.RegularExpressions.Regex.Escape(simple)}\."
         let replacement = qualified + "."
         System.Text.RegularExpressions.Regex.Replace(text, pattern, replacement)
 
-    /// Canonicalize attribute names whose `[<X>]` form in the .fs requires an
-    /// `open` of a namespace that the .fsi may not have. Two independent
-    /// rewrites:
-    ///   1. ATTRIBUTE HEAD - qualified only when the user wrote a bare name
-    ///      (head has no dot).
-    ///   2. ENUM ARGS - boundary-aware token rewrite runs regardless of head
-    ///      qualification, so `[<System.ComponentModel.EditorBrowsable(
-    ///      EditorBrowsableState.Never)>]` still gets the enum reference
-    ///      qualified.
-    /// All edits are token-boundary aware so we don't double-qualify
-    /// `System.ComponentModel.EditorBrowsableState` -> `System.ComponentModel
-    /// .System.ComponentModel.EditorBrowsableState`.
+    // Auto-qualify well-known attribute names and enum args so the inserted .fsi
+    // text compiles without requiring extra opens.
     let canonicalizeAttribName (attribText: string) : string =
         let struct (head, rest) = splitAttribHead attribText
 
@@ -105,8 +81,6 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                 | "UnverifiableAttribute" -> "Microsoft.FSharp.Core.CompilerServices." + head
                 | _ -> head
 
-        // Enum-arg rewrites: applied to `rest` whether or not the head was
-        // already qualified, with negative-lookbehind boundaries to be safe.
         let qualifiedRest =
             rest
             |> qualifyEnumToken "EditorBrowsableState" "System.ComponentModel.EditorBrowsableState"
@@ -114,8 +88,6 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
         qualifiedHead + qualifiedRest
 
-    /// Leading whitespace of the .fsi sig line, so the inserted attribute lines
-    /// up with the declaration it attaches to.
     let indentOfLine (sigSourceText: SourceText) (lineStart: int) =
         let line = sigSourceText.Lines.GetLineFromPosition(lineStart).ToString()
         let mutable i = 0
@@ -125,11 +97,8 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
         line.Substring(0, i)
 
-    /// Line break that matches the .fsi file's existing convention - avoids
-    /// inserting CRLF into an LF-only file (or vice versa). If the target line
-    /// has no trailing newline (last line of file with no trailing newline),
-    /// walks PREVIOUS lines to find one and reuse it; only falls back to
-    /// `Environment.NewLine` if the file contains no line breaks at all.
+    // Reuse the .fsi's existing newline convention; if the target line has no
+    // terminator, walk backward to find one before falling back to Environment.NewLine.
     let lineBreakAt (sigSourceText: SourceText) (lineStart: int) =
         let inline lineBreakOf (line: TextLine) =
             let lbLen = line.EndIncludingLineBreak - line.End
@@ -150,9 +119,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
         result |> Option.defaultValue Environment.NewLine
 
-    /// Safe wrapper around `FSharpRangeToTextSpan` that returns None when the
-    /// range is out of bounds (e.g. .fsi was truncated between registration
-    /// and apply). OperationCanceledException must not be swallowed.
+    // Bails out if the .fsi was truncated between registration and apply.
     let tryFSharpRangeToTextSpan (text: SourceText) (range: FSharp.Compiler.Text.range) =
         try
             Some(RoslynHelpers.FSharpRangeToTextSpan(text, range))
@@ -167,11 +134,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
-            // SynAttribute.Range covers ONE attribute body (e.g.
-            // `NoDynamicInvocation(false)`) WITHOUT the surrounding `[< >]`
-            // brackets and WITHOUT sibling attributes in a `[<A; B>]` list,
-            // so wrap before inserting. Canonicalize known non-default names
-            // so the inserted .fsi compiles without extra opens.
+            // SynAttribute.Range covers one attribute body without `[<` `>]` or sibling separators.
             let attribSpan = context.Span
             let rawAttribText = sourceText.GetSubText(attribSpan).ToString()
 
@@ -182,45 +145,28 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                 let attribText = canonicalizeAttribName rawAttribText
                 let bracketed = $"[<{attribText}>]"
 
-                // Find the declaration symbol the attribute is attached to.
-                // Position-based lookup is unreliable: skipping `>]`/`;`/whitespace
-                // lands on `let`/`type`/`module` (keywords, no symbol use) or, in
-                // multi-attribute cases like `[<A; B>]` / `[<A>]\n[<B>]`, on a
-                // sibling attribute. Enumerate all symbol uses in the file and pick
-                // the FIRST definition by source position (single O(N) min, no
-                // sort) whose range starts AFTER the diagnostic attribute and
-                // which has a `SignatureLocation`.
+                // Position-based lookup is unreliable in `[<A; B>]` / `[<A>]\n[<B>]`
+                // (lands on sibling attribute or on `let`/`type`/`module`). Enumerate
+                // symbol uses and pick the first definition starting after the diagnostic
+                // whose SignatureLocation points into a different file (the .fsi).
                 let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync "AddMissingAttributeToSignature"
 
                 let diagFsRange =
                     RoslynHelpers.TextSpanToFSharpRange(document.FilePath, attribSpan, sourceText)
 
-                // Materialize the filtered candidates once: avoids enumerating the
-                // sequence twice (Seq.isEmpty + Seq.minBy would otherwise re-run
-                // the F# checker's symbol-use iteration).
                 let candidates =
                     checkResults.GetAllUsesOfAllSymbolsInFile(context.CancellationToken)
                     |> Seq.filter (fun (u: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse) ->
                         u.IsFromDefinition
                         && u.Symbol.SignatureLocation.IsSome
-                        // The picked symbol's SignatureLocation must point to a
-                        // DIFFERENT file from the .fs (i.e. into the .fsi).
-                        // Counter-example: the wildcard self-identifier `_` in
-                        // `member _.F(x: int) = ...` is reported as a definition
-                        // symbol with SignatureLocation = its own .fs position.
-                        // Its column (11..18) is lower than the member identifier
-                        // F (col 13..) so the minBy tie-break used to pick it,
-                        // and the fix would silently modify the .fs instead of
-                        // the .fsi (the test then sees the .fsi unchanged).
+                        // SignatureLocation must point into the .fsi, not back at the .fs.
+                        // The wildcard self-identifier `_` in `member _.F = ...` is reported
+                        // as a definition whose SignatureLocation is its own .fs position.
                         && (match u.Symbol.SignatureLocation with
                             | Some sigLoc -> not (String.Equals(sigLoc.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase))
                             | None -> false)
-                        // Skip constructors: when the attribute is on a member inside
-                        // `type T() = ...`, F# also reports a definition use of the
-                        // implicit constructor at the member's line, but its
-                        // SignatureLocation points at the `new: ...` line in the
-                        // .fsi, not the member declaration. We always want the
-                        // member/property/value the attribute is attached to.
+                        // Skip the implicit constructor of `type T() = ...`: its
+                        // SignatureLocation points at `new: ...`, not at the member.
                         && (match u.Symbol with
                             | :? FSharpMemberOrFunctionOrValue as mfv -> not mfv.IsConstructor
                             | _ -> true)
@@ -233,9 +179,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                     if candidates.Length = 0 then
                         None
                     else
-                        // Sort tie-broken by (line, col, end-line, end-col, symbol full name)
-                        // so the selection is fully deterministic for overloads /
-                        // type+ctor pairs that share a start position.
+                        // Tie-break by symbol name for determinism across overloads / type+ctor pairs.
                         candidates
                         |> Array.minBy (fun u ->
                             u.Range.StartLine, u.Range.StartColumn, u.Range.EndLine, u.Range.EndColumn, u.Symbol.FullName)
@@ -245,11 +189,8 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                 | Some sigRange when not (String.Equals(sigRange.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase)) ->
                     match tryFindSigDocument document sigRange.FileName with
                     | Some sigDoc ->
-                        // Capture the DocumentId, not the Document - Documents are
-                        // immutable snapshots, so re-resolving via the current
-                        // workspace solution at apply time observes any intervening
-                        // .fsi edits. The .fsi span lookup is wrapped to bail out
-                        // gracefully if the file was truncated.
+                        // Keep the DocumentId, not the Document: re-resolve at apply
+                        // time so intervening .fsi edits are observed.
                         let sigDocId = sigDoc.Id
 
                         let normalizedSigPath =

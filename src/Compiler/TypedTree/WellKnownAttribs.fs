@@ -118,7 +118,6 @@ type internal WellKnownValAttributes =
     | TailCallAttribute = (1uL <<< 40)
     | NotComputed = (1uL <<< 63)
 
-/// Plain set operations on `'F when 'F :> System.Enum` flag values backed by uint64.
 module internal Flags =
     let inline private bits (f: ^F when ^F: enum<uint64>) = LanguagePrimitives.EnumToValue f
     let inline private ofBits<'F when 'F: enum<uint64>> (v: uint64) : 'F = LanguagePrimitives.EnumOfValue v

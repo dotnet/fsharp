@@ -267,9 +267,7 @@ let inline f (x: int) = x + 1
         |> compile
         |> shouldSucceed
 
-    // -----------------------------------------------------------------------
-    // Module-level attribute
-    // -----------------------------------------------------------------------
+    // Module-level attribute.
 
     [<Fact>]
     let ``AutoOpen on top-level module in impl but not sig produces warning`` () =
@@ -287,9 +285,7 @@ let x = 1
         |> withWarningCode 3888
         |> withDiagnosticMessageMatches "AutoOpen"
 
-    // -----------------------------------------------------------------------
-    // Diagnostic placement and range
-    // -----------------------------------------------------------------------
+    // Diagnostic placement and range.
 
     [<Fact>]
     let ``Diagnostic squiggle is placed on the offending attribute in the .fs`` () =
@@ -383,11 +379,7 @@ let inline f (x: int) = x + 1
         |> withWarningCode 3888
         |> withDiagnosticMessageMatches "NoDynamicInvocation"
 
-    // -----------------------------------------------------------------------
-    // Accessibility scope: internal symbols are enforced too. Within-project
-    // and InternalsVisibleTo callers also see the .fsi's view, so the same
-    // .fs/.fsi divergence applies.
-    // -----------------------------------------------------------------------
+    // Internal-symbol scope: same .fsi/.fs divergence applies (cross-file + InternalsVisibleTo).
 
     [<Fact>]
     let ``Internal type with attribute mismatch still fires FS3888`` () =
@@ -419,10 +411,7 @@ let inline internal f (x: int) = x + 1
         |> withWarningCode 3888
         |> withDiagnosticMessageMatches "NoDynamicInvocation"
 
-    // -----------------------------------------------------------------------
-    // Expanded attribute set: typecheck/IDE-affecting attributes that were
-    // not in the initial list but should equally not silently diverge.
-    // -----------------------------------------------------------------------
+    // Expanded attribute set: typecheck-affecting attributes added after the initial PR.
 
     [<Fact>]
     let ``StructuralEquality mismatch fires FS3888`` () =
@@ -458,8 +447,7 @@ type R = { X: int }
 
     [<Fact>]
     let ``Struct attribute mismatch fires FS3888`` () =
-        // Sig says class-like type, impl marks it as a struct: a real
-        // typechecking divergence (boxing/byref semantics).
+        // Sig as class, impl as struct: boxing/byref semantics flip.
         let sigSrc = """
 module M
 type R = { X: int }

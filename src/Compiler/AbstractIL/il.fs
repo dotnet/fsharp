@@ -1195,8 +1195,7 @@ type ILAttribElem =
 
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
-// Intentionally NOT [<RequireQualifiedAccess>]: the .fsi omits it because the
-// DU cases `Encoded`/`Decoded` are used unqualified across the compiler.
+// Encoded/Decoded are used unqualified across the compiler - do NOT add [<RequireQualifiedAccess>].
 [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILAttribute =
     | Encoded of method: ILMethodSpec * data: byte[] * elements: ILAttribElem list
