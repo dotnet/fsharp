@@ -1473,8 +1473,8 @@ module MetadataAsTextILField =
 
         let line =
             metadataText.Split('\n')
-            |> Array.tryFind (fun l -> l.Contains(fieldName))
-            |> Option.defaultWith (fun () -> failwithf "field %s not found in metadata text:\n%s" fieldName metadataText)
+            |> Array.tryFind (fun l -> l.Contains("val " + fieldName + ":"))
+            |> Option.defaultWith (fun () -> failwithf "field declaration for %s not found in metadata text:\n%s" fieldName metadataText)
 
         Assert.Contains("[<Literal>]", metadataText)
         Assert.Contains("= " + expectedValueText, line)
@@ -1486,20 +1486,20 @@ module MetadataAsTextILField =
         Assert.Contains("[<Literal>]", metadataText)
         let line =
             metadataText.Split('\n')
-            |> Array.tryFind (fun l -> l.Contains("MaxValue"))
-            |> Option.defaultWith (fun () -> failwithf "MaxValue not found:\n%s" metadataText)
+            |> Array.tryFind (fun l -> l.Contains("val MaxValue:"))
+            |> Option.defaultWith (fun () -> failwithf "MaxValue declaration not found:\n%s" metadataText)
         Assert.Contains("=", line)
         Assert.False(line.TrimEnd().EndsWith(": char"),
                     sprintf "MaxValue line is missing its literal value: %s" line)
 
     [<Fact>]
-    let ``System.Math.PI (initonly, non-literal) renders without [<Literal>] and without value`` () =
-        let metadataText = getMetadataTextForEntity "Math" "let _ = typeof<System.Math>"
+    let ``System.String.Empty (initonly, non-literal) renders without [<Literal>] and without value`` () =
+        let metadataText = getMetadataTextForEntity "String" "let _ = typeof<System.String>"
 
         let line =
             metadataText.Split('\n')
-            |> Array.tryFind (fun l -> l.Contains(" PI") || l.Contains("\tPI"))
-            |> Option.defaultWith (fun () -> failwithf "PI not found:\n%s" metadataText)
+            |> Array.tryFind (fun l -> l.Contains("val Empty:"))
+            |> Option.defaultWith (fun () -> failwithf "Empty not found:\n%s" metadataText)
 
         Assert.Contains("static val", line)
         Assert.DoesNotContain("=", line)

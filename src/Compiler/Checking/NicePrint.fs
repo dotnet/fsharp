@@ -1954,6 +1954,11 @@ module TastDefinitionPrinting =
         let nameL = ConvertLogicalNameToDisplayLayout (tagField >> wordL) finfo.FieldName
         let typL = layoutType denv (finfo.FieldType(infoReader.amap, m))
         let fieldL = staticL ^^ WordL.keywordVal ^^ (nameL |> addColonL) ^^ typL
+        let isLiteral = finfo.LiteralValue.IsSome
+        let fieldL =
+            if isLiteral then fieldL ^^ PrintIL.layoutILFieldInit finfo.LiteralValue
+            else fieldL
+        let fieldL = fieldL |> PrintTypes.layoutAttribs denv None isLiteral TyparKind.Type []
         layoutXmlDocOfILFieldInfo denv infoReader finfo fieldL
 
     let layoutEventInfo denv (infoReader: InfoReader) m (einfo: EventInfo) =
