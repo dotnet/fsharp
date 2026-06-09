@@ -1070,7 +1070,7 @@ module PrintTypes =
 
         | TType_measure unt -> layoutMeasure denv unt
 
-        | TType_anon_tt_union (unionInfo, types) ->
+        | TType_anon_union (unionInfo, types) ->
             let sigma = unionInfo.UnsortedCaseSourceIndices
 
             let unsortedTyps =

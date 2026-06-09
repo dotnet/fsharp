@@ -108,7 +108,7 @@ module internal XmlDocSignatures =
 
         | TType_measure _ -> "?"
 
-        | TType_anon_tt_union(_, _) -> failwith "unreachable" // always erased by stripTyEqnsAndMeasureEqns
+        | TType_anon_union(_, _) -> failwith "unreachable" // always erased by stripTyEqnsAndMeasureEqns
 
     and tyargsEnc g (gtpsType, gtpsMethod) args =
         match args with
@@ -451,7 +451,7 @@ module internal NullnessAnalysis =
                     | true, Some tAbbrev -> (hasWithNullAnyWhere tAbbrev true) @ tyArgs
                     | _ -> tyArgs
 
-                | TType_anon_tt_union(_, tys)
+                | TType_anon_union(_, tys)
                 | TType_tuple(_, tys)
                 | TType_anon(tys = tys) ->
                     let inner = tys |> List.collect (fun t -> hasWithNullAnyWhere t false)

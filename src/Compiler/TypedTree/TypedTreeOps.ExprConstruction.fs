@@ -1071,7 +1071,7 @@ module internal TypeTesters =
             || isFSharpObjModelRefTy g ty
             || isUnitTy g ty
             || (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty))
-            || isAnonTtUnionTy g ty)
+            || isAnonUnionTy g ty)
 
     let isForallFunctionTy g ty =
         let _, tau = tryDestForallTy g ty
@@ -1252,7 +1252,7 @@ module internal TypeTesters =
             | TType_ucase(_, b)
             | TType_anon(_, b)
             | TType_tuple(_, b)
-            | TType_anon_tt_union(_, b) -> List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
+            | TType_anon_union(_, b) -> List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
 
             | TType_fun(domainTy, rangeTy, nullness) ->
                 match checkForNullness, nullness.Evaluate() with

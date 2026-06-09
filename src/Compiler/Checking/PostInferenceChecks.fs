@@ -455,7 +455,7 @@ let rec CheckTypeDeep<'V when 'V :> ITypeVisitor and 'V: struct>
     | TType_ucase (_, tinst) ->
         CheckTypesDeep cenv v g env tinst
 
-    | TType_anon_tt_union (_, tys) ->
+    | TType_anon_union (_, tys) ->
         CheckTypesDeep cenv f g env tys
 
     | TType_tuple (_, tys) ->

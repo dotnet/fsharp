@@ -1319,7 +1319,7 @@ module internal AttributeHelpers =
             if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then
                 let tcref = tcrefOfAppTy g ty
                 EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute_True tcref.Deref
-            elif (isAnonTtUnionTy g ty) then
+            elif (isAnonUnionTy g ty) then
                 false
             else
                 // All other F# types, array, byref, tuple types are sealed
@@ -1618,7 +1618,7 @@ module internal DebugPrint =
 
         | TType_tuple(_tupInfo, tys) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
 
-        | TType_anon_tt_union(_, tys) ->
+        | TType_anon_union(_, tys) ->
             leftL (tagText "(")
             ^^ sepListL (wordL (tagText "|")) (List.map (auxTypeAtomL env) tys)
             ^^ rightL (tagText ")")

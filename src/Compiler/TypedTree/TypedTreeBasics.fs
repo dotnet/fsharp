@@ -261,13 +261,14 @@ let inline (|CombinedNullness|_|) (nullnessNew: Nullness) (nullnessOrig: Nullnes
     let nullnessAfter = combineNullness nullnessOrig nullnessNew
     if nullnessEquiv nullnessAfter nullnessOrig then ValueNone else ValueSome nullnessAfter
 
+<<<<<<< HEAD
 let tryAddNullnessToTy nullnessNew (ty:TType) =
     let inline (|NullnessWouldChangeTo|_|) orig = (|CombinedNullness|_|) nullnessNew orig
     match ty with
     | TType_var (tp, NullnessWouldChangeTo after) -> Some (TType_var (tp, after))
     | TType_app (tcr, tinst, NullnessWouldChangeTo after) -> Some (TType_app (tcr, tinst, after))
     | TType_fun (d, r, NullnessWouldChangeTo after) -> Some (TType_fun (d, r, after))
-    | TType_anon_tt_union _ -> None
+    | TType_anon_union _ -> None
     | TType_var _
     | TType_app _
     | TType_fun _ -> Some ty
@@ -275,6 +276,10 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
     | TType_tuple _
     | TType_anon _
     | TType_forall _
+=======
+    | TType_anon_union _ -> None
+    | TType_forall _ -> None
+>>>>>>> f24b042b9 (Change naming of anonymous union type)
     | TType_measure _ -> None
 
 /// Matches a `TyconRef` whose definition is a struct/enum value type (which never carries outer nullness).

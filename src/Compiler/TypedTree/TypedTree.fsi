@@ -3269,7 +3269,7 @@ type TType =
     | TType_var of typar: Typar * nullness: Nullness
 
     /// Indicates the type is a union type, containing common ancestor type and the disjoint cases
-    | TType_anon_tt_union of unionInfo: AnonTtUnionInfo * choices: TTypes
+    | TType_anon_union of unionInfo: AnonUnionInfo * choices: TTypes
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure
@@ -3316,7 +3316,7 @@ type AnonRecdTypeInfo =
     member DisplayNameCoreByIdx: idx: int -> string
 
 [<RequireQualifiedAccess>]
-type AnonTtUnionInfo =
+type AnonUnionInfo =
     {
         /// Common ancestor type for all cases in this union, used for ILgen
         CommonAncestorTy: TType
@@ -3325,7 +3325,7 @@ type AnonTtUnionInfo =
         UnsortedCaseSourceIndices: int[]
     }
 
-    static member Create: commonAncestorTy: TType * unsortedCaseSourceIndices: int[] -> AnonTtUnionInfo
+    static member Create: commonAncestorTy: TType * unsortedCaseSourceIndices: int[] -> AnonUnionInfo
 
 [<RequireQualifiedAccess>]
 type TupInfo =
