@@ -336,7 +336,7 @@
     } 
   } 
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'f@8-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit f@8
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/Weirdo,int32>
   {
     .field public int32 C
@@ -350,7 +350,7 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/Weirdo,int32>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      int32 assembly/'f@8-1'::C
+      IL_0008:  stfld      int32 assembly/f@8::C
       IL_000d:  ret
     } 
 
@@ -362,7 +362,7 @@
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      int32 assembly/'f@8-1'::C
+      IL_0003:  ldfld      int32 assembly/f@8::C
       IL_0008:  ret
     } 
 
@@ -399,7 +399,7 @@
     IL_0000:  ldc.i4.1
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
-    IL_0003:  newobj     instance void assembly/'f@8-1'::.ctor(int32)
+    IL_0003:  newobj     instance void assembly/f@8::.ctor(int32)
     IL_0008:  stloc.1
     IL_0009:  ret
   } 

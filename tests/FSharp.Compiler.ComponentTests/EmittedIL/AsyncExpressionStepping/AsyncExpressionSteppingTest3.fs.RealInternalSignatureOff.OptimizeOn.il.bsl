@@ -37,16 +37,16 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@5-1'
+    .class auto ansi serializable sealed nested assembly beforefieldinit f3@5
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
-      .field static assembly initonly class assembly/assembly/'f3@5-1' @_instance
+      .field static assembly initonly class assembly/assembly/f3@5 @_instance
       .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
-        IL_0000:  newobj     instance void assembly/assembly/'f3@5-1'::.ctor()
-        IL_0005:  stsfld     class assembly/assembly/'f3@5-1' assembly/assembly/'f3@5-1'::@_instance
+        IL_0000:  newobj     instance void assembly/assembly/f3@5::.ctor()
+        IL_0005:  stsfld     class assembly/assembly/f3@5 assembly/assembly/f3@5::@_instance
         IL_000a:  ret
       } 
 
@@ -93,7 +93,7 @@
         IL_0036:  add
         IL_0037:  stloc.2
         IL_0038:  ldloc.2
-        IL_0039:  newobj     instance void assembly/assembly/'f3@10-2'::.ctor(int32)
+        IL_0039:  newobj     instance void assembly/assembly/'f3@10-1'::.ctor(int32)
         IL_003e:  tail.
         IL_0040:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_0045:  ret
@@ -101,7 +101,7 @@
 
     } 
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@10-2'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@10-1'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public int32 z
@@ -115,7 +115,7 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      int32 assembly/assembly/'f3@10-2'::z
+        IL_0008:  stfld      int32 assembly/assembly/'f3@10-1'::z
         IL_000d:  ret
       } 
 
@@ -125,7 +125,7 @@
         .maxstack  8
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
-        IL_0002:  ldfld      int32 assembly/assembly/'f3@10-2'::z
+        IL_0002:  ldfld      int32 assembly/assembly/'f3@10-1'::z
         IL_0007:  tail.
         IL_0009:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::Success(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!0>,
                                                                                                                                                                        !0)
@@ -150,7 +150,7 @@
       
       .maxstack  8
       IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
-      IL_0005:  ldsfld     class assembly/assembly/'f3@5-1' assembly/assembly/'f3@5-1'::@_instance
+      IL_0005:  ldsfld     class assembly/assembly/f3@5 assembly/assembly/f3@5::@_instance
       IL_000a:  tail.
       IL_000c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
       IL_0011:  ret

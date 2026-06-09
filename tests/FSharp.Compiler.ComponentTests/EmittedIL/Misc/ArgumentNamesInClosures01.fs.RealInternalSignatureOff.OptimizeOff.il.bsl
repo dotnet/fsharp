@@ -74,7 +74,7 @@
       .locals init (class M/T V_0)
       IL_0000:  ldarg.0
       IL_0001:  stloc.0
-      IL_0002:  ldsfld     class M/'get_F@41-2' M/'get_F@41-2'::@_instance
+      IL_0002:  ldsfld     class M/get_F@41 M/get_F@41::@_instance
       IL_0007:  ret
     } 
 
@@ -85,16 +85,16 @@
     } 
   } 
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'get_F@41-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit get_F@41
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32>
   {
-    .field static assembly initonly class M/'get_F@41-2' @_instance
+    .field static assembly initonly class M/get_F@41 @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
-      IL_0000:  newobj     instance void M/'get_F@41-2'::.ctor()
-      IL_0005:  stsfld     class M/'get_F@41-2' M/'get_F@41-2'::@_instance
+      IL_0000:  newobj     instance void M/get_F@41::.ctor()
+      IL_0005:  stsfld     class M/get_F@41 M/get_F@41::@_instance
       IL_000a:  ret
     } 
 

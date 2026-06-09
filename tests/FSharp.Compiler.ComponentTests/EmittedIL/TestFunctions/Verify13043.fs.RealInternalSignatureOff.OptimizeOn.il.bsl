@@ -141,7 +141,7 @@
     IL_0001:  stloc.0
     IL_0002:  ldarg.0
     IL_0003:  ldarg.1
-    IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::'f@26-3'(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,
+    IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::'f@26-1'(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,
                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
     IL_0009:  ret
   } 
@@ -161,7 +161,7 @@
     IL_0009:  ret
   } 
 
-  .method assembly static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'f@26-3'(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition, class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> _arg1) cil managed
+  .method assembly static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'f@26-1'(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition, class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> _arg1) cil managed
   {
     
     .maxstack  4

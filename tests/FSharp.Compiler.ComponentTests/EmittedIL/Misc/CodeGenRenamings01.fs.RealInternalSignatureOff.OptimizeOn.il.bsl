@@ -38,7 +38,7 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'seq1@9-2'
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname seq1@9
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<class [runtime]System.Tuple`2<int32,int32>>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -56,10 +56,10 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      int32 assembly/'seq1@9-2'::pc
+      IL_0002:  stfld      int32 assembly/seq1@9::pc
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/'seq1@9-2'::current
+      IL_0009:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
       IL_000e:  ldarg.0
       IL_000f:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<class [runtime]System.Tuple`2<int32,int32>>::.ctor()
       IL_0014:  ret
@@ -71,7 +71,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldc.i4.3
-      IL_0002:  stfld      int32 assembly/'seq1@9-2'::pc
+      IL_0002:  stfld      int32 assembly/seq1@9::pc
       IL_0007:  ret
     } 
 
@@ -80,7 +80,7 @@
       
       .maxstack  7
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 assembly/'seq1@9-2'::pc
+      IL_0001:  ldfld      int32 assembly/seq1@9::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -103,34 +103,34 @@
 
       IL_0027:  ldarg.0
       IL_0028:  ldc.i4.1
-      IL_0029:  stfld      int32 assembly/'seq1@9-2'::pc
+      IL_0029:  stfld      int32 assembly/seq1@9::pc
       IL_002e:  ldarg.0
       IL_002f:  ldc.i4.1
       IL_0030:  ldc.i4.1
       IL_0031:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
                                                                                                   !1)
-      IL_0036:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/'seq1@9-2'::current
+      IL_0036:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
       IL_003b:  ldc.i4.1
       IL_003c:  ret
 
       IL_003d:  ldarg.0
       IL_003e:  ldc.i4.2
-      IL_003f:  stfld      int32 assembly/'seq1@9-2'::pc
+      IL_003f:  stfld      int32 assembly/seq1@9::pc
       IL_0044:  ldarg.0
       IL_0045:  ldc.i4.2
       IL_0046:  ldc.i4.2
       IL_0047:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
                                                                                                   !1)
-      IL_004c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/'seq1@9-2'::current
+      IL_004c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
       IL_0051:  ldc.i4.1
       IL_0052:  ret
 
       IL_0053:  ldarg.0
       IL_0054:  ldc.i4.3
-      IL_0055:  stfld      int32 assembly/'seq1@9-2'::pc
+      IL_0055:  stfld      int32 assembly/seq1@9::pc
       IL_005a:  ldarg.0
       IL_005b:  ldnull
-      IL_005c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/'seq1@9-2'::current
+      IL_005c:  stfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
       IL_0061:  ldc.i4.0
       IL_0062:  ret
     } 
@@ -143,8 +143,8 @@
       .maxstack  8
       IL_0000:  ldc.i4.0
       IL_0001:  ldnull
-      IL_0002:  newobj     instance void assembly/'seq1@9-2'::.ctor(int32,
-                                                                              class [runtime]System.Tuple`2<int32,int32>)
+      IL_0002:  newobj     instance void assembly/seq1@9::.ctor(int32,
+                                                                          class [runtime]System.Tuple`2<int32,int32>)
       IL_0007:  ret
     } 
 
@@ -153,7 +153,7 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 assembly/'seq1@9-2'::pc
+      IL_0001:  ldfld      int32 assembly/seq1@9::pc
       IL_0006:  switch     ( 
                             IL_001d,
                             IL_0020,
@@ -193,7 +193,7 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [runtime]System.Tuple`2<int32,int32> assembly/'seq1@9-2'::current
+      IL_0001:  ldfld      class [runtime]System.Tuple`2<int32,int32> assembly/seq1@9::current
       IL_0006:  ret
     } 
 
@@ -629,8 +629,8 @@
     IL_0072:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`2<int32,int32>> '<StartupCode$assembly>'.$assembly::list1@8
     IL_0077:  ldc.i4.0
     IL_0078:  ldnull
-    IL_0079:  newobj     instance void assembly/'seq1@9-2'::.ctor(int32,
-                                                                            class [runtime]System.Tuple`2<int32,int32>)
+    IL_0079:  newobj     instance void assembly/seq1@9::.ctor(int32,
+                                                                        class [runtime]System.Tuple`2<int32,int32>)
     IL_007e:  stsfld     class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>> '<StartupCode$assembly>'.$assembly::seq1@9
     IL_0083:  ldc.i4.2
     IL_0084:  newarr     class [runtime]System.Tuple`2<int32,int32>

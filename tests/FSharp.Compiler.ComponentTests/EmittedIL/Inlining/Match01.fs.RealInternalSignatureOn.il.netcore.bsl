@@ -449,7 +449,7 @@
       } 
     } 
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'clo@4-2'
+    .class auto ansi serializable sealed nested assembly beforefieldinit clo@4
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>
     {
       .field public class assembly/Test1 obj
@@ -470,10 +470,10 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class assembly/Test1 assembly/Test1/'clo@4-2'::this
+        IL_0008:  stfld      class assembly/Test1 assembly/Test1/clo@4::this
         IL_000d:  ldarg.0
         IL_000e:  ldarg.2
-        IL_000f:  stfld      class assembly/Test1 assembly/Test1/'clo@4-2'::obj
+        IL_000f:  stfld      class assembly/Test1 assembly/Test1/clo@4::obj
         IL_0014:  ret
       } 
 
@@ -495,11 +495,11 @@
                  class assembly/Test1/X14 V_11,
                  class assembly/Test1/X14 V_12)
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::this
+        IL_0001:  ldfld      class assembly/Test1 assembly/Test1/clo@4::this
         IL_0006:  ldfld      int32 assembly/Test1::_tag
         IL_000b:  stloc.0
         IL_000c:  ldarg.0
-        IL_000d:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::obj
+        IL_000d:  ldfld      class assembly/Test1 assembly/Test1/clo@4::obj
         IL_0012:  ldfld      int32 assembly/Test1::_tag
         IL_0017:  stloc.1
         IL_0018:  ldloc.0
@@ -507,7 +507,7 @@
         IL_001a:  bne.un     IL_013f
 
         IL_001f:  ldarg.0
-        IL_0020:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::this
+        IL_0020:  ldfld      class assembly/Test1 assembly/Test1/clo@4::this
         IL_0025:  call       instance int32 assembly/Test1::get_Tag()
         IL_002a:  switch     ( 
                               IL_003f,
@@ -515,11 +515,11 @@
                               IL_00bd,
                               IL_00fe)
         IL_003f:  ldarg.0
-        IL_0040:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::this
+        IL_0040:  ldfld      class assembly/Test1 assembly/Test1/clo@4::this
         IL_0045:  castclass  assembly/Test1/X11
         IL_004a:  stloc.2
         IL_004b:  ldarg.0
-        IL_004c:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::obj
+        IL_004c:  ldfld      class assembly/Test1 assembly/Test1/clo@4::obj
         IL_0051:  castclass  assembly/Test1/X11
         IL_0056:  stloc.3
         IL_0057:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -540,11 +540,11 @@
         IL_007b:  ret
 
         IL_007c:  ldarg.0
-        IL_007d:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::this
+        IL_007d:  ldfld      class assembly/Test1 assembly/Test1/clo@4::this
         IL_0082:  castclass  assembly/Test1/X12
         IL_0087:  stloc.s    V_7
         IL_0089:  ldarg.0
-        IL_008a:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::obj
+        IL_008a:  ldfld      class assembly/Test1 assembly/Test1/clo@4::obj
         IL_008f:  castclass  assembly/Test1/X12
         IL_0094:  stloc.s    V_8
         IL_0096:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -565,11 +565,11 @@
         IL_00bc:  ret
 
         IL_00bd:  ldarg.0
-        IL_00be:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::this
+        IL_00be:  ldfld      class assembly/Test1 assembly/Test1/clo@4::this
         IL_00c3:  castclass  assembly/Test1/X13
         IL_00c8:  stloc.s    V_9
         IL_00ca:  ldarg.0
-        IL_00cb:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::obj
+        IL_00cb:  ldfld      class assembly/Test1 assembly/Test1/clo@4::obj
         IL_00d0:  castclass  assembly/Test1/X13
         IL_00d5:  stloc.s    V_10
         IL_00d7:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -590,11 +590,11 @@
         IL_00fd:  ret
 
         IL_00fe:  ldarg.0
-        IL_00ff:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::this
+        IL_00ff:  ldfld      class assembly/Test1 assembly/Test1/clo@4::this
         IL_0104:  castclass  assembly/Test1/X14
         IL_0109:  stloc.s    V_11
         IL_010b:  ldarg.0
-        IL_010c:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-2'::obj
+        IL_010c:  ldfld      class assembly/Test1 assembly/Test1/clo@4::obj
         IL_0111:  castclass  assembly/Test1/X14
         IL_0116:  stloc.s    V_12
         IL_0118:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -622,7 +622,7 @@
 
     } 
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'clo@4-7'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'clo@4-1'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>
     {
       .field public object obj
@@ -650,13 +650,13 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class assembly/Test1 assembly/Test1/'clo@4-7'::this
+        IL_0008:  stfld      class assembly/Test1 assembly/Test1/'clo@4-1'::this
         IL_000d:  ldarg.0
         IL_000e:  ldarg.2
-        IL_000f:  stfld      object assembly/Test1/'clo@4-7'::obj
+        IL_000f:  stfld      object assembly/Test1/'clo@4-1'::obj
         IL_0014:  ldarg.0
         IL_0015:  ldarg.3
-        IL_0016:  stfld      class assembly/Test1 assembly/Test1/'clo@4-7'::objTemp
+        IL_0016:  stfld      class assembly/Test1 assembly/Test1/'clo@4-1'::objTemp
         IL_001b:  ret
       } 
 
@@ -677,16 +677,16 @@
                  class assembly/Test1/X14 V_10,
                  class assembly/Test1/X14 V_11)
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      object assembly/Test1/'clo@4-7'::obj
+        IL_0001:  ldfld      object assembly/Test1/'clo@4-1'::obj
         IL_0006:  unbox.any  assembly/Test1
         IL_000b:  brfalse    IL_0137
 
         IL_0010:  ldarg.0
-        IL_0011:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::this
+        IL_0011:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::this
         IL_0016:  ldfld      int32 assembly/Test1::_tag
         IL_001b:  stloc.0
         IL_001c:  ldarg.0
-        IL_001d:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::objTemp
+        IL_001d:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::objTemp
         IL_0022:  ldfld      int32 assembly/Test1::_tag
         IL_0027:  stloc.1
         IL_0028:  ldloc.0
@@ -694,7 +694,7 @@
         IL_002a:  bne.un     IL_0133
 
         IL_002f:  ldarg.0
-        IL_0030:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::this
+        IL_0030:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::this
         IL_0035:  call       instance int32 assembly/Test1::get_Tag()
         IL_003a:  switch     ( 
                               IL_004f,
@@ -702,11 +702,11 @@
                               IL_00bf,
                               IL_00f9)
         IL_004f:  ldarg.0
-        IL_0050:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::this
+        IL_0050:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::this
         IL_0055:  castclass  assembly/Test1/X11
         IL_005a:  stloc.2
         IL_005b:  ldarg.0
-        IL_005c:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::objTemp
+        IL_005c:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::objTemp
         IL_0061:  castclass  assembly/Test1/X11
         IL_0066:  stloc.3
         IL_0067:  ldloc.2
@@ -725,11 +725,11 @@
         IL_0084:  ret
 
         IL_0085:  ldarg.0
-        IL_0086:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::this
+        IL_0086:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::this
         IL_008b:  castclass  assembly/Test1/X12
         IL_0090:  stloc.s    V_6
         IL_0092:  ldarg.0
-        IL_0093:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::objTemp
+        IL_0093:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::objTemp
         IL_0098:  castclass  assembly/Test1/X12
         IL_009d:  stloc.s    V_7
         IL_009f:  ldloc.s    V_6
@@ -748,11 +748,11 @@
         IL_00be:  ret
 
         IL_00bf:  ldarg.0
-        IL_00c0:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::this
+        IL_00c0:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::this
         IL_00c5:  castclass  assembly/Test1/X13
         IL_00ca:  stloc.s    V_8
         IL_00cc:  ldarg.0
-        IL_00cd:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::objTemp
+        IL_00cd:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::objTemp
         IL_00d2:  castclass  assembly/Test1/X13
         IL_00d7:  stloc.s    V_9
         IL_00d9:  ldloc.s    V_8
@@ -771,11 +771,11 @@
         IL_00f8:  ret
 
         IL_00f9:  ldarg.0
-        IL_00fa:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::this
+        IL_00fa:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::this
         IL_00ff:  castclass  assembly/Test1/X14
         IL_0104:  stloc.s    V_10
         IL_0106:  ldarg.0
-        IL_0107:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-7'::objTemp
+        IL_0107:  ldfld      class assembly/Test1 assembly/Test1/'clo@4-1'::objTemp
         IL_010c:  castclass  assembly/Test1/X14
         IL_0111:  stloc.s    V_11
         IL_0113:  ldloc.s    V_10
@@ -839,8 +839,8 @@
 
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  newobj     instance void assembly/Test1/'clo@4-2'::.ctor(class assembly/Test1,
-                                                                        class assembly/Test1)
+      IL_0008:  newobj     instance void assembly/Test1/clo@4::.ctor(class assembly/Test1,
+                                                                    class assembly/Test1)
       IL_000d:  stloc.0
       IL_000e:  ldloc.0
       IL_000f:  ldnull
@@ -889,7 +889,7 @@
       IL_000a:  ldarg.0
       IL_000b:  ldarg.1
       IL_000c:  ldloc.0
-      IL_000d:  newobj     instance void assembly/Test1/'clo@4-7'::.ctor(class assembly/Test1,
+      IL_000d:  newobj     instance void assembly/Test1/'clo@4-1'::.ctor(class assembly/Test1,
                                                                         object,
                                                                         class assembly/Test1)
       IL_0012:  stloc.1

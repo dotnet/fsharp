@@ -37,7 +37,7 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'f0@6-2'
+    .class auto autochar serializable sealed nested assembly beforefieldinit specialname f0@6
            extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -55,10 +55,10 @@
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
-        IL_0002:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::pc
+        IL_0002:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0007:  ldarg.0
         IL_0008:  ldarg.2
-        IL_0009:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::current
+        IL_0009:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
         IL_000e:  ldarg.0
         IL_000f:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
         IL_0014:  ret
@@ -70,7 +70,7 @@
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ldc.i4.2
-        IL_0002:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::pc
+        IL_0002:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0007:  ret
       } 
 
@@ -79,7 +79,7 @@
         
         .maxstack  6
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::pc
+        IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0006:  ldc.i4.1
         IL_0007:  sub
         IL_0008:  switch     ( 
@@ -98,19 +98,19 @@
 
         IL_0020:  ldarg.0
         IL_0021:  ldc.i4.1
-        IL_0022:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::pc
+        IL_0022:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0027:  ldarg.0
         IL_0028:  ldc.i4.1
-        IL_0029:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::current
+        IL_0029:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
         IL_002e:  ldc.i4.1
         IL_002f:  ret
 
         IL_0030:  ldarg.0
         IL_0031:  ldc.i4.2
-        IL_0032:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::pc
+        IL_0032:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0037:  ldarg.0
         IL_0038:  ldc.i4.0
-        IL_0039:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::current
+        IL_0039:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
         IL_003e:  ldc.i4.0
         IL_003f:  ret
       } 
@@ -123,8 +123,8 @@
         .maxstack  8
         IL_0000:  ldc.i4.0
         IL_0001:  ldc.i4.0
-        IL_0002:  newobj     instance void SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::.ctor(int32,
-                                                                                                                 int32)
+        IL_0002:  newobj     instance void SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::.ctor(int32,
+                                                                                                             int32)
         IL_0007:  ret
       } 
 
@@ -133,7 +133,7 @@
         
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::pc
+        IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0006:  switch     ( 
                               IL_0019,
                               IL_001c,
@@ -166,7 +166,7 @@
         
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::current
+        IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
         IL_0006:  ret
       } 
 
@@ -189,8 +189,8 @@
       .maxstack  8
       IL_0000:  ldc.i4.0
       IL_0001:  ldc.i4.0
-      IL_0002:  newobj     instance void SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/'f0@6-2'::.ctor(int32,
-                                                                                                               int32)
+      IL_0002:  newobj     instance void SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::.ctor(int32,
+                                                                                                           int32)
       IL_0007:  ret
     } 
 

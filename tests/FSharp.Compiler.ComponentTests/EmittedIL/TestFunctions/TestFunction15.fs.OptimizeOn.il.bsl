@@ -33,16 +33,16 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@6-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit assembly@6
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
-    .field static assembly initonly class assembly/'assembly@6-1' @_instance
+    .field static assembly initonly class assembly/assembly@6 @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
-      IL_0000:  newobj     instance void assembly/'assembly@6-1'::.ctor()
-      IL_0005:  stsfld     class assembly/'assembly@6-1' assembly/'assembly@6-1'::@_instance
+      IL_0000:  newobj     instance void assembly/assembly@6::.ctor()
+      IL_0005:  stsfld     class assembly/assembly@6 assembly/assembly@6::@_instance
       IL_000a:  ret
     } 
 
@@ -74,7 +74,7 @@
     
     .maxstack  8
     IL_0000:  nop
-    IL_0001:  ldsfld     class assembly/'assembly@6-1' assembly/'assembly@6-1'::@_instance
+    IL_0001:  ldsfld     class assembly/assembly@6 assembly/assembly@6::@_instance
     IL_0006:  ldc.i4.1
     IL_0007:  ldc.i4.2
     IL_0008:  ldc.i4.3

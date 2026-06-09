@@ -140,7 +140,7 @@
 
     } 
 
-    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname 'f@13-3'
+    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname 'f@13-1'
            extends [runtime]System.Object
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -158,7 +158,7 @@
       
       .maxstack  8
       IL_0000:  ldnull
-      IL_0001:  ldftn      void Program/DelegateImmediateInvoke2/'f@13-3'::Invoke()
+      IL_0001:  ldftn      void Program/DelegateImmediateInvoke2/'f@13-1'::Invoke()
       IL_0007:  newobj     instance void Program/DelegateImmediateInvoke2/Foo::.ctor(object,
                                                                                      native int)
       IL_000c:  tail.
@@ -197,7 +197,7 @@
 
     } 
 
-    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname 'f@7-1'
+    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname f@7
            extends [runtime]System.Object
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -215,7 +215,7 @@
       
       .maxstack  8
       IL_0000:  ldnull
-      IL_0001:  ldftn      void Program/DelegateImmediateInvoke1/'f@7-1'::Invoke()
+      IL_0001:  ldftn      void Program/DelegateImmediateInvoke1/f@7::Invoke()
       IL_0007:  newobj     instance void Program/DelegateImmediateInvoke1/Foo::.ctor(object,
                                                                                      native int)
       IL_000c:  tail.
