@@ -2066,17 +2066,33 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             else
                 tdef.CustomAttrs
 
+        // Methods sort by (Name, insertion-idx) to keep IL emission order independent of
+        // whether the surrounding method body was emitted inline (sequential codegen) or via
+        // the deferred queue at IlxGen.fs:12516 (parallel codegen). Method ordering has no IL
+        // semantics — tokens are assigned by the writer based on input order and any references
+        // inside the same assembly are re-resolved against that order.
         let sortedMethods = gmethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
 
-        let sortedFields = gfields |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
+        // Fields and events MUST preserve insertion order. For struct types, the IL field
+        // declaration order determines physical memory layout (visible via Marshal.SizeOf,
+        // P/Invoke ABI, blittable interop). Sorting fields by name silently breaks any
+        // [<Struct>] DU/Record whose runtime size or layout is observed.
+        // Events are kept symmetric with fields — Add/Remove method pairs reference event
+        // declaration order in metadata, and the only stability we need is "stable across
+        // sequential-vs-parallel codegen", which insertion order via gfieldIdx already
+        // provides because field/event AddXxxDef happens during the SEQUENTIAL spine walk
+        // (not from deferred parallel method bodies).
+        let preservedFields =
+            gfields |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
 
-        let sortedEvents = gevents |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
+        let preservedEvents =
+            gevents |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
 
         tdef.With(
             methods = mkILMethods sortedMethods,
-            fields = mkILFields sortedFields,
+            fields = mkILFields preservedFields,
             properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
-            events = mkILEvents sortedEvents,
+            events = mkILEvents preservedEvents,
             nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close(g)),
             customAttrs = storeILCustomAttrs attrs
         )
