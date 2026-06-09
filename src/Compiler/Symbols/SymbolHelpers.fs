@@ -55,7 +55,9 @@ module internal SymbolHelpers =
     let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
 #if !NO_TYPEPROVIDERS
-        |   ProvidedProp(_, pi, _) -> Construct.ComputeDefinitionLocationOfProvidedItem pi
+        |   ProvidedProp(_, pi, _) ->
+                Construct.ComputeDefinitionLocationOfProvidedItem pi
+                |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag pinfo.DeclaringTyconRef))
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
@@ -72,7 +74,9 @@ module internal SymbolHelpers =
     let rangeOfEventInfo preferFlag (einfo: EventInfo) =
         match einfo with
 #if !NO_TYPEPROVIDERS
-        | ProvidedEvent (_, ei, _) -> Construct.ComputeDefinitionLocationOfProvidedItem ei
+        | ProvidedEvent(_, ei, _) ->
+            Construct.ComputeDefinitionLocationOfProvidedItem ei
+            |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag einfo.DeclaringTyconRef))
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
