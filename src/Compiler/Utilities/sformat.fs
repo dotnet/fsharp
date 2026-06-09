@@ -487,11 +487,17 @@ module ReflectUtils =
         | Value
         | Reference
 
+    [<RequireQualifiedAccess; StructuralComparison; StructuralEquality>]
+    type RecordKind =
+        | Nominal
+        | AnonReference
+        | AnonStruct
+
     [<NoEquality; NoComparison>]
     type ValueInfo =
         | TupleValue of TupleType * (obj * Type)[]
         | FunctionClosureValue of Type
-        | RecordValue of isAnonRecord: bool * isStruct: bool * (string * obj * Type)[]
+        | RecordValue of kind: RecordKind * (string * obj * Type)[]
         | UnionCaseValue of string * (string * (obj * Type))[]
         | ExceptionValue of Type * (string * (obj * Type))[]
         | NullValue
@@ -555,14 +561,17 @@ module ReflectUtils =
                 elif FSharpType.IsRecord(reprty, bindingFlags) then
                     let props = FSharpType.GetRecordFields(reprty, bindingFlags)
 
-                    let isAnonRecord =
-                        reprty.Name.StartsWith("<>f__AnonymousType", StringComparison.Ordinal)
-
-                    let isStruct = isAnonRecord && reprty.IsValueType
+                    let kind =
+                        if reprty.Name.StartsWith("<>f__AnonymousType", StringComparison.Ordinal) then
+                            if reprty.IsValueType then
+                                RecordKind.AnonStruct
+                            else
+                                RecordKind.AnonReference
+                        else
+                            RecordKind.Nominal
 
                     RecordValue(
-                        isAnonRecord,
-                        isStruct,
+                        kind,
                         props
                         |> Array.map (fun prop -> prop.Name, prop.GetValue(obj, null), prop.PropertyType)
                     )
@@ -868,24 +877,18 @@ module Display =
 
     let unitL = wordL (tagPunctuation "()")
 
-    let makeRecordL isAnonRecord nameXs =
+    let makeRecordL kind nameXs =
         let itemL (name, xL) = (wordL name ^^ wordL equals) -- xL
 
         let braceL xs =
-            if isAnonRecord then
-                (wordL leftBraceBar) ^^ xs ^^ (wordL rightBraceBar)
-            else
-                (wordL leftBrace) ^^ xs ^^ (wordL rightBrace)
+            match kind with
+            | RecordKind.AnonReference
+            | RecordKind.AnonStruct -> (wordL leftBraceBar) ^^ xs ^^ (wordL rightBraceBar)
+            | RecordKind.Nominal -> (wordL leftBrace) ^^ xs ^^ (wordL rightBrace)
 
         let itemLayouts = nameXs |> List.map itemL
 
-        let body =
-            if isAnonRecord then
-                semiListL itemLayouts
-            else
-                aboveListL itemLayouts
-
-        braceL body
+        braceL (aboveListL itemLayouts)
 
     let makePropertiesL nameXs =
         let itemL (name, v) =
@@ -1218,14 +1221,17 @@ module Display =
             | TupleType.Value -> structL ^^ fields
             | TupleType.Reference -> fields
 
-        and recordValueL depthLim isAnonRecord isStruct items =
+        and recordValueL depthLim kind items =
             let itemL (name, x, ty) =
                 countNodes 1
                 tagRecordField name, nestedObjL depthLim Precedence.BracketIfTuple (x, ty)
 
-            let body = makeRecordL isAnonRecord (List.map itemL items)
+            let body = makeRecordL kind (List.map itemL items)
 
-            if isStruct then structL -- body else body
+            match kind with
+            | RecordKind.AnonStruct -> structL -- body
+            | RecordKind.AnonReference
+            | RecordKind.Nominal -> body
 
         and listValueL depthLim constr recd =
             match constr with
@@ -1491,7 +1497,7 @@ module Display =
             match repr with
             | TupleValue(tupleType, vals) -> tupleValueL depthLim prec vals tupleType
 
-            | RecordValue(isAnonRecord, isStruct, items) -> recordValueL depthLim isAnonRecord isStruct (Array.toList items)
+            | RecordValue(kind, items) -> recordValueL depthLim kind (Array.toList items)
 
             | UnionCaseValue(constr, recd) when // x is List<T>. Note: "null" is never a valid list value.
                 (not (isNull x)) && isListType (x.GetType())
