@@ -18,37 +18,37 @@
       <Uri>https://github.com/dotnet/msbuild</Uri>
       <Sha>4ea8215937724cd480a29c30187195b5cbda7486</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis" Version="5.9.0-1.26306.2">
+    <Dependency Name="Microsoft.CodeAnalysis" Version="5.9.0-1.26308.7">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>f5856fc44e59b6fffe14c29c74834d77d2554615</Sha>
+      <Sha>576f18b3e54f0511c2fc93a2b20d2762148b688b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.Features" Version="5.9.0-1.26306.2">
+    <Dependency Name="Microsoft.CodeAnalysis.Features" Version="5.9.0-1.26308.7">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>f5856fc44e59b6fffe14c29c74834d77d2554615</Sha>
+      <Sha>576f18b3e54f0511c2fc93a2b20d2762148b688b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures" Version="5.9.0-1.26306.2">
+    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures" Version="5.9.0-1.26308.7">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>f5856fc44e59b6fffe14c29c74834d77d2554615</Sha>
+      <Sha>576f18b3e54f0511c2fc93a2b20d2762148b688b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="5.9.0-1.26306.2">
+    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="5.9.0-1.26308.7">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>f5856fc44e59b6fffe14c29c74834d77d2554615</Sha>
+      <Sha>576f18b3e54f0511c2fc93a2b20d2762148b688b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="5.9.0-1.26306.2">
+    <Dependency Name="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="5.9.0-1.26308.7">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>f5856fc44e59b6fffe14c29c74834d77d2554615</Sha>
+      <Sha>576f18b3e54f0511c2fc93a2b20d2762148b688b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.9.0-1.26306.2">
+    <Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.9.0-1.26308.7">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>f5856fc44e59b6fffe14c29c74834d77d2554615</Sha>
+      <Sha>576f18b3e54f0511c2fc93a2b20d2762148b688b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.Compilers" Version="5.9.0-1.26306.2">
+    <Dependency Name="Microsoft.CodeAnalysis.Compilers" Version="5.9.0-1.26308.7">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>f5856fc44e59b6fffe14c29c74834d77d2554615</Sha>
+      <Sha>576f18b3e54f0511c2fc93a2b20d2762148b688b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.VisualStudio.LanguageServices" Version="5.9.0-1.26306.2">
+    <Dependency Name="Microsoft.VisualStudio.LanguageServices" Version="5.9.0-1.26308.7">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>f5856fc44e59b6fffe14c29c74834d77d2554615</Sha>
+      <Sha>576f18b3e54f0511c2fc93a2b20d2762148b688b</Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
     <Dependency Name="System.Collections.Immutable" Version="10.0.2">
