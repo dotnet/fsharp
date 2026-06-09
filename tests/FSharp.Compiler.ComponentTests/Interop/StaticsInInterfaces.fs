@@ -408,16 +408,6 @@ module Test =
       IL_000f:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance int32  get_Value() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Tests.Test/C::c
-      IL_0006:  ret
-    } 
-
     .method public hidebysig static class Tests.Test/C 
             'Tests.Test.IAdditionOperator<Tests.Test.C>.op_Addition'(class Tests.Test/C x,
                                                                      class Tests.Test/C y) cil managed
@@ -433,6 +423,16 @@ module Test =
       IL_000c:  add
       IL_000d:  newobj     instance void Tests.Test/C::.ctor(int32)
       IL_0012:  ret
+    } 
+
+    .method public hidebysig specialname 
+            instance int32  get_Value() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 Tests.Test/C::c
+      IL_0006:  ret
     } 
 
     .property instance int32 Value()

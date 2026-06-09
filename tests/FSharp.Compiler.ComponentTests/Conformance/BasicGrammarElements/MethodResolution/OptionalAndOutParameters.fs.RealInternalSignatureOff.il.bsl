@@ -50,12 +50,15 @@
 
   } 
 
-  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> get_patternInput@8() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class [runtime]System.Tuple`2<bool,int32> '<StartupCode$assembly>'.$OutOptionalTests::patternInput@8
-    IL_0005:  ret
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
   .method assembly specialname static int32 get_outArg@8() cil managed
@@ -66,13 +69,20 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static void set_outArg@8(int32 'value') cil managed
+  .method assembly specialname static int32 'get_outArg@9-1'() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::outArg@8
-    IL_0006:  ret
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::'outArg@9-1'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> get_patternInput@8() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     class [runtime]System.Tuple`2<bool,int32> '<StartupCode$assembly>'.$OutOptionalTests::patternInput@8
+    IL_0005:  ret
   } 
 
   .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> 'get_patternInput@9-1'() cil managed
@@ -83,12 +93,13 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static int32 'get_outArg@9-1'() cil managed
+  .method assembly specialname static void set_outArg@8(int32 'value') cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::'outArg@9-1'
-    IL_0005:  ret
+    IL_0000:  ldarg.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$OutOptionalTests::outArg@8
+    IL_0006:  ret
   } 
 
   .method assembly specialname static void 'set_outArg@9-1'(int32 'value') cil managed
@@ -129,18 +140,18 @@
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$OutOptionalTests
        extends [runtime]System.Object
 {
-  .field static assembly initonly class [runtime]System.Tuple`2<bool,int32> patternInput@8
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly int32 outArg@8
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly initonly class [runtime]System.Tuple`2<bool,int32> 'patternInput@9-1'
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly int32 'outArg@9-1'
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .field static assembly int32 outArg@8
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 'outArg@9-1'
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly initonly class [runtime]System.Tuple`2<bool,int32> patternInput@8
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly initonly class [runtime]System.Tuple`2<bool,int32> 'patternInput@9-1'
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
@@ -174,7 +185,6 @@
   } 
 
 } 
-
 
 
 
