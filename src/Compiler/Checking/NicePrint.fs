@@ -1698,7 +1698,7 @@ module InfoMemberPrinting =
     // That is, this style:
     //          Container(argName1: argType1, ..., argNameN: argTypeN) : retType
     //          Container.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let layoutMethInfoCSharpStyle amap m denv (minfo: MethInfo) minst =
+    let layoutMethInfoCSharpStyle useDeclaringTypeForCSharpExt amap m denv (minfo: MethInfo) minst =
         let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
@@ -1707,7 +1707,11 @@ module InfoMemberPrinting =
         let layout = 
             layout ^^
                 if isAppTy minfo.TcGlobals minfo.ApparentEnclosingAppType then
-                    let tcref = minfo.ApparentEnclosingTyconRef 
+                    let tcref =
+                        if useDeclaringTypeForCSharpExt && minfo.IsCSharpStyleExtensionMember then
+                            minfo.DeclaringTyconRef
+                        else
+                            minfo.ApparentEnclosingTyconRef
                     PrintTypes.layoutTyconRef denv tcref
                 else
                     emptyL
@@ -1781,7 +1785,7 @@ module InfoMemberPrinting =
     //
     // For C# extension members:
     //          ApparentContainer.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let rec prettyLayoutOfMethInfoFreeStyle (infoReader: InfoReader) m denv typarInst methInfo =
+    let rec prettyLayoutOfMethInfoFreeStyle useDeclaringTypeForCSharpExt (infoReader: InfoReader) m denv typarInst methInfo =
         let amap = infoReader.amap
 
         match methInfo with 
@@ -1795,17 +1799,17 @@ module InfoMemberPrinting =
         | MethInfoWithModifiedReturnType(ILMeth(_, ilminfo, _) as wrappedInfo,retTy) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m wrappedInfo typarInst ilminfo
             let prettyMethInfo = MethInfoWithModifiedReturnType(prettyMethInfo,retTy)
-            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            let resL = layoutMethInfoCSharpStyle useDeclaringTypeForCSharpExt amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst mi
+        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle useDeclaringTypeForCSharpExt infoReader m denv typarInst mi
         | ILMeth(_, ilminfo, _) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
-            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            let resL = layoutMethInfoCSharpStyle useDeclaringTypeForCSharpExt amap m denv prettyMethInfo minst
             prettyTyparInst, resL
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
+            prettyTyparInst, layoutMethInfoCSharpStyle useDeclaringTypeForCSharpExt amap m denv methInfo methInfo.FormalMethodInst
     #endif
 
     let prettyLayoutOfPropInfoFreeStyle g amap m denv (pinfo: PropInfo) =
@@ -1841,8 +1845,8 @@ module InfoMemberPrinting =
         let resL = prettyLayoutOfPropInfoFreeStyle g amap m denv pinfo 
         resL |> bufferL os
 
-    let formatMethInfoToBufferFreeStyle amap m denv os (minfo: MethInfo) = 
-        let _, resL = prettyLayoutOfMethInfoFreeStyle amap m denv emptyTyparInst minfo 
+    let formatMethInfoToBufferFreeStyle useDeclaringTypeForCSharpExt amap m denv os (minfo: MethInfo) = 
+        let _, resL = prettyLayoutOfMethInfoFreeStyle useDeclaringTypeForCSharpExt amap m denv emptyTyparInst minfo 
         resL |> bufferL os
 
     /// Format a method to a layout (actually just containing a string) using "free style" (aka "standalone"). 
@@ -2866,10 +2870,10 @@ let stringOfQualifiedValOrMember denv infoReader vref =
 
 /// Convert a MethInfo to a string
 let formatMethInfoToBufferFreeStyle infoReader m denv buf d =
-    InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf d
+    InfoMemberPrinting.formatMethInfoToBufferFreeStyle false infoReader m denv buf d
 
 let prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo =
-    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo
+    InfoMemberPrinting.prettyLayoutOfMethInfoFreeStyle false infoReader m denv typarInst minfo
 
 /// Convert a PropInfo to a string
 let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
@@ -2877,7 +2881,14 @@ let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
 
 /// Convert a MethInfo to a string
 let stringOfMethInfo infoReader m denv minfo =
-    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle false infoReader m denv buf minfo)
+
+/// Convert a MethInfo to a string, suitable for the "Available overloads" list
+/// in overload-resolution error messages. For C#-style extension methods, the
+/// rendering uses the extension's declaring type rather than the receiver type,
+/// so the message is not misleading (issue dotnet/fsharp#9838).
+let stringOfMethInfoForOverloadError infoReader m denv minfo =
+    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle true infoReader m denv buf minfo)
 
 let stringOfMethInfoFSharpStyle infoReader m denv minfo =
     InfoMemberPrinting.layoutMethInfoFSharpStyle infoReader m denv minfo

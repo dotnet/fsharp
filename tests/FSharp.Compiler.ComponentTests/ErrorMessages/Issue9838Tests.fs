@@ -33,8 +33,8 @@ foo.CopyTo(span)
 Known type of argument: Span<int>
 
 Available overloads:
- - (extension) MemoryExtensions.CopyTo<'T>(destination: Memory<'T>) : unit // Argument 'destination' doesn't match
- - (extension) MemoryExtensions.CopyTo<'T>(destination: Span<'T>) : unit // Argument 'destination' doesn't match") ]
+ - (extension) MemoryExtensions.CopyTo<'T>(destination: Memory<'T>) : unit
+ - (extension) MemoryExtensions.CopyTo<'T>(destination: Span<'T>) : unit") ]
 
 [<FactForNETCOREAPP>]
 let ``Issue 9838 - error message mentions declaring type MemoryExtensions`` () =

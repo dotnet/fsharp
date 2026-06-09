@@ -960,7 +960,7 @@ type Exception with
                         sprintf " // %s" nameOrOneBasedIndexMessage
                     | _ -> ""
 
-                (NicePrint.stringOfMethInfo x.infoReader m displayEnv x.methodSlot.Method)
+                (NicePrint.stringOfMethInfoForOverloadError x.infoReader m displayEnv x.methodSlot.Method)
                 + paramInfo
 
             let nl = Environment.NewLine
