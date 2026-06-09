@@ -261,7 +261,7 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
 
 38. **`always()` in guard expressions MUST be preserved.** When a job `if:` uses `always() && <condition>`, the `always()` modifier is semantically significant — it means the job evaluates even when predecessors fail/are skipped. Document the FULL expression including `always()`. Dropping `always()` changes the semantics and is HIGH error.
 
-39. **gh-aw `safe-outputs:` keys are behavioral.** For every gh-aw `.md` workflow, ALL keys under `safe-outputs:` are behavioral configuration that affects what the workflow does. Document each key and its value: `noop.report-as-issue`, `hide-older-comments`, `discussions`, `issues`, `draft`, `max`, `protected-files`, `allowed-files`, `title-prefix`, etc. Missing safe-output key = HIGH.
+39. **gh-aw `safe-outputs:` — signature, not enumeration.** For each gh-aw `.md` workflow, document its safe-output **signature**: which action verbs it can emit (`create-pull-request`, `add-comment`, `push-to-pull-request-branch`, `add-labels`, etc.) and the distinguishing config per verb. **Do NOT exhaustively list every leaf key.** Universal defaults are suppressed: `target: "*"`, `noop.report-as-issue: false`, `draft: false`. Per-workflow blocks list only OVERRIDES + behaviorally distinguishing fields: `max`, `title-prefix`, `labels`/`allowed`, `allowed-files`, `protected-files`, `reviewers`, `auto-merge`, `hide-older-comments` (when true), `base`. Format: ONE paragraph per workflow, ≤200 chars, comma-separated action signatures. Example: `**\`labelops-flake-fix.md\`** — \`create-pull-request\` (max 1, title \`[LabelOps Flake] \`, labels \`automation, Flaky, NO_RELEASE_NOTES\`, protected-files fallback-to-issue), \`create-issue\` (max 1, title \`[LabelOps Flake] \`, labels \`Flaky, automation\`), \`add-comment\`.` Missing action verb (e.g., a workflow can emit `create-issue` but the doc doesn't mention it) = HIGH. Missing leaf key when value differs from universal default = MED. Exhaustive enumeration of defaults = readability MAJOR (Rule 42).
 
 40. **NEVER reference internal rules or extraction artifacts in output.** The generated doc must be self-contained. Do NOT write "per Rule 23", "excluded per Rule N", or reference `/tmp/*.txt` extraction files. If excluding a workflow, write `⚠️ Excluded — too complex for accurate automated documentation` without referencing rule numbers.
 
@@ -272,6 +272,21 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
     - **Backslash `\`** — escape sequences are interpreted; avoid entirely.
     - **Triple-period `...` immediately followed by a hyphenated identifier** — same lexer class as `;` issue.
     **Post-draft MANDATORY check:** after emitting each Mermaid block, scan every line matching `--> .* : ` and verify no `;` appears in the label text. If found → replace with `,`. This is non-negotiable: a doc with one un-rendering Mermaid block fails Phase 3.5 with CRIT severity (verifier check (p)).
+
+42. **Compaction is mandatory — the doc must be readable on a single screen.** Tables and lists are for scanning, not enumeration.
+    - **Suppress universal defaults.** State once at section top: "gh-aw safe-output defaults (suppressed below): `target: \"*\"`, `noop.report-as-issue: false`, `draft: false`." Per-workflow blocks then list only deviations.
+    - **Group identical-pattern entries.** Label families (`⚠️ Affects-Build-Infra`, `⚠️ Affects-Compiler-Output`, …) → ONE bullet: `⚠️ Affects-* family (7 labels: Build-Infra, …)`. Same applies to any 3+ rows with identical Classification + Applied-By + Action columns.
+    - **Per-workflow signature blocks, not per-leaf-key tables.** For safe-outputs, emit one paragraph per workflow (Rule 39). Total safe-output section lines for the whole doc MUST be ≤30 (not 90+).
+    - **Label Dictionary as semantic groups, not flat table.** Five groups: Always-applied / Agent-chosen — add / Agent-chosen — remove / Trigger filters (read-only) / Imperative. Each group is a bulleted list. Total Label section MUST be ≤30 lines (not 25+ rows × 5 cols).
+    - **Overview table ≤5 columns** — `# | Workflow | Trigger | Inputs | Primary Actions`. Drop "Type" (metadata). Inline `concurrency` in Inputs cell only when present.
+    - **Hard limits:** any single table > 25 rows = MAJOR. Doc total lines > 600 = MAJOR. Total `^|` pipe-row count > 80 = MAJOR.
+
+43. **Edge-label brevity — the diagram is a picture, not a config dump.**
+    - **≤80 chars per edge label.** If the source config needs more, split into intermediate states OR move the detail to the per-workflow signature block (Rule 39).
+    - **Behavior verb + brief object only.** `🤖 create-pull-request` ✓. `🤖 create-pull-request (labels: automation, NO_RELEASE_NOTES, allowed-files: .github/docs/**, protected-files: allowed)` ✗ — move config to the sig block.
+    - **Permitted in edge labels:** action verbs (e.g., `create-pull-request`, `add-labels`, `push-to-pull-request-branch`), short object hints (≤25 chars: `(fix)`, `(skip)`, `(escalate)`), guard predicates from source (e.g., `if: success() || failure()`), `src Lnn` citations ONLY when proving a non-obvious safeguard exists (e.g., dedup gates).
+    - **Forbidden in edge labels:** full safe-output config blocks `(labels: …, max: …, protected-files: …)`; long shell commands (`gh pr list --search label:"…", drop drafts, forks, …, max 3 (seed=GITHUB_RUN_ID)` → `gh pr list (label X, ≤3)`); multi-clause descriptions joined by `,`/`and`.
+    - **Post-draft scan:** `grep -oE ' : .{80,}$' .github/docs/state-machine.md` MUST return 0 lines. Any line > 80 chars after the ` : ` separator = MED.
 
 
 </rules>
@@ -457,6 +472,21 @@ For every workflow where the manifest says `COMPLEX=true`:
     > node check.mjs .github/docs/state-machine.md
     > ```
     > ANY parse failure = CRIT (the diagram cannot render in GitHub or browsers). Root-cause class: `;` inside edge labels in composite states triggers `Lexical error` when followed by hyphenated identifiers (see Rule 41). Fix by replacing `;` with `,` in every edge label.
+    > (q) **Readability metrics — MAJOR if violated** (Rules 42, 43). Run:
+    > ```bash
+    > LINES=$(wc -l < .github/docs/state-machine.md)
+    > PIPES=$(grep -c '^|' .github/docs/state-machine.md)
+    > LONGEDGES=$(grep -oE ' : .{80,}$' .github/docs/state-machine.md | wc -l | tr -d ' ')
+    > MAXTABLE=$(awk 'BEGIN{m=0;c=0} /^\|/{c++; if(c>m)m=c} !/^\|/{c=0} END{print m}' .github/docs/state-machine.md)
+    > echo "LINES=$LINES PIPES=$PIPES LONGEDGES=$LONGEDGES MAXTABLE=$MAXTABLE"
+    > FAIL=0
+    > [ "$LINES" -gt 600 ] && { echo "MAJOR\treadability\tdoc lines $LINES > 600 (Rule 42)"; FAIL=1; }
+    > [ "$PIPES" -gt 80 ] && { echo "MAJOR\treadability\tpipe-row count $PIPES > 80 (Rule 42)"; FAIL=1; }
+    > [ "$MAXTABLE" -gt 25 ] && { echo "MAJOR\treadability\tlargest contiguous table $MAXTABLE rows > 25 (Rule 42)"; FAIL=1; }
+    > [ "$LONGEDGES" -gt 0 ] && { echo "MED\treadability\t$LONGEDGES edge labels > 80 chars (Rule 43)"; FAIL=1; }
+    > [ "$FAIL" -eq 0 ] && echo "CLEAN (readability)"
+    > ```
+    > These limits encode user-validated screen-readability bounds. Any violation = budget breach (verifier failure), even when the content is technically complete. Compaction (Rule 42) and edge-label brevity (Rule 43) trump exhaustive enumeration (Rule 39 sig form is correct).
     > Output format: one line per failure — `SEVERITY<tab>WORKFLOW<tab>FINDING` or `CLEAN` if all pass.
 13. **Fix all findings** from the subagent. If ≥3 findings, re-run the subagent after fixes. Repeat until CLEAN or ≤2 MINOR.
 
