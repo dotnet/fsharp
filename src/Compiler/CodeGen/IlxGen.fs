@@ -12890,9 +12890,20 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             // converted via GetIlxClosureFreeVars. Skip them in priming so we don't register a
             // phantom (v.CompiledName, range, uniq) entry that pushes the user's real nested
             // closures to suffix '-N'.
+            //
+            // We can't use stripTopLambda directly — it errors on Lambdas carrying
+            // ctorThisValOpt/baseValOpt (constructors/instance methods). Inline a safe variant
+            // that just walks past plain Lambda/TyLambda nesting without raising.
+            let rec stripOuterTopLambdas (e: Expr) =
+                match e with
+                | Expr.TyLambda(_, _, body, _, _) -> stripOuterTopLambdas body
+                | Expr.Lambda(_, ctorThisValOpt, baseValOpt, _, body, _, _)
+                    when Option.isNone ctorThisValOpt && Option.isNone baseValOpt ->
+                    stripOuterTopLambdas body
+                | _ -> e
+
             if v.IsCompiledAsTopLevel then
-                let _tps, _vss, body, _bodyTy = stripTopLambda (rhs, v.Type)
-                walkExpr [ mkLocalValRef v ] cloc body
+                walkExpr [ mkLocalValRef v ] cloc (stripOuterTopLambdas rhs)
             else
                 walkExpr [ mkLocalValRef v ] cloc rhs
 
