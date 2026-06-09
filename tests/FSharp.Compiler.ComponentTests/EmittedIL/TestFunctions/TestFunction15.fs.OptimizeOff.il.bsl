@@ -33,10 +33,19 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit assembly@6
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@6-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
-    .field static assembly initonly class assembly/assembly@6 @_instance
+    .field static assembly initonly class assembly/'assembly@6-1' @_instance
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'assembly@6-1'::.ctor()
+      IL_0005:  stsfld     class assembly/'assembly@6-1' assembly/'assembly@6-1'::@_instance
+      IL_000a:  ret
+    } 
+
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -56,15 +65,6 @@
       IL_0001:  ldc.i4.1
       IL_0002:  add
       IL_0003:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/assembly@6::.ctor()
-      IL_0005:  stsfld     class assembly/assembly@6 assembly/assembly@6::@_instance
-      IL_000a:  ret
     } 
 
   } 
@@ -90,7 +90,7 @@
     IL_0016:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_001b:  stloc.1
-    IL_001c:  ldsfld     class assembly/assembly@6 assembly/assembly@6::@_instance
+    IL_001c:  ldsfld     class assembly/'assembly@6-1' assembly/'assembly@6-1'::@_instance
     IL_0021:  ldloc.1
     IL_0022:  tail.
     IL_0024:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
@@ -112,7 +112,6 @@
   } 
 
 } 
-
 
 
 

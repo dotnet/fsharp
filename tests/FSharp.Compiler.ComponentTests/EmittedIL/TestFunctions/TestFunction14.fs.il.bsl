@@ -33,10 +33,19 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit assembly@5
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@5-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,int32>
   {
-    .field static assembly initonly class assembly/assembly@5 @_instance
+    .field static assembly initonly class assembly/'assembly@5-1' @_instance
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'assembly@5-1'::.ctor()
+      IL_0005:  stsfld     class assembly/'assembly@5-1' assembly/'assembly@5-1'::@_instance
+      IL_000a:  ret
+    } 
+
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -59,21 +68,21 @@
       IL_0009:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@5-2'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
+  {
+    .field static assembly initonly class assembly/'assembly@5-2' @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
-      IL_0000:  newobj     instance void assembly/assembly@5::.ctor()
-      IL_0005:  stsfld     class assembly/assembly@5 assembly/assembly@5::@_instance
+      IL_0000:  newobj     instance void assembly/'assembly@5-2'::.ctor()
+      IL_0005:  stsfld     class assembly/'assembly@5-2' assembly/'assembly@5-2'::@_instance
       IL_000a:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@5-1'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field static assembly initonly class assembly/'assembly@5-1' @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -95,23 +104,14 @@
       IL_0003:  ret
     } 
 
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/'assembly@5-1'::.ctor()
-      IL_0005:  stsfld     class assembly/'assembly@5-1' assembly/'assembly@5-1'::@_instance
-      IL_000a:  ret
-    } 
-
   } 
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class assembly/assembly@5 assembly/assembly@5::@_instance
-    IL_0005:  ldsfld     class assembly/'assembly@5-1' assembly/'assembly@5-1'::@_instance
+    IL_0000:  ldsfld     class assembly/'assembly@5-1' assembly/'assembly@5-1'::@_instance
+    IL_0005:  ldsfld     class assembly/'assembly@5-2' assembly/'assembly@5-2'::@_instance
     IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>>::get_Empty()
     IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>>::Cons(!0,
                                                                                                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
@@ -135,7 +135,6 @@
   } 
 
 } 
-
 
 
 

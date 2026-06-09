@@ -37,15 +37,15 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto autochar serializable sealed nested assembly beforefieldinit specialname f1@5
+    .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'f1@5-3'
            extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-      .field public int32 pc
+      .field public int32 current
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field public int32 current
+      .field public int32 pc
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -55,13 +55,23 @@
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
-        IL_0002:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::pc
+        IL_0002:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::pc
         IL_0007:  ldarg.0
         IL_0008:  ldarg.2
-        IL_0009:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::current
+        IL_0009:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::current
         IL_000e:  ldarg.0
         IL_000f:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
         IL_0014:  ret
+      } 
+
+      .method public strict virtual instance void Close() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldc.i4.3
+        IL_0002:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::pc
+        IL_0007:  ret
       } 
 
       .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
@@ -69,7 +79,7 @@
         
         .maxstack  6
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::pc
+        IL_0001:  ldfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::pc
         IL_0006:  ldc.i4.1
         IL_0007:  sub
         IL_0008:  switch     ( 
@@ -96,10 +106,10 @@
         IL_0036:  pop
         IL_0037:  ldarg.0
         IL_0038:  ldc.i4.1
-        IL_0039:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::pc
+        IL_0039:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::pc
         IL_003e:  ldarg.0
         IL_003f:  ldc.i4.1
-        IL_0040:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::current
+        IL_0040:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::current
         IL_0045:  ldc.i4.1
         IL_0046:  ret
 
@@ -109,30 +119,33 @@
         IL_0056:  pop
         IL_0057:  ldarg.0
         IL_0058:  ldc.i4.2
-        IL_0059:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::pc
+        IL_0059:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::pc
         IL_005e:  ldarg.0
         IL_005f:  ldc.i4.2
-        IL_0060:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::current
+        IL_0060:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::current
         IL_0065:  ldc.i4.1
         IL_0066:  ret
 
         IL_0067:  ldarg.0
         IL_0068:  ldc.i4.3
-        IL_0069:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::pc
+        IL_0069:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::pc
         IL_006e:  ldarg.0
         IL_006f:  ldc.i4.0
-        IL_0070:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::current
+        IL_0070:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::current
         IL_0075:  ldc.i4.0
         IL_0076:  ret
       } 
 
-      .method public strict virtual instance void Close() cil managed
+      .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
       {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldc.i4.3
-        IL_0002:  stfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::pc
+        IL_0000:  ldc.i4.0
+        IL_0001:  ldc.i4.0
+        IL_0002:  newobj     instance void SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::.ctor(int32,
+                                                                                                                 int32)
         IL_0007:  ret
       } 
 
@@ -141,7 +154,7 @@
         
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::pc
+        IL_0001:  ldfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::pc
         IL_0006:  switch     ( 
                               IL_001d,
                               IL_0020,
@@ -181,34 +194,10 @@
         
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::current
+        IL_0001:  ldfld      int32 SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::current
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldc.i4.0
-        IL_0001:  ldc.i4.0
-        IL_0002:  newobj     instance void SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::.ctor(int32,
-                                                                                                             int32)
-        IL_0007:  ret
-      } 
-
-    } 
-
-    .method public static class [runtime]System.Collections.Generic.IEnumerable`1<int32> f1() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  ldc.i4.0
-      IL_0002:  newobj     instance void SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/f1@5::.ctor(int32,
-                                                                                                           int32)
-      IL_0007:  ret
     } 
 
     .method private specialname rtspecialname static void  .cctor() cil managed
@@ -220,6 +209,17 @@
       IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$SeqExpressionSteppingTest2::init@
       IL_000b:  pop
       IL_000c:  ret
+    } 
+
+    .method public static class [runtime]System.Collections.Generic.IEnumerable`1<int32> f1() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  ldc.i4.0
+      IL_0002:  newobj     instance void SeqExpressionSteppingTest2/SeqExpressionSteppingTest2/'f1@5-3'::.ctor(int32,
+                                                                                                               int32)
+      IL_0007:  ret
     } 
 
     .method assembly static void  staticInitialization@() cil managed
@@ -275,7 +275,6 @@
   } 
 
 } 
-
 
 
 

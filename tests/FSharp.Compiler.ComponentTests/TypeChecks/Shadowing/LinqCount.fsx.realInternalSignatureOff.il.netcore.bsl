@@ -48,6 +48,17 @@
 
   } 
 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
   .method public specialname static class [runtime]System.Collections.Generic.List`1<int32> get_r() cil managed
   {
     
@@ -67,12 +78,12 @@
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly$fsx
        extends [runtime]System.Object
 {
-  .field static assembly initonly class [runtime]System.Collections.Generic.List`1<int32> r@2
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .field static assembly initonly class [runtime]System.Collections.Generic.List`1<int32> r@2
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
@@ -94,7 +105,6 @@
   } 
 
 } 
-
 
 
 

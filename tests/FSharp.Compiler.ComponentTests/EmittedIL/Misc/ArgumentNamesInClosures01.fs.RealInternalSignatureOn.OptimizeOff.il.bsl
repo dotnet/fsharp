@@ -56,10 +56,19 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .class auto ansi serializable sealed nested assembly beforefieldinit get_F@41
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'get_F@41-2'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32>
     {
-      .field static assembly initonly class M/T/get_F@41 @_instance
+      .field static assembly initonly class M/T/'get_F@41-2' @_instance
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        
+        .maxstack  10
+        IL_0000:  newobj     instance void M/T/'get_F@41-2'::.ctor()
+        IL_0005:  stsfld     class M/T/'get_F@41-2' M/T/'get_F@41-2'::@_instance
+        IL_000a:  ret
+      } 
+
       .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -79,15 +88,6 @@
         IL_0001:  tail.
         IL_0003:  call       int32 M::I(class M/C)
         IL_0008:  ret
-      } 
-
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void M/T/get_F@41::.ctor()
-        IL_0005:  stsfld     class M/T/get_F@41 M/T/get_F@41::@_instance
-        IL_000a:  ret
       } 
 
     } 
@@ -110,7 +110,7 @@
       .locals init (class M/T V_0)
       IL_0000:  ldarg.0
       IL_0001:  stloc.0
-      IL_0002:  ldsfld     class M/T/get_F@41 M/T/get_F@41::@_instance
+      IL_0002:  ldsfld     class M/T/'get_F@41-2' M/T/'get_F@41-2'::@_instance
       IL_0007:  ret
     } 
 

@@ -57,90 +57,6 @@
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method public static valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T> NewSomeGenericUnion(!T item1, int32 item2) cil managed
-      {
-        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                    int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  3
-        .locals init (valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T> V_0)
-        IL_0000:  ldloca.s   V_0
-        IL_0002:  initobj    valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>
-        IL_0008:  ldloca.s   V_0
-        IL_000a:  ldarg.0
-        IL_000b:  stfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item1
-        IL_0010:  ldloca.s   V_0
-        IL_0012:  ldarg.1
-        IL_0013:  stfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item2
-        IL_0018:  ldloc.0
-        IL_0019:  ret
-      } 
-
-      .method public hidebysig instance !T get_Item1() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item1
-        IL_0006:  ret
-      } 
-
-      .method public hidebysig instance int32 get_Item2() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item2
-        IL_0006:  ret
-      } 
-
-      .method public hidebysig instance int32 get_Tag() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  pop
-        IL_0002:  ldc.i4.0
-        IL_0003:  ret
-      } 
-
-      .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldstr      "%+0.8A"
-        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
-        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-        IL_000f:  ldarg.0
-        IL_0010:  ldobj      valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>
-        IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>::Invoke(!0)
-        IL_001a:  ret
-      } 
-
-      .method public strict virtual instance string ToString() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldstr      "%+A"
-        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>>::.ctor(string)
-        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-        IL_000f:  ldarg.0
-        IL_0010:  ldobj      valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>
-        IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>::Invoke(!0)
-        IL_001a:  ret
-      } 
-
       .method public hidebysig virtual final instance int32  CompareTo(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T> obj) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -272,65 +188,6 @@
         IL_004b:  ret
       } 
 
-      .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  7
-        .locals init (int32 V_0,
-                 !T V_1)
-        IL_0000:  ldc.i4.0
-        IL_0001:  stloc.0
-        IL_0002:  ldarg.0
-        IL_0003:  pop
-        IL_0004:  ldc.i4.0
-        IL_0005:  stloc.0
-        IL_0006:  ldc.i4     0x9e3779b9
-        IL_000b:  ldarg.0
-        IL_000c:  ldfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item2
-        IL_0011:  ldloc.0
-        IL_0012:  ldc.i4.6
-        IL_0013:  shl
-        IL_0014:  ldloc.0
-        IL_0015:  ldc.i4.2
-        IL_0016:  shr
-        IL_0017:  add
-        IL_0018:  add
-        IL_0019:  add
-        IL_001a:  stloc.0
-        IL_001b:  ldc.i4     0x9e3779b9
-        IL_0020:  ldarg.0
-        IL_0021:  ldfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item1
-        IL_0026:  stloc.1
-        IL_0027:  ldarg.1
-        IL_0028:  ldloc.1
-        IL_0029:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<!T>(class [runtime]System.Collections.IEqualityComparer,
-                                                                                                                                           !!0)
-        IL_002e:  ldloc.0
-        IL_002f:  ldc.i4.6
-        IL_0030:  shl
-        IL_0031:  ldloc.0
-        IL_0032:  ldc.i4.2
-        IL_0033:  shr
-        IL_0034:  add
-        IL_0035:  add
-        IL_0036:  add
-        IL_0037:  stloc.0
-        IL_0038:  ldloc.0
-        IL_0039:  ret
-      } 
-
-      .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-        IL_0006:  call       instance int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-        IL_000b:  ret
-      } 
-
       .method public hidebysig instance bool Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T> obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -440,6 +297,149 @@
         IL_0016:  ret
       } 
 
+      .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  7
+        .locals init (int32 V_0,
+                 !T V_1)
+        IL_0000:  ldc.i4.0
+        IL_0001:  stloc.0
+        IL_0002:  ldarg.0
+        IL_0003:  pop
+        IL_0004:  ldc.i4.0
+        IL_0005:  stloc.0
+        IL_0006:  ldc.i4     0x9e3779b9
+        IL_000b:  ldarg.0
+        IL_000c:  ldfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item2
+        IL_0011:  ldloc.0
+        IL_0012:  ldc.i4.6
+        IL_0013:  shl
+        IL_0014:  ldloc.0
+        IL_0015:  ldc.i4.2
+        IL_0016:  shr
+        IL_0017:  add
+        IL_0018:  add
+        IL_0019:  add
+        IL_001a:  stloc.0
+        IL_001b:  ldc.i4     0x9e3779b9
+        IL_0020:  ldarg.0
+        IL_0021:  ldfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item1
+        IL_0026:  stloc.1
+        IL_0027:  ldarg.1
+        IL_0028:  ldloc.1
+        IL_0029:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<!T>(class [runtime]System.Collections.IEqualityComparer,
+                                                                                                                                           !!0)
+        IL_002e:  ldloc.0
+        IL_002f:  ldc.i4.6
+        IL_0030:  shl
+        IL_0031:  ldloc.0
+        IL_0032:  ldc.i4.2
+        IL_0033:  shr
+        IL_0034:  add
+        IL_0035:  add
+        IL_0036:  add
+        IL_0037:  stloc.0
+        IL_0038:  ldloc.0
+        IL_0039:  ret
+      } 
+
+      .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+        IL_0006:  call       instance int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+        IL_000b:  ret
+      } 
+
+      .method public static valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T> NewSomeGenericUnion(!T item1, int32 item2) cil managed
+      {
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                    int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  3
+        .locals init (valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T> V_0)
+        IL_0000:  ldloca.s   V_0
+        IL_0002:  initobj    valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>
+        IL_0008:  ldloca.s   V_0
+        IL_000a:  ldarg.0
+        IL_000b:  stfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item1
+        IL_0010:  ldloca.s   V_0
+        IL_0012:  ldarg.1
+        IL_0013:  stfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item2
+        IL_0018:  ldloc.0
+        IL_0019:  ret
+      } 
+
+      .method public strict virtual instance string ToString() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldstr      "%+A"
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_000f:  ldarg.0
+        IL_0010:  ldobj      valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>
+        IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>::Invoke(!0)
+        IL_001a:  ret
+      } 
+
+      .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldstr      "%+0.8A"
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_000f:  ldarg.0
+        IL_0010:  ldobj      valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>
+        IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>,string>::Invoke(!0)
+        IL_001a:  ret
+      } 
+
+      .method public hidebysig instance !T get_Item1() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item1
+        IL_0006:  ret
+      } 
+
+      .method public hidebysig instance int32 get_Item2() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<!T>::item2
+        IL_0006:  ret
+      } 
+
+      .method public hidebysig instance int32 get_Tag() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  pop
+        IL_0002:  ldc.i4.0
+        IL_0003:  ret
+      } 
+
       .property instance int32 Tag()
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -473,6 +473,17 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .field static assembly valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<int32> y@1
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
     .method assembly specialname static bool get_arg@1() cil managed
     {
       
@@ -495,17 +506,6 @@
       .maxstack  8
       IL_0000:  ldsfld     valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericUnion`1<int32> assembly/EqualsMicroPerfAndCodeGenerationTests::y@1
       IL_0005:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-      IL_000b:  pop
-      IL_000c:  ret
     } 
 
     .method assembly static void  staticInitialization@() cil managed
@@ -588,7 +588,6 @@
   } 
 
 } 
-
 
 
 

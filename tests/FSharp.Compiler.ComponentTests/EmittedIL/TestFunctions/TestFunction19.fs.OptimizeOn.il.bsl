@@ -42,8 +42,8 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .field assembly int32 y
     .field assembly int32 x
+    .field assembly int32 y
     .method public specialname rtspecialname instance void  .ctor(int32 x, int32 y) cil managed
     {
       
@@ -89,7 +89,7 @@
     } 
   } 
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@11-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@11-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2
@@ -106,7 +106,7 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/'assembly@11-1'::clo2
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/'assembly@11-2'::clo2
       IL_000d:  ret
     } 
 
@@ -115,7 +115,7 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/'assembly@11-1'::clo2
+      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/'assembly@11-2'::clo2
       IL_0006:  ldarg.1
       IL_0007:  tail.
       IL_0009:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
@@ -124,7 +124,7 @@
 
   } 
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit assembly@11
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'assembly@11-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo1
@@ -141,7 +141,7 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> assembly/assembly@11::clo1
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> assembly/'assembly@11-1'::clo1
       IL_000d:  ret
     } 
 
@@ -151,12 +151,12 @@
       .maxstack  6
       .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> assembly/assembly@11::clo1
+      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> assembly/'assembly@11-1'::clo1
       IL_0006:  ldarg.1
       IL_0007:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::Invoke(!0)
       IL_000c:  stloc.0
       IL_000d:  ldloc.0
-      IL_000e:  newobj     instance void assembly/'assembly@11-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_000e:  newobj     instance void assembly/'assembly@11-2'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_0013:  ret
     } 
 
@@ -189,7 +189,7 @@
                                                                                                                                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_0026:  stloc.2
     IL_0027:  ldloc.2
-    IL_0028:  newobj     instance void assembly/assembly@11::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>)
+    IL_0028:  newobj     instance void assembly/'assembly@11-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>)
     IL_002d:  ldloc.0
     IL_002e:  ldloc.1
     IL_002f:  call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/C,class assembly/C>::InvokeFast<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,
@@ -213,7 +213,6 @@
   } 
 
 } 
-
 
 
 

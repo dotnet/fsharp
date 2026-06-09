@@ -118,45 +118,6 @@
       IL_0026:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0,
-               class [runtime]System.Collections.IEqualityComparer V_1)
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  ldc.i4     0x9e3779b9
-      IL_0007:  ldarg.1
-      IL_0008:  stloc.1
-      IL_0009:  ldarg.0
-      IL_000a:  ldfld      int32 assembly/T::i
-      IL_000f:  ldloc.0
-      IL_0010:  ldc.i4.6
-      IL_0011:  shl
-      IL_0012:  ldloc.0
-      IL_0013:  ldc.i4.2
-      IL_0014:  shr
-      IL_0015:  add
-      IL_0016:  add
-      IL_0017:  add
-      IL_0018:  stloc.0
-      IL_0019:  ldloc.0
-      IL_001a:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 assembly/T::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
     .method public hidebysig instance bool Equals(valuetype assembly/T obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -205,16 +166,6 @@
       IL_001e:  ret
     } 
 
-    .method public hidebysig instance void Set(int32 i) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      int32 assembly/T::i
-      IL_0007:  ret
-    } 
-
     .method public hidebysig virtual final instance bool  Equals(valuetype assembly/T obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -258,18 +209,59 @@
       IL_001d:  ret
     } 
 
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0,
+               class [runtime]System.Collections.IEqualityComparer V_1)
+      IL_0000:  ldc.i4.0
+      IL_0001:  stloc.0
+      IL_0002:  ldc.i4     0x9e3779b9
+      IL_0007:  ldarg.1
+      IL_0008:  stloc.1
+      IL_0009:  ldarg.0
+      IL_000a:  ldfld      int32 assembly/T::i
+      IL_000f:  ldloc.0
+      IL_0010:  ldc.i4.6
+      IL_0011:  shl
+      IL_0012:  ldloc.0
+      IL_0013:  ldc.i4.2
+      IL_0014:  shr
+      IL_0015:  add
+      IL_0016:  add
+      IL_0017:  add
+      IL_0018:  stloc.0
+      IL_0019:  ldloc.0
+      IL_001a:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 assembly/T::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
+    } 
+
+    .method public hidebysig instance void Set(int32 i) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      int32 assembly/T::i
+      IL_0007:  ret
+    } 
+
   } 
 
   .field static assembly valuetype assembly/T[] a@11
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .method public specialname static valuetype assembly/T[] get_a() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     valuetype assembly/T[] assembly::a@11
-    IL_0005:  ret
-  } 
-
   .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
@@ -279,6 +271,14 @@
     IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
     IL_000b:  pop
     IL_000c:  ret
+  } 
+
+  .method public specialname static valuetype assembly/T[] get_a() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     valuetype assembly/T[] assembly::a@11
+    IL_0005:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed

@@ -37,6 +37,17 @@
          extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
   {
     .field static assembly initonly class assembly/GenericInner@15 @_instance
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/GenericInner@15::.ctor()
+      IL_0005:  stsfld     class assembly/GenericInner@15 assembly/GenericInner@15::@_instance
+      IL_000a:  ret
+    } 
+
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -60,17 +71,6 @@
       IL_0001:  newobj     instance void class assembly/GenericInner@15T<!!T>::.ctor(class assembly/GenericInner@15)
       IL_0006:  box        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!T>,int32>
       IL_000b:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/GenericInner@15::.ctor()
-      IL_0005:  stsfld     class assembly/GenericInner@15 assembly/GenericInner@15::@_instance
-      IL_000a:  ret
     } 
 
   } 
@@ -122,6 +122,15 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32>
   {
     .field static assembly initonly class assembly/NonGenericInner@25 @_instance
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/NonGenericInner@25::.ctor()
+      IL_0005:  stsfld     class assembly/NonGenericInner@25 assembly/NonGenericInner@25::@_instance
+      IL_000a:  ret
+    } 
+
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -147,15 +156,6 @@
 
       IL_000b:  ldc.i4.2
       IL_000c:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/NonGenericInner@25::.ctor()
-      IL_0005:  stsfld     class assembly/NonGenericInner@25 assembly/NonGenericInner@25::@_instance
-      IL_000a:  ret
     } 
 
   } 
@@ -195,31 +195,6 @@
       IL_0011:  ret
     } 
 
-  } 
-
-  .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32> funcA(int32 n) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  ldc.i4.1
-    IL_0003:  sub
-    IL_0004:  switch     ( 
-                          IL_0013,
-                          IL_001b)
-    IL_0011:  br.s       IL_001d
-
-    IL_0013:  ldc.i4.s   10
-    IL_0015:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
-    IL_001a:  ret
-
-    IL_001b:  ldnull
-    IL_001c:  ret
-
-    IL_001d:  ldc.i4.s   22
-    IL_001f:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
-    IL_0024:  ret
   } 
 
   .method public static int32  OuterWithGenericInner<a>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> list) cil managed
@@ -272,6 +247,31 @@
     IL_0010:  ret
   } 
 
+  .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32> funcA(int32 n) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  ldc.i4.1
+    IL_0003:  sub
+    IL_0004:  switch     ( 
+                          IL_0013,
+                          IL_001b)
+    IL_0011:  br.s       IL_001d
+
+    IL_0013:  ldc.i4.s   10
+    IL_0015:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
+    IL_001a:  ret
+
+    IL_001b:  ldnull
+    IL_001c:  ret
+
+    IL_001d:  ldc.i4.s   22
+    IL_001f:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
+    IL_0024:  ret
+  } 
+
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
@@ -286,7 +286,6 @@
   } 
 
 } 
-
 
 
 

@@ -137,20 +137,6 @@
       IL_0008:  ret
     } 
 
-    .method private hidebysig newslot virtual instance string  'MyTestModule.ICanGetAnything<System.String>.Get'() cil managed
-    {
-      .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-      .override  method instance !0 class MyTestModule/ICanGetAnything`1<string>::Get()
-      
-      .maxstack  3
-      .locals init (class MyTestModule/MyClassImplementingTheSameInterface V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldnull
-      IL_0003:  ret
-    } 
-
     .method private hidebysig newslot virtual instance class [runtime]System.Collections.Generic.List`1<class [runtime]System.Collections.Generic.List`1<string>>  'MyTestModule.ICanGetAnything<System.Collections.Generic.List<System.Collections.Generic.List<System.String>>>.Get'() cil managed
     {
       .override  method instance !0 class MyTestModule/ICanGetAnything`1<class [runtime]System.Collections.Generic.List`1<class [runtime]System.Collections.Generic.List`1<string>>>::Get()
@@ -177,6 +163,20 @@
       IL_0003:  ret
     } 
 
+    .method private hidebysig newslot virtual instance string  'MyTestModule.ICanGetAnything<System.String>.Get'() cil managed
+    {
+      .param [0]
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .override  method instance !0 class MyTestModule/ICanGetAnything`1<string>::Get()
+      
+      .maxstack  3
+      .locals init (class MyTestModule/MyClassImplementingTheSameInterface V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      IL_0002:  ldnull
+      IL_0003:  ret
+    } 
+
   } 
 
 } 
@@ -185,7 +185,6 @@
        extends [runtime]System.Object
 {
 } 
-
 
 
 

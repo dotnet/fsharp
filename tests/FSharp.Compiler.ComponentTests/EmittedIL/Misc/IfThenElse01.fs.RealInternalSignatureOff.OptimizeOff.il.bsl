@@ -41,6 +41,17 @@
            extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
     {
       .field static assembly initonly class assembly/M/f5@5 @_instance
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  10
+        IL_0000:  newobj     instance void assembly/M/f5@5::.ctor()
+        IL_0005:  stsfld     class assembly/M/f5@5 assembly/M/f5@5::@_instance
+        IL_000a:  ret
+      } 
+
       .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -64,17 +75,6 @@
         IL_0001:  newobj     instance void class assembly/M/f5@5T<!!a>::.ctor(class assembly/M/f5@5)
         IL_0006:  box        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!a>>>>
         IL_000b:  ret
-      } 
-
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void assembly/M/f5@5::.ctor()
-        IL_0005:  stsfld     class assembly/M/f5@5 assembly/M/f5@5::@_instance
-        IL_000a:  ret
       } 
 
     } 
@@ -126,6 +126,17 @@
 
     } 
 
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
     .method public static char  m() cil managed
     {
       
@@ -161,6 +172,17 @@
       IL_002a:  ret
     } 
 
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
 } 
