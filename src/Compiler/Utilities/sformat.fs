@@ -149,6 +149,8 @@ module TaggedText =
     let rightBracket = tagPunctuation "]"
     let leftBrace = tagPunctuation "{"
     let rightBrace = tagPunctuation "}"
+    let leftBraceBar = tagPunctuation "{|"
+    let rightBraceBar = tagPunctuation "|}"
     let equals = tagOperator "="
 
 #if COMPILER
@@ -216,8 +218,6 @@ module TaggedText =
     // common tagged literals
     let lineBreak = tagLineBreak "\n"
     let space = tagSpace " "
-    let leftBraceBar = tagPunctuation "{|"
-    let rightBraceBar = tagPunctuation "|}"
     let arrow = tagPunctuation "->"
     let dot = tagPunctuation "."
     let leftAngle = tagPunctuation "<"
@@ -491,7 +491,7 @@ module ReflectUtils =
     type ValueInfo =
         | TupleValue of TupleType * (obj * Type)[]
         | FunctionClosureValue of Type
-        | RecordValue of (string * obj * Type)[]
+        | RecordValue of isAnonRecord: bool * isStruct: bool * (string * obj * Type)[]
         | UnionCaseValue of string * (string * (obj * Type))[]
         | ExceptionValue of Type * (string * (obj * Type))[]
         | NullValue
@@ -555,7 +555,14 @@ module ReflectUtils =
                 elif FSharpType.IsRecord(reprty, bindingFlags) then
                     let props = FSharpType.GetRecordFields(reprty, bindingFlags)
 
+                    let isAnonRecord =
+                        reprty.Name.StartsWith("<>f__AnonymousType", StringComparison.Ordinal)
+
+                    let isStruct = isAnonRecord && reprty.IsValueType
+
                     RecordValue(
+                        isAnonRecord,
+                        isStruct,
                         props
                         |> Array.map (fun prop -> prop.Name, prop.GetValue(obj, null), prop.PropertyType)
                     )
@@ -861,13 +868,24 @@ module Display =
 
     let unitL = wordL (tagPunctuation "()")
 
-    let makeRecordL nameXs =
+    let makeRecordL isAnonRecord nameXs =
         let itemL (name, xL) = (wordL name ^^ wordL equals) -- xL
 
         let braceL xs =
-            (wordL leftBrace) ^^ xs ^^ (wordL rightBrace)
+            if isAnonRecord then
+                (wordL leftBraceBar) ^^ xs ^^ (wordL rightBraceBar)
+            else
+                (wordL leftBrace) ^^ xs ^^ (wordL rightBrace)
 
-        nameXs |> List.map itemL |> aboveListL |> braceL
+        let itemLayouts = nameXs |> List.map itemL
+
+        let body =
+            if isAnonRecord then
+                semiListL itemLayouts
+            else
+                aboveListL itemLayouts
+
+        braceL body
 
     let makePropertiesL nameXs =
         let itemL (name, v) =
@@ -1200,12 +1218,14 @@ module Display =
             | TupleType.Value -> structL ^^ fields
             | TupleType.Reference -> fields
 
-        and recordValueL depthLim items =
+        and recordValueL depthLim isAnonRecord isStruct items =
             let itemL (name, x, ty) =
                 countNodes 1
                 tagRecordField name, nestedObjL depthLim Precedence.BracketIfTuple (x, ty)
 
-            makeRecordL (List.map itemL items)
+            let body = makeRecordL isAnonRecord (List.map itemL items)
+
+            if isStruct then structL -- body else body
 
         and listValueL depthLim constr recd =
             match constr with
@@ -1471,7 +1491,7 @@ module Display =
             match repr with
             | TupleValue(tupleType, vals) -> tupleValueL depthLim prec vals tupleType
 
-            | RecordValue items -> recordValueL depthLim (Array.toList items)
+            | RecordValue(isAnonRecord, isStruct, items) -> recordValueL depthLim isAnonRecord isStruct (Array.toList items)
 
             | UnionCaseValue(constr, recd) when // x is List<T>. Note: "null" is never a valid list value.
                 (not (isNull x)) && isListType (x.GetType())
