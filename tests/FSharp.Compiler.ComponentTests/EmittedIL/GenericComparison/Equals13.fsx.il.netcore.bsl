@@ -47,8 +47,8 @@
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-      .field assembly int32 u
       .field assembly !T v
+      .field assembly int32 u
       .method public specialname rtspecialname instance void  .ctor(!T v, int32 u) cil managed
       {
         

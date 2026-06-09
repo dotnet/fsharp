@@ -33,16 +33,16 @@
     .custom instance void [runtime]System.Reflection.DefaultMemberAttribute::.ctor(string) = ( 01 00 04 49 74 65 6D 00 00 )                      
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-    .field assembly int32 JustSomeInt@
-    .field assembly string NonNullable@
-    .field assembly string Nullable@
+    .field static assembly string uglyGlobalMutableString
+    .field static assembly string uglyGlobalMutableNullableString
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> dict
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 01 02 02 00 00 ) 
-    .field static assembly int32 init@6
-    .field static assembly string uglyGlobalMutableNullableString
+    .field assembly string Nullable@
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    .field static assembly string uglyGlobalMutableString
+    .field assembly string NonNullable@
+    .field assembly int32 JustSomeInt@
+    .field static assembly int32 init@6
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
