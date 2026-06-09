@@ -2291,36 +2291,35 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
         //printfn "Not eliminating because no Run found"
         None
 
-let IsILMethodRefSystemStringEquals (mref: ILMethodRef) =
-    mref.Name = "Equals" &&
+let inline (|StringTy|_|) (ilTy: ILType) : bool =
+    ilTy.IsNominal && ilTy.TypeRef.Name = tname_String
+
+let inline private isILMethodRefOnSystemString
+        (methodName: string)
+        (returnTypeName: string)
+        ([<InlineIfLambda>] argsCheck: ILType list -> bool)
+        (mref: ILMethodRef) =
+    mref.Name = methodName &&
     mref.DeclaringTypeRef.Name = tname_String &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = tname_Bool) &&
-    (mref.ArgCount = 2 &&
-        mref.ArgTypes
-        |> List.forall (fun ilTy ->
-            ilTy.IsNominal && ilTy.TypeRef.Name = tname_String))
+    mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = returnTypeName &&
+    argsCheck mref.ArgTypes
+
+let IsILMethodRefSystemStringEquals (mref: ILMethodRef) =
+    mref |> isILMethodRefOnSystemString "Equals" tname_Bool (function
+        | [StringTy; StringTy] -> true
+        | _ -> false)
 
 let IsILMethodRefSystemStringConcat (mref: ILMethodRef) =
-    mref.Name = "Concat" &&
-    mref.DeclaringTypeRef.Name = tname_String &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = tname_String) &&
-    (mref.ArgCount >= 2 && mref.ArgCount <= 4 &&
-        mref.ArgTypes 
-        |> List.forall (fun ilTy ->
-            ilTy.IsNominal && ilTy.TypeRef.Name = tname_String))
+    mref |> isILMethodRefOnSystemString "Concat" tname_String (function
+        | [StringTy; StringTy]
+        | [StringTy; StringTy; StringTy]
+        | [StringTy; StringTy; StringTy; StringTy] -> true
+        | _ -> false)
 
 let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
-    mref.Name = "Concat" &&
-    mref.DeclaringTypeRef.Name = tname_String &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = tname_String) &&
-    (mref.ArgCount = 1 && 
-        mref.ArgTypes
-        |> List.forall (fun ilTy ->          
-            match ilTy with
-            | ILType.Array (shape, ilTy) when shape = ILArrayShape.SingleDimensional &&
-                                              ilTy.IsNominal &&
-                                              ilTy.TypeRef.Name = tname_String -> true
-            | _ -> false))
+    mref |> isILMethodRefOnSystemString "Concat" tname_String (function
+        | [ILType.Array (shape, StringTy)] when shape = ILArrayShape.SingleDimensional -> true
+        | _ -> false)
 
 let rec IsDebugPipeRightExpr cenv expr =
     let g = cenv.g
