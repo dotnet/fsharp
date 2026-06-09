@@ -383,9 +383,8 @@ let TestEmptyStringEq(x: string) =
 """
        ]
 
-    // Baseline for #19873: under `--optimize-` the null+Length form is not emitted, because F#'s
-    // `(=)` is only inlined when `LocalOptimizationsEnabled = true`; the call falls through to
-    // `String.Equals(s, "")`. JIT tiered compilation still reaches the fast path.
+    // #19873: under `--optimize-` `(=)` isn't inlined (only when LocalOptimizationsEnabled),
+    // so the call falls through to `String.Equals(s, "")` instead of the null+Length form.
     [<Fact>]
     let ``Test codegen for empty string pattern under --optimize-``() =
         FSharp """
@@ -422,9 +421,8 @@ let TestEmptyStringPattern(x: string) =
 """
        ]
 
-    // Baseline for #19873: the optimizer can't see BuildSwitch's `isNullFiltered` flag, so the
-    // empty-string branch under `null | "" -> _` re-emits its own null check. Result: two
-    // back-to-back `brfalse.s` on the same argument (the JIT folds the duplicate).
+    // #19873: the optimizer doesn't see BuildSwitch's `isNullFiltered` flag, so the empty-string
+    // branch under `null | "" -> _` re-emits its own null check (two back-to-back `brfalse.s`).
     [<Fact>]
     let ``Test codegen for null-or-empty-string pattern``() =
         FSharp """

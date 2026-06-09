@@ -2471,10 +2471,7 @@ val internal ecmaPublicKey: PublicKey
 /// Strips ILType.Modified from the ILType.
 val internal stripILModifiedFromTy: ILType -> ILType
 
-// Names of important built-in types, exported so callers can use them in
-// `mref.DeclaringTypeRef.Name = tname_X` comparisons instead of repeating magic strings.
-// Only the names referenced outside `il.fs` are exposed; add more here as needed.
-// (TcGlobals.fsi separately exports `tname_Enum` / `tname_Array`.)
+// Built-in type names exposed for `mref.DeclaringTypeRef.Name = tname_X` matchers outside il.fs.
 
 [<Literal>]
 val internal tname_String: string = "System.String"

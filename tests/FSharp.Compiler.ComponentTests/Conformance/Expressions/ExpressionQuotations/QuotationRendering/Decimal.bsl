@@ -1,4 +1,3 @@
-// Decimal
 Lambda (x,
         IfThenElse (Call (None, op_Equality,
                           [x,

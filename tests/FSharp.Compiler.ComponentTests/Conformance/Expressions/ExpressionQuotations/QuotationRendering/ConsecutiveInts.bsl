@@ -1,4 +1,3 @@
-// ConsecutiveInts
 Lambda (x,
         IfThenElse (Call (None, op_Equality, [x, Value (1)]), Value ("a"),
                     IfThenElse (Call (None, op_Equality, [x, Value (2)]),

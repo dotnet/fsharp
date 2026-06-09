@@ -2293,7 +2293,6 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
 
 let IsILMethodRefSystemStringEquals (mref: ILMethodRef) =
     mref.Name = "Equals" &&
-    mref.CallingConv.IsStatic &&
     mref.DeclaringTypeRef.Name = tname_String &&
     (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = tname_Bool) &&
     (mref.ArgCount = 2 &&
@@ -2550,17 +2549,13 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
     | _ ->
         OptimizeExpr cenv env expr
 
-/// Rewrite `System.String.Equals(x, "")` (or `Equals("", x)`) into the null-safe length check
-/// `if x = null then false else x.Length = 0`. Equivalent semantics — `String.Equals` returns false
-/// on null. This optimization originally lived in `BuildSwitch` for `match s with "" -> _` but was
-/// moved here so that quotations capture the original `op_Equality(_, "")` shape (issue #19873).
+/// Rewrite `String.Equals(x, "")` to `x <> null && x.Length = 0` (issue #19873 —
+/// done here so quotation bodies, which the optimizer skips, keep `op_Equality(_, "")`).
 and MakeOptimizedStringEqualsEmptyCall cenv env m nonEmptyArg =
     let g = cenv.g
     let _, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m nonEmptyArg
     let lengthIsZero = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
-    let nullSafe = mkLazyAnd g m (mkNonNullTest g m vExpr) lengthIsZero
-    let optimized = mkLetBind m bind nullSafe
-    OptimizeExpr cenv env optimized
+    OptimizeExpr cenv env (mkLetBind m bind (mkLazyAnd g m (mkNonNullTest g m vExpr) lengthIsZero))
 
 /// Optimize/analyze an application of an intrinsic operator to arguments
 and OptimizeExprOp cenv env (op, tyargs, args, m) =
@@ -2633,15 +2628,11 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
       when IsILMethodRefSystemStringConcat ilMethRef ->
         MakeOptimizedSystemStringConcatCall cenv env m args
 
-    // See MakeOptimizedStringEqualsEmptyCall. Applied post-inlining (on the `String.Equals` shape
-    // that `(=)` lowers to) so `Expr.Quote` bodies, which the optimizer skips, keep the original
-    // `op_Equality(s, "")` form.
-    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [arg1; Expr.Const(Const.String "", _, _)]
+    // See MakeOptimizedStringEqualsEmptyCall (issue #19873). `(=)` lowers to `String.Equals` post-inlining.
+    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _,
+        ([nonEmpty; Expr.Const(Const.String "", _, _)] | [Expr.Const(Const.String "", _, _); nonEmpty])
       when IsILMethodRefSystemStringEquals ilMethRef ->
-        MakeOptimizedStringEqualsEmptyCall cenv env m arg1
-    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [Expr.Const(Const.String "", _, _); arg2]
-      when IsILMethodRefSystemStringEquals ilMethRef ->
-        MakeOptimizedStringEqualsEmptyCall cenv env m arg2
+        MakeOptimizedStringEqualsEmptyCall cenv env m nonEmpty
 
     | _ -> 
         // Reductions
