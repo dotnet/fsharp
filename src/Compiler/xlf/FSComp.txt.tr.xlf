@@ -1497,6 +1497,11 @@
         <target state="new">Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcGenericAttributesNotSupported">
+        <source>Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</source>
+        <target state="new">Generic attribute types are not supported in F#. The type '{0}' has type parameters and cannot be used as an attribute.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">Söz dizimi “expr1[expr2]” dizin oluşturma için kullanılıyor. Dizin oluşturmayı etkinleştirmek için bir tür ek açıklama eklemeyi düşünün veya bir işlev çağırıyorsanız bir boşluk ekleyin, örn. “expr1 [expr2]”.</target>
@@ -8972,21 +8977,21 @@
           <target state="new">This expression is a function value. When used in an interpolated string it will be formatted using its 'ToString' method, which is likely not the intended behavior. Consider applying the function to its arguments.</target>
           <note />
         </trans-unit>
-        <trans-unit id="parsLetBangCannotBeLastInCE">
-          <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
-          <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
-          <note />
-        </trans-unit>
-        <trans-unit id="tcListLiteralWithSingleTupleElement">
-          <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
-          <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
-          <note />
-        </trans-unit>
-        <trans-unit id="featureExceptionFieldSerializationSupport">
-          <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
-          <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
-          <note />
-        </trans-unit>
+      <trans-unit id="parsLetBangCannotBeLastInCE">
+        <source>'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</source>
+        <target state="new">'{0}' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcListLiteralWithSingleTupleElement">
+        <source>This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</source>
+        <target state="new">This list expression contains a single tuple element. Did you mean to use ';' instead of ',' to separate list elements?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureExceptionFieldSerializationSupport">
+        <source>emit GetObjectData and field-restoring deserialization constructor for exception types</source>
+        <target state="new">emit GetObjectData and field-restoring deserialization constructor for exception types</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
