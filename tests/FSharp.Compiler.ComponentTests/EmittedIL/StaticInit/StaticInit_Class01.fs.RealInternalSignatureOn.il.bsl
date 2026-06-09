@@ -37,8 +37,8 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .field static assembly int32 init@4
     .field static assembly int32 x
+    .field static assembly int32 init@4
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
