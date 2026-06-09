@@ -1241,10 +1241,9 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                 match Array.tryFindIndex (fun (a: string) -> a = "--") argv with
                 | Some idx ->
                     let prefix = argv[0 .. idx - 1]
-                    let suffix = argv[idx ..]
+                    let suffix = argv[idx..]
                     PostProcessCompilerArgs abbrevArgs prefix @ List.ofArray suffix
-                | None ->
-                    PostProcessCompilerArgs abbrevArgs argv
+                | None -> PostProcessCompilerArgs abbrevArgs argv
 
             ParseCompilerOptions(collect, fsiCompilerOptions, List.tail processedArgs)
         with e ->
