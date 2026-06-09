@@ -313,11 +313,7 @@ type TcFileState =
 
       argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
-      /// Marks `(tycon.Stamp, synBaseTy.Range)` pairs for which the inherit-clause type
-      /// failed to resolve with an `UndefinedName` diagnostic in an earlier pass. Subsequent
-      /// passes (Phase 1F, Phase 2A) consult this marker to skip re-resolving the same
-      /// syntactic inherit clause, eliminating the redundant work and the duplicate FS0039.
-      /// See issue dotnet/fsharp#16432.
+      /// Inherit clauses whose type already failed UndefinedName; skip re-resolution to avoid duplicate FS0039.
       inheritResolutionFailed: ConcurrentDictionary<struct (Stamp * range), unit>
 
       // forward call

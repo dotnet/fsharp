@@ -50,25 +50,14 @@ open FSharp.Compiler.TypeProviders
 
 type cenv = TcFileState
 
-/// Recognises a recoverable `UndefinedName` failure (possibly wrapped). Used by the inherit-clause
-/// type-checking path to mark a `(tycon, range)` pair as already-reported so later passes
-/// (Phase 1F, Phase 2A) can skip re-resolving the same syntactic clause. See issue dotnet/fsharp#16432.
-///
-/// `UndefinedName` may arrive wrapped by `WrappedError` or by any of the constraint-solver
-/// wrappers (`ErrorFromAddingTypeEquation`, `ErrorFromAddingConstraint`, `ErrorFromApplyingDefault`)
-/// — these are common when the inherit clause carries type arguments and the failure surfaces
-/// during the `CheckCxs` second pass. All such wrappers are unwrapped so the marker is set in
-/// every case.
-let private isUndefinedNameFailure (e: exn) =
-    let rec loop (e: exn) =
-        match e with
-        | UndefinedName _ -> true
-        | WrappedError(inner, _) -> loop inner
-        | ErrorFromAddingTypeEquation(error = inner) -> loop inner
-        | ErrorFromAddingConstraint(error = inner) -> loop inner
-        | ErrorFromApplyingDefault(error = inner) -> loop inner
-        | _ -> false
-    loop e
+let rec (|UndefinedNameError|_|) (e: exn) =
+    match e with
+    | UndefinedName _ -> Some ()
+    | WrappedError(inner, _)
+    | ErrorFromAddingTypeEquation(error = inner)
+    | ErrorFromAddingConstraint(error = inner)
+    | ErrorFromApplyingDefault(error = inner) -> (|UndefinedNameError|_|) inner
+    | _ -> None
 
 //-------------------------------------------------------------------------
 // Mutually recursive shapes
@@ -1386,12 +1375,6 @@ module MutRecBindingChecking =
                             
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
-                            // If Phase 1D/1F already reported `UndefinedName` for this exact syntactic
-                            // inherit clause, short-circuit: the user has seen the FS0039 once and we
-                            // would only re-emit the same diagnostic by trying to re-resolve here.
-                            // Non-`UndefinedName` failures (and the success path) still go through
-                            // normal type-checking below, so IDE `ItemOccurrence.Use` sink events
-                            // for valid types are preserved. See issue dotnet/fsharp#16432.
                             let inheritsExpr, tpenv =
                                 if cenv.inheritResolutionFailed.ContainsKey(struct (tcref.Stamp, synBaseTy.Range)) then
                                     mkUnit g m, tpenv
@@ -3346,30 +3329,23 @@ module EstablishTypeDefinitionCores =
                         let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
 
                         let inherits = inherits |> List.map (fun (ty, m, _) -> (ty, m)) 
-                        // Resolve each inherit type. If a previous pass already failed with `UndefinedName`
-                        // for this clause, skip re-resolution entirely (returns the recovery type used
-                        // by `TcTypeAndRecover`). This avoids the duplicate FS0039 (#16432) without
-                        // any diagnostic-sink trickery and prevents the duplicate work too. Failures
-                        // that are NOT `UndefinedName` (e.g. constraint or type-provider errors that
-                        // only surface in the `CheckCxs` second pass) are NOT marked, so they continue
-                        // to flow through the normal recovery path.
-                        let inheritedTys =
-                            inherits
-                            |> List.mapFold (fun tpenv (ty, m) ->
-                                let key = struct (tcref.Stamp, ty.Range)
-                                if cenv.inheritResolutionFailed.ContainsKey key then
+                        let tryResolveInheritType tpenv (ty: SynType, m) =
+                            let key = struct (tcref.Stamp, ty.Range)
+                            if cenv.inheritResolutionFailed.ContainsKey key then
+                                (g.obj_ty_ambivalent, m), tpenv
+                            else
+                                try
+                                    let resolved, tpenv = TcType cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv ty
+                                    (resolved, m), tpenv
+                                with
+                                | RecoverableException (UndefinedNameError as e) ->
+                                    errorRecovery e ty.Range
+                                    cenv.inheritResolutionFailed.TryAdd(key, ()) |> ignore
                                     (g.obj_ty_ambivalent, m), tpenv
-                                else
-                                    try
-                                        let resolved, tpenv = TcType cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv ty
-                                        (resolved, m), tpenv
-                                    with RecoverableException e ->
-                                        errorRecovery e ty.Range
-                                        if isUndefinedNameFailure e then
-                                            cenv.inheritResolutionFailed.TryAdd(key, ()) |> ignore
-                                        (g.obj_ty_ambivalent, m), tpenv
-                            ) tpenv
-                            |> fst
+                                | RecoverableException e ->
+                                    errorRecovery e ty.Range
+                                    (g.obj_ty_ambivalent, m), tpenv
+                        let inheritedTys = inherits |> List.mapFold tryResolveInheritType tpenv |> fst
                         let implementedTys, inheritedTys =   
                             match kind with 
                             | SynTypeDefnKind.Interface -> 

@@ -57,52 +57,50 @@ module InheritsDeclarations =
         |> compile
         |> shouldSucceed
 
-    // Regression tests for https://github.com/dotnet/fsharp/issues/16432:
-    // inheriting from an unknown type should emit FS0039 only once,
-    // not three times (once per name-resolution site in CheckDeclarations).
-
-    let private assertSingleFS39 source =
-        let result =
-            FSharp source
-            |> typecheck
-
-        let fs39 =
-            result.Output.Diagnostics
-            |> List.filter (fun d -> d.Error = (Error 39))
-
-        Assert.True(
-            fs39.Length = 1,
-            sprintf "Expected exactly 1 FS0039 but got %d. Diagnostics:\n%A" fs39.Length result.Output.Diagnostics
-        )
-
-    [<Theory>]
-    [<InlineData("type MyClass() =\n    inherit NonExistentBase()\n")>]
-    [<InlineData("type MyClass() =\n    inherit MissingGeneric<int>()\n")>]
-    [<InlineData("type IMyInterface =\n    inherit INonExistent\n")>]
-    let ``Inherit from undefined type reports single FS0039`` source =
-        assertSingleFS39 source
+    [<Fact>]
+    let ``Inherit from undefined non-generic type reports single FS0039`` () =
+        FSharp "type MyClass() =\n    inherit NonExistentBase()\n"
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 2, Col 13, Line 2, Col 28, "The type 'NonExistentBase' is not defined.")
+        ]
 
     [<Fact>]
-    let ``Two different undefined names still report separately`` () =
-        let result =
-            FSharp """
+    let ``Inherit from undefined generic type reports single FS0039`` () =
+        FSharp "type MyClass() =\n    inherit MissingGeneric<int>()\n"
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 2, Col 13, Line 2, Col 27, "The type 'MissingGeneric' is not defined.")
+        ]
+
+    [<Fact>]
+    let ``Interface inheriting undefined interface reports single FS0039`` () =
+        FSharp "type IMyInterface =\n    inherit INonExistent\n"
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 2, Col 13, Line 2, Col 25, "The type 'INonExistent' is not defined.")
+            (Error 887, Line 2, Col 5, Line 2, Col 25, "The type 'obj' is not an interface type")
+        ]
+
+    [<Fact>]
+    let ``Undefined inherit and undefined value report independently`` () =
+        FSharp """
 type MyClass() =
     inherit NonExistentBase()
     member _.X = undefinedValue
 """
-            |> typecheck
-
-        let fs39 =
-            result.Output.Diagnostics
-            |> List.filter (fun d -> d.Error = (Error 39))
-
-        Assert.True(
-            fs39.Length >= 2,
-            sprintf "Expected >= 2 FS0039, got %d. Diagnostics:\n%A" fs39.Length result.Output.Diagnostics
-        )
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 3, Col 13, Line 3, Col 28, "The type 'NonExistentBase' is not defined.")
+            (Error 39, Line 4, Col 18, Line 4, Col 32, "The value or constructor 'undefinedValue' is not defined.")
+        ]
 
     [<Fact>]
-    let ``Valid inherit produces no FS0039`` () =
+    let ``Valid inherit produces no diagnostics`` () =
         FSharp """
 open System
 type MyClass() =
