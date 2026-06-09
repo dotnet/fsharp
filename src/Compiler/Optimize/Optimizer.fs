@@ -2294,33 +2294,33 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
 let IsILMethodRefSystemStringEquals (mref: ILMethodRef) =
     mref.Name = "Equals" &&
     mref.CallingConv.IsStatic &&
-    mref.DeclaringTypeRef.Name = "System.String" &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.Boolean") &&
+    mref.DeclaringTypeRef.Name = tname_String &&
+    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = tname_Bool) &&
     (mref.ArgCount = 2 &&
         mref.ArgTypes
         |> List.forall (fun ilTy ->
-            ilTy.IsNominal && ilTy.TypeRef.Name = "System.String"))
+            ilTy.IsNominal && ilTy.TypeRef.Name = tname_String))
 
 let IsILMethodRefSystemStringConcat (mref: ILMethodRef) =
     mref.Name = "Concat" &&
-    mref.DeclaringTypeRef.Name = "System.String" &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.String") &&
+    mref.DeclaringTypeRef.Name = tname_String &&
+    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = tname_String) &&
     (mref.ArgCount >= 2 && mref.ArgCount <= 4 &&
         mref.ArgTypes 
         |> List.forall (fun ilTy ->
-            ilTy.IsNominal && ilTy.TypeRef.Name = "System.String"))
+            ilTy.IsNominal && ilTy.TypeRef.Name = tname_String))
 
 let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
     mref.Name = "Concat" &&
-    mref.DeclaringTypeRef.Name = "System.String" &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.String") &&
+    mref.DeclaringTypeRef.Name = tname_String &&
+    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = tname_String) &&
     (mref.ArgCount = 1 && 
         mref.ArgTypes
         |> List.forall (fun ilTy ->          
             match ilTy with
             | ILType.Array (shape, ilTy) when shape = ILArrayShape.SingleDimensional &&
                                               ilTy.IsNominal &&
-                                              ilTy.TypeRef.Name = "System.String" -> true
+                                              ilTy.TypeRef.Name = tname_String -> true
             | _ -> false))
 
 let rec IsDebugPipeRightExpr cenv expr =
