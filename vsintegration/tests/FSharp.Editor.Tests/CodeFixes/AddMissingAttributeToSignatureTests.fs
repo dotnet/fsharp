@@ -82,7 +82,7 @@ let private countDiags (fsiCode: string) (fsCode: string) : int =
     |> Array.length
 
 [<Fact>]
-let ``Module-level: AutoOpen on nested module is inserted into .fsi`` () =
+let ``Module-level: RequireQualifiedAccess on nested module is inserted into .fsi`` () =
     let fsiCode =
         """
 module M
@@ -93,7 +93,7 @@ module Inner =
     let fsCode =
         """
 module M
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module Inner =
     let x = 42
 """
@@ -101,7 +101,7 @@ module Inner =
     let expectedFsi =
         """
 module M
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module Inner =
     val x: int
 """
@@ -357,14 +357,14 @@ val x: int
 
     let fsCode =
         """
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module M.Sub
 let x = 1
 """
 
     let expected =
         """
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module M.Sub
 val x: int
 """
