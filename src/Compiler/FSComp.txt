@@ -910,7 +910,6 @@ optsStaticlink,"Statically link the given assembly and all referenced DLLs that 
 optsResident,"Use a resident background compilation service to improve compiler startup times."
 optsPdb,"Name the output debug file"
 optsSimpleresolution,"Resolve assembly references using directory-based rules rather than MSBuild resolution"
-3888,optsSimpleresolutionNotSupportedOnCoreClr,"The --simpleresolution option is not supported on .NET Core; ignoring."
 optsShortFormOf,"Short form of '%s'"
 optsClirootDeprecatedMsg,"The command-line option '--cliroot' has been deprecated. Use an explicit reference to a specific copy of mscorlib.dll instead."
 optsClirootDescription,"Use to override where the compiler looks for mscorlib.dll and framework components"
