@@ -2269,6 +2269,7 @@ and TypeDefsBuilder() =
                 // User-declared types: source-position ASC. idx is a final tiebreaker
                 // for sites that legitimately share an exact range (rare).
                 struct (false, 0, m.FileIndex, m.StartLine, m.StartColumn, idx, tdef.Name)
+
         let newVal = sortKey, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
 
         tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun _key oldList -> newVal :: oldList))
@@ -12891,7 +12892,9 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                     // for BOTH the RHSs and the body. The original "RHS sees only its own bound
                     // var" comment was incorrect — IlxGen's GenLetRecBindings adds every rec
                     // sibling's val before generating any of their bodies.
-                    let lbvs = (binds |> List.map (fun (TBind(v, _, _)) -> mkLocalValRef v)) @ letBoundVars
+                    let lbvs =
+                        (binds |> List.map (fun (TBind(v, _, _)) -> mkLocalValRef v)) @ letBoundVars
+
                     for TBind(_, rhs, _) in binds do
                         walkExpr lbvs cloc rhs
 
@@ -12980,8 +12983,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             let rec stripOuterTopLambdas (e: Expr) =
                 match e with
                 | Expr.TyLambda(_, _, body, _, _) -> stripOuterTopLambdas body
-                | Expr.Lambda(_, ctorThisValOpt, baseValOpt, _, body, _, _)
-                    when Option.isNone ctorThisValOpt && Option.isNone baseValOpt ->
+                | Expr.Lambda(_, ctorThisValOpt, baseValOpt, _, body, _, _) when Option.isNone ctorThisValOpt && Option.isNone baseValOpt ->
                     stripOuterTopLambdas body
                 | _ -> e
 
