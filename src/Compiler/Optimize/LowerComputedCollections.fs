@@ -339,12 +339,12 @@ module List =
 
                 let loop =
                     mkLoop (fun _idxVar loopVar ->
-                        let body =
-                            body
-                            |> Option.map (fun (loopVal, body) -> mkInvisibleLet m loopVal loopVar body)
-                            |> Option.defaultValue loopVar
-
-                        mkCallCollectorAdd tcVal g reader mBody collector body)
+                        match body with
+                        | Some (loopVal, body) ->
+                            mkInvisibleLet m loopVal loopVar
+                                (Expr.DebugPoint (DebugPointAtLeafExpr.Yes mFor, mkCallCollectorAdd tcVal g reader mBody collector body))
+                        | None ->
+                            mkCallCollectorAdd tcVal g reader mBody collector loopVar)
 
                 let close = mkCallCollectorClose tcVal g reader mBody collector
                 mkSequential m loop close
@@ -504,12 +504,13 @@ module Array =
             mkCompGenLetIn mFor "array" arrayTy (mkNewArray count) (fun (_, array) ->
                 let loop =
                     mkLoop (fun idxVar loopVar ->
-                        let body =
-                            body
-                            |> Option.map (fun (loopVal, body) -> mkInvisibleLet mBody loopVal loopVar body)
-                            |> Option.defaultValue loopVar
+                        let mkStore elem = mkAsmExpr ([stelem], [], [array; convToNativeInt NoCheckOvf idxVar; elem], [], mBody)
 
-                        mkAsmExpr ([stelem], [], [array; convToNativeInt NoCheckOvf idxVar; body], [], mBody))
+                        match body with
+                        | Some (loopVal, body) ->
+                            mkInvisibleLet mBody loopVal loopVar (Expr.DebugPoint (DebugPointAtLeafExpr.Yes mFor, mkStore body))
+                        | None ->
+                            mkStore loopVar)
 
                 mkSequential m loop array)
 

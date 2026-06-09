@@ -352,6 +352,14 @@ let rec isTypeSeqBlockElementContinuator token =
     //   member x.M1
     //   member x.M2
     | BAR -> true
+    // Closing tokens for anonymous record types and struct types in type aliases, e.g.
+    //   type T =
+    //       {| Id: int
+    //       |} []          <-- BAR_RBRACE here should not trigger OBLOCKSEP for '[]'
+    //   type T =
+    //       {| Id: int
+    //       |} seq         <-- BAR_RBRACE here should not trigger OBLOCKSEP for 'seq'
+    | BAR_RBRACE -> true
     | OBLOCKBEGIN | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND (_, _) -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ODUMMY token -> isTypeSeqBlockElementContinuator token
     | _ -> false

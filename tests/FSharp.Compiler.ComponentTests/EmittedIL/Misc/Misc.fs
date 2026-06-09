@@ -177,6 +177,15 @@ module Misc =
         |>asNetStandard20
         |>verifyCompilation
 
+    // Regression test: a debug point landing while a value-type constructor's 'this' pointer
+    // is on the stack must spill it as a managed pointer (byref), not as the value type.
+    [<Theory; FileInlineData("StructCtorDebugPoints.fs")>]
+    let ``StructCtorDebugPoints_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asLibrary
+        |> verifyCompilation
+
     // SOURCE=Marshal.fs                   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Marshal.exe"  # Marshal.fs
     [<Theory; FileInlineData("Marshal.fs")>]
     let ``Marshal_fs`` compilation =

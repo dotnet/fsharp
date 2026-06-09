@@ -78,42 +78,45 @@
              valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1,
              uint64 V_2,
              int32 V_3,
-             int32 V_4)
+             int32 V_4,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_5)
     IL_0000:  ldc.i4.0
     IL_0001:  conv.i8
     IL_0002:  stloc.2
     IL_0003:  ldc.i4.0
     IL_0004:  stloc.3
-    IL_0005:  br.s       IL_0020
+    IL_0005:  br.s       IL_0024
 
-    IL_0007:  ldloca.s   V_1
-    IL_0009:  ldloc.3
-    IL_000a:  stloc.s    V_4
-    IL_000c:  ldloc.s    V_4
-    IL_000e:  ldloc.s    V_4
-    IL_0010:  mul
-    IL_0011:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-    IL_0016:  nop
-    IL_0017:  ldloc.3
-    IL_0018:  ldc.i4.1
-    IL_0019:  add
-    IL_001a:  stloc.3
-    IL_001b:  ldloc.2
+    IL_0007:  ldloc.3
+    IL_0008:  stloc.s    V_4
+    IL_000a:  ldloca.s   V_1
+    IL_000c:  stloc.s    V_5
+    IL_000e:  ldloc.s    V_5
+    IL_0010:  ldloc.s    V_4
+    IL_0012:  ldloc.s    V_4
+    IL_0014:  mul
+    IL_0015:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_001a:  nop
+    IL_001b:  ldloc.3
     IL_001c:  ldc.i4.1
-    IL_001d:  conv.i8
-    IL_001e:  add
-    IL_001f:  stloc.2
-    IL_0020:  ldloc.2
-    IL_0021:  ldc.i4.s   11
-    IL_0023:  conv.i8
-    IL_0024:  blt.un.s   IL_0007
+    IL_001d:  add
+    IL_001e:  stloc.3
+    IL_001f:  ldloc.2
+    IL_0020:  ldc.i4.1
+    IL_0021:  conv.i8
+    IL_0022:  add
+    IL_0023:  stloc.2
+    IL_0024:  ldloc.2
+    IL_0025:  ldc.i4.s   11
+    IL_0027:  conv.i8
+    IL_0028:  blt.un.s   IL_0007
 
-    IL_0026:  ldloca.s   V_1
-    IL_0028:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_002d:  dup
-    IL_002e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$assembly::squaresOfOneToTenD@4
-    IL_0033:  stloc.0
-    IL_0034:  ret
+    IL_002a:  ldloca.s   V_1
+    IL_002c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_0031:  dup
+    IL_0032:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$assembly::squaresOfOneToTenD@4
+    IL_0037:  stloc.0
+    IL_0038:  ret
   } 
 
 } 
