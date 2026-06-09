@@ -62,7 +62,9 @@ module internal SymbolHelpers =
     let rangeOfMethInfo (g: TcGlobals) preferFlag (minfo: MethInfo) =
         match minfo with
 #if !NO_TYPEPROVIDERS
-        |   ProvidedMeth(_, mi, _, _) -> Construct.ComputeDefinitionLocationOfProvidedItem mi
+        |   ProvidedMeth(_, mi, _, _) ->
+                Construct.ComputeDefinitionLocationOfProvidedItem mi
+                |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag minfo.DeclaringTyconRef))
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
