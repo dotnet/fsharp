@@ -16,7 +16,8 @@ module Simpleresolution =
 
     let private helloWorld = """
 module M
-let main () = printfn "hello"
+[<EntryPoint>]
+let main _ = printfn "hello"; 0
 """
 
     [<FactForNETCOREAPP>]
@@ -24,6 +25,7 @@ let main () = printfn "hello"
         FSharp helloWorld
         |> asExe
         |> withOptions ["--simpleresolution"]
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
         |> withWarningCode 3888
@@ -35,6 +37,7 @@ let main () = printfn "hello"
         FSharp helloWorld
         |> asExe
         |> withOptions ["--simpleresolution"]
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
         |> withDiagnostics [ Warning 3888, Line 0, Col 1, Line 0, Col 1, "The --simpleresolution option is not supported on .NET Core; ignoring." ]
@@ -45,6 +48,7 @@ let main () = printfn "hello"
         FSharp helloWorld
         |> asExe
         |> withOptions ["--simpleresolution"; "--noframework"]
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
         |> withWarningCode 3888
@@ -55,20 +59,24 @@ let main () = printfn "hello"
         FSharp helloWorld
         |> asExe
         |> withOptions ["--simpleresolution"; "-r:System.Net.Http.dll"]
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
         |> withWarningCode 3888
         |> ignore
 
-    // Negative guard: a genuinely-missing user reference must still produce FS0078,
-    // even with --simpleresolution. This ensures the fix only suppresses the
-    // framework-resolution failures, not the user-driven ones.
+    // Negative guard: a genuinely-missing user reference must still produce a
+    // resolution error (FS0084 via the MSBuild resolver path, which is what
+    // coreclr uses now that --simpleresolution is ignored). This ensures the
+    // fix only suppresses the framework-resolution failures, not the
+    // user-driven ones.
     [<FactForNETCOREAPP>]
-    let ``--simpleresolution on coreclr still reports FS0078 for a user-supplied missing -r``() =
+    let ``--simpleresolution on coreclr still reports an error for a user-supplied missing -r``() =
         FSharp helloWorld
         |> asExe
         |> withOptions ["--simpleresolution"; "-r:Nonexistent.Definitely.Missing.dll"]
+        |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 78
+        |> withErrorCode 84
         |> ignore

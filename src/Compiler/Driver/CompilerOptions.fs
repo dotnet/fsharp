@@ -1283,7 +1283,11 @@ let advancedFlagsBoth tcConfigB =
         CompilerOption(
             "simpleresolution",
             tagNone,
-            OptionUnit(fun () -> tcConfigB.useSimpleResolution <- true),
+            OptionUnit(fun () ->
+                if FSharpEnvironment.isRunningOnCoreClr then
+                    warning (Error(FSComp.SR.optsSimpleresolutionNotSupportedOnCoreClr (), rangeCmdArgs))
+                else
+                    tcConfigB.useSimpleResolution <- true),
             None,
             Some(FSComp.SR.optsSimpleresolution ())
         )
