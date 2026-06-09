@@ -116,7 +116,6 @@ type Layout =
         | Node(_, right, _) -> right.JuxtapositionRight
         | Attr(_, _, subLayout) -> subLayout.JuxtapositionRight
 
-[<NoEquality; NoComparison>]
 type IEnvironment =
     abstract GetLayout: obj -> Layout
     abstract MaxColumns: int

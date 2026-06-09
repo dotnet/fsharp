@@ -65,11 +65,15 @@ module private AttributeConformance =
 
     let private enforcedEntities : E list = [
         E.RequireQualifiedAccessAttribute
-        E.AutoOpenAttribute
+        // AutoOpen intentionally not enforced: it is a legitimately asymmetric
+        // idiom on internal modules (auto-open within the project, opaque for
+        // InternalsVisibleTo consumers and for the .fsi-visible surface).
         E.NoComparisonAttribute
         E.NoEqualityAttribute
-        E.StructuralEqualityAttribute
-        E.StructuralComparisonAttribute
+        // StructuralEquality / StructuralComparison intentionally not enforced:
+        // they are documentary - the F# default for DU/record/struct already
+        // generates structural equality / comparison. Their presence on the .fs
+        // and absence on the .fsi has no observable consumer effect.
         E.CustomEqualityAttribute
         E.CustomComparisonAttribute
         E.ReferenceEqualityAttribute
@@ -153,14 +157,18 @@ module private AttributeConformance =
             implVal sigVal fallback
 
     let checkEntity (g: TcGlobals) (implEntity: Entity) (sigEntity: Entity) (fallback: range) =
-        let enforcedFlagsOnEntity (e: Entity) =
-            EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
-            e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
-        checkEnforced (emitter g) enforcedFlagsOnEntity enforcedEntities
-            (fun (e: Entity) -> e.Attribs)
-            (classifyEntityAttrib g)
-            (fun (e: Entity) -> e.DisplayName)
-            implEntity sigEntity fallback
+        // Skip if the sig hides the representation (e.g. `type internal T` in .fsi
+        // vs a DU in .fs). Attributes like [<NoEquality>] / [<StructuralEquality>]
+        // syntactically cannot be applied to opaque type declarations.
+        if not sigEntity.IsHiddenReprTycon then
+            let enforcedFlagsOnEntity (e: Entity) =
+                EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
+                e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
+            checkEnforced (emitter g) enforcedFlagsOnEntity enforcedEntities
+                (fun (e: Entity) -> e.Attribs)
+                (classifyEntityAttrib g)
+                (fun (e: Entity) -> e.DisplayName)
+                implEntity sigEntity fallback
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *

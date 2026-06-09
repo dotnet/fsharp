@@ -164,7 +164,9 @@ type U = A | B
         |> withDiagnosticMessageMatches "RequireQualifiedAccess"
 
     [<Fact>]
-    let ``AutoOpen on nested module in impl but not sig produces warning`` () =
+    let ``AutoOpen on nested module in impl but not sig does NOT fire FS3888 (intentionally asymmetric)`` () =
+        // AutoOpen on an internal module is a legitimate asymmetric idiom: auto-open
+        // within the project, opaque for InternalsVisibleTo consumers.
         let sigSrc = """
 module M
 module Inner =
@@ -178,8 +180,7 @@ module Inner =
 """
         compileSigImpl sigSrc implSrc
         |> shouldSucceed
-        |> withWarningCode 3888
-        |> withDiagnosticMessageMatches "AutoOpen"
+        |> withWarningCodes []
 
     [<Fact>]
     let ``CLIMutable on record in impl but not sig produces warning`` () =
@@ -270,7 +271,7 @@ let inline f (x: int) = x + 1
     // Module-level attribute.
 
     [<Fact>]
-    let ``AutoOpen on top-level module in impl but not sig produces warning`` () =
+    let ``AutoOpen on top-level module in impl but not sig does NOT fire FS3888 (intentionally asymmetric)`` () =
         let sigSrc = """
 module M.Sub
 val x: int
@@ -282,8 +283,7 @@ let x = 1
 """
         compileSigImpl sigSrc implSrc
         |> shouldSucceed
-        |> withWarningCode 3888
-        |> withDiagnosticMessageMatches "AutoOpen"
+        |> withWarningCodes []
 
     // Diagnostic placement and range.
 
@@ -414,18 +414,21 @@ let inline internal f (x: int) = x + 1
     // Expanded attribute set: typecheck-affecting attributes added after the initial PR.
 
     [<Fact>]
-    let ``StructuralEquality mismatch fires FS3888`` () =
+    let ``StructuralEquality/Comparison on impl but not sig is documentary and does NOT fire FS3888`` () =
+        // StructuralEquality / StructuralComparison on a record matches the F# default;
+        // the attributes are documentary and have no observable consumer effect.
         let sigSrc = """
 module M
 type R = { X: int }
 """
         let implSrc = """
 module M
-[<StructuralEquality; NoComparison>]
+[<StructuralEquality; StructuralComparison>]
 type R = { X: int }
 """
         compileSigImpl sigSrc implSrc
-        |> withDiagnosticMessageMatches "StructuralEquality"
+        |> shouldSucceed
+        |> withWarningCodes []
 
     [<Fact>]
     let ``IsReadOnly mismatch fires FS3888`` () =

@@ -105,7 +105,8 @@ module internal CodeFix =
     let AddMissingAttributeToSignature = "AddMissingAttributeToSignature"
 
     [<Literal>]
-    let RemoveExtraAttributeFromImplementation = "RemoveExtraAttributeFromImplementation"
+    let RemoveExtraAttributeFromImplementation =
+        "RemoveExtraAttributeFromImplementation"
 
     [<Literal>]
     let AddTypeAnnotationToObjectOfIndeterminateType =

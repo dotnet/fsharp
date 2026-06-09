@@ -1752,7 +1752,7 @@ type ILSecurityAction =
     | InheritanceDemandChoice
     | DemandChoice
 
-[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+[<StructuralEquality; StructuralComparison>]
 type ILSecurityDecl = ILSecurityDecl of ILSecurityAction * byte[]
 
 [<NoEquality; NoComparison; Struct>]
