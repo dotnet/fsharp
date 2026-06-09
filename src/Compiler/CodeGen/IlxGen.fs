@@ -12745,8 +12745,11 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             then
                 v.CompiledName g.CompilerGlobalState |> ignore
 
-        let primeClosureName (letBoundVars: ValRef list) (uniq: int64) (m: range) =
+        let _primeClosureName (letBoundVars: ValRef list) (uniq: int64) (m: range) =
             // Replicates the basename-selection in GetIlxClosureFreeVars (IlxGen.fs:~7132).
+            // Currently UNUSED — see Expr.Lambda/TyLambda/Obj cases below for the rationale.
+            // Kept here as a reference for the basename-selection logic if priming is
+            // reintroduced after state-machine lowering moves earlier.
             let boundvar =
                 letBoundVars |> List.tryFind (fun v -> not v.Deref.IsCompilerGenerated)
 
@@ -12773,16 +12776,17 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | Expr.Val _
                 | Expr.WitnessArg _ -> ()
 
-                | Expr.Lambda(uniq, _, _, _, body, m, _) ->
-                    primeClosureName letBoundVars uniq m
+                | Expr.Lambda(_, _, _, _, body, _, _) ->
+                    // Don't prime closure names — state-machine lowering and other late
+                    // transforms create/remove Lambdas after this pass, so priming would
+                    // register phantom (basename, uniq) cache entries that push real codegen
+                    // closures to suffix '-N'. Just recurse to keep walking the AST for raw
+                    // data sites (TOp.Bytes/UInt16s) which still need priming.
                     walkExpr letBoundVars cloc body
 
-                | Expr.TyLambda(uniq, _, body, m, _) ->
-                    primeClosureName letBoundVars uniq m
-                    walkExpr letBoundVars cloc body
+                | Expr.TyLambda(_, _, body, _, _) -> walkExpr letBoundVars cloc body
 
-                | Expr.Obj(uniq, _, _, basecall, overrides, iimpls, m) ->
-                    primeClosureName letBoundVars uniq m
+                | Expr.Obj(_, _, _, basecall, overrides, iimpls, _) ->
                     walkExpr letBoundVars cloc basecall
 
                     for TObjExprMethod(_, _, _, _, e, _) in overrides do
@@ -12793,18 +12797,22 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                             walkExpr letBoundVars cloc e
 
                 | Expr.Let(TBind(v, rhs, _), body, _, _) ->
-                    // Mirror GenBindingAfterDebugPoint (IlxGen.fs:~8648): RHS sees the let-bound
-                    // var on letBoundVars; the body does not.
+                    // Mirror GenBindingAfterDebugPoint (IlxGen.fs:~8643-8654): both the RHS AND
+                    // the body see the let-bound var on letBoundVars — the binding mutates eenv
+                    // and all subsequent generation (including the body) uses the updated eenv.
                     walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
-                    walkExpr letBoundVars cloc body
+                    walkExpr (mkLocalValRef v :: letBoundVars) cloc body
 
                 | Expr.LetRec(binds, body, _, _) ->
-                    // Mirror computeFixupsForOneRecursiveVar (IlxGen.fs:~8438): each rec bind's
-                    // RHS sees only its own bound var on letBoundVars, not its rec siblings.
-                    for TBind(v, rhs, _) in binds do
-                        walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
+                    // Mirror GenLetRecBindings: all rec siblings' Vars are added to letBoundVars
+                    // for BOTH the RHSs and the body. The original "RHS sees only its own bound
+                    // var" comment was incorrect — IlxGen's GenLetRecBindings adds every rec
+                    // sibling's val before generating any of their bodies.
+                    let lbvs = (binds |> List.map (fun (TBind(v, _, _)) -> mkLocalValRef v)) @ letBoundVars
+                    for TBind(_, rhs, _) in binds do
+                        walkExpr lbvs cloc rhs
 
-                    walkExpr letBoundVars cloc body
+                    walkExpr lbvs cloc body
 
                 | Expr.Op(op, _, args, m) ->
                     match op with
@@ -12876,6 +12884,18 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | Some d -> walkDtree letBoundVars cloc d
                 | None -> ()
 
+        let walkTopBindRhs (v: Val) (rhs: Expr) (cloc: CompileLocation) =
+            // For Vals compiled as top-level methods, the outer TyLambda/Lambda(s) of the RHS
+            // are emitted as method type-args / value-args by GenMethodForBinding, NOT closure-
+            // converted via GetIlxClosureFreeVars. Skip them in priming so we don't register a
+            // phantom (v.CompiledName, range, uniq) entry that pushes the user's real nested
+            // closures to suffix '-N'.
+            if v.IsCompiledAsTopLevel then
+                let _tps, _vss, body, _bodyTy = stripTopLambda (rhs, v.Type)
+                walkExpr [ mkLocalValRef v ] cloc body
+            else
+                walkExpr [ mkLocalValRef v ] cloc rhs
+
         let rec walkModuleContents (cloc: CompileLocation) (x: ModuleOrNamespaceContents) =
             match x with
             | TMDefRec(_, _, _, mbinds, _) ->
@@ -12883,7 +12903,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                     walkModuleBinding cloc mb
             | TMDefLet(TBind(v, rhs, _), _) ->
                 primeVal v
-                walkExpr [ mkLocalValRef v ] cloc rhs
+                walkTopBindRhs v rhs cloc
             | TMDefDo(e, _) -> walkExpr [] cloc e
             | TMDefOpens _ -> ()
             | TMDefs defs ->
@@ -12894,7 +12914,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             match mb with
             | ModuleOrNamespaceBinding.Binding(TBind(v, rhs, _)) ->
                 primeVal v
-                walkExpr [ mkLocalValRef v ] cloc rhs
+                walkTopBindRhs v rhs cloc
             | ModuleOrNamespaceBinding.Module(mspec, mdef) ->
                 let cloc' =
                     if mspec.IsNamespace then
