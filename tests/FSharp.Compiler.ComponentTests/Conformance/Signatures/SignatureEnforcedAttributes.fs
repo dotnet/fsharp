@@ -382,3 +382,92 @@ let inline f (x: int) = x + 1
         |> shouldSucceed
         |> withWarningCode 3888
         |> withDiagnosticMessageMatches "NoDynamicInvocation"
+
+    // -----------------------------------------------------------------------
+    // Accessibility scope: internal symbols are enforced too. Within-project
+    // and InternalsVisibleTo callers also see the .fsi's view, so the same
+    // .fs/.fsi divergence applies.
+    // -----------------------------------------------------------------------
+
+    [<Fact>]
+    let ``Internal type with attribute mismatch still fires FS3888`` () =
+        let sigSrc = """
+module M
+type internal C = { X: int }
+"""
+        let implSrc = """
+module M
+[<NoEquality; NoComparison>]
+type internal C = { X: int }
+"""
+        compileSigImpl sigSrc implSrc
+        |> withDiagnosticMessageMatches "NoEquality"
+
+    [<Fact>]
+    let ``Internal val with attribute mismatch still fires FS3888`` () =
+        let sigSrc = """
+module M
+val inline internal f: x: int -> int
+"""
+        let implSrc = """
+module M
+[<NoDynamicInvocationAttribute>]
+let inline internal f (x: int) = x + 1
+"""
+        compileSigImpl sigSrc implSrc
+        |> shouldSucceed
+        |> withWarningCode 3888
+        |> withDiagnosticMessageMatches "NoDynamicInvocation"
+
+    // -----------------------------------------------------------------------
+    // Expanded attribute set: typecheck/IDE-affecting attributes that were
+    // not in the initial list but should equally not silently diverge.
+    // -----------------------------------------------------------------------
+
+    [<Fact>]
+    let ``StructuralEquality mismatch fires FS3888`` () =
+        let sigSrc = """
+module M
+type R = { X: int }
+"""
+        let implSrc = """
+module M
+[<StructuralEquality; NoComparison>]
+type R = { X: int }
+"""
+        compileSigImpl sigSrc implSrc
+        |> withDiagnosticMessageMatches "StructuralEquality"
+
+    [<Fact>]
+    let ``IsReadOnly mismatch fires FS3888`` () =
+        let sigSrc = """
+module M
+[<Struct>]
+type R = { X: int }
+"""
+        let implSrc = """
+module M
+[<System.Runtime.CompilerServices.IsReadOnly>]
+[<Struct>]
+type R = { X: int }
+"""
+        compileSigImpl sigSrc implSrc
+        |> shouldSucceed
+        |> withWarningCode 3888
+        |> withDiagnosticMessageMatches "IsReadOnly"
+
+    [<Fact>]
+    let ``Struct attribute mismatch fires FS3888`` () =
+        // Sig says class-like type, impl marks it as a struct: a real
+        // typechecking divergence (boxing/byref semantics).
+        let sigSrc = """
+module M
+type R = { X: int }
+"""
+        let implSrc = """
+module M
+[<Struct>]
+type R = { X: int }
+"""
+        compileSigImpl sigSrc implSrc
+        |> withDiagnosticMessageMatches "Struct"

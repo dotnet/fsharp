@@ -54,6 +54,11 @@ module private AttributeConformance =
     /// Val attributes that must be mirrored in the .fsi when present in the .fs,
     /// because the F# compiler / IDE reads them off the signature when typechecking
     /// or compiling consumer code. One row = one rule.
+    /// Only attributes that affect typechecking, name resolution, overload
+    /// resolution, or generated codegen contract belong here. Purely-runtime
+    /// attributes (DllImport, ReflectedDefinition, SkipLocalsInit, ...) are out
+    /// of scope: their presence in the .fs alone does not silently change what
+    /// consumers' typecheck observes.
     let private enforcedVals : V list = [
         V.NoDynamicInvocationAttribute_True ||| V.NoDynamicInvocationAttribute_False
         V.RequiresExplicitTypeArgumentsAttribute
@@ -62,6 +67,7 @@ module private AttributeConformance =
         V.GeneralizableValueAttribute
         V.WarnOnWithoutNullArgumentAttribute
         V.CLIEventAttribute
+        V.ExtensionAttribute
     ]
 
     /// Entity (type/module) attributes with the same rule as above.
@@ -70,6 +76,11 @@ module private AttributeConformance =
         E.AutoOpenAttribute
         E.NoComparisonAttribute
         E.NoEqualityAttribute
+        E.StructuralEqualityAttribute
+        E.StructuralComparisonAttribute
+        E.CustomEqualityAttribute
+        E.CustomComparisonAttribute
+        E.ReferenceEqualityAttribute
         E.AbstractClassAttribute
         E.SealedAttribute_True ||| E.SealedAttribute_False
         E.CLIMutableAttribute
@@ -81,6 +92,13 @@ module private AttributeConformance =
         E.UnverifiableAttribute
         E.EditorBrowsableAttribute
         E.AttributeUsageAttribute
+        E.IsByRefLikeAttribute
+        E.IsReadOnlyAttribute
+        E.ExtensionAttribute
+        E.MeasureAttribute
+        E.StructAttribute
+        E.ClassAttribute
+        E.InterfaceAttribute
     ]
 
     let private enforcedValsMask     : V = List.reduce Flags.union enforcedVals
@@ -139,32 +157,30 @@ module private AttributeConformance =
             warning
 
     let checkVal (g: TcGlobals) (implVal: Val) (sigVal: Val) (fallback: range) =
-        // External consumers see what the .fsi declares. Check the SIG's
-        // accessibility (not the impl's) because the impl may default to
-        // public in the .fs source even when the .fsi narrows it to internal.
-        if sigVal.Accessibility.IsPublic then
-            let enforcedFlagsOnVal (v: Val) =
-                ValHasWellKnownAttribute g enforcedValsMask v |> ignore // forceload
-                v.ValAttribs.Flags |> Flags.intersect enforcedValsMask
-            checkEnforced (emitter g) enforcedFlagsOnVal enforcedVals
-                (fun (v: Val)    -> v.Attribs)
-                (classifyValAttrib g)
-                (fun (v: Val)    -> v.DisplayName)
-                implVal sigVal fallback
+        // Enforce for every val that has a paired .fsi declaration regardless
+        // of accessibility: internal symbols also feed cross-file (and
+        // InternalsVisibleTo) typechecking, so the contract divergence applies.
+        let enforcedFlagsOnVal (v: Val) =
+            ValHasWellKnownAttribute g enforcedValsMask v |> ignore // forceload
+            v.ValAttribs.Flags |> Flags.intersect enforcedValsMask
+        checkEnforced (emitter g) enforcedFlagsOnVal enforcedVals
+            (fun (v: Val)    -> v.Attribs)
+            (classifyValAttrib g)
+            (fun (v: Val)    -> v.DisplayName)
+            implVal sigVal fallback
 
     let checkEntity (g: TcGlobals) (implEntity: Entity) (sigEntity: Entity) (fallback: range) =
-        // External consumers see what the .fsi declares. Check the SIG's
-        // accessibility (not the impl's) because the impl may default to
-        // public in the .fs source even when the .fsi narrows it to internal.
-        if sigEntity.Accessibility.IsPublic then
-            let enforcedFlagsOnEntity (e: Entity) =
-                EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
-                e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
-            checkEnforced (emitter g) enforcedFlagsOnEntity enforcedEntities
-                (fun (e: Entity) -> e.Attribs)
-                (classifyEntityAttrib g)
-                (fun (e: Entity) -> e.DisplayName)
-                implEntity sigEntity fallback
+        // Enforce for every entity that has a paired .fsi declaration regardless
+        // of accessibility: internal symbols also feed cross-file (and
+        // InternalsVisibleTo) typechecking, so the contract divergence applies.
+        let enforcedFlagsOnEntity (e: Entity) =
+            EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
+            e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
+        checkEnforced (emitter g) enforcedFlagsOnEntity enforcedEntities
+            (fun (e: Entity) -> e.Attribs)
+            (classifyEntityAttrib g)
+            (fun (e: Entity) -> e.DisplayName)
+            implEntity sigEntity fallback
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
