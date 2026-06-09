@@ -68,6 +68,8 @@ module private AttributeConformance =
         V.WarnOnWithoutNullArgumentAttribute
         V.CLIEventAttribute
         V.ExtensionAttribute
+        V.ParamArrayAttribute
+        V.LiteralAttribute
     ]
 
     /// Entity (type/module) attributes with the same rule as above.
