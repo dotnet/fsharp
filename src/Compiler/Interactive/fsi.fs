@@ -1876,9 +1876,15 @@ type internal FsiDynamicCompiler
         let manifest =
             let manifest = ilxMainModule.Manifest.Value
 
+            let hasUserDebuggableAttr =
+                manifest.CustomAttrs.AsList()
+                |> List.exists (fun a -> a.Method.DeclaringType.TypeRef.FullName = "System.Diagnostics.DebuggableAttribute")
+
             let attrs =
                 [
                     tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName tcConfigB.fsiMultiAssemblyEmit)
+                    if generateDebugInfo && not hasUserDebuggableAttr then
+                        tcGlobals.mkDebuggableAttributeV2 (tcConfigB.jitTracking, true)
                     yield! manifest.CustomAttrs.AsList()
                 ]
 
