@@ -462,3 +462,21 @@ type R = { X: int }
 """
         compileSigImpl sigSrc implSrc
         |> withDiagnosticMessageMatches "Struct"
+
+    [<Fact>]
+    let ``RequireQualifiedAccess on nested module: impl-only fires FS3888`` () =
+        let sigSrc = """
+module M
+module Inner =
+    val x: int
+"""
+        let implSrc = """
+module M
+[<RequireQualifiedAccess>]
+module Inner =
+    let x = 42
+"""
+        compileSigImpl sigSrc implSrc
+        |> shouldSucceed
+        |> withWarningCode 3888
+        |> withDiagnosticMessageMatches "RequireQualifiedAccess"

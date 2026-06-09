@@ -157,10 +157,11 @@ module private AttributeConformance =
             implVal sigVal fallback
 
     let checkEntity (g: TcGlobals) (implEntity: Entity) (sigEntity: Entity) (fallback: range) =
-        // Skip if the sig hides the representation (e.g. `type internal T` in .fsi
-        // vs a DU in .fs). Attributes like [<NoEquality>] / [<StructuralEquality>]
-        // syntactically cannot be applied to opaque type declarations.
-        if not sigEntity.IsHiddenReprTycon then
+        // Skip when the sig declares a non-module entity with hidden representation
+        // (e.g. `type internal T` opaque in .fsi vs DU in .fs): structural-equality
+        // / NoEquality attributes can't be applied to opaque type declarations.
+        // Modules report IsHiddenReprTycon=true but accept RequireQualifiedAccess.
+        if sigEntity.IsModuleOrNamespace || not sigEntity.IsHiddenReprTycon then
             let enforcedFlagsOnEntity (e: Entity) =
                 EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
                 e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
