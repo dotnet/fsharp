@@ -1,0 +1,3212 @@
+module internal FSharp.Compiler.IlxDeltaEmitter
+
+open System
+open System.Collections.Generic
+open System.Collections.Immutable
+open System.IO
+open System.Linq
+open System.Reflection.Metadata
+open System.Reflection.Metadata.Ecma335
+open System.Reflection
+open System.Reflection.Emit
+open System.Reflection.PortableExecutable
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.BinaryConstants
+open FSharp.Compiler.AbstractIL.ILDeltaHandles
+open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.HotReload
+open FSharp.Compiler.HotReload.SymbolChanges
+open FSharp.Compiler.HotReload.SymbolMatcher
+open FSharp.Compiler.HotReloadBaseline
+open FSharp.Compiler.HotReloadPdb
+open FSharp.Compiler.IlxDeltaStreams
+open FSharp.Compiler.CodeGen.FSharpDefinitionIndex
+open FSharp.Compiler.SynthesizedTypeMaps
+open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.TypedTreeDiff
+open Internal.Utilities
+open FSharp.Compiler.EnvironmentHelpers
+
+module MetadataWriter = FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
+open MetadataWriter
+open FSharp.Compiler.CodeGen.DeltaMetadataTables
+open FSharp.Compiler.CodeGen.DeltaMetadataTypes
+
+exception HotReloadUnsupportedEditException of string
+
+module ILWriter = FSharp.Compiler.AbstractIL.ILBinaryWriter
+let private normalizeGeneratedFieldName (name: string) =
+    match name.IndexOf('@') with
+    | -1 -> name
+    | idx when idx > 0 -> name.Substring(0, idx)
+    | _ -> name
+
+/// Converts an SRM EntityHandle to our TypeDefOrRef type for EventType fields
+let private entityHandleToTypeDefOrRef (handle: EntityHandle) : TypeDefOrRef =
+    let rowId = MetadataTokens.GetRowNumber handle
+    match handle.Kind with
+    | HandleKind.TypeDefinition -> TDR_TypeDef(TypeDefHandle rowId)
+    | HandleKind.TypeReference -> TDR_TypeRef(TypeRefHandle rowId)
+    | HandleKind.TypeSpecification -> TDR_TypeSpec(TypeSpecHandle rowId)
+    | _ -> TDR_TypeDef(TypeDefHandle 0) // Nil handle maps to TypeDef 0
+
+/// Converts SRM ExceptionRegion to our IlExceptionRegion type
+let private convertExceptionRegions (regions: ImmutableArray<ExceptionRegion>) : IlExceptionRegion[] =
+    if regions.IsDefaultOrEmpty then
+        [||]
+    else
+        regions.ToArray()
+        |> Array.map (fun region ->
+            let kind =
+                match region.Kind with
+                | ExceptionRegionKind.Catch -> IlExceptionRegionKind.Catch
+                | ExceptionRegionKind.Filter -> IlExceptionRegionKind.Filter
+                | ExceptionRegionKind.Finally -> IlExceptionRegionKind.Finally
+                | ExceptionRegionKind.Fault -> IlExceptionRegionKind.Fault
+                | _ -> IlExceptionRegionKind.Catch
+            let catchToken =
+                if region.CatchType.IsNil then 0
+                else MetadataTokens.GetToken(region.CatchType)
+            {
+                IlExceptionRegion.Kind = kind
+                TryOffset = region.TryOffset
+                TryLength = region.TryLength
+                HandlerOffset = region.HandlerOffset
+                HandlerLength = region.HandlerLength
+                CatchTypeToken = catchToken
+                FilterOffset = region.FilterOffset
+            })
+
+/// Represents the emitted artifacts for a hot reload delta.
+/// This is the primary output from IlxDeltaEmitter, containing all deltas needed
+/// for MetadataUpdater.ApplyUpdate.
+type IlxDelta =
+    {
+        Metadata: byte[]
+        IL: byte[]
+        Pdb: byte[] option
+        /// EncLog entries using TableName from BinaryConstants for type safety
+        EncLog: (TableName * int * EditAndContinueOperation) array
+        /// EncMap entries using TableName from BinaryConstants for type safety
+        EncMap: (TableName * int) array
+        UpdatedTypeTokens: int list
+        UpdatedMethodTokens: int list
+        AddedOrChangedMethods: HotReloadBaseline.AddedOrChangedMethodInfo list
+        MethodBodies: MethodBodyUpdate list
+        StandaloneSignatures: StandaloneSignatureUpdate list
+        GenerationId: Guid
+        BaseGenerationId: Guid
+        UserStringUpdates: (int * int * string) list
+        MethodDefinitionRows: MethodDefinitionRowInfo list
+        UpdatedBaseline: FSharpEmitBaseline option
+    }
+
+/// Request payload used when producing a delta. This will accumulate more fields as the emitter is implemented.
+type IlxDeltaRequest =
+    {
+        Baseline: FSharpEmitBaseline
+        UpdatedTypes: string list
+        UpdatedMethods: MethodDefinitionKey list
+        UpdatedAccessors: AccessorUpdate list
+        Module: ILModuleDef
+        SymbolChanges: FSharpSymbolChanges option
+        CurrentGeneration: int
+        PreviousGenerationId: Guid option
+        SynthesizedNames: FSharpSynthesizedTypeMaps option
+    }
+
+type private MethodMetadataInfo =
+    MethodAttributes * MethodImplAttributes * string * byte[] * StringOffset option * BlobOffset option
+
+
+[<RequireQualifiedAccess>]
+type internal EntityTokenRemapKind =
+    | TypeDef
+    | FieldDef
+    | MethodDef
+    | MemberRef
+    | MethodSpec
+    | TypeRef
+    | Event
+    | Property
+    | AssemblyRef
+    | Passthrough
+
+let internal classifyEntityTokenRemapKind (token: int) : EntityTokenRemapKind =
+    match token &&& 0xFF000000 with
+    | 0x02000000 -> EntityTokenRemapKind.TypeDef
+    | 0x04000000 -> EntityTokenRemapKind.FieldDef
+    | 0x06000000 -> EntityTokenRemapKind.MethodDef
+    | 0x0A000000 -> EntityTokenRemapKind.MemberRef
+    | 0x2B000000 -> EntityTokenRemapKind.MethodSpec
+    | 0x01000000 -> EntityTokenRemapKind.TypeRef
+    | 0x14000000 -> EntityTokenRemapKind.Event
+    | 0x17000000 -> EntityTokenRemapKind.Property
+    | 0x23000000 -> EntityTokenRemapKind.AssemblyRef
+    // Existing baseline tables that can legitimately appear in IL but do not participate
+    // in delta remapping. Keep these explicit so new table tags fail closed by default.
+    | 0x00000000
+    | 0x11000000
+    | 0x1A000000
+    | 0x1B000000 ->
+        EntityTokenRemapKind.Passthrough
+    | tableTag ->
+        raise (
+            HotReloadUnsupportedEditException(
+                sprintf
+                    "Unsupported metadata token table 0x%02X in method-body remap (token=0x%08X). Please rebuild."
+                    (tableTag >>> 24)
+                    token
+            )
+        )
+
+/// Helper that produces an empty delta payload.
+let private emptyDelta: IlxDelta =
+    {
+        Metadata = Array.empty
+        IL = Array.empty
+        Pdb = None
+        EncLog = Array.empty
+        EncMap = Array.empty
+        UpdatedTypeTokens = []
+        UpdatedMethodTokens = []
+        AddedOrChangedMethods = []
+        MethodBodies = []
+        StandaloneSignatures = []
+        GenerationId = Guid.Empty
+        BaseGenerationId = Guid.Empty
+        UserStringUpdates = []
+        MethodDefinitionRows = []
+        UpdatedBaseline = None
+    }
+
+let private defaultWriterOptions (ilg: ILGlobals) (checksumAlgorithm: HashAlgorithm) : ILWriter.options =
+    // ILBinaryWriter insists on having an output path even when we emit to memory. Generate a
+    // unique, throwaway file name per invocation so parallel sessions never collide, and so we
+    // leave a breadcrumb for debugging when traces mention the synthetic assembly.
+    let scratchDll =
+        let fileName = sprintf "fsharp-hotreload-%s.dll" (System.Guid.NewGuid().ToString("N"))
+        Path.Combine(Path.GetTempPath(), fileName)
+
+    let scratchPdb =
+        match Path.ChangeExtension(scratchDll, ".pdb") with
+        | null -> scratchDll + ".pdb"
+        | path -> path
+
+    {
+        ilg = ilg
+        outfile = scratchDll
+        pdbfile = Some scratchPdb
+        portablePDB = true
+        embeddedPDB = false
+        embedAllSource = false
+        embedSourceList = []
+        allGivenSources = []
+        sourceLink = ""
+        checksumAlgorithm = checksumAlgorithm
+        signer = None
+        emitTailcalls = false
+        deterministic = true
+        dumpDebugInfo = false
+        referenceAssemblyOnly = false
+        referenceAssemblyAttribOpt = None
+        referenceAssemblySignatureHash = None
+        pathMap = PathMap.empty
+    }
+
+let private opCodeLookup : Lazy<Dictionary<int, OpCode>> =
+    lazy
+        (let dict = Dictionary<int, OpCode>()
+         for field in typeof<OpCodes>.GetFields(BindingFlags.Public ||| BindingFlags.Static) do
+             let op = field.GetValue(null) :?> OpCode
+             let value = int (uint16 op.Value)
+             if not (dict.ContainsKey(value)) then
+                 dict[value] <- op
+         dict)
+
+let private traceFlag name = lazy (isEnvVarTruthy name)
+
+/// Trace flags for hot reload debugging - controlled via environment variables
+let private traceUserStringUpdates = traceFlag "FSHARP_HOTRELOAD_TRACE_STRINGS"
+let private traceSynthesizedMappings = traceFlag "FSHARP_HOTRELOAD_TRACE_SYNTHESIZED"
+let private traceMethodUpdates = traceFlag "FSHARP_HOTRELOAD_TRACE_METHODS"
+let private traceMetadata = traceFlag "FSHARP_HOTRELOAD_TRACE_METADATA"
+let private traceHeapOffsets = traceFlag "FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS"
+
+/// Deduplicates method keys while preserving order
+let private dedupeMethodKeys (keys: MethodDefinitionKey list) =
+    let seen = HashSet<MethodDefinitionKey>(HashIdentity.Structural)
+    keys
+    |> List.fold (fun acc key -> if seen.Add key then key :: acc else acc) []
+    |> List.rev
+
+let private rewriteMethodBody (remapUserString: int -> int) (remapEntityToken: int -> int) (body: MethodBodyBlock) =
+    let ilBytes = body.GetILBytes().ToArray()
+    let rewritten = Array.copy ilBytes
+    let referencedMethodSpecs = HashSet<int>()
+    let mutable offset = 0
+    let length = ilBytes.Length
+
+    let advance count = offset <- offset + count
+
+    while offset < length do
+        let opcodeValue, size =
+            let first = int ilBytes.[offset]
+            if first = 0xFE then
+                let second = int ilBytes.[offset + 1]
+                ((0xFE00 ||| second), 2)
+            else
+                (first, 1)
+        advance size
+
+        let operandType =
+            match opCodeLookup.Value.TryGetValue opcodeValue with
+            | true, op -> op.OperandType
+            | _ -> OperandType.InlineNone
+
+        let operandStart = offset
+
+        let inline readInt32 () =
+            let value = BitConverter.ToInt32(ilBytes, operandStart)
+            advance 4
+            value
+
+        let inline readInt16 () =
+            let value = BitConverter.ToInt16(ilBytes, operandStart)
+            advance 2
+            value
+
+        let inline readSByte () =
+            let value = sbyte ilBytes.[operandStart]
+            advance 1
+            value
+
+        let inline readByte () =
+            let value = ilBytes.[operandStart]
+            advance 1
+            value
+
+        match operandType with
+        | OperandType.InlineNone -> ()
+        | OperandType.ShortInlineI -> readSByte () |> ignore
+        | OperandType.InlineI -> readInt32 () |> ignore
+        | OperandType.InlineI8 -> advance 8
+        | OperandType.ShortInlineR -> advance 4
+        | OperandType.InlineR -> advance 8
+        | OperandType.InlineBrTarget -> readInt32 () |> ignore
+        | OperandType.ShortInlineBrTarget -> readSByte () |> ignore
+        | OperandType.ShortInlineVar -> readByte () |> ignore
+        | OperandType.InlineVar -> readInt16 () |> ignore
+        | OperandType.InlineString ->
+            let original = readInt32 ()
+            let updated = remapUserString original
+            let tokenBytes = BitConverter.GetBytes(updated : int)
+            Buffer.BlockCopy(tokenBytes, 0, rewritten, operandStart, 4)
+        | OperandType.InlineField
+        | OperandType.InlineMethod
+        | OperandType.InlineSig
+        | OperandType.InlineTok
+        | OperandType.InlineType ->
+            let original = readInt32 ()
+            let updated = remapEntityToken original
+            if original <> updated then
+                let tokenBytes = BitConverter.GetBytes(updated : int)
+                Buffer.BlockCopy(tokenBytes, 0, rewritten, operandStart, 4)
+            if (updated &&& 0xFF000000) = 0x2B000000 then
+                referencedMethodSpecs.Add(updated) |> ignore
+        | OperandType.InlineSwitch ->
+            let count = readInt32 ()
+            advance (count * 4)
+        | OperandType.InlinePhi ->
+            let count = int (readByte ())
+            advance (count * 2)
+        | _ -> ()
+
+    rewritten, (referencedMethodSpecs |> Seq.toList)
+
+/// Remaps a TypeDefOrRefOrSpec coded index (ECMA-335 II.23.2.8) using the entity-token remapper.
+/// TypeSpec rows cannot be appended by the delta writer yet; they pass through unchanged, matching
+/// MemberRef parent handling.
+let private remapTypeDefOrRefCodedIndexWith (remapEntityToken: int -> int) (coded: int) : int =
+    let rowId = coded >>> 2
+
+    if rowId = 0 then
+        coded
+    else
+        match coded &&& 0x3 with
+        | 0 -> (((remapEntityToken (0x02000000 ||| rowId)) &&& 0x00FFFFFF) <<< 2)
+        | 1 -> (((remapEntityToken (0x01000000 ||| rowId)) &&& 0x00FFFFFF) <<< 2) ||| 1
+        | _ -> coded
+
+/// Rewrites the TypeDefOrRefOrSpec coded indexes embedded in an ECMA-335 signature blob so the blob
+/// can be stored in a delta against the baseline metadata tables.
+///
+/// Signature blobs captured from the in-memory recompile embed TypeDef/TypeRef row ids of that
+/// compile. When the baseline tables have a different shape (for example SDK-built baselines carry
+/// import-scope TypeRefs that the in-memory rewrite does not regenerate), copying the blob raw makes
+/// its coded indexes resolve to arbitrary baseline rows - observed at runtime as
+/// "The generic type 'IntrinsicOperators' was used with the wrong number of generic arguments".
+/// Walks the signature grammar (II.23.2) and remaps every embedded coded index; fails closed on
+/// unknown element types.
+let internal remapSignatureBlobWith (remapTypeDefOrRefCodedIndex: int -> int) (signature: byte[]) : byte[] =
+    if isNull (box signature) || signature.Length = 0 then
+        signature
+    else
+        let builder = BlobBuilder()
+        let mutable pos = 0
+
+        let fail (message: string) : 'T =
+            raise (
+                HotReloadUnsupportedEditException(
+                    sprintf
+                        "Unsupported signature blob during delta remap at offset %d: %s. Please rebuild."
+                        pos
+                        message
+                )
+            )
+
+        let peek () =
+            if pos >= signature.Length then
+                fail "unexpected end of signature"
+            else
+                int signature.[pos]
+
+        let readByteValue () =
+            let value = peek ()
+            pos <- pos + 1
+            value
+
+        let copyByte () = builder.WriteByte(byte (readByteValue ()))
+
+        let compressedLength (first: int) =
+            if first &&& 0x80 = 0 then 1
+            elif first &&& 0xC0 = 0x80 then 2
+            elif first &&& 0xE0 = 0xC0 then 4
+            else fail (sprintf "invalid compressed integer lead byte 0x%02X" first)
+
+        let readCompressedUInt () =
+            let first = readByteValue ()
+            match compressedLength first with
+            | 1 -> first
+            | 2 -> ((first &&& 0x3F) <<< 8) ||| readByteValue ()
+            | _ ->
+                let b2 = readByteValue ()
+                let b3 = readByteValue ()
+                let b4 = readByteValue ()
+                ((first &&& 0x1F) <<< 24) ||| (b2 <<< 16) ||| (b3 <<< 8) ||| b4
+
+        // Copies a compressed (possibly signed) integer without re-encoding.
+        let copyCompressed () =
+            let length = compressedLength (peek ())
+            for _ in 1..length do
+                copyByte ()
+
+        let remapCodedIndex () =
+            let coded = readCompressedUInt ()
+            builder.WriteCompressedInteger(remapTypeDefOrRefCodedIndex coded)
+
+        // CMOD_REQD/CMOD_OPT carry a TypeDefOrRefOrSpec coded index; PINNED is a bare prefix.
+        let rec copyCustomModsAndConstraints () =
+            if pos < signature.Length then
+                match peek () with
+                | 0x1F
+                | 0x20 ->
+                    copyByte ()
+                    remapCodedIndex ()
+                    copyCustomModsAndConstraints ()
+                | 0x45 ->
+                    copyByte ()
+                    copyCustomModsAndConstraints ()
+                | _ -> ()
+
+        let rec copyType () =
+            copyCustomModsAndConstraints ()
+
+            match readByteValue () with
+            // VOID and primitive element types, TYPEDBYREF, I, U, OBJECT
+            | (0x01 | 0x02 | 0x03 | 0x04 | 0x05 | 0x06 | 0x07 | 0x08 | 0x09 | 0x0A | 0x0B | 0x0C | 0x0D | 0x0E | 0x16 | 0x18 | 0x19 | 0x1C) as code ->
+                builder.WriteByte(byte code)
+            // PTR, BYREF, SZARRAY wrap a single type
+            | (0x0F | 0x10 | 0x1D) as code ->
+                builder.WriteByte(byte code)
+                copyType ()
+            // VALUETYPE, CLASS carry a TypeDefOrRefOrSpec coded index
+            | (0x11 | 0x12) as code ->
+                builder.WriteByte(byte code)
+                remapCodedIndex ()
+            // VAR, MVAR carry a generic parameter ordinal
+            | (0x13 | 0x1E) as code ->
+                builder.WriteByte(byte code)
+                copyCompressed ()
+            // ARRAY: type, rank, sizes, lower bounds
+            | 0x14 ->
+                builder.WriteByte 0x14uy
+                copyType ()
+                copyCompressed () // rank
+                let numSizes = readCompressedUInt ()
+                builder.WriteCompressedInteger numSizes
+
+                for _ in 1..numSizes do
+                    copyCompressed ()
+
+                let numLoBounds = readCompressedUInt ()
+                builder.WriteCompressedInteger numLoBounds
+
+                for _ in 1..numLoBounds do
+                    copyCompressed () // signed; copied verbatim
+
+            // GENERICINST: (CLASS | VALUETYPE), coded index, argument count, arguments
+            | 0x15 ->
+                builder.WriteByte 0x15uy
+
+                match readByteValue () with
+                | (0x11 | 0x12) as kind ->
+                    builder.WriteByte(byte kind)
+                    remapCodedIndex ()
+                    let argCount = readCompressedUInt ()
+                    builder.WriteCompressedInteger argCount
+
+                    for _ in 1..argCount do
+                        copyType ()
+                | kind -> fail (sprintf "unexpected GENERICINST kind 0x%02X" kind)
+            // FNPTR wraps a full method signature
+            | 0x1B ->
+                builder.WriteByte 0x1Buy
+                copyMethodSignature ()
+            | code -> fail (sprintf "unexpected signature element type 0x%02X" code)
+
+        and copyMethodSignature () =
+            let callingConvention = readByteValue ()
+            builder.WriteByte(byte callingConvention)
+
+            if callingConvention &&& 0x10 <> 0 then
+                copyCompressed () // generic parameter count
+
+            let paramCount = readCompressedUInt ()
+            builder.WriteCompressedInteger paramCount
+            copyType () // return type
+
+            let mutable remaining = paramCount
+
+            while remaining > 0 do
+                if peek () = 0x41 then
+                    copyByte () // SENTINEL (vararg) does not consume a parameter slot
+                else
+                    copyType ()
+                    remaining <- remaining - 1
+
+        (match peek () with
+         // FieldSig
+         | 0x06 ->
+             copyByte ()
+             copyType ()
+         // LocalVarSig
+         | 0x07 ->
+             copyByte ()
+             let count = readCompressedUInt ()
+             builder.WriteCompressedInteger count
+
+             for _ in 1..count do
+                 copyType ()
+         // MethodSpec instantiation (GENERICINST; not a valid method calling convention)
+         | 0x0A ->
+             copyByte ()
+             let argCount = readCompressedUInt ()
+             builder.WriteCompressedInteger argCount
+
+             for _ in 1..argCount do
+                 copyType ()
+         // MethodDefSig/MethodRefSig/PropertySig
+         | _ -> copyMethodSignature ())
+
+        if pos <> signature.Length then
+            fail "trailing bytes in signature"
+
+        builder.ToArray()
+
+let private buildUpdatedTypeTokens
+    (tryGetBaselineTypeName: string -> string)
+    (baselineTypeTokens: Map<string, int>)
+    (updatedTypes: string list)
+    (symbolChangeTypeNames: string list)
+    (resolvedMethods: (ILTypeDef list * ILTypeDef * ILMethodDef * MethodDefinitionKey) list)
+    =
+    let methodTypeNames =
+        resolvedMethods
+        |> List.map (fun (enclosing, typeDef, _, _) ->
+            let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+            tryGetBaselineTypeName typeRef.FullName)
+
+    (updatedTypes @ symbolChangeTypeNames @ methodTypeNames)
+    |> List.map tryGetBaselineTypeName
+    |> List.distinct
+    |> List.choose (fun typeName -> baselineTypeTokens |> Map.tryFind typeName)
+
+let private buildUpdatedBaseline
+    (updatedBaselineCore: FSharpEmitBaseline)
+    (propertyMapRowsSnapshot: PropertyMapRowInfo list)
+    (eventMapRowsSnapshot: EventMapRowInfo list)
+    (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
+    (methodTokenToKey: Dictionary<int, MethodDefinitionKey>)
+    (addedMethodDeltaTokens: Dictionary<MethodDefinitionKey, int>)
+    (addedPropertyDeltaTokens: Dictionary<PropertyDefinitionKey, int>)
+    (addedEventDeltaTokens: Dictionary<EventDefinitionKey, int>)
+    =
+    let addPropertyMapEntry (entries: Map<string, int>) (row: PropertyMapRowInfo) =
+        if row.IsAdded then
+            entries |> Map.add row.DeclaringType row.RowId
+        else
+            entries
+
+    let addEventMapEntry (entries: Map<string, int>) (row: EventMapRowInfo) =
+        if row.IsAdded then
+            entries |> Map.add row.DeclaringType row.RowId
+        else
+            entries
+
+    let extendMethodSemanticsMap
+        (entries: Map<MethodDefinitionKey, MethodSemanticsEntry list>)
+        (row: MethodSemanticsMetadataUpdate)
+        =
+        if row.IsAdded then
+            match methodTokenToKey.TryGetValue row.MethodToken with
+            | true, methodKey ->
+                let newEntry =
+                    { MethodSemanticsEntry.RowId = row.RowId
+                      Attributes = row.Attributes
+                      Association = row.AssociationInfo }
+
+                let updatedList =
+                    match entries |> Map.tryFind methodKey with
+                    | Some existing ->
+                        newEntry :: existing
+                        |> List.distinctBy (fun entry -> entry.RowId)
+                    | None -> [ newEntry ]
+
+                entries |> Map.add methodKey updatedList
+            | _ -> entries
+        else
+            entries
+
+    let updatedPropertyMapEntries =
+        propertyMapRowsSnapshot
+        |> List.fold addPropertyMapEntry updatedBaselineCore.PropertyMapEntries
+
+    let updatedEventMapEntries =
+        eventMapRowsSnapshot
+        |> List.fold addEventMapEntry updatedBaselineCore.EventMapEntries
+
+    let updatedMethodSemanticsEntries =
+        methodSemanticsRowsSnapshot
+        |> List.fold extendMethodSemanticsMap updatedBaselineCore.MethodSemanticsEntries
+
+    let updatedMethodTokenMap =
+        addedMethodDeltaTokens
+        |> Seq.fold (fun acc (KeyValue(key, token)) -> acc |> Map.add key token) updatedBaselineCore.MethodTokens
+
+    let updatedPropertyTokenMap =
+        addedPropertyDeltaTokens
+        |> Seq.fold (fun acc (KeyValue(key, token)) -> acc |> Map.add key token) updatedBaselineCore.PropertyTokens
+
+    let updatedEventTokenMap =
+        addedEventDeltaTokens
+        |> Seq.fold (fun acc (KeyValue(key, token)) -> acc |> Map.add key token) updatedBaselineCore.EventTokens
+
+    { updatedBaselineCore with
+        MethodTokens = updatedMethodTokenMap
+        PropertyTokens = updatedPropertyTokenMap
+        EventTokens = updatedEventTokenMap
+        PropertyMapEntries = updatedPropertyMapEntries
+        EventMapEntries = updatedEventMapEntries
+        MethodSemanticsEntries = updatedMethodSemanticsEntries }
+
+
+let private tryBuildMethodUpdateInput
+    (traceMethodUpdates: bool)
+    (metadataReader: MetadataReader)
+    (peReader: PEReader)
+    (baselineMethodTokens: Map<MethodDefinitionKey, int>)
+    (addedMethodTokens: Dictionary<MethodDefinitionKey, int>)
+    (addedMethodDeltaTokens: Dictionary<MethodDefinitionKey, int>)
+    (key: MethodDefinitionKey)
+    : struct (MethodDefinitionKey * int * MethodDefinitionHandle * MethodDefinition * MethodBodyBlock) option =
+
+    let tryCreateInput (methodToken: int) (deltaToken: int) (isAddedMethod: bool) =
+        let methodHandle = MetadataTokens.MethodDefinitionHandle methodToken
+
+        if methodHandle.IsNil then
+            None
+        else
+            let methodDef = metadataReader.GetMethodDefinition methodHandle
+            let body = peReader.GetMethodBody(methodDef.RelativeVirtualAddress)
+
+            if traceMethodUpdates then
+                if isAddedMethod then
+                    printfn
+                        "[fsharp-hotreload][method-add] %s::%s token=0x%08X"
+                        key.DeclaringType
+                        key.Name
+                        deltaToken
+                else
+                    printfn
+                        "[fsharp-hotreload][method-update] %s::%s token=0x%08X"
+                        key.DeclaringType
+                        key.Name
+                        methodToken
+
+            Some(struct (key, deltaToken, methodHandle, methodDef, body))
+
+    match baselineMethodTokens |> Map.tryFind key with
+    | Some methodToken ->
+        tryCreateInput methodToken methodToken false
+    | None ->
+        match addedMethodTokens.TryGetValue key, addedMethodDeltaTokens.TryGetValue key with
+        | (true, methodToken), (true, deltaToken) ->
+            tryCreateInput methodToken deltaToken true
+        | _ ->
+            None
+let private buildReferenceRows
+    (traceMetadata: bool)
+    (typeReferenceRows: ResizeArray<TypeReferenceRowInfo>)
+    (memberReferenceRows: ResizeArray<MemberReferenceRowInfo>)
+    (assemblyReferenceRows: ResizeArray<AssemblyReferenceRowInfo>)
+    (methodSpecificationRowsSnapshot: MethodSpecificationRowInfo list)
+    (customAttributeRowList: CustomAttributeRowInfo list)
+    =
+    let typeReferenceRowList =
+        typeReferenceRows
+        |> Seq.sortBy (fun row -> row.RowId)
+        |> Seq.toList
+
+    let memberReferenceRowList =
+        memberReferenceRows
+        |> Seq.sortBy (fun row -> row.RowId)
+        |> Seq.toList
+
+    let assemblyReferenceRowList =
+        assemblyReferenceRows
+        |> Seq.sortBy (fun row -> row.RowId)
+        |> Seq.toList
+
+    if traceMetadata then
+        printfn
+            "[fsharp-hotreload][metadata] row-counts typeRef=%d memberRef=%d methodSpec=%d assemblyRef=%d customAttr=%d"
+            typeReferenceRowList.Length
+            memberReferenceRowList.Length
+            methodSpecificationRowsSnapshot.Length
+            assemblyReferenceRowList.Length
+            customAttributeRowList.Length
+
+        for row in typeReferenceRowList do
+            printfn
+                "[fsharp-hotreload][metadata] typeref rowId=%d name=%s scope=%A row=%d"
+                row.RowId
+                row.Name
+                row.ResolutionScope
+                row.ResolutionScope.RowId
+
+        for row in memberReferenceRowList do
+            printfn
+                "[fsharp-hotreload][metadata] memberref rowId=%d name=%s parent=%A row=%d"
+                row.RowId
+                row.Name
+                row.Parent
+                row.Parent.RowId
+
+        for row in methodSpecificationRowsSnapshot do
+            printfn
+                "[fsharp-hotreload][metadata] methodspec rowId=%d methodTag=%d methodRow=%d"
+                row.RowId
+                row.Method.CodedTag
+                row.Method.RowId
+
+        for row in assemblyReferenceRowList do
+            printfn "[fsharp-hotreload][metadata] assemblyref rowId=%d name=%s" row.RowId row.Name
+
+    typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList
+
+let private emitMetadataDelta
+    (traceMetadata: bool)
+    (moduleName: string)
+    (baselineModuleNameOffset: StringOffset option)
+    (currentGeneration: int)
+    (encId: Guid)
+    (encBaseId: Guid)
+    (moduleMvid: Guid)
+    (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
+    (parameterDefinitionRowsSnapshot: ParameterDefinitionRowInfo list)
+    (typeReferenceRowList: TypeReferenceRowInfo list)
+    (memberReferenceRowList: MemberReferenceRowInfo list)
+    (methodSpecificationRowsSnapshot: MethodSpecificationRowInfo list)
+    (assemblyReferenceRowList: AssemblyReferenceRowInfo list)
+    (propertyDefinitionRowsSnapshot: PropertyDefinitionRowInfo list)
+    (eventDefinitionRowsSnapshot: EventDefinitionRowInfo list)
+    (propertyMapRowsSnapshot: PropertyMapRowInfo list)
+    (eventMapRowsSnapshot: EventMapRowInfo list)
+    (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
+    (standaloneSignatures: StandaloneSignatureUpdate list)
+    (customAttributeRowList: CustomAttributeRowInfo list)
+    (userStringEntries: (int * int * string) list)
+    (methodUpdates: MethodMetadataUpdate list)
+    (baselineHeapOffsets: MetadataHeapOffsets)
+    (baselineTableRowCounts: int[])
+    =
+    let metadataDelta =
+        MetadataWriter.emitWithReferences
+            moduleName
+            baselineModuleNameOffset
+            currentGeneration
+            encId
+            encBaseId
+            moduleMvid
+            methodDefinitionRowsSnapshot
+            parameterDefinitionRowsSnapshot
+            typeReferenceRowList
+            memberReferenceRowList
+            methodSpecificationRowsSnapshot
+            assemblyReferenceRowList
+            propertyDefinitionRowsSnapshot
+            eventDefinitionRowsSnapshot
+            propertyMapRowsSnapshot
+            eventMapRowsSnapshot
+            methodSemanticsRowsSnapshot
+            standaloneSignatures
+            customAttributeRowList
+            userStringEntries
+            methodUpdates
+            baselineHeapOffsets
+            baselineTableRowCounts
+
+    if traceMetadata then
+        let count idx = metadataDelta.TableRowCounts.[idx]
+
+        printfn
+            "[fsharp-hotreload][metadata] table-counts module=%d method=%d param=%d typeRef=%d memberRef=%d methodSpec=%d assemblyRef=%d customAttr=%d standAloneSig=%d"
+            (count TableNames.Module.Index)
+            (count TableNames.Method.Index)
+            (count TableNames.Param.Index)
+            (count TableNames.TypeRef.Index)
+            (count TableNames.MemberRef.Index)
+            (count TableNames.MethodSpec.Index)
+            (count TableNames.AssemblyRef.Index)
+            (count TableNames.CustomAttribute.Index)
+            (count TableNames.StandAloneSig.Index)
+
+    metadataDelta
+let private buildMethodUpdatesWithMetadata
+    (orderedMethodInputs: struct (MethodDefinitionKey * int * MethodDefinitionHandle * MethodDefinition * MethodBodyBlock) list)
+    (metadataReader: MetadataReader)
+    (builder: IlDeltaStreamBuilder)
+    (remapUserString: int -> int)
+    (remapEntityToken: int -> int)
+    =
+    let methodUpdatesWithDefs =
+        orderedMethodInputs
+        |> List.map (fun struct (key, methodToken, methodHandle, methodDef, body) ->
+            let ilBytes, referencedMethodSpecs = rewriteMethodBody remapUserString remapEntityToken body
+            let localSigToken =
+                if body.LocalSignature.IsNil then
+                    0
+                else
+                    let standalone = metadataReader.GetStandaloneSignature body.LocalSignature
+                    // Local signatures are emitted into the delta blob heap; remap the embedded
+                    // TypeDefOrRef coded indexes from the fresh compile to baseline rows.
+                    let signatureBytes =
+                        metadataReader.GetBlobBytes standalone.Signature
+                        |> remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken)
+
+                    builder.AddStandaloneSignature(signatureBytes)
+
+            let bodyUpdate =
+                builder.AddMethodBody(
+                    methodToken,
+                    localSigToken,
+                    ilBytes,
+                    body.MaxStack,
+                    body.LocalVariablesInitialized,
+                    convertExceptionRegions body.ExceptionRegions,
+                    remapEntityToken
+                )
+
+            // Convert SRM MethodDefinitionHandle to F# MethodDefHandle
+            let methodHandleEntity: EntityHandle = methodHandle
+            let methodRowId = MetadataTokens.GetRowNumber(methodHandleEntity)
+            ({ MethodKey = key
+               MethodToken = methodToken
+               MethodHandle = MethodDefHandle methodRowId
+               Body = bodyUpdate }, methodDef, referencedMethodSpecs))
+
+    let methodMetadataLookup =
+        let dict: Dictionary<MethodDefinitionKey, MethodMetadataInfo> = Dictionary(HashIdentity.Structural)
+        for update, methodDef, _ in methodUpdatesWithDefs do
+            let name = metadataReader.GetString methodDef.Name
+            let signature = metadataReader.GetBlobBytes methodDef.Signature
+            let nameOffset = if methodDef.Name.IsNil then None else Some (StringOffset (MetadataTokens.GetHeapOffset methodDef.Name))
+            let signatureOffset = if methodDef.Signature.IsNil then None else Some (BlobOffset (MetadataTokens.GetHeapOffset methodDef.Signature))
+            dict[update.MethodKey] <-
+                (methodDef.Attributes, methodDef.ImplAttributes, name, signature, nameOffset, signatureOffset)
+        dict
+
+    methodUpdatesWithDefs, methodMetadataLookup
+
+let private buildParameterDefinitionRowsSnapshot
+    (parameterDefinitionRowsRaw: struct (int * ParameterDefinitionKey * bool) list)
+    (parameterHandleLookup: Dictionary<ParameterDefinitionKey, ParameterHandle>)
+    (baselineParameterHandles: Map<ParameterDefinitionKey, ParameterDefinitionMetadataHandles>)
+    (syntheticParameterInfo: Dictionary<ParameterDefinitionKey, ParameterAttributes>)
+    (firstParamRowByMethod: Dictionary<MethodDefinitionKey, int>)
+    (returnParameterKeys: HashSet<ParameterDefinitionKey>)
+    (metadataReader: MetadataReader)
+    : ParameterDefinitionRowInfo list =
+    let rows =
+        parameterDefinitionRowsRaw
+        |> List.choose (fun struct (rowId, key, isAdded) ->
+            if rowId = 0 then
+                None
+            else
+                let attrs, sequence, nameOpt, resolvedOffsetOpt =
+                    match parameterHandleLookup.TryGetValue key with
+                    | true, handle when not handle.IsNil ->
+                        let parameter = metadataReader.GetParameter handle
+                        let name =
+                            if parameter.Name.IsNil then
+                                None
+                            else
+                                metadataReader.GetString parameter.Name |> Some
+                        let resolvedOffset =
+                            match baselineParameterHandles |> Map.tryFind key |> Option.bind (fun info -> info.NameOffset) with
+                            | Some offset -> Some offset
+                            | None -> if parameter.Name.IsNil then None else Some (StringOffset (MetadataTokens.GetHeapOffset parameter.Name))
+                        parameter.Attributes, int parameter.SequenceNumber, name, resolvedOffset
+                    | _ ->
+                        let attrs =
+                            match syntheticParameterInfo.TryGetValue key with
+                            | true, value -> value
+                            | _ -> ParameterAttributes.None
+                        attrs, key.SequenceNumber, None, None
+
+                match firstParamRowByMethod.TryGetValue key.Method with
+                | true, existing when existing <= rowId -> ()
+                | _ -> firstParamRowByMethod[key.Method] <- rowId
+
+                // Treat synthesized return parameter rows as added so EncLog/EncMap
+                // reflect the new Param table entry, mirroring Roslyn ENC behavior.
+                let effectiveIsAdded =
+                    if returnParameterKeys.Contains key then true else isAdded
+
+                Some
+                    { ParameterDefinitionRowInfo.Key = key
+                      RowId = rowId
+                      IsAdded = effectiveIsAdded
+                      Attributes = attrs
+                      SequenceNumber = sequence
+                      Name = nameOpt
+                      NameOffset = resolvedOffsetOpt })
+
+    if traceMethodUpdates.Value then
+        printfn "[fsharp-hotreload][param-rows] count=%d" rows.Length
+
+    rows
+
+let private buildMethodDefinitionRowsSnapshot
+    (methodDefinitionRowsRaw: struct (int * MethodDefinitionKey * bool) list)
+    (methodUpdatesWithDefs: (MethodMetadataUpdate * MethodDefinition * int list) list)
+    (methodMetadataLookup: Dictionary<MethodDefinitionKey, MethodMetadataInfo>)
+    (baselineMethodHandles: Map<MethodDefinitionKey, MethodDefinitionMetadataHandles>)
+    (firstParamRowByMethod: Dictionary<MethodDefinitionKey, int>)
+    (baselineMethodTokens: Map<MethodDefinitionKey, int>)
+    (methodDefinitionIndex: DefinitionIndex<MethodDefinitionKey>)
+    : MethodDefinitionRowInfo list =
+
+    let tryBuildMethodRow rowId key isAdded =
+        match methodMetadataLookup.TryGetValue key with
+        | true, (attrs, implAttrs, name, signature, emittedNameOffset, emittedSignatureOffset) ->
+            let baselineHandles = baselineMethodHandles |> Map.tryFind key
+            let resolvedNameOffset =
+                match baselineHandles |> Option.bind (fun info -> info.NameOffset) with
+                | Some offset -> Some offset
+                | None -> emittedNameOffset
+            let resolvedSignatureOffset =
+                match baselineHandles |> Option.bind (fun info -> info.SignatureOffset) with
+                | Some offset -> Some offset
+                | None -> emittedSignatureOffset
+            let resolvedAttributes =
+                match baselineHandles |> Option.bind (fun info -> info.Attributes) with
+                | Some value -> value
+                | None -> attrs
+            let resolvedImplAttributes =
+                match baselineHandles |> Option.bind (fun info -> info.ImplAttributes) with
+                | Some value -> value
+                | None -> implAttrs
+            let resolvedCodeRva = baselineHandles |> Option.bind (fun info -> info.Rva)
+            let baselineFirstParam =
+                baselineHandles
+                |> Option.bind (fun info -> info.FirstParameterRowId)
+
+            let firstParam =
+                match firstParamRowByMethod.TryGetValue key with
+                | true, value when value > 0 -> Some value
+                | _ ->
+                    match baselineFirstParam with
+                    | Some _ as baselineRow -> baselineRow
+                    | None -> None
+
+            Some
+                { MethodDefinitionRowInfo.Key = key
+                  RowId = rowId
+                  IsAdded = isAdded
+                  Attributes = resolvedAttributes
+                  ImplAttributes = resolvedImplAttributes
+                  Name = name
+                  NameOffset = resolvedNameOffset
+                  Signature = signature
+                  SignatureOffset = resolvedSignatureOffset
+                  FirstParameterRowId = firstParam
+                  CodeRva = resolvedCodeRva }
+        | _ -> None
+
+    let initialRows =
+        methodDefinitionRowsRaw
+        |> List.choose (fun struct (rowId, key, isAdded) -> tryBuildMethodRow rowId key isAdded)
+
+    let existingKeys = HashSet<MethodDefinitionKey>(initialRows |> Seq.map (fun row -> row.Key), HashIdentity.Structural)
+
+    let missingRows =
+        methodUpdatesWithDefs
+        |> List.choose (fun (update, _, _) ->
+            if existingKeys.Contains update.MethodKey then
+                None
+            else
+                let rowId =
+                    match baselineMethodTokens |> Map.tryFind update.MethodKey with
+                    | Some token -> token &&& 0x00FFFFFF
+                    | None -> methodDefinitionIndex.GetRowId update.MethodKey
+
+                tryBuildMethodRow rowId update.MethodKey false)
+
+    let rows = initialRows @ missingRows
+
+    if traceMethodUpdates.Value then
+        printfn "[fsharp-hotreload][method-rows] count=%d (missing=%d)" rows.Length missingRows.Length
+        printfn "[fsharp-hotreload][params] firstParamRowByMethod entries:"
+        for KeyValue(k, v) in firstParamRowByMethod do
+            printfn "  %s::%s firstParamRowId=%d" k.DeclaringType k.Name v
+        printfn "[fsharp-hotreload][methods] FirstParameterRowId after merge:"
+        for row in rows do
+            let fp = defaultArg row.FirstParameterRowId 0
+            printfn "  method=%s::%s rowId=%d firstParam=%d isAdded=%b" row.Key.DeclaringType row.Key.Name row.RowId fp row.IsAdded
+
+    rows
+
+let private buildMethodSpecificationRowsSnapshot
+    (traceMetadata: bool)
+    (methodUpdatesWithDefs: (MethodMetadataUpdate * MethodDefinition * int list) list)
+    (baselineMethodSpecRowCount: int)
+    (methodSpecRowsByToken: Dictionary<int, MethodSpecificationRowInfo>)
+    : MethodSpecificationRowInfo list =
+
+    let referencedMethodSpecTokens =
+        methodUpdatesWithDefs
+        |> List.collect (fun (_, _, methodSpecs) -> methodSpecs)
+        |> List.distinct
+
+    if traceMetadata then
+        printfn
+            "[fsharp-hotreload][metadata] methodspec candidates=%d baselineRows=%d tokens=%s"
+            referencedMethodSpecTokens.Length
+            baselineMethodSpecRowCount
+            (referencedMethodSpecTokens |> List.map (fun token -> sprintf "0x%08X" token) |> String.concat ",")
+
+    referencedMethodSpecTokens
+    |> List.choose (fun methodSpecToken ->
+        match methodSpecRowsByToken.TryGetValue methodSpecToken with
+        | true, row -> Some row
+        | _ ->
+            if traceMetadata then
+                printfn
+                    "[fsharp-hotreload][metadata] missing mapped methodspec token=0x%08X"
+                    methodSpecToken
+
+            None)
+    |> Seq.sortBy _.RowId
+    |> Seq.toList
+
+
+let private buildPropertyEventAndSemanticsRows
+    (traceMethodUpdates: bool)
+    (request: IlxDeltaRequest)
+    (metadataReader: MetadataReader)
+    (propertyDefinitionIndex: DefinitionIndex<PropertyDefinitionKey>)
+    (eventDefinitionIndex: DefinitionIndex<EventDefinitionKey>)
+    (propertyHandleLookup: Dictionary<PropertyDefinitionKey, PropertyDefinitionHandle>)
+    (eventHandleLookup: Dictionary<EventDefinitionKey, EventDefinitionHandle>)
+    (baselinePropertyHandles: Map<PropertyDefinitionKey, PropertyDefinitionMetadataHandles>)
+    (baselineEventHandles: Map<EventDefinitionKey, EventDefinitionMetadataHandles>)
+    (baselinePropertyLookup: Dictionary<string * string, PropertyDefinitionKey * int>)
+    (baselineEventLookup: Dictionary<string * string, EventDefinitionKey * int>)
+    (baselineTableRowCounts: int[])
+    (tryGetMethodToken: MethodDefinitionKey -> int option)
+    =
+    let propertyDefinitionRowsSnapshot =
+        propertyDefinitionIndex.Rows
+        |> List.choose (fun struct (rowId, key, isAdded) ->
+            match propertyHandleLookup.TryGetValue key with
+            | true, handle when not handle.IsNil ->
+                let propertyDef = metadataReader.GetPropertyDefinition handle
+                let name = metadataReader.GetString propertyDef.Name
+                let signature = metadataReader.GetBlobBytes propertyDef.Signature
+                let baselineHandles = baselinePropertyHandles |> Map.tryFind key
+                let resolvedNameOffset =
+                    match baselineHandles |> Option.bind (fun info -> info.NameOffset) with
+                    | Some offset -> Some offset
+                    | None ->
+                        if propertyDef.Name.IsNil then
+                            None
+                        else
+                            Some(StringOffset(MetadataTokens.GetHeapOffset propertyDef.Name))
+                let resolvedSignatureOffset =
+                    match baselineHandles |> Option.bind (fun info -> info.SignatureOffset) with
+                    | Some offset -> Some offset
+                    | None ->
+                        if propertyDef.Signature.IsNil then
+                            None
+                        else
+                            Some(BlobOffset(MetadataTokens.GetHeapOffset propertyDef.Signature))
+                Some
+                    { PropertyDefinitionRowInfo.Key = key
+                      RowId = rowId
+                      IsAdded = isAdded
+                      Name = name
+                      NameOffset = resolvedNameOffset
+                      Signature = signature
+                      SignatureOffset = resolvedSignatureOffset
+                      Attributes = propertyDef.Attributes }
+            | _ -> None)
+
+    if traceMethodUpdates then
+        printfn "[fsharp-hotreload][property-rows] count=%d" propertyDefinitionRowsSnapshot.Length
+
+    let eventDefinitionRowsSnapshot =
+        eventDefinitionIndex.Rows
+        |> List.choose (fun struct (rowId, key, isAdded) ->
+            match eventHandleLookup.TryGetValue key with
+            | true, handle when not handle.IsNil ->
+                let eventDef = metadataReader.GetEventDefinition handle
+                let name = metadataReader.GetString eventDef.Name
+                let resolvedNameOffset =
+                    match baselineEventHandles |> Map.tryFind key |> Option.bind (fun info -> info.NameOffset) with
+                    | Some offset -> Some offset
+                    | None ->
+                        if eventDef.Name.IsNil then
+                            None
+                        else
+                            Some(StringOffset(MetadataTokens.GetHeapOffset eventDef.Name))
+                Some
+                    { EventDefinitionRowInfo.Key = key
+                      RowId = rowId
+                      IsAdded = isAdded
+                      Name = name
+                      NameOffset = resolvedNameOffset
+                      Attributes = eventDef.Attributes
+                      EventType = entityHandleToTypeDefOrRef eventDef.Type }
+            | _ -> None)
+
+    let propertyRowsByType =
+        propertyDefinitionRowsSnapshot
+        |> Seq.groupBy (fun row -> row.Key.DeclaringType)
+        |> dict
+
+    let propertyRowsByName =
+        propertyDefinitionRowsSnapshot
+        |> Seq.groupBy (fun row -> struct (row.Key.DeclaringType, row.Key.Name))
+        |> dict
+
+    let eventRowsByType =
+        eventDefinitionRowsSnapshot
+        |> Seq.groupBy (fun row -> row.Key.DeclaringType)
+        |> dict
+
+    let eventRowsByName =
+        eventDefinitionRowsSnapshot
+        |> Seq.groupBy (fun row -> struct (row.Key.DeclaringType, row.Key.Name))
+        |> dict
+
+    let baselinePropertyMapRowCount = baselineTableRowCounts.[TableNames.PropertyMap.Index]
+    let baselineEventMapRowCount = baselineTableRowCounts.[TableNames.EventMap.Index]
+
+    let propertyMapDefinitionIndex =
+        let tryExisting typeName = request.Baseline.PropertyMapEntries |> Map.tryFind typeName
+        DefinitionIndex<string>(tryExisting, baselinePropertyMapRowCount)
+
+    let eventMapDefinitionIndex =
+        let tryExisting typeName = request.Baseline.EventMapEntries |> Map.tryFind typeName
+        DefinitionIndex<string>(tryExisting, baselineEventMapRowCount)
+
+    let propertyMapRowsSnapshot =
+        let missingTypes =
+            propertyDefinitionRowsSnapshot
+            |> Seq.filter _.IsAdded
+            |> Seq.map (fun row -> row.Key.DeclaringType)
+            |> Seq.filter (fun typeName -> not (request.Baseline.PropertyMapEntries |> Map.containsKey typeName))
+            |> Seq.distinct
+            |> Seq.toList
+
+        for typeName in missingTypes do
+            propertyMapDefinitionIndex.Add typeName |> ignore
+
+        propertyMapDefinitionIndex.Rows
+        |> List.choose (fun struct (rowId, typeName, isAdded) ->
+            let typeTokenOpt = request.Baseline.TypeTokens |> Map.tryFind typeName
+            let firstPropertyRowIdOpt =
+                match propertyRowsByType.TryGetValue typeName with
+                | true, rows ->
+                    rows
+                    |> Seq.sortBy _.RowId
+                    |> Seq.tryHead
+                    |> Option.map _.RowId
+                | _ -> None
+
+            let shouldAdd = isAdded || List.contains typeName missingTypes
+
+            match typeTokenOpt, firstPropertyRowIdOpt, shouldAdd with
+            | Some typeToken, Some firstRowId, true ->
+                Some
+                    { PropertyMapRowInfo.DeclaringType = typeName
+                      RowId = rowId
+                      TypeDefRowId = typeToken &&& 0x00FFFFFF
+                      FirstPropertyRowId = Some firstRowId
+                      IsAdded = true }
+            | _ -> None)
+
+    let eventMapRowsSnapshot =
+        let missingTypes =
+            eventDefinitionRowsSnapshot
+            |> Seq.filter _.IsAdded
+            |> Seq.map (fun row -> row.Key.DeclaringType)
+            |> Seq.filter (fun typeName -> not (request.Baseline.EventMapEntries |> Map.containsKey typeName))
+            |> Seq.distinct
+            |> Seq.toList
+
+        for typeName in missingTypes do
+            eventMapDefinitionIndex.Add typeName |> ignore
+
+        eventMapDefinitionIndex.Rows
+        |> List.choose (fun struct (rowId, typeName, isAdded) ->
+            let typeTokenOpt = request.Baseline.TypeTokens |> Map.tryFind typeName
+            let firstEventRowIdOpt =
+                match eventRowsByType.TryGetValue typeName with
+                | true, rows ->
+                    rows
+                    |> Seq.sortBy _.RowId
+                    |> Seq.tryHead
+                    |> Option.map _.RowId
+                | _ -> None
+
+            let shouldAdd = isAdded || List.contains typeName missingTypes
+
+            match typeTokenOpt, firstEventRowIdOpt, shouldAdd with
+            | Some typeToken, Some firstRowId, true ->
+                Some
+                    { EventMapRowInfo.DeclaringType = typeName
+                      RowId = rowId
+                      TypeDefRowId = typeToken &&& 0x00FFFFFF
+                      FirstEventRowId = Some firstRowId
+                      IsAdded = true }
+            | _ -> None)
+
+    let tryGetPropertyAssociation typeName propertyName =
+        match propertyRowsByName.TryGetValue(struct (typeName, propertyName)) with
+        | true, rows ->
+            rows
+            |> Seq.sortBy _.RowId
+            |> Seq.tryHead
+            |> Option.map (fun row -> struct (row.RowId, row.Key))
+        | _ ->
+            match baselinePropertyLookup.TryGetValue((typeName, propertyName)) with
+            | true, (key, rowId) -> Some(struct (rowId, key))
+            | _ -> None
+
+    let tryGetEventAssociation typeName eventName =
+        match eventRowsByName.TryGetValue(struct (typeName, eventName)) with
+        | true, rows ->
+            rows
+            |> Seq.sortBy _.RowId
+            |> Seq.tryHead
+            |> Option.map (fun row -> struct (row.RowId, row.Key))
+        | _ ->
+            match baselineEventLookup.TryGetValue((typeName, eventName)) with
+            | true, (key, rowId) -> Some(struct (rowId, key))
+            | _ -> None
+
+    let semanticsAttributeForMemberKind memberKind =
+        match memberKind with
+        | SymbolMemberKind.PropertyGet _ -> MethodSemanticsAttributes.Getter
+        | SymbolMemberKind.PropertySet _ -> MethodSemanticsAttributes.Setter
+        | SymbolMemberKind.EventAdd _ -> MethodSemanticsAttributes.Adder
+        | SymbolMemberKind.EventRemove _ -> MethodSemanticsAttributes.Remover
+        | SymbolMemberKind.EventInvoke _ -> MethodSemanticsAttributes.Raiser
+        | _ -> MethodSemanticsAttributes.Other
+
+    let accessorName memberKind =
+        match memberKind with
+        | SymbolMemberKind.PropertyGet name
+        | SymbolMemberKind.PropertySet name -> Some name
+        | SymbolMemberKind.EventAdd name
+        | SymbolMemberKind.EventRemove name
+        | SymbolMemberKind.EventInvoke name -> Some name
+        | _ -> None
+
+    let mutable nextMethodSemanticsRowId = baselineTableRowCounts.[TableNames.MethodSemantics.Index]
+
+    let methodSemanticsRowsSnapshot =
+        request.UpdatedAccessors
+        |> List.choose (fun accessor ->
+            match accessor.Method with
+            | None -> None
+            | Some methodKey ->
+                match tryGetMethodToken methodKey with
+                | None -> None
+                | Some methodToken ->
+                    let typeName = accessor.ContainingType
+                    let attrs = semanticsAttributeForMemberKind accessor.MemberKind
+                    match accessor.MemberKind, accessorName accessor.MemberKind with
+                    | (SymbolMemberKind.PropertyGet _
+                      | SymbolMemberKind.PropertySet _), Some propertyName ->
+                        match tryGetPropertyAssociation typeName propertyName with
+                        | Some(struct (propertyRowId, propertyKey)) when propertyDefinitionIndex.IsAdded propertyKey ->
+                            nextMethodSemanticsRowId <- nextMethodSemanticsRowId + 1
+                            Some
+                                { MethodSemanticsMetadataUpdate.RowId = nextMethodSemanticsRowId
+                                  MethodToken = methodToken
+                                  Attributes = attrs
+                                  IsAdded = true
+                                  AssociationInfo =
+                                    MethodSemanticsAssociation.PropertyAssociation(propertyKey, propertyRowId) }
+                        | None -> None
+                        | _ -> None
+                    | (SymbolMemberKind.EventAdd _
+                      | SymbolMemberKind.EventRemove _
+                      | SymbolMemberKind.EventInvoke _), Some eventName ->
+                        match tryGetEventAssociation typeName eventName with
+                        | Some(struct (eventRowId, eventKey)) when eventDefinitionIndex.IsAdded eventKey ->
+                            nextMethodSemanticsRowId <- nextMethodSemanticsRowId + 1
+                            Some
+                                { MethodSemanticsMetadataUpdate.RowId = nextMethodSemanticsRowId
+                                  MethodToken = methodToken
+                                  Attributes = attrs
+                                  IsAdded = true
+                                  AssociationInfo =
+                                    MethodSemanticsAssociation.EventAssociation(eventKey, eventRowId) }
+                        | None -> None
+                        | _ -> None
+                    | _ -> None)
+
+    propertyDefinitionRowsSnapshot,
+    eventDefinitionRowsSnapshot,
+    propertyMapRowsSnapshot,
+    eventMapRowsSnapshot,
+    methodSemanticsRowsSnapshot
+
+let private buildCustomAttributeRows
+    (traceMetadata: bool)
+    (metadataReader: MetadataReader)
+    (baselineTableRowCounts: int[])
+    (methodUpdateInputs: struct (MethodDefinitionKey * int * MethodDefinitionHandle * MethodDefinition * MethodBodyBlock) list)
+    (methodDefinitionRowsRaw: struct (int * MethodDefinitionKey * bool) list)
+    (methodDefinitionIndex: DefinitionIndex<MethodDefinitionKey>)
+    (methodUpdatesWithDefs: (MethodMetadataUpdate * MethodDefinition * int list) list)
+    (remapEntityToken: int -> int)
+    (remapAssemblyRefToken: int -> int)
+    (baselineTypeReferenceTokens: Map<TypeReferenceKey, int>)
+    (initialTypeRefRowId: int)
+    (initialMemberRefRowId: int)
+    (typeReferenceRows: ResizeArray<TypeReferenceRowInfo>)
+    (memberReferenceRows: ResizeArray<MemberReferenceRowInfo>)
+    =
+    let rows = ResizeArray<CustomAttributeRowInfo>()
+    let mutable nextRowId = baselineTableRowCounts.[TableNames.CustomAttribute.Index]
+    let mutable nextTypeRefRowId = initialTypeRefRowId
+    let mutable nextMemberRefRowId = initialMemberRefRowId
+
+    let methodRowIdToKey = Dictionary<int, MethodDefinitionKey>(HashIdentity.Structural)
+    for struct (rowId, key, _) in methodDefinitionRowsRaw do
+        methodRowIdToKey[rowId] <- key
+
+    let methodsWithCustomAttribute = HashSet<MethodDefinitionKey>(HashIdentity.Structural)
+    let methodsWithNullableContextAttribute = HashSet<MethodDefinitionKey>(HashIdentity.Structural)
+    let mutable nullableContextAttributeSeen = false
+
+    let encodeNullableContextValue () = [| 0x01uy; 0x00uy; 0x01uy; 0x00uy; 0x00uy |]
+
+    let rec getFullTypeName (handle: TypeDefinitionHandle) =
+        let def = metadataReader.GetTypeDefinition handle
+        let name = metadataReader.GetString def.Name
+        let ns =
+            if def.Namespace.IsNil then
+                ""
+            else
+                metadataReader.GetString def.Namespace
+        let declaring = def.GetDeclaringType()
+        if declaring.IsNil then
+            if String.IsNullOrEmpty ns then name else $"{ns}.{name}"
+        else
+            $"{getFullTypeName declaring}+{name}"
+
+    let tryFindTypeDefinition fullName =
+        metadataReader.TypeDefinitions
+        |> Seq.tryPick (fun handle ->
+            let def = metadataReader.GetTypeDefinition handle
+            let name = metadataReader.GetString def.Name
+            let ns = if def.Namespace.IsNil then "" else metadataReader.GetString def.Namespace
+            let decl = if String.IsNullOrEmpty ns then name else $"{ns}.{name}"
+            if String.Equals(decl, fullName, StringComparison.Ordinal) then Some handle else None)
+
+    let tryFindStateMachineType (methodKey: MethodDefinitionKey) =
+        match tryFindTypeDefinition methodKey.DeclaringType with
+        | None -> ValueNone
+        | Some parentHandle ->
+            let parentDef = metadataReader.GetTypeDefinition parentHandle
+            let nestedTypes = parentDef.GetNestedTypes()
+            let prefix = methodKey.Name + "@hotreload"
+            let matches =
+                nestedTypes
+                |> Seq.choose (fun nested ->
+                    let nestedDef = metadataReader.GetTypeDefinition nested
+                    let name = metadataReader.GetString nestedDef.Name
+                    if name.StartsWith(prefix, StringComparison.Ordinal) then
+                        Some(name, nested)
+                    else
+                        None)
+                |> Seq.toArray
+
+            if matches.Length = 0 then
+                ValueNone
+            else
+                matches
+                |> Array.tryFind (fun (name, _) -> String.Equals(name, prefix, StringComparison.Ordinal))
+                |> ValueOption.ofOption
+                |> ValueOption.orElseWith (fun () -> matches |> Array.tryHead |> ValueOption.ofOption)
+                |> ValueOption.map snd
+
+    let findAssemblyReferenceRow scopeName =
+        metadataReader.AssemblyReferences
+        |> Seq.tryPick (fun handle ->
+            let reference = metadataReader.GetAssemblyReference handle
+            let name = metadataReader.GetString reference.Name
+            if String.Equals(name, scopeName, StringComparison.OrdinalIgnoreCase) then
+                let token = MetadataTokens.GetToken(EntityHandle.op_Implicit handle)
+                let remapped = remapAssemblyRefToken token
+                let rowId = remapped &&& 0x00FFFFFF
+                Some(RS_AssemblyRef(AssemblyRefHandle rowId))
+            else
+                None)
+
+    let tryGetAssemblyScope () =
+        match findAssemblyReferenceRow "System.Runtime" with
+        | Some scope -> Some scope
+        | None -> findAssemblyReferenceRow "mscorlib"
+
+    let tryFindSystemTypeRef () =
+        metadataReader.TypeReferences
+        |> Seq.tryPick (fun handle ->
+            let typeRef = metadataReader.GetTypeReference handle
+            let name = metadataReader.GetString typeRef.Name
+            let ns =
+                if typeRef.Namespace.IsNil then
+                    ""
+                else
+                    metadataReader.GetString typeRef.Namespace
+            if String.Equals(name, "Type", StringComparison.Ordinal)
+               && String.Equals(ns, "System", StringComparison.Ordinal) then
+                Some handle
+            else
+                None)
+
+    let tryReuseBaselineTypeRef scopeName namespaceName typeName =
+        let key =
+            { TypeReferenceKey.Scope = TypeReferenceScope.Assembly scopeName
+              Namespace = namespaceName
+              Name = typeName }
+        baselineTypeReferenceTokens |> Map.tryFind key
+
+    let tryFindExistingTypeRef scopeName namespaceName typeName =
+        metadataReader.TypeReferences
+        |> Seq.tryPick (fun handle ->
+            let typeRef = metadataReader.GetTypeReference handle
+            let name = metadataReader.GetString typeRef.Name
+            if name = typeName then
+                let ns = if typeRef.Namespace.IsNil then "" else metadataReader.GetString typeRef.Namespace
+                if ns = namespaceName then
+                    match typeRef.ResolutionScope.Kind with
+                    | HandleKind.AssemblyReference ->
+                        let asm =
+                            metadataReader.GetAssemblyReference(
+                                AssemblyReferenceHandle.op_Explicit typeRef.ResolutionScope
+                            )
+                        let asmName = metadataReader.GetString asm.Name
+                        if asmName = scopeName then
+                            Some handle
+                        else
+                            None
+                    | _ -> None
+                else
+                    None
+            else
+                None)
+
+    let mutable systemObjectTypeRefToken: int option = None
+    let mutable asyncAttributeTypeRefToken: int option = None
+    let mutable asyncAttributeCtorToken: int option = None
+    let mutable nullableContextAttributeTypeRefToken: int option = None
+    let mutable nullableContextAttributeCtorToken: int option = None
+
+    let ensureSystemObjectTypeRef () =
+        match systemObjectTypeRefToken with
+        | Some token -> token
+        | None ->
+            let scope =
+                match tryGetAssemblyScope () with
+                | Some value -> value
+                | None -> RS_Module(ModuleHandle 1)
+            let nextRowId = nextTypeRefRowId + 1
+            nextTypeRefRowId <- nextRowId
+            typeReferenceRows.Add(
+                { RowId = nextRowId
+                  ResolutionScope = scope
+                  Name = "Object"
+                  NameOffset = None
+                  Namespace = "System"
+                  NamespaceOffset = None })
+            let token = 0x01000000 ||| nextRowId
+            systemObjectTypeRefToken <- Some token
+            token
+
+    let ensureSystemTypeRefHandle () =
+        match tryFindSystemTypeRef () with
+        | Some handle -> handle
+        | None ->
+            let scope =
+                match tryGetAssemblyScope () with
+                | Some value -> value
+                | None -> RS_Module(ModuleHandle 1)
+            let nextRowId = nextTypeRefRowId + 1
+            nextTypeRefRowId <- nextRowId
+            typeReferenceRows.Add(
+                { RowId = nextRowId
+                  ResolutionScope = scope
+                  Name = "Type"
+                  NameOffset = None
+                  Namespace = "System"
+                  NamespaceOffset = None })
+            MetadataTokens.TypeReferenceHandle nextRowId
+
+    let ensureAsyncAttributeTypeRef () =
+        match asyncAttributeTypeRefToken with
+        | Some token -> token
+        | None ->
+            let scope =
+                match tryGetAssemblyScope () with
+                | Some value -> value
+                | None ->
+                    raise (
+                        HotReloadUnsupportedEditException
+                            "Unable to locate System.Runtime/mscorlib assembly reference for AsyncStateMachineAttribute. Please rebuild."
+                    )
+            let nextRowId = nextTypeRefRowId + 1
+            nextTypeRefRowId <- nextRowId
+            typeReferenceRows.Add(
+                { RowId = nextRowId
+                  ResolutionScope = scope
+                  Name = "AsyncStateMachineAttribute"
+                  NameOffset = None
+                  Namespace = "System.Runtime.CompilerServices"
+                  NamespaceOffset = None })
+            let token = 0x01000000 ||| nextRowId
+            asyncAttributeTypeRefToken <- Some token
+            token
+
+    let ensureAsyncAttributeCtor () =
+        match asyncAttributeCtorToken with
+        | Some token -> token
+        | None ->
+            let attrTypeToken = ensureAsyncAttributeTypeRef ()
+            let systemTypeRefHandle = ensureSystemTypeRefHandle ()
+
+            let signatureBytes =
+                let blob = BlobBuilder()
+                let instanceHeader =
+                    (int SignatureCallingConvention.Default)
+                    ||| (int SignatureAttributes.Instance)
+                    |> byte
+                blob.WriteByte(instanceHeader)
+                blob.WriteCompressedInteger 1
+                blob.WriteByte(LanguagePrimitives.EnumToValue SignatureTypeCode.Void)
+                blob.WriteByte(0x12uy)
+                let typeRefEntity: EntityHandle = TypeReferenceHandle.op_Implicit systemTypeRefHandle
+                let codedIndex = CodedIndex.TypeDefOrRef typeRefEntity
+                blob.WriteCompressedInteger codedIndex
+                blob.ToArray()
+
+            let parentRowId = attrTypeToken &&& 0x00FFFFFF
+            let nextRowId = nextMemberRefRowId + 1
+            nextMemberRefRowId <- nextRowId
+            memberReferenceRows.Add(
+                { RowId = nextRowId
+                  Parent = MRP_TypeRef(TypeRefHandle parentRowId)
+                  Name = ".ctor"
+                  NameOffset = None
+                  Signature = signatureBytes
+                  SignatureOffset = None })
+
+            let token = 0x0A000000 ||| nextRowId
+            asyncAttributeCtorToken <- Some token
+            token
+
+    let ensureNullableContextAttributeTypeRef () =
+        match nullableContextAttributeTypeRefToken with
+        | Some token -> token
+        | None ->
+            let baselineOrExistingToken =
+                [ "System.Runtime"; "mscorlib" ]
+                |> List.tryPick (fun scope ->
+                    match tryReuseBaselineTypeRef scope "System.Runtime.CompilerServices" "NullableContextAttribute" with
+                    | Some token -> Some token
+                    | None ->
+                        match tryFindExistingTypeRef scope "System.Runtime.CompilerServices" "NullableContextAttribute" with
+                        | Some handle -> Some(MetadataTokens.GetToken(EntityHandle.op_Implicit handle))
+                        | None -> None)
+            match baselineOrExistingToken with
+            | Some token ->
+                nullableContextAttributeTypeRefToken <- Some token
+                token
+            | None ->
+                let scope =
+                    match tryGetAssemblyScope () with
+                    | Some value -> value
+                    | None ->
+                        raise (
+                            HotReloadUnsupportedEditException
+                                "Unable to locate System.Runtime/mscorlib assembly reference for NullableContextAttribute. Please rebuild."
+                        )
+                let nextRowId = nextTypeRefRowId + 1
+                nextTypeRefRowId <- nextRowId
+                typeReferenceRows.Add(
+                    { RowId = nextRowId
+                      ResolutionScope = scope
+                      Name = "NullableContextAttribute"
+                      NameOffset = None
+                      Namespace = "System.Runtime.CompilerServices"
+                      NamespaceOffset = None })
+                let token = 0x01000000 ||| nextRowId
+                nullableContextAttributeTypeRefToken <- Some token
+                let _ = ensureSystemObjectTypeRef ()
+                token
+
+    let ensureNullableContextAttributeCtor () =
+        match nullableContextAttributeCtorToken with
+        | Some token -> token
+        | None ->
+            let attrTypeToken = ensureNullableContextAttributeTypeRef ()
+            let signatureBytes =
+                let blob = BlobBuilder()
+                let instanceHeader =
+                    (int SignatureCallingConvention.Default)
+                    ||| (int SignatureAttributes.Instance)
+                    |> byte
+                blob.WriteByte(instanceHeader)
+                blob.WriteCompressedInteger 1
+                blob.WriteByte(LanguagePrimitives.EnumToValue SignatureTypeCode.Void)
+                blob.WriteByte(LanguagePrimitives.EnumToValue SignatureTypeCode.Byte)
+                blob.ToArray()
+
+            let parentRowId = attrTypeToken &&& 0x00FFFFFF
+            let nextRowId = nextMemberRefRowId + 1
+            nextMemberRefRowId <- nextRowId
+            memberReferenceRows.Add(
+                { RowId = nextRowId
+                  Parent = MRP_TypeRef(TypeRefHandle parentRowId)
+                  Name = ".ctor"
+                  NameOffset = None
+                  Signature = signatureBytes
+                  SignatureOffset = None })
+
+            let token = 0x0A000000 ||| nextRowId
+            nullableContextAttributeCtorToken <- Some token
+            token
+
+    let encodeAsyncAttributeValue (stateMachineFullName: string) =
+        let blob = BlobBuilder()
+        blob.WriteUInt16(0x0001us)
+        blob.WriteSerializedString(stateMachineFullName)
+        blob.WriteUInt16(0us)
+        blob.ToArray()
+
+    let isAsyncStateMachineAttribute (attribute: CustomAttribute) =
+        match attribute.Constructor.Kind with
+        | HandleKind.MemberReference ->
+            let memberRef = metadataReader.GetMemberReference(MemberReferenceHandle.op_Explicit attribute.Constructor)
+            match memberRef.Parent.Kind with
+            | HandleKind.TypeReference ->
+                let typeRef = metadataReader.GetTypeReference(TypeReferenceHandle.op_Explicit memberRef.Parent)
+                let name = metadataReader.GetString typeRef.Name
+                let ns = if typeRef.Namespace.IsNil then "" else metadataReader.GetString typeRef.Namespace
+                ns = "System.Runtime.CompilerServices"
+                && name.EndsWith("StateMachineAttribute", StringComparison.Ordinal)
+            | _ -> false
+        | _ -> false
+
+    let isNullableContextAttribute (attribute: CustomAttribute) =
+        match attribute.Constructor.Kind with
+        | HandleKind.MemberReference ->
+            let memberRef = metadataReader.GetMemberReference(MemberReferenceHandle.op_Explicit attribute.Constructor)
+            match memberRef.Parent.Kind with
+            | HandleKind.TypeReference ->
+                let typeRef = metadataReader.GetTypeReference(TypeReferenceHandle.op_Explicit memberRef.Parent)
+                let name = metadataReader.GetString typeRef.Name
+                let ns = if typeRef.Namespace.IsNil then "" else metadataReader.GetString typeRef.Namespace
+                ns = "System.Runtime.CompilerServices" && name = "NullableContextAttribute"
+            | _ -> false
+        | _ -> false
+
+    for struct (key: MethodDefinitionKey, _, _, methodDef, _) in methodUpdateInputs do
+        if methodDefinitionIndex.Contains key then
+            let parentRowId = methodDefinitionIndex.GetRowId key
+            for attributeHandle in methodDef.GetCustomAttributes() do
+                let attribute = metadataReader.GetCustomAttribute attributeHandle
+                let constructorToken = MetadataTokens.GetToken attribute.Constructor
+                let remappedConstructorToken = remapEntityToken constructorToken
+                let ctorRowId = remappedConstructorToken &&& 0x00FFFFFF
+                nextRowId <- nextRowId + 1
+                let valueBytes =
+                    if attribute.Value.IsNil then
+                        Array.empty
+                    else
+                        metadataReader.GetBlobBytes attribute.Value
+
+                if isAsyncStateMachineAttribute attribute then
+                    match methodRowIdToKey.TryGetValue parentRowId with
+                    | true, methodKey -> methodsWithCustomAttribute.Add methodKey |> ignore
+                    | _ -> ()
+
+                if isNullableContextAttribute attribute then
+                    nullableContextAttributeSeen <- true
+                    match methodRowIdToKey.TryGetValue parentRowId with
+                    | true, methodKey ->
+                        if traceMetadata then
+                            printfn
+                                "[fsharp-hotreload][metadata] nullable-context attribute detected on %s"
+                                methodKey.Name
+                        methodsWithNullableContextAttribute.Add methodKey |> ignore
+                    | _ -> ()
+
+                let ctorType =
+                    match attribute.Constructor.Kind with
+                    | HandleKind.MethodDefinition -> CAT_MethodDef(MethodDefHandle ctorRowId)
+                    | HandleKind.MemberReference -> CAT_MemberRef(MemberRefHandle ctorRowId)
+                    | _ -> CAT_MemberRef(MemberRefHandle ctorRowId)
+
+                rows.Add(
+                    { RowId = nextRowId
+                      Parent = HCA_MethodDef(MethodDefHandle parentRowId)
+                      Constructor = ctorType
+                      Value = valueBytes
+                      ValueOffset =
+                        if attribute.Value.IsNil then
+                            None
+                        else
+                            Some(BlobOffset(MetadataTokens.GetHeapOffset attribute.Value)) })
+
+    for (update, _, _) in methodUpdatesWithDefs do
+        let methodKey = update.MethodKey
+        if methodsWithCustomAttribute.Contains methodKey |> not then
+            match tryFindStateMachineType methodKey with
+            | ValueSome stateMachineHandle ->
+                let ctorToken = ensureAsyncAttributeCtor ()
+                let ctorRowId = ctorToken &&& 0x00FFFFFF
+                let methodRowId = methodDefinitionIndex.GetRowId methodKey
+                let stateMachineFullName = getFullTypeName stateMachineHandle
+                let valueBytes = encodeAsyncAttributeValue stateMachineFullName
+
+                nextRowId <- nextRowId + 1
+                rows.Add(
+                    { RowId = nextRowId
+                      Parent = HCA_MethodDef(MethodDefHandle methodRowId)
+                      Constructor = CAT_MemberRef(MemberRefHandle ctorRowId)
+                      Value = valueBytes
+                      ValueOffset = None })
+
+                methodsWithCustomAttribute.Add methodKey |> ignore
+            | ValueNone -> ()
+
+    if nullableContextAttributeSeen then
+        for KeyValue(methodRowId, methodKey) in methodRowIdToKey do
+            if methodsWithNullableContextAttribute.Contains methodKey |> not then
+                let ctorToken = ensureNullableContextAttributeCtor ()
+                let ctorRowId = ctorToken &&& 0x00FFFFFF
+                nextRowId <- nextRowId + 1
+                rows.Add(
+                    { RowId = nextRowId
+                      Parent = HCA_MethodDef(MethodDefHandle methodRowId)
+                      Constructor = CAT_MemberRef(MemberRefHandle ctorRowId)
+                      Value = encodeNullableContextValue ()
+                      ValueOffset = None })
+                methodsWithNullableContextAttribute.Add methodKey |> ignore
+
+    let rowList = rows |> Seq.toList
+    if traceMetadata then
+        printfn "[fsharp-hotreload][metadata] custom-attributes rows=%d" (List.length rowList)
+
+    rowList, nextTypeRefRowId, nextMemberRefRowId
+
+let private buildMethodAndParameterRows
+    (orderedMethodInputs: struct (MethodDefinitionKey * int * MethodDefinitionHandle * MethodDefinition * MethodBodyBlock) list)
+    (metadataReader: MetadataReader)
+    (builder: IlDeltaStreamBuilder)
+    (remapUserString: int -> int)
+    (remapEntityToken: int -> int)
+    (parameterDefinitionRowsRaw: struct (int * ParameterDefinitionKey * bool) list)
+    (parameterHandleLookup: Dictionary<ParameterDefinitionKey, ParameterHandle>)
+    (baselineParameterHandles: Map<ParameterDefinitionKey, ParameterDefinitionMetadataHandles>)
+    (syntheticParameterInfo: Dictionary<ParameterDefinitionKey, ParameterAttributes>)
+    (firstParamRowByMethod: Dictionary<MethodDefinitionKey, int>)
+    (returnParameterKeys: HashSet<ParameterDefinitionKey>)
+    (methodDefinitionRowsRaw: struct (int * MethodDefinitionKey * bool) list)
+    (baselineMethodHandles: Map<MethodDefinitionKey, MethodDefinitionMetadataHandles>)
+    (baselineMethodTokens: Map<MethodDefinitionKey, int>)
+    (methodDefinitionIndex: DefinitionIndex<MethodDefinitionKey>)
+    (traceMetadata: bool)
+    (baselineMethodSpecRowCount: int)
+    (methodSpecRowsByToken: Dictionary<int, MethodSpecificationRowInfo>) =
+    let methodUpdatesWithDefs, methodMetadataLookup =
+        buildMethodUpdatesWithMetadata
+            orderedMethodInputs
+            metadataReader
+            builder
+            remapUserString
+            remapEntityToken
+
+    let parameterDefinitionRowsSnapshot =
+        buildParameterDefinitionRowsSnapshot
+            parameterDefinitionRowsRaw
+            parameterHandleLookup
+            baselineParameterHandles
+            syntheticParameterInfo
+            firstParamRowByMethod
+            returnParameterKeys
+            metadataReader
+
+    let methodDefinitionRowsSnapshot =
+        buildMethodDefinitionRowsSnapshot
+            methodDefinitionRowsRaw
+            methodUpdatesWithDefs
+            methodMetadataLookup
+            baselineMethodHandles
+            firstParamRowByMethod
+            baselineMethodTokens
+            methodDefinitionIndex
+
+    let methodSpecificationRowsSnapshot =
+        buildMethodSpecificationRowsSnapshot
+            traceMetadata
+            methodUpdatesWithDefs
+            baselineMethodSpecRowCount
+            methodSpecRowsByToken
+
+    methodUpdatesWithDefs,
+    parameterDefinitionRowsSnapshot,
+    methodDefinitionRowsSnapshot,
+    methodSpecificationRowsSnapshot
+
+let private buildAddedOrChangedMethods (methodBodies: MethodBodyUpdate list) =
+    methodBodies
+    |> List.map (fun body ->
+        { HotReloadBaseline.AddedOrChangedMethodInfo.MethodToken = body.MethodToken
+          LocalSignatureToken = body.LocalSignatureToken
+          CodeOffset = body.CodeOffset
+          CodeLength = body.CodeLength })
+
+let private buildDeltaToUpdatedMethodTokenMap
+    (methodTokenMap: Dictionary<int, int>)
+    (addedOrChangedMethods: HotReloadBaseline.AddedOrChangedMethodInfo list)
+    : IReadOnlyDictionary<int, int> =
+    let dict = Dictionary<int, int>()
+
+    for KeyValue(newToken, baselineToken) in methodTokenMap do
+        dict[baselineToken] <- newToken
+
+    for methodInfo in addedOrChangedMethods do
+        if not (dict.ContainsKey methodInfo.MethodToken) then
+            dict[methodInfo.MethodToken] <- methodInfo.MethodToken
+
+    dict :> IReadOnlyDictionary<_, _>
+
+let private finalizeDeltaArtifacts
+    (request: IlxDeltaRequest)
+    (pdbBytesOpt: byte[] option)
+    (encId: Guid)
+    (encBaseId: Guid)
+    (metadataDelta: MetadataWriter.MetadataDelta)
+    (streams: IlDeltaStreams)
+    (updatedTypeTokens: int list)
+    (updatedMethodTokenList: int list)
+    (methodTokenMap: Dictionary<int, int>)
+    (userStringEntries: (int * int * string) list)
+    (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
+    (propertyMapRowsSnapshot: PropertyMapRowInfo list)
+    (eventMapRowsSnapshot: EventMapRowInfo list)
+    (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
+    (methodTokenToKey: Dictionary<int, MethodDefinitionKey>)
+    (addedMethodDeltaTokens: Dictionary<MethodDefinitionKey, int>)
+    (addedPropertyDeltaTokens: Dictionary<PropertyDefinitionKey, int>)
+    (addedEventDeltaTokens: Dictionary<EventDefinitionKey, int>)
+    =
+    let addedOrChangedMethods =
+        buildAddedOrChangedMethods streams.MethodBodies
+
+    let deltaToUpdatedMethodToken =
+        buildDeltaToUpdatedMethodTokenMap methodTokenMap addedOrChangedMethods
+
+    let pdbDelta =
+        match pdbBytesOpt with
+        | None -> None
+        | Some pdbBytes ->
+            HotReloadPdb.emitDelta
+                request.Baseline
+                pdbBytes
+                addedOrChangedMethods
+                deltaToUpdatedMethodToken
+                metadataDelta.EncLog
+                metadataDelta.EncMap
+
+    let synthesizedSnapshot =
+        request.SynthesizedNames
+        |> Option.map (fun map -> map.Snapshot |> Seq.map (fun struct (k, v) -> k, v) |> Map.ofSeq)
+
+    let updatedBaselineCore =
+        HotReloadBaseline.applyDelta
+            request.Baseline
+            metadataDelta.TableRowCounts
+            metadataDelta.HeapSizes
+            addedOrChangedMethods
+            encId
+            encBaseId
+            synthesizedSnapshot
+
+    let updatedBaseline =
+        buildUpdatedBaseline
+            updatedBaselineCore
+            propertyMapRowsSnapshot
+            eventMapRowsSnapshot
+            methodSemanticsRowsSnapshot
+            methodTokenToKey
+            addedMethodDeltaTokens
+            addedPropertyDeltaTokens
+            addedEventDeltaTokens
+
+    let delta =
+        { emptyDelta with
+            Metadata = metadataDelta.Metadata
+            IL = streams.IL
+            UpdatedTypeTokens = updatedTypeTokens
+            UpdatedMethodTokens = updatedMethodTokenList
+            EncLog = metadataDelta.EncLog
+            EncMap = metadataDelta.EncMap
+            MethodBodies = streams.MethodBodies
+            StandaloneSignatures = streams.StandaloneSignatures
+            Pdb = pdbDelta
+            GenerationId = encId
+            BaseGenerationId = encBaseId
+            UserStringUpdates = userStringEntries
+            MethodDefinitionRows = methodDefinitionRowsSnapshot
+            AddedOrChangedMethods = addedOrChangedMethods
+            UpdatedBaseline = Some updatedBaseline
+        }
+
+    if traceUserStringUpdates.Value then
+        for (original, updated, text) in delta.UserStringUpdates do
+            printfn "[fsharp-hotreload][userstring-summary] original=0x%08X new=0x%08X text=%s" original updated text
+
+    delta
+
+// Definition-table token remapping stays isolated from metadata-reference row remapping
+// so accessor/association resolution can evolve without touching TypeRef/MemberRef/MethodSpec logic.
+type private DefinitionTokenRemapper =
+    { RemapDefinitionToken: int -> int
+      RemapPropertyAssociationToken: int -> int
+      RemapEventAssociationToken: int -> int }
+
+type private DefinitionTokenRemapContext =
+    { TypeTokenMap: Dictionary<int, int>
+      FieldTokenMap: Dictionary<int, int>
+      MethodTokenMap: Dictionary<int, int>
+      PropertyTokenMap: Dictionary<int, int>
+      EventTokenMap: Dictionary<int, int> }
+
+let private createDefinitionTokenRemapper (context: DefinitionTokenRemapContext) : DefinitionTokenRemapper =
+    let inline remapWith (dict: Dictionary<int, int>) token =
+        match dict.TryGetValue token with
+        | true, mapped -> mapped
+        | _ -> token
+
+    let remapDefinitionToken token =
+        match classifyEntityTokenRemapKind token with
+        | EntityTokenRemapKind.TypeDef -> remapWith context.TypeTokenMap token
+        | EntityTokenRemapKind.FieldDef -> remapWith context.FieldTokenMap token
+        | EntityTokenRemapKind.MethodDef -> remapWith context.MethodTokenMap token
+        | EntityTokenRemapKind.Event -> remapWith context.EventTokenMap token
+        | EntityTokenRemapKind.Property -> remapWith context.PropertyTokenMap token
+        | _ -> token
+
+    { RemapDefinitionToken = remapDefinitionToken
+      RemapPropertyAssociationToken = remapWith context.PropertyTokenMap
+      RemapEventAssociationToken = remapWith context.EventTokenMap }
+
+type private MetadataReferenceRemapper =
+    { RemapEntityToken: int -> int
+      RemapAssemblyRefToken: int -> int }
+
+type private MetadataReferenceRemapContext =
+    { MetadataReader: MetadataReader
+      TraceMetadata: bool
+      BaselineMemberRefRowCount: int
+      TryReuseBaselineTypeRef: TypeReferenceKey -> int option
+      RemapDefinitionToken: int -> int
+      TypeReferenceRows: ResizeArray<TypeReferenceRowInfo>
+      MemberReferenceRows: ResizeArray<MemberReferenceRowInfo>
+      AssemblyReferenceRows: ResizeArray<AssemblyReferenceRowInfo>
+      TypeRefTokenMap: Dictionary<int, int>
+      AssemblyRefTokenMap: Dictionary<int, int>
+      MemberRefTokenMap: Dictionary<int, int>
+      MethodSpecTokenMap: Dictionary<int, int>
+      MethodSpecRowsByToken: Dictionary<int, MethodSpecificationRowInfo>
+      GetNextTypeRefRowId: unit -> int
+      SetNextTypeRefRowId: int -> unit
+      GetNextMemberRefRowId: unit -> int
+      SetNextMemberRefRowId: int -> unit
+      GetNextAssemblyRefRowId: unit -> int
+      SetNextAssemblyRefRowId: int -> unit
+      GetNextMethodSpecRowId: unit -> int
+      SetNextMethodSpecRowId: int -> unit }
+
+let private createMetadataReferenceRemapper (context: MetadataReferenceRemapContext) : MetadataReferenceRemapper =
+    let metadataReader = context.MetadataReader
+    let traceMetadata = context.TraceMetadata
+
+    let rec remapAssemblyRefToken token =
+        match context.AssemblyRefTokenMap.TryGetValue token with
+        | true, mapped -> mapped
+        | _ ->
+            let handle = MetadataTokens.AssemblyReferenceHandle token
+            let row = metadataReader.GetAssemblyReference handle
+            let nextRowId = context.GetNextAssemblyRefRowId () + 1
+            context.SetNextAssemblyRefRowId nextRowId
+            let getBlob (blob: BlobHandle) = if blob.IsNil then Array.empty else metadataReader.GetBlobBytes blob
+            let info =
+                { RowId = nextRowId
+                  Version = row.Version
+                  Flags = row.Flags
+                  PublicKeyOrToken = getBlob row.PublicKeyOrToken
+                  PublicKeyOrTokenOffset = None
+                  Name = if row.Name.IsNil then "" else metadataReader.GetString row.Name
+                  NameOffset = None
+                  Culture = if row.Culture.IsNil then None else Some(metadataReader.GetString row.Culture)
+                  CultureOffset = None
+                  HashValue = getBlob row.HashValue
+                  HashValueOffset = None }
+            context.AssemblyReferenceRows.Add info
+            let deltaToken = 0x23000000 ||| nextRowId
+            context.AssemblyRefTokenMap[token] <- deltaToken
+            deltaToken
+
+    and tryTypeRefKey (handle: TypeReferenceHandle) (depth: int) : TypeReferenceKey option =
+        // Build the full typed scope chain for a TypeRef in the freshly emitted metadata so it can
+        // be matched against the baseline table by identity. Nested TypeRefs recurse into their
+        // enclosing TypeRef; depth-guard against malformed metadata cycles.
+        if depth > 64 then
+            None
+        else
+            let row = metadataReader.GetTypeReference handle
+            let name = if row.Name.IsNil then "" else metadataReader.GetString row.Name
+            let namespaceName = if row.Namespace.IsNil then "" else metadataReader.GetString row.Namespace
+
+            let scopeOpt =
+                match row.ResolutionScope.Kind with
+                | HandleKind.AssemblyReference ->
+                    let assemblyHandle = AssemblyReferenceHandle.op_Explicit row.ResolutionScope
+                    let assemblyRef = metadataReader.GetAssemblyReference assemblyHandle
+                    Some(TypeReferenceScope.Assembly(metadataReader.GetString assemblyRef.Name))
+                | HandleKind.TypeReference ->
+                    tryTypeRefKey (TypeReferenceHandle.op_Explicit row.ResolutionScope) (depth + 1)
+                    |> Option.map TypeReferenceScope.Nested
+                | _ ->
+                    // Module/ModuleRef scopes have no stable cross-compilation identity; fall through
+                    // to the add-new-row path.
+                    None
+
+            scopeOpt
+            |> Option.map (fun scope ->
+                { TypeReferenceKey.Scope = scope
+                  Namespace = namespaceName
+                  Name = name })
+
+    and remapTypeRefToken token =
+        match context.TypeRefTokenMap.TryGetValue token with
+        | true, mapped -> mapped
+        | _ ->
+            let handle = MetadataTokens.TypeReferenceHandle token
+            let row = metadataReader.GetTypeReference handle
+            let name = if row.Name.IsNil then "" else metadataReader.GetString row.Name
+            let namespaceName = if row.Namespace.IsNil then "" else metadataReader.GetString row.Namespace
+            let baselineToken = tryTypeRefKey handle 0 |> Option.bind context.TryReuseBaselineTypeRef
+            match baselineToken with
+            | Some reused ->
+                context.TypeRefTokenMap[token] <- reused
+                reused
+            | None ->
+                if traceMetadata then
+                    printfn
+                        "[fsharp-hotreload][metadata] remap typeref miss scope=%A ns=%s name=%s"
+                        row.ResolutionScope.Kind
+                        namespaceName
+                        name
+                let resolutionScope =
+                    if row.ResolutionScope.IsNil then
+                        RS_Module(ModuleHandle 1)
+                    else
+                        let scopeToken = MetadataTokens.GetToken(row.ResolutionScope)
+                        match row.ResolutionScope.Kind with
+                        | HandleKind.AssemblyReference ->
+                            let mapped = remapAssemblyRefToken scopeToken
+                            RS_AssemblyRef(AssemblyRefHandle(mapped &&& 0x00FFFFFF))
+                        | HandleKind.TypeReference ->
+                            let mapped = remapTypeRefToken scopeToken
+                            RS_TypeRef(TypeRefHandle(mapped &&& 0x00FFFFFF))
+                        | HandleKind.ModuleDefinition ->
+                            let rowId = MetadataTokens.GetRowNumber row.ResolutionScope
+                            RS_Module(ModuleHandle rowId)
+                        | HandleKind.ModuleReference ->
+                            let rowId = MetadataTokens.GetRowNumber row.ResolutionScope
+                            RS_ModuleRef(ModuleRefHandle rowId)
+                        | _ -> RS_Module(ModuleHandle 1)
+                let nextRowId = context.GetNextTypeRefRowId () + 1
+                context.SetNextTypeRefRowId nextRowId
+                context.TypeReferenceRows.Add(
+                    { RowId = nextRowId
+                      ResolutionScope = resolutionScope
+                      Name = name
+                      NameOffset = None
+                      Namespace = namespaceName
+                      NamespaceOffset = None })
+                let deltaToken = 0x01000000 ||| nextRowId
+                context.TypeRefTokenMap[token] <- deltaToken
+                deltaToken
+
+    and remapMemberRefToken token =
+        let rowId = token &&& 0x00FFFFFF
+
+        if rowId > 0 && rowId <= context.BaselineMemberRefRowCount then
+            token
+        else
+            match context.MemberRefTokenMap.TryGetValue token with
+            | true, mapped -> mapped
+            | _ ->
+                let handle = MetadataTokens.MemberReferenceHandle token
+                let row = metadataReader.GetMemberReference handle
+
+                let parent =
+                    if row.Parent.IsNil then
+                        MRP_TypeRef(TypeRefHandle 1)
+                    else
+                        let parentToken = MetadataTokens.GetToken(row.Parent)
+                        match row.Parent.Kind with
+                        | HandleKind.TypeDefinition ->
+                            let mapped = context.RemapDefinitionToken parentToken
+                            MRP_TypeDef(TypeDefHandle(mapped &&& 0x00FFFFFF))
+                        | HandleKind.TypeReference ->
+                            let mapped = remapTypeRefToken parentToken
+                            MRP_TypeRef(TypeRefHandle(mapped &&& 0x00FFFFFF))
+                        | HandleKind.TypeSpecification ->
+                            let rowId = parentToken &&& 0x00FFFFFF
+                            MRP_TypeSpec(TypeSpecHandle rowId)
+                        | HandleKind.MethodDefinition ->
+                            let mapped = context.RemapDefinitionToken parentToken
+                            MRP_MethodDef(MethodDefHandle(mapped &&& 0x00FFFFFF))
+                        | HandleKind.ModuleReference ->
+                            let rowId = parentToken &&& 0x00FFFFFF
+                            MRP_ModuleRef(ModuleRefHandle rowId)
+                        | _ ->
+                            MRP_TypeRef(TypeRefHandle 1)
+
+                let nextRowId = context.GetNextMemberRefRowId () + 1
+                context.SetNextMemberRefRowId nextRowId
+                let mapped = 0x0A000000 ||| nextRowId
+                context.MemberRefTokenMap[token] <- mapped
+
+                let signature =
+                    if row.Signature.IsNil then
+                        Array.empty
+                    else
+                        // Added MemberRef rows carry their signature blob in the delta heap; remap the
+                        // embedded TypeDefOrRef coded indexes from the fresh compile to baseline rows.
+                        metadataReader.GetBlobBytes row.Signature |> remapSignature
+
+                context.MemberReferenceRows.Add(
+                    { RowId = nextRowId
+                      Parent = parent
+                      Name = if row.Name.IsNil then "" else metadataReader.GetString row.Name
+                      NameOffset = None
+                      Signature = signature
+                      SignatureOffset = None })
+
+                if traceMetadata then
+                    printfn
+                        "[fsharp-hotreload][metadata] remap memberref token=0x%08X -> 0x%08X"
+                        token
+                        mapped
+
+                mapped
+
+    and remapMethodSpecToken token =
+        match context.MethodSpecTokenMap.TryGetValue token with
+        | true, mapped -> mapped
+        | _ ->
+            let methodSpecHandle = MetadataTokens.MethodSpecificationHandle token
+
+            if methodSpecHandle.IsNil then
+                token
+            else
+                let methodSpec = metadataReader.GetMethodSpecification methodSpecHandle
+                let originalMethodToken = MetadataTokens.GetToken(methodSpec.Method)
+                let remappedMethodToken = remapEntityToken originalMethodToken
+                let methodDefOrRef =
+                    let rowId = remappedMethodToken &&& 0x00FFFFFF
+                    match remappedMethodToken &&& 0xFF000000 with
+                    | 0x06000000 -> Some(MDOR_MethodDef(MethodDefHandle rowId))
+                    | 0x0A000000 -> Some(MDOR_MemberRef(MemberRefHandle rowId))
+                    | _ -> None
+
+                match methodDefOrRef with
+                | None ->
+                    if traceMetadata then
+                        printfn
+                            "[fsharp-hotreload][metadata] keeping methodspec token=0x%08X (unsupported remapped method token=0x%08X)"
+                            token
+                            remappedMethodToken
+
+                    token
+                | Some method ->
+                    let rowId = context.GetNextMethodSpecRowId () + 1
+                    context.SetNextMethodSpecRowId rowId
+                    let signature =
+                        if methodSpec.Signature.IsNil then
+                            Array.empty
+                        else
+                            // The instantiation blob embeds TypeDefOrRef coded indexes of the fresh
+                            // compile; remap them so the delta resolves against the baseline tables.
+                            metadataReader.GetBlobBytes methodSpec.Signature |> remapSignature
+
+                    let row =
+                        { MethodSpecificationRowInfo.RowId = rowId
+                          Method = method
+                          Signature = signature
+                          SignatureOffset = None }
+
+                    let mapped = 0x2B000000 ||| rowId
+                    context.MethodSpecTokenMap[token] <- mapped
+                    context.MethodSpecRowsByToken[mapped] <- row
+
+                    if traceMetadata then
+                        printfn
+                            "[fsharp-hotreload][metadata] remap methodspec token=0x%08X -> 0x%08X"
+                            token
+                            mapped
+
+                    mapped
+
+    and remapEntityToken token =
+        match classifyEntityTokenRemapKind token with
+        | EntityTokenRemapKind.TypeDef
+        | EntityTokenRemapKind.FieldDef
+        | EntityTokenRemapKind.MethodDef
+        | EntityTokenRemapKind.Event
+        | EntityTokenRemapKind.Property -> context.RemapDefinitionToken token
+        | EntityTokenRemapKind.MemberRef -> remapMemberRefToken token
+        | EntityTokenRemapKind.MethodSpec -> remapMethodSpecToken token
+        | EntityTokenRemapKind.TypeRef -> remapTypeRefToken token
+        | EntityTokenRemapKind.AssemblyRef -> remapAssemblyRefToken token
+        | EntityTokenRemapKind.Passthrough -> token
+
+    and remapSignature (signature: byte[]) : byte[] =
+        remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken) signature
+
+    { RemapEntityToken = remapEntityToken
+      RemapAssemblyRefToken = remapAssemblyRefToken }
+
+/// Emits the delta artifacts for a request. The current implementation populates token projections
+/// while leaving the raw metadata/IL/PDB payload empty; future work will replace the placeholders
+/// with fully emitted heaps.
+let emitDelta (request: IlxDeltaRequest) : IlxDelta =
+    let synthesizedBuckets =
+        request.SynthesizedNames
+        |> Option.map (fun map ->
+            map.Snapshot
+            |> Seq.map (fun struct (basic, names) -> basic, names)
+            |> dict)
+
+    let symbolMatcher =
+        match request.SynthesizedNames with
+        | Some map -> FSharpSymbolMatcher.createWithSynthesizedNames request.Module map
+        | None -> FSharpSymbolMatcher.create request.Module
+
+    let symbolChangeTypeNames =
+        request.SymbolChanges
+        |> Option.map FSharpSymbolChanges.entitySymbolsWithChanges
+        |> Option.defaultValue []
+        |> List.map (fun symbol -> symbol.QualifiedName)
+
+    let builder = IlDeltaStreamBuilder(Some request.Baseline.Metadata)
+
+    if traceHeapOffsets.Value then
+        let heaps = request.Baseline.Metadata.HeapSizes
+        printfn "[fsharp-hotreload][heap-offsets] Generation %d - Baseline heap sizes passed to IlDeltaStreamBuilder:" request.CurrentGeneration
+        printfn "[fsharp-hotreload][heap-offsets]   UserStringHeapSize = %d" heaps.UserStringHeapSize
+        printfn "[fsharp-hotreload][heap-offsets]   StringHeapSize = %d" heaps.StringHeapSize
+        printfn "[fsharp-hotreload][heap-offsets]   BlobHeapSize = %d" heaps.BlobHeapSize
+        printfn "[fsharp-hotreload][heap-offsets]   GuidHeapSize = %d" heaps.GuidHeapSize
+        printfn "[fsharp-hotreload][heap-offsets]   NextGeneration = %d, EncId = %A" request.Baseline.NextGeneration request.Baseline.EncId
+
+    let baselineTypeTokens = request.Baseline.TypeTokens
+
+    let primaryScopeRef =
+        match request.Module.Manifest with
+        | Some manifest ->
+            let publicKey =
+                manifest.PublicKey |> Option.map (fun key -> PublicKey.KeyAsToken key)
+            let asmRef =
+                ILAssemblyRef.Create(
+                    manifest.Name,
+                    None,
+                    publicKey,
+                    manifest.Retargetable,
+                    manifest.Version,
+                    manifest.Locale
+                )
+
+            ILScopeRef.Assembly asmRef
+        | None -> ILScopeRef.PrimaryAssembly
+
+    let fsharpCoreScopeRef =
+        ILScopeRef.Assembly (ILAssemblyRef.Create("FSharp.Core", None, None, false, None, None))
+
+    let ilg = mkILGlobals (primaryScopeRef, [], fsharpCoreScopeRef)
+
+    let writerOptions = defaultWriterOptions ilg HashAlgorithm.Sha256
+    let assemblyBytes, pdbBytesOpt, emittedTokenMappings, _ =
+        ILWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, request.Module, id)
+    if traceUserStringUpdates.Value then
+        try
+            let tempDll =
+                Path.Combine(Path.GetTempPath(), $"fsharp-hotreload-ilmodule-{System.Guid.NewGuid():N}.dll")
+            File.WriteAllBytes(tempDll, assemblyBytes)
+            printfn "[fsharp-hotreload][trace] wrote IL module snapshot to %s" tempDll
+        with ex ->
+            printfn "[fsharp-hotreload][trace] failed to write IL module snapshot: %s" ex.Message
+
+    use peStream = new MemoryStream(assemblyBytes, writable = false)
+    use peReader = new PEReader(peStream)
+    let metadataReader = peReader.GetMetadataReader()
+    let moduleDef = metadataReader.GetModuleDefinition()
+    let moduleName = metadataReader.GetString moduleDef.Name
+    let baselineModuleNameOffset = request.Baseline.ModuleNameOffset
+    let userStringCalculator = builder.UserStringCalculator
+    let stringTokenCache = Dictionary<int, int>()
+    let userStringUpdates = ResizeArray<int * int * string>()
+
+    let logUserString originalToken newToken text =
+        if traceUserStringUpdates.Value then
+            printfn "[fsharp-hotreload][userstring] original=0x%08X new=0x%08X text=%s" originalToken newToken text
+    let remapUserString token =
+        match stringTokenCache.TryGetValue token with
+        | true, mapped -> mapped
+        | _ ->
+            let handle = MetadataTokens.UserStringHandle token
+            let value = metadataReader.GetUserString handle
+            let newToken = userStringCalculator.GetOrAddUserString value
+            stringTokenCache[token] <- newToken
+            userStringUpdates.Add((token, newToken, value))
+            logUserString token newToken value
+            newToken
+
+    let typeTokenMap = Dictionary<int, int>()
+    let fieldTokenMap = Dictionary<int, int>()
+    let methodTokenMap = Dictionary<int, int>()
+    let propertyTokenMap = Dictionary<int, int>()
+    let eventTokenMap = Dictionary<int, int>()
+    let addedMethodTokens = Dictionary<MethodDefinitionKey, int>(HashIdentity.Structural)
+    let addedPropertyTokens = Dictionary<PropertyDefinitionKey, int>(HashIdentity.Structural)
+    let addedEventTokens = Dictionary<EventDefinitionKey, int>(HashIdentity.Structural)
+    let addedPropertyTokenLookup = Dictionary<int, PropertyDefinitionKey>()
+    let addedEventTokenLookup = Dictionary<int, EventDefinitionKey>()
+    let propertyHandleLookup = Dictionary<PropertyDefinitionKey, PropertyDefinitionHandle>()
+    let eventHandleLookup = Dictionary<EventDefinitionKey, EventDefinitionHandle>()
+    let baselineTypeNameByNew = Dictionary<string, string>(StringComparer.Ordinal)
+
+    let getAliasCandidates (typeName: string) =
+        match synthesizedBuckets with
+        | Some buckets when IsCompilerGeneratedName typeName ->
+            let basicName = GetBasicNameOfPossibleCompilerGeneratedName typeName
+            match buckets.TryGetValue basicName with
+            | true, aliases when aliases.Length > 0 ->
+                if aliases |> Array.exists (fun alias -> alias = typeName) then
+                    Array.append
+                        [| typeName |]
+                        (aliases |> Array.filter (fun alias -> not (String.Equals(alias, typeName, StringComparison.Ordinal))))
+                else
+                    Array.append [| typeName |] aliases
+            | _ -> [| typeName |]
+        | _ -> [| typeName |]
+
+    let resolveBaselineTypeFullName (enclosing: ILTypeDef list) (typeDef: ILTypeDef) =
+        let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+        let newFullName = typeRef.FullName
+
+        let parentBaselinePrefixOpt =
+            match enclosing with
+            | [] -> None
+            | _ ->
+                let parentType = List.last enclosing
+                let parentEnclosing = enclosing |> List.take (List.length enclosing - 1)
+                let parentRef = mkRefForNestedILTypeDef ILScopeRef.Local (parentEnclosing, parentType)
+                let parentBaseline =
+                    match baselineTypeNameByNew.TryGetValue parentRef.FullName with
+                    | true, baselineParent -> baselineParent
+                    | _ -> parentRef.FullName
+                Some(parentBaseline + "+")
+
+        let basePrefix =
+            match parentBaselinePrefixOpt with
+            | Some prefix -> prefix
+            | None ->
+                let lastDot = newFullName.LastIndexOf('.')
+                if lastDot >= 0 then
+                    newFullName.Substring(0, lastDot + 1)
+                else
+                    ""
+
+        let candidateNames =
+            let aliases = getAliasCandidates typeDef.Name
+            let prefixes =
+                if basePrefix.EndsWith("+", StringComparison.Ordinal) then
+                    let withoutPlus = basePrefix.Substring(0, basePrefix.Length - 1)
+                    let dotPrefix = if String.IsNullOrEmpty withoutPlus then "" else withoutPlus + "."
+                    [| basePrefix; dotPrefix |]
+                else
+                    [| basePrefix |]
+
+            let projected =
+                prefixes
+                |> Array.collect (fun prefix ->
+                    aliases
+                    |> Array.map (fun alias ->
+                        if prefix.EndsWith("+", StringComparison.Ordinal) || prefix.EndsWith(".", StringComparison.Ordinal) then
+                            prefix + alias
+                        elif prefix = "" then
+                            alias
+                        else
+                            prefix + alias))
+
+            Array.concat
+                [| projected
+                   prefixes
+                   |> Array.collect (fun prefix ->
+                       [|
+                           if prefix.EndsWith("+", StringComparison.Ordinal) || prefix.EndsWith(".", StringComparison.Ordinal) then
+                               yield prefix + typeDef.Name
+                           elif prefix = "" then
+                               yield typeDef.Name
+                           else
+                               yield prefix + typeDef.Name
+                       |])
+                   [| newFullName |] |]
+            |> Array.filter (fun name -> not (String.IsNullOrWhiteSpace name))
+            |> Array.distinct
+
+        let baselineMatches =
+            candidateNames
+            |> Array.choose (fun candidate ->
+                match request.Baseline.TypeTokens |> Map.tryFind candidate with
+                | Some token -> Some(candidate, token)
+                | None -> None)
+            |> Array.distinctBy fst
+
+        let baselineNameOpt =
+            match baselineMatches with
+            | [||] -> None
+            | [| single |] -> Some single
+            | matches ->
+                let exactMatch =
+                    matches
+                    |> Array.tryFind (fun (matchedName, _) -> String.Equals(matchedName, newFullName, StringComparison.Ordinal))
+
+                match exactMatch with
+                | Some matchResult -> Some matchResult
+                | None ->
+                    let normalizeTypePath (name: string) =
+                        name.Split([|'.'; '+'|], StringSplitOptions.RemoveEmptyEntries)
+                        |> String.concat "."
+
+                    let normalizedTarget = normalizeTypePath newFullName
+
+                    let normalizedMatches =
+                        matches
+                        |> Array.filter (fun (matchedName, _) ->
+                            String.Equals(normalizeTypePath matchedName, normalizedTarget, StringComparison.Ordinal))
+
+                    match normalizedMatches with
+                    | [| normalizedMatch |] -> Some normalizedMatch
+                    | _ ->
+                        let matchedNames = matches |> Array.map fst |> String.concat "; "
+                        let allCandidates = candidateNames |> String.concat "; "
+
+                        raise (
+                            HotReloadUnsupportedEditException(
+                                $"Ambiguous synthesized type mapping for '{newFullName}' (candidates=[{allCandidates}], baselineMatches=[{matchedNames}]); full rebuild required."
+                            )
+                        )
+
+        if traceSynthesizedMappings.Value then
+            match baselineNameOpt with
+            | Some (baselineName, _) when not (String.Equals(newFullName, baselineName, StringComparison.Ordinal)) ->
+                printfn "[fsharp-hotreload][synthesized-map] %s -> %s" newFullName baselineName
+            | None ->
+                printfn "[fsharp-hotreload][synthesized-map] no baseline match for %s candidates=%A" newFullName candidateNames
+            | _ -> ()
+
+        let baselineName, baselineTokenOpt =
+            match baselineNameOpt with
+            | Some (baseline, token) -> baseline, Some token
+            | None -> newFullName, None
+
+        baselineTypeNameByNew[newFullName] <- baselineName
+        if traceSynthesizedMappings.Value then
+            printfn "[fsharp-hotreload][synthesized-map] stored %s -> %s" newFullName baselineName
+        baselineName, baselineTokenOpt
+
+    let tryGetBaselineTypeName fullName =
+        match baselineTypeNameByNew.TryGetValue fullName with
+        | true, baseline -> baseline
+        | _ -> fullName
+
+    let tryGetBaselineTypeToken (enclosing: ILTypeDef list) (typeDef: ILTypeDef) =
+        let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+        let baselineName = tryGetBaselineTypeName typeRef.FullName
+        baselineTypeTokens |> Map.tryFind baselineName
+
+    let addMapping (dict: Dictionary<int, int>) newToken baselineToken =
+        if newToken <> 0 && baselineToken <> 0 && newToken <> baselineToken then
+            dict[newToken] <- baselineToken
+
+    let rec collectTypeMappings (enclosing: ILTypeDef list) (typeDef: ILTypeDef) =
+        let newTypeToken = emittedTokenMappings.TypeDefTokenMap(enclosing, typeDef)
+        if traceSynthesizedMappings.Value then
+            let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+            printfn "[fsharp-hotreload][synthesized-map] visiting %s" typeRef.FullName
+        let _, baselineTokenOpt = resolveBaselineTypeFullName enclosing typeDef
+        let baselineTypeToken =
+            match baselineTokenOpt with
+            | Some token -> token
+            | None ->
+                match tryGetBaselineTypeToken enclosing typeDef with
+                | Some token -> token
+                | None -> request.Baseline.TokenMappings.TypeDefTokenMap(enclosing, typeDef)
+        addMapping typeTokenMap newTypeToken baselineTypeToken
+
+        typeDef.Fields.AsList()
+        |> List.iter (fun fieldDef ->
+            let declaringTypeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+            let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
+            let fieldKey: FieldDefinitionKey =
+                { DeclaringType = baselineDeclaringType
+                  Name = fieldDef.Name
+                  FieldType = fieldDef.FieldType }
+
+            let baselineFieldTokenOpt =
+                match request.Baseline.FieldTokens |> Map.tryFind fieldKey with
+                | Some token -> Some token
+                | None ->
+                    let sanitizedTarget = normalizeGeneratedFieldName fieldDef.Name
+                    request.Baseline.FieldTokens
+                    |> Map.tryPick (fun key token ->
+                        if key.DeclaringType = baselineDeclaringType && key.FieldType = fieldDef.FieldType then
+                            if normalizeGeneratedFieldName key.Name = sanitizedTarget then
+                                Some token
+                            else
+                                None
+                        else
+                            None)
+
+            match baselineFieldTokenOpt with
+            | Some baselineFieldToken ->
+                let newFieldToken = emittedTokenMappings.FieldDefTokenMap(enclosing, typeDef) fieldDef
+                addMapping fieldTokenMap newFieldToken baselineFieldToken
+            | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
+            | None ->
+                let fieldDisplay = $"{declaringTypeRef.FullName}::{fieldDef.Name}"
+                let message =
+                    $"Edit adds field '{fieldDisplay}'. Hot reload currently supports method-body changes only; please rebuild."
+                raise (HotReloadUnsupportedEditException message))
+
+        typeDef.Methods.AsList()
+        |> List.iter (fun methodDef ->
+            let newMethodToken = emittedTokenMappings.MethodDefTokenMap(enclosing, typeDef) methodDef
+            let declaringTypeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+            let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
+            let methodKey: MethodDefinitionKey =
+                { DeclaringType = baselineDeclaringType
+                  Name = methodDef.Name
+                  GenericArity = methodDef.GenericParams.Length
+                  ParameterTypes = methodDef.ParameterTypes
+                  ReturnType = methodDef.Return.Type }
+
+            match request.Baseline.MethodTokens |> Map.tryFind methodKey with
+            | Some baselineMethodToken ->
+                addMapping methodTokenMap newMethodToken baselineMethodToken
+            | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
+            | None ->
+                if not (addedMethodTokens.ContainsKey methodKey) then
+                    addedMethodTokens[methodKey] <- newMethodToken)
+
+        typeDef.Properties.AsList()
+        |> List.iter (fun propertyDef ->
+            let newPropertyToken = emittedTokenMappings.PropertyTokenMap(enclosing, typeDef) propertyDef
+            let declaringTypeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+            let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
+            let propertyKey: PropertyDefinitionKey =
+                { DeclaringType = baselineDeclaringType
+                  Name = propertyDef.Name
+                  PropertyType = propertyDef.PropertyType
+                  IndexParameterTypes = List.ofSeq propertyDef.Args }
+
+            match request.Baseline.PropertyTokens |> Map.tryFind propertyKey with
+            | Some baselinePropertyToken ->
+                addMapping propertyTokenMap newPropertyToken baselinePropertyToken
+            | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
+            | None ->
+                if not (addedPropertyTokens.ContainsKey propertyKey) then
+                    addedPropertyTokens[propertyKey] <- newPropertyToken
+                    addedPropertyTokenLookup[newPropertyToken] <- propertyKey
+                    let rowId = newPropertyToken &&& 0x00FFFFFF
+                    propertyHandleLookup[propertyKey] <- MetadataTokens.PropertyDefinitionHandle rowId)
+
+        typeDef.Events.AsList()
+        |> List.iter (fun eventDef ->
+            let newEventToken = emittedTokenMappings.EventTokenMap(enclosing, typeDef) eventDef
+            let declaringTypeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+            let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
+            let eventKey: EventDefinitionKey =
+                { DeclaringType = baselineDeclaringType
+                  Name = eventDef.Name
+                  EventType = eventDef.EventType }
+
+            match request.Baseline.EventTokens |> Map.tryFind eventKey with
+            | Some baselineEventToken ->
+                addMapping eventTokenMap newEventToken baselineEventToken
+            | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
+            | None ->
+                if not (addedEventTokens.ContainsKey eventKey) then
+                    addedEventTokens[eventKey] <- newEventToken
+                    addedEventTokenLookup[newEventToken] <- eventKey
+                    let rowId = newEventToken &&& 0x00FFFFFF
+                    eventHandleLookup[eventKey] <- MetadataTokens.EventDefinitionHandle rowId)
+
+        typeDef.NestedTypes.AsList()
+        |> List.iter (fun nested -> collectTypeMappings (enclosing @ [ typeDef ]) nested)
+
+    request.Module.TypeDefs.AsList()
+    |> List.iter (collectTypeMappings [])
+
+    let addedMethodKeys =
+        addedMethodTokens
+        |> Seq.map (fun kvp -> kvp.Key)
+        |> Seq.toList
+
+    let allUpdatedMethods =
+        (request.UpdatedMethods @ addedMethodKeys)
+        |> dedupeMethodKeys
+
+    let resolvedMethods =
+        allUpdatedMethods
+        |> List.choose (fun key ->
+            match FSharpSymbolMatcher.tryGetMethodDef symbolMatcher key with
+            | Some(enclosing, typeDef, methodDef) -> Some(enclosing, typeDef, methodDef, key)
+            | None -> None)
+
+    if traceUserStringUpdates.Value then
+        for (_, _, methodDef, _) in resolvedMethods do
+            match methodDef.Code with
+            | None -> ()
+            | Some code ->
+                for instr in code.Instrs do
+                    match instr with
+                    | I_ldstr literal ->
+                        printfn "[fsharp-hotreload][method] %s ldstr literal=%s" methodDef.Name literal
+                    | _ -> ()
+    let moduleMvid = request.Baseline.ModuleId
+
+    let encBaseId =
+        match request.PreviousGenerationId with
+        | Some prev when prev <> Guid.Empty -> prev
+        | _ ->
+            let baselineEncId = request.Baseline.EncId
+            if baselineEncId <> Guid.Empty then baselineEncId else Guid.Empty
+
+    if traceMetadata.Value then
+        printfn
+            "[fsharp-hotreload][metadata] generation=%d prevGeneration=%A baselineEncId=%A resolvedBase=%A"
+            request.CurrentGeneration
+            request.PreviousGenerationId
+            request.Baseline.EncId
+            encBaseId
+    let encId = System.Guid.NewGuid()
+
+    let methodRowLookup =
+        let baselineTokens = request.Baseline.MethodTokens
+        fun key ->
+            baselineTokens
+            |> Map.tryFind key
+            |> Option.map (fun token -> token &&& 0x00FFFFFF)
+
+    let baselineTableRowCounts = request.Baseline.Metadata.TableRowCounts
+    let baselineTypeRefRowCount = baselineTableRowCounts.[TableNames.TypeRef.Index]
+    let baselineMemberRefRowCount = baselineTableRowCounts.[TableNames.MemberRef.Index]
+    let baselineAssemblyRefRowCount = baselineTableRowCounts.[TableNames.AssemblyRef.Index]
+    let baselineMethodSpecRowCount = baselineTableRowCounts.[TableNames.MethodSpec.Index]
+    let lastMethodRowId = baselineTableRowCounts.[TableNames.Method.Index]
+    let mutable nextTypeRefRowId = baselineTypeRefRowCount
+    let mutable nextMemberRefRowId = baselineMemberRefRowCount
+    let mutable nextAssemblyRefRowId = baselineAssemblyRefRowCount
+    let typeReferenceRows = ResizeArray<TypeReferenceRowInfo>()
+    let memberReferenceRows = ResizeArray<MemberReferenceRowInfo>()
+    let assemblyReferenceRows = ResizeArray<AssemblyReferenceRowInfo>()
+    let baselineTypeReferenceTokens = request.Baseline.TypeReferenceTokens
+    let baselineAssemblyReferenceTokens = request.Baseline.AssemblyReferenceTokens
+    if traceMetadata.Value then
+        printfn
+            "[fsharp-hotreload][metadata] baseline-typerefs=%d baseline-assemblyrefs=%d"
+            (baselineTypeReferenceTokens |> Map.count)
+            (baselineAssemblyReferenceTokens |> Map.count)
+    let tryReuseBaselineTypeRef (key: TypeReferenceKey) =
+        baselineTypeReferenceTokens |> Map.tryFind key
+
+    let typeRefTokenMap = Dictionary<int, int>()
+    let assemblyRefTokenMap = Dictionary<int, int>()
+    let memberRefTokenMap = Dictionary<int, int>()
+    let methodDefinitionIndex = DefinitionIndex<MethodDefinitionKey>(methodRowLookup, lastMethodRowId)
+    let processedMethodKeys = HashSet<MethodDefinitionKey>()
+    let addedMethodDeltaTokens = Dictionary<MethodDefinitionKey, int>(HashIdentity.Structural)
+    let methodSpecTokenMap = Dictionary<int, int>()
+    let methodSpecRowsByToken = Dictionary<int, MethodSpecificationRowInfo>()
+    let mutable nextMethodSpecRowId = baselineMethodSpecRowCount
+
+    for KeyValue(key, newToken) in addedMethodTokens do
+        if not (methodDefinitionIndex.IsAdded key) then
+            let rowId = methodDefinitionIndex.Add key
+            let deltaToken = 0x06000000 ||| rowId
+            addedMethodDeltaTokens[key] <- deltaToken
+            addMapping methodTokenMap newToken deltaToken
+
+    // Keep definition-token projection separate from metadata-reference remapping.
+    let definitionTokenRemapper =
+        createDefinitionTokenRemapper
+            { TypeTokenMap = typeTokenMap
+              FieldTokenMap = fieldTokenMap
+              MethodTokenMap = methodTokenMap
+              PropertyTokenMap = propertyTokenMap
+              EventTokenMap = eventTokenMap }
+
+    let metadataReferenceRemapper =
+        createMetadataReferenceRemapper
+            { MetadataReader = metadataReader
+              TraceMetadata = traceMetadata.Value
+              BaselineMemberRefRowCount = baselineMemberRefRowCount
+              TryReuseBaselineTypeRef = tryReuseBaselineTypeRef
+              RemapDefinitionToken = definitionTokenRemapper.RemapDefinitionToken
+              TypeReferenceRows = typeReferenceRows
+              MemberReferenceRows = memberReferenceRows
+              AssemblyReferenceRows = assemblyReferenceRows
+              TypeRefTokenMap = typeRefTokenMap
+              AssemblyRefTokenMap = assemblyRefTokenMap
+              MemberRefTokenMap = memberRefTokenMap
+              MethodSpecTokenMap = methodSpecTokenMap
+              MethodSpecRowsByToken = methodSpecRowsByToken
+              GetNextTypeRefRowId = (fun () -> nextTypeRefRowId)
+              SetNextTypeRefRowId = (fun value -> nextTypeRefRowId <- value)
+              GetNextMemberRefRowId = (fun () -> nextMemberRefRowId)
+              SetNextMemberRefRowId = (fun value -> nextMemberRefRowId <- value)
+              GetNextAssemblyRefRowId = (fun () -> nextAssemblyRefRowId)
+              SetNextAssemblyRefRowId = (fun value -> nextAssemblyRefRowId <- value)
+              GetNextMethodSpecRowId = (fun () -> nextMethodSpecRowId)
+              SetNextMethodSpecRowId = (fun value -> nextMethodSpecRowId <- value) }
+
+    let remapEntityToken = metadataReferenceRemapper.RemapEntityToken
+    let remapAssemblyRefToken = metadataReferenceRemapper.RemapAssemblyRefToken
+
+    let methodUpdateInputs =
+        resolvedMethods
+        |> List.choose (fun (_, _, _, key) ->
+            tryBuildMethodUpdateInput
+                traceMethodUpdates.Value
+                metadataReader
+                peReader
+                request.Baseline.MethodTokens
+                addedMethodTokens
+                addedMethodDeltaTokens
+                key)
+
+    let parameterRowLookup = Dictionary<ParameterDefinitionKey, int>()
+    let parameterHandleLookup = Dictionary<ParameterDefinitionKey, ParameterHandle>()
+    let syntheticParameterInfo = Dictionary<ParameterDefinitionKey, ParameterAttributes>(HashIdentity.Structural)
+    let returnParameterKeys = HashSet<ParameterDefinitionKey>(HashIdentity.Structural)
+    let lastParamRowId = baselineTableRowCounts.[TableNames.Param.Index]
+    let parameterDefinitionIndex =
+        let tryExisting key =
+            match parameterRowLookup.TryGetValue key with
+            | true, rowId -> Some rowId
+            | _ -> None
+        DefinitionIndex<ParameterDefinitionKey>(tryExisting, lastParamRowId)
+
+    let propertyTokenToKey =
+        let dict = Dictionary<int, PropertyDefinitionKey>()
+        for KeyValue(key, token) in request.Baseline.PropertyTokens do
+            dict[token] <- key
+        dict
+
+    for KeyValue(token, key) in addedPropertyTokenLookup do
+        propertyTokenToKey[token] <- key
+
+    let baselinePropertyLookup =
+        let dict = Dictionary<string * string, PropertyDefinitionKey * int>()
+        for KeyValue(key, token) in request.Baseline.PropertyTokens do
+            dict.Add((key.DeclaringType, key.Name), (key, token &&& 0x00FFFFFF))
+        dict
+
+    let eventTokenToKey =
+        let dict = Dictionary<int, EventDefinitionKey>()
+        for KeyValue(key, token) in request.Baseline.EventTokens do
+            dict[token] <- key
+        dict
+
+    for KeyValue(token, key) in addedEventTokenLookup do
+        eventTokenToKey[token] <- key
+
+    let baselineEventLookup =
+        let dict = Dictionary<string * string, EventDefinitionKey * int>()
+        for KeyValue(key, token) in request.Baseline.EventTokens do
+            dict.Add((key.DeclaringType, key.Name), (key, token &&& 0x00FFFFFF))
+        dict
+
+    let methodTokenToKey =
+        let dict = Dictionary<int, MethodDefinitionKey>()
+        for KeyValue(key, token) in request.Baseline.MethodTokens do
+            dict[token] <- key
+        for KeyValue(key, token) in addedMethodDeltaTokens do
+            dict[token] <- key
+        dict
+
+    let propertyRowLookup key =
+        request.Baseline.PropertyTokens
+        |> Map.tryFind key
+        |> Option.map (fun token -> token &&& 0x00FFFFFF)
+
+    let eventRowLookup key =
+        request.Baseline.EventTokens
+        |> Map.tryFind key
+        |> Option.map (fun token -> token &&& 0x00FFFFFF)
+
+    let lastPropertyRowId = baselineTableRowCounts.[TableNames.Property.Index]
+    let propertyDefinitionIndex = DefinitionIndex<PropertyDefinitionKey>(propertyRowLookup, lastPropertyRowId)
+    let processedPropertyKeys = HashSet<PropertyDefinitionKey>()
+    let addedPropertyDeltaTokens = Dictionary<PropertyDefinitionKey, int>(HashIdentity.Structural)
+
+    for KeyValue(key, newToken) in addedPropertyTokens do
+        if not (propertyDefinitionIndex.IsAdded key) then
+            let rowId = propertyDefinitionIndex.Add key
+            let deltaToken = 0x17000000 ||| rowId
+            addedPropertyDeltaTokens[key] <- deltaToken
+            addMapping propertyTokenMap newToken deltaToken
+
+    for KeyValue(key, token) in addedPropertyDeltaTokens do
+        propertyTokenToKey[token] <- key
+
+    let lastEventRowId = baselineTableRowCounts.[TableNames.Event.Index]
+    let eventDefinitionIndex = DefinitionIndex<EventDefinitionKey>(eventRowLookup, lastEventRowId)
+    let processedEventKeys = HashSet<EventDefinitionKey>()
+
+    let addedEventDeltaTokens = Dictionary<EventDefinitionKey, int>(HashIdentity.Structural)
+
+    for KeyValue(key, newToken) in addedEventTokens do
+        if not (eventDefinitionIndex.IsAdded key) then
+            let rowId = eventDefinitionIndex.Add key
+            let deltaToken = 0x14000000 ||| rowId
+            addedEventDeltaTokens[key] <- deltaToken
+            addMapping eventTokenMap newToken deltaToken
+
+    for KeyValue(key, token) in addedEventDeltaTokens do
+        eventTokenToKey[token] <- key
+
+    for struct (key, _, _, _, _) in methodUpdateInputs do
+        if processedMethodKeys.Add key then
+            if methodDefinitionIndex.IsAdded key then
+                ()
+            else
+                methodDefinitionIndex.AddExisting key
+
+    let methodUpdateLookup =
+        let dict = Dictionary<MethodDefinitionKey, struct (MethodDefinitionKey * int * MethodDefinitionHandle * MethodDefinition * MethodBodyBlock)>()
+        for struct (key, methodToken, methodHandle, methodDef, body) in methodUpdateInputs do
+            dict[key] <- struct (key, methodToken, methodHandle, methodDef, body)
+        dict
+
+    let propertyAccessorLookup = Dictionary<MethodDefinitionHandle, PropertyDefinitionHandle>()
+    for propertyHandle in metadataReader.PropertyDefinitions do
+        let propertyDef = metadataReader.GetPropertyDefinition propertyHandle
+        let accessors = propertyDef.GetAccessors()
+        let getter = accessors.Getter
+        if not getter.IsNil then
+            propertyAccessorLookup[getter] <- propertyHandle
+        let setter = accessors.Setter
+        if not setter.IsNil then
+            propertyAccessorLookup[setter] <- propertyHandle
+        for otherHandle in accessors.Others do
+            if not otherHandle.IsNil then
+                propertyAccessorLookup[otherHandle] <- propertyHandle
+
+    let eventAccessorLookup = Dictionary<MethodDefinitionHandle, EventDefinitionHandle>()
+    for eventHandle in metadataReader.EventDefinitions do
+        let eventDef = metadataReader.GetEventDefinition eventHandle
+        let accessors = eventDef.GetAccessors()
+        let adder = accessors.Adder
+        if not adder.IsNil then
+            eventAccessorLookup[adder] <- eventHandle
+        let remover = accessors.Remover
+        if not remover.IsNil then
+            eventAccessorLookup[remover] <- eventHandle
+        let raiser = accessors.Raiser
+        if not raiser.IsNil then
+            eventAccessorLookup[raiser] <- eventHandle
+
+    let methodDefinitionRowsRaw = methodDefinitionIndex.Rows
+
+    let orderedMethodInputs =
+        methodDefinitionRowsRaw
+        |> List.choose (fun struct (_, key, _) ->
+            match methodUpdateLookup.TryGetValue key with
+            | true, data -> Some data
+            | _ -> None)
+
+    let baselineMethodHandles = request.Baseline.MetadataHandles.MethodHandles
+    let baselineParameterHandles = request.Baseline.MetadataHandles.ParameterHandles
+    let baselineParametersByMethod =
+        let dict = Dictionary<MethodDefinitionKey, (ParameterDefinitionKey * ParameterDefinitionMetadataHandles) list>(HashIdentity.Structural)
+        for KeyValue(paramKey, info) in baselineParameterHandles do
+            let methodKey = paramKey.Method
+            let existing =
+                match dict.TryGetValue methodKey with
+                | true, entries -> entries
+                | _ -> []
+            dict[methodKey] <- (paramKey, info) :: existing
+        dict
+    if traceMethodUpdates.Value then
+        for KeyValue(methodKey, entries) in baselineParametersByMethod do
+            printfn "[fsharp-hotreload][param-baseline] method=%s::%s entries=%d" methodKey.DeclaringType methodKey.Name (List.length entries)
+    let baselinePropertyHandles = request.Baseline.MetadataHandles.PropertyHandles
+    let baselineEventHandles = request.Baseline.MetadataHandles.EventHandles
+    let firstParamRowByMethod = Dictionary<MethodDefinitionKey, int>(HashIdentity.Structural)
+
+    let addSyntheticParameter key sequence attrs =
+        let paramKey =
+            { ParameterDefinitionKey.Method = key
+              SequenceNumber = sequence }
+        if not (parameterRowLookup.ContainsKey paramKey) then
+            let rowId = parameterDefinitionIndex.Add paramKey
+            parameterRowLookup[paramKey] <- rowId
+            syntheticParameterInfo[paramKey] <- attrs
+            rowId
+        else
+            parameterRowLookup[paramKey]
+
+    let ensureReturnParameterRow key isAdded =
+        let paramKey =
+            { ParameterDefinitionKey.Method = key
+              SequenceNumber = 0 }
+        if parameterRowLookup.ContainsKey paramKey then
+            Some parameterRowLookup[paramKey]
+        else
+            match baselineParameterHandles |> Map.tryFind paramKey |> Option.bind (fun info -> info.RowId) with
+            | Some baselineRow when baselineRow > 0 ->
+                parameterRowLookup[paramKey] <- baselineRow
+                parameterDefinitionIndex.AddExisting paramKey
+                Some baselineRow
+            | _ ->
+                // Only synthesize a return parameter row for ADDED methods.
+                // For existing methods being updated, if the baseline had no return param row,
+                // we shouldn't add one - that would change the method's ParamList incorrectly.
+                if isAdded then
+                    let rowId = addSyntheticParameter key 0 ParameterAttributes.None
+                    returnParameterKeys.Add paramKey |> ignore
+                    Some rowId
+                else
+                    None
+
+    let enqueueParameters key methodHandle =
+        let methodDef = metadataReader.GetMethodDefinition methodHandle
+        let parameters = methodDef.GetParameters()
+        let mutable sawParameter = false
+        for parameterHandle in parameters do
+            sawParameter <- true
+            let parameter = metadataReader.GetParameter parameterHandle
+            let paramKey =
+                { ParameterDefinitionKey.Method = key
+                  SequenceNumber = int parameter.SequenceNumber }
+            if methodDefinitionIndex.IsAdded key then
+                if not (parameterRowLookup.ContainsKey paramKey) then
+                    let rowId = parameterDefinitionIndex.Add paramKey
+                    parameterRowLookup[paramKey] <- rowId
+                    parameterHandleLookup[paramKey] <- parameterHandle
+            else
+                if not (parameterRowLookup.ContainsKey paramKey) then
+                    let rowId =
+                        match baselineParameterHandles |> Map.tryFind paramKey |> Option.bind (fun info -> info.RowId) with
+                        | Some baselineRow when baselineRow > 0 -> baselineRow
+                        | _ -> MetadataTokens.GetRowNumber parameterHandle
+                    parameterRowLookup[paramKey] <- rowId
+                    parameterHandleLookup[paramKey] <- parameterHandle
+                    parameterDefinitionIndex.AddExisting paramKey
+        if not sawParameter then
+            match baselineParametersByMethod.TryGetValue key with
+            | true, entries when not (List.isEmpty entries) ->
+                if traceMethodUpdates.Value then
+                    printfn "[fsharp-hotreload][param-fallback] method=%s::%s entries=%d" key.DeclaringType key.Name (List.length entries)
+                for (paramKey, info) in entries do
+                    if not (parameterRowLookup.ContainsKey paramKey) then
+                        match info.RowId with
+                        | Some rowId when rowId > 0 ->
+                            parameterRowLookup[paramKey] <- rowId
+                            parameterDefinitionIndex.AddExisting paramKey
+                        | _ ->
+                            let syntheticRow = addSyntheticParameter key paramKey.SequenceNumber ParameterAttributes.None
+                            if traceMethodUpdates.Value then
+                                printfn "[fsharp-hotreload][param-fallback] synthesized baseline entry method=%s::%s seq=%d row=%d" key.DeclaringType key.Name paramKey.SequenceNumber syntheticRow
+            | _ -> ()
+
+        let isAdded = methodDefinitionIndex.IsAdded key
+        let _ = ensureReturnParameterRow key isAdded
+        ()
+
+    orderedMethodInputs
+    |> List.iter (fun struct (key, _, methodHandle, _, _) -> enqueueParameters key methodHandle)
+
+    let registerPropertyDefinition key handle =
+        if processedPropertyKeys.Add key then
+            if propertyDefinitionIndex.IsAdded key then
+                ()
+            else
+                propertyDefinitionIndex.AddExisting key
+        propertyHandleLookup[key] <- handle
+
+    let registerEventDefinition key handle =
+        if processedEventKeys.Add key then
+            if eventDefinitionIndex.IsAdded key then
+                ()
+            else
+                eventDefinitionIndex.AddExisting key
+        eventHandleLookup[key] <- handle
+
+    let tryGetMethodToken key =
+        match request.Baseline.MethodTokens |> Map.tryFind key with
+        | Some token -> Some token
+        | None ->
+            match addedMethodDeltaTokens.TryGetValue key with
+            | true, token -> Some token
+            | _ -> None
+
+    let tryResolveAccessor methodToken =
+        let methodHandle = MetadataTokens.MethodDefinitionHandle methodToken
+        match propertyAccessorLookup.TryGetValue methodHandle with
+        | true, propertyHandle ->
+            if traceMethodUpdates.Value then
+                printfn "[fsharp-hotreload][accessor] property handle matched token=0x%08X" (MetadataTokens.GetToken(EntityHandle.op_Implicit propertyHandle))
+            let associationToken = MetadataTokens.GetToken(EntityHandle.op_Implicit propertyHandle)
+            let baselineToken = definitionTokenRemapper.RemapPropertyAssociationToken associationToken
+            match propertyTokenToKey.TryGetValue(baselineToken) with
+            | true, key ->
+                let baselineHandle = MetadataTokens.PropertyDefinitionHandle baselineToken
+                registerPropertyDefinition key baselineHandle
+            | _ -> ()
+        | _ ->
+            if traceMethodUpdates.Value then
+                printfn "[fsharp-hotreload][accessor] property handle missing for method token=0x%08X" (MetadataTokens.GetToken(EntityHandle.op_Implicit methodHandle))
+            match eventAccessorLookup.TryGetValue methodHandle with
+            | true, eventHandle ->
+                let associationToken = MetadataTokens.GetToken(EntityHandle.op_Implicit eventHandle)
+                let baselineToken = definitionTokenRemapper.RemapEventAssociationToken associationToken
+                match eventTokenToKey.TryGetValue(baselineToken) with
+                | true, key ->
+                    let baselineHandle = MetadataTokens.EventDefinitionHandle baselineToken
+                    registerEventDefinition key baselineHandle
+                | _ -> ()
+            | _ -> ()
+
+    for accessor in request.UpdatedAccessors do
+        match accessor.Method with
+        | Some methodKey ->
+            match tryGetMethodToken methodKey with
+            | Some methodToken -> tryResolveAccessor methodToken
+            | None -> ()
+        | None -> ()
+
+    let updatedTypeTokens =
+        buildUpdatedTypeTokens
+            tryGetBaselineTypeName
+            request.Baseline.TypeTokens
+            request.UpdatedTypes
+            symbolChangeTypeNames
+            resolvedMethods
+
+    let updatedMethodTokenList =
+        orderedMethodInputs
+        |> List.map (fun struct (_, methodToken, _, _, _) -> methodToken)
+
+    if List.isEmpty methodUpdateInputs && List.isEmpty updatedTypeTokens then
+        emptyDelta
+    else
+        let (methodUpdatesWithDefs,
+             parameterDefinitionRowsSnapshot,
+             methodDefinitionRowsSnapshot,
+             methodSpecificationRowsSnapshot) =
+            buildMethodAndParameterRows
+                orderedMethodInputs
+                metadataReader
+                builder
+                remapUserString
+                remapEntityToken
+                parameterDefinitionIndex.Rows
+                parameterHandleLookup
+                baselineParameterHandles
+                syntheticParameterInfo
+                firstParamRowByMethod
+                returnParameterKeys
+                methodDefinitionRowsRaw
+                baselineMethodHandles
+                request.Baseline.MethodTokens
+                methodDefinitionIndex
+                traceMetadata.Value
+                baselineMethodSpecRowCount
+                methodSpecRowsByToken
+        let (propertyDefinitionRowsSnapshot,
+             eventDefinitionRowsSnapshot,
+             propertyMapRowsSnapshot,
+             eventMapRowsSnapshot,
+             methodSemanticsRowsSnapshot) =
+            buildPropertyEventAndSemanticsRows
+                traceMethodUpdates.Value
+                request
+                metadataReader
+                propertyDefinitionIndex
+                eventDefinitionIndex
+                propertyHandleLookup
+                eventHandleLookup
+                baselinePropertyHandles
+                baselineEventHandles
+                baselinePropertyLookup
+                baselineEventLookup
+                baselineTableRowCounts
+                tryGetMethodToken
+
+        let methodUpdates = methodUpdatesWithDefs |> List.map (fun (update, _, _) -> update)
+
+        let baselineHeapOffsets =
+            request.Baseline.Metadata.HeapSizes
+            |> MetadataHeapOffsets.OfHeapSizes
+
+        let userStringEntries =
+            userStringUpdates
+            |> Seq.toList
+
+        let customAttributeRowList, nextTypeRefRowIdAfterAttributes, nextMemberRefRowIdAfterAttributes =
+            buildCustomAttributeRows
+                traceMetadata.Value
+                metadataReader
+                baselineTableRowCounts
+                methodUpdateInputs
+                methodDefinitionRowsRaw
+                methodDefinitionIndex
+                methodUpdatesWithDefs
+                remapEntityToken
+                remapAssemblyRefToken
+                baselineTypeReferenceTokens
+                nextTypeRefRowId
+                nextMemberRefRowId
+                typeReferenceRows
+                memberReferenceRows
+
+        nextTypeRefRowId <- nextTypeRefRowIdAfterAttributes
+        nextMemberRefRowId <- nextMemberRefRowIdAfterAttributes
+
+        let typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList =
+            buildReferenceRows
+                traceMetadata.Value
+                typeReferenceRows
+                memberReferenceRows
+                assemblyReferenceRows
+                methodSpecificationRowsSnapshot
+                customAttributeRowList
+
+        let streams = builder.Build()
+
+        let metadataDelta =
+            emitMetadataDelta
+                traceMetadata.Value
+                moduleName
+                baselineModuleNameOffset
+                request.CurrentGeneration
+                encId
+                encBaseId
+                moduleMvid
+                methodDefinitionRowsSnapshot
+                parameterDefinitionRowsSnapshot
+                typeReferenceRowList
+                memberReferenceRowList
+                methodSpecificationRowsSnapshot
+                assemblyReferenceRowList
+                propertyDefinitionRowsSnapshot
+                eventDefinitionRowsSnapshot
+                propertyMapRowsSnapshot
+                eventMapRowsSnapshot
+                methodSemanticsRowsSnapshot
+                streams.StandaloneSignatures
+                customAttributeRowList
+                userStringEntries
+                methodUpdates
+                baselineHeapOffsets
+                request.Baseline.Metadata.TableRowCounts
+
+        finalizeDeltaArtifacts
+            request
+            pdbBytesOpt
+            encId
+            encBaseId
+            metadataDelta
+            streams
+            updatedTypeTokens
+            updatedMethodTokenList
+            methodTokenMap
+            userStringEntries
+            methodDefinitionRowsSnapshot
+            propertyMapRowsSnapshot
+            eventMapRowsSnapshot
+            methodSemanticsRowsSnapshot
+            methodTokenToKey
+            addedMethodDeltaTokens
+            addedPropertyDeltaTokens
+            addedEventDeltaTokens
