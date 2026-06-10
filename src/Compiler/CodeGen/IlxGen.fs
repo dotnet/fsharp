@@ -12961,6 +12961,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                     // shift cache occupancy for the bucket counter.
                     if IsCompilerGeneratedName v.LogicalName then
                         primeVal v
+
                     walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
                     walkExpr (mkLocalValRef v :: letBoundVars) cloc body
 
