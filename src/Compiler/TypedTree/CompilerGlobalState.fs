@@ -91,25 +91,39 @@ type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
 /// Per-consumer-file closure type-name allocation scope used by IlxGen.
-/// Tracing variant for diagnostics — see https://github.com/dotnet/fsharp/issues/19928.
+/// Disambiguates closure type names when the SAME source range is inlined into
+/// multiple consumer files — without the per-consumer-file marker, those would
+/// race on the shared StableNiceNameGenerator bucket under parallel codegen.
+/// See https://github.com/dotnet/fsharp/issues/19928.
+///
+/// For closures whose source m.FileIndex matches the consumer file, the name
+/// uses the legacy format `basicName@<line>[-N]` so existing baselines remain
+/// stable. Only cross-file inlined closures get the `F<consumerFileIndex>` marker.
 [<Sealed>]
 type PerFileClosureNameScope(consumerFileIndex: int) =
 
     let byUniq = System.Collections.Generic.Dictionary<int64, string>()
     let buckets =
-        System.Collections.Generic.Dictionary<struct (string * int * int), int>()
+        System.Collections.Generic.Dictionary<struct (string * int * int * bool), int>()
 
     member _.EmitClosureName(basicName: string, m: range, uniq: int64) =
         match byUniq.TryGetValue uniq with
         | true, cached ->
             cached
         | false, _ ->
+            let isInlinedFromAnotherFile = m.FileIndex <> consumerFileIndex
+
             // Bucket key omits StartColumn so two Lambdas sharing a line (different columns)
             // share one bucket and produce different `-N` suffixes. Embedding the column in the
             // bucket key without also embedding it in the emitted NAME would cause distinct
             // bucket keys to produce the same name (each "first" in its own bucket → both
             // get "" suffix → duplicate type defs in IL).
-            let bucketKey = struct (basicName, m.FileIndex, m.StartLine)
+            //
+            // The `isInlinedFromAnotherFile` flag splits the bucket so that local closures
+            // (legacy naming) and inlined closures (with `F<consumerFileIndex>` marker) at
+            // the same source line do not contend for the same suffix counter.
+            let bucketKey =
+                struct (basicName, m.FileIndex, m.StartLine, isInlinedFromAnotherFile)
 
             let occ =
                 match buckets.TryGetValue bucketKey with
@@ -121,7 +135,10 @@ type PerFileClosureNameScope(consumerFileIndex: int) =
                     0
 
             let lineMarker =
-                string m.StartLine + "F" + string consumerFileIndex
+                if isInlinedFromAnotherFile then
+                    string m.StartLine + "F" + string consumerFileIndex
+                else
+                    string m.StartLine
 
             let suffix =
                 if occ = 0 then ""
