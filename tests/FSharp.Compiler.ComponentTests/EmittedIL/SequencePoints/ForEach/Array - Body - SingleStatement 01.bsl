@@ -21,7 +21,7 @@ Module::f
 
   (5,9-5,35)  System.Console.WriteLine i
     IL_000a:  ldloc.2
-    IL_000b:  call WriteLine
+    IL_000b:  call Console::WriteLine
 
   <hidden>
     IL_0010:  ldloc.1
