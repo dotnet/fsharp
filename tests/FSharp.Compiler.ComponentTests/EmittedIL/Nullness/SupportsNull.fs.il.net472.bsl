@@ -5,6 +5,7 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
+.assembly extern runtime { }
 .assembly assembly
 {
   .hash algorithm 0x00008004
@@ -26,11 +27,112 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .method public static !!b  fullyInferredTestCase<class a,class b>(!!a arg1,
+                                                                    !!b arg2) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+    .param type a 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .param type b 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  3
+    .locals init (!!b V_0)
+    IL_0000:  ldarg.0
+    IL_0001:  call       int32 MyTestModule::iAcceptNullPartiallyInferredFromUnderscore<!!0>(!!0)
+    IL_0006:  call       void [runtime]System.Console::Write(int32)
+    IL_000b:  ldarg.1
+    IL_000c:  call       !!0 MyTestModule::iCanProduceNullSometimes<!!1>(!!0)
+    IL_0011:  stloc.0
+    IL_0012:  ldloc.0
+    IL_0013:  ret
+  } 
+
+  .method public static int32  iAcceptNullExplicitAnnotation<class T>(!!T arg) cil managed
+  {
+    .param type T 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  3
+    .locals init (!!T V_0)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  box        !!T
+    IL_0008:  brtrue.s   IL_000d
+
+    IL_000a:  ldc.i4.1
+    IL_000b:  br.s       IL_000e
+
+    IL_000d:  ldc.i4.0
+    IL_000e:  brfalse.s  IL_0012
+
+    IL_0010:  ldc.i4.1
+    IL_0011:  ret
+
+    IL_0012:  ldc.i4.0
+    IL_0013:  ret
+  } 
+
+  .method public static int32  iAcceptNullPartiallyInferredFromNamedTypar<class a>(!!a arg) cil managed
+  {
+    .param type a 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  ret
+  } 
+
+  .method public static int32  iAcceptNullPartiallyInferredFromUnderscore<class a>(!!a arg) cil managed
+  {
+    .param type a 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  ret
+  } 
+
+  .method public static int32  iAcceptNullWithNullAnnotation<class a>(!!a arg) cil managed
+  {
+    .param type a 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  3
+    .locals init (!!a V_0)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  box        !!a
+    IL_0008:  brtrue.s   IL_000d
+
+    IL_000a:  ldc.i4.1
+    IL_000b:  br.s       IL_000e
+
+    IL_000d:  ldc.i4.0
+    IL_000e:  brfalse.s  IL_0012
+
+    IL_0010:  ldc.i4.1
+    IL_0011:  ret
+
+    IL_0012:  ldc.i4.0
+    IL_0013:  ret
+  } 
+
   .method public static !!a  iCanProduceNullSometimes<class a>(!!a arg) cil managed
   {
     .param type a 
-      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  4
     .locals init (!!a V_0,
@@ -65,7 +167,7 @@
   .method public static string  iPatternMatchOnArg<class a>(!!a arg) cil managed
   {
     .param type a 
-      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  8
     IL_0000:  ldarg.0
@@ -81,111 +183,10 @@
     IL_0015:  ret
   } 
 
-  .method public static int32  iAcceptNullPartiallyInferredFromUnderscore<class a>(!!a arg) cil managed
-  {
-    .param type a 
-      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-    .param [1]
-    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  ret
-  } 
-
-  .method public static int32  iAcceptNullPartiallyInferredFromNamedTypar<class a>(!!a arg) cil managed
-  {
-    .param type a 
-      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-    .param [1]
-    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  ret
-  } 
-
-  .method public static int32  iAcceptNullWithNullAnnotation<class a>(!!a arg) cil managed
-  {
-    .param type a 
-      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-    .param [1]
-    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  3
-    .locals init (!!a V_0)
-    IL_0000:  ldarg.0
-    IL_0001:  stloc.0
-    IL_0002:  ldloc.0
-    IL_0003:  box        !!a
-    IL_0008:  brtrue.s   IL_000d
-
-    IL_000a:  ldc.i4.1
-    IL_000b:  br.s       IL_000e
-
-    IL_000d:  ldc.i4.0
-    IL_000e:  brfalse.s  IL_0012
-
-    IL_0010:  ldc.i4.1
-    IL_0011:  ret
-
-    IL_0012:  ldc.i4.0
-    IL_0013:  ret
-  } 
-
-  .method public static int32  iAcceptNullExplicitAnnotation<class T>(!!T arg) cil managed
-  {
-    .param type T 
-      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  3
-    .locals init (!!T V_0)
-    IL_0000:  ldarg.0
-    IL_0001:  stloc.0
-    IL_0002:  ldloc.0
-    IL_0003:  box        !!T
-    IL_0008:  brtrue.s   IL_000d
-
-    IL_000a:  ldc.i4.1
-    IL_000b:  br.s       IL_000e
-
-    IL_000d:  ldc.i4.0
-    IL_000e:  brfalse.s  IL_0012
-
-    IL_0010:  ldc.i4.1
-    IL_0011:  ret
-
-    IL_0012:  ldc.i4.0
-    IL_0013:  ret
-  } 
-
-  .method public static !!b  fullyInferredTestCase<class a,class b>(!!a arg1,
-                                                                   !!b arg2) cil managed
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    .param type a 
-      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-    .param type b 
-      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    .param [1]
-    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  3
-    .locals init (!!b V_0)
-    IL_0000:  ldarg.0
-    IL_0001:  call       int32 MyTestModule::iAcceptNullPartiallyInferredFromUnderscore<!!0>(!!0)
-    IL_0006:  call       void [runtime]System.Console::Write(int32)
-    IL_000b:  ldarg.1
-    IL_000c:  call       !!0 MyTestModule::iCanProduceNullSometimes<!!1>(!!0)
-    IL_0011:  stloc.0
-    IL_0012:  ldloc.0
-    IL_0013:  ret
-  } 
-
   .method public static int32  structShouldBeAllowedHere<a>(!!a arg) cil managed
   {
     .param type a 
-      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
     
     .maxstack  3
     .locals init (object V_0)
@@ -203,72 +204,6 @@
        extends [runtime]System.Object
 {
 } 
-
-.class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableAttribute
-       extends [runtime]System.Attribute
-{
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .field public uint8[] NullableFlags
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname instance void  .ctor(uint8 scalarByteValue) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldc.i4.1
-    IL_0008:  newarr     [runtime]System.Byte
-    IL_000d:  dup
-    IL_000e:  ldc.i4.0
-    IL_000f:  ldarg.1
-    IL_0010:  stelem.i1
-    IL_0011:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
-    IL_0016:  ret
-  } 
-
-  .method public specialname rtspecialname instance void  .ctor(uint8[] NullableFlags) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldarg.1
-    IL_0008:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
-    IL_000d:  ret
-  } 
-
-} 
-
-.class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableContextAttribute
-       extends [runtime]System.Attribute
-{
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .field public uint8 Flag
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname instance void  .ctor(uint8 Flag) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldarg.1
-    IL_0008:  stfld      uint8 System.Runtime.CompilerServices.NullableContextAttribute::Flag
-    IL_000d:  ret
-  } 
-
-} 
-
 
 
 

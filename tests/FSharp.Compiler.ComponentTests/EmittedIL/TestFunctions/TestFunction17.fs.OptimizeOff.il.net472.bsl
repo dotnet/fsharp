@@ -58,35 +58,11 @@
     .field assembly int32 y@
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .method public hidebysig specialname instance int32  get_x() cil managed
+    .method public specialname rtspecialname instance void  .ctor(int32 x, int32 y) cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 assembly/R::x@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance int32  get_y() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 assembly/R::y@
-      IL_0006:  ret
-    } 
-
-    .method public specialname rtspecialname 
-            instance void  .ctor(int32 x,
-                                 int32 y) cil managed
-    {
-      .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 10 54 65 73 74 46 75 6E 63 74   
-                                                                                                                               69 6F 6E 31 37 2B 52 00 00 )                      
+      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+                                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 10 54 65 73 74 46 75 6E 63 74   
+                                                                                                                                                     69 6F 6E 31 37 2B 52 00 00 )                      
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -98,19 +74,6 @@
       IL_000e:  ldarg.2
       IL_000f:  stfld      int32 assembly/R::y@
       IL_0014:  ret
-    } 
-
-    .method public strict virtual instance string ToString() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldstr      "%+A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/R,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class assembly/R>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/R,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/R,string>::Invoke(!0)
-      IL_0015:  ret
     } 
 
     .method public hidebysig virtual final instance int32  CompareTo(class assembly/R obj) cil managed
@@ -203,9 +166,7 @@
       IL_000c:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj,
-                                      class [runtime]System.Collections.IComparer comp) cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -292,70 +253,7 @@
       IL_006e:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0,
-               class [runtime]System.Collections.IEqualityComparer V_1,
-               class [runtime]System.Collections.IEqualityComparer V_2)
-      IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0035
-
-      IL_0003:  ldc.i4.0
-      IL_0004:  stloc.0
-      IL_0005:  ldc.i4     0x9e3779b9
-      IL_000a:  ldarg.1
-      IL_000b:  stloc.1
-      IL_000c:  ldarg.0
-      IL_000d:  ldfld      int32 assembly/R::y@
-      IL_0012:  ldloc.0
-      IL_0013:  ldc.i4.6
-      IL_0014:  shl
-      IL_0015:  ldloc.0
-      IL_0016:  ldc.i4.2
-      IL_0017:  shr
-      IL_0018:  add
-      IL_0019:  add
-      IL_001a:  add
-      IL_001b:  stloc.0
-      IL_001c:  ldc.i4     0x9e3779b9
-      IL_0021:  ldarg.1
-      IL_0022:  stloc.2
-      IL_0023:  ldarg.0
-      IL_0024:  ldfld      int32 assembly/R::x@
-      IL_0029:  ldloc.0
-      IL_002a:  ldc.i4.6
-      IL_002b:  shl
-      IL_002c:  ldloc.0
-      IL_002d:  ldc.i4.2
-      IL_002e:  shr
-      IL_002f:  add
-      IL_0030:  add
-      IL_0031:  add
-      IL_0032:  stloc.0
-      IL_0033:  ldloc.0
-      IL_0034:  ret
-
-      IL_0035:  ldc.i4.0
-      IL_0036:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  callvirt   instance int32 assembly/R::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
-    .method public hidebysig instance bool 
-            Equals(class assembly/R obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool Equals(class assembly/R obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -403,9 +301,7 @@
       IL_0036:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
-                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -487,6 +383,102 @@
       IL_0013:  ret
     } 
 
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0,
+               class [runtime]System.Collections.IEqualityComparer V_1,
+               class [runtime]System.Collections.IEqualityComparer V_2)
+      IL_0000:  ldarg.0
+      IL_0001:  brfalse.s  IL_0035
+
+      IL_0003:  ldc.i4.0
+      IL_0004:  stloc.0
+      IL_0005:  ldc.i4     0x9e3779b9
+      IL_000a:  ldarg.1
+      IL_000b:  stloc.1
+      IL_000c:  ldarg.0
+      IL_000d:  ldfld      int32 assembly/R::y@
+      IL_0012:  ldloc.0
+      IL_0013:  ldc.i4.6
+      IL_0014:  shl
+      IL_0015:  ldloc.0
+      IL_0016:  ldc.i4.2
+      IL_0017:  shr
+      IL_0018:  add
+      IL_0019:  add
+      IL_001a:  add
+      IL_001b:  stloc.0
+      IL_001c:  ldc.i4     0x9e3779b9
+      IL_0021:  ldarg.1
+      IL_0022:  stloc.2
+      IL_0023:  ldarg.0
+      IL_0024:  ldfld      int32 assembly/R::x@
+      IL_0029:  ldloc.0
+      IL_002a:  ldc.i4.6
+      IL_002b:  shl
+      IL_002c:  ldloc.0
+      IL_002d:  ldc.i4.2
+      IL_002e:  shr
+      IL_002f:  add
+      IL_0030:  add
+      IL_0031:  add
+      IL_0032:  stloc.0
+      IL_0033:  ldloc.0
+      IL_0034:  ret
+
+      IL_0035:  ldc.i4.0
+      IL_0036:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  callvirt   instance int32 assembly/R::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
+    } 
+
+    .method public strict virtual instance string ToString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/R,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class assembly/R>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/R,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/R,string>::Invoke(!0)
+      IL_0015:  ret
+    } 
+
+    .method public hidebysig specialname instance int32  get_x() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 assembly/R::x@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance int32  get_y() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 assembly/R::y@
+      IL_0006:  ret
+    } 
+
     .property instance int32 x()
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
@@ -514,7 +506,7 @@
     IL_0008:  ldloc.0
     IL_0009:  ldloc.0
     IL_000a:  newobj     instance void class [runtime]System.Tuple`2<class assembly/R,class assembly/R>::.ctor(!0,
-                                                                                                                            !1)
+                                                                                                                                  !1)
     IL_000f:  ret
   } 
 
@@ -532,99 +524,6 @@
   } 
 
 } 
-
-.class private auto ansi serializable sealed System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
-       extends [runtime]System.Enum
-{
-  .custom instance void [runtime]System.FlagsAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .field public specialname rtspecialname int32 value__
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes All = int32(0xFFFFFFFF)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes None = int32(0x00000000)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicParameterlessConstructor = int32(0x00000001)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicConstructors = int32(0x00000003)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicConstructors = int32(0x00000004)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicMethods = int32(0x00000008)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicMethods = int32(0x00000010)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicFields = int32(0x00000020)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicFields = int32(0x00000040)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicNestedTypes = int32(0x00000080)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicNestedTypes = int32(0x00000100)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicProperties = int32(0x00000200)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicProperties = int32(0x00000400)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicEvents = int32(0x00000800)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicEvents = int32(0x00001000)
-  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes Interfaces = int32(0x00002000)
-} 
-
-.class private auto ansi beforefieldinit System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute
-       extends [runtime]System.Attribute
-{
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .field private valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType@
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .field private class [runtime]System.Type Type@
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType,
-                               class [runtime]System.Type Type) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldarg.1
-    IL_0008:  stfld      valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::MemberType@
-    IL_000d:  ldarg.0
-    IL_000e:  ldarg.2
-    IL_000f:  stfld      class [runtime]System.Type System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::Type@
-    IL_0014:  ret
-  } 
-
-  .method public hidebysig specialname instance class [runtime]System.Type get_Type() cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld      class [runtime]System.Type System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::Type@
-    IL_0006:  ret
-  } 
-
-  .method public hidebysig specialname instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes get_MemberType() cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld      valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::MemberType@
-    IL_0006:  ret
-  } 
-
-  .property instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
-          MemberType()
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .get instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::get_MemberType()
-  } 
-  .property instance class [runtime]System.Type
-          Type()
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .get instance class [runtime]System.Type System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::get_Type()
-  } 
-} 
-
 
 
 
