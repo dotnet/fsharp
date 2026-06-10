@@ -115,6 +115,7 @@
     </EmbeddedResource>
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
+    <Compile Include="Utilities\EnvironmentHelpers.fs" />
 	<Compile Include="Utilities\Caches.fsi" />
     <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\illib.fsi" />
@@ -234,6 +235,10 @@
     <Compile Include="AbstractIL\ilsupp.fs" />
     <Compile Include="AbstractIL\ilbinary.fsi" />
     <Compile Include="AbstractIL\ilbinary.fs" />
+    <Compile Include="AbstractIL\ILDeltaHandles.fs" />
+    <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
+    <Compile Include="AbstractIL\ILRowIndexing.fs" />
+    <Compile Include="AbstractIL\ILEncLogWriter.fs" />
     <Compile Include="AbstractIL\ilread.fsi" />
     <Compile Include="AbstractIL\ilread.fs" />
     <Compile Include="AbstractIL\ilwritepdb.fsi" />

@@ -260,7 +260,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         if options.HeadroomPercentage < 0 then
             invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
 
-    let name = defaultArg name (Guid.NewGuid().ToString())
+    let name = defaultArg name (System.Guid.NewGuid().ToString())
 
     // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
     let headroom =
