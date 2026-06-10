@@ -65,17 +65,11 @@ module private AttributeConformance =
 
     let private enforcedEntities : E list = [
         E.RequireQualifiedAccessAttribute
-        // AutoOpen on .fs alone is a no-op for F# consumers - the .fsi governs
-        // the FSharpSignatureData consumers read, the IL attribute is ignored.
-        // Only affects intra-.fs scoping; widely used as that idiom.
+        // AutoOpen on .fs alone is a no-op for F# consumers (.fsi wins).
         E.NoComparisonAttribute
         E.NoEqualityAttribute
-        // StructuralEquality/StructuralComparison are documentary at the consumer
-        // boundary - the F# default for DU/record/struct already generates the
-        // same Equals/GetHashCode/CompareTo and IStructural* interfaces. The
-        // attribute on the impl IS load-bearing as a compile-time assertion
-        // (FS1176/FS1177 if a field doesn't satisfy equality/comparison), but
-        // that fires at the .fs's own compile, not at consumers.
+        // StructuralEquality / StructuralComparison are documentary for consumers
+        // (F# default already generates them); load-bearing only as impl-side FS1176/FS1177.
         E.CustomEqualityAttribute
         E.CustomComparisonAttribute
         E.ReferenceEqualityAttribute
