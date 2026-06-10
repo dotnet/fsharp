@@ -313,7 +313,6 @@ type TcFileState =
 
       argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
-      /// Inherit clauses whose type already failed UndefinedName; skip re-resolution to avoid duplicate FS0039.
       inheritResolutionFailed: ConcurrentDictionary<struct (Stamp * range), unit>
 
       // forward call
