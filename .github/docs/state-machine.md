@@ -15,6 +15,12 @@
 - **flaky-test-detector** — A repository tool / Copilot skill that confirms a test is flaky by checking for failure evidence across ≥3 distinct unrelated PRs (not the originating PR).
 - **Cat A/B/C** (regression-pr-shepherd) — Triage categories for regression-test PRs. **A**: new human review feedback since last bot comment. **B**: CI failure or merge conflict. **C**: healthy (skip this round).
 - **B0–B4** (regression-pr-shepherd, Category B subtypes) — **B0**: merge conflict (rebase + resolve). **B1**: infrastructure/flaky failure (retry CI). **B2**: test compilation or setup error (fix test code). **B3**: added test fails — bug NOT fixed (remove label + comment + close PR). **B4**: other failures (note + re-trigger).
+- **`.lock.yml`** — The compiled GitHub Actions YAML produced by `gh aw compile` from a gh-aw `.md` source. Checked in and executed by GitHub Actions directly; never hand-edited.
+- **`BSL` (baseline)** — F# compiler test baseline files (`.bsl`); tests diff against these. `BSL auto-accept` means automatically regenerating baselines instead of comparing — disallowed in some auto-resolve paths because it masks regressions.
+- **`dotnet/skills`** — A separate Microsoft repository hosting reusable Copilot skills (validators, tools, agent prompts). Some workflows (e.g., `skill-validation.yml`) download nightly-release binaries from there.
+- **`FCS` (F# Compiler Service)** — The F# compiler-as-a-library used by IDEs and tools. "FCS-testable" issues can be reproduced/fixed via the compiler service without needing Visual Studio.
+- **`12h stuck guard` / `ci_blocked` / `has_ci` / `has_conflicts`** (labelops-pr-maintenance internal flags) — `has_ci` = PR has CI runs to evaluate; `has_conflicts` = PR has merge conflicts; `ci_blocked` = CI hasn't started (queued/blocked); `12h stuck guard` = skip PR if LabelOps already committed within the last 12 hours AND checks are still red, to avoid retry storms.
+- **milestone 29 / `2026-05-12` cutoff** — Repo-specific operational constants: milestone 29 is applied by `add_to_project.yml` (internal milestone number; title unconfirmed from source); the `2026-05-12` cutoff in `labelops-pr-security-scan` is the date the scanner went live — PRs opened before that date are skipped to avoid re-scanning historical PRs.
 
 ## Legend
 
@@ -97,7 +103,7 @@ stateDiagram-v2
         AWU_HasChanges --> AWU_Noop : ⚙️ empty (normal steady state)
         AWU_HasChanges --> AWU_Session : ⚙️ non-empty — delegate to CCA
         AWU_Session --> [*] : 🤖 create-agent-session (to CCA)
-        AWU_Noop --> [*] : ⚙️ noop (report-as-issue: false — src L39)
+        AWU_Noop --> [*] : ⚙️ noop (report-as-issue: false)
     }
 ```
 
@@ -105,8 +111,12 @@ stateDiagram-v2
 
 **gh-aw safe-output defaults (suppressed below):** `target: "*"`, `noop.report-as-issue: false`. Per-workflow blocks list overrides and distinguishing config.
 
-**`agentic-state-machine.md`** — `create-pull-request` (max: 1, title-prefix: "[Agentic State Machine] ", labels: automation+NO_RELEASE_NOTES, allowed-files: .github/docs/**, protected-files: allowed), `noop`.
-**`aw-auto-update.md`** — `create-agent-session` (base: main, max: 1), `noop`.
+| Workflow | Output | Max | Key Constraints |
+|---|---|---|---|
+| `agentic-state-machine.md` | `create-pull-request` | 1 | title `[Agentic State Machine] `; labels `automation, NO_RELEASE_NOTES`; allowed-files `.github/docs/**`; protected-files allowed |
+| `agentic-state-machine.md` | `noop` | — | — |
+| `aw-auto-update.md` | `create-agent-session` | 1 | base `main` |
+| `aw-auto-update.md` | `noop` | — | — |
 
 ---
 
@@ -173,7 +183,7 @@ stateDiagram-v2
         LPM_ProvenFlake --> LPM_Escalate : ⚙️ not proven flake
         state LPM_ExistingFlakePRCheck <<choice>>
         LPM_ExistingFlakePRCheck --> LPM_NextPR : ⚙️ existing [LabelOps Flake] PR found (skip)
-        LPM_ExistingFlakePRCheck --> LPM_DispatchFlakeFix : ⚙️ no existing [LabelOps Flake] PR (src L108)
+        LPM_ExistingFlakePRCheck --> LPM_DispatchFlakeFix : ⚙️ no existing [LabelOps Flake] PR
         LPM_DispatchFlakeFix --> LPM_ConflictCheck : 🤖 dispatch-workflow: labelops-flake-fix (max: 3)
         LPM_Escalate --> LPM_ConflictCheck : 🤖 add-labels AI-needs-CI-fix-input + add-comment
         state LPM_NeedsConflictTriage <<choice>>
@@ -190,7 +200,7 @@ stateDiagram-v2
         LPM_MorePRs --> LPM_ClassifyPR : ⚙️ yes (next PR)
         LPM_MorePRs --> LPM_Done : ⚙️ no
         LPM_Done --> [*] : ⚙️ run complete
-        LPM_Noop --> [*] : ⚙️ noop (report-as-issue: false — src L40)
+        LPM_Noop --> [*] : ⚙️ noop (report-as-issue: false)
     }
     state "labelops-pr-security-scan" as LPSS {
         direction LR
@@ -232,9 +242,19 @@ stateDiagram-v2
 
 ### Safe-outputs configuration
 
-**`labelops-flake-fix.md`** — `create-pull-request` (max: 1, title-prefix: "[LabelOps Flake] ", labels: automation+Flaky+NO_RELEASE_NOTES, protected-files: fallback-to-issue), `add-comment` (max: 1), `create-issue` (max: 1, title-prefix: "[LabelOps Flake] ", labels: Flaky+automation).
-**`labelops-pr-maintenance.md`** — `noop`, `add-comment` (max: 5, hide-older-comments: true), `push-to-pull-request-branch` (max: 5, protected-files: allowed), `add-labels` (max: 3, allowed: AI-needs-CI-fix-input), `dispatch-workflow` (max: 3, workflows: [labelops-flake-fix]).
-**`labelops-pr-security-scan.md`** — `noop`, `add-labels` (max: 50, allowed: 11 security labels — see Labels), `add-comment` (max: 25, hide-older-comments: true).
+| Workflow | Output | Max | Key Constraints |
+|---|---|---|---|
+| `labelops-flake-fix.md` | `create-pull-request` | 1 | title `[LabelOps Flake] `; labels `automation, Flaky, NO_RELEASE_NOTES`; protected-files fallback-to-issue |
+| `labelops-flake-fix.md` | `add-comment` | 1 | — |
+| `labelops-flake-fix.md` | `create-issue` | 1 | title `[LabelOps Flake] `; labels `Flaky, automation` |
+| `labelops-pr-maintenance.md` | `noop` | — | — |
+| `labelops-pr-maintenance.md` | `add-comment` | 5 | hide-older-comments |
+| `labelops-pr-maintenance.md` | `push-to-pull-request-branch` | 5 | protected-files allowed |
+| `labelops-pr-maintenance.md` | `add-labels` | 3 | allowed `AI-needs-CI-fix-input` |
+| `labelops-pr-maintenance.md` | `dispatch-workflow` | 3 | workflows `[labelops-flake-fix]` |
+| `labelops-pr-security-scan.md` | `noop` | — | — |
+| `labelops-pr-security-scan.md` | `add-labels` | 50 | allowed: 11 security labels (see Labels) |
+| `labelops-pr-security-scan.md` | `add-comment` | 25 | hide-older-comments |
 
 ---
 
@@ -260,7 +280,7 @@ stateDiagram-v2
         state RPS_HasCIFailure <<choice>>
         RPS_HasCIFailure --> RPS_CITriage : ⚙️ yes => Category B (CI failure or merge conflict)
         RPS_HasCIFailure --> RPS_NextPR : ⚙️ no => Category C (healthy, skip)
-        RPS_FixFeedback --> RPS_SameFixCheck : ⚙️ check: last commit matches feedback? (src L152–154)
+        RPS_FixFeedback --> RPS_SameFixCheck : ⚙️ check: last commit matches feedback?
         state RPS_SameFixCheck <<choice>>
         RPS_SameFixCheck --> RPS_NextPR : ⚙️ already pushed (last commit matches feedback — skip)
         RPS_SameFixCheck --> RPS_PushFix : ⚙️ not yet pushed
@@ -288,7 +308,7 @@ stateDiagram-v2
         RPS_MorePRs --> RPS_QuickTriage : ⚙️ yes (next PR)
         RPS_MorePRs --> RPS_Done : ⚙️ no
         RPS_Done --> [*] : ⚙️ run complete, update memory
-        RPS_Noop --> [*] : ⚙️ noop (report-as-issue: false — src L23)
+        RPS_Noop --> [*] : ⚙️ noop (report-as-issue: false)
     }
     state "repo-assist" as RA {
         direction LR
@@ -305,7 +325,7 @@ stateDiagram-v2
         RA_RunInstructions --> RA_InstructionResult : ⚙️ follow user instructions, apply guidelines
         RA_InstructionResult --> [*] : ⚙️ no actionable work => noop
         RA_InstructionResult --> RA_CmdOutputs : ⚙️ work done
-        RA_CmdOutputs --> [*] : 🤖 safe-outputs (add-comment, create-pull-request, push, etc.)
+        RA_CmdOutputs --> [*] : 🤖 any of repo-assist's 9 safe-outputs (see Safe-outputs below)
         RA_T1 --> RA_T3 : ⚙️ Task 1: investigate issues, add AI-thinks-issue-fixed/windows-only
         RA_T3 --> RA_T2 : ⚙️ Task 3: revisit AI-thinks-windows-only, remove-labels if FCS-testable
         RA_T2 --> RA_T2_SkipCheck : ⚙️ Task 2: Step A — check 6 skip conditions
@@ -331,17 +351,21 @@ stateDiagram-v2
 
 ### Safe-outputs configuration
 
-**`regression-pr-shepherd.md`** — `noop`, `add-comment` (max: 5, hide-older-comments: true), `push-to-pull-request-branch` (max: 10, title-prefix: "Add regression test: ", labels: AI-Issue-Regression-PR, allowed-files: tests/**+vsintegration/tests/**, protected-files: fallback-to-issue), `remove-labels` (max: 5, allowed: AI-thinks-issue-fixed).
-**`repo-assist.md`**
-- `noop`
-- `messages` — footer, run-started, run-success, run-failure templates
-- `add-comment` — max 10, hide-older-comments
-- `create-pull-request` — max 10, title "Add regression test: ", labels NO_RELEASE_NOTES + AI-Issue-Regression-PR, reviewers abonie + T-Gro, auto-merge, allowed-files tests/** + vsintegration/tests/**
-- `push-to-pull-request-branch` — max 4, title "[Repo Assist] ", protected-files fallback-to-issue
-- `create-issue` — max 4, title "[Repo Assist] ", labels automation + repo-assist
-- `update-issue` — max 1, title "[Repo Assist] "
-- `add-labels` — max 30, allowed AI-thinks-issue-fixed + AI-thinks-windows-only
-- `remove-labels` — max 10, allowed AI-thinks-issue-fixed + AI-thinks-windows-only
+| Workflow | Output | Max | Key Constraints |
+|---|---|---|---|
+| `regression-pr-shepherd.md` | `noop` | — | — |
+| `regression-pr-shepherd.md` | `add-comment` | 5 | hide-older-comments |
+| `regression-pr-shepherd.md` | `push-to-pull-request-branch` | 10 | title `Add regression test: `; labels `AI-Issue-Regression-PR`; allowed-files `tests/**`, `vsintegration/tests/**`; protected-files fallback-to-issue |
+| `regression-pr-shepherd.md` | `remove-labels` | 5 | allowed `AI-thinks-issue-fixed` |
+| `repo-assist.md` | `noop` | — | — |
+| `repo-assist.md` | `messages` | — | footer, run-started, run-success, run-failure |
+| `repo-assist.md` | `add-comment` | 10 | hide-older-comments |
+| `repo-assist.md` | `create-pull-request` | 10 | title `Add regression test: `; labels `NO_RELEASE_NOTES, AI-Issue-Regression-PR`; reviewers abonie, T-Gro; auto-merge; allowed-files `tests/**`, `vsintegration/tests/**` |
+| `repo-assist.md` | `push-to-pull-request-branch` | 4 | title `[Repo Assist] `; protected-files fallback-to-issue |
+| `repo-assist.md` | `create-issue` | 4 | title `[Repo Assist] `; labels `automation, repo-assist` |
+| `repo-assist.md` | `update-issue` | 1 | title `[Repo Assist] ` |
+| `repo-assist.md` | `add-labels` | 30 | allowed `AI-thinks-issue-fixed, AI-thinks-windows-only` |
+| `repo-assist.md` | `remove-labels` | 10 | allowed `AI-thinks-issue-fixed, AI-thinks-windows-only` |
 
 ---
 
@@ -465,6 +489,15 @@ stateDiagram-v2
         BKP_Backport --> [*] : 🤖 uses: dotnet/arcade backport-base.yml@main (reusable workflow)
     }
 ```
+
+> **`/run` commands** — available via PR comment by users with admin/write access:
+>
+> | Command | Tool | Effect |
+> |---|---|---|
+> | `/run fantomas` | F# code formatter | applies `dotnet fantomas .` to the repo, commits the diff and pushes to the PR branch |
+> | `/run ilverify` | IL verifier | runs `pwsh tests/ILVerify/ilverify.ps1`, reports failures; no push on failure |
+> | `/run xlf` | localization tool | runs `dotnet build src/Compiler /t:UpdateXlf`, regenerates `.xlf` resource files, commits and pushes |
+> | `/run test-baseline` | baseline test updater | runs `dotnet test` with `TEST_UPDATE_BSL=1` for the given filter, commits new `.bsl` files and pushes |
 
 ---
 
