@@ -32,6 +32,22 @@ Some experiences are un-implemented by F# including:
 * **Edit and Continue**
 * **Hot reload**
 
+## Hot reload heap tracing
+
+The hot-reload metadata writer now exposes a lightweight tracing hook so you can capture heap sizes while iterating on Task&nbsp;2.3. Set the environment variable `FSHARP_HOTRELOAD_TRACE_HEAPS=1` before running a targeted test, for example:
+
+```
+FSHARP_HOTRELOAD_TRACE_HEAPS=1 ./.dotnet/dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Debug -f net10.0 --filter FullyQualifiedName~FSharpDeltaMetadataWriterTests
+```
+
+Each delta emitted during the run prints a summary such as:
+
+```
+[fsharp-hotreload][heap-summary] baseline:string=1234 blob=2048 guid=256 | delta:string=64 blob=32 guid=0
+```
+
+The new service-level regressions (`property/event/async delta reports baseline heap offsets`) validate that `MetadataDelta.HeapOffsets` mirror the baseline reader before any heap reuse changes are made. Combine those tests with the trace output above to document the current string/blob footprint before adjusting the builders.
+
 ## Emitted information
 
 Emitted debug information includes:

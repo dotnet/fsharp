@@ -43,6 +43,11 @@
       <BuildType Solution="Proto|*" Project="Release" />
     </Project>
   </Folder>
+  <Folder Name="/Tests/HotReloadDemo/">
+    <Project Path="tests/projects/HotReloadDemo/HotReloadDemoApp/HotReloadDemoApp.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+  </Folder>
   <Folder Name="/Tests/FSharp.Compiler.Service.Tests support/">
     <Project Path="tests/service/data/CSharp_Analysis/CSharp_Analysis.csproj">
       <BuildType Solution="Proto|*" Project="Debug" />

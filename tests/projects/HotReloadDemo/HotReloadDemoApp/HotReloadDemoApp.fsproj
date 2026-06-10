@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Prevent repo-level Directory.Build props from flowing into the sample -->
+  <PropertyGroup>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <WarningsAsErrors>false</WarningsAsErrors>
+    <Nullable>enable</Nullable>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <!-- Keep sample outputs local -->
+    <BaseOutputPath>bin\</BaseOutputPath>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+
+  <!-- Allow building with the repo-local compiler when requested -->
+  <Import Project="../../../../UseLocalCompiler.Directory.Build.props"
+          Condition="'$(LoadLocalFSharpBuild)' == 'True'" />
+
+  <ItemGroup>
+    <Compile Include="HotReloadSession.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Provide an editable source template for the demo -->
+    <None Include="DemoTarget.fs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../../src/Compiler/FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="../../../../src/FSharp.Core/FSharp.Core.fsproj" />
+  </ItemGroup>
+
+</Project>
