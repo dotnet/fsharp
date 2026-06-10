@@ -19,7 +19,10 @@
 - **`BSL` (baseline)** — F# compiler test baseline files (`.bsl`); tests diff against these. `BSL auto-accept` means automatically regenerating baselines instead of comparing — disallowed in some auto-resolve paths because it masks regressions.
 - **`dotnet/skills`** — A separate Microsoft repository hosting reusable Copilot skills (validators, tools, agent prompts). Some workflows (e.g., `skill-validation.yml`) download nightly-release binaries from there.
 - **`FCS` (F# Compiler Service)** — The F# compiler-as-a-library used by IDEs and tools. "FCS-testable" issues can be reproduced/fixed via the compiler service without needing Visual Studio.
-- **`12h stuck guard` / `ci_blocked` / `has_ci` / `has_conflicts`** (labelops-pr-maintenance internal flags) — `has_ci` = PR has CI runs to evaluate; `has_conflicts` = PR has merge conflicts; `ci_blocked` = CI hasn't started (queued/blocked); `12h stuck guard` = skip PR if LabelOps already committed within the last 12 hours AND checks are still red, to avoid retry storms.
+- **`has_ci`** (labelops-pr-maintenance) — PR has CI runs to evaluate.
+- **`has_conflicts`** (labelops-pr-maintenance) — PR has merge conflicts.
+- **`ci_blocked`** (labelops-pr-maintenance) — CI hasn't started yet (queued or blocked by other workflows).
+- **`12h stuck guard`** (labelops-pr-maintenance) — Skip the PR if LabelOps already committed within the last 12 hours AND checks are still red. Prevents retry storms.
 - **milestone 29 / `2026-05-12` cutoff** — Repo-specific operational constants: milestone 29 is applied by `add_to_project.yml` (internal milestone number; title unconfirmed from source); the `2026-05-12` cutoff in `labelops-pr-security-scan` is the date the scanner went live — PRs opened before that date are skipped to avoid re-scanning historical PRs.
 
 ## Legend
@@ -37,29 +40,27 @@
 
 ## Overview
 
-| # | Workflow | Trigger | Inputs | Primary Actions |
-|---|---|---|---|---|
-| 1 | `agentic-state-machine.md` | schedule 7d, dispatch | none | `noop`, `create-pull-request` |
-| 2 | `aw-auto-update.md` | schedule 24h, dispatch | none | `noop`, `create-agent-session` |
-| 3 | `labelops-flake-fix.md` | dispatch | `failing_test`, `affected_prs`, `originating_pr` (all req, string; serialized, cancel=false) | `create-pull-request`, `add-comment`, `create-issue` |
-| 4 | `labelops-pr-maintenance.md` | schedule 3h, dispatch | none (serialized, cancel=false) | `noop`, `add-comment`, `push-to-pull-request-branch`, `add-labels`, `dispatch-workflow` |
-| 5 | `labelops-pr-security-scan.md` | schedule 1h, dispatch | none (serialized, cancel=false) | `noop`, `add-labels`, `add-comment` |
-| 6 | `regression-pr-shepherd.md` | schedule 4h, dispatch | none | `noop`, `add-comment`, `push-to-pull-request-branch`, `remove-labels` |
-| 7 | `repo-assist.md` | schedule 12h, dispatch, slash_command `/repo-assist`, reaction `eyes` | none | `noop`, `messages`, `add-comment`, `create-pull-request`, `push-to-pull-request-branch`, `create-issue`, `update-issue`, `add-labels`, `remove-labels` |
-| 8 | `add_to_project.yml` | issues (opened, transferred), pull_request_target (opened, main) | — | add label `Needs-Triage`, set milestone 29 |
-| 9 | `backport.yml` | issue_comment (created), schedule (cron `0 13 * * *`) | — | delegates to `dotnet/arcade` backport-base.yml |
-| 10 | `branch-merge.yml` | push (main, release/\*) | — | delegates to `dotnet/arcade` inter-branch-merge-base.yml |
-| 11 | `check_release_notes.yml` | pull_request_target (opened/sync/reopened/labeled/unlabeled; main, release/\*) | — | create or update PR comment |
-| 12 | `commands.yml` | issue_comment (created) | — | apply patch to PR branch, comment on PR |
-| 13 | `copilot-setup-steps.yml` | dispatch | none | build environment setup for Copilot agent |
-| 14 | `repository_lockdown_check.yml` | pull_request_target (opened/sync/reopened; main, release/\*) | — | create, update, or delete lockdown comment |
-| 15 | `skill-validation.yml` | pull_request (`.github/skills/**`, `.github/agents/**`), push (main), dispatch | none | validate skills and agents |
+| Workflow | Trigger | Inputs | Primary Actions |
+|---|---|---|---|
+| `agentic-state-machine.md` | schedule 7d, dispatch | none | `noop`, `create-pull-request` |
+| `aw-auto-update.md` | schedule 24h, dispatch | none | `noop`, `create-agent-session` |
+| `labelops-flake-fix.md` | dispatch | `failing_test`, `affected_prs`, `originating_pr` (all req) | `create-pull-request`, `add-comment`, `create-issue` |
+| `labelops-pr-maintenance.md` | schedule 3h, dispatch | none | `noop`, `add-comment`, `push-to-pull-request-branch`, `add-labels`, `dispatch-workflow` |
+| `labelops-pr-security-scan.md` | schedule 1h, dispatch | none | `noop`, `add-labels`, `add-comment` |
+| `regression-pr-shepherd.md` | schedule 4h, dispatch | none | `noop`, `add-comment`, `push-to-pull-request-branch`, `remove-labels` |
+| `repo-assist.md` | schedule 12h, dispatch, slash_command `/repo-assist`, reaction `eyes` | none | `noop`, `messages`, `add-comment`, `create-pull-request`, `push-to-pull-request-branch`, `create-issue`, `update-issue`, `add-labels`, `remove-labels` |
+| `add_to_project.yml` | issues (opened, transferred), pull_request_target (opened, main) | — | add label `Needs-Triage`, set milestone 29 |
+| `backport.yml` | issue_comment (created), schedule (cron `0 13 * * *`) | — | delegates to `dotnet/arcade` backport-base.yml |
+| `branch-merge.yml` | push (main, release/\*) | — | delegates to `dotnet/arcade` inter-branch-merge-base.yml |
+| `check_release_notes.yml` | pull_request_target (opened/sync/reopened/labeled/unlabeled; main, release/\*) | — | create or update PR comment |
+| `commands.yml` | issue_comment (created) | — | apply patch to PR branch, comment on PR |
+| `copilot-setup-steps.yml` | dispatch | none | build environment setup for Copilot agent |
+| `repository_lockdown_check.yml` | pull_request_target (opened/sync/reopened; main, release/\*) | — | create, update, or delete lockdown comment |
+| `skill-validation.yml` | pull_request (`.github/skills/**`, `.github/agents/**`), push (main), dispatch | none | validate skills and agents |
 
 ---
 
 ## Group A1 — Agentic Infrastructure
-
-Workflows: `agentic-state-machine.md` (schedule 7d + dispatch) and `aw-auto-update.md` (schedule 24h + dispatch).
 
 ```mermaid
 stateDiagram-v2
@@ -109,20 +110,16 @@ stateDiagram-v2
 
 ### Safe-outputs configuration
 
-**gh-aw safe-output defaults (suppressed below):** `target: "*"`, `noop.report-as-issue: false`. Per-workflow blocks list overrides and distinguishing config.
+**gh-aw safe-output defaults (suppressed below):** `target: "*"`, `noop.report-as-issue: false`. Per-workflow blocks list overrides and distinguishing config. **`noop` rows omitted — all gh-aw workflows emit `noop | — | (defaults)`.**
 
 | Workflow | Output | Max | Key Constraints |
 |---|---|---|---|
 | `agentic-state-machine.md` | `create-pull-request` | 1 | title `[Agentic State Machine] `; labels `automation, NO_RELEASE_NOTES`; allowed-files `.github/docs/**`; protected-files allowed |
-| `agentic-state-machine.md` | `noop` | — | — |
 | `aw-auto-update.md` | `create-agent-session` | 1 | base `main` |
-| `aw-auto-update.md` | `noop` | — | — |
 
 ---
 
 ## Group A2 — LabelOps Agents
-
-Workflows: `labelops-flake-fix.md`, `labelops-pr-maintenance.md`, `labelops-pr-security-scan.md`.
 
 ```mermaid
 stateDiagram-v2
@@ -245,22 +242,18 @@ stateDiagram-v2
 | Workflow | Output | Max | Key Constraints |
 |---|---|---|---|
 | `labelops-flake-fix.md` | `create-pull-request` | 1 | title `[LabelOps Flake] `; labels `automation, Flaky, NO_RELEASE_NOTES`; protected-files fallback-to-issue |
-| `labelops-flake-fix.md` | `add-comment` | 1 | — |
+| `labelops-flake-fix.md` | `add-comment` | 1 | (defaults) |
 | `labelops-flake-fix.md` | `create-issue` | 1 | title `[LabelOps Flake] `; labels `Flaky, automation` |
-| `labelops-pr-maintenance.md` | `noop` | — | — |
 | `labelops-pr-maintenance.md` | `add-comment` | 5 | hide-older-comments |
 | `labelops-pr-maintenance.md` | `push-to-pull-request-branch` | 5 | protected-files allowed |
 | `labelops-pr-maintenance.md` | `add-labels` | 3 | allowed `AI-needs-CI-fix-input` |
 | `labelops-pr-maintenance.md` | `dispatch-workflow` | 3 | workflows `[labelops-flake-fix]` |
-| `labelops-pr-security-scan.md` | `noop` | — | — |
 | `labelops-pr-security-scan.md` | `add-labels` | 50 | allowed: 11 security labels (see Labels) |
 | `labelops-pr-security-scan.md` | `add-comment` | 25 | hide-older-comments |
 
 ---
 
 ## Group A3 — Code Quality Agents
-
-Workflows: `regression-pr-shepherd.md`, `repo-assist.md`.
 
 ```mermaid
 stateDiagram-v2
@@ -353,11 +346,9 @@ stateDiagram-v2
 
 | Workflow | Output | Max | Key Constraints |
 |---|---|---|---|
-| `regression-pr-shepherd.md` | `noop` | — | — |
 | `regression-pr-shepherd.md` | `add-comment` | 5 | hide-older-comments |
 | `regression-pr-shepherd.md` | `push-to-pull-request-branch` | 10 | title `Add regression test: `; labels `AI-Issue-Regression-PR`; allowed-files `tests/**`, `vsintegration/tests/**`; protected-files fallback-to-issue |
 | `regression-pr-shepherd.md` | `remove-labels` | 5 | allowed `AI-thinks-issue-fixed` |
-| `repo-assist.md` | `noop` | — | — |
 | `repo-assist.md` | `messages` | — | footer, run-started, run-success, run-failure |
 | `repo-assist.md` | `add-comment` | 10 | hide-older-comments |
 | `repo-assist.md` | `create-pull-request` | 10 | title `Add regression test: `; labels `NO_RELEASE_NOTES, AI-Issue-Regression-PR`; reviewers abonie, T-Gro; auto-merge; allowed-files `tests/**`, `vsintegration/tests/**` |
@@ -370,8 +361,6 @@ stateDiagram-v2
 ---
 
 ## Group B — PR & Issue Triage
-
-Workflows: `add_to_project.yml` (note: `pull_request_target` gated off — only `issues` events execute), `check_release_notes.yml`, `repository_lockdown_check.yml`.
 
 ```mermaid
 stateDiagram-v2
@@ -432,8 +421,6 @@ stateDiagram-v2
 ---
 
 ## Group C — Comment & Slash Commands
-
-Workflows: `commands.yml` (19 named steps, 4 jobs), `backport.yml`.
 
 ```mermaid
 stateDiagram-v2
@@ -503,8 +490,6 @@ stateDiagram-v2
 
 ## Group D — Push, Validation & Tooling
 
-Workflows: `branch-merge.yml`, `skill-validation.yml`, `copilot-setup-steps.yml`.
-
 ```mermaid
 stateDiagram-v2
     direction LR
@@ -537,29 +522,25 @@ stateDiagram-v2
 
 ## Labels
 
-**Always-applied** (safe-output `labels:` — engine applies automatically)
-- `automation` — agentic-state-machine, labelops-flake-fix (PR), repo-assist (issue)
-- `NO_RELEASE_NOTES` — agentic-state-machine, labelops-flake-fix, repo-assist (PR)
-- `Flaky` — labelops-flake-fix (PR + issue)
-- `AI-Issue-Regression-PR` — repo-assist (PR), regression-pr-shepherd (push-to-PR-branch)
-- `repo-assist` — repo-assist (issue)
+All labels in one place — who adds, removes, or reads each. **Cross-workflow flows** (e.g., `AI-Issue-Regression-PR` from `repo-assist` → consumed by `regression-pr-shepherd`) are visible here.
 
-**Agent-chosen — add** (`add-labels.allowed:`)
-- `AI-needs-CI-fix-input` — labelops-pr-maintenance
-- `AI-Tooling-Check-Scanned-Clean`, `AI-Tooling-Check-Bypassed` — labelops-pr-security-scan
-- `⚠️ Affects-*` family (7: Build-Infra, Compiler-Output, Bootstrap, Restore, Design-Time, Test-Tooling, Agent-Config) — labelops-pr-security-scan
-- `⚠️ Suspicious-Prompting`, `⚠️ Scope-Review-Needed` — labelops-pr-security-scan
-- `AI-thinks-issue-fixed`, `AI-thinks-windows-only` — repo-assist
+| Label | Type | Added by | Removed by | Read by | Notes |
+|---|---|---|---|---|---|
+| `automation` | always-applied | ASM, LFF (PR), RA (issue) | — | — | via safe-output `labels:` |
+| `NO_RELEASE_NOTES` | always-applied | ASM, LFF, RA (PR) | — | check_release_notes | via safe-output `labels:` |
+| `Flaky` | always-applied | LFF (PR + issue) | — | — | via safe-output `labels:` |
+| `AI-Issue-Regression-PR` | always-applied | RA (PR), RPS (push-to-PR-branch) | — | RPS (selects PRs) | **cross-workflow signal RA → RPS** |
+| `repo-assist` | always-applied | RA (issue) | — | — | via safe-output `labels:` |
+| `AI-needs-CI-fix-input` | agent-add | LPM | — | — | escalation flag |
+| `AI-Tooling-Check-Scanned-Clean` | agent-add | LPSS | — | — | per-PR scan outcome |
+| `AI-Tooling-Check-Bypassed` | agent-add | LPSS | — | — | per-PR scan outcome |
+| `⚠️ Affects-*` family (7) | agent-add | LPSS | — | — | Build-Infra, Compiler-Output, Bootstrap, Restore, Design-Time, Test-Tooling, Agent-Config |
+| `⚠️ Suspicious-Prompting`, `⚠️ Scope-Review-Needed` | agent-add | LPSS | — | — | review-trigger flags |
+| `AI-thinks-issue-fixed` | agent-add + agent-remove | RA | RPS, RA | — | **bidirectional** — RA proposes, RPS/RA retract |
+| `AI-thinks-windows-only` | agent-add + agent-remove | RA | RA | — | RA self-corrects in Task 3 |
+| `AI-Auto-Resolve-CI`, `AI-Auto-Resolve-Conflicts` | filter (read-only) | — (external) | — | LPM (`gh pr list --search label:...`) | **selection signal into LPM** |
+| `Needs-Triage` | imperative | ATP (`apply-label` job, github-script) | — | — | classic workflow, not gh-aw |
 
-**Agent-chosen — remove** (`remove-labels.allowed:`)
-- `AI-thinks-issue-fixed` — regression-pr-shepherd, repo-assist
-- `AI-thinks-windows-only` — repo-assist
-
-**Trigger filters** (read-only; used in `gh pr list --search label:...`)
-- `AI-Auto-Resolve-CI`, `AI-Auto-Resolve-Conflicts` — labelops-pr-maintenance
-
-**Imperative** (classic workflows via github-script)
-- `Needs-Triage` — add_to_project.yml (`apply-label` job)
 ---
 
 ## Handover Map
@@ -570,7 +551,6 @@ stateDiagram-v2
 | `aw-auto-update.md` | CHANGED_FILES non-empty after `gh aw upgrade + compile` | Copilot Coding Agent (CCA) | `create-agent-session` (base: main, max: 1) | CCA writes `.lock.yml` files using `COPILOT_GITHUB_TOKEN` |
 | `agentic-state-machine.md` | State-machine doc changed | PR reviewer (human) | `create-pull-request` (labels: automation, NO_RELEASE_NOTES; allowed-files: .github/docs/**) | Writes `.github/docs/state-machine.md` |
 | `repo-assist.md` | Regression test PR created (Task 2) | `regression-pr-shepherd.md` | Indirect via label `AI-Issue-Regression-PR` on PR | Shepherd picks up in subsequent scheduled run |
-| `repo-assist.md` | `AI-thinks-issue-fixed` applied in Task 1 or Task 3 | Task 2 (same run) | In-process; Task 3 output feeds into Task 2 | Run order: Task 1 → Task 3 → Task 2 → Task FINAL |
 | `commands.yml` | `/run <cmd>` approved PR comment | PR branch | `git push origin HEAD:branch` (direct write) | Requires commenter admin/write access |
 | `backport.yml` | `/backport to <branch>` PR comment | `dotnet/arcade` backport-base.yml | `uses: dotnet/arcade/.github/workflows/backport-base.yml@main` | Reusable workflow; schedule trigger only cleans old runs |
 | `branch-merge.yml` | Push to `release/*` or `main` | `dotnet/arcade` inter-branch-merge-base.yml | `uses: dotnet/arcade/.github/workflows/inter-branch-merge-base.yml@main` | Config: `.config/service-branch-merge.json` |
