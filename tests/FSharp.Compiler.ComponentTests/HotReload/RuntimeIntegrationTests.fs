@@ -504,6 +504,15 @@ let existing () = 1
 let mutable newCounter = 41
 """
 
+    let private moduleValueSecondUpdateSource =
+        """
+module Sample.Library
+
+let existing () = 1
+let mutable newCounter = 41
+let mutable secondCounter = 7
+"""
+
     let private moduleFunctionUpdatedSource =
         """
 module Sample.Library
@@ -772,6 +781,55 @@ let extra () = 99
                     setter.Invoke(null, [| box 7 |]) |> ignore
                     Assert.Equal(7, getter.Invoke(null, [||]) :?> int)
                     printfn "[fieldadd-test] SUCCESS: added module value readable/writable after ApplyUpdate"
+
+                    // ---------------------------------------------------------------
+                    // Generation 2: add a SECOND module value. This exercises baseline
+                    // chaining: gen-1 field/method/property tokens must resolve so only
+                    // the new value is appended, and the startup constructor (added in
+                    // gen 1, now part of the chained baseline) is re-emitted as an
+                    // UPDATED method body that also initializes the second value.
+                    // ---------------------------------------------------------------
+                    File.WriteAllText(fsPath, moduleValueSecondUpdateSource)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    let compileDiagnostics3, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors3 = compileDiagnostics3 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors3.Length > 0 then failwithf "Second update compilation failed: %A" (errors3 |> Array.map (fun d -> d.Message))
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "EmitHotReloadDelta (generation 2) failed: %A" error
+                    | Ok delta2 ->
+                        let pdbBytes2 = delta2.Pdb |> Option.defaultValue Array.empty
+
+                        try
+                            MetadataUpdater.ApplyUpdate(assembly, delta2.Metadata.AsSpan(), delta2.IL.AsSpan(), pdbBytes2.AsSpan())
+                            printfn "[fieldadd-test] generation 2 ApplyUpdate succeeded!"
+                        with :? InvalidOperationException as ex ->
+                            failwithf "Generation 2 ApplyUpdate failed (delta rejected): %s" ex.Message
+
+                        // Generation-1 members keep working and keep their state.
+                        Assert.Equal(1, existingMethod.Invoke(null, [||]) :?> int)
+                        Assert.Equal(7, getter.Invoke(null, [||]) :?> int)
+
+                        let getter2 = moduleType.GetMethod("get_secondCounter", BindingFlags.Public ||| BindingFlags.Static)
+                        Assert.True(not (isNull getter2), "get_secondCounter accessor not found after generation 2.")
+                        let setter2 = moduleType.GetMethod("set_secondCounter", BindingFlags.Public ||| BindingFlags.Static)
+                        Assert.True(not (isNull setter2), "set_secondCounter accessor not found after generation 2.")
+
+                        // The startup class was already type-initialized in generation 1,
+                        // so the UPDATED constructor does not re-run: the second value
+                        // reads default(int), not its initializer (7) — C# EnC semantics.
+                        let initialValue2 = getter2.Invoke(null, [||]) :?> int
+                        printfn "[fieldadd-test] initial secondCounter value = %d" initialValue2
+                        Assert.Equal(Unchecked.defaultof<int>, initialValue2)
+
+                        setter2.Invoke(null, [| box 13 |]) |> ignore
+                        Assert.Equal(13, getter2.Invoke(null, [||]) :?> int)
+                        Assert.Equal(7, getter.Invoke(null, [||]) :?> int)
+                        printfn "[fieldadd-test] SUCCESS: second module value readable/writable after generation 2"
             finally
                 try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
