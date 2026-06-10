@@ -1,3 +1,8 @@
+Module::|Id|
+  (4,23-4,24)  x
+    IL_0000:  ldarg.0
+    IL_0001:  ret
+
 Module::f
   (7,17-7,18)  l
     IL_0000:  ldarg.0
@@ -31,8 +36,3 @@ Module::f
     IL_0026:  ldloc.1
     IL_0027:  brtrue.s IL_000b
     IL_0029:  ret
-
-Module::|Id|
-  (4,23-4,24)  x
-    IL_0000:  ldarg.0
-    IL_0001:  ret

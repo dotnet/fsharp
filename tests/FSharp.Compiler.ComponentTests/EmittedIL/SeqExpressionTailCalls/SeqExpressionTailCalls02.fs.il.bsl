@@ -67,16 +67,6 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance void Close() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldc.i4.3
-      IL_0002:  stfld      int32 assembly/rwalk1@5::pc
-      IL_0007:  ret
-    } 
-
     .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
       
@@ -136,20 +126,14 @@
       IL_0067:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 assembly/rwalk1@5::x
-      IL_0006:  ldc.i4.0
-      IL_0007:  ldc.i4.0
-      IL_0008:  newobj     instance void assembly/rwalk1@5::.ctor(int32,
-                                                                                  int32,
-                                                                                  int32)
-      IL_000d:  ret
+      IL_0001:  ldc.i4.3
+      IL_0002:  stfld      int32 assembly/rwalk1@5::pc
+      IL_0007:  ret
     } 
 
     .method public strict virtual instance bool get_CheckClose() cil managed
@@ -201,6 +185,22 @@
       IL_0006:  ret
     } 
 
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 assembly/rwalk1@5::x
+      IL_0006:  ldc.i4.0
+      IL_0007:  ldc.i4.0
+      IL_0008:  newobj     instance void assembly/rwalk1@5::.ctor(int32,
+                                                                                  int32,
+                                                                                  int32)
+      IL_000d:  ret
+    } 
+
   } 
 
   .class auto autochar serializable sealed nested assembly beforefieldinit specialname rwalk2@6
@@ -235,16 +235,6 @@
       IL_0015:  ldarg.0
       IL_0016:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_001b:  ret
-    } 
-
-    .method public strict virtual instance void Close() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldc.i4.3
-      IL_0002:  stfld      int32 assembly/rwalk2@6::pc
-      IL_0007:  ret
     } 
 
     .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
@@ -306,20 +296,14 @@
       IL_0067:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 assembly/rwalk2@6::x
-      IL_0006:  ldc.i4.0
-      IL_0007:  ldc.i4.0
-      IL_0008:  newobj     instance void assembly/rwalk2@6::.ctor(int32,
-                                                                                  int32,
-                                                                                  int32)
-      IL_000d:  ret
+      IL_0001:  ldc.i4.3
+      IL_0002:  stfld      int32 assembly/rwalk2@6::pc
+      IL_0007:  ret
     } 
 
     .method public strict virtual instance bool get_CheckClose() cil managed
@@ -369,6 +353,22 @@
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 assembly/rwalk2@6::current
       IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 assembly/rwalk2@6::x
+      IL_0006:  ldc.i4.0
+      IL_0007:  ldc.i4.0
+      IL_0008:  newobj     instance void assembly/rwalk2@6::.ctor(int32,
+                                                                                  int32,
+                                                                                  int32)
+      IL_000d:  ret
     } 
 
   } 

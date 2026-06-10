@@ -27,6 +27,13 @@
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .method public static void  strictlyNotNull(object x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ret
+  } 
+
   .method public static void  myGenericFunction1<class a>(!!a p) cil managed
   {
     .param type a 
@@ -134,13 +141,6 @@
     IL_0014:  box        !!a
     IL_0019:  call       void MyLibrary::strictlyNotNull(object)
     IL_001e:  ret
-  } 
-
-  .method public static void  strictlyNotNull(object x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ret
   } 
 
 } 

@@ -2074,12 +2074,40 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             else
                 tdef.CustomAttrs
 
-        // Methods sort by (Name, insertion-idx) to keep IL emission order independent of
-        // whether the surrounding method body was emitted inline (sequential codegen) or via
-        // the deferred queue at IlxGen.fs:12516 (parallel codegen). Method ordering has no IL
-        // semantics — tokens are assigned by the writer based on input order and any references
-        // inside the same assembly are re-resolved against that order.
-        let sortedMethods = gmethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
+        // Methods come from two sources with different ordering semantics:
+        //   1. User method definitions added during the SEQUENTIAL spine walk (e.g. ctors,
+        //      properties, F# `member` bindings). Their order is source-deterministic across
+        //      SEQ and PAR codegen, so we preserve insertion order — keeping IL emission
+        //      identical to legacy non-parallel compilers and existing baselines (notably
+        //      .cctor placed AFTER .ctor and overload ordering by F# declaration).
+        //
+        //   2. Method bodies emitted by the DEFERRED codegen pass — primarily closure
+        //      invokers (`Invoke@<line>`, `MoveNext`) and other compiler-generated methods.
+        //      Under `--parallelcompilation+` these are added in scheduler order, not source
+        //      order, which is a non-determinism source. Their names always carry the
+        //      compiler-generated '@' marker, so we sort them by name to get a stable order.
+        //
+        // Splitting by `@` in the method name keeps user-method order stable while making the
+        // deferred closure-method order deterministic across SEQ and PAR.
+        // See https://github.com/dotnet/fsharp/issues/19928.
+        let sortedMethods =
+            let userMethods = ResizeArray<struct (string * int) * ILMethodDef>()
+            let deferredMethods = ResizeArray<struct (string * int) * ILMethodDef>()
+
+            for entry in gmethods do
+                let struct (name, _) = fst entry
+                if name.Contains("@") then
+                    deferredMethods.Add(entry)
+                else
+                    userMethods.Add(entry)
+
+            let sortedUser =
+                userMethods |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
+
+            let sortedDeferred =
+                deferredMethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
+
+            sortedUser @ sortedDeferred
 
         // Fields and events MUST preserve insertion order. For struct types, the IL field
         // declaration order determines physical memory layout (visible via Marshal.SizeOf,
