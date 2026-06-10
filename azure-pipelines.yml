@@ -1,0 +1,31 @@
+# F# 15.9 servicing — minimal pipeline 499 trigger acknowledgment
+# Inserted by S4 wrap-up to close gpt55/opus48 azure-pipelines-yml-deferral blocker.
+# Full pipeline matrix lands in S7 (RestorePlan §9) — this stub emits a single check-run
+# so pipeline 499 doesn't 404 on each push, and downstream §S work units that query
+# pipeline 499 health (§8 flake list) get a parseable signal.
+
+trigger:
+  branches:
+    include:
+      - release/dev15.9.x
+pr: none
+
+stages:
+- stage: Acknowledge
+  displayName: 'S4 wrap-up: pipeline trigger acknowledged; full matrix in S7'
+  jobs:
+  - job: noop
+    displayName: 'No-op trigger ack (full build matrix lands S7)'
+    pool:
+      vmImage: 'windows-2022'
+    steps:
+    - checkout: self
+      fetchDepth: 1
+    - powershell: |
+        Write-Host "F# 15.9 servicing pipeline 499 trigger acknowledged."
+        Write-Host "Branch: $(Build.SourceBranchName)"
+        Write-Host "Commit: $(Build.SourceVersion)"
+        Write-Host "Full build matrix replaces this stub in S7 (RestorePlan §9)."
+        # Exit 0 — this stub is informational only; not a real build.
+        exit 0
+      displayName: 'Emit ack message'
