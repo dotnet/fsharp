@@ -811,7 +811,6 @@ let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
                         let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
                         mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String _ as c)  ->
-                        // Empty-string is rewritten to a null-safe length check by the Optimizer (#19873).
                         mkCallEqualsOperator g m g.string_ty testexpr (Expr.Const (c, m, g.string_ty))
                     | DecisionTreeTest.Const (Const.Decimal _ as c)  ->
                         mkCallEqualsOperator g m g.decimal_ty testexpr (Expr.Const (c, m, g.decimal_ty))
