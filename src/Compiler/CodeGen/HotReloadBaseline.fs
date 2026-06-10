@@ -8,7 +8,10 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
+open FSharp.Compiler.EncMethodDebugInformation
 open FSharp.Compiler.IlxGen
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
 module ILBaselineReader = FSharp.Compiler.AbstractIL.ILBaselineReader
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -179,6 +182,17 @@ type FSharpEmitBaseline =
         BlobStreamLengthAdded: int
         GuidStreamLengthAdded: int
         AddedOrChangedMethods: AddedOrChangedMethodInfo list
+        /// <summary>
+        /// Per-method Edit-and-Continue debug information (lambda/closure occurrence maps),
+        /// keyed by MethodDef token (0x06xxxxxx). Decoded from the baseline portable PDB's EnC
+        /// CustomDebugInformation rows when the baseline is captured, and refreshed in memory
+        /// for updated/added methods as each delta is applied (see chainEncMethodDebugInfos).
+        /// A baseline compiled without --enable:hotreloaddeltas (or a pre-C2 PDB) yields the
+        /// empty map. NOTE: delta PDBs do not yet re-emit EnC CDI rows, so within a session
+        /// this in-memory chain is the only generation-accurate source; persistence across
+        /// session restarts is the remaining gap.
+        /// </summary>
+        EncMethodDebugInfos: Map<int, EncMethodDebugInformation>
     }
 
 type private BaselineMaps =
@@ -492,6 +506,13 @@ let private createCore
         BlobStreamLengthAdded = 0
         GuidStreamLengthAdded = 0
         AddedOrChangedMethods = []
+        // The baseline PDB is already in memory here (captured alongside the emitted
+        // assembly), so the EnC CDI rows are decoded eagerly; flag-off baselines and
+        // pre-C2 PDBs decode to the empty map.
+        EncMethodDebugInfos =
+            portablePdbSnapshot
+            |> Option.map (fun snapshot -> readEncMethodDebugInfoFromPortablePdb snapshot.Bytes)
+            |> Option.defaultValue Map.empty
         ModuleNameOffset = None
     }
 
@@ -564,6 +585,71 @@ let internal applyDelta
         TypeReferenceTokens = baseline.TypeReferenceTokens
         AssemblyReferenceTokens = baseline.AssemblyReferenceTokens
     }
+
+/// <summary>
+/// Carries per-method EnC debug information forward into the next-generation baseline after a
+/// delta, mirroring how AddedOrChangedMethods chains method state: every updated or added
+/// method's entry is replaced by its occurrence data recomputed from the fresh compile, or
+/// dropped when the fresh compile produced none (fail closed — the method's lambdas must then
+/// be treated as unmappable rather than matched against stale data). Unchanged methods keep
+/// their baseline entries. NOTE: the delta PDB does not yet re-emit EnC CDI rows; this
+/// in-memory chain is what the generation-aware closure lowering (C3) consumes, and PDB
+/// persistence across session restarts is the remaining gap.
+/// </summary>
+let chainEncMethodDebugInfos
+    (baseline: FSharpEmitBaseline)
+    (refreshedEncDebugInfos: Map<int, EncMethodDebugInformation>)
+    (updatedMethodTokens: int list)
+    : FSharpEmitBaseline =
+    let chainedInfos =
+        (baseline.EncMethodDebugInfos, updatedMethodTokens)
+        ||> List.fold (fun acc methodToken ->
+            match Map.tryFind methodToken refreshedEncDebugInfos with
+            | Some info -> Map.add methodToken info acc
+            | None -> Map.remove methodToken acc)
+
+    { baseline with
+        EncMethodDebugInfos = chainedInfos }
+
+/// <summary>
+/// Recomputes the per-method EnC debug information from the fresh typed tree of an edited
+/// compilation, keyed by baseline MethodDef token, for chaining into the next-generation
+/// baseline (see chainEncMethodDebugInfos). Name-to-token resolution mirrors the fail-closed
+/// write-side keying: only compiled names identifying exactly one baseline MethodDef row
+/// resolve, so an entry can never attach to the wrong method. Methods added by the current
+/// delta have no baseline token yet and carry no entry (added lambda members are a C4
+/// concern).
+/// </summary>
+let computeRefreshedEncMethodDebugInfos
+    (g: TcGlobals)
+    (baseline: FSharpEmitBaseline)
+    (implementationFiles: CheckedAssemblyAfterOptimization)
+    : Map<int, EncMethodDebugInformation> =
+    let (CheckedAssemblyAfterOptimization implFiles) = implementationFiles
+
+    let infosByName =
+        implFiles
+        |> List.map (fun implFile -> implFile.ImplFile)
+        |> computeMethodEncDebugInfo g
+
+    if Map.isEmpty infosByName then
+        Map.empty
+    else
+        let tokensByUniqueName =
+            baseline.MethodTokens
+            |> Map.toSeq
+            |> Seq.groupBy (fun (key, _) -> key.Name)
+            |> Seq.choose (fun (name, entries) ->
+                match entries |> Seq.truncate 2 |> List.ofSeq with
+                | [ (_, token) ] -> Some(name, token)
+                | _ -> None)
+            |> Map.ofSeq
+
+        (Map.empty, infosByName)
+        ||> Map.fold (fun acc methName info ->
+            match Map.tryFind methName tokensByUniqueName with
+            | Some methodToken -> Map.add methodToken info acc
+            | None -> acc)
 
 /// <summary>Create an <see cref="FSharpEmitBaseline"/> without capturing the ILX environment snapshot.</summary>
 let create

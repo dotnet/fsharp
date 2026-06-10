@@ -248,16 +248,32 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         File.AppendAllText(path, line)
                     with :? IOException as ex ->
                         eprintfn "[fsharp-hotreload][service] Failed to write trace log: %s" ex.Message
-                match delta.UpdatedBaseline with
-                | Some updatedBaseline ->
-                    if trace then
-                        printfn
-                            "[fsharp-hotreload][service] staging pending baseline encId=%O baseId=%O newBaselineEncId=%O"
-                            delta.GenerationId
-                            delta.BaseGenerationId
-                            updatedBaseline.EncId
-                    sessionStore().UpdateBaseline(updatedBaseline)
-                | None -> ()
+                let delta =
+                    match delta.UpdatedBaseline with
+                    | Some updatedBaseline ->
+                        // Generation chaining (C2): replace the updated methods' EnC debug
+                        // information with the data recomputed from the fresh typed tree. The
+                        // delta PDB does not yet re-emit EnC CDI rows, so this in-memory chain
+                        // is what the closure mapping (C3) consumes; PDB persistence across
+                        // session restarts is the remaining gap.
+                        let updatedMethodTokens =
+                            delta.AddedOrChangedMethods |> List.map (fun info -> info.MethodToken)
+
+                        let chainedBaseline =
+                            chainEncMethodDebugInfos updatedBaseline request.RefreshedEncDebugInfos updatedMethodTokens
+
+                        if trace then
+                            printfn
+                                "[fsharp-hotreload][service] staging pending baseline encId=%O baseId=%O newBaselineEncId=%O"
+                                delta.GenerationId
+                                delta.BaseGenerationId
+                                chainedBaseline.EncId
+                        sessionStore().UpdateBaseline(chainedBaseline)
+
+                        { delta with
+                            UpdatedBaseline = Some chainedBaseline }
+                    | None -> delta
+
                 Ok { Delta = delta }
             with
             | HotReloadUnsupportedEditException message ->
@@ -337,7 +353,11 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                               UpdatedTypes = updatedTypes
                               UpdatedMethods = updatedMethods
                               UpdatedAccessors = accessorUpdates
-                              SymbolChanges = Some symbolChanges }
+                              SymbolChanges = Some symbolChanges
+                              // Recomputed occurrence data from the fresh typed tree; EmitDelta
+                              // chains it into the next-generation baseline for the updated methods.
+                              RefreshedEncDebugInfos =
+                                computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation }
 
                         match this.EmitDelta request with
                         | Ok result ->

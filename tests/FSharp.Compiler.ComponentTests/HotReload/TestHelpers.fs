@@ -994,7 +994,8 @@ module internal TestHelpers =
               UserStringStreamLengthAdded = 0
               BlobStreamLengthAdded = 0
               GuidStreamLengthAdded = 0
-              AddedOrChangedMethods = [] }
+              AddedOrChangedMethods = []
+              EncMethodDebugInfos = Map.empty }
 
         // Attach string handles from baseline metadata so delta can reuse them
         let baselineWithHandles = attachMetadataHandlesFromBytes assemblyBytes baseline

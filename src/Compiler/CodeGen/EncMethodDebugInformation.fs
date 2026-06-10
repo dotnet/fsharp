@@ -28,8 +28,11 @@ module internal FSharp.Compiler.EncMethodDebugInformation
 #nowarn "9" // NativePtr: BlobReader only exposes a byte*-based constructor
 
 open System
+open System.Collections.Generic
+open System.Collections.Immutable
 open System.IO
 open System.Reflection.Metadata
+open System.Reflection.Metadata.Ecma335
 open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
 
@@ -525,18 +528,13 @@ let tryCreateFromLambdaOccurrences (occurrences: LambdaOccurrence list) : EncMet
                       ClosureOrdinal = closureOrdinal })
               StateMachineStates = [] }
 
-/// Computes the per-method EnC CustomDebugInformation side channel for the baseline PDB
-/// writer from the optimized implementation files of a flag-on compilation, keyed by IL
-/// method (compiled) name. Keying is fail closed: members without a compiled name,
-/// compiled names claimed by more than one member binding anywhere in the assembly
-/// (overloads, same-named members on different types), and members with unencodable
-/// occurrence chains are omitted — the writer additionally drops any name that does not
-/// identify exactly one IL method row, so a map can never attach to the wrong method.
-let computeMethodCustomDebugInfoRows
-    (g: TcGlobals)
-    (implFiles: CheckedImplFile list)
-    : Map<string, PdbMethodCustomDebugInfo list> =
-
+/// Computes the per-member EnC method debug information of a flag-on compilation from its
+/// implementation files, keyed by IL method (compiled) name. Keying is fail closed: members
+/// without a compiled name, compiled names claimed by more than one member binding anywhere
+/// in the assembly (overloads, same-named members on different types), and members with
+/// unencodable occurrence chains are omitted, so an entry can never describe the wrong
+/// method. Members without lambda occurrences carry no entry.
+let computeMethodEncDebugInfo (g: TcGlobals) (implFiles: CheckedImplFile list) : Map<string, EncMethodDebugInformation> =
     let allMembers = implFiles |> List.collect (collectMemberLambdaOccurrences g)
 
     let ambiguousNames =
@@ -552,21 +550,105 @@ let computeMethodCustomDebugInfoRows
         match symbol.CompiledName, occurrences with
         | Some methName, _ :: _ when not (Set.contains methName ambiguousNames) ->
             match tryCreateFromLambdaOccurrences occurrences with
-            | Some info ->
-                let lambdaMapBlob = serializeLambdaMap info
-
-                if lambdaMapBlob.Length = 0 then
-                    acc
-                else
-                    // Only the EnC Lambda and Closure Map is emitted at baseline; the
-                    // EnC Local Slot Map and State Machine State Map are omitted (see
-                    // tryCreateFromLambdaOccurrences).
-                    Map.add
-                        methName
-                        [
-                            { KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap
-                              Blob = lambdaMapBlob }
-                        ]
-                        acc
+            | Some info -> Map.add methName info acc
             | None -> acc
         | _ -> acc)
+
+/// Computes the per-method EnC CustomDebugInformation side channel for the baseline PDB
+/// writer from the optimized implementation files of a flag-on compilation, keyed by IL
+/// method (compiled) name (fail-closed keying per computeMethodEncDebugInfo) — the writer
+/// additionally drops any name that does not identify exactly one IL method row, so a map
+/// can never attach to the wrong method.
+let computeMethodCustomDebugInfoRows
+    (g: TcGlobals)
+    (implFiles: CheckedImplFile list)
+    : Map<string, PdbMethodCustomDebugInfo list> =
+
+    (Map.empty, computeMethodEncDebugInfo g implFiles)
+    ||> Map.fold (fun acc methName info ->
+        let lambdaMapBlob = serializeLambdaMap info
+
+        if lambdaMapBlob.Length = 0 then
+            acc
+        else
+            // Only the EnC Lambda and Closure Map is emitted at baseline; the
+            // EnC Local Slot Map and State Machine State Map are omitted (see
+            // tryCreateFromLambdaOccurrences).
+            Map.add
+                methName
+                [
+                    { KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap
+                      Blob = lambdaMapBlob }
+                ]
+                acc)
+
+// ---------------------------------------------------------------------------
+// Baseline read bridge (Phase C2): portable-PDB EnC CDI rows -> the per-method map the
+// hot reload session baseline (FSharpEmitBaseline.EncMethodDebugInfos) exposes to the
+// generation-aware closure lowering (Phase C3).
+// ---------------------------------------------------------------------------
+
+/// Decodes every method-level EnC CustomDebugInformation row of a portable PDB image into
+/// per-method EnC debug information, keyed by MethodDef token (0x06xxxxxx). The CDI parent
+/// of the EnC rows is always a MethodDef handle, so token keying is unambiguous here — the
+/// name keying on the write side exists only because the PDB writer lacks tokens.
+/// Fail safe: a null/empty or non-PDB image yields the empty map (back-compat with
+/// baselines compiled without --enable:hotreloaddeltas and with pre-C2 PDBs), and a method
+/// whose blobs do not decode is omitted rather than guessed.
+let readEncMethodDebugInfoFromPortablePdb (pdbBytes: byte[]) : Map<int, EncMethodDebugInformation> =
+    if isEmpty pdbBytes then
+        Map.empty
+    else
+        try
+            use provider =
+                MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange pdbBytes)
+
+            let reader = provider.GetMetadataReader()
+
+            let slotMapBlobs = Dictionary<int, byte[]>()
+            let lambdaMapBlobs = Dictionary<int, byte[]>()
+            let stateMapBlobs = Dictionary<int, byte[]>()
+
+            for cdiHandle in reader.CustomDebugInformation do
+                let cdi = reader.GetCustomDebugInformation cdiHandle
+
+                if cdi.Parent.Kind = HandleKind.MethodDefinition then
+                    let methodToken = MetadataTokens.GetToken cdi.Parent
+                    let kind = reader.GetGuid cdi.Kind
+
+                    if kind = PortableCustomDebugInfoKinds.encLocalSlotMap then
+                        slotMapBlobs[methodToken] <- reader.GetBlobBytes cdi.Value
+                    elif kind = PortableCustomDebugInfoKinds.encLambdaAndClosureMap then
+                        lambdaMapBlobs[methodToken] <- reader.GetBlobBytes cdi.Value
+                    elif kind = PortableCustomDebugInfoKinds.encStateMachineStateMap then
+                        stateMapBlobs[methodToken] <- reader.GetBlobBytes cdi.Value
+
+            let methodTokens =
+                Seq.concat
+                    [
+                        slotMapBlobs.Keys :> seq<int>
+                        lambdaMapBlobs.Keys
+                        stateMapBlobs.Keys
+                    ]
+                |> Seq.distinct
+
+            let tryBlob (blobs: Dictionary<int, byte[]>) token =
+                match blobs.TryGetValue token with
+                | true, blob -> blob
+                | _ -> Array.empty
+
+            (Map.empty, methodTokens)
+            ||> Seq.fold (fun acc token ->
+                try
+                    let info =
+                        deserialize (tryBlob slotMapBlobs token) (tryBlob lambdaMapBlobs token) (tryBlob stateMapBlobs token)
+
+                    Map.add token info acc
+                with :? InvalidDataException ->
+                    // Fail closed per method: an undecodable blob never yields a partial
+                    // (and so potentially mismatched) map for its method.
+                    acc)
+        with :? BadImageFormatException ->
+            // Not a portable PDB image (or a corrupted one): the session still starts,
+            // with no per-method EnC information.
+            Map.empty

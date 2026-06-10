@@ -3,7 +3,10 @@
 Status: C1 landed (2026-06-10) — lambda occurrence model and alignment in `TypedTreeDiff`.
 C2 commit 1 landed (2026-06-10) — EnC CDI blob encoder/decoder (`EncMethodDebugInformation.fs`).
 C2 commit 2 landed (2026-06-10) — baseline-time EnC Lambda and Closure Map CDI emission in the
-portable PDB under `--enable:hotreloaddeltas`; reader wiring in the baseline snapshot pending.
+portable PDB under `--enable:hotreloaddeltas`.
+C2 commit 3 landed (2026-06-10) — baseline EnC CDI read into the hot reload session
+(`FSharpEmitBaseline.EncMethodDebugInfos`) plus in-memory generation chaining; delta-PDB CDI
+re-emission deferred (see "C2 baseline CDI read" below).
 C3–C5 pending. Implementation notes are folded into the relevant sections below.
 Source research: Roslyn main @ June 2026 (`ClosureConversion.cs`, `EncVariableSlotAllocator.cs`, `EditAndContinueMethodDebugInformation.cs`, `DefinitionMap.cs`, `AbstractEditAndContinueAnalyzer.ReportLambdaAndClosureRudeEdits`).
 
@@ -176,6 +179,37 @@ the same optimized typed tree the baseline snapshot stores:
   occurrence keys `[0]`/`[0; 1]` plus closure ordinals; the flag-off compile of the same source
   must contain zero EnC CDI rows.
 
+### C2 baseline CDI read & in-memory chaining as implemented (commit 3)
+
+When a hot reload session baseline is captured, the EnC CDI rows of the baseline portable PDB
+are decoded into `FSharpEmitBaseline.EncMethodDebugInfos: Map<int, EncMethodDebugInformation>`,
+keyed by **MethodDef token** — the CDI parent of the EnC rows is a MethodDef handle, so token
+keying is unambiguous (the name keying on the write side exists only because the PDB writer
+lacks tokens). Details:
+
+- **Reader**: `EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb` (SRM
+  `MetadataReaderProvider`, same SRM boundary as `HotReloadPdb.emitDelta`) collects all three
+  EnC blob kinds per method and decodes them with the C2 decoder. Fail safe/fail closed: a
+  non-PDB or empty image yields the empty map (flag-off and pre-C2 baselines start sessions
+  fine with no per-method data), and a method whose blobs do not decode is omitted entirely.
+- **Sources**: the fsc emit hook decodes the exact emitted PDB bytes
+  (`PortablePdbSnapshot.Bytes`). The checker path (`FSharpChecker.StartHotReloadSession`)
+  rewrites the baseline in memory *without* the CDI side channel, so it additionally reads the
+  on-disk PDB as a sibling input when the snapshot carried no EnC rows (`service.fs`,
+  `createBaseline`).
+- **Generation chaining**: when a delta is emitted through the session
+  (`EmitDeltaForCompilation`), the per-method occurrence data is recomputed from the fresh
+  typed tree (`HotReloadBaseline.computeRefreshedEncMethodDebugInfos`, name→token resolution
+  fail closed on non-unique names) and `chainEncMethodDebugInfos` replaces the updated/added
+  methods' entries in the next-generation baseline — entries the fresh compile did not produce
+  are dropped rather than left stale (their lambdas must be treated as unmappable). Unchanged
+  methods keep their baseline entries, mirroring the `AddedOrChangedMethods` plumbing.
+- **Deferred**: the delta PDB does **not** yet re-emit EnC CDI rows (delta-PDB writing is a
+  separate path). Within a session the in-memory chain is the generation-accurate source C3
+  consumes; persisting refreshed maps into delta PDBs (so a restarted session can rehydrate
+  generation-N state) is the remaining gap. Methods *added* by a delta also carry no entry yet
+  (no baseline token at refresh time) — added lambda members are a C4 concern.
+
 ### State machines (Phase D, builds on the same map)
 
 - F# `async` lowers to closure chains → covered by the lambda/closure map directly (a major
@@ -203,7 +237,9 @@ lambda signature changes, mid-sequence resume-point insertion, struct-closure ca
   encoder/decoder module (`EncMethodDebugInformation.fs`) with round-trip + cross-validation tests
   against Roslyn-emitted blobs (see "C2 blob encoder/decoder as implemented"). Commit 2 ✅ landed:
   baseline-time EnC Lambda and Closure Map emission in ilwritepdb under the flag (see "C2 baseline
-  CDI emission as implemented"). Remaining: reader in the baseline snapshot.
+  CDI emission as implemented"). Commit 3 ✅ landed: baseline read into the session +
+  in-memory generation chaining (see "C2 baseline CDI read & in-memory chaining as
+  implemented"); delta-PDB CDI re-emission deferred.
 - **C3** `feat(hot-reload): generation-aware closure identity in IlxGen lowering` — `ClosureSlotAllocator`
   seam; matched occurrences reuse closure class/method/field identity; new occurrences get
   generation-suffixed names. Flag-off behavior byte-identical (EmittedIL gate).

@@ -390,6 +390,7 @@ module EdgeCaseTests =
                 BlobStreamLengthAdded = 0
                 GuidStreamLengthAdded = 0
                 AddedOrChangedMethods = []
+                EncMethodDebugInfos = Map.empty
             }
 
         [<Fact>]

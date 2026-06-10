@@ -727,12 +727,25 @@ type FSharpChecker
         let portablePdbSnapshot = pdbBytesOpt |> Option.map HotReloadPdb.createSnapshot
         let assemblyBytes = File.ReadAllBytes(outputPath)
 
-        HotReloadBaseline.createFromEmittedArtifacts
-            ilModule
-            tokenMappings
-            assemblyBytes
-            portablePdbSnapshot
-            None
+        let baseline =
+            HotReloadBaseline.createFromEmittedArtifacts
+                ilModule
+                tokenMappings
+                assemblyBytes
+                portablePdbSnapshot
+                None
+
+        // The in-memory rewrite above passes no EnC CDI side channel (methodCustomDebugInfoRows =
+        // Map.empty), so its PDB never carries EnC rows. The on-disk PDB produced by the flag-on
+        // build is the durable source of the baseline EnC method debug information: read it as a
+        // sibling input when the rewrite yielded none (flag-off/pre-C2 PDBs still decode to the
+        // empty map, and the session starts fine either way).
+        if Map.isEmpty baseline.EncMethodDebugInfos && File.Exists(pdbPath) then
+            { baseline with
+                EncMethodDebugInfos =
+                    EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath)) }
+        else
+            baseline
 
     let toHotReloadImplementationSnapshot (typedImplFiles: CheckedImplFile list) : CheckedAssemblyAfterOptimization =
         typedImplFiles

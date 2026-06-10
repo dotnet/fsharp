@@ -358,6 +358,113 @@ type Type =
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
+    // Two lambda occurrences in 'transform' (matching the C1 extraction pinned by
+    // PdbCdiEmissionTests): the outer List.map argument (occurrence key [0]) and the
+    // lambda nested inside it (occurrence key [0; 1]).
+    let private lambdaBaselineSource =
+        """
+module CdiChain
+
+let transform (values: int list) =
+    let offset = 1
+    values |> List.map (fun v -> List.map (fun u -> u + offset + v) [ v ] |> List.sum)
+"""
+
+    // Body-only edit: the lambda set is unchanged, so the delta is a plain MethodBody
+    // update and the refreshed occurrence data must show the same two keys.
+    let private lambdaUpdatedSource =
+        """
+module CdiChain
+
+let transform (values: int list) =
+    let offset = 2
+    values |> List.map (fun v -> List.map (fun u -> u + offset + v) [ v ] |> List.sum)
+"""
+
+    [<Fact>]
+    let ``EmitDeltaForCompilation chains refreshed EnC method debug information into the next baseline`` () =
+        let checker =
+            FSharpChecker.Create(
+                keepAssemblyContents = true,
+                enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                captureIdentifiersWhenParsing = false
+            )
+
+        let projectDir, fsPath, dllPath = createTempProject ()
+        let service = FSharpEditAndContinueLanguageService.Instance
+
+        try
+            let baselineResults = compileProject checker fsPath dllPath lambdaBaselineSource
+            let tcGlobals, baselineImplementation = getTypedAssembly baselineResults
+            let baseline = createBaseline tcGlobals dllPath
+
+            // Back-compat: this baseline's in-memory PDB rewrite carries no EnC CDI side
+            // channel (and pre-C2 PDBs carry no EnC rows at all), so the session must start
+            // fine with an empty per-method map.
+            Assert.True(
+                Map.isEmpty baseline.EncMethodDebugInfos,
+                "expected the CDI-less baseline to expose an empty EnC method debug information map"
+            )
+
+            service.EndSession()
+            service.StartSession(baseline, baselineImplementation) |> ignore
+            Assert.True(service.IsSessionActive)
+
+            let updatedResults = compileProject checker fsPath dllPath lambdaUpdatedSource
+            let updatedTcGlobals, updatedImplementation = getTypedAssembly updatedResults
+
+            let updatedModule =
+                let options : ILReaderOptions =
+                    { pdbDirPath = None
+                      reduceMemoryUsage = ReduceMemoryFlag.Yes
+                      metadataOnly = MetadataOnlyFlag.No
+                      tryGetMetadataSnapshot = fun _ -> None }
+
+                use reader = OpenILModuleReader dllPath options
+                reader.ILModuleDef
+
+            // The build pipeline clears the active session once the new binary is written;
+            // rehydrate it with the previously captured baseline before emitting the delta.
+            service.StartSession(baseline, baselineImplementation) |> ignore
+
+            let transformToken =
+                baseline.MethodTokens
+                |> Map.toList
+                |> List.pick (fun (key, token) -> if key.Name = "transform" then Some token else None)
+
+            match service.EmitDeltaForCompilation(updatedTcGlobals, updatedImplementation, updatedModule) with
+            | Error error -> failwithf "EmitDeltaForCompilation failed: %A" error
+            | Ok result ->
+                let updatedTokens =
+                    result.Delta.AddedOrChangedMethods |> List.map (fun info -> info.MethodToken)
+
+                Assert.Contains(transformToken, updatedTokens)
+
+                let chainedBaseline =
+                    match service.TryGetBaseline() with
+                    | ValueSome chained -> chained
+                    | ValueNone -> failwith "Expected an active session baseline after delta emission."
+
+                let info =
+                    match Map.tryFind transformToken chainedBaseline.EncMethodDebugInfos with
+                    | Some info -> info
+                    | None ->
+                        failwithf
+                            "expected chained EnC method debug information for token 0x%08X, found tokens %A"
+                            transformToken
+                            (chainedBaseline.EncMethodDebugInfos |> Map.toList |> List.map fst)
+
+                // The chained entry reflects the fresh compile's occurrence data: the body
+                // edit adds no lambda, so the same two occurrence keys come back.
+                Assert.Equal(2, info.Lambdas.Length)
+                Assert.Equal(2, info.Closures.Length)
+                Assert.Equal<int list>([ 0 ], EncMethodDebugInformation.decodeOccurrenceKey info.Lambdas[0].SyntaxOffset)
+                Assert.Equal<int list>([ 0; 1 ], EncMethodDebugInformation.decodeOccurrenceKey info.Lambdas[1].SyntaxOffset)
+        finally
+            try service.EndSession() with _ -> ()
+            try checker.InvalidateAll() with _ -> ()
+            try Directory.Delete(projectDir, true) with _ -> ()
+
     [<Fact>]
     let ``ApplyUpdate succeeds for method body edit`` () =
         // This test requires DOTNET_MODIFIABLE_ASSEMBLIES=debug to be set
