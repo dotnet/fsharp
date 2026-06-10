@@ -82,3 +82,40 @@ let main _ =
     if outer b = 42 then 0 else 1
 """
         |> compileRunSucceeds realsig
+
+    /// Generic class with type-private static accessed from TLR-lifted inner-rec
+    /// inside an instance member. Adversarial wave 2 (opus 4.8 attempt 20) — confirmed
+    /// `MethodAccessException` before the SelectTLRVals private-ref guard.
+    [<Theory; InlineData(true); InlineData(false)>]
+    let ``Type-private static of generic class accessed from TLR-lifted inner-rec`` (realsig: bool) =
+        """module Sample
+type Holder<'T>() =
+    static let secret = 42
+    static member private Secret = secret
+    member _.Run() =
+        let rec h n = if n = 0 then Holder<'T>.Secret else h (n - 1)
+        h 5
+[<EntryPoint>]
+let main _ = if Holder<int>().Run() = 42 then 0 else 1
+"""
+        |> compileRunSucceeds realsig
+
+    /// Same shape as above but the private member reads a mutable backing field,
+    /// proving the failure is a CLR access check at the call site rather than
+    /// constant folding. Adversarial wave 2 (opus 4.8 attempt 24).
+    [<Theory; InlineData(true); InlineData(false)>]
+    let ``Type-private static (mutable backing) of generic class accessed from TLR-lifted inner-rec`` (realsig: bool) =
+        """module Sample
+type Holder<'T>() =
+    static let mutable backing = 0
+    static member Set v = backing <- v
+    static member private Secret = backing + 1
+    member _.Run() =
+        let rec h n = if n = 0 then Holder<'T>.Secret else h (n - 1)
+        h 5
+[<EntryPoint>]
+let main _ =
+    Holder<int>.Set 41
+    if Holder<int>().Run() = 42 then 0 else 1
+"""
+        |> compileRunSucceeds realsig

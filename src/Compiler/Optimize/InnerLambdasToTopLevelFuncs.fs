@@ -157,6 +157,26 @@ let IsRefusedTLR g (f: Val) =
     let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline || isResumableCode || isInlineIfLambda
     refuseTest
 
+/// Under --realsig+, a TLR-lifted helper is emitted at module scope (outside its declaring
+/// type). If the helper's body invokes a source-`private` member of an enclosing type, the
+/// CLR raises MethodAccessException at runtime because IL `private` is type-scoped.
+/// F# RecdFields always compile to IL `assembly` or better, so direct field access is safe;
+/// only val/method references need to be checked.
+let BodyReferencesPrivateMember e =
+    let mutable found = false
+    let folder =
+        { ExprFolder0 with
+            exprIntercept = fun _recurseF noInterceptF z expr ->
+                if found then z
+                else
+                    match expr with
+                    | Expr.Val (vref, _, _) ->
+                        if vref.Accessibility.IsPrivate then found <- true
+                    | _ -> ()
+                    noInterceptF z expr }
+    FoldExpr folder () e |> ignore
+    found
+
 let IsMandatoryTopLevel (f: Val) =
     let specialVal = f.MemberInfo.IsSome
     let isModulBinding = f.IsMemberOrModuleBinding
@@ -184,6 +204,11 @@ module Pass1_DetermineTLRAndArities =
 
         // Exclude values bound in a decision tree
         elif Zset.contains f xinfo.DecisionTreeBindings then
+            None
+
+        // Under --realsig+, lifting a helper out of its declaring type would lose access to
+        // any source-`private` members it references, producing MethodAccessException at runtime.
+        elif g.realsig && BodyReferencesPrivateMember e then
             None
         else
             // Could the binding be TLR? with what arity?
