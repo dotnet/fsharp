@@ -41,6 +41,19 @@ type PerFileNamingScope =
     /// source-location marker baked into the generated name; the uniqueness bucket is this scope's file.
     member Fresh: name: string * m: range -> string
 
+/// Per-consumer-file closure type-name allocation scope used by IlxGen.
+/// See https://github.com/dotnet/fsharp/issues/19928.
+[<Sealed>]
+type PerFileClosureNameScope =
+
+    new: consumerFileIndex: int -> PerFileClosureNameScope
+
+    /// Allocate (or reuse cached) closure type name. Repeat calls with the same `uniq` return
+    /// the same name. New `uniq`s at the same (basicName, m.FileIndex, m.StartLine,
+    /// m.StartColumn) bucket get an incrementing `-N` suffix. Emitted name format:
+    /// `basicName@<lineFromM>F<consumerFileIndex>[-N]`.
+    member EmitClosureName: basicName: string * m: range * uniq: int64 -> string
+
 type internal CompilerGlobalState =
 
     new: unit -> CompilerGlobalState

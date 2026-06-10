@@ -1267,6 +1267,12 @@ and IlxGenEnv =
         /// Collection of code-gen functions where each inner array represents codegen (method bodies) functions for a single file
         delayedFileGenReverse: list<(unit -> unit)[]>
 
+        /// Per-consumer-file scope for closure type-name allocation. See follow-up issue
+        /// https://github.com/dotnet/fsharp/issues/19928 for the seq-vs-par determinism
+        /// rationale that motivates this field. MUST be Some when emitting any closure —
+        /// GetIlxClosureFreeVars fails fast on None.
+        closureNameScope: PerFileClosureNameScope option
+
         /// Other information from the emit of this assembly
         intraAssemblyInfo: IlxGenIntraAssemblyInfo
 
@@ -7453,7 +7459,16 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            let scope =
+                match eenv.closureNameScope with
+                | Some s -> s
+                | None ->
+                    failwithf
+                        "closureNameScope must be set when emitting closure %s at %A — see https://github.com/dotnet/fsharp/issues/19928"
+                        basenameSafeForUseAsTypename
+                        expr.Range
+
+            scope.EmitClosureName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -11084,6 +11099,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
                     TopImplQualifiedName = qname.Text
                     Range = m
                 }
+            closureNameScope = Some(PerFileClosureNameScope(m.FileIndex))
         }
 
     cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
@@ -13080,6 +13096,11 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         if extraBindings.Length > 0 then
             let mexpr = TMDefs [ for b in extraBindings -> TMDefLet(b, range0) ]
 
+            let eenv =
+                { eenv with
+                    closureNameScope = Some(PerFileClosureNameScope(0))
+                }
+
             let _emptyTopInstrs, _emptyTopCode =
                 CodeGenMethod
                     cenv
@@ -13134,6 +13155,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         imports = None
         delayCodeGen = true
         delayedFileGenReverse = []
+        closureNameScope = None
         intraAssemblyInfo = IlxGenIntraAssemblyInfo.Create()
         realsig = g.realsig
         initClassFieldSpec = None
@@ -13199,6 +13221,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
         { eenv with
             cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
             delayCodeGen = cenv.options.parallelIlxGenEnabled
+            closureNameScope = Some(PerFileClosureNameScope(0))
         }
 
     // Generate the PrivateImplementationDetails type

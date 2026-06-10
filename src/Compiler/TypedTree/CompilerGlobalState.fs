@@ -90,6 +90,49 @@ type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
     member _.Fresh (name: string, m: range) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
+/// Per-consumer-file closure type-name allocation scope used by IlxGen.
+/// Tracing variant for diagnostics — see https://github.com/dotnet/fsharp/issues/19928.
+[<Sealed>]
+type PerFileClosureNameScope(consumerFileIndex: int) =
+
+    let byUniq = System.Collections.Generic.Dictionary<int64, string>()
+    let buckets =
+        System.Collections.Generic.Dictionary<struct (string * int * int), int>()
+
+    member _.EmitClosureName(basicName: string, m: range, uniq: int64) =
+        match byUniq.TryGetValue uniq with
+        | true, cached ->
+            cached
+        | false, _ ->
+            // Bucket key omits StartColumn so two Lambdas sharing a line (different columns)
+            // share one bucket and produce different `-N` suffixes. Embedding the column in the
+            // bucket key without also embedding it in the emitted NAME would cause distinct
+            // bucket keys to produce the same name (each "first" in its own bucket → both
+            // get "" suffix → duplicate type defs in IL).
+            let bucketKey = struct (basicName, m.FileIndex, m.StartLine)
+
+            let occ =
+                match buckets.TryGetValue bucketKey with
+                | true, n ->
+                    buckets[bucketKey] <- n + 1
+                    n
+                | false, _ ->
+                    buckets[bucketKey] <- 1
+                    0
+
+            let lineMarker =
+                string m.StartLine + "F" + string consumerFileIndex
+
+            let suffix =
+                if occ = 0 then ""
+                else "-" + string occ
+
+            let name =
+                CompilerGeneratedNameSuffix basicName (lineMarker + suffix)
+
+            byUniq[uniq] <- name
+            name
+
 type internal CompilerGlobalState () =
     /// A global generator of compiler generated names
     let globalNng = NiceNameGenerator()
