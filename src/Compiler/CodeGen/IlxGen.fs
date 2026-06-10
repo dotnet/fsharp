@@ -12953,7 +12953,14 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                     // parallel codegen. Priming them here in source order pins the suffix
                     // before any deferred method-body codegen can race.
                     // See https://github.com/dotnet/fsharp/issues/19928.
-                    primeVal v
+                    //
+                    // Restrict priming to Vals that are clearly TLR fHat names (already carry
+                    // the compiler-generated '@' marker). This avoids registering names for
+                    // user-written compiler-generated locals that the codegen path doesn't
+                    // actually route through StableNiceNameGenerator, which would otherwise
+                    // shift cache occupancy for the bucket counter.
+                    if IsCompilerGeneratedName v.LogicalName then
+                        primeVal v
                     walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
                     walkExpr (mkLocalValRef v :: letBoundVars) cloc body
 
@@ -12963,7 +12970,8 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                     // var" comment was incorrect — IlxGen's GenLetRecBindings adds every rec
                     // sibling's val before generating any of their bodies.
                     for TBind(v, _, _) in binds do
-                        primeVal v
+                        if IsCompilerGeneratedName v.LogicalName then
+                            primeVal v
 
                     let lbvs =
                         (binds |> List.map (fun (TBind(v, _, _)) -> mkLocalValRef v)) @ letBoundVars

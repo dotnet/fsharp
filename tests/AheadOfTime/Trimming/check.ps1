@@ -66,10 +66,10 @@ $allErrors = @()
 $allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.Core.dll" -expected_len 316928 -callerLineNumber 66
 
 # Check net9.0 trimmed assemblies with static linked FSharpCore
-$allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9096704 -callerLineNumber 69
+$allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9168384 -callerLineNumber 69
 
 # Check net9.0 trimmed assemblies with F# metadata resources removed
-$allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7531008 -callerLineNumber 72
+$allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7602176 -callerLineNumber 72
 
 # Report all errors and exit with failure if any occurred
 if ($allErrors.Count -gt 0) {
