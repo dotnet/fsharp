@@ -88,7 +88,7 @@
       "cats": []
     },
     "19880": {
-      "sha": "8a86aa95257cfa17620cee1364fcfed5b534bb00",
+      "sha": "5a6d2b491a9e",
       "cats": []
     },
     "19879": {
@@ -236,6 +236,18 @@
     },
     "19927": {
       "sha": "6ab9ef3cc51759e1c266259e06f3bb10d0086ad4",
+      "cats": []
+    },
+    "19930": {
+      "sha": "33c46fd10dd3ac55207c800ab3f7cfbf071bbf6a",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore",
+        "Affects-Test-Tooling"
+      ]
+    },
+    "19929": {
+      "sha": "2f461701fc2b",
       "cats": []
     }
   }
