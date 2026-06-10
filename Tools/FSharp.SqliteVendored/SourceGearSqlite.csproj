@@ -1,11 +1,42 @@
 <Project Sdk="Microsoft.NET.Sdk">
- <PropertyGroup>
-  <TargetFramework>net472</TargetFramework>
-  <IsPackable>false</IsPackable>
-  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-  <!-- Vendored SourceGear.Sqlite3 e_sqlite3.dll lands here in §10 -->
- </PropertyGroup>
- <ItemGroup>
-  <None Include="runtimes\**\*" Pack="true" CopyToOutputDirectory="PreserveNewest" />
- </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <RestoreEnabled>true</RestoreEnabled>
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
+  </PropertyGroup>
+
+  <!-- SourceGear.Sqlite3 contains the e_sqlite3.dll for win-x86 / win-x64 / win-arm64 under runtimes/<rid>/native/.
+       Microsoft FCIB policy prohibits .dll commits, so we pull the nupkg + extract at build time. -->
+  <ItemGroup>
+    <PackageReference Include="SourceGear.Sqlite3" Version="3.50.4.5" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <!-- After NuGet restore populates $(PkgSourceGear_Sqlite3), copy the DLLs into the local runtimes/ tree
+       BEFORE Build runs so the VSIX <Content Include> rows (vsintegration/Vsix/VisualFSharpFull) + SWIX
+       payload (setup/Swix/Microsoft.FSharp.SDK/SourceGearSqlite.swr) find them. -->
+  <Target Name="AcquireSourceGearDll" BeforeTargets="Build">
+    <ItemGroup>
+      <_SourceGearDll Include="$(PkgSourceGear_Sqlite3)\runtimes\win-x86\native\e_sqlite3.dll">
+        <DestRid>win-x86</DestRid>
+        <ExpectedSha>61544338560CCF41A665BAC6FABA5A2270CD0088DCDF63F6906AB7CCF6B34E5E</ExpectedSha>
+      </_SourceGearDll>
+      <_SourceGearDll Include="$(PkgSourceGear_Sqlite3)\runtimes\win-x64\native\e_sqlite3.dll">
+        <DestRid>win-x64</DestRid>
+        <ExpectedSha>AABF85D7A8B416FB15203CB754FCFC9858C8F1DD3BBC7EAB82335F6C362BA0D6</ExpectedSha>
+      </_SourceGearDll>
+    </ItemGroup>
+    <Copy SourceFiles="@(_SourceGearDll)"
+          DestinationFiles="@(_SourceGearDll->'$(MSBuildThisFileDirectory)runtimes\%(DestRid)\native\e_sqlite3.dll')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- After acquisition, the runtimes\ tree under this dir is the canonical payload source for §11 (SWIX) +
+       §6.1 commit 1.4 anchor. The Content item below makes the DLLs visible to consumers via MSBuild. -->
+  <ItemGroup>
+    <None Include="runtimes\**\*.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
 </Project>
