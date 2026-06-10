@@ -402,6 +402,44 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     Exec-Console $dotnetExe $test_args
 }
 
+# Runs a test assembly via the xUnit v2 console runner, bypassing `dotnet test` (and therefore
+# the repo-wide Microsoft.Testing.Platform gate declared in global.json). Used only for projects
+# whose harness cannot run under MTP -- today that is FSharp.Editor.IntegrationTests, which
+# depends on Microsoft.VisualStudio.Extensibility.Testing.Xunit (VS-hive launcher, xUnit-v2-locked).
+# The runner is restored via a <PackageDownload Include="xunit.runner.console" .../> on the
+# test project, so it is present in the NuGet global packages folder after a normal slnx restore.
+function TestUsingXUnitConsole([string] $testProject, [string] $targetFramework) {
+
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
+    $assemblyPath = "$ArtifactsDir\bin\$projectName\$configuration\$targetFramework\$projectName.dll"
+    if (-not (Test-Path $assemblyPath)) {
+        throw "Test assembly not found at $assemblyPath. Was $projectName built before -testIntegration was invoked?"
+    }
+
+    $runnerVersion = (Select-Xml -Path "$RepoRoot\eng\Versions.props" -XPath "//XunitRunnerConsoleV2Version").Node.InnerText
+    if ([string]::IsNullOrWhiteSpace($runnerVersion)) {
+        throw "XunitRunnerConsoleV2Version is not defined in eng\Versions.props."
+    }
+
+    $nugetRoot = GetNuGetPackageCachePath
+    $xunitConsole = Join-Path $nugetRoot "xunit.runner.console\$runnerVersion\tools\net472\xunit.console.exe"
+    if (-not (Test-Path $xunitConsole)) {
+        throw "xunit.console.exe not found at $xunitConsole. Ensure restore of $projectName ran first (PackageDownload of xunit.runner.console v$runnerVersion)."
+    }
+
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
+    Create-Directory $testResultsDir
+    $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
+    $resultsXml = Join-Path $testResultsDir "$projectName.$targetFramework.$jobName.xml"
+
+    # -parallel none / -noshadow mirror the project's xunit.runner.json (parallelizeTestCollections=false, shadowCopy=false).
+    $xunit_args = """$assemblyPath"" -xml ""$resultsXml"" -parallel none -noshadow -nologo"
+
+    Write-Host("$xunitConsole $xunit_args")
+
+    Exec-Console $xunitConsole $xunit_args
+}
+
 function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.props") $TempDir
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
@@ -666,7 +704,7 @@ try {
     }
 
     if ($testIntegration -and -not $noVisualStudio) {
-        TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework
+        TestUsingXUnitConsole -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework
     }
 
     if ($testAOT) {
