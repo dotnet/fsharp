@@ -2,6 +2,31 @@
 
 > **15 workflows documented.** Source: `.github/workflows/` · FULL_REWRITE (generator `d4fe5640de7eb85c`).
 
+> **What this doc is.** A map of the 15 GitHub Actions workflows and AI agents in this repository — their triggers, control flow, side effects, and how they hand work to each other. Use it to understand "what runs when, who acts on what, and where does this label come from."
+
+## Glossary
+
+- **gh-aw** — `gh aw`, a GitHub CLI extension that compiles agentic workflow `.md` files (frontmatter + prompt) into runnable `.lock.yml` GitHub Actions workflows. See [github/gh-aw](https://github.com/githubnext/gh-aw).
+- **gh-aw workflow (`*.md`)** — A workflow defined as a Markdown file with YAML frontmatter declaring triggers (`on:`), tools (`tools:`), and `safe-outputs:`. The body is the LLM prompt.
+- **safe-outputs** — gh-aw's runtime permission and rate-limit framework. Each safe-output key (`create-pull-request`, `add-comment`, `add-labels`, `push-to-pull-request-branch`, `dispatch-workflow`, `noop`, etc.) constrains what side effects an agent run can produce: maximum count per run (`max:`), allowed file globs (`allowed-files:`), required label set, fallback behavior on validation failure.
+- **noop** — A safe-output that lets an agent end a run cleanly with no side effects (no PR, no comment). `report-as-issue: false` suppresses opening an issue when the noop is the only output — i.e., a successful no-op is silent.
+- **CCA (Copilot Coding Agent)** — Microsoft's hosted coding agent invoked via `create-agent-session`. The calling workflow hands off a task; CCA executes it asynchronously and writes results back to the repo.
+- **state-store branch** — A dedicated git branch (e.g., `memory/repo-assist`, `safety/scanned-PRs`) used as persistent JSON storage between scheduled workflow runs. Avoids depending on external infrastructure.
+- **flaky-test-detector** — A repository tool / Copilot skill that confirms a test is flaky by checking for failure evidence across ≥3 distinct unrelated PRs (not the originating PR).
+- **Cat A/B/C** (regression-pr-shepherd) — Triage categories for regression-test PRs. **A**: new human review feedback since last bot comment. **B**: CI failure or merge conflict. **C**: healthy (skip this round).
+- **B0–B4** (regression-pr-shepherd, Category B subtypes) — **B0**: merge conflict (rebase + resolve). **B1**: infrastructure/flaky failure (retry CI). **B2**: test compilation or setup error (fix test code). **B3**: added test fails — bug NOT fixed (remove label + comment + close PR). **B4**: other failures (note + re-trigger).
+
+## Legend
+
+| Symbol | Meaning |
+|---|---|
+| ⏰ | scheduled trigger (cron) |
+| 👤 | human-initiated trigger (manual dispatch, PR/issue events, comment, reaction) |
+| ⚙️ | workflow-engine action (job condition, step logic, push event, internal evaluation) |
+| 🤖 | agent/bot action (safe-output emission, dispatch, autonomous write) |
+| `<<choice>>` | binary branch on a guard condition |
+| `<<fork>>` / `<<join>>` | parallel job split / join |
+
 ---
 
 ## Overview
@@ -139,7 +164,7 @@ stateDiagram-v2
         LPM_CIHealthy --> LPM_ConflictCheck : ⚙️ yes — healthy
         LPM_CIHealthy --> LPM_CIFixable : ⚙️ no — failures exist
         state LPM_CIFixable <<choice>>
-        LPM_CIFixable --> LPM_Fix : ⚙️ fixable (<=3 attempts, <=500 LOC, no BSL auto-accept, no API surface change)
+        LPM_CIFixable --> LPM_Fix : ⚙️ fixable (≤3 attempts, ≤500 LOC, no BSL auto-accept)
         LPM_CIFixable --> LPM_ProvenFlake : ⚙️ not fixable
         LPM_Fix --> LPM_PushCIFix : ⚙️ reproduce locally + fix + build + targeted tests
         LPM_PushCIFix --> LPM_NextPR : 🤖 push-to-pull-request-branch + add-comment — stop this PR (CI restarts)
@@ -283,7 +308,7 @@ stateDiagram-v2
         RA_CmdOutputs --> [*] : 🤖 safe-outputs (add-comment, create-pull-request, push, etc.)
         RA_T1 --> RA_T3 : ⚙️ Task 1: investigate issues, add AI-thinks-issue-fixed/windows-only
         RA_T3 --> RA_T2 : ⚙️ Task 3: revisit AI-thinks-windows-only, remove-labels if FCS-testable
-        RA_T2 --> RA_T2_SkipCheck : ⚙️ Task 2: Step A — check skip conditions (repo-assist.md L296–306)
+        RA_T2 --> RA_T2_SkipCheck : ⚙️ Task 2: Step A — check 6 skip conditions
         state RA_T2_SkipCheck <<choice>>
         RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ skip (closed|existing-PR|test-coverage|untestable|human-coverage)
         RA_T2_SkipCheck --> RA_T2_CreatePR : ⚙️ no skip condition met
@@ -294,10 +319,29 @@ stateDiagram-v2
     }
 ```
 
+> **`repo-assist` Task 2 — Step A skip conditions** (any of these → no PR):
+> 1. The issue is **closed** — someone already resolved it
+> 2. A regression test PR exists (open or merged): `gh pr list --label "AI-Issue-Regression-PR" --search "{issue_number}" --state all`
+> 3. The issue body or comments link to a PR that addresses it
+> 4. Repo Assist already posted a test-link comment (a comment containing a GitHub permalink to a test file)
+> 5. Repo Assist already posted an "untestable" explanation (Outcome 3 from a previous run)
+> 6. A human already posted a comment with test coverage or a fix reference after the `AI-thinks-issue-fixed` label was applied
+
+> **`repo-assist` task ordering** — non-sequential by design: **Task 1 → Task 3 → Task 2 → Task FINAL**. Task 3 revisits `AI-thinks-windows-only` labels (which Task 1 may have just applied) BEFORE Task 2 attempts to write regression tests, because Task 3's findings determine whether Task 2 should skip.
+
 ### Safe-outputs configuration
 
 **`regression-pr-shepherd.md`** — `noop`, `add-comment` (max: 5, hide-older-comments: true), `push-to-pull-request-branch` (max: 10, title-prefix: "Add regression test: ", labels: AI-Issue-Regression-PR, allowed-files: tests/**+vsintegration/tests/**, protected-files: fallback-to-issue), `remove-labels` (max: 5, allowed: AI-thinks-issue-fixed).
-**`repo-assist.md`** — `noop`, `messages` (footer/run-started/run-success/run-failure templates), `add-comment` (max: 10, hide-older-comments: true), `create-pull-request` (max: 10, title-prefix: "Add regression test: ", labels: NO_RELEASE_NOTES+AI-Issue-Regression-PR, reviewers: abonie+T-Gro, auto-merge: true, allowed-files: tests/**+vsintegration/tests/**), `push-to-pull-request-branch` (max: 4, title-prefix: "[Repo Assist] ", protected-files: fallback-to-issue), `create-issue` (max: 4, title-prefix: "[Repo Assist] ", labels: automation+repo-assist), `update-issue` (max: 1, title-prefix: "[Repo Assist] "), `add-labels` (max: 30, allowed: AI-thinks-issue-fixed+AI-thinks-windows-only), `remove-labels` (max: 10, allowed: AI-thinks-issue-fixed+AI-thinks-windows-only).
+**`repo-assist.md`**
+- `noop`
+- `messages` — footer, run-started, run-success, run-failure templates
+- `add-comment` — max 10, hide-older-comments
+- `create-pull-request` — max 10, title "Add regression test: ", labels NO_RELEASE_NOTES + AI-Issue-Regression-PR, reviewers abonie + T-Gro, auto-merge, allowed-files tests/** + vsintegration/tests/**
+- `push-to-pull-request-branch` — max 4, title "[Repo Assist] ", protected-files fallback-to-issue
+- `create-issue` — max 4, title "[Repo Assist] ", labels automation + repo-assist
+- `update-issue` — max 1, title "[Repo Assist] "
+- `add-labels` — max 30, allowed AI-thinks-issue-fixed + AI-thinks-windows-only
+- `remove-labels` — max 10, allowed AI-thinks-issue-fixed + AI-thinks-windows-only
 
 ---
 
@@ -391,7 +435,9 @@ stateDiagram-v2
         CMD_SetupRuntime --> CMD_RunCmd : ⚙️ .NET 9.0.x ready
         CMD_RunCmd --> CMD_CreatePatch : ⚙️ run command (continue-on-error): fantomas/xlf/ilverify/test-baseline
         CMD_CreatePatch --> CMD_UploadArtifacts : ⚙️ if: command, write run_step_outcome + hasPatch to result file
-        CMD_UploadArtifacts --> CMD_RunSucceeded : ⚙️ actions/upload-artifact@v4 (cli-results: repo.patch + result)
+        state "job boundary — cli-results artifact" as CMD_JobBoundary
+        CMD_UploadArtifacts --> CMD_JobBoundary : ⚙️ upload-artifact@v4 (cli-results)
+        CMD_JobBoundary --> CMD_RunSucceeded : ⚙️ apply-and-report job starts
         state CMD_RunSucceeded <<choice>>
         CMD_RunSucceeded --> [*] : ⚙️ run-parsed-command.result != 'success' — apply-and-report if: guard false
         CMD_RunSucceeded --> CMD_Checkout2 : ⚙️ command != '' AND result == 'success'

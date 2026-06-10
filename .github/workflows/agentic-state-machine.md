@@ -288,6 +288,21 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
     - **Forbidden in edge labels:** full safe-output config blocks `(labels: …, max: …, protected-files: …)`; long shell commands (`gh pr list --search label:"…", drop drafts, forks, …, max 3 (seed=GITHUB_RUN_ID)` → `gh pr list (label X, ≤3)`); multi-clause descriptions joined by `,`/`and`.
     - **Post-draft scan:** `grep -oE ' : .{80,}$' .github/docs/state-machine.md` MUST return 0 lines. Any line > 80 chars after the ` : ` separator = MED.
 
+44. **Glossary mandatory — define every domain term at first use OR in a top-of-doc glossary.** The doc must be readable by a first-time engineer who has never seen this repo. The following term classes MUST be defined:
+    - **Project-specific tool names** that are not standard GitHub CLI / Actions vocabulary (e.g., `gh-aw`, `flaky-test-detector`, `skill-validator`, repo-specific scripts).
+    - **Custom frameworks and runtime concepts** (e.g., `safe-outputs`, `state-store branch`, `noop`, `report-as-issue`).
+    - **Acronyms** on first use (e.g., `CCA = Copilot Coding Agent`, `BSL = Baseline`, `CCS = Copilot Code Suggestion`, `LPM/LFF/LPSS/RPS/RA` if used as state-prefix conventions). Spell out on first use AND in the glossary.
+    - **Project-specific taxonomies** (e.g., regression-pr-shepherd's `Cat A/B/C`, `B0–B4` subtypes; labelops's `has_ci/has_conflicts/ci_blocked`).
+    - **Diagram convention key** — the actor-prefix emoji legend (⏰ schedule, 👤 human, ⚙️ workflow engine, 🤖 agent/bot) MUST appear as a legend block. Same for `<<choice>>` / `<<fork>>` / `<<join>>` if used.
+    Place the glossary IMMEDIATELY after the title and intro paragraph, BEFORE the Overview table. A first-time reader rated 2/5 on a 5-point readability scale citing exactly these gaps. Missing glossary entry for a term used 3+ times = MAJOR. Missing emoji legend = MAJOR.
+
+45. **Self-contained — never use source-file pointers as documentation.** Any phrase like `"(see file.md L100–110)"`, `"per source line N"`, `"refer to <file>"`, or `"as defined in <other-doc>"` in PLACE of actual content is a documentation failure. Inline the content. Citations `(src Lnn)` are permitted ONLY as provenance markers AFTER the documented content, never AS the content. Example:
+    - ❌ WRONG: `RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ check skip conditions (repo-assist.md L296–306)`
+    - ✅ CORRECT: `RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ check 6 skip conditions` + an inline `> **Skip conditions**: 1. closed; 2. existing PR; 3. existing coverage; 4. test-link comment; 5. untestable comment; 6. human coverage comment.` callout below the diagram.
+    Any source-pointer-as-content = MAJOR. Inlined skip conditions, taxonomy enumerations, and predicate lists belong in the doc itself.
+
+46. **Orientation paragraph mandatory at top.** Before any table, diagram, or section, the doc MUST open with 1–3 sentences answering: (a) **what is this doc** (a map / catalogue / spec of which artifacts?), (b) **who reads it** (new engineer onboarding? PR reviewer? auditor?), and (c) **how to use it** (read top-down? jump to glossary? cross-reference with Handover Map?). The current cryptic generator-version stamp (`> **15 workflows documented.** ... FULL_REWRITE (generator d4fe5640...)`) is NOT orientation — it is metadata. Three independent reviewers flagged the missing intro as a P0 issue. Missing intro paragraph = MAJOR.
+
 
 </rules>
 
