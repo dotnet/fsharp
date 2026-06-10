@@ -1169,6 +1169,7 @@ let main6
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
                             referenceAssemblySignatureHash = refAssemblySignatureHash
                             pathMap = tcConfig.pathMap
+                            methodCustomDebugInfoRows = Map.empty
                         },
                         ilxMainModule,
                         normalizeAssemblyRefs
@@ -1180,6 +1181,21 @@ let main6
             | MetadataAssemblyGeneration.ReferenceOnly -> ()
             | _ ->
                 try
+                    // Hot reload baseline (--enable:hotreloaddeltas): compute the per-method
+                    // EnC lambda/closure CustomDebugInformation rows from the same optimized
+                    // typed tree the baseline capture snapshots, so a later generation can map
+                    // lambda occurrences back to this baseline. Flag-off builds pass the empty
+                    // map and the emitted binaries stay byte-identical.
+                    let methodCustomDebugInfoRows =
+                        if tcConfig.emitCaptureArtifacts then
+                            let (CheckedAssemblyAfterOptimization implFiles) = optimizedImpls
+
+                            implFiles
+                            |> List.map (fun implFile -> implFile.ImplFile)
+                            |> EncMethodDebugInformation.computeMethodCustomDebugInfoRows tcGlobals
+                        else
+                            Map.empty
+
                     let ilWriteOptions: ILBinaryWriter.options =
                         {
                             ilg = tcGlobals.ilg
@@ -1200,6 +1216,7 @@ let main6
                             referenceAssemblyAttribOpt = None
                             referenceAssemblySignatureHash = None
                             pathMap = tcConfig.pathMap
+                            methodCustomDebugInfoRows = methodCustomDebugInfoRows
                         }
 
                     // Give the emit hook first chance to perform a single-pass emit+capture flow.

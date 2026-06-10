@@ -1919,6 +1919,7 @@ type internal FsiDynamicCompiler
                 referenceAssemblyAttribOpt = None
                 referenceAssemblySignatureHash = None
                 pathMap = tcConfig.pathMap
+                methodCustomDebugInfoRows = Map.empty
             }
 
         let assemblyBytes, pdbBytes = WriteILBinaryInMemory(opts, ilxMainModule, id)

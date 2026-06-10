@@ -718,7 +718,8 @@ type FSharpChecker
               referenceAssemblyOnly = false
               referenceAssemblyAttribOpt = None
               referenceAssemblySignatureHash = None
-              pathMap = PathMap.empty }
+              pathMap = PathMap.empty
+              methodCustomDebugInfoRows = Map.empty }
 
         let _, pdbBytesOpt, tokenMappings, _ =
             ILBinaryWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, ilModule, id)

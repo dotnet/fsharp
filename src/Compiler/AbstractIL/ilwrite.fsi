@@ -27,7 +27,11 @@ type options =
       referenceAssemblyOnly: bool
       referenceAssemblyAttribOpt: ILAttribute option
       referenceAssemblySignatureHash: int option
-      pathMap: PathMap }
+      pathMap: PathMap
+      /// Hot reload baseline side channel: per-method EnC CustomDebugInformation rows for
+      /// the portable PDB writer, keyed by IL method name. Empty unless the compilation
+      /// runs with --enable:hotreloaddeltas (flag-off output stays byte-identical).
+      methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
 
 /// <summary>
 /// Captures the various metadata token mapping functions produced by the IL writer.

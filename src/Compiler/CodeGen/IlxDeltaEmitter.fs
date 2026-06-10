@@ -212,6 +212,7 @@ let private defaultWriterOptions (ilg: ILGlobals) (checksumAlgorithm: HashAlgori
         referenceAssemblyAttribOpt = None
         referenceAssemblySignatureHash = None
         pathMap = PathMap.empty
+        methodCustomDebugInfoRows = Map.empty
     }
 
 let private opCodeLookup : Lazy<Dictionary<int, OpCode>> =

@@ -130,7 +130,8 @@ module internal MetadataDeltaTestHelpers =
           referenceAssemblyOnly = false
           referenceAssemblyAttribOpt = None
           referenceAssemblySignatureHash = None
-          pathMap = PathMap.empty }
+          pathMap = PathMap.empty
+          methodCustomDebugInfoRows = Map.empty }
 
     let createAssemblyBytes (moduleDef: ILModuleDef) =
         let options = defaultWriterOptions ilGlobals

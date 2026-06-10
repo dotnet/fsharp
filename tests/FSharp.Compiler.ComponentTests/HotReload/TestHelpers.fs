@@ -246,7 +246,8 @@ module internal TestHelpers =
           referenceAssemblyOnly = false
           referenceAssemblyAttribOpt = None
           referenceAssemblySignatureHash = None
-          pathMap = PathMap.empty }
+          pathMap = PathMap.empty
+          methodCustomDebugInfoRows = Map.empty }
 
     let private collectSourceDocuments (ilModule: ILModuleDef) : ILSourceDocument list =
         let docs = HashSet<ILSourceDocument>(HashIdentity.Reference)

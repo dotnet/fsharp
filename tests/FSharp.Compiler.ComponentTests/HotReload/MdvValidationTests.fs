@@ -566,7 +566,8 @@ module MdvValidationTests =
               referenceAssemblyOnly = false
               referenceAssemblyAttribOpt = None
               referenceAssemblySignatureHash = None
-              pathMap = PathMap.empty }
+              pathMap = PathMap.empty
+              methodCustomDebugInfoRows = Map.empty }
 
         let assemblyBytes, pdbBytesOpt, tokenMappings, _ =
             ILWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, ilModule, id)

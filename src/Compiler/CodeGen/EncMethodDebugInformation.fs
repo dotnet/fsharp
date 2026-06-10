@@ -33,6 +33,11 @@ open System.Reflection.Metadata
 open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
 
+open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeDiff
+
 /// Portable-PDB CustomDebugInformation kind GUIDs for the EnC blobs, copied verbatim
 /// from roslyn/src/Dependencies/CodeAnalysis.Debugging/PortableCustomDebugInfoKinds.cs.
 [<RequireQualifiedAccess>]
@@ -470,3 +475,98 @@ let deserialize (slotMapBlob: byte[]) (lambdaMapBlob: byte[]) (stateMachineState
       Closures = closures
       Lambdas = lambdas
       StateMachineStates = deserializeStateMachineStates stateMachineStateMapBlob }
+
+// ---------------------------------------------------------------------------
+// Baseline emission bridge (Phase C2): C1 lambda occurrences -> CDI rows for the
+// portable PDB writer. Computed in the fsc emit path when --enable:hotreloaddeltas
+// is on; the rows ride the IL writer options into ilwritepdb keyed by IL method name.
+// ---------------------------------------------------------------------------
+
+/// Root-first ordinal chain of a C1 occurrence: the occurrence id stores enclosing
+/// ordinals nearest-enclosing-first, while the key packing wants root-first with the
+/// occurrence's own ordinal last.
+let private occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
+    List.rev occurrence.Id.ParentChain @ [ occurrence.Id.Ordinal ]
+
+/// Builds the EnC method debug information for one member from its C1 lambda
+/// occurrence sequence. Modeling decisions (documented in
+/// docs/hot-reload-closure-mapping.md, "C2 baseline CDI emission"):
+///   - MethodOrdinal stays UndefinedMethodOrdinal: F# needs no Roslyn-style
+///     partial-method/ordinal disambiguation at baseline.
+///   - One closure scope per occurrence, and lambda i references closure i: IlxGen
+///     lowers every lambda occurrence (curried group) to its own closure class, so
+///     unlike C# there is no shared display-class scope to model and no static/this-only
+///     lambdas at the typed-tree level (refinement to Static/ThisOnly ordinals is a
+///     Phase-C3 lowering concern).
+///   - LocalSlots stays empty: the EnC Local Slot Map describes the lowered local slot
+///     layout, an IlxGen emission artifact that is not trivially derivable from the
+///     typed tree; it is omitted rather than guessed.
+/// Fails closed (None) when any occurrence key is not encodable (chains deeper than 2
+/// or ordinals past the packing limits): a partial map could silently mismatch
+/// occurrences, so the method then gets no lambda map at all.
+let tryCreateFromLambdaOccurrences (occurrences: LambdaOccurrence list) : EncMethodDebugInformation option =
+    let keys =
+        occurrences
+        |> List.map (occurrenceOrdinalChain >> tryEncodeOccurrenceKey)
+
+    if keys |> List.exists Option.isNone then
+        None
+    else
+        let keys = keys |> List.map Option.get
+
+        Some
+            { MethodOrdinal = UndefinedMethodOrdinal
+              LocalSlots = []
+              Closures = keys |> List.map (fun key -> { SyntaxOffset = key })
+              Lambdas =
+                keys
+                |> List.mapi (fun closureOrdinal key ->
+                    { SyntaxOffset = key
+                      ClosureOrdinal = closureOrdinal })
+              StateMachineStates = [] }
+
+/// Computes the per-method EnC CustomDebugInformation side channel for the baseline PDB
+/// writer from the optimized implementation files of a flag-on compilation, keyed by IL
+/// method (compiled) name. Keying is fail closed: members without a compiled name,
+/// compiled names claimed by more than one member binding anywhere in the assembly
+/// (overloads, same-named members on different types), and members with unencodable
+/// occurrence chains are omitted — the writer additionally drops any name that does not
+/// identify exactly one IL method row, so a map can never attach to the wrong method.
+let computeMethodCustomDebugInfoRows
+    (g: TcGlobals)
+    (implFiles: CheckedImplFile list)
+    : Map<string, PdbMethodCustomDebugInfo list> =
+
+    let allMembers = implFiles |> List.collect (collectMemberLambdaOccurrences g)
+
+    let ambiguousNames =
+        allMembers
+        |> List.choose (fun (symbol, _) -> symbol.CompiledName)
+        |> List.countBy id
+        |> List.filter (fun (_, count) -> count > 1)
+        |> List.map fst
+        |> Set.ofList
+
+    (Map.empty, allMembers)
+    ||> List.fold (fun acc (symbol: SymbolId, occurrences) ->
+        match symbol.CompiledName, occurrences with
+        | Some methName, _ :: _ when not (Set.contains methName ambiguousNames) ->
+            match tryCreateFromLambdaOccurrences occurrences with
+            | Some info ->
+                let lambdaMapBlob = serializeLambdaMap info
+
+                if lambdaMapBlob.Length = 0 then
+                    acc
+                else
+                    // Only the EnC Lambda and Closure Map is emitted at baseline; the
+                    // EnC Local Slot Map and State Machine State Map are omitted (see
+                    // tryCreateFromLambdaOccurrences).
+                    Map.add
+                        methName
+                        [
+                            { KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap
+                              Blob = lambdaMapBlob }
+                        ]
+                        acc
+            | None -> acc
+        | _ -> acc)

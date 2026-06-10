@@ -2013,6 +2013,25 @@ let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Ma
 
     rude |> Seq.toList
 
+/// Per-member lambda occurrence sequences for an implementation file, extracted with the
+/// same Phase-C1 occurrence model the typed-tree diff uses (Phase C2: baseline-time EnC
+/// CustomDebugInformation emission). Every member binding of the file is returned so
+/// callers can detect compiled-name collisions across ALL members; members whose bodies
+/// the occurrence model cannot represent (quotations, object expressions, local type
+/// functions, uncomputable type identities) yield an empty occurrence list — the baseline
+/// then carries no lambda map for them and later generations must treat their lambdas as
+/// unmappable. Results are ordered deterministically by binding key.
+let collectMemberLambdaOccurrences (g: TcGlobals) (implFile: CheckedImplFile) : (SymbolId * LambdaOccurrence list) list =
+    let denv = DisplayEnv.Empty g
+    let bindings, _entities = collectSnapshots g denv implFile
+
+    bindings
+    |> Map.toList
+    |> List.map (fun (_, snapshot) ->
+        match snapshot.LambdaOccurrenceData with
+        | LambdaOccurrenceExtraction.Extracted occurrences -> snapshot.Symbol, occurrences
+        | LambdaOccurrenceExtraction.Unsupported _ -> snapshot.Symbol, [])
+
 /// Computes semantic edits between two checked implementation files, classifying additions
 /// against the runtime capabilities negotiated for the active hot reload session.
 let diffImplementationFile (g: TcGlobals) (capabilities: EditAndContinueCapabilities) baseline updated =

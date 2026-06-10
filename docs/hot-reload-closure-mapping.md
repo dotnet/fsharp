@@ -1,9 +1,10 @@
 # F# Hot Reload: Closure & State-Machine Mapping Design (Phase C/D)
 
 Status: C1 landed (2026-06-10) — lambda occurrence model and alignment in `TypedTreeDiff`.
-C2 commit 1 landed (2026-06-10) — EnC CDI blob encoder/decoder (`EncMethodDebugInformation.fs`);
-PDB writer/reader wiring pending. C3–C5 pending. Implementation notes are folded into the
-relevant sections below.
+C2 commit 1 landed (2026-06-10) — EnC CDI blob encoder/decoder (`EncMethodDebugInformation.fs`).
+C2 commit 2 landed (2026-06-10) — baseline-time EnC Lambda and Closure Map CDI emission in the
+portable PDB under `--enable:hotreloaddeltas`; reader wiring in the baseline snapshot pending.
+C3–C5 pending. Implementation notes are folded into the relevant sections below.
 Source research: Roslyn main @ June 2026 (`ClosureConversion.cs`, `EncVariableSlotAllocator.cs`, `EditAndContinueMethodDebugInformation.cs`, `DefinitionMap.cs`, `AbstractEditAndContinueAnalyzer.ReportLambdaAndClosureRudeEdits`).
 
 ## Problem
@@ -136,6 +137,45 @@ nonsense; Phase G must either teach the debugger the F# key semantics or emit a 
 source-offset map. Cross-validation: the component test builds a C# library with the repo SDK,
 decodes the Roslyn-emitted CDI rows with our decoder, and re-encodes them byte-identically.
 
+### C2 baseline CDI emission as implemented (commit 2)
+
+When `--enable:hotreloaddeltas` is on, the fsc emit path (`fsc.fs` `main6`, right where the
+baseline-capture hook already receives `optimizedImpls`) computes per-method occurrence data from
+the same optimized typed tree the baseline snapshot stores:
+
+- **Conduit**: `TypedTreeDiff.collectMemberLambdaOccurrences` (public C1 extraction over a
+  `CheckedImplFile`; returns every member binding, with an empty occurrence list for members the
+  model cannot represent) → `EncMethodDebugInformation.computeMethodCustomDebugInfoRows`
+  (occurrences → serialized blobs) → new `methodCustomDebugInfoRows: Map<string,
+  PdbMethodCustomDebugInfo list>` field on the IL writer `options` → `generatePortablePdb` →
+  CDI rows on `MethodDef` parents in the portable PDB. Flag-off builds pass the empty map
+  everywhere; the writer path is a strict no-op then (EmittedIL gate: byte-identical output).
+- **Keying (fail closed twice)**: rows are keyed by IL method name (`SymbolId.CompiledName`).
+  The producer drops members without a compiled name and any compiled name claimed by more than
+  one member binding in the assembly (overloads, same-named members on different types); the PDB
+  writer independently drops any name that does not identify exactly one `MethodDef` row in the
+  module. A map is therefore never attached to the wrong method; ambiguous methods simply carry
+  no lambda map (later generations must treat their lambdas as unmappable). Token-precise keying
+  (via the IlxGen token maps) can replace name keying in C3 if the exclusions bite.
+- **What is emitted**: only the *EnC Lambda and Closure Map*, for methods with at least one
+  occurrence whose key chains are encodable; `MethodOrdinal` stays `UndefinedMethodOrdinal` (-1,
+  Roslyn semantics for "no partial-method disambiguation needed"). One closure scope per
+  occurrence and lambda *i* references closure *i*: IlxGen lowers every lambda occurrence
+  (curried group) to its own closure class, so there is no shared display-class scope to model;
+  refinement to `Static`/`ThisOnly` closure ordinals is a C3 lowering concern. If *any*
+  occurrence key of a method fails to encode (chain depth > 2, ordinal > 0xFFFF), the whole
+  method gets no map — a partial map could silently mismatch occurrences.
+- **What is omitted (documented exclusions)**: the *EnC Local Slot Map* (the lowered local slot
+  layout is an IlxGen emission artifact, not trivially derivable from the typed tree — omitted
+  rather than guessed) and the *EnC State Machine State Map* (Phase D). Members the C1 model
+  excludes (quotations, object expressions, local type functions, uncomputable type identities)
+  and module-level values whose initializers run in startup code (no method row matches their
+  compiled name) carry no map.
+- **Tests**: `PdbCdiEmissionTests` compiles a library with the flag (2 lambdas, one nested),
+  opens the PDB with System.Reflection.Metadata, decodes the row with the F# decoder and checks
+  occurrence keys `[0]`/`[0; 1]` plus closure ordinals; the flag-off compile of the same source
+  must contain zero EnC CDI rows.
+
 ### State machines (Phase D, builds on the same map)
 
 - F# `async` lowers to closure chains → covered by the lambda/closure map directly (a major
@@ -161,8 +201,9 @@ lambda signature changes, mid-sequence resume-point insertion, struct-closure ca
   at emission until C4).
 - **C2** `feat(hot-reload): Roslyn-format EnC CDI blobs in portable PDBs` — commit 1 ✅ landed:
   encoder/decoder module (`EncMethodDebugInformation.fs`) with round-trip + cross-validation tests
-  against Roslyn-emitted blobs (see "C2 blob encoder/decoder as implemented"). Remaining: writer
-  wiring in ilwritepdb, reader in the baseline snapshot.
+  against Roslyn-emitted blobs (see "C2 blob encoder/decoder as implemented"). Commit 2 ✅ landed:
+  baseline-time EnC Lambda and Closure Map emission in ilwritepdb under the flag (see "C2 baseline
+  CDI emission as implemented"). Remaining: reader in the baseline snapshot.
 - **C3** `feat(hot-reload): generation-aware closure identity in IlxGen lowering` — `ClosureSlotAllocator`
   seam; matched occurrences reuse closure class/method/field identity; new occurrences get
   generation-suffixed names. Flag-off behavior byte-identical (EmittedIL gate).

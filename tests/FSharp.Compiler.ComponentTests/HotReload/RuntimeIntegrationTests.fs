@@ -171,7 +171,8 @@ type Type =
               referenceAssemblyOnly = false
               referenceAssemblyAttribOpt = None
               referenceAssemblySignatureHash = None
-              pathMap = PathMap.empty }
+              pathMap = PathMap.empty
+              methodCustomDebugInfoRows = Map.empty }
 
         let assemblyBytes, pdbBytesOpt, tokenMappings, _ =
             FSharp.Compiler.AbstractIL.ILBinaryWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, ilModule, id)

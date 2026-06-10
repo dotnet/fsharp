@@ -3916,7 +3916,11 @@ type options =
      referenceAssemblyOnly: bool
      referenceAssemblyAttribOpt: ILAttribute option
      referenceAssemblySignatureHash : int option
-     pathMap: PathMap }
+     pathMap: PathMap
+     // Hot reload baseline side channel: per-method EnC CustomDebugInformation rows for
+     // the portable PDB writer, keyed by IL method name. Empty unless the compilation
+     // runs with --enable:hotreloaddeltas (flag-off output stays byte-identical).
+     methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
 
 /// <summary>
 /// Core IL writer that emits the PE image and invokes <paramref name="metadataSnapshotSink" />
@@ -4085,7 +4089,7 @@ let writeBinaryAuxWithSnapshotSink (stream: Stream, options: options, modul, nor
             match options.pdbfile, options.portablePDB with
             | Some _, true ->
                 let pdbInfo =
-                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap
+                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap options.methodCustomDebugInfoRows
 
                 if options.embeddedPDB then
                     let uncompressedLength, contentId, stream, algorithmName, checkSum = pdbInfo
