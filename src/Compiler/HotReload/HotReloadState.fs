@@ -1,6 +1,7 @@
 module internal FSharp.Compiler.HotReloadState
 
 open System
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.TypedTree
 
@@ -11,6 +12,8 @@ type HotReloadSession =
         CurrentGeneration: int
         PreviousGenerationId: Guid option
         PendingUpdate: PendingHotReloadUpdate option
+        /// Runtime capabilities negotiated when the session started; consulted by edit classification.
+        Capabilities: EditAndContinueCapabilities
     }
 
 and PendingHotReloadUpdate =
@@ -36,7 +39,12 @@ type internal HotReloadSessionStore() =
     let mutable session: HotReloadSession voption = ValueNone
     let mutable lastCommittedSession: HotReloadSession voption = ValueNone
 
-    member _.SetBaseline(value: FSharpEmitBaseline, implementationFiles: CheckedAssemblyAfterOptimization) : HotReloadSessionStart =
+    member _.SetBaseline
+        (
+            value: FSharpEmitBaseline,
+            implementationFiles: CheckedAssemblyAfterOptimization,
+            ?capabilities: EditAndContinueCapabilities
+        ) : HotReloadSessionStart =
         lock sessionLock (fun () ->
             let hadExistingSession = session.IsSome
 
@@ -53,6 +61,8 @@ type internal HotReloadSessionStore() =
                     CurrentGeneration = max 1 value.NextGeneration
                     PreviousGenerationId = previousGenerationId
                     PendingUpdate = None
+                    // Hosts that do not negotiate capabilities get the Roslyn-conservative default.
+                    Capabilities = defaultArg capabilities EditAndContinueCapabilities.BaselineOnly
                 }
 
             session <- ValueSome newSession

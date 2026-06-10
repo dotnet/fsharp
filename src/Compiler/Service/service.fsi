@@ -108,8 +108,14 @@ type public FSharpChecker =
     /// Starting a new session replaces the previously active session.
     /// This API is opt-in and requires compilation with <c>--enable:hotreloaddeltas</c>.
     /// </remarks>
+    /// <param name="projectOptions">The project options describing the project to hot reload.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    /// <param name="capabilities">Optional runtime edit-and-continue capability names (for example <c>AddMethodToExistingType</c>),
+    /// as reported by the target runtime. Unknown names are ignored. When omitted, only baseline edits
+    /// (method-body updates) are assumed to be supported.</param>
     member StartHotReloadSession:
-        projectOptions: FSharpProjectOptions * ?userOpName: string -> Async<Result<unit, FSharpHotReloadError>>
+        projectOptions: FSharpProjectOptions * ?userOpName: string * ?capabilities: string seq ->
+            Async<Result<unit, FSharpHotReloadError>>
 
     /// <summary>
     /// Starts a hot reload session using a workspace project snapshot.
@@ -118,9 +124,14 @@ type public FSharpChecker =
     /// Session scope is process-wide and single-active-session only.
     /// Starting from a snapshot also replaces any existing active session.
     /// </remarks>
+    /// <param name="projectSnapshot">The workspace snapshot describing the project to hot reload.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    /// <param name="capabilities">Optional runtime edit-and-continue capability names (for example <c>AddMethodToExistingType</c>),
+    /// as reported by the target runtime. Unknown names are ignored. When omitted, only baseline edits
+    /// (method-body updates) are assumed to be supported.</param>
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member StartHotReloadSession:
-        projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+        projectSnapshot: FSharpProjectSnapshot * ?userOpName: string * ?capabilities: string seq ->
             Async<Result<unit, FSharpHotReloadError>>
 
     /// <summary>

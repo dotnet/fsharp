@@ -4,6 +4,7 @@ open System
 open FSharp.Compiler.EnvironmentHelpers
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
 open FSharp.Compiler.HotReload.DefinitionMap
 open FSharp.Compiler.HotReload.SymbolChanges
@@ -33,6 +34,7 @@ let private mergeDefinitionMaps (left: FSharpDefinitionMap) (right: FSharpDefini
 
 let computeSymbolChanges
     (tcGlobals: TcGlobals)
+    (capabilities: EditAndContinueCapabilities)
     (baseline: CheckedAssemblyAfterOptimization)
     (updated: CheckedAssemblyAfterOptimization)
     : FSharpSymbolChanges =
@@ -46,7 +48,7 @@ let computeSymbolChanges
         ||> Seq.fold (fun acc updatedFile ->
             match Map.tryFind (fileKey updatedFile) baselineLookup with
             | Some baselineFile ->
-                let diff = diffImplementationFile tcGlobals baselineFile updatedFile
+                let diff = diffImplementationFile tcGlobals capabilities baselineFile updatedFile
                 let map = FSharpDefinitionMap.ofTypedTreeDiff diff
                 mergeDefinitionMaps acc map
             | None ->

@@ -8,6 +8,7 @@ open System.Text
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -86,6 +87,26 @@ type RudeEditKind =
     | InsertExplicitInterface // Explicit interface implementations cannot be added
     | InsertIntoInterface     // Members cannot be added to interfaces
     | FieldAdded              // Fields cannot be added (type layout change)
+    // The edit itself is valid for hot reload, but the runtime did not advertise the
+    // capability required to apply it (mirrors Roslyn's RudeEditKind.NotSupportedByRuntime).
+    | NotSupportedByRuntime
+
+/// The category of declaration being added to an existing type or module, used to
+/// determine which runtime capability gates emission of the addition.
+[<RequireQualifiedAccess>]
+type AdditionKind =
+    | Method
+    | InstanceField
+    | StaticField
+
+/// Single seam consulted by edit classification: the runtime capability required to apply an
+/// addition of the given kind. Phase B flips further addition kinds (fields, new types) from
+/// always-rude to capability-gated by implementing their emission and routing them through here.
+let capabilityForAddition (kind: AdditionKind) : EditAndContinueCapability =
+    match kind with
+    | AdditionKind.Method -> EditAndContinueCapability.AddMethodToExistingType
+    | AdditionKind.InstanceField -> EditAndContinueCapability.AddInstanceFieldToExistingType
+    | AdditionKind.StaticField -> EditAndContinueCapability.AddStaticFieldToExistingType
 
 type SemanticEdit =
     { Symbol: SymbolId
@@ -1042,7 +1063,11 @@ let private collectSnapshots g denv (CheckedImplFile (qualifiedNameOfFile = qual
     let initialEntities: Map<string, EntitySnapshot> = Map.empty
     snapshotModuleContents g denv initialPath (initialBindings, initialEntities) contents
 
-let private compareBindings (baseline: Map<string, BindingSnapshot>) (updated: Map<string, BindingSnapshot>) =
+let private compareBindings
+    (capabilities: EditAndContinueCapabilities)
+    (baseline: Map<string, BindingSnapshot>)
+    (updated: Map<string, BindingSnapshot>)
+    =
     let edits = ResizeArray()
     let rude = ResizeArray()
     let matchedUpdatedKeys = HashSet()
@@ -1168,7 +1193,10 @@ let private compareBindings (baseline: Map<string, BindingSnapshot>) (updated: M
             let info = updatedBinding.AdditionInfo
             // Check restrictions following Roslyn patterns
             if info.IsField then
-                // Fields cannot be added - they change type layout
+                // Phase A does not implement field-row emission, so field additions stay rude even
+                // when the runtime advertises AddInstance/StaticFieldToExistingType. Phase B flips
+                // this branch to consult `capabilityForAddition AdditionKind.InstanceField/StaticField`
+                // exactly like the method path below once emission exists.
                 rude.Add(
                     { Symbol = Some updatedBinding.Symbol
                       Kind = RudeEditKind.FieldAdded
@@ -1209,8 +1237,25 @@ let private compareBindings (baseline: Map<string, BindingSnapshot>) (updated: M
                       Message = "Adding members to interfaces is not supported." }
                 )
             elif info.IsMethod then
-                // Method can be added - emit as Insert edit
-                handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
+                // The edit kind itself is supported; whether it can be applied depends on the
+                // capabilities the runtime negotiated at session start (Roslyn parity:
+                // AbstractEditAndContinueAnalyzer reports RudeEditKind.NotSupportedByRuntime
+                // when an otherwise-valid edit exceeds the runtime's capabilities).
+                let requiredCapability = capabilityForAddition AdditionKind.Method
+
+                if capabilities.Supports requiredCapability then
+                    // Method can be added - emit as Insert edit
+                    handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
+                else
+                    rude.Add(
+                        { Symbol = Some updatedBinding.Symbol
+                          Kind = RudeEditKind.NotSupportedByRuntime
+                          Message =
+                            FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
+                                updatedBinding.Symbol.QualifiedName,
+                                requiredCapability.Name
+                            ) }
+                    )
             else
                 // Other additions (module-level values) are still rude edits for now
                 rude.Add(
@@ -1288,13 +1333,14 @@ let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Ma
 
     rude |> Seq.toList
 
-/// Computes semantic edits between two checked implementation files.
-let diffImplementationFile (g: TcGlobals) baseline updated =
+/// Computes semantic edits between two checked implementation files, classifying additions
+/// against the runtime capabilities negotiated for the active hot reload session.
+let diffImplementationFile (g: TcGlobals) (capabilities: EditAndContinueCapabilities) baseline updated =
     let denv = DisplayEnv.Empty g
     let baselineBindings, baselineEntities = collectSnapshots g denv baseline
     let updatedBindings, updatedEntities = collectSnapshots g denv updated
 
-    let semanticEdits, bindingRudeEdits = compareBindings baselineBindings updatedBindings
+    let semanticEdits, bindingRudeEdits = compareBindings capabilities baselineBindings updatedBindings
     let entityRudeEdits = compareEntities baselineEntities updatedEntities
 
     { SemanticEdits = semanticEdits

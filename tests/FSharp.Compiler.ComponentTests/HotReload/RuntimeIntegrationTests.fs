@@ -13,6 +13,7 @@ open Xunit
 
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.TypedTree
@@ -266,7 +267,10 @@ type Type =
 
             let service = FSharpEditAndContinueLanguageService.Instance
             service.EndSession()
-            service.StartSession(baseline, baselineImplementation) |> ignore
+
+            // Method insertion requires the runtime to advertise AddMethodToExistingType.
+            let insertionCapabilities = EditAndContinueCapabilities.Parse [ "Baseline"; "AddMethodToExistingType" ]
+            service.StartSession(baseline, baselineImplementation, insertionCapabilities) |> ignore
 
             let updatedResults = compileProject checker fsPath dllPath insertedMethodSource
             let updatedTcGlobals, updatedImplementation = getTypedAssembly updatedResults
@@ -281,7 +285,7 @@ type Type =
                 reader.ILModuleDef
 
             // The build pipeline may clear session state during writes; restore the baseline snapshot before emit.
-            service.StartSession(baseline, baselineImplementation) |> ignore
+            service.StartSession(baseline, baselineImplementation, insertionCapabilities) |> ignore
 
             match service.EmitDeltaForCompilation(updatedTcGlobals, updatedImplementation, updatedModule) with
             | Error error -> failwithf "EmitDeltaForCompilation failed for method insertion: %A" error
@@ -302,6 +306,51 @@ type Type =
                     Assert.True(containsInsertedMethod, "Updated baseline missing inserted method token.")
                 | None ->
                     Assert.True(false, "Updated baseline missing after method insertion delta.")
+        finally
+            try checker.InvalidateAll() with _ -> ()
+            try Directory.Delete(projectDir, true) with _ -> ()
+
+    [<Fact>]
+    let ``EmitDeltaForCompilation rejects method insertion without runtime capability`` () =
+        let checker =
+            FSharpChecker.Create(
+                keepAssemblyContents = true,
+                enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                captureIdentifiersWhenParsing = false
+            )
+
+        let projectDir, fsPath, dllPath = createTempProject ()
+
+        try
+            let baselineResults = compileProject checker fsPath dllPath baselineSource
+            let tcGlobals, baselineImplementation = getTypedAssembly baselineResults
+            let baseline = createBaseline tcGlobals dllPath
+
+            let service = FSharpEditAndContinueLanguageService.Instance
+            service.EndSession()
+            // No capabilities negotiated: the session defaults to baseline-only, so the
+            // otherwise-valid method insertion must surface as an unsupported (rude) edit.
+            service.StartSession(baseline, baselineImplementation) |> ignore
+
+            let updatedResults = compileProject checker fsPath dllPath insertedMethodSource
+            let updatedTcGlobals, updatedImplementation = getTypedAssembly updatedResults
+            let updatedModule =
+                let options : ILReaderOptions =
+                    { pdbDirPath = None
+                      reduceMemoryUsage = ReduceMemoryFlag.Yes
+                      metadataOnly = MetadataOnlyFlag.No
+                      tryGetMetadataSnapshot = fun _ -> None }
+
+                use reader = OpenILModuleReader dllPath options
+                reader.ILModuleDef
+
+            service.StartSession(baseline, baselineImplementation) |> ignore
+
+            match service.EmitDeltaForCompilation(updatedTcGlobals, updatedImplementation, updatedModule) with
+            | Ok _ ->
+                Assert.True(false, "Expected method insertion to be rejected when AddMethodToExistingType is not advertised.")
+            | Error (HotReloadError.UnsupportedEdit _) -> ()
+            | Error error -> failwithf "Expected UnsupportedEdit, got: %A" error
         finally
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()

@@ -47,6 +47,9 @@ module internal RudeEditDiagnostics =
             $"Adding member '{name}' to an interface is not supported."
         | RudeEditKind.FieldAdded ->
             $"Adding field '{name}' is not supported (changes type layout)."
+        | RudeEditKind.NotSupportedByRuntime ->
+            // The diff message already names the symbol and the missing runtime capability.
+            fallback
         | RudeEditKind.Unsupported -> fallback
 
     let private diagnosticId kind =
@@ -66,6 +69,7 @@ module internal RudeEditDiagnostics =
         | RudeEditKind.InsertExplicitInterface -> "FSHRDL009"
         | RudeEditKind.InsertIntoInterface -> "FSHRDL010"
         | RudeEditKind.FieldAdded -> "FSHRDL011"
+        | RudeEditKind.NotSupportedByRuntime -> "FSHRDL016"
         | RudeEditKind.Unsupported -> "FSHRDL099"
 
     let ofRudeEdit (edit: RudeEdit) : RudeEditDiagnostic =

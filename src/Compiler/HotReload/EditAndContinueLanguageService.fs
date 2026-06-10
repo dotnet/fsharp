@@ -5,6 +5,7 @@ open System.IO
 open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.IlxDeltaEmitter
@@ -139,24 +140,38 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     /// <summary>Singleton instance consumed by CLI and IDE hosts.</summary>
     static member Instance = lazyInstance.Value
 
-    /// <summary>Initialise or replace the current baseline and reset the generation counters.</summary>
-    member _.StartSession(baseline: FSharpEmitBaseline) : HotReloadState.HotReloadSessionStart =
+    /// <summary>
+    /// Initialise or replace the current baseline and reset the generation counters. When the host
+    /// negotiated runtime capabilities, pass them via <paramref name="capabilities"/>; otherwise the
+    /// session defaults to <see cref="EditAndContinueCapabilities.BaselineOnly"/>.
+    /// </summary>
+    member _.StartSession
+        (
+            baseline: FSharpEmitBaseline,
+            ?capabilities: EditAndContinueCapabilities
+        ) : HotReloadState.HotReloadSessionStart =
         use _ =
             Activity.start "HotReload.StartSession" [|
                 Activity.Tags.project, baseline.ModuleId.ToString()
                 activityTagHotReloadAction, "baseline"
             |]
 
-        sessionStore().SetBaseline(baseline, CheckedAssemblyAfterOptimization [])
+        sessionStore().SetBaseline(baseline, CheckedAssemblyAfterOptimization [], ?capabilities = capabilities)
 
-    member _.StartSession(baseline: FSharpEmitBaseline, implementationFiles: CheckedAssemblyAfterOptimization) : HotReloadState.HotReloadSessionStart =
+    /// <summary>Initialise or replace the current baseline together with its typed implementation files.</summary>
+    member _.StartSession
+        (
+            baseline: FSharpEmitBaseline,
+            implementationFiles: CheckedAssemblyAfterOptimization,
+            ?capabilities: EditAndContinueCapabilities
+        ) : HotReloadState.HotReloadSessionStart =
         use _ =
             Activity.start "HotReload.StartSession" [|
                 Activity.Tags.project, baseline.ModuleId.ToString()
                 activityTagHotReloadAction, "baseline+impl"
             |]
 
-        sessionStore().SetBaseline(baseline, implementationFiles)
+        sessionStore().SetBaseline(baseline, implementationFiles, ?capabilities = capabilities)
 
     /// <summary>Attempts to fetch the current baseline.</summary>
     member _.TryGetBaseline() =
@@ -279,10 +294,23 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     activityTagGeneration, string session.CurrentGeneration
                     Activity.Tags.project, session.Baseline.ModuleId.ToString()
                 |]
-            let symbolChanges = computeSymbolChanges tcGlobals session.ImplementationFiles updatedImplementation
+            let symbolChanges =
+                computeSymbolChanges tcGlobals session.Capabilities session.ImplementationFiles updatedImplementation
 
             if not (List.isEmpty symbolChanges.RudeEdits) then
-                Error(HotReloadError.UnsupportedEdit "Rude edits detected; full rebuild required.")
+                // Surface the per-edit diagnostics (including which runtime capability is missing
+                // for RudeEditKind.NotSupportedByRuntime) so hosts can report an actionable reason.
+                let details =
+                    symbolChanges.RudeEdits
+                    |> RudeEditDiagnostics.ofRudeEdits
+                    |> List.map (fun diagnostic -> $"{diagnostic.Id}: {diagnostic.Message}")
+                    |> String.concat Environment.NewLine
+
+                Error(
+                    HotReloadError.UnsupportedEdit(
+                        $"Rude edits detected; full rebuild required.{Environment.NewLine}{details}"
+                    )
+                )
             elif not (List.isEmpty symbolChanges.Deleted) then
                 Error(HotReloadError.UnsupportedEdit "Deleted symbols detected; full rebuild required.")
             else

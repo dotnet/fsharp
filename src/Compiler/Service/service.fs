@@ -35,6 +35,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.BuildGraph
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.HotReload.DeltaBuilder
@@ -195,6 +196,7 @@ type internal FSharpHotReloadService
     member _.StartHotReloadSession
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
         (outputPath: string option)
+        (capabilities: EditAndContinueCapabilities)
         =
         async {
             match outputPath with
@@ -252,7 +254,9 @@ type internal FSharpHotReloadService
                             setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
 
                             editAndContinueService.EndSession()
-                            let startTransition = editAndContinueService.StartSession(baseline, implementationFiles)
+
+                            let startTransition =
+                                editAndContinueService.StartSession(baseline, implementationFiles, capabilities)
 
 
                             if traceSessionTransitions then
@@ -323,7 +327,12 @@ type internal FSharpHotReloadService
                                 match editAndContinueService.TryGetSession() with
                                 | ValueNone -> None
                                 | ValueSome session ->
-                                    let symbolChanges = computeSymbolChanges tcGlobals session.ImplementationFiles implementationFiles
+                                    let symbolChanges =
+                                        computeSymbolChanges
+                                            tcGlobals
+                                            session.Capabilities
+                                            session.ImplementationFiles
+                                            implementationFiles
 
                                     match mapSymbolChangesToDelta session.Baseline symbolChanges with
                                     | Error mappingErrors ->
@@ -842,8 +851,9 @@ type FSharpChecker
     member private _.StartHotReloadSessionCore
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
         (outputPath: string option)
+        (capabilities: EditAndContinueCapabilities)
         =
-        hotReloadService.StartHotReloadSession parseAndCheckProject outputPath
+        hotReloadService.StartHotReloadSession parseAndCheckProject outputPath capabilities
 
     member private _.EmitHotReloadDeltaCore
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
@@ -851,7 +861,14 @@ type FSharpChecker
         =
         hotReloadService.EmitHotReloadDelta parseAndCheckProject outputPath
 
-    member this.StartHotReloadSession(projectOptions: FSharpProjectOptions, ?userOpName: string) =
+    // Runtime capability strings cross the public boundary once and are parsed into the typed
+    // model here; everything downstream consults EditAndContinueCapabilities only.
+    static member private ParseHotReloadCapabilities(capabilities: string seq option) =
+        capabilities
+        |> Option.map EditAndContinueCapabilities.Parse
+        |> Option.defaultValue EditAndContinueCapabilities.BaselineOnly
+
+    member this.StartHotReloadSession(projectOptions: FSharpProjectOptions, ?userOpName: string, ?capabilities: string seq) =
         async {
             ensureKeepAssemblyContents ()
 
@@ -866,9 +883,10 @@ type FSharpChecker
                 this.StartHotReloadSessionCore
                     (fun () -> this.ParseAndCheckProject(projectOptions, userOpName = opName))
                     (tryGetOutputPathFromProjectOptions projectOptions)
+                    (FSharpChecker.ParseHotReloadCapabilities capabilities)
         }
 
-    member this.StartHotReloadSession(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
+    member this.StartHotReloadSession(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string, ?capabilities: string seq) =
         async {
             ensureKeepAssemblyContents ()
 
@@ -883,6 +901,7 @@ type FSharpChecker
                 this.StartHotReloadSessionCore
                     (fun () -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName))
                     (tryGetOutputPathFromProjectSnapshot projectSnapshot)
+                    (FSharpChecker.ParseHotReloadCapabilities capabilities)
         }
 
     member this.EmitHotReloadDelta(projectOptions: FSharpProjectOptions, ?userOpName: string) =

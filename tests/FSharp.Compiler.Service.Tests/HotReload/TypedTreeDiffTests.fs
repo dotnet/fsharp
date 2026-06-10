@@ -9,6 +9,7 @@ open Xunit
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
@@ -93,10 +94,15 @@ type private DiffTestHarness() =
 
         tcGlobals, implFile
 
-    member _.Diff baseline updated =
+    /// Diffs with an explicit runtime capability set; addition classification depends on it.
+    member _.DiffWith (capabilities: EditAndContinueCapabilities) baseline updated =
         let tcGlobals, baselineImpl = baseline
         let _, updatedImpl = updated
-        diffImplementationFile tcGlobals baselineImpl updatedImpl
+        diffImplementationFile tcGlobals capabilities baselineImpl updatedImpl
+
+    /// Diffs with the conservative baseline-only capability set (the session default).
+    member this.Diff baseline updated =
+        this.DiffWith EditAndContinueCapabilities.BaselineOnly baseline updated
 
     interface IDisposable with
         member _.Dispose() =
@@ -467,6 +473,24 @@ let run () =
     // Following Roslyn patterns for Edit and Continue restrictions
     // =========================================================================
 
+    /// The full capability set advertised by a modern CoreCLR runtime; addition tests pass it
+    /// explicitly because the diff defaults to the conservative baseline-only set.
+    let private allCapabilities =
+        EditAndContinueCapabilities.Parse [
+            "Baseline"
+            "AddMethodToExistingType"
+            "AddStaticFieldToExistingType"
+            "AddInstanceFieldToExistingType"
+            "NewTypeDefinition"
+            "ChangeCustomAttributes"
+            "UpdateParameters"
+            "GenericAddMethodToExistingType"
+            "GenericUpdateMethod"
+            "GenericAddFieldToExistingType"
+            "AddExplicitInterfaceImplementation"
+            "AddFieldRva"
+        ]
+
     [<Fact>]
     let ``adding instance method to class produces semantic edit`` () =
         use harness = new DiffTestHarness()
@@ -486,7 +510,7 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith allCapabilities baseline updated
 
         // Adding a non-virtual instance method should produce an Insert semantic edit
         Assert.Empty(result.RudeEdits)
@@ -512,12 +536,67 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith allCapabilities baseline updated
 
         // Adding a static method should produce an Insert semantic edit
         Assert.Empty(result.RudeEdits)
         Assert.Single(result.SemanticEdits) |> ignore
         Assert.Equal(SemanticEditKind.Insert, result.SemanticEdits[0].Kind)
+
+    [<Fact>]
+    let ``adding method with AddMethodToExistingType capability produces semantic edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type MyClass() =
+    member this.Existing() = 1
+"""
+        let updated_source = """
+module Library
+type MyClass() =
+    member this.Existing() = 1
+    member this.NewMethod() = 42
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // The single capability gating method additions is enough; no other capability is required.
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddMethodToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        Assert.Single(result.SemanticEdits) |> ignore
+        Assert.Equal(SemanticEditKind.Insert, result.SemanticEdits[0].Kind)
+
+    [<Fact>]
+    let ``adding method without AddMethodToExistingType capability produces NotSupportedByRuntime rude edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type MyClass() =
+    member this.Existing() = 1
+"""
+        let updated_source = """
+module Library
+type MyClass() =
+    member this.Existing() = 1
+    member this.NewMethod() = 42
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // Session default: the runtime did not advertise AddMethodToExistingType.
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        // The message must name the missing runtime capability so hosts can surface it.
+        Assert.Contains("AddMethodToExistingType", rudeEdit.Message)
 
     [<Fact>]
     let ``adding virtual method produces rude edit`` () =
@@ -539,7 +618,8 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        // Always rude even when the runtime advertises every capability.
+        let result = harness.DiffWith allCapabilities baseline updated
 
         // Adding a virtual method should produce a rude edit
         Assert.NotEmpty(result.RudeEdits)
@@ -574,7 +654,7 @@ type DerivedClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith allCapabilities baseline updated
 
         // Adding an override method should produce a rude edit
         Assert.NotEmpty(result.RudeEdits)
@@ -600,7 +680,7 @@ type MyNumber(value: int) =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith allCapabilities baseline updated
 
         // Adding an operator should produce a rude edit
         Assert.NotEmpty(result.RudeEdits)
@@ -635,7 +715,7 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith allCapabilities baseline updated
 
         Assert.NotEmpty(result.RudeEdits)
         let hasExplicitInterfaceRudeEdit =
@@ -662,7 +742,7 @@ let newValue = 42
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith allCapabilities baseline updated
 
         // Adding a module-level value should still produce a rude edit
         Assert.NotEmpty(result.RudeEdits)
@@ -691,7 +771,7 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith allCapabilities baseline updated
 
         // Adding an auto-property creates a backing field, which changes type layout
         // This is correctly detected as a rude edit (TypeLayoutChange)
@@ -718,7 +798,7 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith allCapabilities baseline updated
 
         // Adding a readonly property should produce an Insert semantic edit
         Assert.Empty(result.RudeEdits)

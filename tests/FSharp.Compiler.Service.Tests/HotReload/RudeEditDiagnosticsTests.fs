@@ -73,6 +73,15 @@ module RudeEditDiagnosticsTests =
         Assert.Contains("explicit interface", diag.Message, StringComparison.OrdinalIgnoreCase)
 
     [<Fact>]
+    let ``not supported by runtime diagnostic id`` () =
+        // The diff-produced message already names the symbol and the missing capability,
+        // so the diagnostic surfaces it verbatim.
+        let message = "Adding 'M.f' requires the runtime capability 'AddMethodToExistingType', which the current runtime does not support."
+        let diag = RudeEditDiagnostics.ofRudeEdit (rude RudeEditKind.NotSupportedByRuntime message)
+        Assert.Equal("FSHRDL016", diag.Id)
+        Assert.Equal(message, diag.Message)
+
+    [<Fact>]
     let ``unsupported diagnostic id`` () =
         let diag = RudeEditDiagnostics.ofRudeEdit (rude RudeEditKind.Unsupported "custom")
         Assert.Equal("FSHRDL099", diag.Id)
