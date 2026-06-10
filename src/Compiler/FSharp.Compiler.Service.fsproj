@@ -333,6 +333,7 @@
     <Compile Include="TypedTree\TypeProviders.fs" />
     <Compile Include="TypedTree\QuotationPickler.fsi" />
     <Compile Include="TypedTree\QuotationPickler.fs" />
+    <Compile Include="TypedTree\SynthesizedTypeMaps.fs" />
     <Compile Include="TypedTree\CompilerGlobalState.fsi" />
     <Compile Include="TypedTree\CompilerGlobalState.fs" />
     <Compile Include="TypedTree\WellKnownAttribs.fsi" />
@@ -357,6 +358,8 @@
     <Compile Include="TypedTree\TypedTreeOps.ExprOps.fs" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fs" />
+    <Compile Include="TypedTree\TypedTreeDiff.fs" />
+    <Compile Include="HotReload\DefinitionMap.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
