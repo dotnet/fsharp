@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup>
+  <TargetFramework>net472</TargetFramework>
+  <IsPackable>false</IsPackable>
+  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  <!-- Vendored SourceGear.Sqlite3 e_sqlite3.dll lands here in §10 -->
+ </PropertyGroup>
+ <ItemGroup>
+  <None Include="runtimes\**\*" Pack="true" CopyToOutputDirectory="PreserveNewest" />
+ </ItemGroup>
+</Project>
