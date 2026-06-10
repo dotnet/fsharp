@@ -62,7 +62,9 @@
 
     <!-- other packages -->
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
-    <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-roslyn-62714-01</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
+    <!-- S5.5: 1.1.0-roslyn-62714-01 was a Roslyn-internal prerelease never published to public feeds.
+         Closest published on dnceng/dotnet-tools is 1.1.0-beta2-20527-01 (verified 2026-06-10). -->
+    <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-beta2-20527-01</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
     <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>
     <MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>1.0.0</MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>
     <NewtonsoftJsonPackageVersion>9.0.1</NewtonsoftJsonPackageVersion>

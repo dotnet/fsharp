@@ -9,6 +9,20 @@
   <Import Project="FSharpBuild.Directory.Build.props" Condition="'$(FSharpTestCompilerVersion)' == ''" />
   <Import Project="FSharpTests.Directory.Build.props" Condition="'$(FSharpTestCompilerVersion)' != ''" />
 
+  <!-- S5.5 PD iter1: Legacy 15.9 package version remediation (overrides PackageVersions.props after FSharpBuild import). -->
+  <!-- Each override is justified per S5.5/strategy.md. DO NOT remove without re-probing feeds. -->
+  <PropertyGroup Label="S5.5-PackageVersionOverrides">
+    <!-- Pdb2Pdb 1.1.0-roslyn-62714-01 is a Roslyn-internal pre-release that was never pushed to public feeds.
+         Closest published is 1.1.0-beta2-20527-01 on dnceng/dotnet-tools (Nov 2020, 233 versions). -->
+    <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-beta2-20527-01</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
+  </PropertyGroup>
+
+  
+  <!-- S5.5 iter2: suppress restore-warning escalation for 15.9-era legacy CVE/downgrade noise (NU1603/1604/1605/1903).
+       NU1102 (missing pkg) is a hard error, fixed via build/targets/PackageVersions.props line 65 override above. -->
+  <PropertyGroup Label="S5.5-RestoreWarningSuppression">
+    <NoWarn>$(NoWarn);NU1603;NU1604;NU1605;NU1903</NoWarn>
+  </PropertyGroup>
   <!-- Arcade common roots block: pulls in Arcade SDK common props (eng\common, etc.) -->
   <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" />
 
