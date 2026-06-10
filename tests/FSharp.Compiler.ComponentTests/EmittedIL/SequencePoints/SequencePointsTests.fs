@@ -574,7 +574,7 @@ let f (l: string) =
 module If =
     [<Fact>]
     let ``If 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -586,7 +586,7 @@ let g () =
 
     [<Fact>]
     let ``If 02 - Bind`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -599,7 +599,7 @@ let g () =
 
     [<Fact>]
     let ``If 03 - Set`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -611,7 +611,7 @@ let g (arr: int[]) =
 
     [<Fact>]
     let ``If 04`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -623,7 +623,7 @@ let g () =
 
     [<Fact>]
     let ``If 05`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -638,7 +638,7 @@ let g () =
 module Match =
     [<Fact>]
     let ``Match 01`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =
@@ -652,7 +652,7 @@ let g () =
 
     [<Fact>]
     let ``Match 02 - Bind`` () =
-        Baseline.verify """
+        baseline.verify """
 module Module
 
 let f (x: int) =

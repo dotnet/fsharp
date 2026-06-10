@@ -1,9 +1,17 @@
 namespace EmittedIL
 
+open System.Diagnostics
+open System.Runtime.CompilerServices
 open Xunit
 open FSharp.Test.Compiler
 
 module DebugInlineAsCall =
+
+    let private baseline = SequencePointsBaseline(__SOURCE_DIRECTORY__)
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let private verifySequencePoints result =
+        baseline.verifyResult(StackTrace().GetFrame(1), result)
 
     [<Fact>]
     let ``Call 01 - Release`` () =
@@ -33,8 +41,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::f(int32)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 03 - Two args`` () =
@@ -52,8 +59,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<add>__debug@8'(int32,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 04 - Function arg`` () =
@@ -70,9 +76,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       !!2 Test::apply<int32,int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,!!2>>,"]
-        |> shouldSucceed
-
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 05 - Nested inline`` () =
@@ -92,10 +96,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains
-            ["call       int32 Test::double(int32)"
-             "call       int32 Test::quadruple(int32)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 06 - Multiple calls`` () =
@@ -112,7 +113,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains [ "call       int32 Test::double(int32)" ]
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 07 - Local function`` () =
@@ -127,8 +128,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 08 - Local generic function`` () =
@@ -143,8 +143,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,int32>::InvokeFast<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 09 - FSharp.Core not`` () =
@@ -158,7 +157,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILNotPresent ["call       bool [FSharp.Core]Microsoft.FSharp.Core.Operators::Not(bool)"]
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 10 - Different assembly`` () =
@@ -186,8 +185,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 [Lib]MyLib::triple(int32)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 11 - Measure`` () =
@@ -205,8 +203,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       float64 Test::scale(float64)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 12 - No inner optimization`` () =
@@ -224,11 +221,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains
-            [ "ldc.i4.5"
-              "ldc.i4.s   10"
-              "callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)" ]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 13`` () =
@@ -244,9 +237,7 @@ g 1 |> ignore
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::g(int32)"]
-        |> shouldSucceed
-        |> verifyILNotPresent ["Test::'<f>__debug"]
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 14`` () =
@@ -262,9 +253,7 @@ g 1 2 |> ignore
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<g>__debug@7'(int32,"]
-        |> shouldSucceed
-        |> verifyILNotPresent ["Test::'<f>__debug"]
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 15`` () =
@@ -280,9 +269,7 @@ g 1 2 |> ignore
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<g>__debug@7'(int32,"]
-        |> shouldSucceed
-        |> verifyILNotPresent ["Test::'<f>__debug"]
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Call 16 - Debug lib called from optimized app`` () =
@@ -335,11 +322,10 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<add>__debug@7'(int32,"]
-        |> shouldSucceed
-    
+        |> verifySequencePoints
+
     [<Fact>]
-    let ``SRTP 02 - Local `` () =
+    let ``SRTP 02 - Local`` () =
         FSharp """
 [<EntryPoint>]
 let main _ =
@@ -351,8 +337,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<add>__debug@5'(int32,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 03 - Different type arguments`` () =
@@ -370,10 +355,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains
-            [ "call       int32 Test::'<getLength>__debug@7'(string)"
-              "call       int32 Test::'<getLength>__debug@8-1'(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)" ]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 04 - Multiple calls`` () =
@@ -389,11 +371,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains
-            [ "call       int32 Test::'<add>__debug@6'(int32,"
-              "call       int32 Test::'<add>__debug@6-1'(int32," ]
-        |> shouldSucceed
-    
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 05 - Different assembly`` () =
@@ -420,8 +398,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<add>__debug@6'(int32,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 06 - Different assembly`` () =
@@ -450,10 +427,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains
-            [ "call       int32 Test::'<double>__debug@8'(int32)"
-              "call       int32 Test::'<add>__debug@4'(int32," ]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 07 - Nested - Same project`` () =
@@ -471,12 +445,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains
-            [ "call       int32 Test::'<double>__debug@8'(int32)"
-              "call       int32 Test::'<add>__debug@4'(int32," ]
-        |> shouldSucceed
-
-    
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 08 - Nested - Different type arguments`` () =
@@ -497,10 +466,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains
-            [ "call       int32 Test::'<add>__debug@5'(int32,"
-              "call       float64 Test::'<add>__debug@6-1'(float64," ]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 09 - Witness`` () =
@@ -519,10 +485,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains
-            [ "call       int32 Test::'<add>__debug@8'(int32,"
-              "call       float64 Test::'<add>__debug@9-1'(float64," ]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 10 - Witness`` () =
@@ -545,8 +508,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains [ "call       class Test/MyNum Test::'<Invoke>__debug@13'(float64)" ]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 11 - Witness`` () =
@@ -571,9 +533,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains [ "call       class Test/MyNum Test::'<Invoke>__debug@15'(float64)" ]
-        |> shouldSucceed
-
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 12 - Witness - Struct with partially resolved type args`` () =
@@ -599,8 +559,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       void Test::'<g>__debug@16'(class Test/T)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 13 - Witness - Struct with ResumableCode and partially resolved type args`` () =
@@ -629,8 +588,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["Test::'<g>__debug@19'()"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 14 - StateMachine with unresolved trait from composed inline function`` () =
@@ -663,8 +621,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<h>__debug@23'(valuetype Test/S`1<int32>)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 15 - Composed inline with linked constraints`` () =
@@ -687,8 +644,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<h>__debug@13'(valuetype Test/S`1<int32>)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 16 - Same line`` () =
@@ -716,8 +672,7 @@ type U = static member inline F<'a, 'b when 'a: (member M: unit -> unit)>(_a: 'a
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["Program::'<foo>__debug@10'(class Module/T)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 17 - Same line`` () =
@@ -747,8 +702,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["Test::'<foo>__debug@8'(int32,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 18 - Type abbreviation with constraint`` () =
@@ -778,8 +732,7 @@ type C = static member inline F<'a, 'b, 'c when C<'a, 'b>>(_a: 'a) = ()
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["Program::'<foo>__debug@12'(class Program/T)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 19 - byref`` () =
@@ -802,8 +755,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       void Test::'<f>__debug@13'(valuetype Test/S&,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 20 - byref`` () =
@@ -837,8 +789,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       void Test::'<f>__debug@12'(valuetype Test/S&,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 21 - byref`` () =
@@ -875,8 +826,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       void Test::'<g>__debug@12'(valuetype Test/S&,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 22 - Recursive inline with different type arg`` () =
@@ -899,7 +849,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 23 - Cross-file specialization with nested closures at same line`` () =
@@ -910,7 +860,6 @@ let main _ =
         let additionalSource = FsSourceWithFileName "Program.fs" """
 module Program
 open Module
-
 
 let inline wrap source =
     let mutable state = false
@@ -943,7 +892,7 @@ let monad' = MonadBuilder ()
         |> withNoOptimize
         |> asLibrary
         |> compile
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 24 - byref with free typar at callsite`` () =
@@ -969,8 +918,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       void Test::'<callMember>__debug@12'<!!0>(class Test/MyBuilder`1<!!0>,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 25 - byref with free typar at callsite - large tuple`` () =
@@ -1006,8 +954,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       void Test::'<callMember>__debug@18'<!!0>(class Test/MyBuilder`1<!!0>,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 26 - byref with free typar at callsite - three tupled args`` () =
@@ -1033,8 +980,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       void Test::'<callMember>__debug@12'<!!0>(class Test/MyBuilder`1<!!0>,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 27 - non-typar tyarg to SRTP callee - non-inline caller`` () =
@@ -1060,8 +1006,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       void Test::'<callMember>__debug@9'<!!0>(class Test/MyBuilder`1<!!0>)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 28 - non-typar tyarg to SRTP callee - inline caller`` () =
@@ -1087,7 +1032,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``SRTP 29 - byref callee under SRTP witnesses, nested in delegate bodies`` () =
@@ -1128,12 +1073,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains
-            [ "call       void Test::'<bindDynamic>__debug@17'(class [runtime]System.Tuple`2<int32,int32>&,"
-              "call       void Test::'<bindDynamic>__debug@19-1'(class [runtime]System.Tuple`2<int32,int32>&,"
-              "call       class Test/Code`1<class [runtime]System.Tuple`2<int32,int32>> Test::'<wrap>__debug@24'(class Test/Aw," ]
-        |> shouldSucceed
-        |> withStdOutContains "Result = (1, 2)"
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Member 01 - Non-generic`` () =
@@ -1151,8 +1091,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["callvirt   instance int32 Test/T::Double(int32)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Member 02 - Generic`` () =
@@ -1170,8 +1109,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["callvirt   instance !!1 Test/T::Apply<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Member 03 - SRTP`` () =
@@ -1189,8 +1127,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<Add>__debug@8'(class Test/T,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Operator 01 - Top-level`` () =
@@ -1206,8 +1143,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::op_PlusPlus(int32,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Operator 02 - Top-level SRTP`` () =
@@ -1223,8 +1159,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<op_PlusPlus>__debug@6'(int32,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Operator 03 - Local`` () =
@@ -1239,8 +1174,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       !!0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::InvokeFast<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,!!0>>,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Operator 04 - Local SRTP`` () =
@@ -1255,8 +1189,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<op_PlusPlus>__debug@5'(int32,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Accessibility 01`` () =
@@ -1270,8 +1203,7 @@ let inline f () = fInternal ()
         |> withNoOptimize
         |> asLibrary
         |> compile
-        |> verifyILContains ["call       void Module::'<fInternal>__debug@5'()"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Accessibility 02`` () =
@@ -1289,8 +1221,7 @@ type T() =
         |> withNoOptimize
         |> asLibrary
         |> compile
-        |> verifyILContains ["call       void Module/T::'<InternalMethod>__debug@9'(class Module/T)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Accessibility 03`` () =
@@ -1314,9 +1245,7 @@ let r = Lib.T().G(1)
         |> withNoOptimize
         |> withReferences [library]
         |> compile
-        |> verifyILContains ["Lib/T::G<int32>(!!0)"]
-        |> shouldSucceed
-
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Accessibility 04`` () =
@@ -1344,8 +1273,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::'<addPublic>__debug@6'(int32,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Accessibility 05`` () =
@@ -1382,8 +1310,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["Test::'<Invoke>__debug@6'(float64)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Accessibility 06`` () =
@@ -1424,8 +1351,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 [Lib]Lib::publicFn(int32)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Accessibility 07`` () =
@@ -1466,8 +1392,7 @@ let main _ =
         |> withReferences [library]
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 [Lib]Lib::publicFn(int32)"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Resumable 01`` () =
@@ -1483,7 +1408,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Resumable 02`` () =
@@ -1503,7 +1428,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``Resumable 03`` () =
@@ -1532,7 +1457,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``InlineIfLambda 01 - Debug`` () =
@@ -1549,8 +1474,7 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
-        |> verifyILContains ["call       int32 Test::apply(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,"]
-        |> shouldSucceed
+        |> verifySequencePoints
 
     [<Fact>]
     let ``InlineIfLambda 02 - Release`` () =
