@@ -21,7 +21,8 @@ module DefinitionMapTests =
 
     let private diffResult edits rude =
         { TypedTreeDiffResult.SemanticEdits = edits
-          RudeEdits = rude }
+          RudeEdits = rude
+          LambdaEdits = [] }
 
     [<Fact>]
     let ``added edit surfaces in definition map`` () =

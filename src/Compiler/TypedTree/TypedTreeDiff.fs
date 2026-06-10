@@ -6,10 +6,12 @@ open System
 open System.Collections.Generic
 open System.Text
 
+open Internal.Utilities.Collections
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -121,9 +123,116 @@ type RudeEdit =
       Kind: RudeEditKind
       Message: string }
 
+// ---------------------------------------------------------------------------
+// Lambda occurrence model (Phase C1)
+//
+// Each member body is summarized as an ordered sequence of lambda OCCURRENCES.
+// Identity is structural and positional (traversal ordinal + enclosing-lambda
+// chain + structural digest); source ranges are recorded for diagnostics only
+// and never participate in identity, so unrelated line edits cannot perturb
+// occurrence matching (Roslyn equivalent: syntax-offset matching through the
+// SyntaxMap rather than absolute source positions).
+// ---------------------------------------------------------------------------
+
+/// Identity of a single lambda occurrence within a member body.
+type LambdaOccurrenceId =
+    { /// The member whose body contains this lambda occurrence.
+      MemberSymbol: SymbolId
+      /// Pre-order traversal index of this occurrence among all lambda occurrences
+      /// extracted from the member body (consecutive curried lambdas form ONE occurrence).
+      Ordinal: int
+      /// Ordinals of the enclosing lambda occurrences, nearest enclosing first.
+      /// Empty for occurrences directly inside the member body.
+      ParentChain: int list }
+
+/// Identity of a value captured by a lambda occurrence from an enclosing scope:
+/// logical (source) name plus runtime type identity. Mirrors Roslyn's display-class
+/// field matching, which keys captured variables by name and type. Self captures are
+/// normalized to 'this'/'base' so renaming the F# self identifier is not a capture rename.
+type CaptureIdentity =
+    { /// Source-level logical name of the captured value.
+      LogicalName: string
+      /// Runtime type identity of the captured value.
+      Type: RuntimeTypeIdentity }
+
+/// A lambda occurrence extracted from a member body. Consecutive curried lambdas
+/// (fun x -> fun y -> ...) are merged into one occurrence, matching how IlxGen forms
+/// a single closure class for a curried lambda chain.
+type LambdaOccurrence =
+    { /// Structural/positional identity of this occurrence.
+      Id: LambdaOccurrenceId
+      /// Number of consecutive curried lambda groups merged into this occurrence.
+      CurriedArity: int
+      /// Runtime type identities of the parameters in each curried group. Part of the
+      /// structural digest so parameter-shape changes never silently align (the legacy
+      /// digest treated them as shape changes, and so do we).
+      ParameterTypes: RuntimeTypeIdentity list list
+      /// Values captured from enclosing scopes (free locals of the occurrence expression
+      /// that are not module/member-level), ordered deterministically by identity.
+      Captures: CaptureIdentity list
+      /// Runtime type identity of the value produced after all curried groups are applied.
+      ReturnTypeIdentity: RuntimeTypeIdentity
+      /// Digest of the occurrence expression, used to detect pure body edits between two
+      /// occurrences that share the same structural digest. Never part of identity.
+      BodyHash: int
+      /// Source range of the occurrence. Diagnostics only — never identity.
+      Range: range }
+
+/// A change to the captured-value set of a matched lambda occurrence pair, classified
+/// with C#-parity kinds (RenamingCapturedVariable / ChangingCapturedVariableType /
+/// ChangingCapturedVariableScope). All of these are permanently rude edits; capture
+/// additions are also rude today but may become applicable in Phase C4 via the
+/// AddInstanceFieldToExistingType runtime capability.
+[<RequireQualifiedAccess>]
+type CaptureSetChange =
+    /// A captured value kept its type but changed its logical name
+    /// (C# parity: RenamingCapturedVariable).
+    | Renamed of oldName: string * newName: string * captureType: RuntimeTypeIdentity
+    /// A captured value kept its logical name but changed its type
+    /// (C# parity: ChangingCapturedVariableType).
+    | TypeChanged of name: string * oldType: RuntimeTypeIdentity * newType: RuntimeTypeIdentity
+    /// A captured value moved between lambda occurrences: it stopped being captured by
+    /// one occurrence and started being captured by another in the same member
+    /// (C# parity: ChangingCapturedVariableScope).
+    | ScopeChanged of name: string * captureType: RuntimeTypeIdentity
+    /// The occurrence captures an additional value it did not capture before.
+    | CaptureAdded of capture: CaptureIdentity
+    /// The occurrence no longer captures a value it captured before.
+    | CaptureRemoved of capture: CaptureIdentity
+
+/// A classified edit for a single lambda occurrence, produced by aligning the baseline
+/// and updated occurrence sequences of a matched member. Matched pairs always carry both
+/// occurrences so downstream consumers (the Phase C4 emitter and its verifier) never have
+/// to re-derive the pairing.
+[<RequireQualifiedAccess>]
+type LambdaEdit =
+    /// The occurrence matched structurally and only its body changed. This is the
+    /// hot-reload-compatible case: the member body update covers it.
+    | BodyEdited of baseline: LambdaOccurrence * updated: LambdaOccurrence
+    /// The occurrence exists only in the updated member body.
+    | Added of updated: LambdaOccurrence
+    /// The occurrence exists only in the baseline member body.
+    | Removed of baseline: LambdaOccurrence
+    /// The occurrence matched on shape (arity, parameter and return identity, position)
+    /// but its captured-value set is incompatible.
+    | CaptureSetChanged of baseline: LambdaOccurrence * updated: LambdaOccurrence * changes: CaptureSetChange list
+
+/// Lambda edits for a single member, keyed by the member symbol. Carried alongside the
+/// semantic/rude edits so Phase C4 emission can consume the structured data without
+/// re-running occurrence extraction.
+type MemberLambdaEdits =
+    { /// The member whose body produced these lambda edits (baseline-side symbol).
+      MemberSymbol: SymbolId
+      /// Aligned per-occurrence edits, ordered by occurrence ordinal.
+      Edits: LambdaEdit list }
+
 type TypedTreeDiffResult =
     { SemanticEdits: SemanticEdit list
-      RudeEdits: RudeEdit list }
+      RudeEdits: RudeEdit list
+      /// Structured lambda occurrence edits for members whose lambda sets were analyzed,
+      /// including members that produced rude edits (the payload names exactly which
+      /// occurrences were added/removed/capture-incompatible).
+      LambdaEdits: MemberLambdaEdits list }
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -742,6 +851,414 @@ and private bindingDigest denv (TBind (var, body, _)) =
     let sigHash = tyToString denv var.Type |> stableHash
     hashCombine sigHash (exprDigest denv body)
 
+// ---------------------------------------------------------------------------
+// Lambda occurrence extraction
+// ---------------------------------------------------------------------------
+
+/// Result of extracting lambda occurrences from a member body. Constructs we cannot yet
+/// model faithfully (quotations, object expressions, local type functions, types without
+/// a computable runtime identity) keep the member on the legacy whole-body digest path,
+/// which classifies any lowered-shape change as rude exactly as before this model existed.
+[<RequireQualifiedAccess>]
+type private LambdaOccurrenceExtraction =
+    | Extracted of LambdaOccurrence list
+    | Unsupported of reason: string
+
+/// Looks through wrappers that carry no structure of their own.
+let rec private stripDebugPointsAndLinks (expr: Expr) =
+    match expr with
+    | Expr.DebugPoint (_, inner) -> stripDebugPointsAndLinks inner
+    | Expr.Link eref -> stripDebugPointsAndLinks eref.Value
+    | _ -> expr
+
+/// Strips the member's own top-level type lambdas and (up to) its declared curried
+/// argument groups, leaving the body the diff should treat as "inside" the member.
+/// The member's own parameter lambdas are not closures; IlxGen strips them the same way
+/// via the binding's ValReprInfo before forming closure classes.
+let private stripMemberTopLambdas (valReprInfo: ValReprInfo option) (expr: Expr) =
+    let rec stripTyLambdas expr =
+        match stripDebugPointsAndLinks expr with
+        | Expr.TyLambda (_, _, body, _, _) -> stripTyLambdas body
+        | stripped -> stripped
+
+    let rec stripLambdas remaining expr =
+        if remaining = 0 then
+            expr
+        else
+            match stripDebugPointsAndLinks expr with
+            | Expr.Lambda (_, _, _, _, body, _, _) -> stripLambdas (remaining - 1) body
+            | stripped -> stripped
+
+    match valReprInfo with
+    | Some info -> stripLambdas info.NumCurriedArgs (stripTyLambdas expr)
+    | None -> expr
+
+/// Extracts the ordered lambda occurrence sequence from a member body, or reports the
+/// member as unsupported for occurrence modelling (in which case the caller falls back
+/// to the legacy whole-body lambda digest).
+let private extractLambdaOccurrences
+    (g: TcGlobals)
+    (denv: DisplayEnv)
+    (typarOrdinals: Map<Stamp, int>)
+    (memberSymbol: SymbolId)
+    (valReprInfo: ValReprInfo option)
+    (expr: Expr)
+    : LambdaOccurrenceExtraction =
+
+    let occurrences = ResizeArray<LambdaOccurrence>()
+    let mutable unsupported = None
+    let mutable nextOrdinal = 0
+
+    let markUnsupported (reason: string) =
+        if unsupported.IsNone then
+            unsupported <- Some reason
+
+    let tryTypeIdentity (ty: TType) =
+        match tryTypeIdentityFromTType g typarOrdinals ty with
+        | Some identity -> Some identity
+        | None ->
+            markUnsupported "a type without a computable runtime identity"
+            None
+
+    // Captures = free locals of the occurrence expression that come from enclosing scopes.
+    // Module/member-level values are accessed via static call/field paths in IL, never
+    // hoisted into closure fields, so they are not captures.
+    let captureIdentities (lambdaExpr: Expr) =
+        let freeVars = freeInExpr CollectTyparsAndLocals lambdaExpr
+
+        let captures =
+            freeVars.FreeLocals
+            |> Zset.elements
+            |> List.choose (fun (v: Val) ->
+                if v.IsCompiledAsTopLevel || v.IsMemberOrModuleBinding then
+                    None
+                else
+                    // Normalize self captures: the user-chosen self identifier is not part
+                    // of the runtime capture identity (it always lowers to the 'this' slot).
+                    let logicalName =
+                        if v.IsMemberThisVal || v.IsCtorThisVal then "this"
+                        elif v.IsBaseVal then "base"
+                        else v.LogicalName
+
+                    tryTypeIdentity v.Type
+                    |> Option.map (fun tyIdentity ->
+                        { LogicalName = logicalName
+                          Type = tyIdentity }))
+            |> List.distinct
+            |> List.sortBy (fun capture -> capture.LogicalName, capture.Type)
+
+        captures
+
+    // Gathers the consecutive curried lambda chain starting at a lambda node into one
+    // occurrence: parameter groups plus the body/return type after the last group.
+    let rec gatherCurriedGroups acc expr =
+        match stripDebugPointsAndLinks expr with
+        | Expr.Lambda (_, _, _, valParams, bodyExpr, _, bodyTy) ->
+            gatherCurriedGroups ((valParams, bodyTy) :: acc) bodyExpr
+        | _ -> List.rev acc, expr
+
+    let rec walk (parentChain: int list) (expr: Expr) =
+        match expr with
+        | Expr.Lambda _ -> visitLambda parentChain expr
+        | Expr.TyLambda _ ->
+            // Local type functions lower through a different IlxGen path (erased or TyFunc
+            // closures); keep members containing them on the legacy digest path for now.
+            markUnsupported "a local type function"
+        | Expr.Const _ -> ()
+        | Expr.Val _ -> ()
+        | Expr.App (funcExpr, _, _, args, _) ->
+            walk parentChain funcExpr
+            args |> List.iter (walk parentChain)
+        | Expr.Sequential (expr1, expr2, _, _) ->
+            walk parentChain expr1
+            walk parentChain expr2
+        | Expr.Let (TBind (_, bindingExpr, _), bodyExpr, _, _) ->
+            walk parentChain bindingExpr
+            walk parentChain bodyExpr
+        | Expr.LetRec (bindings, bodyExpr, _, _) ->
+            bindings |> List.iter (fun (TBind (_, bindingExpr, _)) -> walk parentChain bindingExpr)
+            walk parentChain bodyExpr
+        | Expr.Match (_, _, _, targets, _, _) ->
+            // Mirrors the legacy digest traversal: classification is driven by the
+            // expressions in the match targets.
+            targets |> Array.iter (fun (TTarget (_, targetExpr, _)) -> walk parentChain targetExpr)
+        | Expr.Op (op, _, args, _) ->
+            match op with
+            | TOp.While _
+            | TOp.IntegerForLoop _
+            | TOp.TryWith _
+            | TOp.TryFinally _ ->
+                // Loop/try operands are wrapped in compiler-generated delay lambdas
+                // (mkDummyLambda) that IlxGen always eliminates; they never become
+                // closures, so walk through them without creating occurrences.
+                args |> List.iter (walkThroughOperandLambda parentChain)
+            | _ -> args |> List.iter (walk parentChain)
+        | Expr.Obj _ ->
+            // Object expressions form closure classes through a separate IlxGen path.
+            markUnsupported "an object expression"
+        | Expr.Quote _ ->
+            // Quotation-bearing members stay entirely on the query/legacy digest paths.
+            markUnsupported "a quotation"
+        | Expr.DebugPoint (_, body) -> walk parentChain body
+        | Expr.Link eref -> walk parentChain eref.Value
+        | Expr.TyChoose (_, bodyExpr, _) -> walk parentChain bodyExpr
+        | Expr.WitnessArg _ -> ()
+        | Expr.StaticOptimization (_, onExpr, elseExpr, _) ->
+            walk parentChain onExpr
+            walk parentChain elseExpr
+
+    and walkThroughOperandLambda parentChain expr =
+        match stripDebugPointsAndLinks expr with
+        | Expr.Lambda (_, _, _, _, bodyExpr, _, _) -> walk parentChain bodyExpr
+        | other -> walk parentChain other
+
+    and visitLambda parentChain lambdaExpr =
+        let ordinal = nextOrdinal
+        nextOrdinal <- nextOrdinal + 1
+
+        let groups, innerBody = gatherCurriedGroups [] lambdaExpr
+
+        match groups with
+        | [] -> walk parentChain innerBody
+        | _ ->
+            let parameterTypes =
+                groups
+                |> List.map (fun (valParams, _) ->
+                    valParams |> List.choose (fun (v: Val) -> tryTypeIdentity v.Type))
+
+            let returnTypeIdentity =
+                let _, lastBodyTy = List.last groups
+                tryTypeIdentity lastBodyTy
+
+            if unsupported.IsNone then
+                match returnTypeIdentity with
+                | Some returnIdentity ->
+                    occurrences.Add
+                        { Id =
+                            { MemberSymbol = memberSymbol
+                              Ordinal = ordinal
+                              ParentChain = parentChain }
+                          CurriedArity = groups.Length
+                          ParameterTypes = parameterTypes
+                          Captures = captureIdentities lambdaExpr
+                          ReturnTypeIdentity = returnIdentity
+                          BodyHash = exprDigest denv lambdaExpr
+                          Range = lambdaExpr.Range }
+                | None -> ()
+
+            walk (ordinal :: parentChain) innerBody
+
+    walk [] (stripMemberTopLambdas valReprInfo expr)
+
+    match unsupported with
+    | Some reason -> LambdaOccurrenceExtraction.Unsupported reason
+    | None -> LambdaOccurrenceExtraction.Extracted(List.ofSeq occurrences)
+
+// ---------------------------------------------------------------------------
+// Lambda occurrence alignment
+// ---------------------------------------------------------------------------
+
+/// Longest-common-subsequence pairing of two sequences under the given equality,
+/// returning matched index pairs in order.
+let private lcsMatchIndexes (isEqual: int -> int -> bool) (oldCount: int) (newCount: int) =
+    let table = Array2D.zeroCreate (oldCount + 1) (newCount + 1)
+
+    for i in oldCount - 1 .. -1 .. 0 do
+        for j in newCount - 1 .. -1 .. 0 do
+            table[i, j] <-
+                if isEqual i j then
+                    table[i + 1, j + 1] + 1
+                else
+                    max table[i + 1, j] table[i, j + 1]
+
+    let pairs = ResizeArray()
+    let mutable i = 0
+    let mutable j = 0
+
+    while i < oldCount && j < newCount do
+        if isEqual i j then
+            pairs.Add(i, j)
+            i <- i + 1
+            j <- j + 1
+        elif table[i + 1, j] >= table[i, j + 1] then
+            i <- i + 1
+        else
+            j <- j + 1
+
+    List.ofSeq pairs
+
+/// Full structural digest of an occurrence (sans body): position, shape, and captures.
+/// Occurrences equal under this key are perfectly matched.
+let private occurrenceStructuralKey (occ: LambdaOccurrence) =
+    occ.Id.ParentChain, occ.CurriedArity, occ.ParameterTypes, occ.ReturnTypeIdentity, occ.Captures
+
+/// Shape-only digest of an occurrence: the structural digest without the capture set.
+/// Occurrences equal under this key but not under the structural key form a matched
+/// pair whose capture sets are incompatible.
+let private occurrenceShapeKey (occ: LambdaOccurrence) =
+    occ.Id.ParentChain, occ.CurriedArity, occ.ParameterTypes, occ.ReturnTypeIdentity
+
+/// Classifies the difference between the capture sets of a matched occurrence pair.
+/// Pairing strategy: same-name/different-type pairs become TypeChanged, then
+/// same-type/different-name pairs become Renamed, and the leftovers are reported as
+/// plain additions/removals (the cross-occurrence scope post-pass may upgrade those).
+let private diffCaptureSets (baseline: CaptureIdentity list) (updated: CaptureIdentity list) =
+    let baselineSet = Set.ofList baseline
+    let updatedSet = Set.ofList updated
+    let removed = Set.difference baselineSet updatedSet |> Set.toList
+    let added = Set.difference updatedSet baselineSet |> Set.toList
+
+    if List.isEmpty removed && List.isEmpty added then
+        []
+    else
+        let changes = ResizeArray()
+        let mutable remainingAdded = added
+        let mutable unpaired = []
+
+        let takeAdded predicate =
+            match remainingAdded |> List.tryFind predicate with
+            | Some candidate ->
+                remainingAdded <- remainingAdded |> List.filter (fun a -> a <> candidate)
+                Some candidate
+            | None -> None
+
+        for removedCapture in removed do
+            match takeAdded (fun a -> a.LogicalName = removedCapture.LogicalName) with
+            | Some addedCapture ->
+                changes.Add(
+                    CaptureSetChange.TypeChanged(removedCapture.LogicalName, removedCapture.Type, addedCapture.Type)
+                )
+            | None -> unpaired <- removedCapture :: unpaired
+
+        for removedCapture in List.rev unpaired do
+            match takeAdded (fun a -> a.Type = removedCapture.Type) with
+            | Some addedCapture ->
+                changes.Add(
+                    CaptureSetChange.Renamed(removedCapture.LogicalName, addedCapture.LogicalName, removedCapture.Type)
+                )
+            | None -> changes.Add(CaptureSetChange.CaptureRemoved removedCapture)
+
+        for addedCapture in remainingAdded do
+            changes.Add(CaptureSetChange.CaptureAdded addedCapture)
+
+        List.ofSeq changes
+
+/// Upgrades matching CaptureAdded/CaptureRemoved entries observed on DIFFERENT occurrence
+/// pairs of the same member to ScopeChanged: the value did not stop being captured, it
+/// moved between lambda scopes (C# parity: ChangingCapturedVariableScope).
+let private classifyCaptureScopeMoves (edits: LambdaEdit list) =
+    let capturesOf selector =
+        edits
+        |> List.collect (function
+            | LambdaEdit.CaptureSetChanged (_, _, changes) -> changes |> List.choose selector
+            | _ -> [])
+        |> Set.ofList
+
+    let addedIdentities =
+        capturesOf (function
+            | CaptureSetChange.CaptureAdded c -> Some c
+            | _ -> None)
+
+    let removedIdentities =
+        capturesOf (function
+            | CaptureSetChange.CaptureRemoved c -> Some c
+            | _ -> None)
+
+    let moved = Set.intersect addedIdentities removedIdentities
+
+    if Set.isEmpty moved then
+        edits
+    else
+        edits
+        |> List.map (function
+            | LambdaEdit.CaptureSetChanged (baseline, updated, changes) ->
+                let upgraded =
+                    changes
+                    |> List.map (function
+                        | CaptureSetChange.CaptureAdded c when Set.contains c moved ->
+                            CaptureSetChange.ScopeChanged(c.LogicalName, c.Type)
+                        | CaptureSetChange.CaptureRemoved c when Set.contains c moved ->
+                            CaptureSetChange.ScopeChanged(c.LogicalName, c.Type)
+                        | other -> other)
+
+                LambdaEdit.CaptureSetChanged(baseline, updated, upgraded)
+            | other -> other)
+
+/// Aligns the baseline and updated occurrence sequences of a matched member.
+///
+/// Pass 1 runs an LCS over the full structural digests (position, shape, captures):
+/// pairs matched here are compatible and become BodyEdited when their bodies differ.
+/// Pass 2 re-aligns the leftovers on the shape-only digest: pairs matched here either
+/// survived a reordering (capture sets still equal → BodyEdited) or have incompatible
+/// capture sets (→ CaptureSetChanged). Anything still unmatched is Added/Removed.
+///
+/// Two identical occurrences that are reordered are indistinguishable by construction
+/// and therefore align positionally — this is intentional (their closures are
+/// interchangeable, so positional identity is correct).
+let private alignLambdaOccurrences (baseline: LambdaOccurrence list) (updated: LambdaOccurrence list) =
+    let olds = Array.ofList baseline
+    let news = Array.ofList updated
+
+    let pass1 =
+        lcsMatchIndexes
+            (fun i j -> occurrenceStructuralKey olds[i] = occurrenceStructuralKey news[j])
+            olds.Length
+            news.Length
+
+    let matchedOld = HashSet(pass1 |> List.map fst)
+    let matchedNew = HashSet(pass1 |> List.map snd)
+
+    let leftoverOld =
+        [| for i in 0 .. olds.Length - 1 do
+               if not (matchedOld.Contains i) then yield i |]
+
+    let leftoverNew =
+        [| for j in 0 .. news.Length - 1 do
+               if not (matchedNew.Contains j) then yield j |]
+
+    let pass2 =
+        lcsMatchIndexes
+            (fun i j -> occurrenceShapeKey olds[leftoverOld[i]] = occurrenceShapeKey news[leftoverNew[j]])
+            leftoverOld.Length
+            leftoverNew.Length
+        |> List.map (fun (i, j) -> leftoverOld[i], leftoverNew[j])
+
+    let allPairs = pass1 @ pass2
+    let pairedOld = HashSet(allPairs |> List.map fst)
+    let pairedNew = HashSet(allPairs |> List.map snd)
+
+    let pairEdits =
+        allPairs
+        |> List.choose (fun (i, j) ->
+            let baselineOcc = olds[i]
+            let updatedOcc = news[j]
+
+            match diffCaptureSets baselineOcc.Captures updatedOcc.Captures with
+            | [] when baselineOcc.BodyHash = updatedOcc.BodyHash -> None
+            | [] -> Some(LambdaEdit.BodyEdited(baselineOcc, updatedOcc))
+            | changes -> Some(LambdaEdit.CaptureSetChanged(baselineOcc, updatedOcc, changes)))
+
+    let removedEdits =
+        [ for i in 0 .. olds.Length - 1 do
+              if not (pairedOld.Contains i) then
+                  yield LambdaEdit.Removed olds[i] ]
+
+    let addedEdits =
+        [ for j in 0 .. news.Length - 1 do
+              if not (pairedNew.Contains j) then
+                  yield LambdaEdit.Added news[j] ]
+
+    let ordinalOf =
+        function
+        | LambdaEdit.BodyEdited (_, updatedOcc)
+        | LambdaEdit.CaptureSetChanged (_, updatedOcc, _)
+        | LambdaEdit.Added updatedOcc -> updatedOcc.Id.Ordinal
+        | LambdaEdit.Removed baselineOcc -> baselineOcc.Id.Ordinal
+
+    pairEdits @ removedEdits @ addedEdits
+    |> classifyCaptureScopeMoves
+    |> List.sortBy ordinalOf
+
 /// Properties needed to check if a method addition is allowed.
 /// Following Roslyn patterns for Edit and Continue restrictions.
 type private MethodAdditionInfo =
@@ -775,6 +1292,9 @@ type private BindingSnapshot =
       LambdaShapeDigest: string
       StateMachineShapeDigest: string
       QueryShapeDigest: string
+      // Structured lambda occurrence sequence (or the reason extraction was not possible,
+      // in which case lambda classification falls back to LambdaShapeDigest).
+      LambdaOccurrenceData: LambdaOccurrenceExtraction
       IsSynthesized: bool
       ContainingEntity: string option
       AdditionInfo: MethodAdditionInfo }
@@ -949,6 +1469,11 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
             parameterTypeIdentities
             returnTypeIdentity
 
+    // Structured lambda occurrence sequence for the member body (Phase C1). Members with
+    // constructs the model does not cover stay on the legacy whole-body digest path.
+    let lambdaOccurrenceData =
+        extractLambdaOccurrences g denv typarOrdinals symbol var.ValReprInfo expr
+
     // Determine addition info for hot reload restrictions
     let additionInfo =
         let isMethod = memberKind.IsSome
@@ -994,6 +1519,7 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
       LambdaShapeDigest = lambdaShapeDigest
       StateMachineShapeDigest = stateMachineShapeDigest
       QueryShapeDigest = queryShapeDigest
+      LambdaOccurrenceData = lambdaOccurrenceData
       IsSynthesized = var.IsCompilerGenerated
       ContainingEntity = containingEntity
       AdditionInfo = additionInfo }: BindingSnapshot
@@ -1066,6 +1592,52 @@ let private collectSnapshots g denv (CheckedImplFile (qualifiedNameOfFile = qual
     let initialEntities: Map<string, EntitySnapshot> = Map.empty
     snapshotModuleContents g denv initialPath (initialBindings, initialEntities) contents
 
+/// Formats a structured message for a lambda-set change, naming the counts and ordinals
+/// of the added/removed occurrences (e.g. "1 lambda added at ordinal 2").
+let private formatLambdaSetChangeMessage
+    (symbol: SymbolId)
+    (added: LambdaOccurrence list)
+    (removed: LambdaOccurrence list)
+    =
+    let describe verb (occs: LambdaOccurrence list) =
+        let ordinals = occs |> List.map (fun occ -> string occ.Id.Ordinal) |> String.concat ", "
+
+        if occs.Length = 1 then
+            $"1 lambda {verb} at ordinal {ordinals}"
+        else
+            $"{occs.Length} lambdas {verb} at ordinals {ordinals}"
+
+    let parts =
+        [ if not removed.IsEmpty then describe "removed" removed
+          if not added.IsEmpty then describe "added" added ]
+
+    $"""Lambda set changed for '{symbol.QualifiedName}': {String.concat "; " parts}."""
+
+/// Formats a structured message for capture-set incompatibilities of matched lambda
+/// occurrence pairs, using the C#-parity rude edit kind names.
+let private formatCaptureSetChangeMessage (symbol: SymbolId) (captureChanged: LambdaEdit list) =
+    let describeChange ordinal change =
+        match change with
+        | CaptureSetChange.Renamed (oldName, newName, _) ->
+            $"RenamingCapturedVariable: captured value '{oldName}' renamed to '{newName}' (lambda ordinal {ordinal})"
+        | CaptureSetChange.TypeChanged (name, _, _) ->
+            $"ChangingCapturedVariableType: captured value '{name}' changed type (lambda ordinal {ordinal})"
+        | CaptureSetChange.ScopeChanged (name, _) ->
+            $"ChangingCapturedVariableScope: captured value '{name}' moved to a different lambda scope (lambda ordinal {ordinal})"
+        | CaptureSetChange.CaptureAdded capture ->
+            $"lambda at ordinal {ordinal} captures additional value '{capture.LogicalName}' (may become a supported edit via AddInstanceFieldToExistingType)"
+        | CaptureSetChange.CaptureRemoved capture ->
+            $"lambda at ordinal {ordinal} no longer captures value '{capture.LogicalName}'"
+
+    let parts =
+        captureChanged
+        |> List.collect (function
+            | LambdaEdit.CaptureSetChanged (_, updatedOcc, changes) ->
+                changes |> List.map (describeChange updatedOcc.Id.Ordinal)
+            | _ -> [])
+
+    $"""Lambda capture set changed for '{symbol.QualifiedName}': {String.concat "; " parts}."""
+
 let private compareBindings
     (capabilities: EditAndContinueCapabilities)
     (baseline: Map<string, BindingSnapshot>)
@@ -1073,6 +1645,7 @@ let private compareBindings
     =
     let edits = ResizeArray()
     let rude = ResizeArray()
+    let memberLambdaEdits = ResizeArray()
     let matchedUpdatedKeys = HashSet()
 
     let handleEdit (snapshot: BindingSnapshot) kind baselineHash updatedHash =
@@ -1141,23 +1714,76 @@ let private compareBindings
                   Message =
                     $"State-machine lowering shape changed from '{baselineBinding.StateMachineShapeDigest}' to '{updatedBinding.StateMachineShapeDigest}'." }
             )
-        elif baselineBinding.LambdaShapeDigest <> updatedBinding.LambdaShapeDigest then
-            rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.LambdaShapeChange
-                  Message =
-                    $"Lambda lowering shape changed from '{baselineBinding.LambdaShapeDigest}' to '{updatedBinding.LambdaShapeDigest}'." }
-            )
-        elif baselineBinding.BodyHash <> updatedBinding.BodyHash then
-            if traceHotReloadMethodDiff then
-                printfn
-                    "[fsharp-hotreload][typed-diff] body change symbol=%s synthesized=%b baselineHash=%d updatedHash=%d"
-                    baselineBinding.Symbol.LogicalName
-                    baselineBinding.IsSynthesized
-                    baselineBinding.BodyHash
-                    updatedBinding.BodyHash
+        else
+            // Lambda classification (Phase C1): when occurrence extraction succeeded on both
+            // sides, align the occurrence sequences and classify per occurrence; otherwise
+            // fall back to the legacy whole-body lambda digest comparison.
+            let lambdaRudeEdit =
+                match baselineBinding.LambdaOccurrenceData, updatedBinding.LambdaOccurrenceData with
+                | LambdaOccurrenceExtraction.Extracted baselineOccs, LambdaOccurrenceExtraction.Extracted updatedOccs ->
+                    let lambdaEditList = alignLambdaOccurrences baselineOccs updatedOccs
 
-            handleEdit baselineBinding SemanticEditKind.MethodBody (Some baselineBinding.BodyHash) (Some updatedBinding.BodyHash)
+                    if not lambdaEditList.IsEmpty then
+                        memberLambdaEdits.Add
+                            { MemberSymbol = baselineBinding.Symbol
+                              Edits = lambdaEditList }
+
+                    let added =
+                        lambdaEditList
+                        |> List.choose (function
+                            | LambdaEdit.Added occ -> Some occ
+                            | _ -> None)
+
+                    let removed =
+                        lambdaEditList
+                        |> List.choose (function
+                            | LambdaEdit.Removed occ -> Some occ
+                            | _ -> None)
+
+                    let captureChanged =
+                        lambdaEditList
+                        |> List.filter (function
+                            | LambdaEdit.CaptureSetChanged _ -> true
+                            | _ -> false)
+
+                    if not added.IsEmpty || not removed.IsEmpty then
+                        Some(formatLambdaSetChangeMessage baselineBinding.Symbol added removed)
+                    elif not captureChanged.IsEmpty then
+                        Some(formatCaptureSetChangeMessage baselineBinding.Symbol captureChanged)
+                    else
+                        // Only BodyEdited occurrences (or no lambda changes at all): the
+                        // member body update covers the edit; fall through to body hashing.
+                        None
+                | _ ->
+                    // Legacy digest path: extraction was unsupported on at least one side.
+                    if baselineBinding.LambdaShapeDigest <> updatedBinding.LambdaShapeDigest then
+                        Some
+                            $"Lambda lowering shape changed from '{baselineBinding.LambdaShapeDigest}' to '{updatedBinding.LambdaShapeDigest}'."
+                    else
+                        None
+
+            match lambdaRudeEdit with
+            | Some message ->
+                rude.Add(
+                    { Symbol = Some baselineBinding.Symbol
+                      Kind = RudeEditKind.LambdaShapeChange
+                      Message = message }
+                )
+            | None ->
+                if baselineBinding.BodyHash <> updatedBinding.BodyHash then
+                    if traceHotReloadMethodDiff then
+                        printfn
+                            "[fsharp-hotreload][typed-diff] body change symbol=%s synthesized=%b baselineHash=%d updatedHash=%d"
+                            baselineBinding.Symbol.LogicalName
+                            baselineBinding.IsSynthesized
+                            baselineBinding.BodyHash
+                            updatedBinding.BodyHash
+
+                    handleEdit
+                        baselineBinding
+                        SemanticEditKind.MethodBody
+                        (Some baselineBinding.BodyHash)
+                        (Some updatedBinding.BodyHash)
 
     let addRemovedDeclarationRudeEdit (baselineBinding: BindingSnapshot) =
         match tryClassifySynthesizedLoweredShapeChurn baselineBinding with
@@ -1355,7 +1981,7 @@ let private compareBindings
         if not (matchedUpdatedKeys.Contains key) && not (Map.containsKey key baseline) then
             addAddedDeclarationOrInsertEdit updatedBinding
 
-    edits |> Seq.toList, rude |> Seq.toList
+    edits |> Seq.toList, rude |> Seq.toList, memberLambdaEdits |> Seq.toList
 
 let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Map<string, EntitySnapshot>) =
     let rude = ResizeArray()
@@ -1394,8 +2020,11 @@ let diffImplementationFile (g: TcGlobals) (capabilities: EditAndContinueCapabili
     let baselineBindings, baselineEntities = collectSnapshots g denv baseline
     let updatedBindings, updatedEntities = collectSnapshots g denv updated
 
-    let semanticEdits, bindingRudeEdits = compareBindings capabilities baselineBindings updatedBindings
+    let semanticEdits, bindingRudeEdits, lambdaEdits =
+        compareBindings capabilities baselineBindings updatedBindings
+
     let entityRudeEdits = compareEntities baselineEntities updatedEntities
 
     { SemanticEdits = semanticEdits
-      RudeEdits = bindingRudeEdits @ entityRudeEdits }
+      RudeEdits = bindingRudeEdits @ entityRudeEdits
+      LambdaEdits = lambdaEdits }

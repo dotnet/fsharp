@@ -996,3 +996,372 @@ type MyClass() =
 
         Assert.NotEmpty(result.RudeEdits)
         Assert.Empty(result.SemanticEdits)
+
+    // =========================================================================
+    // Lambda occurrence model tests (Phase C1)
+    // Structured occurrence extraction, old/new alignment, and capture
+    // compatibility classification in the typed-tree diff.
+    // =========================================================================
+
+    /// All lambda edits across all members of a diff result.
+    let private allLambdaEdits (result: TypedTreeDiffResult) =
+        result.LambdaEdits |> List.collect (fun memberEdits -> memberEdits.Edits)
+
+    [<Fact>]
+    let ``body edit inside lambda still produces method body edit`` () =
+        // Regression pin: a pure body edit within an unchanged lambda set must remain an
+        // ordinary MethodBody edit, now carrying a structured BodyEdited occurrence pair.
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let evaluate () =
+    let transform = fun x -> x + 1
+    transform 41
+"""
+        let updated_source = """
+module Library
+let evaluate () =
+    let transform = fun x -> x + 2
+    transform 41
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        Assert.Single(result.SemanticEdits) |> ignore
+        Assert.Equal(SemanticEditKind.MethodBody, result.SemanticEdits[0].Kind)
+
+        let lambdaEdit = Assert.Single(allLambdaEdits result)
+
+        match lambdaEdit with
+        | LambdaEdit.BodyEdited (baselineOcc, updatedOcc) ->
+            Assert.Equal(0, baselineOcc.Id.Ordinal)
+            Assert.Equal(0, updatedOcc.Id.Ordinal)
+            Assert.Equal(baselineOcc.CurriedArity, updatedOcc.CurriedArity)
+        | other -> failwithf "Expected BodyEdited, got %A" other
+
+    [<Fact>]
+    let ``adding a lambda produces structured rude edit naming the added ordinal`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let evaluate () =
+    let double = fun x -> x * 2
+    double 21
+"""
+        let updated_source = """
+module Library
+let evaluate () =
+    let double = fun x -> x * 2
+    let offset = fun x -> x + 1
+    double 21 + offset 0
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.LambdaShapeChange, rudeEdit.Kind)
+        Assert.Contains("1 lambda added at ordinal 1", rudeEdit.Message)
+
+        // The structured payload names the added occurrence; the surviving occurrence is
+        // aligned, not reported as removed+added.
+        let addedEdit = Assert.Single(allLambdaEdits result)
+
+        match addedEdit with
+        | LambdaEdit.Added updatedOcc ->
+            Assert.Equal(1, updatedOcc.Id.Ordinal)
+            Assert.Empty(updatedOcc.Id.ParentChain)
+        | other -> failwithf "Expected Added, got %A" other
+
+    [<Fact>]
+    let ``removing a lambda produces structured rude edit naming the removed ordinal`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let evaluate () =
+    let double = fun x -> x * 2
+    let offset = fun x -> x + 1
+    double 21 + offset 0
+"""
+        let updated_source = """
+module Library
+let evaluate () =
+    let double = fun x -> x * 2
+    double 21
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.LambdaShapeChange, rudeEdit.Kind)
+        Assert.Contains("1 lambda removed at ordinal 1", rudeEdit.Message)
+
+        let removedEdit = Assert.Single(allLambdaEdits result)
+
+        match removedEdit with
+        | LambdaEdit.Removed baselineOcc -> Assert.Equal(1, baselineOcc.Id.Ordinal)
+        | other -> failwithf "Expected Removed, got %A" other
+
+    [<Fact>]
+    let ``reordering distinguishable lambdas aligns occurrences without rude edit`` () =
+        // Reordering does not change the lambda set: the LCS alignment matches the
+        // surviving occurrences instead of reporting a spurious removed+added pair.
+        // (Two IDENTICAL occurrences that are reordered align positionally by construction;
+        // that is intentional, since indistinguishable closures are interchangeable.)
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let evaluate (flag: bool) =
+    let single = fun x -> x + 1
+    let curried = fun x y -> x + y
+    if flag then single 1 else curried 1 2
+"""
+        let updated_source = """
+module Library
+let evaluate (flag: bool) =
+    let curried = fun x y -> x + y
+    let single = fun x -> x + 1
+    if flag then single 1 else curried 1 2
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        // No rude edit: the lambda set is unchanged. (Any body-level edit would surface as
+        // an ordinary MethodBody edit; the whole-body hash treats adjacent independent lets
+        // as order-insensitive, so a pure swap may produce no semantic edit at all.)
+        Assert.Empty(result.RudeEdits)
+
+        for edit in result.SemanticEdits do
+            Assert.Equal(SemanticEditKind.MethodBody, edit.Kind)
+
+        // Both occurrences survive the reordering: nothing may be classified added/removed.
+        let edits = allLambdaEdits result
+
+        Assert.DoesNotContain(
+            edits,
+            fun edit ->
+                match edit with
+                | LambdaEdit.Added _
+                | LambdaEdit.Removed _ -> true
+                | _ -> false
+        )
+
+    [<Fact>]
+    let ``nested lambda addition keeps outer occurrence matched`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let evaluate () =
+    let outer = fun x -> x + 1
+    outer 1
+"""
+        let updated_source = """
+module Library
+let evaluate () =
+    let outer = fun x ->
+        let inner = fun y -> y + x
+        inner x + 1
+    outer 1
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.LambdaShapeChange, rudeEdit.Kind)
+        Assert.Contains("1 lambda added at ordinal 1", rudeEdit.Message)
+
+        let edits = allLambdaEdits result
+
+        // The outer occurrence is matched (its body changed), never removed.
+        Assert.DoesNotContain(
+            edits,
+            fun edit ->
+                match edit with
+                | LambdaEdit.Removed _ -> true
+                | _ -> false
+        )
+
+        // The inner occurrence is Added with the outer occurrence in its parent chain.
+        let added =
+            edits
+            |> List.pick (function
+                | LambdaEdit.Added occ -> Some occ
+                | _ -> None)
+
+        Assert.Equal(1, added.Id.Ordinal)
+        Assert.Equal<int list>([ 0 ], added.Id.ParentChain)
+
+    [<Fact>]
+    let ``capture rename produces capture-set rude edit`` () =
+        // C# parity: RenamingCapturedVariable is a permanent rude edit.
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let evaluate () =
+    let seed = 10
+    let transform = fun x -> x + seed
+    transform 1
+"""
+        let updated_source = """
+module Library
+let evaluate () =
+    let start = 10
+    let transform = fun x -> x + start
+    transform 1
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.LambdaShapeChange, rudeEdit.Kind)
+        Assert.Contains("RenamingCapturedVariable", rudeEdit.Message)
+        Assert.Contains("'seed'", rudeEdit.Message)
+        Assert.Contains("'start'", rudeEdit.Message)
+
+        let lambdaEdit = Assert.Single(allLambdaEdits result)
+
+        match lambdaEdit with
+        | LambdaEdit.CaptureSetChanged (_, _, changes) ->
+            let change = Assert.Single(changes)
+
+            match change with
+            | CaptureSetChange.Renamed (oldName, newName, _) ->
+                Assert.Equal("seed", oldName)
+                Assert.Equal("start", newName)
+            | other -> failwithf "Expected Renamed, got %A" other
+        | other -> failwithf "Expected CaptureSetChanged, got %A" other
+
+    [<Fact>]
+    let ``capture type change produces capture-set rude edit`` () =
+        // C# parity: ChangingCapturedVariableType is a permanent rude edit.
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let evaluate () =
+    let seed = 10
+    let transform = fun (x: int) -> x + seed
+    transform 1
+"""
+        let updated_source = """
+module Library
+let evaluate () =
+    let seed = 10L
+    let transform = fun (x: int) -> x + int seed
+    transform 1
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.LambdaShapeChange, rudeEdit.Kind)
+        Assert.Contains("ChangingCapturedVariableType", rudeEdit.Message)
+        Assert.Contains("'seed'", rudeEdit.Message)
+
+        let lambdaEdit = Assert.Single(allLambdaEdits result)
+
+        match lambdaEdit with
+        | LambdaEdit.CaptureSetChanged (_, _, changes) ->
+            let change = Assert.Single(changes)
+
+            match change with
+            | CaptureSetChange.TypeChanged (name, _, _) -> Assert.Equal("seed", name)
+            | other -> failwithf "Expected TypeChanged, got %A" other
+        | other -> failwithf "Expected CaptureSetChanged, got %A" other
+
+    [<Fact>]
+    let ``capturing an additional value produces capture-set rude edit`` () =
+        // Additive captures are rude today; the message records that Phase C4 may allow
+        // them via the AddInstanceFieldToExistingType capability (Roslyn emits a new
+        // closure field for them).
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let evaluate () =
+    let first = 1
+    let transform = fun x -> x + first
+    transform 1
+"""
+        let updated_source = """
+module Library
+let evaluate () =
+    let first = 1
+    let second = 2
+    let transform = fun x -> x + first + second
+    transform 1
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.LambdaShapeChange, rudeEdit.Kind)
+        Assert.Contains("'second'", rudeEdit.Message)
+        Assert.Contains("AddInstanceFieldToExistingType", rudeEdit.Message)
+
+        let lambdaEdit = Assert.Single(allLambdaEdits result)
+
+        match lambdaEdit with
+        | LambdaEdit.CaptureSetChanged (_, _, changes) ->
+            let change = Assert.Single(changes)
+
+            match change with
+            | CaptureSetChange.CaptureAdded capture -> Assert.Equal("second", capture.LogicalName)
+            | other -> failwithf "Expected CaptureAdded, got %A" other
+        | other -> failwithf "Expected CaptureSetChanged, got %A" other
+
+    [<Fact>]
+    let ``lambda inside added function stays an insert edit`` () =
+        // Lambdas inside newly added members are part of the Insert edit, not lambda edits
+        // on existing members.
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let existing () = 1
+"""
+        let updated_source = """
+module Library
+let existing () = 1
+let added (values: int list) = values |> List.map (fun v -> v + 1)
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits)
+        Assert.Equal(SemanticEditKind.Insert, edit.Kind)
+        Assert.Empty(allLambdaEdits result)

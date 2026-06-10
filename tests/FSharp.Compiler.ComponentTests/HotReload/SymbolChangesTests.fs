@@ -22,7 +22,8 @@ module SymbolChangesTests =
 
     let private diff edits rude =
         { TypedTreeDiffResult.SemanticEdits = edits
-          RudeEdits = rude }
+          RudeEdits = rude
+          LambdaEdits = [] }
 
     [<Fact>]
     let ``synthesized updates are partitioned separately`` () =
