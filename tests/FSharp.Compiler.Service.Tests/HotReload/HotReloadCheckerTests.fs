@@ -2129,3 +2129,66 @@ module Shapes =
 
         checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()
+
+    let private moduleValueAddBaseline =
+        """
+module Sample.Library
+
+let existing () = 1
+"""
+
+    let private moduleValueAddUpdated =
+        """
+module Sample.Library
+
+let existing () = 1
+let mutable newCounter = 0
+"""
+
+    [<Fact>]
+    let ``EmitHotReloadDelta cleanly rejects module value addition pending field emission`` () =
+        // Phase B1a allows the CLASSIFICATION of module-level value additions when the runtime
+        // advertises the static-field and method capabilities, but field-row EMISSION is Phase
+        // B1b. Until it lands, the emitter must reject the edit through the error channel —
+        // never produce a delta with accessor methods referencing a field row it cannot emit.
+        // This test is the executable cut line: B1b flips it to expect a successful delta.
+        let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-module-value-add", Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(projectDir) |> ignore
+
+        let fsPath = Path.Combine(projectDir, "Library.fs")
+        let dllPath = Path.Combine(projectDir, "Library.dll")
+
+        File.WriteAllText(fsPath, moduleValueAddBaseline)
+
+        let checker = createChecker ()
+        let projectOptions = prepareProjectOptions checker fsPath dllPath moduleValueAddBaseline
+
+        checker.InvalidateAll()
+        compileProject checker projectOptions true
+
+        let fullCapabilities =
+            [ "Baseline"
+              "AddMethodToExistingType"
+              "AddStaticFieldToExistingType"
+              "AddInstanceFieldToExistingType" ]
+
+        match checker.StartHotReloadSession(projectOptions, capabilities = fullCapabilities) |> Async.RunImmediate with
+        | Error error -> failwithf "Failed to start session: %A" error
+        | Ok () -> ()
+
+        File.WriteAllText(fsPath, moduleValueAddUpdated)
+        checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+        compileProject checker projectOptions false
+
+        let emitResult = checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate
+
+        match emitResult with
+        | Ok _ ->
+            failwith
+                "Module value addition emitted a delta, but Phase B1b field emission has not landed; if field emission now works, update this test to validate the delta instead."
+        | Error (FSharpHotReloadError.UnsupportedEdit _)
+        | Error (FSharpHotReloadError.DeltaEmissionFailed _) -> ()
+        | Error other -> failwithf "Expected a clean emission rejection, got: %A" other
+
+        checker.EndHotReloadSession()
+        try Directory.Delete(projectDir, true) with _ -> ()

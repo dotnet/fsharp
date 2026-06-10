@@ -726,7 +726,7 @@ type MyClass() =
         )
 
     [<Fact>]
-    let ``adding module-level value produces rude edit`` () =
+    let ``adding module-level value with capabilities produces insert edit`` () =
         use harness = new DiffTestHarness()
         let baseline_source = """
 module Library
@@ -744,9 +744,12 @@ let newValue = 42
 
         let result = harness.DiffWith allCapabilities baseline updated
 
-        // Adding a module-level value should still produce a rude edit
-        Assert.NotEmpty(result.RudeEdits)
-        Assert.Equal(RudeEditKind.DeclarationAdded, result.RudeEdits[0].Kind)
+        // Module-level values lower to static field + accessor on the module type; with the
+        // static-field and method capabilities the addition is an Insert edit (the
+        // capability-less rejection is covered by the dedicated gating tests below).
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits |> List.filter (fun e -> e.Symbol.LogicalName = "newValue"))
+        Assert.Equal(SemanticEditKind.Insert, edit.Kind)
 
     // =========================================================================
     // Property Addition Tests
@@ -845,3 +848,151 @@ type MyClass() =
         Assert.NotEmpty(result.RudeEdits)
         let hasLayoutChange = result.RudeEdits |> List.exists (fun e -> e.Kind = RudeEditKind.TypeLayoutChange)
         Assert.True(hasLayoutChange, "Expected TypeLayoutChange rude edit for event backing field")
+
+    [<Fact>]
+    let ``adding mutable module value with field and method capabilities produces insert edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let existing () = 1
+"""
+        let updated_source = """
+module Library
+let existing () = 1
+let mutable newCounter = 0
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits |> List.filter (fun e -> e.Symbol.LogicalName = "newCounter"))
+        Assert.Equal(SemanticEditKind.Insert, edit.Kind)
+
+    [<Fact>]
+    let ``adding mutable module value without static field capability names the missing capability`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let existing () = 1
+"""
+        let updated_source = """
+module Library
+let existing () = 1
+let mutable newCounter = 0
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // Method additions allowed, static fields not: the value addition must report the
+        // field capability as the missing one.
+        let methodOnly = EditAndContinueCapabilities.Parse [ "Baseline"; "AddMethodToExistingType" ]
+        let result = harness.DiffWith methodOnly baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("AddStaticFieldToExistingType", rudeEdit.Message)
+
+    [<Fact>]
+    let ``adding immutable module value with capabilities produces insert edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let existing () = 1
+"""
+        let updated_source = """
+module Library
+let existing () = 1
+let newValue = System.DateTime.Now.Ticks
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits |> List.filter (fun e -> e.Symbol.LogicalName = "newValue"))
+        Assert.Equal(SemanticEditKind.Insert, edit.Kind)
+
+    [<Fact>]
+    let ``adding module function requires only the method capability`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let existing () = 1
+"""
+        let updated_source = """
+module Library
+let existing () = 1
+let newFunction (x: int) = x + 1
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // Module functions lower to static methods: AddMethodToExistingType alone suffices.
+        let methodOnly = EditAndContinueCapabilities.Parse [ "Baseline"; "AddMethodToExistingType" ]
+        let result = harness.DiffWith methodOnly baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits |> List.filter (fun e -> e.Symbol.LogicalName = "newFunction"))
+        Assert.Equal(SemanticEditKind.Insert, edit.Kind)
+
+    [<Fact>]
+    let ``adding module function without method capability produces NotSupportedByRuntime`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let existing () = 1
+"""
+        let updated_source = """
+module Library
+let existing () = 1
+let newFunction (x: int) = x + 1
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("AddMethodToExistingType", rudeEdit.Message)
+
+    [<Fact>]
+    let ``adding instance field stays rude even with all capabilities`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type MyClass() =
+    member this.Existing() = 1
+"""
+        let updated_source = """
+module Library
+type MyClass() =
+    [<DefaultValue>] val mutable NewField: int
+    member this.Existing() = 1
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // Instance-field emission is Phase B2: must stay rude regardless of capabilities so we
+        // never advertise an edit we cannot emit.
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        Assert.NotEmpty(result.RudeEdits)
+        Assert.Empty(result.SemanticEdits)

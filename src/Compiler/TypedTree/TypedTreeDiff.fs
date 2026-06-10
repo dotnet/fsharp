@@ -752,7 +752,8 @@ type private MethodAdditionInfo =
       IsConstructor: bool               // .ctor or .cctor
       IsOperator: bool                  // User-defined operator
       IsInInterface: bool               // Member of an interface type
-      IsField: bool }                   // Field (not a method)
+      IsField: bool                     // Field (not a method)
+      IsModuleBinding: bool }           // Bound at module scope (lowers to static members of the module type)
 
     static member Default =
         { IsMethod = false
@@ -762,7 +763,8 @@ type private MethodAdditionInfo =
           IsConstructor = false
           IsOperator = false
           IsInInterface = false
-          IsField = false }
+          IsField = false
+          IsModuleBinding = false }
 
 type private BindingSnapshot =
     { Symbol: SymbolId
@@ -981,7 +983,8 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
           IsConstructor = isConstructor
           IsOperator = isOperator
           IsInInterface = isInInterface
-          IsField = isField }
+          IsField = isField
+          IsModuleBinding = var.IsModuleBinding }
 
     { Symbol = symbol
       InlineInfo = var.InlineInfo
@@ -1191,17 +1194,44 @@ let private compareBindings
             )
         | None ->
             let info = updatedBinding.AdditionInfo
+
+            // Module-level values lower to a static field on the module type plus accessor
+            // methods (get_/set_), with initialization appended to the startup-code class
+            // constructor. Applying one therefore needs BOTH the static-field and the method
+            // runtime capabilities (Roslyn parity: a C# static field with initializer needs
+            // AddStaticFieldToExistingType, and our accessors additionally need
+            // AddMethodToExistingType).
+            let addModuleValueInsertOrRude () =
+                let requiredCapabilities =
+                    [ capabilityForAddition AdditionKind.StaticField
+                      capabilityForAddition AdditionKind.Method ]
+
+                match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
+                | None -> handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
+                | Some missing ->
+                    rude.Add(
+                        { Symbol = Some updatedBinding.Symbol
+                          Kind = RudeEditKind.NotSupportedByRuntime
+                          Message =
+                            FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
+                                updatedBinding.Symbol.QualifiedName,
+                                missing.Name
+                            ) }
+                    )
+
             // Check restrictions following Roslyn patterns
             if info.IsField then
-                // Phase A does not implement field-row emission, so field additions stay rude even
-                // when the runtime advertises AddInstance/StaticFieldToExistingType. Phase B flips
-                // this branch to consult `capabilityForAddition AdditionKind.InstanceField/StaticField`
-                // exactly like the method path below once emission exists.
-                rude.Add(
-                    { Symbol = Some updatedBinding.Symbol
-                      Kind = RudeEditKind.FieldAdded
-                      Message = "Adding fields is not supported. Fields change type layout." }
-                )
+                if info.IsModuleBinding then
+                    // Mutable module-level value: static field + get_/set_ accessors.
+                    addModuleValueInsertOrRude ()
+                else
+                    // Instance fields (class let-bounds / val mutable) are Phase B2: emission is
+                    // not implemented yet, so they stay rude regardless of runtime capabilities.
+                    rude.Add(
+                        { Symbol = Some updatedBinding.Symbol
+                          Kind = RudeEditKind.FieldAdded
+                          Message = "Adding fields is not supported. Fields change type layout." }
+                    )
             elif info.IsExplicitInterfaceImplementation then
                 rude.Add(
                     { Symbol = Some updatedBinding.Symbol
@@ -1256,12 +1286,36 @@ let private compareBindings
                                 requiredCapability.Name
                             ) }
                     )
+            elif info.IsModuleBinding then
+                match updatedBinding.Symbol.TotalArgCount with
+                | Some argCount when argCount > 0 ->
+                    // Module-level functions lower to plain static methods on the module type —
+                    // the same edit shape as adding a type member, gated the same way.
+                    let requiredCapability = capabilityForAddition AdditionKind.Method
+
+                    if capabilities.Supports requiredCapability then
+                        handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
+                    else
+                        rude.Add(
+                            { Symbol = Some updatedBinding.Symbol
+                              Kind = RudeEditKind.NotSupportedByRuntime
+                              Message =
+                                FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
+                                    updatedBinding.Symbol.QualifiedName,
+                                    requiredCapability.Name
+                                ) }
+                        )
+                | _ ->
+                    // Immutable module-level value: static field (+ getter) initialized from the
+                    // startup-code class constructor — same capability pair as the mutable case.
+                    addModuleValueInsertOrRude ()
             else
-                // Other additions (module-level values) are still rude edits for now
+                // Additions that are neither members, fields, nor module bindings (e.g. local
+                // bindings surfaced at this level) remain unsupported.
                 rude.Add(
                     { Symbol = Some updatedBinding.Symbol
                       Kind = RudeEditKind.DeclarationAdded
-                      Message = "Adding module-level values is not supported." }
+                      Message = "Adding this kind of declaration is not supported." }
                 )
 
     let hasSameBindingIdentity (baselineBinding: BindingSnapshot) (updatedBinding: BindingSnapshot) =
