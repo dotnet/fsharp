@@ -2895,11 +2895,14 @@ and OptimizeLinearExpr cenv env expr contf =
       let e1R, e1info = OptimizeExpr cenv env e1 
 
       OptimizeLinearExpr cenv env e2 (contf << (fun (e2R, e2info) -> 
-        if (flag = NormalSeq) && 
-           // Always eliminate '(); expr' sequences, even in debug code, to ensure that 
-           // conditional method calls don't leave a dangling breakpoint (see FSharp 1.0 bug 6034)
-           (cenv.settings.EliminateSequential || (match stripDebugPoints e1R with Expr.Const (Const.Unit, _, _) -> true | _ -> false)) && 
-           not e1info.HasEffect then 
+        if (flag = NormalSeq) &&
+           // Drop bare (compiler-generated) units always; keep a debug-pointed unit in debug code so
+           // it stays steppable (a unit without one must go, else a dangling breakpoint - FSharp 1.0 bug 6034).
+           (cenv.settings.EliminateSequential ||
+            (match e1R with
+             | Expr.DebugPoint(DebugPointAtLeafExpr.Yes _, _) -> false
+             | _ -> match stripDebugPoints e1R with Expr.Const (Const.Unit, _, _) -> true | _ -> false)) &&
+           not e1info.HasEffect then
             e2R, e2info
         else 
             Expr.Sequential (e1R, e2R, flag, m), 
