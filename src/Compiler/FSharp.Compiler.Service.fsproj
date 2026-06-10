@@ -453,6 +453,9 @@
     <Compile Include="CodeGen\EraseUnions.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
     <Compile Include="CodeGen\IlxGen.fs" />
+    <Compile Include="AbstractIL\ILBaselineReader.fs" />
+    <Compile Include="CodeGen\HotReloadBaseline.fs" />
+    <Compile Include="CodeGen\HotReloadPdb.fs" />
     <Compile Include="Driver\FxResolver.fsi" />
     <Compile Include="Driver\FxResolver.fs" />
     <Compile Include="DependencyManager/AssemblyResolveHandler.fsi">

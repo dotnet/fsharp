@@ -163,9 +163,30 @@ type HashAlgorithm =
     | Sha1
     | Sha256
 
-// Document checksum algorithms
+// ============================================================================
+// Well-known PDB GUIDs
+// ============================================================================
+// These GUIDs are used for Portable PDB metadata and are shared between
+// the main compiler PDB writer and hot reload delta PDB emission.
+
+/// Document checksum algorithm: SHA-1 (Portable PDB spec)
 let guidSha1 = Guid("ff1816ec-aa5e-4d10-87f7-6f4963833460")
+
+/// Document checksum algorithm: SHA-256 (Portable PDB spec)
 let guidSha2 = Guid("8829d00f-11b8-4213-878b-770e8597ac16")
+
+/// F# language GUID for Portable PDB Document.Language field
+let corSymLanguageTypeFSharp =
+    Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
+
+/// Embedded source custom debug information GUID
+let embeddedSourceGuid =
+    Guid(0x0e8a571bu, 0x6926us, 0x466eus, 0xb4uy, 0xaduy, 0x8auy, 0xb0uy, 0x46uy, 0x11uy, 0xf5uy, 0xfeuy)
+
+/// Source link custom debug information GUID
+let sourceLinkGuid =
+    Guid(0xcc110556u, 0xa091us, 0x4d38us, 0x9fuy, 0xecuy, 0x25uy, 0xabuy, 0x9auy, 0x35uy, 0x1auy, 0x6auy)
+
 
 let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
     try
@@ -369,14 +390,10 @@ type PortablePdbGenerator
 
         metadata.GetOrAddBlob writer
 
-    let corSymLanguageTypeId =
-        Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
-
-    let embeddedSourceId =
-        Guid(0x0e8a571bu, 0x6926us, 0x466eus, 0xb4uy, 0xaduy, 0x8auy, 0xb0uy, 0x46uy, 0x11uy, 0xf5uy, 0xfeuy)
-
-    let sourceLinkId =
-        Guid(0xcc110556u, 0xa091us, 0x4d38us, 0x9fuy, 0xecuy, 0x25uy, 0xabuy, 0x9auy, 0x35uy, 0x1auy, 0x6auy)
+    // Use module-level GUIDs (shared with hot reload PDB delta emission)
+    let corSymLanguageTypeId = corSymLanguageTypeFSharp
+    let embeddedSourceId = embeddedSourceGuid
+    let sourceLinkId = sourceLinkGuid
 
     /// <summary>
     /// The maximum number of bytes in to write out uncompressed.
