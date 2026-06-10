@@ -99,7 +99,7 @@
         IL_0041:  ldloc.2
         IL_0042:  stloc.s    V_4
         IL_0044:  ldloc.s    V_4
-        IL_0046:  newobj     instance void assembly/assembly/'f3@10-1'::.ctor(int32)
+        IL_0046:  newobj     instance void assembly/assembly/f3@10::.ctor(int32)
         IL_004b:  tail.
         IL_004d:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_0052:  ret
@@ -107,7 +107,7 @@
 
     } 
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@10-1'
+    .class auto ansi serializable sealed nested assembly beforefieldinit f3@10
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public int32 'value'
@@ -124,7 +124,7 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      int32 assembly/assembly/'f3@10-1'::'value'
+        IL_0008:  stfld      int32 assembly/assembly/f3@10::'value'
         IL_000d:  ret
       } 
 
@@ -134,7 +134,7 @@
         .maxstack  8
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
-        IL_0002:  ldfld      int32 assembly/assembly/'f3@10-1'::'value'
+        IL_0002:  ldfld      int32 assembly/assembly/f3@10::'value'
         IL_0007:  tail.
         IL_0009:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::Success(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!0>,
                                                                                                                                                                        !0)
