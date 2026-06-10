@@ -416,13 +416,10 @@ function TestUsingXUnitConsole([string] $testProject, [string] $targetFramework)
         throw "Test assembly not found at $assemblyPath. Was $projectName built before -testIntegration was invoked?"
     }
 
-    $runnerVersion = (Select-Xml -Path "$RepoRoot\eng\Versions.props" -XPath "//XunitRunnerConsoleV2Version").Node.InnerText
-    if ([string]::IsNullOrWhiteSpace($runnerVersion)) {
-        throw "XunitRunnerConsoleV2Version is not defined in eng\Versions.props."
-    }
-
-    $nugetRoot = GetNuGetPackageCachePath
-    $xunitConsole = Join-Path $nugetRoot "xunit.runner.console\$runnerVersion\tools\net472\xunit.console.exe"
+    # Get-PackageVersion (eng\build-utils.ps1) reads <XunitRunnerConsoleV2Version> from eng\Versions.props,
+    # and Get-PackageDir resolves the NuGet cache path. Defensive Trim() covers accidental whitespace in the value.
+    $runnerVersion = (Get-PackageVersion "XunitRunnerConsoleV2").Trim()
+    $xunitConsole = Join-Path (Get-PackageDir "xunit.runner.console" $runnerVersion) "tools\net472\xunit.console.exe"
     if (-not (Test-Path $xunitConsole)) {
         throw "xunit.console.exe not found at $xunitConsole. Ensure restore of $projectName ran first (PackageDownload of xunit.runner.console v$runnerVersion)."
     }
