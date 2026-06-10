@@ -225,6 +225,54 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
+
+/// Artifacts captured from a single baseline emit pass.
+///
+/// These bytes/maps are reused to start or refresh a hot reload baseline without
+/// running a second IL writer pass that could diverge from what hit disk.
+type CompilerEmitArtifacts =
+    { IlxMainModule: ILModuleDef
+      TokenMappings: FSharp.Compiler.AbstractIL.ILBinaryWriter.ILTokenMappings
+      AssemblyBytes: byte[]
+      PortablePdbBytes: byte[] option
+      IlxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot
+      OptimizedImpls: TypedTree.CheckedAssemblyAfterOptimization }
+
+/// Adapter interface that lets the core emit pipeline remain unaware of hot reload
+/// implementation details while still offering extension points for capture/fallback flows.
+type ICompilerEmitHook =
+    abstract ValidateConfiguration:
+        emitCaptureArtifacts: bool * debugInfo: bool * localOptimizationsEnabled: bool -> unit
+
+    abstract PrepareForCodeGeneration:
+        emitCaptureArtifacts: bool * compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
+
+    abstract BeforeFileEmit:
+        emitCaptureArtifacts: bool * compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
+
+    /// Attempts to perform the final emit phase and capture baseline artifacts in one pass.
+    /// Returns true when the hook handled emission; false means caller must use normal emit.
+    abstract TryEmitWithArtifacts:
+        emitCaptureArtifacts: bool *
+        compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState *
+        ilWriteOptions: FSharp.Compiler.AbstractIL.ILBinaryWriter.options *
+        ilxMainModule: ILModuleDef *
+        normalizeAssemblyRefs: (ILAssemblyRef -> ILAssemblyRef) *
+        optimizedImpls: TypedTree.CheckedAssemblyAfterOptimization *
+        ilxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot *
+        outputFile: string *
+        pdbfile: string option -> bool
+
+    /// Captures baseline artifacts after emission when emit happened outside TryEmitWithArtifacts.
+    abstract CaptureArtifacts:
+        compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState * artifacts: CompilerEmitArtifacts -> unit
+
+    /// Resets hook-owned state when the compiler falls back to dynamic assembly emission.
+    abstract FallbackEmit:
+        compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
+
+val defaultCompilerEmitHook: ICompilerEmitHook
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -469,6 +517,8 @@ type TcConfigBuilder =
         isInvalidationSupported: bool
 
         mutable emitDebugInfoInQuotations: bool
+        mutable emitCaptureArtifacts: bool
+        mutable compilerEmitHook: ICompilerEmitHook option
 
         mutable strictIndentation: bool option
 
@@ -840,6 +890,8 @@ type TcConfig =
     member legacyReferenceResolver: LegacyReferenceResolver
 
     member emitDebugInfoInQuotations: bool
+    member emitCaptureArtifacts: bool
+    member compilerEmitHook: ICompilerEmitHook option
 
     member langVersion: LanguageVersion
 

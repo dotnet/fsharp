@@ -13,6 +13,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerEmitHookBootstrap
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
@@ -1286,6 +1287,23 @@ let advancedFlagsBoth tcConfigB =
             OptionUnit(fun () -> tcConfigB.useSimpleResolution <- true),
             None,
             Some(FSComp.SR.optsSimpleresolution ())
+        )
+
+        CompilerOption(
+            "enable",
+            tagString,
+            OptionString(fun arg ->
+                match arg.ToLowerInvariant() with
+                | "hotreloaddeltas" ->
+                    tcConfigB.emitCaptureArtifacts <- true
+                    configureHotReloadEmitHook tcConfigB
+                | "hotreloadhook" ->
+                    // Hook-only mode keeps synthesized-name replay active for hot reload sessions
+                    // without enabling baseline-capture emission for the current compilation.
+                    configureHotReloadEmitHook tcConfigB
+                | _ -> error (Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch arg, rangeCmdArgs))),
+            None,
+            Some "Enable experimental compiler features."
         )
 
         CompilerOption("targetprofile", tagString, OptionString(SetTargetProfile tcConfigB), None, Some(FSComp.SR.optsTargetProfile ()))

@@ -32,6 +32,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerEmitHookBootstrap
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
@@ -950,11 +951,18 @@ let main4
     if tcConfig.standalone && generatedCcu.UsesFSharp20PlusQuotations then
         error (Error(FSComp.SR.fscQuotationLiteralsStaticLinking0 (), rangeStartup))
 
+    let compilerEmitHook = resolveCompilerEmitHookForCompile tcConfig
+    compilerEmitHook.ValidateConfiguration(tcConfig.emitCaptureArtifacts, tcConfig.debuginfo, tcConfig.optSettings.LocalOptimizationsEnabled)
+
     // Compute a static linker, it gets called later.
     let staticLinker = StaticLink(ctok, tcConfig, tcImports, tcGlobals)
 
     ReportTime tcConfig "TAST -> IL"
     use _ = UseBuildPhase BuildPhase.IlxGen
+
+    let compilerGlobalState = tcGlobals.CompilerGlobalState.Value
+
+    compilerEmitHook.PrepareForCodeGeneration(tcConfig.emitCaptureArtifacts, compilerGlobalState)
 
     // Create the Abstract IL generator
     let ilxGenerator =
@@ -1019,9 +1027,11 @@ let main4
         tcGlobals,
         diagnosticsLogger,
         staticLinker,
+        optimizedImpls,
         outfile,
         pdbfile,
         ilxMainModule,
+        codegenResults.ilxGenEnvSnapshot,
         signingInfo,
         exiter,
         ilSourceDocs,
@@ -1037,9 +1047,11 @@ let main5
           tcGlobals,
           diagnosticsLogger: DiagnosticsLogger,
           staticLinker,
+          optimizedImpls,
           outfile,
           pdbfile,
           ilxMainModule,
+          ilxGenEnvSnapshot,
           signingInfo,
           exiter: Exiter,
           ilSourceDocs,
@@ -1065,7 +1077,9 @@ let main5
         tcImports,
         tcGlobals,
         diagnosticsLogger,
+        optimizedImpls,
         ilxMainModule,
+        ilxGenEnvSnapshot,
         outfile,
         pdbfile,
         signingInfo,
@@ -1083,7 +1097,9 @@ let main6
           tcImports: TcImports,
           tcGlobals: TcGlobals,
           diagnosticsLogger: DiagnosticsLogger,
+          optimizedImpls,
           ilxMainModule,
+          ilxGenEnvSnapshot,
           outfile,
           pdbfile,
           signingInfo,
@@ -1112,8 +1128,12 @@ let main6
             | _ -> aref
         | None -> aref
 
+    let compilerEmitHook = resolveCompilerEmitHookForCompile tcConfig
+
     match dynamicAssemblyCreator with
     | None ->
+        compilerEmitHook.BeforeFileEmit(tcConfig.emitCaptureArtifacts, tcGlobals.CompilerGlobalState.Value)
+
         try
             match tcConfig.emitMetadataAssembly with
             | MetadataAssemblyGeneration.None -> ()
@@ -1160,7 +1180,7 @@ let main6
             | MetadataAssemblyGeneration.ReferenceOnly -> ()
             | _ ->
                 try
-                    ILBinaryWriter.WriteILBinaryFile(
+                    let ilWriteOptions: ILBinaryWriter.options =
                         {
                             ilg = tcGlobals.ilg
                             outfile = outfile
@@ -1180,16 +1200,33 @@ let main6
                             referenceAssemblyAttribOpt = None
                             referenceAssemblySignatureHash = None
                             pathMap = tcConfig.pathMap
-                        },
-                        ilxMainModule,
-                        normalizeAssemblyRefs
-                    )
+                        }
+
+                    // Give the emit hook first chance to perform a single-pass emit+capture flow.
+                    // If it declines, preserve the upstream file-emission path unchanged.
+                    let emittedByHook =
+                        compilerEmitHook.TryEmitWithArtifacts(
+                            tcConfig.emitCaptureArtifacts,
+                            tcGlobals.CompilerGlobalState.Value,
+                            ilWriteOptions,
+                            ilxMainModule,
+                            normalizeAssemblyRefs,
+                            optimizedImpls,
+                            ilxGenEnvSnapshot,
+                            outfile,
+                            pdbfile
+                        )
+
+                    if not emittedByHook then
+                        ILBinaryWriter.WriteILBinaryFile(ilWriteOptions, ilxMainModule, normalizeAssemblyRefs)
                 with Failure msg ->
                     error (Error(FSComp.SR.fscProblemWritingBinary (outfile, msg), rangeCmdArgs))
         with e ->
             errorRecoveryNoRange e
             exiter.Exit 1
-    | Some da -> da (tcConfig, tcGlobals, outfile, ilxMainModule)
+    | Some da ->
+        compilerEmitHook.FallbackEmit(tcGlobals.CompilerGlobalState.Value)
+        da (tcConfig, tcGlobals, outfile, ilxMainModule)
 
     AbortOnError(diagnosticsLogger, exiter)
 
