@@ -1,7 +1,9 @@
 # F# Hot Reload: Closure & State-Machine Mapping Design (Phase C/D)
 
 Status: C1 landed (2026-06-10) — lambda occurrence model and alignment in `TypedTreeDiff`.
-C2–C5 pending. Implementation notes from C1 are folded into the relevant sections below.
+C2 commit 1 landed (2026-06-10) — EnC CDI blob encoder/decoder (`EncMethodDebugInformation.fs`);
+PDB writer/reader wiring pending. C3–C5 pending. Implementation notes are folded into the
+relevant sections below.
 Source research: Roslyn main @ June 2026 (`ClosureConversion.cs`, `EncVariableSlotAllocator.cs`, `EditAndContinueMethodDebugInformation.cs`, `DefinitionMap.cs`, `AbstractEditAndContinueAnalyzer.ReportLambdaAndClosureRudeEdits`).
 
 ## Problem
@@ -103,6 +105,37 @@ while implementing, where they refine the draft above:
   edits — but with structured messages (counts + ordinals) and a `LambdaEdits` payload ready for the C4
   emitter to consume.
 
+### C2 blob encoder/decoder as implemented (`EncMethodDebugInformation.fs`)
+
+`src/Compiler/CodeGen/EncMethodDebugInformation.fs` replicates Roslyn's three EnC CDI blob formats
+byte for byte (`roslyn/src/Compilers/Core/Portable/Emit/EditAndContinueMethodDebugInformation.cs`:
+`SerializeLocalSlots`/`SerializeLambdaMap`/`SerializeStateMachineStates` and the `Uncompress*`
+readers), including the syntax-offset-baseline optimization and the slot-map kind/ordinal byte
+packing (0xFF baseline marker, 0x00 temp, bit 7 = has-ordinal, low bits = kind + 1). The CDI kind
+GUIDs (from `roslyn/src/Dependencies/CodeAnalysis.Debugging/PortableCustomDebugInfoKinds.cs`):
+
+| CDI | Kind GUID |
+|---|---|
+| EnC Local Slot Map | `755F52A8-91C5-45BE-B4B8-209571E552BD` |
+| EnC Lambda and Closure Map | `A643004C-0240-496F-A783-30D64F4979DE` |
+| EnC State Machine State Map | `8B78CD68-2EDE-420B-980B-E15884B8AAA3` |
+
+**Occurrence-key encoding**: the blob slots Roslyn fills with *syntax offsets* carry, in F#,
+deterministic ints packed from the C1 occurrence ordinal chain (root-first enclosing-occurrence
+ordinals ending with the occurrence's own ordinal). Packing is 16-bit segments: a depth-1 chain
+`[o]` is the key `o` itself (0..0xFFFF); a depth-2 chain `[p; o]` packs as `((p + 1) <<< 16) ||| o`,
+the +1 bias keeping depth-1 and depth-2 key spaces disjoint. Encoding **fails closed**
+(`tryEncodeOccurrenceKey` returns `None`, callers must treat the occurrence as unmappable/rude):
+chains deeper than 2, ordinals past 0xFFFF, or packed keys past the ECMA-335 compressed-integer
+budget (0x1FFFFFFD, leaving room for the -1 baseline adjustment). Keys never truncate.
+
+**Phase-G debugger-interop caveat**: the blob *format* is identical to Roslyn's, so mdv and Roslyn
+tooling can decode our maps structurally — but the integers are occurrence keys, not source syntax
+offsets. A debugger (or any consumer) that interprets them as positions into F# source will get
+nonsense; Phase G must either teach the debugger the F# key semantics or emit a parallel
+source-offset map. Cross-validation: the component test builds a C# library with the repo SDK,
+decodes the Roslyn-emitted CDI rows with our decoder, and re-encodes them byte-identically.
+
 ### State machines (Phase D, builds on the same map)
 
 - F# `async` lowers to closure chains → covered by the lambda/closure map directly (a major
@@ -126,9 +159,10 @@ lambda signature changes, mid-sequence resume-point insertion, struct-closure ca
   ✅ landed: occurrence extraction + LCS alignment + capture-compatibility classification. Replaces the
   blanket `LambdaShapeChange` digest check with structured `LambdaEdit` data (still conservatively rude
   at emission until C4).
-- **C2** `feat(hot-reload): Roslyn-format EnC CDI blobs in portable PDBs` — writer in ilwritepdb,
-  reader in the baseline snapshot, round-trip + cross-validation tests against Roslyn-emitted blobs
-  (hotreload-utils C# deltas as fixtures).
+- **C2** `feat(hot-reload): Roslyn-format EnC CDI blobs in portable PDBs` — commit 1 ✅ landed:
+  encoder/decoder module (`EncMethodDebugInformation.fs`) with round-trip + cross-validation tests
+  against Roslyn-emitted blobs (see "C2 blob encoder/decoder as implemented"). Remaining: writer
+  wiring in ilwritepdb, reader in the baseline snapshot.
 - **C3** `feat(hot-reload): generation-aware closure identity in IlxGen lowering` — `ClosureSlotAllocator`
   seam; matched occurrences reuse closure class/method/field identity; new occurrences get
   generation-suffixed names. Flag-off behavior byte-identical (EmittedIL gate).
