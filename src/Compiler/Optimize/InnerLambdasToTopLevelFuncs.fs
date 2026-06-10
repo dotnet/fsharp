@@ -158,11 +158,15 @@ let IsRefusedTLR g (f: Val) =
     refuseTest
 
 /// Under --realsig+, a TLR-lifted helper is emitted at module scope (outside its declaring
-/// type). If the helper's body invokes a source-`private` member of an enclosing type, the
-/// CLR raises MethodAccessException at runtime because IL `private` is type-scoped.
-/// F# RecdFields always compile to IL `assembly` or better, so direct field access is safe;
-/// only val/method references need to be checked.
-let BodyReferencesPrivateMember e =
+/// type when that type is a class). If the helper's body invokes a source-`private` member
+/// of a class/struct, the CLR raises MethodAccessException at runtime because IL `private`
+/// is type-scoped.
+///
+/// Private members of MODULES are not at risk: the lifted helper lands in the same module
+/// IL class as the private val. F# RecdFields always compile to IL `assembly` or wider, so
+/// field access is safe; only val/method references whose declaring entity is a class need
+/// to be checked.
+let BodyReferencesTypeScopedPrivate e =
     let mutable found = false
     let folder =
         { ExprFolder0 with
@@ -170,8 +174,10 @@ let BodyReferencesPrivateMember e =
                 if found then z
                 else
                     match expr with
-                    | Expr.Val (vref, _, _) ->
-                        if vref.Accessibility.IsPrivate then found <- true
+                    | Expr.Val (vref, _, _) when vref.Accessibility.IsPrivate ->
+                        match vref.TryDeclaringEntity with
+                        | Parent eref when not eref.IsModuleOrNamespace -> found <- true
+                        | _ -> ()
                     | _ -> ()
                     noInterceptF z expr }
     FoldExpr folder () e |> ignore
@@ -208,7 +214,7 @@ module Pass1_DetermineTLRAndArities =
 
         // Under --realsig+, lifting a helper out of its declaring type would lose access to
         // any source-`private` members it references, producing MethodAccessException at runtime.
-        elif g.realsig && BodyReferencesPrivateMember e then
+        elif g.realsig && BodyReferencesTypeScopedPrivate e then
             None
         else
             // Could the binding be TLR? with what arity?
