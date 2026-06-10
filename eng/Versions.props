@@ -1,0 +1,223 @@
+<Project>
+  <PropertyGroup>
+    <!-- opt-out properties -->
+    <UsingToolXUnit>false</UsingToolXUnit>
+    <!-- opt-in properties -->
+    <UsingToolNetFrameworkReferenceAssemblies>true</UsingToolNetFrameworkReferenceAssemblies>
+    <UsingToolNuGetRepack>true</UsingToolNuGetRepack>
+    <UsingToolSourceLink>true</UsingToolSourceLink>
+
+    <UsingToolVSSDK>true</UsingToolVSSDK>
+  </PropertyGroup>
+  <!-- Version number computation -->
+  <PropertyGroup>
+    <PreReleaseVersionLabel>servicing-15.9</PreReleaseVersionLabel>
+    <!-- F# Version components -->
+    <FSMajorVersion>4</FSMajorVersion>
+    <FSMinorVersion>5</FSMinorVersion>
+    <FSBuildVersion>3</FSBuildVersion>
+    <FSRevisionVersion>0</FSRevisionVersion>
+    <!-- F# Language version -->
+    <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
+    <FSLanguageReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)</FSLanguageReleaseNotesVersion>
+    <!-- FSharp.Core version -->
+    <FSCoreProductVersion>$(FSMajorVersion).$(FSMinorVersion)</FSCoreProductVersion>
+    <FSCorePackageVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersion>
+    <FSCoreReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)-$(FSBuildVersion)</FSCoreReleaseNotesVersion>
+    <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
+    <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
+    <!-- FSharp.Compiler.Service version -->
+    <FCSMajorVersion>26</FCSMajorVersion>
+    <FCSMinorVersion>0</FCSMinorVersion>
+    <FCSBuildVersion>0</FCSBuildVersion>
+    <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
+    <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
+    <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
+    <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
+    <!-- The current published nuget package -->
+    <FSharpCoreShippedPackageVersion>6.0.0</FSharpCoreShippedPackageVersion>
+    <!-- The pattern for specifying the preview package -->
+    <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
+    <FSToolsMajorVersion>11</FSToolsMajorVersion>
+    <FSToolsMinorVersion>4</FSToolsMinorVersion>
+    <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
+    <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
+    <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
+    <FSProductVersionReleaseNotesVersion>$(FSToolsMajorVersion)-$(FSToolsMinorVersion)-$(FSToolsBuildVersion)</FSProductVersionReleaseNotesVersion>
+    <FSProductVersion>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion).$(FSToolsRevisionVersion)</FSProductVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VSMajorVersion>15</VSMajorVersion>
+    <VSMinorVersion>7</VSMinorVersion>
+    <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
+    <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
+    <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
+  </PropertyGroup>
+  <!-- version number assignment -->
+  <PropertyGroup Condition="'$(UseFSharpPackageVersion)' == 'true'">
+    <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
+    <AssemblyVersion>$(FSCoreVersion)</AssemblyVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UseFSharpPackageVersion)' != 'true'">
+    <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
+    <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersionPrefix)</VersionPrefix>
+    <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersionPrefix)</VersionPrefix>
+    <VersionPrefix Condition="'$(UseFSharpCompilerServiceVersion)' == 'true'">$(FSharpCompilerServicePackageVersion)</VersionPrefix>
+    <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
+    <!-- PR builds should explicitly specify a version number -->
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- default package sources -->
+    <RestoreSources Condition="'$(DotNetBuildOffline)' != 'true'">
+      $(RestoreSources);
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json;
+    </RestoreSources>
+    <!-- System.* packages -->
+    <SystemBuffersVersion>4.5.1</SystemBuffersVersion>
+    <SystemCollectionsImmutableVersion>5.0.0</SystemCollectionsImmutableVersion>
+    <SystemConsoleVersion>4.3.0</SystemConsoleVersion>
+    <SystemDataSqlClientPackageVersion>4.3.0</SystemDataSqlClientPackageVersion>
+    <SystemDesignVersion>4.0.0</SystemDesignVersion>
+    <SystemDiagnosticsProcessVersion>4.3.0</SystemDiagnosticsProcessVersion>
+    <SystemDiagnosticsTraceSourceVersion>4.3.0</SystemDiagnosticsTraceSourceVersion>
+    <SystemIoCompressionVersion>4.3.0</SystemIoCompressionVersion>
+    <SystemLinqExpressionsVersion>4.3.0</SystemLinqExpressionsVersion>
+    <SystemLinqQueryableVersion>4.3.0</SystemLinqQueryableVersion>
+    <SystemMemoryVersion>4.5.4</SystemMemoryVersion>
+    <SystemNetRequestsVersion>4.3.0</SystemNetRequestsVersion>
+    <SystemNetSecurityVersion>4.3.0</SystemNetSecurityVersion>
+    <SystemReflectionEmitVersion>4.3.0</SystemReflectionEmitVersion>
+    <SystemReflectionMetadataVersion>5.0.0</SystemReflectionMetadataVersion>
+    <SystemReflectionTypeExtensionsVersion>4.3.0</SystemReflectionTypeExtensionsVersion>
+    <SystemRuntimeCachingVersion>1.5.0</SystemRuntimeCachingVersion>
+    <SystemRuntimeVersion>4.3.0</SystemRuntimeVersion>
+    <SystemRuntimeInteropServicesVersion>4.3.0</SystemRuntimeInteropServicesVersion>
+    <SystemRuntimeLoaderVersion>4.3.0</SystemRuntimeLoaderVersion>
+    <SystemNetSecurityVersion>4.3.0</SystemNetSecurityVersion>
+    <SystemSecurityClaimsVersion>4.3.0</SystemSecurityClaimsVersion>
+    <SystemSecurityCryptographyAlgorithmsVersion>4.3.0</SystemSecurityCryptographyAlgorithmsVersion>
+    <SystemSecurityPrincipalVersion>4.3.0</SystemSecurityPrincipalVersion>
+    <SystemThreadingTasksParallelVersion>4.3.0</SystemThreadingTasksParallelVersion>
+    <SystemThreadingTasksDataflow>4.11.1</SystemThreadingTasksDataflow>
+    <SystemThreadingThreadVersion>4.3.0</SystemThreadingThreadVersion>
+    <SystemThreadingThreadPoolVersion>4.3.0</SystemThreadingThreadPoolVersion>
+    <!-- Roslyn packages -->
+    <RoslynVersion>3.9.0-5.21120.8</RoslynVersion>
+    <MicrosoftCodeAnalysisCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCommonVersion>
+    <MicrosoftCodeAnalysisCSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpVersion>
+    <MicrosoftCodeAnalysisCSharpScriptingVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpScriptingVersion>
+    <MicrosoftCodeAnalysisCSharpFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpFeaturesVersion>
+    <MicrosoftCodeAnalysisCSharpEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpEditorFeaturesVersion>
+    <MicrosoftCodeAnalysisCSharpWorkspacesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpWorkspacesVersion>
+    <MicrosoftCodeAnalysisFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisFeaturesVersion>
+    <MicrosoftCodeAnalysisFeaturesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisFeaturesCommonVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesCommonVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
+    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
+    <MicrosoftCodeAnalysisScriptingCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisScriptingCommonVersion>
+    <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
+    <MicrosoftCodeAnalysisWorkspacesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisWorkspacesCommonVersion>
+    <MicrosoftCodeAnalysisVisualBasicVersion>$(RoslynVersion)</MicrosoftCodeAnalysisVisualBasicVersion>
+    <MicrosoftCodeAnalysisVisualBasicFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisVisualBasicFeaturesVersion>
+    <MicrosoftCodeAnalysisVisualBasicWorkspacesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisVisualBasicWorkspacesVersion>
+    <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
+    <!-- Microsoft Build packages -->
+    <MicrosoftBuildOverallPackagesVersion>16.11.6</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
+    <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
+    <!-- Visual Studio editor packages -->
+    <VisualStudioEditorPackagesVersion>16.8.39</VisualStudioEditorPackagesVersion>
+    <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
+    <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>
+    <MicrosoftVisualStudioLanguageStandardClassificationVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageStandardClassificationVersion>
+    <MicrosoftVisualStudioLanguageVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageVersion>
+    <MicrosoftVisualStudioLanguageIntellisenseVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageIntellisenseVersion>
+    <MicrosoftVisualStudioPlatformVSEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioPlatformVSEditorVersion>
+    <MicrosoftVisualStudioTextUIVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIVersion>
+    <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
+    <MicrosoftVisualStudioTextDataVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextDataVersion>
+    <MicrosoftVisualStudioTextInternalVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextInternalVersion>
+    <!-- Visual Studio language+shell packages -->
+    <VisualStudioLanguageAndShellVersion>16.7.30329.88</VisualStudioLanguageAndShellVersion>
+    <MicrosoftVisualStudioShell150Version>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioShell150Version>
+    <MicrosoftVisualStudioShellDesignVersion>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioShellDesignVersion>
+    <MicrosoftVisualStudioShellFrameworkVersion>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioShellFrameworkVersion>
+    <MicrosoftVisualStudioPackageLanguageService150Version>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
+    <!-- Visual Studio shell+interop packages -->
+    <VisualStudioLanguageAndShellInteropVersion>16.7.30328.74</VisualStudioLanguageAndShellInteropVersion>
+    <MicrosoftVisualStudioShellInterop80Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop80Version>
+    <MicrosoftVisualStudioShellInterop90Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop90Version>
+    <MicrosoftVisualStudioShellInterop100Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop100Version>
+    <MicrosoftVisualStudioShellInterop110Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop110Version>
+    <MicrosoftVisualStudioShellInterop120Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop120Version>
+    <MicrosoftVisualStudioImageCatalogVersion>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioImageCatalogVersion>
+    <MicrosoftVisualStudioShellInteropVersion>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInteropVersion>
+    <MicrosoftVisualStudioTextManagerInteropVersion>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInteropVersion>
+    <MicrosoftVisualStudioTextManagerInterop80Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInterop80Version>
+    <MicrosoftVisualStudioTextManagerInterop100Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInterop100Version>
+    <MicrosoftVisualStudioTextManagerInterop120Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInterop120Version>
+    <MicrosoftVisualStudioOLEInteropVersion>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioOLEInteropVersion>
+    <EnvDTE80Version>$(VisualStudioLanguageAndShellInteropVersion)</EnvDTE80Version>
+    <!-- Misc. Visual Studio packages -->
+    <MicrosoftVisualStudioRpcContractsVersion>16.10.23</MicrosoftVisualStudioRpcContractsVersion>
+    <MicrosoftVisualStudioComponentModelHostVersion>16.6.255</MicrosoftVisualStudioComponentModelHostVersion>
+    <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>14.0.25420</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
+    <MicrosoftVisualStudioDesignerInterfacesVersion>1.1.4322</MicrosoftVisualStudioDesignerInterfacesVersion>
+    <MicrosoftVisualStudioGraphModelVersion>16.0.28226-alpha</MicrosoftVisualStudioGraphModelVersion>
+    <MicrosoftVisualStudioImagingVersion>16.7.30329.63</MicrosoftVisualStudioImagingVersion>
+    <MicrosoftVisualStudioManagedInterfacesVersion>8.0.50728</MicrosoftVisualStudioManagedInterfacesVersion>
+    <MicrosoftVisualStudioProjectAggregatorVersion>8.0.50728</MicrosoftVisualStudioProjectAggregatorVersion>
+    <MicrosoftVisualStudioProjectSystemVersion>16.0.201-pre-g7d366164d0</MicrosoftVisualStudioProjectSystemVersion>
+    <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
+    <MicrosoftVisualStudioShell140Version>14.3.25407</MicrosoftVisualStudioShell140Version>
+    <MicrosoftVisualStudioShellImmutable100Version>10.0.30319</MicrosoftVisualStudioShellImmutable100Version>
+    <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
+    <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
+    <MicrosoftVisualStudioShellInterop160DesignTimeVersion>16.0.1</MicrosoftVisualStudioShellInterop160DesignTimeVersion>
+    <MicrosoftVisualStudioShellInterop16DesignTimeVersion>16.0.28924.11111</MicrosoftVisualStudioShellInterop16DesignTimeVersion>
+    <MicrosoftVisualStudioThreadingVersion>16.10.56</MicrosoftVisualStudioThreadingVersion>
+    <MicrosoftVisualStudioUtilitiesVersion>16.7.30329.38</MicrosoftVisualStudioUtilitiesVersion>
+    <MicrosoftVisualStudioValidationVersion>16.10.35</MicrosoftVisualStudioValidationVersion>
+    <MicrosoftVisualStudioWCFReferenceInteropVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropVersion>
+    <MicrosoftVSSDKBuildToolsVersion>16.8.3036</MicrosoftVSSDKBuildToolsVersion>
+    <SystemRuntimeCompilerServicesUnsafeVersion>5.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
+    <VSSDKDebuggerVisualizersVersion>12.0.4</VSSDKDebuggerVisualizersVersion>
+    <VSSDKVSLangProjVersion>7.0.4</VSSDKVSLangProjVersion>
+    <VSSDKVSLangProj8Version>8.0.4</VSSDKVSLangProj8Version>
+    <VSSDKVSLangProj11Version>11.0.4</VSSDKVSLangProj11Version>
+    <VSSDKVSHelpVersion>7.0.4</VSSDKVSHelpVersion>
+    <!-- setup packages -->
+    <MicroBuildCoreVersion>0.2.0</MicroBuildCoreVersion>
+    <MicroBuildCoreSentinelVersion>1.0.0</MicroBuildCoreSentinelVersion>
+    <MicroBuildPluginsSwixBuildVersion>1.0.147</MicroBuildPluginsSwixBuildVersion>
+    <MicrosoftVisualStudioEngMicroBuildPluginsSwixBuildVersion>1.1.79</MicrosoftVisualStudioEngMicroBuildPluginsSwixBuildVersion>
+    <!-- other packages -->
+    <FsCheckVersion>3.0.0-alpha4</FsCheckVersion>
+    <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
+    <MicrosoftCompositionVersion>1.0.30</MicrosoftCompositionVersion>
+    <MicrosoftMSXMLVersion>8.0.0</MicrosoftMSXMLVersion>
+    <MicrosoftNetCompilersVersion>2.7.0</MicrosoftNetCompilersVersion>
+    <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
+
+
+    <MicrosoftNETTestSdkVersion>16.6.1</MicrosoftNETTestSdkVersion>
+    <MicrosoftWin32RegistryVersion>4.3.0</MicrosoftWin32RegistryVersion>
+    <NewtonsoftJsonVersion>12.0.2</NewtonsoftJsonVersion>
+    <NUnitVersion>3.13.2</NUnitVersion>
+    <NUnit3TestAdapterVersion>4.1.0</NUnit3TestAdapterVersion>
+    <NUnitLiteVersion>3.11.0</NUnitLiteVersion>
+    <NunitXmlTestLoggerVersion>2.1.41</NunitXmlTestLoggerVersion>
+    <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
+    <StrawberryPerlVersion>5.28.0.1</StrawberryPerlVersion>
+    <StreamJsonRpcVersion>2.7.76</StreamJsonRpcVersion>
+    <NerdbankStreamsVersion>2.7.74</NerdbankStreamsVersion>
+    <XUnitVersion>2.4.1</XUnitVersion>
+    <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
+  </PropertyGroup>
+</Project>

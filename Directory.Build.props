@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- F# 15.9 servicing ship vehicle: donor (16.11) conditional imports preserved verbatim per RestorePlan section 3.6 [B.4a] -->
+  <Import Project="FSharpBuild.Directory.Build.props" Condition="'$(FSharpTestCompilerVersion)' == ''" />
+  <Import Project="FSharpTests.Directory.Build.props" Condition="'$(FSharpTestCompilerVersion)' != ''" />
+
+  <!-- Arcade common roots block: pulls in Arcade SDK common props (eng\common, etc.) -->
+  <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" />
+
+</Project>
+
