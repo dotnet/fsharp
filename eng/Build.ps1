@@ -665,7 +665,7 @@ try {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework
     }
 
-    if ($testIntegration) {
+    if ($testIntegration -and -not $noVisualStudio) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework
     }
 

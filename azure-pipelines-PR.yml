@@ -448,10 +448,10 @@ stages:
                 _testKind: testCoreclr
                 TEST_TRANSPARENT_COMPILER: 1 # Pipeline variable will map to env var.
                 transparentCompiler: TransparentCompiler
-              # inttests_release:
-              #   _configuration: Release
-              #   _testKind: testIntegration
-              #   setupVsHive: true
+              inttests_release:
+                _configuration: Release
+                _testKind: testIntegration
+                setupVsHive: true
           steps:
           - checkout: self
             clean: true
