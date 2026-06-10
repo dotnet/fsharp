@@ -1,0 +1,106 @@
+# Hot Reload Runtime Capability Negotiation
+
+F# hot reload negotiates *runtime edit-and-continue capabilities* the same way Roslyn does:
+the host (for example `dotnet-watch`) collects the capability strings reported by the target
+runtime (`MetadataUpdater.GetCapabilities()`) and passes them to the compiler when a hot
+reload session starts. Edit classification then distinguishes between:
+
+- edits that are **unsupported by F# hot reload** (always rude: virtual-method insertion,
+  signature changes, type-layout changes, ...), and
+- edits that are **valid but cannot be applied by the connected runtime**
+  (`RudeEditKind.NotSupportedByRuntime`, diagnostic id `FSHRDL016`, message names the
+  missing capability).
+
+This mirrors Roslyn's `RudeEditKind.NotSupportedByRuntime` distinction.
+
+## The model
+
+`src/Compiler/Utilities/EditAndContinueCapabilities.fs` (namespace
+`FSharp.Compiler.EditAndContinue`):
+
+- `EditAndContinueCapability` — internal DU with one case per runtime capability word:
+  `Baseline`, `AddMethodToExistingType`, `AddStaticFieldToExistingType`,
+  `AddInstanceFieldToExistingType`, `NewTypeDefinition`, `ChangeCustomAttributes`,
+  `UpdateParameters`, `GenericAddMethodToExistingType`, `GenericUpdateMethod`,
+  `GenericAddFieldToExistingType`, `AddExplicitInterfaceImplementation`, `AddFieldRva`.
+  `Name` returns the exact runtime/Roslyn capability string.
+- `EditAndContinueCapabilities` — immutable wrapper over a `Set<EditAndContinueCapability>`
+  with `Supports`, `IsBaselineOnly`, `CapabilityNames`, `BaselineOnly` and `Parse`.
+
+Capability strings cross the compiler boundary exactly once, in
+`EditAndContinueCapabilities.Parse`. Everything downstream consults the typed model, so
+there are no stringly-typed capability checks in classification or emission.
+
+### Parser semantics (Roslyn parity)
+
+Mirrors `EditAndContinueCapabilitiesParser.Parse` in
+`roslyn/src/Features/Core/Portable/EditAndContinue/EditAndContinueCapabilities.cs`:
+
+- each input string is one capability name; matching is exact and case-sensitive;
+- unknown capability words are **ignored** (forward compatibility with newer runtimes);
+- the aggregate word `AddDefinitionToExistingType` expands to
+  `AddMethodToExistingType + AddStaticFieldToExistingType + AddInstanceFieldToExistingType`.
+
+One deliberate deviation: an F# session always carries at least `Baseline`. `Parse` of an
+empty (or all-unknown) input yields `BaselineOnly`, and `Baseline` is implied whenever any
+other capability is recognized. A capability-less session is unrepresentable; method-body
+updates are never gated behind a missing `Baseline` word.
+
+## Session plumbing
+
+- `FSharpChecker.StartHotReloadSession(projectOptions | projectSnapshot, ?userOpName,
+  ?capabilities: string seq)` (`src/Compiler/Service/service.fs[i]`) — string-based at the
+  public boundary, like Roslyn's `WatchHotReloadService(Solution, ImmutableArray<string>)`.
+  When omitted the session defaults to `EditAndContinueCapabilities.BaselineOnly`
+  (Roslyn-conservative: assume the runtime can only update method bodies).
+- The parsed capabilities are stored on the session
+  (`HotReloadSession.Capabilities` in `src/Compiler/HotReload/HotReloadState.fs`) by
+  `FSharpEditAndContinueLanguageService.StartSession(..., ?capabilities)`.
+- `EmitDeltaForCompilation`/`EmitHotReloadDelta` pass `session.Capabilities` into
+  `computeSymbolChanges` → `TypedTreeDiff.diffImplementationFile`.
+
+The `fsc --enable:hotreloaddeltas` emit hook (`Driver/HotReloadEmitHook.fs`) does not
+negotiate capabilities and therefore runs baseline-only.
+
+## Classification gating
+
+`src/Compiler/TypedTree/TypedTreeDiff.fs` consults a single seam:
+
+```fsharp
+[<RequireQualifiedAccess>]
+type AdditionKind =
+    | Method
+    | InstanceField
+    | StaticField
+
+let capabilityForAddition: AdditionKind -> EditAndContinueCapability
+```
+
+The order of checks for an added declaration follows Roslyn
+(`AbstractEditAndContinueAnalyzer` / `CSharpEditAndContinueAnalyzer`, see uses of
+`EditAndContinueCapabilities.` there): edit-kind rude edits first (virtual, constructor,
+operator, explicit interface, interface member, field), then the runtime-capability check.
+A method addition that passes the rude-edit checks requires
+`capabilityForAddition AdditionKind.Method = AddMethodToExistingType`; if the session does
+not support it, the diff reports `RudeEditKind.NotSupportedByRuntime` with the
+`hotReloadAdditionNotSupportedByRuntime` FSComp message naming the capability.
+
+## Phase B and beyond
+
+Field additions (`AdditionKind.InstanceField`/`StaticField` →
+`AddInstanceFieldToExistingType`/`AddStaticFieldToExistingType`) currently stay
+`RudeEditKind.FieldAdded` regardless of capabilities because Phase A does not implement
+field-row emission. Phase B flips them on by implementing emission and routing the field
+branch through `capabilityForAddition`, exactly like the method path — no new classification
+structure is needed. The same pattern applies later to `NewTypeDefinition`,
+`GenericAddMethodToExistingType`/`GenericUpdateMethod` (generic-aware gating),
+`ChangeCustomAttributes` and `UpdateParameters`.
+
+## Roslyn references
+
+- `roslyn/src/Features/Core/Portable/EditAndContinue/EditAndContinueCapabilities.cs` —
+  flags + parser (capability set mirrored here).
+- `roslyn/src/Features/Core/Portable/EditAndContinue/AbstractEditAndContinueAnalyzer.cs` —
+  capability-gated classification and `RudeEditKind.NotSupportedByRuntime` reporting.
+- `roslyn/src/Features/CSharp/Portable/EditAndContinue/CSharpEditAndContinueAnalyzer.cs` —
+  language-specific required-capability computation.
