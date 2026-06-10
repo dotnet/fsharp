@@ -1,0 +1,9 @@
+package name=SourceGear.Sqlite3
+ version=3.50.4.5
+ vs.package.type=msi
+
+vs.payload source="$(VendoredSqliteRoot)\runtimes\win-x86\native\e_sqlite3.dll"
+ vs.payload.directory="Common7\IDE\CommonExtensions\Microsoft\FSharp\runtimes\win-x86\native"
+
+vs.payload source="$(VendoredSqliteRoot)\runtimes\win-x64\native\e_sqlite3.dll"
+ vs.payload.directory="Common7\IDE\CommonExtensions\Microsoft\FSharp\runtimes\win-x64\native"
