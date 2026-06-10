@@ -98,7 +98,7 @@
 
   } 
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit f@27
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f@27-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition
@@ -112,7 +112,7 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> assembly/f@27::condition
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> assembly/'f@27-1'::condition
       IL_000d:  ret
     } 
 
@@ -145,7 +145,7 @@
       IL_0021:  stloc.3
       IL_0022:  nop
       IL_0023:  ldarg.0
-      IL_0024:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> assembly/f@27::condition
+      IL_0024:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> assembly/'f@27-1'::condition
       IL_0029:  ldloc.3
       IL_002a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
       IL_002f:  brfalse.s  IL_0036
@@ -261,7 +261,7 @@
     .maxstack  4
     .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>> V_0)
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/f@27::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>)
+    IL_0001:  newobj     instance void assembly/'f@27-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>)
     IL_0006:  stloc.0
     IL_0007:  ldloc.0
     IL_0008:  ldarg.1

@@ -104,7 +104,7 @@
 
     } 
 
-    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname f1@19
+    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname 'f1@19-1'
            extends [runtime]System.Object
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -125,7 +125,7 @@
       .maxstack  4
       .locals init (class Program/DelegateImmediateInvoke3/Foo`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
       IL_0000:  ldnull
-      IL_0001:  ldftn      void Program/DelegateImmediateInvoke3/f1@19::Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
+      IL_0001:  ldftn      void Program/DelegateImmediateInvoke3/'f1@19-1'::Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
       IL_0007:  newobj     instance void class Program/DelegateImmediateInvoke3/Foo`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(object,
                                                                                                                                             native int)
       IL_000c:  stloc.0

@@ -41,20 +41,23 @@ type PerFileNamingScope =
     /// source-location marker baked into the generated name; the uniqueness bucket is this scope's file.
     member Fresh: name: string * m: range -> string
 
-/// Per-consumer-file closure type-name allocation scope used by IlxGen.
-/// See https://github.com/dotnet/fsharp/issues/19928.
+/// Per-consumer-file closure type-name allocation scope used by IlxGen for cross-file
+/// inlined closures only. See https://github.com/dotnet/fsharp/issues/19928.
 [<Sealed>]
 type PerFileClosureNameScope =
 
     new: consumerFileIndex: int -> PerFileClosureNameScope
 
+    /// File index of the consumer file that this scope was allocated for. Used by the caller
+    /// to gate routing through this scope vs. the legacy StableNameGenerator.
+    member ConsumerFileIndex: int
+
     /// Allocate (or reuse cached) closure type name. Repeat calls with the same `uniq` return
     /// the same name. New `uniq`s at the same source line get an incrementing `-N` suffix.
-    /// Emitted name format: `basicName@<lineFromM>[-N]` for in-file closures, or
-    /// `basicName@<lineFromM>F<consumerFileIndex>[-N]` for closures inlined from another file
-    /// (where m.FileIndex ≠ consumerFileIndex). The `F<file>` infix disambiguates cross-file
-    /// inlined closures so parallel consumer files don't race on the shared StableNiceNameGenerator
-    /// bucket.
+    /// Emitted name format: `basicName@<lineFromM>F<consumerFileIndex>[-N]`. Intended for
+    /// closures inlined from another file (m.FileIndex ≠ consumerFileIndex); for in-file
+    /// closures, callers should route through StableNiceNameGenerator directly for baseline
+    /// stability.
     member EmitClosureName: basicName: string * m: range * uniq: int64 -> string
 
 type internal CompilerGlobalState =

@@ -95,7 +95,7 @@
 
     } 
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f7@6-2'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f7@6-4'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> computation2
@@ -112,7 +112,7 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/assembly/'f7@6-2'::computation2
+        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/assembly/'f7@6-4'::computation2
         IL_000d:  ret
       } 
 
@@ -121,13 +121,13 @@
         
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/assembly/'f7@6-2'::computation2
+        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/assembly/'f7@6-4'::computation2
         IL_0006:  ret
       } 
 
     } 
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f7@6-3'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f7@6-5'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> computation1
@@ -148,10 +148,10 @@
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/assembly/'f7@6-3'::computation1
+        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/assembly/'f7@6-5'::computation1
         IL_000d:  ldarg.0
         IL_000e:  ldarg.2
-        IL_000f:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>> assembly/assembly/'f7@6-3'::part2
+        IL_000f:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>> assembly/assembly/'f7@6-5'::part2
         IL_0014:  ret
       } 
 
@@ -161,9 +161,9 @@
         .maxstack  8
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
-        IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/assembly/'f7@6-3'::computation1
+        IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/assembly/'f7@6-5'::computation1
         IL_0007:  ldarg.0
-        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>> assembly/assembly/'f7@6-3'::part2
+        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>> assembly/assembly/'f7@6-5'::part2
         IL_000d:  tail.
         IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Bind<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
                                                                                                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!1>,
@@ -211,15 +211,15 @@
                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>)
         IL_0014:  stloc.0
         IL_0015:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
-        IL_001a:  ldsfld     class assembly/assembly/f7@9 assembly/assembly/f7@9::@_instance
+        IL_001a:  ldsfld     class assembly/assembly/'f7@9-2' assembly/assembly/'f7@9-2'::@_instance
         IL_001f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Delay<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
         IL_0024:  stloc.1
         IL_0025:  ldloc.1
-        IL_0026:  newobj     instance void assembly/assembly/'f7@6-2'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+        IL_0026:  newobj     instance void assembly/assembly/'f7@6-4'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
         IL_002b:  stloc.2
         IL_002c:  ldloc.0
         IL_002d:  ldloc.2
-        IL_002e:  newobj     instance void assembly/assembly/'f7@6-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,
+        IL_002e:  newobj     instance void assembly/assembly/'f7@6-5'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,
                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>)
         IL_0033:  tail.
         IL_0035:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
@@ -228,16 +228,16 @@
 
     } 
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f7@9-1'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f7@9-3'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
     {
-      .field static assembly initonly class assembly/assembly/'f7@9-1' @_instance
+      .field static assembly initonly class assembly/assembly/'f7@9-3' @_instance
       .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
-        IL_0000:  newobj     instance void assembly/assembly/'f7@9-1'::.ctor()
-        IL_0005:  stsfld     class assembly/assembly/'f7@9-1' assembly/assembly/'f7@9-1'::@_instance
+        IL_0000:  newobj     instance void assembly/assembly/'f7@9-3'::.ctor()
+        IL_0005:  stsfld     class assembly/assembly/'f7@9-3' assembly/assembly/'f7@9-3'::@_instance
         IL_000a:  ret
       } 
 
@@ -281,16 +281,16 @@
 
     } 
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit f7@9
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f7@9-2'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
     {
-      .field static assembly initonly class assembly/assembly/f7@9 @_instance
+      .field static assembly initonly class assembly/assembly/'f7@9-2' @_instance
       .method private specialname rtspecialname static void  .cctor() cil managed
       {
         
         .maxstack  10
-        IL_0000:  newobj     instance void assembly/assembly/f7@9::.ctor()
-        IL_0005:  stsfld     class assembly/assembly/f7@9 assembly/assembly/f7@9::@_instance
+        IL_0000:  newobj     instance void assembly/assembly/'f7@9-2'::.ctor()
+        IL_0005:  stsfld     class assembly/assembly/'f7@9-2' assembly/assembly/'f7@9-2'::@_instance
         IL_000a:  ret
       } 
 
@@ -311,7 +311,7 @@
         .maxstack  8
         IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
         IL_0005:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly/assembly::get_es()
-        IL_000a:  ldsfld     class assembly/assembly/'f7@9-1' assembly/assembly/'f7@9-1'::@_instance
+        IL_000a:  ldsfld     class assembly/assembly/'f7@9-3' assembly/assembly/'f7@9-3'::@_instance
         IL_000f:  tail.
         IL_0011:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::For<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>,
                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>)

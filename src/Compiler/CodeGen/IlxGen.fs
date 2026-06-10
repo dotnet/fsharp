@@ -7497,11 +7497,23 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            match eenv.closureNameScope with
-            | Some scope -> scope.EmitClosureName(basenameSafeForUseAsTypename, expr.Range, uniq)
-            | None ->
+            // Route in-file closures through StableNameGenerator (legacy `basicName@<line>[-N]`)
+            // for baseline stability. PrimeStableNamesForCodegen pins those names in source
+            // order so the suffix assignments are deterministic under parallel codegen.
+            // Cross-file inlined closures (`expr.Range.FileIndex != consumer file index`) are
+            // disambiguated through PerFileClosureNameScope with an `F<consumerFileIndex>` marker
+            // — these would otherwise race on the shared StableNameGenerator bucket counter when
+            // multiple parallel consumer files inline the same source range.
+            let consumerFileIndex =
+                eenv.closureNameScope
+                |> Option.map (fun s -> s.ConsumerFileIndex)
+                |> Option.defaultValue 0
+
+            if expr.Range.FileIndex = consumerFileIndex || eenv.closureNameScope.IsNone then
                 let stableGen = g.CompilerGlobalState.Value.StableNameGenerator
                 stableGen.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            else
+                eenv.closureNameScope.Value.EmitClosureName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 

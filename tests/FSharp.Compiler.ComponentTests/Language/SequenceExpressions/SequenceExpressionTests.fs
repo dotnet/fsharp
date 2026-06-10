@@ -62,7 +62,7 @@ let rec f () = seq {
           .maxstack  8
           IL_0000:  ldc.i4.s   123
           IL_0002:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Singleton<int32>(!!0)
-          IL_0007:  ldsfld     class Test/f@5 Test/f@5::@_instance
+          IL_0007:  ldsfld     class Test/'f@5-2' Test/'f@5-2'::@_instance
           IL_000c:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.Collections.Generic.IEnumerable`1<!!0>>)
           IL_0011:  tail.
           IL_0013:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Append<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>,
