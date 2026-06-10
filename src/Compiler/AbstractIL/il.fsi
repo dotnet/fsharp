@@ -854,6 +854,7 @@ type ILAttribElem =
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
 /// Custom attribute.
+[<RequireQualifiedAccess>]
 type ILAttribute =
     /// Attribute with args encoded to a binary blob according to ECMA-335 II.21 and II.23.3.
     /// 'decodeILAttribData' is used to parse the byte[] blob to ILAttribElem's as best as possible.
@@ -973,6 +974,7 @@ type internal ILSecurityAction =
     | InheritanceDemandChoice
     | DemandChoice
 
+[<RequireQualifiedAccess>]
 type internal ILSecurityDecl = ILSecurityDecl of ILSecurityAction * byte[]
 
 /// Abstract type equivalent to ILSecurityDecl list - use helpers

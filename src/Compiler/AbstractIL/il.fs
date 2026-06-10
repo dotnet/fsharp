@@ -1195,8 +1195,7 @@ type ILAttribElem =
 
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
-// Encoded/Decoded are used unqualified across the compiler - do NOT add [<RequireQualifiedAccess>].
-[<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILAttribute =
     | Encoded of method: ILMethodSpec * data: byte[] * elements: ILAttribElem list
     | Decoded of method: ILMethodSpec * fixedArgs: ILAttribElem list * namedArgs: ILAttributeNamedArg list
@@ -1752,7 +1751,7 @@ type ILSecurityAction =
     | InheritanceDemandChoice
     | DemandChoice
 
-[<StructuralEquality; StructuralComparison>]
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILSecurityDecl = ILSecurityDecl of ILSecurityAction * byte[]
 
 [<NoEquality; NoComparison; Struct>]
