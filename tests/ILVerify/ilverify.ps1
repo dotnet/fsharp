@@ -4,12 +4,15 @@ function Normalize-IlverifyOutputLine {
     param(
         [string]$line
     )
-    # Remove F# closure suffixes: +clo@NNN-NNN, +clo@NNN, +NAME@NNN-NNN, +NAME@NNN
-    $line = $line -replace '(\+\w+)@\d+(-\d+)?', '$1'
+    # Remove F# closure suffixes: +clo@NNN[F<file>][-NNN], +NAME@NNN[F<file>][-NNN]
+    # The optional F<file> infix is added by PerFileClosureNameScope for closures inlined
+    # from another file (cross-file inlining). See
+    # https://github.com/dotnet/fsharp/issues/19928.
+    $line = $line -replace '(\+\w+)@\d+(F\d+)?(-\d+)?', '$1'
     # Remove patterns like "Pipe #1 stage #1 at line 1782@1782"
     $line = $line -replace 'Pipe #\d+ stage #\d+ at line \d+@\d+', ''
-    # Remove function suffixes like NAME@NNN or NAME@NNN-NNN in method names
-    $line = $line -replace '(\w+)@\d+(-\d+)?', '$1'
+    # Remove function suffixes like NAME@NNN[F<file>][-NNN] in method names
+    $line = $line -replace '(\w+)@\d+(F\d+)?(-\d+)?', '$1'
     # Remove 'at line NNNN'
     $line = $line -replace 'at line \d+', ''
     # Remove leftover double spaces, stray "+" etc.
