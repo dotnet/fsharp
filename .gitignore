@@ -130,3 +130,11 @@ tests/fsharpqa/testenv/bin/System.ValueTuple.dll
 msbuild.binlog
 /fcs/FSharp.Compiler.Service.netstandard/*.fs
 /fcs/FSharp.Compiler.Service.netstandard/*.fsi
+
+# Operator bootstrap and per-shell transient state
+.bootstrap/
+*.bootstrap.zip
+*.operator-log
+evidence/
+.dotnet/
+.tools/
