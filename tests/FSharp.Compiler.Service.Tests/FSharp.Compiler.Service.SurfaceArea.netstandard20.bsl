@@ -2063,6 +2063,25 @@ FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.Docume
 FSharp.Compiler.CodeAnalysis.DocumentSource: Int32 Tag
 FSharp.Compiler.CodeAnalysis.DocumentSource: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.DocumentSource: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo)
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 CodeLength
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 CodeOffset
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo)
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 LocalSignatureToken
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 MethodToken
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 get_CodeLength()
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 get_CodeOffset()
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 get_LocalSignatureToken()
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Int32 get_MethodToken()
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Void .ctor(Int32, Int32, Int32, Int32)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults Item
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_Item()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Tags: Int32 Aborted
@@ -2138,11 +2157,15 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: FSharp.Compiler.Symbols.
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean HotReloadSessionActive
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean UsesTransparentCompiler
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_HotReloadSessionActive()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_UsesTransparentCompiler()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.DocumentSource], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Instance
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Instance()
+FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities HotReloadCapabilities
+FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities get_HotReloadCapabilities()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions GetProjectOptionsFromCommandLineArgs(System.String, System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.Tokenization.FSharpTokenInfo[][] TokenizeFile(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 ActualCheckFileCount
@@ -2159,6 +2182,10 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer]] CheckFileInProjectAllowingStaleCachedResults(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, System.String, Int32, System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetBackgroundSemanticClassificationForFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetBackgroundSemanticClassificationForFile(System.String, FSharpProjectSnapshot, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpResult`2[FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta,FSharp.Compiler.CodeAnalysis.FSharpHotReloadError]] EmitHotReloadDelta(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpResult`2[FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta,FSharp.Compiler.CodeAnalysis.FSharpHotReloadError]] EmitHotReloadDelta(FSharpProjectSnapshot, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpResult`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.CodeAnalysis.FSharpHotReloadError]] StartHotReloadSession(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpResult`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.CodeAnalysis.FSharpHotReloadError]] StartHotReloadSession(FSharpProjectSnapshot, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] NotifyFileChanged(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] NotifyProjectCleaned(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] FindBackgroundReferencesInFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -2188,6 +2215,7 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: System.Tuple`2[FSharp.Compiler.Token
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearCache(System.Collections.Generic.IEnumerable`1[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearCache(System.Collections.Generic.IEnumerable`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Void EndHotReloadSession()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharpProjectSnapshot, Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -2212,6 +2240,100 @@ FSharp.Compiler.CodeAnalysis.FSharpCodeCompletionOptions: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpCodeCompletionOptions: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpCodeCompletionOptions: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpCodeCompletionOptions: Void .ctor(Boolean, Boolean, Boolean, Boolean)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean SupportsIl
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean SupportsMetadata
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean SupportsMultipleGenerations
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean SupportsPortablePdb
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean SupportsRuntimeApply
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean get_SupportsIl()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean get_SupportsMetadata()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean get_SupportsMultipleGenerations()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean get_SupportsPortablePdb()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: Boolean get_SupportsRuntimeApply()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability Flags
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability get_Flags()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability Il
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability Metadata
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability MultipleGenerations
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability None
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability PortablePdb
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability RuntimeApply
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapability: Int32 value__
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Byte[] IL
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Byte[] Metadata
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Byte[] get_IL()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Byte[] get_Metadata()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo] AddedOrChangedMethods
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo] get_AddedOrChangedMethods()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] UpdatedMethods
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] UpdatedTypes
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_UpdatedMethods()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_UpdatedTypes()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.ValueTuple`3[System.Int32,System.Int32,System.String]] UserStringUpdates
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[System.ValueTuple`3[System.Int32,System.Int32,System.String]] get_UserStringUpdates()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Core.FSharpOption`1[System.Byte[]] Pdb
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Core.FSharpOption`1[System.Byte[]] get_Pdb()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid BaseGenerationId
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid GenerationId
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid get_BaseGenerationId()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid get_GenerationId()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Void .ctor(Byte[], Byte[], Microsoft.FSharp.Core.FSharpOption`1[System.Byte[]], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo], Microsoft.FSharp.Collections.FSharpList`1[System.ValueTuple`3[System.Int32,System.Int32,System.String]], System.Guid, System.Guid)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+CompilationFailed: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Item
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+CompilationFailed: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Item()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+DeltaEmissionFailed: System.String Item
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+DeltaEmissionFailed: System.String get_Item()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 CompilationFailed
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 DeltaEmissionFailed
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 MissingOutputPath
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 NoActiveSession
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 NoChanges
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 UnsupportedEdit
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+UnsupportedEdit: System.String Item
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+UnsupportedEdit: System.String get_Item()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpHotReloadError)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpHotReloadError, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean IsCompilationFailed
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean IsDeltaEmissionFailed
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean IsMissingOutputPath
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean IsNoActiveSession
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean IsNoChanges
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean IsUnsupportedEdit
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean get_IsCompilationFailed()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean get_IsDeltaEmissionFailed()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean get_IsMissingOutputPath()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean get_IsNoActiveSession()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean get_IsNoChanges()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean get_IsUnsupportedEdit()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError MissingOutputPath
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NewCompilationFailed(FSharp.Compiler.Diagnostics.FSharpDiagnostic[])
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NewDeltaEmissionFailed(System.String)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NewUnsupportedEdit(System.String)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NoActiveSession
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NoChanges
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError get_MissingOutputPath()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError get_NoActiveSession()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError get_NoChanges()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+CompilationFailed
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+DeltaEmissionFailed
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+UnsupportedEdit
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 Tag
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 get_Tag()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(FSharp.Compiler.Text.Position)
@@ -2552,7 +2674,9 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Byte[] get_VersionFo
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: FSharpProjectIdentifier Identifier
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: FSharpProjectIdentifier get_Identifier()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] ReferencesOnDisk
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] TrackedInputsOnDisk
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] get_ReferencesOnDisk()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] get_TrackedInputsOnDisk()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] CommandLineOptions
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] OtherOptions
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_CommandLineOptions()

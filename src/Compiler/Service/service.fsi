@@ -15,6 +15,50 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
+[<RequireQualifiedAccess>]
+type FSharpHotReloadError =
+    | NoActiveSession
+    | NoChanges
+    | MissingOutputPath
+    | UnsupportedEdit of string
+    | CompilationFailed of FSharpDiagnostic[]
+    | DeltaEmissionFailed of string
+
+type FSharpAddedOrChangedMethodInfo =
+    { MethodToken: int
+      LocalSignatureToken: int
+      CodeOffset: int
+      CodeLength: int }
+
+type FSharpHotReloadDelta =
+    { Metadata: byte[]
+      IL: byte[]
+      Pdb: byte[] option
+      UpdatedTypes: int list
+      UpdatedMethods: int list
+      AddedOrChangedMethods: FSharpAddedOrChangedMethodInfo list
+      UserStringUpdates: struct (int * int * string) list
+      GenerationId: Guid
+      BaseGenerationId: Guid }
+
+[<System.Flags>]
+type FSharpHotReloadCapability =
+    | None = 0
+    | Il = 1
+    | Metadata = 2
+    | PortablePdb = 4
+    | MultipleGenerations = 8
+    | RuntimeApply = 16
+
+type FSharpHotReloadCapabilities =
+    internal new : FSharpHotReloadCapability -> FSharpHotReloadCapabilities
+    member Flags: FSharpHotReloadCapability
+    member SupportsIl: bool
+    member SupportsMetadata: bool
+    member SupportsPortablePdb: bool
+    member SupportsMultipleGenerations: bool
+    member SupportsRuntimeApply: bool
+
 /// Used to parse and check F# source code.
 [<Sealed; AutoSerializable(false)>]
 type public FSharpChecker =
@@ -55,6 +99,58 @@ type public FSharpChecker =
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?transparentCompilerCacheSizes:
             CacheSizes ->
             FSharpChecker
+
+    /// <summary>
+    /// Starts a hot reload session using project options.
+    /// </summary>
+    /// <remarks>
+    /// Hot reload session state is process-wide: only one session can be active per compiler process.
+    /// Starting a new session replaces the previously active session.
+    /// This API is opt-in and requires compilation with <c>--enable:hotreloaddeltas</c>.
+    /// </remarks>
+    member StartHotReloadSession:
+        projectOptions: FSharpProjectOptions * ?userOpName: string -> Async<Result<unit, FSharpHotReloadError>>
+
+    /// <summary>
+    /// Starts a hot reload session using a workspace project snapshot.
+    /// </summary>
+    /// <remarks>
+    /// Session scope is process-wide and single-active-session only.
+    /// Starting from a snapshot also replaces any existing active session.
+    /// </remarks>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member StartHotReloadSession:
+        projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+            Async<Result<unit, FSharpHotReloadError>>
+
+    /// <summary>
+    /// Emits a hot reload delta using project options against the active session baseline.
+    /// </summary>
+    /// <remarks>
+    /// Returns <c>NoActiveSession</c> when no process-wide session is currently active.
+    /// </remarks>
+    member EmitHotReloadDelta:
+        projectOptions: FSharpProjectOptions * ?userOpName: string ->
+            Async<Result<FSharpHotReloadDelta, FSharpHotReloadError>>
+
+    /// <summary>
+    /// Emits a hot reload delta using a workspace project snapshot.
+    /// </summary>
+    /// <remarks>
+    /// Uses the same single process-wide active session as other hot reload APIs.
+    /// </remarks>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member EmitHotReloadDelta:
+        projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+            Async<Result<FSharpHotReloadDelta, FSharpHotReloadError>>
+
+    /// <summary>Ends the active process-wide hot reload session, if any.</summary>
+    member EndHotReloadSession: unit -> unit
+
+    /// <summary>Indicates whether a process-wide hot reload session is currently active.</summary>
+    member HotReloadSessionActive: bool
+
+    member HotReloadCapabilities: FSharpHotReloadCapabilities
 
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member UsesTransparentCompiler: bool

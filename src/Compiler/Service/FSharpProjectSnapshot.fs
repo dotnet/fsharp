@@ -396,6 +396,111 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] Proj
         projectId: string option
     ) =
 
+    let projectDirectory =
+        projectFileName
+        |> Path.GetDirectoryName
+        |> Option.ofObj
+        |> Option.defaultValue ""
+
+    let trimEnclosingQuotes (value: string) =
+        if String.IsNullOrWhiteSpace value then
+            value
+        else
+            value.Trim().Trim('"')
+
+    let tryNormalizeTrackedInputPath (path: string) =
+        if String.IsNullOrWhiteSpace path then
+            None
+        else
+            let candidatePath =
+                let path = trimEnclosingQuotes path
+
+                if Path.IsPathRooted path then
+                    path
+                elif String.IsNullOrWhiteSpace projectDirectory then
+                    path
+                else
+                    Path.Combine(projectDirectory, path)
+
+            let fullPath =
+                try
+                    Path.GetFullPath candidatePath
+                with _ ->
+                    candidatePath
+
+            if FileSystem.FileExistsShim fullPath then
+                Some fullPath
+            else
+                None
+
+    let tryGetTrackedInputPath (option: string) =
+        let startsWith (prefix: string) =
+            option.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+
+        let valueFromPrefix prefixes =
+            prefixes
+            |> Seq.tryPick (fun prefix ->
+                if startsWith prefix && option.Length > prefix.Length then
+                    Some(option.Substring(prefix.Length))
+                else
+                    None)
+
+        let normalizeResourceOptionValue (value: string) =
+            let normalized = trimEnclosingQuotes value
+            let logicalNameSeparator = normalized.IndexOf(',')
+
+            if logicalNameSeparator > 0 then
+                normalized.Substring(0, logicalNameSeparator)
+            else
+                normalized
+
+        let tryPathFromPrefixedOption prefixes valueNormalizer =
+            valueFromPrefix prefixes
+            |> Option.map valueNormalizer
+            |> Option.bind tryNormalizeTrackedInputPath
+
+        if String.IsNullOrWhiteSpace option then
+            None
+        elif startsWith "-r:" || startsWith "--reference:" || startsWith "--out:" || startsWith "-o:" then
+            None
+        elif option.StartsWith("-", StringComparison.Ordinal) then
+            tryPathFromPrefixedOption [ "--resource:"; "-resource:"; "--res:"; "-res:" ] normalizeResourceOptionValue
+            |> Option.orElseWith (fun () ->
+                tryPathFromPrefixedOption [ "--win32res:"; "--keyfile:"; "--load:"; "--use:" ] trimEnclosingQuotes)
+        else
+            tryNormalizeTrackedInputPath option
+
+    let isSplitOutputOption (option: string) =
+        String.Equals(option, "-o", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(option, "--out", StringComparison.OrdinalIgnoreCase)
+
+    let trackedInputsOnDisk =
+        let rec collectTrackedInputs skipNextOutput tracked options =
+            match options with
+            | [] -> tracked
+            | _ :: tail when skipNextOutput ->
+                collectTrackedInputs false tracked tail
+            | option :: tail when isSplitOutputOption option ->
+                // Split output flags are followed by an output path that should not be tracked as an input dependency.
+                collectTrackedInputs true tracked tail
+            | option :: tail ->
+                let updatedTracked =
+                    match tryGetTrackedInputPath option with
+                    | Some path -> path :: tracked
+                    | None -> tracked
+
+                collectTrackedInputs false updatedTracked tail
+
+        otherOptions
+        |> Seq.toList
+        |> collectTrackedInputs false []
+        |> List.rev
+        |> Seq.distinct
+        |> Seq.map (fun path ->
+            { Path = path
+              LastModified = FileSystem.GetLastWriteTimeShim path })
+        |> Seq.toList
+
     let hashForParsing =
         lazy
             (Md5Hasher.empty
@@ -408,7 +513,9 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] Proj
         lazy
             (hashForParsing.Value
              |> Md5Hasher.addStrings (referencesOnDisk |> Seq.map (fun r -> r.Path))
-             |> Md5Hasher.addDateTimes (referencesOnDisk |> Seq.map (fun r -> r.LastModified)))
+             |> Md5Hasher.addDateTimes (referencesOnDisk |> Seq.map (fun r -> r.LastModified))
+             |> Md5Hasher.addStrings (trackedInputsOnDisk |> Seq.map (fun i -> i.Path))
+             |> Md5Hasher.addDateTimes (trackedInputsOnDisk |> Seq.map (fun i -> i.LastModified)))
 
     let commandLineOptions =
         lazy
@@ -478,6 +585,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] Proj
     member _.ProjectFileName = projectFileName
     member _.ProjectId = projectId
     member _.ReferencesOnDisk = referencesOnDisk
+    member _.TrackedInputsOnDisk = trackedInputsOnDisk
     member _.OtherOptions = otherOptions
 
     member _.IsIncompleteTypeCheckEnvironment = isIncompleteTypeCheckEnvironment

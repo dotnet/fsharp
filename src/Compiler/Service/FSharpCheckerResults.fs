@@ -3836,7 +3836,7 @@ type FSharpCheckProjectResults
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
     // TODO: Looks like we don't need this
-    member _.TypedImplementationFiles =
+    member private _.TypedImplementationFiles =
         if not keepAssemblyContents then
             invalidOp
                 "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
@@ -3894,6 +3894,7 @@ type FSharpCheckProjectResults
             | CheckedAssemblyAfterOptimization files -> files |> List.map (fun implFile -> implFile.ImplFile)
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
+
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     // TODO: this should be async
