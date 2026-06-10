@@ -9,6 +9,8 @@ open System.Collections.Concurrent
 open System.Threading
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
+open FSharp.Compiler.GeneratedNames
+open FSharp.Compiler.CompilerGeneratedNameMapState
 
 /// Generates compiler-generated names. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
@@ -17,7 +19,7 @@ open FSharp.Compiler.Text
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs, and it is good
 /// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
 /// are used to host multiple concurrent instances of compilation.
-type NiceNameGenerator() =    
+type NiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGeneratedNameMap option) =
     let basicNameCounts = ConcurrentDictionary<struct (string * int), int ref>(max Environment.ProcessorCount 1, 127)
     // Cache this as a delegate.
     let basicNameCountsAddDelegate = Func<struct (string * int), int ref>(fun _ -> ref 0)
@@ -26,15 +28,21 @@ type NiceNameGenerator() =
         let key = struct (basicName, m.FileIndex)
         let countCell = basicNameCounts.GetOrAdd(key, basicNameCountsAddDelegate)
         Interlocked.Increment(countCell)
-   
+
     member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
-        let count = increment basicName m
-        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count - 1) with 0 -> "" | n -> "-" + string n))
+        match getCompilerGeneratedNameMap() with
+        | Some map ->
+            map.GetOrAddName basicName
+        | None ->
+            let count = increment basicName m
+            CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count - 1) with 0 -> "" | n -> "-" + string n))
 
     member this.FreshCompilerGeneratedName (name, m: range) =
         this.FreshCompilerGeneratedNameOfBasicName (GetBasicNameOfPossibleCompilerGeneratedName name, m)
 
     member _.IncrementOnly(name: string, m: range) = increment name m
+
+    new () = NiceNameGenerator(fun () -> None)
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
@@ -42,25 +50,30 @@ type NiceNameGenerator() =
 ///
 /// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
-type StableNiceNameGenerator() = 
+type StableNiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGeneratedNameMap option) =
 
     let niceNames = ConcurrentDictionary<string * int64, string>(max Environment.ProcessorCount 1, 127)
-    let innerGenerator = NiceNameGenerator()
+    let innerGenerator = new NiceNameGenerator(getCompilerGeneratedNameMap)
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let key = basicName, uniq
         niceNames.GetOrAdd(key, fun (basicName, _) -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
 
-type internal CompilerGlobalState () =
+    new () = StableNiceNameGenerator(fun () -> None)
+
+type internal CompilerGlobalState () as this =
     /// A global generator of compiler generated names
-    let globalNng = NiceNameGenerator()
+    let getCompilerGeneratedNameMap () =
+        tryGetCompilerGeneratedNameMap (this :> obj)
+
+    let globalNng = NiceNameGenerator(getCompilerGeneratedNameMap)
 
     /// A global generator of stable compiler generated names
-    let globalStableNameGenerator = StableNiceNameGenerator ()
+    let globalStableNameGenerator = StableNiceNameGenerator(getCompilerGeneratedNameMap)
 
     /// A name generator used by IlxGen for static fields, some generated arguments and other things.
-    let ilxgenGlobalNng = NiceNameGenerator ()
+    let ilxgenGlobalNng = NiceNameGenerator(getCompilerGeneratedNameMap)
 
     member _.NiceNameGenerator = globalNng
 

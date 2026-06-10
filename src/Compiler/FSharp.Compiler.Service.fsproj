@@ -311,6 +311,8 @@
     <Compile Include="SyntaxTree\LexHelpers.fs">
       <Link>SyntaxTree\LexHelpers.fs</Link>
     </Compile>
+    <Compile Include="Generated\GeneratedNames.fs" />
+    <Compile Include="Generated\CompilerGeneratedNameMapState.fs" />
     <Compile Include="$(FsYaccOutputFolder)pplex.fsi">
       <Link>SyntaxTree\FsLexOutput\pplex.fsi</Link>
     </Compile>
