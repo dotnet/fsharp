@@ -34,6 +34,22 @@ type ParameterDefinitionRowInfo =
       Name: string option
       NameOffset: StringOffset option }
 
+/// Row model for a Field table entry emitted into a delta (ECMA-335 II.22.15:
+/// Flags, Name, Signature). Added fields additionally record the parent TypeDef
+/// row so the EncLog can emit the Roslyn-style AddField parent entry.
+type FieldDefinitionRowInfo =
+    { Key: FieldDefinitionKey
+      RowId: int
+      IsAdded: bool
+      /// Row id of the baseline TypeDef that receives the field; used for the
+      /// EncLog (TypeDef, AddField) parent entry preceding the Field row.
+      ParentTypeDefRowId: int
+      Attributes: FieldAttributes
+      Name: string
+      NameOffset: StringOffset option
+      Signature: byte[]
+      SignatureOffset: BlobOffset option }
+
 type TypeReferenceRowInfo =
     { RowId: int
       ResolutionScope: ResolutionScope
@@ -119,6 +135,7 @@ type MethodSemanticsMetadataUpdate =
 
 type TableRows =
     { Module: RowElementData[][]
+      Field: RowElementData[][]
       MethodDef: RowElementData[][]
       Param: RowElementData[][]
       TypeRef: RowElementData[][]

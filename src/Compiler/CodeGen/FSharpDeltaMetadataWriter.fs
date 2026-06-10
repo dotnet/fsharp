@@ -45,6 +45,8 @@ type MethodDefinitionRowInfo = DeltaMetadataTypes.MethodDefinitionRowInfo
 
 type ParameterDefinitionRowInfo = DeltaMetadataTypes.ParameterDefinitionRowInfo
 
+type FieldDefinitionRowInfo = DeltaMetadataTypes.FieldDefinitionRowInfo
+
 type MethodMetadataUpdate =
     {
         MethodKey: MethodDefinitionKey
@@ -101,6 +103,7 @@ let emitWithUserStrings
     (moduleId: Guid)
     (methodDefinitionRows: MethodDefinitionRowInfo list)
     (parameterDefinitionRows: ParameterDefinitionRowInfo list)
+    (fieldDefinitionRows: FieldDefinitionRowInfo list)
     (typeReferenceRows: TypeReferenceRowInfo list)
     (memberReferenceRows: MemberReferenceRowInfo list)
     (methodSpecificationRows: MethodSpecificationRowInfo list)
@@ -214,6 +217,28 @@ let emitWithUserStrings
             encLog.Add(struct (TableNames.Param, row.RowId, operation))
             encMap.Add(struct (TableNames.Param, row.RowId))
 
+        // Added fields enter the Field table and EncMap here; their EncLog entries are the
+        // Roslyn-style (TypeDef, AddField) + (Field, Default) pairs built below, which are
+        // spliced into the log rather than added to `encLog` so the per-table sorting cannot
+        // separate the parent entry from its field row.
+        for row in fieldDefinitionRows do
+            if row.IsAdded then
+                tableMirror.AddFieldRow row
+                encMap.Add(struct (TableNames.Field, row.RowId))
+
+        // Roslyn parity (verified against a hotreload-delta-gen C# delta that adds a static
+        // field): the EncLog logs the parent TypeDef row tagged AddField immediately followed
+        // by the new Field row with the Default operation, and only the Field row appears in
+        // EncMap. The runtime associates the Field row with the immediately preceding AddField
+        // parent, so each pair must stay adjacent.
+        let fieldEncLogPairs =
+            fieldDefinitionRows
+            |> List.filter (fun row -> row.IsAdded)
+            |> List.sortBy (fun row -> row.RowId)
+            |> List.collect (fun row ->
+                [ struct (TableNames.TypeDef, row.ParentTypeDefRowId, EditAndContinueOperation.AddField)
+                  struct (TableNames.Field, row.RowId, EditAndContinueOperation.Default) ])
+
         for row in typeReferenceRows do
             tableMirror.AddTypeReferenceRow row
 
@@ -318,7 +343,13 @@ let emitWithUserStrings
                 |> Seq.sortBy (fun struct (_, rowId, _) -> rowId)
                 |> Seq.iter builder.Add
 
-            orderedTables |> Array.iter appendEntries
+            appendEntries TableNames.Module
+            // Added-field (TypeDef AddField, Field) pairs are placed between the Module row
+            // and the Method entries: ECMA table order puts TypeDef (0x02) and Field (0x04)
+            // before Method (0x06), and Roslyn likewise logs the field pair ahead of the
+            // method rows that consume the new field.
+            fieldEncLogPairs |> List.iter builder.Add
+            orderedTables |> Array.skip 1 |> Array.iter appendEntries
 
             // Any tables not in the canonical order are appended sorted by token
             snapshot
@@ -374,6 +405,7 @@ let emitWithUserStrings
                         moduleId
                         methodDefinitionRows
                         parameterDefinitionRows
+                        fieldDefinitionRows
                         typeReferenceRows
                         memberReferenceRows
                         methodSpecificationRows
@@ -471,6 +503,7 @@ let emitWithReferences
     (moduleId: Guid)
     (methodDefinitionRows: MethodDefinitionRowInfo list)
     (parameterDefinitionRows: ParameterDefinitionRowInfo list)
+    (fieldDefinitionRows: FieldDefinitionRowInfo list)
     (typeReferenceRows: TypeReferenceRowInfo list)
     (memberReferenceRows: MemberReferenceRowInfo list)
     (methodSpecificationRows: MethodSpecificationRowInfo list)
@@ -496,6 +529,7 @@ let emitWithReferences
         moduleId
         methodDefinitionRows
         parameterDefinitionRows
+        fieldDefinitionRows
         typeReferenceRows
         memberReferenceRows
         methodSpecificationRows
@@ -541,6 +575,7 @@ let emit
         moduleId
         methodDefinitionRows
         parameterDefinitionRows
+        ([] : FieldDefinitionRowInfo list)
         []
         []
         []

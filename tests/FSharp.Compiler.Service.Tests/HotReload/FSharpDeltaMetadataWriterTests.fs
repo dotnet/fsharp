@@ -652,6 +652,137 @@ module FSharpDeltaMetadataWriterTests =
         ignoreBadImageFormat (fun () -> assertEncMapMatches metadataDelta.Metadata metadataDelta.EncMap)
 
     [<Fact>]
+    let ``metadata writer emits added static field rows with Roslyn EncLog pairing`` () =
+        // Mirrors the C# reference delta produced by hotreload-delta-gen for
+        // `public static int AddedStatic = 42;`: the EncLog logs the parent TypeDef row
+        // tagged AddField immediately followed by the new Field row (Default op), the
+        // updated initializer method logs as a plain update, and only the Field row is
+        // present in EncMap.
+        let moduleDef = createPropertyModule None ()
+        let assemblyBytes, _, _, _ = createAssemblyBytes moduleDef
+        use peReader = new PEReader(new MemoryStream(assemblyBytes, false))
+        let metadataReader = peReader.GetMetadataReader()
+
+        let typeHandle =
+            metadataReader.TypeDefinitions
+            |> Seq.find (fun handle -> metadataReader.GetString(metadataReader.GetTypeDefinition(handle).Name) = "PropertyHost")
+
+        let getterHandle =
+            metadataReader.MethodDefinitions
+            |> Seq.find (fun handle -> metadataReader.GetString(metadataReader.GetMethodDefinition(handle).Name) = "get_Message")
+
+        let builder = IlDeltaStreamBuilder None
+
+        let stringType = ilGlobals.typ_String
+        let methodKey = methodKey "Sample.PropertyHost" "get_Message" stringType
+        let getterEntity: EntityHandle = getterHandle
+        let methodRowId = MetadataTokens.GetRowNumber getterEntity
+
+        let getterDef = metadataReader.GetMethodDefinition getterHandle
+        let methodRow : DeltaWriter.MethodDefinitionRowInfo =
+            { Key = methodKey
+              RowId = methodRowId
+              IsAdded = false
+              Attributes = getterDef.Attributes
+              ImplAttributes = getterDef.ImplAttributes
+              Name = metadataReader.GetString getterDef.Name
+              NameOffset = None
+              Signature = metadataReader.GetBlobBytes getterDef.Signature
+              SignatureOffset = None
+              FirstParameterRowId = None
+              CodeRva = None }
+
+        let updates: DeltaWriter.MethodMetadataUpdate list =
+            [ { MethodKey = methodKey
+                MethodToken = MetadataTokens.GetToken(EntityHandle.op_Implicit getterHandle)
+                MethodHandle = toMethodDefHandle getterHandle
+                Body =
+                    { MethodToken = MetadataTokens.GetToken(EntityHandle.op_Implicit getterHandle)
+                      LocalSignatureToken = 0
+                      CodeOffset = 0
+                      CodeLength = 1 } } ]
+
+        let typeEntity: EntityHandle = typeHandle
+        let parentTypeDefRowId = MetadataTokens.GetRowNumber typeEntity
+        let baselineFieldRowCount = metadataReader.GetTableRowCount TableIndex.Field
+        let fieldRowId = baselineFieldRowCount + 1
+
+        let fieldKey: FieldDefinitionKey =
+            { DeclaringType = "Sample.PropertyHost"
+              Name = "AddedStatic"
+              FieldType = ilGlobals.typ_Int32 }
+
+        let fieldRows: DeltaWriter.FieldDefinitionRowInfo list =
+            [ { Key = fieldKey
+                RowId = fieldRowId
+                IsAdded = true
+                ParentTypeDefRowId = parentTypeDefRowId
+                Attributes = FieldAttributes.Public ||| FieldAttributes.Static
+                Name = "AddedStatic"
+                NameOffset = None
+                // FieldSig per ECMA-335 II.23.2.4: FIELD (0x06) followed by int32 (0x08).
+                Signature = [| 0x06uy; 0x08uy |]
+                SignatureOffset = None } ]
+
+        let moduleName = metadataReader.GetString(metadataReader.GetModuleDefinition().Name)
+
+        let metadataDelta =
+            DeltaWriter.emitWithReferences
+                moduleName
+                None
+                1
+                (System.Guid.NewGuid())
+                (System.Guid.NewGuid())
+                (System.Guid.NewGuid())
+                [ methodRow ]
+                [] // parameter rows
+                fieldRows
+                [] // type reference rows
+                [] // member reference rows
+                [] // method spec rows
+                [] // assembly reference rows
+                [] // property rows
+                [] // event rows
+                [] // property map rows
+                [] // event map rows
+                [] // method semantics rows
+                builder.StandaloneSignatures
+                [] // custom attribute rows
+                [] // user string updates
+                updates
+                MetadataHeapOffsets.Zero
+                (getRowCounts metadataReader)
+
+        let tableCount (table: TableName) = metadataDelta.TableRowCounts.[table.Index]
+        Assert.Equal(1, tableCount TableNames.Field)
+
+        // Assert the EXACT EncLog sequence: the (TypeDef, AddField) parent entry must be
+        // immediately followed by its Field row — the runtime associates the Field row with
+        // the preceding AddField parent, so sorting-based assertions are not sufficient here.
+        let expectedEncLog: (TableName * int * EditAndContinueOperation)[] =
+            [| (TableNames.Module, 1, EditAndContinueOperation.Default)
+               (TableNames.TypeDef, parentTypeDefRowId, EditAndContinueOperation.AddField)
+               (TableNames.Field, fieldRowId, EditAndContinueOperation.Default)
+               (TableNames.Method, methodRowId, EditAndContinueOperation.Default) |]
+
+        Assert.Equal<(TableName * int * EditAndContinueOperation)[]>(expectedEncLog, metadataDelta.EncLog)
+
+        // EncMap is token-sorted and contains the Field row but NOT the AddField TypeDef entry.
+        let expectedEncMap: (TableName * int)[] =
+            [| (TableNames.Module, 1)
+               (TableNames.Field, fieldRowId)
+               (TableNames.Method, methodRowId) |]
+
+        Assert.Equal<(TableName * int)[]>(expectedEncMap, metadataDelta.EncMap)
+
+        Assert.True(metadataDelta.Metadata.Length > 0)
+        ignoreBadImageFormat (fun () -> assertTableStreamMatches metadataDelta)
+        ignoreBadImageFormat (fun () -> assertTableCountsMatch metadataDelta.Metadata metadataDelta.TableRowCounts)
+        ignoreBadImageFormat (fun () -> assertBitMasksMatch metadataDelta.Metadata metadataDelta.TableBitMasks)
+        ignoreBadImageFormat (fun () -> assertEncLogMatches metadataDelta.Metadata metadataDelta.EncLog)
+        ignoreBadImageFormat (fun () -> assertEncMapMatches metadataDelta.Metadata metadataDelta.EncMap)
+
+    [<Fact>]
     let ``property delta uses ENC-sized indexes`` () =
         // Use closure delta: it updates an existing method body (with locals), exercising MethodDef update path.
         let artifacts = MetadataDeltaTestHelpers.emitClosureDeltaArtifacts ()
@@ -2436,6 +2567,7 @@ module FSharpDeltaMetadataWriterTests =
 
     let private emptyTableRows : TableRows =
         { Module = emptyRowArrays
+          Field = emptyRowArrays
           MethodDef = emptyRowArrays
           Param = emptyRowArrays
           TypeRef = emptyRowArrays

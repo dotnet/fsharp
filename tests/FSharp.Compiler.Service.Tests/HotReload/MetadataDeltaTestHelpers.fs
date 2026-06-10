@@ -1377,6 +1377,7 @@ module internal MetadataDeltaTestHelpers =
                 (System.Guid.NewGuid())
                 methodDefinitionRows
                 [] // parameter rows
+                [] // field rows
                 (typeReferenceRows |> Seq.toList)
                 (memberReferenceRows |> Seq.toList)
                 [] // method spec rows

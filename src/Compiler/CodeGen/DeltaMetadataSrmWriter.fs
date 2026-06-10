@@ -118,6 +118,7 @@ let serialize
     (moduleId: Guid)
     (methodDefinitionRows: MethodDefinitionRowInfo list)
     (parameterDefinitionRows: ParameterDefinitionRowInfo list)
+    (fieldDefinitionRows: FieldDefinitionRowInfo list)
     (typeReferenceRows: TypeReferenceRowInfo list)
     (memberReferenceRows: MemberReferenceRowInfo list)
     (methodSpecificationRows: MethodSpecificationRowInfo list)
@@ -144,6 +145,7 @@ let serialize
     let assemblyRefCount = assemblyReferenceRows.Length
     let customAttributeCount = customAttributeRows.Length
     let standaloneSigCount = standaloneSignatureRows.Length
+    let fieldAddCount = fieldDefinitionRows |> List.filter (fun row -> row.IsAdded) |> List.length
     let propertyAddCount = propertyDefinitionRows |> List.filter (fun row -> row.IsAdded) |> List.length
     let eventAddCount = eventDefinitionRows |> List.filter (fun row -> row.IsAdded) |> List.length
     let propertyMapAddCount = propertyMapRows |> List.filter (fun row -> row.IsAdded) |> List.length
@@ -153,7 +155,7 @@ let serialize
     metadataBuilder.SetCapacity(TableIndex.Module, 1)
     metadataBuilder.SetCapacity(TableIndex.TypeRef, typeRefCount)
     metadataBuilder.SetCapacity(TableIndex.TypeDef, 0)
-    metadataBuilder.SetCapacity(TableIndex.Field, 0)
+    metadataBuilder.SetCapacity(TableIndex.Field, fieldAddCount)
     metadataBuilder.SetCapacity(TableIndex.MethodDef, methodCount)
     metadataBuilder.SetCapacity(TableIndex.Param, parameterCount)
     metadataBuilder.SetCapacity(TableIndex.InterfaceImpl, 0)
@@ -235,6 +237,12 @@ let serialize
     for row in parameterDefinitionRows do
         let nameHandle = toOptionalStringHandle metadataBuilder row.Name row.NameOffset
         metadataBuilder.AddParameter(row.Attributes, nameHandle, row.SequenceNumber) |> ignore
+
+    for row in fieldDefinitionRows do
+        if row.IsAdded then
+            let nameHandle = toStringHandle metadataBuilder row.Name row.NameOffset
+            let signatureHandle = toBlobHandle metadataBuilder row.Signature row.SignatureOffset
+            metadataBuilder.AddFieldDefinition(row.Attributes, nameHandle, signatureHandle) |> ignore
 
     for row in typeReferenceRows do
         let scopeHandle = toResolutionScopeHandle row.ResolutionScope
@@ -332,6 +340,7 @@ let serialize
 let private trackedParityTables =
     [| TableIndex.Module
        TableIndex.TypeRef
+       TableIndex.Field
        TableIndex.MethodDef
        TableIndex.Param
        TableIndex.MemberRef

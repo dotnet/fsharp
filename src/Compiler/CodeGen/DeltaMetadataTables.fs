@@ -298,6 +298,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let mutable userStringHeapBytesCache: byte[] option = None
 
     let moduleRows = RowTableBuilder()
+    let fieldRows = RowTableBuilder()
     let methodRows = RowTableBuilder()
     let paramRows = RowTableBuilder()
     let typeRefRows = RowTableBuilder()
@@ -505,6 +506,20 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 rowElementSimpleIndex TableNames.Param (row.FirstParameterRowId |> Option.defaultValue 0)
             |]
         methodRows.Add rowElements
+
+    /// Add a Field table row per ECMA-335 II.22.15: Flags (2 bytes), Name (string
+    /// heap), Signature (blob heap, FieldSig per II.23.2.4).
+    member _.AddFieldRow(row: FieldDefinitionRowInfo) =
+        let nameToken = addExistingStringOffset row.NameOffset row.Name
+        let signatureToken = addExistingBlobOffset row.SignatureOffset row.Signature
+
+        let rowElements =
+            [|
+                rowElementUShort (uint16 row.Attributes)
+                stringElement nameToken
+                blobElement signatureToken
+            |]
+        fieldRows.Add rowElements
 
     member _.AddParameterRow(row: ParameterDefinitionRowInfo) =
         // Validate parameter row per ECMA-335 II.22.33
@@ -725,6 +740,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
 
     member _.TableRows : TableRows =
         { Module = moduleRows.Entries
+          Field = fieldRows.Entries
           MethodDef = methodRows.Entries
           Param = paramRows.Entries
           TypeRef = typeRefRows.Entries
@@ -748,6 +764,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     member _.TableRowCounts : int[] =
         let counts = Array.zeroCreate DeltaTokens.TableCount
         counts[TableNames.Module.Index] <- moduleRows.Count
+        counts[TableNames.Field.Index] <- fieldRows.Count
         counts[TableNames.Method.Index] <- methodRows.Count
         counts[TableNames.Param.Index] <- paramRows.Count
         counts[TableNames.TypeRef.Index] <- typeRefRows.Count

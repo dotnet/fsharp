@@ -735,6 +735,7 @@ let private emitMetadataDelta
     (moduleMvid: Guid)
     (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
     (parameterDefinitionRowsSnapshot: ParameterDefinitionRowInfo list)
+    (fieldDefinitionRowsSnapshot: FieldDefinitionRowInfo list)
     (typeReferenceRowList: TypeReferenceRowInfo list)
     (memberReferenceRowList: MemberReferenceRowInfo list)
     (methodSpecificationRowsSnapshot: MethodSpecificationRowInfo list)
@@ -761,6 +762,7 @@ let private emitMetadataDelta
             moduleMvid
             methodDefinitionRowsSnapshot
             parameterDefinitionRowsSnapshot
+            fieldDefinitionRowsSnapshot
             typeReferenceRowList
             memberReferenceRowList
             methodSpecificationRowsSnapshot
@@ -3175,6 +3177,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 moduleMvid
                 methodDefinitionRowsSnapshot
                 parameterDefinitionRowsSnapshot
+                ([] : FieldDefinitionRowInfo list)
                 typeReferenceRowList
                 memberReferenceRowList
                 methodSpecificationRowsSnapshot
