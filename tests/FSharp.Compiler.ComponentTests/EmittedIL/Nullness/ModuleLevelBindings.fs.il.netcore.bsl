@@ -34,6 +34,17 @@
   .field static assembly string nullableMutableStringField@6
   .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
   .method public specialname static string get_notNullStringField() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -42,33 +53,6 @@
     .maxstack  8
     IL_0000:  ldstr      ""
     IL_0005:  ret
-  } 
-
-  .method public specialname static string get_nullableStringField() cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  ret
-  } 
-
-  .method public specialname static string get_nullableMutableStringField() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     string MyTestModule::nullableMutableStringField@6
-    IL_0005:  ret
-  } 
-
-  .method public specialname static void set_nullableMutableStringField(string 'value') cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  stsfld     string MyTestModule::nullableMutableStringField@6
-    IL_0006:  ret
   } 
 
   .method public specialname static valuetype [runtime]System.Nullable`1<int32> get_nullableInt() cil managed
@@ -82,6 +66,24 @@
     IL_0001:  ret
   } 
 
+  .method public specialname static string get_nullableMutableStringField() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     string MyTestModule::nullableMutableStringField@6
+    IL_0005:  ret
+  } 
+
+  .method public specialname static string get_nullableStringField() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  ret
+  } 
+
   .method public specialname static int32 get_regularInt() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -92,15 +94,13 @@
     IL_0002:  ret
   } 
 
-  .method private specialname rtspecialname static void  .cctor() cil managed
+  .method public specialname static void set_nullableMutableStringField(string 'value') cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
-    IL_000b:  pop
-    IL_000c:  ret
+    IL_0000:  ldarg.0
+    IL_0001:  stsfld     string MyTestModule::nullableMutableStringField@6
+    IL_0006:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed

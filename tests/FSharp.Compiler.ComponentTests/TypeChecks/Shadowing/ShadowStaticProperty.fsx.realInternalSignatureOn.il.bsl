@@ -35,6 +35,17 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly int32 x
     .field static assembly int32 init@1
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
     .method private specialname rtspecialname instance void  .ctor() cil managed
     {
       
@@ -77,17 +88,6 @@
       IL_0011:  ldarg.0
       IL_0012:  stsfld     int32 assembly/Foo::x
       IL_0017:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-      IL_000b:  pop
-      IL_000c:  ret
     } 
 
     .method assembly static void  staticInitialization@() cil managed

@@ -50,19 +50,19 @@
       IL_0001:  ret
     } 
 
-    .method public specialname static int32 op_Multiply<a>(!!a _arg3, valuetype assembly/S _arg4) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.1
-      IL_0001:  ret
-    } 
-
     .method public specialname static int32 op_Addition<a>(valuetype assembly/S _arg5, !!a _arg6) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldc.i4.2
+      IL_0001:  ret
+    } 
+
+    .method public specialname static int32 op_Multiply<a>(!!a _arg3, valuetype assembly/S _arg4) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.1
       IL_0001:  ret
     } 
 

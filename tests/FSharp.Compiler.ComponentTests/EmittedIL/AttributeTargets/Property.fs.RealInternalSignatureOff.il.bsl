@@ -51,14 +51,6 @@
 
   } 
 
-  .method public specialname static int32 get_T() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$M::T@12
-    IL_0005:  ret
-  } 
-
   .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
@@ -68,6 +60,14 @@
     IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$M::init@
     IL_000b:  pop
     IL_000c:  ret
+  } 
+
+  .method public specialname static int32 get_T() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$M::T@12
+    IL_0005:  ret
   } 
 
   .property int32 T()

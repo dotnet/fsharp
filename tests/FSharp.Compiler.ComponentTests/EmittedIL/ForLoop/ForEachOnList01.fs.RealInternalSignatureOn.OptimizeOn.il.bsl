@@ -42,27 +42,6 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
     .field static assembly initonly class assembly/test6@38 @_instance
-    .method assembly specialname rtspecialname instance void  .ctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(int32 x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ldc.i4.1
-      IL_0002:  add
-      IL_0003:  ret
-    } 
-
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -72,12 +51,6 @@
       IL_000a:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit test7@47
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-  {
-    .field static assembly initonly class assembly/test7@47 @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -99,6 +72,12 @@
       IL_0003:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit test7@47
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
+  {
+    .field static assembly initonly class assembly/test7@47 @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -106,6 +85,27 @@
       IL_0000:  newobj     instance void assembly/test7@47::.ctor()
       IL_0005:  stsfld     class assembly/test7@47 assembly/test7@47::@_instance
       IL_000a:  ret
+    } 
+
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance int32 Invoke(int32 x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ldc.i4.1
+      IL_0002:  add
+      IL_0003:  ret
     } 
 
   } 

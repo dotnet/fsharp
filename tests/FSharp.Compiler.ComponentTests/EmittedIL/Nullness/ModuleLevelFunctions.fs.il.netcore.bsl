@@ -27,54 +27,6 @@
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-  .method public static string  nonNullableInputOutputFunc(string x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ret
-  } 
-
-  .method public static string  nullableStringInputOutputFunc(string x) cil managed
-  {
-    .param [0]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ret
-  } 
-
-  .method public static int32  nonNullableIntFunc(int32 x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ret
-  } 
-
-  .method public static valuetype [runtime]System.Nullable`1<int32> nullableIntFunc(valuetype [runtime]System.Nullable`1<int32> x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ret
-  } 
-
-  .method public static valuetype [runtime]System.ValueTuple`6<string,string,int32,int32,int32,int32> genericValueTypeTest(valuetype [runtime]System.ValueTuple`6<string,string,int32,int32,int32,int32> x) cil managed
-  {
-    .param [0]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 00 01 02 00 00 ) 
-    .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 00 01 02 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ret
-  } 
-
   .method public static class [runtime]System.Tuple`6<string,string,int32,int32,int32,int32> 
           genericRefTypeTest(string x_0,
                              string x_1,
@@ -107,12 +59,12 @@
     IL_000f:  ret
   } 
 
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> nestedGenericsTest(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> x) cil managed
+  .method public static valuetype [runtime]System.ValueTuple`6<string,string,int32,int32,int32,int32> genericValueTypeTest(valuetype [runtime]System.ValueTuple`6<string,string,int32,int32,int32,int32> x) cil managed
   {
     .param [0]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 00 01 02 00 00 ) 
     .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 00 01 02 00 00 ) 
     
     .maxstack  8
     IL_0000:  ldarg.0
@@ -129,6 +81,54 @@
     .maxstack  8
     IL_0000:  ldc.i4.s   42
     IL_0002:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> nestedGenericsTest(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> x) cil managed
+  {
+    .param [0]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ret
+  } 
+
+  .method public static string  nonNullableInputOutputFunc(string x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ret
+  } 
+
+  .method public static int32  nonNullableIntFunc(int32 x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ret
+  } 
+
+  .method public static valuetype [runtime]System.Nullable`1<int32> nullableIntFunc(valuetype [runtime]System.Nullable`1<int32> x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ret
+  } 
+
+  .method public static string  nullableStringInputOutputFunc(string x) cil managed
+  {
+    .param [0]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ret
   } 
 
 } 

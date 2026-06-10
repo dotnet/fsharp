@@ -333,31 +333,6 @@
       IL_0006:  ret
     } 
 
-    .method public static class MyTestModule/MyDu get_JustLabel() cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                  int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldsfld     class MyTestModule/MyDu MyTestModule/MyDu::_unique_JustLabel
-      IL_0005:  ret
-    } 
-
-    .method public hidebysig instance bool get_IsJustLabel() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  isinst     MyTestModule/MyDu/_JustLabel
-      IL_0006:  ldnull
-      IL_0007:  cgt.un
-      IL_0009:  ret
-    } 
-
     .method public static class MyTestModule/MyDu NewJustInt(int32 item) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
@@ -369,19 +344,6 @@
       IL_0000:  ldarg.0
       IL_0001:  newobj     instance void MyTestModule/MyDu/JustInt::.ctor(int32)
       IL_0006:  ret
-    } 
-
-    .method public hidebysig instance bool get_IsJustInt() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  isinst     MyTestModule/MyDu/JustInt
-      IL_0006:  ldnull
-      IL_0007:  cgt.un
-      IL_0009:  ret
     } 
 
     .method public static class MyTestModule/MyDu NewMaybeString(string _nullableString) cil managed
@@ -399,6 +361,59 @@
       IL_0006:  ret
     } 
 
+    .method public strict virtual instance string ToString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class MyTestModule/MyDu>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>::Invoke(!0)
+      IL_0015:  ret
+    } 
+
+    .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldstr      "%+0.8A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>::Invoke(!0)
+      IL_0015:  ret
+    } 
+
+    .method public hidebysig instance bool get_IsJustInt() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  isinst     MyTestModule/MyDu/JustInt
+      IL_0006:  ldnull
+      IL_0007:  cgt.un
+      IL_0009:  ret
+    } 
+
+    .method public hidebysig instance bool get_IsJustLabel() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  isinst     MyTestModule/MyDu/_JustLabel
+      IL_0006:  ldnull
+      IL_0007:  cgt.un
+      IL_0009:  ret
+    } 
+
     .method public hidebysig instance bool get_IsMaybeString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -410,6 +425,18 @@
       IL_0006:  ldnull
       IL_0007:  cgt.un
       IL_0009:  ret
+    } 
+
+    .method public static class MyTestModule/MyDu get_JustLabel() cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldsfld     class MyTestModule/MyDu MyTestModule/MyDu::_unique_JustLabel
+      IL_0005:  ret
     } 
 
     .method public hidebysig instance int32 get_Tag() cil managed
@@ -434,33 +461,6 @@
 
       IL_0016:  ldc.i4.0
       IL_0017:  ret
-    } 
-
-    .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldstr      "%+0.8A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>::Invoke(!0)
-      IL_0015:  ret
-    } 
-
-    .method public strict virtual instance string ToString() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldstr      "%+A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class MyTestModule/MyDu>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/MyDu,string>::Invoke(!0)
-      IL_0015:  ret
     } 
 
     .property instance int32 Tag()
@@ -514,21 +514,6 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method public static class MyTestModule/SingleCaseDu NewSingleCaseItIs(string _nullableString) cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                  int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .param [1]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  newobj     instance void MyTestModule/SingleCaseDu::.ctor(string)
-      IL_0006:  ret
-    } 
-
     .method assembly specialname rtspecialname instance void  .ctor(string _nullableString) cil managed
     {
       .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
@@ -549,29 +534,32 @@
       IL_000d:  ret
     } 
 
-    .method public hidebysig instance string get_nullableString() cil managed
+    .method public static class MyTestModule/SingleCaseDu NewSingleCaseItIs(string _nullableString) cil managed
     {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .param [0]
+      .param [1]
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      string MyTestModule/SingleCaseDu::_nullableString
+      IL_0001:  newobj     instance void MyTestModule/SingleCaseDu::.ctor(string)
       IL_0006:  ret
     } 
 
-    .method public hidebysig instance int32 get_Tag() cil managed
+    .method public strict virtual instance string ToString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  pop
-      IL_0002:  ldc.i4.0
-      IL_0003:  ret
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/SingleCaseDu,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class MyTestModule/SingleCaseDu>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/SingleCaseDu,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/SingleCaseDu,string>::Invoke(!0)
+      IL_0015:  ret
     } 
 
     .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
@@ -588,17 +576,29 @@
       IL_0015:  ret
     } 
 
-    .method public strict virtual instance string ToString() cil managed
+    .method public hidebysig instance int32 get_Tag() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  ldstr      "%+A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/SingleCaseDu,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class MyTestModule/SingleCaseDu>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/SingleCaseDu,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class MyTestModule/SingleCaseDu,string>::Invoke(!0)
-      IL_0015:  ret
+      IL_0000:  ldarg.0
+      IL_0001:  pop
+      IL_0002:  ldc.i4.0
+      IL_0003:  ret
+    } 
+
+    .method public hidebysig instance string get_nullableString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .param [0]
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      string MyTestModule/SingleCaseDu::_nullableString
+      IL_0006:  ret
     } 
 
     .property instance int32 Tag()
@@ -620,6 +620,17 @@
     } 
   } 
 
+  .method public static class MyTestModule/MyDu createMaybeString(string innerValue) cil managed
+  {
+    .param [1]
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       class MyTestModule/MyDu MyTestModule/MyDu::NewMaybeString(string)
+    IL_0006:  ret
+  } 
+
   .method public static class MyTestModule/MyDu giveMeLabel() cil managed
   {
     
@@ -636,17 +647,6 @@
     IL_0005:  tail.
     IL_0007:  callvirt   instance string [runtime]System.Object::ToString()
     IL_000c:  ret
-  } 
-
-  .method public static class MyTestModule/MyDu createMaybeString(string innerValue) cil managed
-  {
-    .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       class MyTestModule/MyDu MyTestModule/MyDu::NewMaybeString(string)
-    IL_0006:  ret
   } 
 
   .method public static string  processNullableDu(class MyTestModule/MyDu x) cil managed

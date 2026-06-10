@@ -70,6 +70,18 @@
       IL_002e:  ret
     } 
 
+    .method assembly hidebysig instance int32 f(int32 a) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 assembly/D::x
+      IL_0006:  ldarg.1
+      IL_0007:  add
+      IL_0008:  ret
+    } 
+
     .method public hidebysig specialname instance int32  get_X() cil managed
     {
       
@@ -86,18 +98,6 @@
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 assembly/D::y
       IL_0006:  ret
-    } 
-
-    .method assembly hidebysig instance int32 f(int32 a) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 assembly/D::x
-      IL_0006:  ldarg.1
-      IL_0007:  add
-      IL_0008:  ret
     } 
 
     .property instance int32 X()

@@ -44,165 +44,6 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly int64 bits@
-    .method public hidebysig specialname instance int64  get_bits() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int64 assembly/Flags::bits@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  CompareTo(valuetype assembly/Flags obj) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  5
-      .locals init (class [runtime]System.Collections.IComparer V_0,
-               int64 V_1,
-               int64 V_2)
-      IL_0000:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0005:  stloc.0
-      IL_0006:  ldarg.0
-      IL_0007:  ldfld      int64 assembly/Flags::bits@
-      IL_000c:  stloc.1
-      IL_000d:  ldarga.s   obj
-      IL_000f:  ldfld      int64 assembly/Flags::bits@
-      IL_0014:  stloc.2
-      IL_0015:  ldloc.1
-      IL_0016:  ldloc.2
-      IL_0017:  cgt
-      IL_0019:  ldloc.1
-      IL_001a:  ldloc.2
-      IL_001b:  clt
-      IL_001d:  sub
-      IL_001e:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  unbox.any  assembly/Flags
-      IL_0007:  call       instance int32 assembly/Flags::CompareTo(valuetype assembly/Flags)
-      IL_000c:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  5
-      .locals init (valuetype assembly/Flags V_0,
-               int64 V_1,
-               int64 V_2)
-      IL_0000:  ldarg.1
-      IL_0001:  unbox.any  assembly/Flags
-      IL_0006:  stloc.0
-      IL_0007:  ldarg.0
-      IL_0008:  ldfld      int64 assembly/Flags::bits@
-      IL_000d:  stloc.1
-      IL_000e:  ldloca.s   V_0
-      IL_0010:  ldfld      int64 assembly/Flags::bits@
-      IL_0015:  stloc.2
-      IL_0016:  ldloc.1
-      IL_0017:  ldloc.2
-      IL_0018:  cgt
-      IL_001a:  ldloc.1
-      IL_001b:  ldloc.2
-      IL_001c:  clt
-      IL_001e:  sub
-      IL_001f:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0,
-               int64 V_1)
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  ldc.i4     0x9e3779b9
-      IL_0007:  ldarg.0
-      IL_0008:  ldfld      int64 assembly/Flags::bits@
-      IL_000d:  stloc.1
-      IL_000e:  ldloc.1
-      IL_000f:  conv.i4
-      IL_0010:  ldloc.1
-      IL_0011:  ldc.i4.s   32
-      IL_0013:  shr
-      IL_0014:  conv.i4
-      IL_0015:  xor
-      IL_0016:  ldloc.0
-      IL_0017:  ldc.i4.6
-      IL_0018:  shl
-      IL_0019:  ldloc.0
-      IL_001a:  ldc.i4.2
-      IL_001b:  shr
-      IL_001c:  add
-      IL_001d:  add
-      IL_001e:  add
-      IL_001f:  stloc.0
-      IL_0020:  ldloc.0
-      IL_0021:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 assembly/Flags::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
-    .method public hidebysig instance bool Equals(valuetype assembly/Flags obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int64 assembly/Flags::bits@
-      IL_0006:  ldarga.s   obj
-      IL_0008:  ldfld      int64 assembly/Flags::bits@
-      IL_000d:  ceq
-      IL_000f:  ret
-    } 
-
-    .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  4
-      .locals init (valuetype assembly/Flags V_0)
-      IL_0000:  ldarg.1
-      IL_0001:  isinst     assembly/Flags
-      IL_0006:  brfalse.s  IL_001f
-
-      IL_0008:  ldarg.1
-      IL_0009:  unbox.any  assembly/Flags
-      IL_000e:  stloc.0
-      IL_000f:  ldarg.0
-      IL_0010:  ldfld      int64 assembly/Flags::bits@
-      IL_0015:  ldloca.s   V_0
-      IL_0017:  ldfld      int64 assembly/Flags::bits@
-      IL_001c:  ceq
-      IL_001e:  ret
-
-      IL_001f:  ldc.i4.0
-      IL_0020:  ret
-    } 
-
     .method public specialname rtspecialname instance void  .ctor(int64 bits) cil managed
     {
       
@@ -305,13 +146,106 @@
       IL_005d:  ret
     } 
 
-    .method public hidebysig specialname instance int64  get_Bits() cil managed
+    .method public hidebysig virtual final instance int32  CompareTo(valuetype assembly/Flags obj) cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  5
+      .locals init (class [runtime]System.Collections.IComparer V_0,
+               int64 V_1,
+               int64 V_2)
+      IL_0000:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0005:  stloc.0
+      IL_0006:  ldarg.0
+      IL_0007:  ldfld      int64 assembly/Flags::bits@
+      IL_000c:  stloc.1
+      IL_000d:  ldarga.s   obj
+      IL_000f:  ldfld      int64 assembly/Flags::bits@
+      IL_0014:  stloc.2
+      IL_0015:  ldloc.1
+      IL_0016:  ldloc.2
+      IL_0017:  cgt
+      IL_0019:  ldloc.1
+      IL_001a:  ldloc.2
+      IL_001b:  clt
+      IL_001d:  sub
+      IL_001e:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  unbox.any  assembly/Flags
+      IL_0007:  call       instance int32 assembly/Flags::CompareTo(valuetype assembly/Flags)
+      IL_000c:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  5
+      .locals init (valuetype assembly/Flags V_0,
+               int64 V_1,
+               int64 V_2)
+      IL_0000:  ldarg.1
+      IL_0001:  unbox.any  assembly/Flags
+      IL_0006:  stloc.0
+      IL_0007:  ldarg.0
+      IL_0008:  ldfld      int64 assembly/Flags::bits@
+      IL_000d:  stloc.1
+      IL_000e:  ldloca.s   V_0
+      IL_0010:  ldfld      int64 assembly/Flags::bits@
+      IL_0015:  stloc.2
+      IL_0016:  ldloc.1
+      IL_0017:  ldloc.2
+      IL_0018:  cgt
+      IL_001a:  ldloc.1
+      IL_001b:  ldloc.2
+      IL_001c:  clt
+      IL_001e:  sub
+      IL_001f:  ret
+    } 
+
+    .method public hidebysig instance bool Equals(valuetype assembly/Flags obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int64 assembly/Flags::bits@
-      IL_0006:  ret
+      IL_0006:  ldarga.s   obj
+      IL_0008:  ldfld      int64 assembly/Flags::bits@
+      IL_000d:  ceq
+      IL_000f:  ret
+    } 
+
+    .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  4
+      .locals init (valuetype assembly/Flags V_0)
+      IL_0000:  ldarg.1
+      IL_0001:  isinst     assembly/Flags
+      IL_0006:  brfalse.s  IL_001f
+
+      IL_0008:  ldarg.1
+      IL_0009:  unbox.any  assembly/Flags
+      IL_000e:  stloc.0
+      IL_000f:  ldarg.0
+      IL_0010:  ldfld      int64 assembly/Flags::bits@
+      IL_0015:  ldloca.s   V_0
+      IL_0017:  ldfld      int64 assembly/Flags::bits@
+      IL_001c:  ceq
+      IL_001e:  ret
+
+      IL_001f:  ldc.i4.0
+      IL_0020:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(valuetype assembly/Flags obj) cil managed
@@ -352,6 +286,72 @@
 
       IL_0021:  ldc.i4.0
       IL_0022:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0,
+               int64 V_1)
+      IL_0000:  ldc.i4.0
+      IL_0001:  stloc.0
+      IL_0002:  ldc.i4     0x9e3779b9
+      IL_0007:  ldarg.0
+      IL_0008:  ldfld      int64 assembly/Flags::bits@
+      IL_000d:  stloc.1
+      IL_000e:  ldloc.1
+      IL_000f:  conv.i4
+      IL_0010:  ldloc.1
+      IL_0011:  ldc.i4.s   32
+      IL_0013:  shr
+      IL_0014:  conv.i4
+      IL_0015:  xor
+      IL_0016:  ldloc.0
+      IL_0017:  ldc.i4.6
+      IL_0018:  shl
+      IL_0019:  ldloc.0
+      IL_001a:  ldc.i4.2
+      IL_001b:  shr
+      IL_001c:  add
+      IL_001d:  add
+      IL_001e:  add
+      IL_001f:  stloc.0
+      IL_0020:  ldloc.0
+      IL_0021:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 assembly/Flags::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
+    } 
+
+    .method public hidebysig specialname instance int64  get_Bits() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int64 assembly/Flags::bits@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance int64  get_bits() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int64 assembly/Flags::bits@
+      IL_0006:  ret
     } 
 
     .property instance int64 bits()

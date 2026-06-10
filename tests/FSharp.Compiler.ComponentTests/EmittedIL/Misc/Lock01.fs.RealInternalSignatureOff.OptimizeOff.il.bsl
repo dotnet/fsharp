@@ -38,14 +38,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method public specialname static object get_o() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     object '<StartupCode$assembly>'.$assembly::o@19
-    IL_0005:  ret
-  } 
-
   .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
@@ -55,6 +47,14 @@
     IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
     IL_000b:  pop
     IL_000c:  ret
+  } 
+
+  .method public specialname static object get_o() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     object '<StartupCode$assembly>'.$assembly::o@19
+    IL_0005:  ret
   } 
 
   .property object o()

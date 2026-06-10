@@ -60,6 +60,16 @@
       IL_0014:  ret
     } 
 
+    .method public strict virtual instance void Close() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldc.i4.3
+      IL_0002:  stfld      int32 assembly/seq1@9::pc
+      IL_0007:  ret
+    } 
+
     .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>>& next) cil managed
     {
       
@@ -120,13 +130,16 @@
       IL_0062:  ret
     } 
 
-    .method public strict virtual instance void Close() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<class [runtime]System.Tuple`2<int32,int32>> GetFreshEnumerator() cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldc.i4.3
-      IL_0002:  stfld      int32 assembly/seq1@9::pc
+      IL_0000:  ldc.i4.0
+      IL_0001:  ldnull
+      IL_0002:  newobj     instance void assembly/seq1@9::.ctor(int32,
+                                                                          class [runtime]System.Tuple`2<int32,int32>)
       IL_0007:  ret
     } 
 
@@ -179,19 +192,6 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<class [runtime]System.Tuple`2<int32,int32>> GetFreshEnumerator() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  ldnull
-      IL_0002:  newobj     instance void assembly/seq1@9::.ctor(int32,
-                                                                          class [runtime]System.Tuple`2<int32,int32>)
-      IL_0007:  ret
-    } 
-
   } 
 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> alist@5
@@ -216,6 +216,41 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32[] a2@26
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method public specialname static int32[] get_a1() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32[] assembly::a1@25
+    IL_0005:  ret
+  } 
+
+  .method public specialname static int32[] get_a2() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32[] assembly::a2@26
+    IL_0005:  ret
+  } 
+
+  .method public specialname static int32[0...,0...] get_a3() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32[0...,0...] assembly::a3@11
+    IL_0005:  ret
+  } 
+
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_alist() cil managed
   {
     
@@ -229,6 +264,30 @@
     
     .maxstack  8
     IL_0000:  ldsfld     int32[] assembly::array@6
+    IL_0005:  ret
+  } 
+
+  .method public specialname static class [runtime]System.Tuple`2<int32,int32>[] get_array1() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     class [runtime]System.Tuple`2<int32,int32>[] assembly::array1@10
+    IL_0005:  ret
+  } 
+
+  .method public specialname static int32[0...,0...,0...] get_array3D() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32[0...,0...,0...] assembly::array3D@12
+    IL_0005:  ret
+  } 
+
+  .method public specialname static int32[0...,0...,0...,0...] get_array4D() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32[0...,0...,0...,0...] assembly::array4D@13
     IL_0005:  ret
   } 
 
@@ -254,65 +313,6 @@
     .maxstack  8
     IL_0000:  ldsfld     class [runtime]System.Collections.Generic.IEnumerable`1<class [runtime]System.Tuple`2<int32,int32>> assembly::seq1@9
     IL_0005:  ret
-  } 
-
-  .method public specialname static class [runtime]System.Tuple`2<int32,int32>[] get_array1() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     class [runtime]System.Tuple`2<int32,int32>[] assembly::array1@10
-    IL_0005:  ret
-  } 
-
-  .method public specialname static int32[0...,0...] get_a3() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32[0...,0...] assembly::a3@11
-    IL_0005:  ret
-  } 
-
-  .method public specialname static int32[0...,0...,0...] get_array3D() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32[0...,0...,0...] assembly::array3D@12
-    IL_0005:  ret
-  } 
-
-  .method public specialname static int32[0...,0...,0...,0...] get_array4D() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32[0...,0...,0...,0...] assembly::array4D@13
-    IL_0005:  ret
-  } 
-
-  .method public specialname static int32[] get_a1() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32[] assembly::a1@25
-    IL_0005:  ret
-  } 
-
-  .method public specialname static int32[] get_a2() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32[] assembly::a2@26
-    IL_0005:  ret
-  } 
-
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed

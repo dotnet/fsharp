@@ -43,16 +43,14 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly float64 F@
-    .method public hidebysig specialname instance float64  get_F() cil managed
+    .method public specialname rtspecialname instance void  .ctor(float64 f) cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      float64 floatsanddoubles/Float::F@
-      IL_0006:  ret
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      float64 floatsanddoubles/Float::F@
+      IL_0007:  ret
     } 
 
     .method public hidebysig virtual final instance int32  CompareTo(valuetype floatsanddoubles/Float obj) cil managed
@@ -177,45 +175,6 @@
       IL_0041:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0)
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  ldc.i4     0x9e3779b9
-      IL_0007:  ldarg.1
-      IL_0008:  ldarg.0
-      IL_0009:  ldfld      float64 floatsanddoubles/Float::F@
-      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<float64>(class [runtime]System.Collections.IEqualityComparer,
-                                                                                                                                              !!0)
-      IL_0013:  ldloc.0
-      IL_0014:  ldc.i4.6
-      IL_0015:  shl
-      IL_0016:  ldloc.0
-      IL_0017:  ldc.i4.2
-      IL_0018:  shr
-      IL_0019:  add
-      IL_001a:  add
-      IL_001b:  add
-      IL_001c:  stloc.0
-      IL_001d:  ldloc.0
-      IL_001e:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 floatsanddoubles/Float::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
     .method public hidebysig instance bool Equals(valuetype floatsanddoubles/Float obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -262,16 +221,6 @@
 
       IL_001d:  ldc.i4.0
       IL_001e:  ret
-    } 
-
-    .method public specialname rtspecialname instance void  .ctor(float64 f) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      float64 floatsanddoubles/Float::F@
-      IL_0007:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(valuetype floatsanddoubles/Float obj) cil managed
@@ -340,6 +289,57 @@
       IL_001d:  ret
     } 
 
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0)
+      IL_0000:  ldc.i4.0
+      IL_0001:  stloc.0
+      IL_0002:  ldc.i4     0x9e3779b9
+      IL_0007:  ldarg.1
+      IL_0008:  ldarg.0
+      IL_0009:  ldfld      float64 floatsanddoubles/Float::F@
+      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<float64>(class [runtime]System.Collections.IEqualityComparer,
+                                                                                                                                              !!0)
+      IL_0013:  ldloc.0
+      IL_0014:  ldc.i4.6
+      IL_0015:  shl
+      IL_0016:  ldloc.0
+      IL_0017:  ldc.i4.2
+      IL_0018:  shr
+      IL_0019:  add
+      IL_001a:  add
+      IL_001b:  add
+      IL_001c:  stloc.0
+      IL_001d:  ldloc.0
+      IL_001e:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 floatsanddoubles/Float::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
+    } 
+
+    .method public hidebysig specialname instance float64  get_F() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      float64 floatsanddoubles/Float::F@
+      IL_0006:  ret
+    } 
+
     .property instance float64 F()
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
@@ -358,16 +358,14 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly float64 D@
-    .method public hidebysig specialname instance float64  get_D() cil managed
+    .method public specialname rtspecialname instance void  .ctor(float64 d) cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      float64 floatsanddoubles/Double::D@
-      IL_0006:  ret
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      float64 floatsanddoubles/Double::D@
+      IL_0007:  ret
     } 
 
     .method public hidebysig virtual final instance int32  CompareTo(valuetype floatsanddoubles/Double obj) cil managed
@@ -492,45 +490,6 @@
       IL_0041:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0)
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  ldc.i4     0x9e3779b9
-      IL_0007:  ldarg.1
-      IL_0008:  ldarg.0
-      IL_0009:  ldfld      float64 floatsanddoubles/Double::D@
-      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<float64>(class [runtime]System.Collections.IEqualityComparer,
-                                                                                                                                              !!0)
-      IL_0013:  ldloc.0
-      IL_0014:  ldc.i4.6
-      IL_0015:  shl
-      IL_0016:  ldloc.0
-      IL_0017:  ldc.i4.2
-      IL_0018:  shr
-      IL_0019:  add
-      IL_001a:  add
-      IL_001b:  add
-      IL_001c:  stloc.0
-      IL_001d:  ldloc.0
-      IL_001e:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 floatsanddoubles/Double::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
     .method public hidebysig instance bool Equals(valuetype floatsanddoubles/Double obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -577,16 +536,6 @@
 
       IL_001d:  ldc.i4.0
       IL_001e:  ret
-    } 
-
-    .method public specialname rtspecialname instance void  .ctor(float64 d) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      float64 floatsanddoubles/Double::D@
-      IL_0007:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(valuetype floatsanddoubles/Double obj) cil managed
@@ -653,6 +602,57 @@
 
       IL_001c:  ldc.i4.0
       IL_001d:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0)
+      IL_0000:  ldc.i4.0
+      IL_0001:  stloc.0
+      IL_0002:  ldc.i4     0x9e3779b9
+      IL_0007:  ldarg.1
+      IL_0008:  ldarg.0
+      IL_0009:  ldfld      float64 floatsanddoubles/Double::D@
+      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<float64>(class [runtime]System.Collections.IEqualityComparer,
+                                                                                                                                              !!0)
+      IL_0013:  ldloc.0
+      IL_0014:  ldc.i4.6
+      IL_0015:  shl
+      IL_0016:  ldloc.0
+      IL_0017:  ldc.i4.2
+      IL_0018:  shr
+      IL_0019:  add
+      IL_001a:  add
+      IL_001b:  add
+      IL_001c:  stloc.0
+      IL_001d:  ldloc.0
+      IL_001e:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 floatsanddoubles/Double::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
+    } 
+
+    .method public hidebysig specialname instance float64  get_D() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      float64 floatsanddoubles/Double::D@
+      IL_0006:  ret
     } 
 
     .property instance float64 D()
@@ -1037,12 +1037,15 @@
 
   } 
 
-  .method public specialname static valuetype floatsanddoubles/Float[] get_floats() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     valuetype floatsanddoubles/Float[] '<StartupCode$assembly>'.$floatsanddoubles::floats@22
-    IL_0005:  ret
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$floatsanddoubles::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$floatsanddoubles::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
   .method public specialname static valuetype floatsanddoubles/Double[] get_doubles() cil managed
@@ -1050,6 +1053,14 @@
     
     .maxstack  8
     IL_0000:  ldsfld     valuetype floatsanddoubles/Double[] '<StartupCode$assembly>'.$floatsanddoubles::doubles@23
+    IL_0005:  ret
+  } 
+
+  .method public specialname static valuetype floatsanddoubles/Float[] get_floats() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     valuetype floatsanddoubles/Float[] '<StartupCode$assembly>'.$floatsanddoubles::floats@22
     IL_0005:  ret
   } 
 
@@ -1215,17 +1226,6 @@
 
     IL_0182:  ldc.i4.0
     IL_0183:  ret
-  } 
-
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$floatsanddoubles::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$floatsanddoubles::init@
-    IL_000b:  pop
-    IL_000c:  ret
   } 
 
   .property valuetype floatsanddoubles/Float[]

@@ -41,6 +41,15 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field static assembly initonly class assembly/assembly/f3@5 @_instance
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        
+        .maxstack  10
+        IL_0000:  newobj     instance void assembly/assembly/f3@5::.ctor()
+        IL_0005:  stsfld     class assembly/assembly/f3@5 assembly/assembly/f3@5::@_instance
+        IL_000a:  ret
+      } 
+
       .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -90,15 +99,6 @@
         IL_0045:  ret
       } 
 
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void assembly/assembly/f3@5::.ctor()
-        IL_0005:  stsfld     class assembly/assembly/f3@5 assembly/assembly/f3@5::@_instance
-        IL_000a:  ret
-      } 
-
     } 
 
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@10-1'
@@ -134,17 +134,6 @@
 
     } 
 
-    .method public static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> f3() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
-      IL_0005:  ldsfld     class assembly/assembly/f3@5 assembly/assembly/f3@5::@_instance
-      IL_000a:  tail.
-      IL_000c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
-      IL_0011:  ret
-    } 
-
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -154,6 +143,17 @@
       IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
       IL_000b:  pop
       IL_000c:  ret
+    } 
+
+    .method public static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> f3() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
+      IL_0005:  ldsfld     class assembly/assembly/f3@5 assembly/assembly/f3@5::@_instance
+      IL_000a:  tail.
+      IL_000c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
+      IL_0011:  ret
     } 
 
     .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> get_arg@1() cil managed

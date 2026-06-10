@@ -41,10 +41,6 @@
     {
     } 
 
-    .method public hidebysig strict virtual instance int32  Invoke([out] uint8[]  marshal([ + 1]) data, [out] int32 length) runtime managed
-    {
-    } 
-
     .method public hidebysig strict virtual 
             instance class [runtime]System.IAsyncResult 
             BeginInvoke([out] uint8[]  marshal([ + 1]) data,
@@ -55,6 +51,10 @@
     } 
 
     .method public hidebysig strict virtual instance int32  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
+    {
+    } 
+
+    .method public hidebysig strict virtual instance int32  Invoke([out] uint8[]  marshal([ + 1]) data, [out] int32 length) runtime managed
     {
     } 
 

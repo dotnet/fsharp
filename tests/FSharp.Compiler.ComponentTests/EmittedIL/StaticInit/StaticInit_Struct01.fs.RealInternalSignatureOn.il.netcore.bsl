@@ -50,6 +50,27 @@
     .field static assembly int32 x
     .field static assembly int32 init@4
     .field assembly valuetype [runtime]System.DateTime s
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
+    .method public specialname rtspecialname instance void  .ctor(valuetype [runtime]System.DateTime s) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      valuetype [runtime]System.DateTime assembly/C::s
+      IL_0007:  ret
+    } 
+
     .method public hidebysig virtual final instance int32  CompareTo(valuetype assembly/C obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -106,45 +127,6 @@
       IL_001d:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0)
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  ldc.i4     0x9e3779b9
-      IL_0007:  ldarg.1
-      IL_0008:  ldarg.0
-      IL_0009:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<valuetype [runtime]System.DateTime>(class [runtime]System.Collections.IEqualityComparer,
-                                                                                                                                                                                !!0)
-      IL_0013:  ldloc.0
-      IL_0014:  ldc.i4.6
-      IL_0015:  shl
-      IL_0016:  ldloc.0
-      IL_0017:  ldc.i4.2
-      IL_0018:  shr
-      IL_0019:  add
-      IL_001a:  add
-      IL_001b:  add
-      IL_001c:  stloc.0
-      IL_001d:  ldloc.0
-      IL_001e:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 assembly/C::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
     .method public hidebysig instance bool Equals(valuetype assembly/C obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -194,40 +176,6 @@
       IL_001e:  ret
     } 
 
-    .method public specialname rtspecialname instance void  .ctor(valuetype [runtime]System.DateTime s) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      valuetype [runtime]System.DateTime assembly/C::s
-      IL_0007:  ret
-    } 
-
-    .method assembly static int32  f() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  nop
-      IL_0001:  volatile.
-      IL_0003:  ldsfld     int32 assembly/C::init@4
-      IL_0008:  ldc.i4.1
-      IL_0009:  bge.s      IL_0014
-
-      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
-      IL_0010:  nop
-      IL_0011:  nop
-      IL_0012:  br.s       IL_0015
-
-      IL_0014:  nop
-      IL_0015:  ldsfld     int32 assembly/C::x
-      IL_001a:  ldstr      "2"
-      IL_001f:  callvirt   instance int32 [runtime]System.String::get_Length()
-      IL_0024:  add
-      IL_0025:  ret
-    } 
-
     .method public hidebysig virtual final instance bool  Equals(valuetype assembly/C obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -272,15 +220,67 @@
       IL_001d:  ret
     } 
 
-    .method private specialname rtspecialname static void  .cctor() cil managed
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0)
+      IL_0000:  ldc.i4.0
+      IL_0001:  stloc.0
+      IL_0002:  ldc.i4     0x9e3779b9
+      IL_0007:  ldarg.1
+      IL_0008:  ldarg.0
+      IL_0009:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
+      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<valuetype [runtime]System.DateTime>(class [runtime]System.Collections.IEqualityComparer,
+                                                                                                                                                                                !!0)
+      IL_0013:  ldloc.0
+      IL_0014:  ldc.i4.6
+      IL_0015:  shl
+      IL_0016:  ldloc.0
+      IL_0017:  ldc.i4.2
+      IL_0018:  shr
+      IL_0019:  add
+      IL_001a:  add
+      IL_001b:  add
+      IL_001c:  stloc.0
+      IL_001d:  ldloc.0
+      IL_001e:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-      IL_000b:  pop
-      IL_000c:  ret
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 assembly/C::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
+    } 
+
+    .method assembly static int32  f() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  nop
+      IL_0001:  volatile.
+      IL_0003:  ldsfld     int32 assembly/C::init@4
+      IL_0008:  ldc.i4.1
+      IL_0009:  bge.s      IL_0014
+
+      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_0010:  nop
+      IL_0011:  nop
+      IL_0012:  br.s       IL_0015
+
+      IL_0014:  nop
+      IL_0015:  ldsfld     int32 assembly/C::x
+      IL_001a:  ldstr      "2"
+      IL_001f:  callvirt   instance int32 [runtime]System.String::get_Length()
+      IL_0024:  add
+      IL_0025:  ret
     } 
 
     .method assembly static void  staticInitialization@() cil managed

@@ -43,6 +43,16 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field public int32 Field
+    .method public specialname rtspecialname instance void  .ctor(int32 i) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      int32 Experiment.Test/Test::Field
+      IL_0007:  ret
+    } 
+
     .method public hidebysig virtual final instance int32  CompareTo(valuetype Experiment.Test/Test obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -108,42 +118,6 @@
       IL_001f:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0)
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  ldc.i4     0x9e3779b9
-      IL_0007:  ldarg.0
-      IL_0008:  ldfld      int32 Experiment.Test/Test::Field
-      IL_000d:  ldloc.0
-      IL_000e:  ldc.i4.6
-      IL_000f:  shl
-      IL_0010:  ldloc.0
-      IL_0011:  ldc.i4.2
-      IL_0012:  shr
-      IL_0013:  add
-      IL_0014:  add
-      IL_0015:  add
-      IL_0016:  stloc.0
-      IL_0017:  ldloc.0
-      IL_0018:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 Experiment.Test/Test::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
     .method public hidebysig instance bool Equals(valuetype Experiment.Test/Test obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -179,16 +153,6 @@
 
       IL_001f:  ldc.i4.0
       IL_0020:  ret
-    } 
-
-    .method public specialname rtspecialname instance void  .ctor(int32 i) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      int32 Experiment.Test/Test::Field
-      IL_0007:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(valuetype Experiment.Test/Test obj) cil managed
@@ -229,6 +193,42 @@
 
       IL_0021:  ldc.i4.0
       IL_0022:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0)
+      IL_0000:  ldc.i4.0
+      IL_0001:  stloc.0
+      IL_0002:  ldc.i4     0x9e3779b9
+      IL_0007:  ldarg.0
+      IL_0008:  ldfld      int32 Experiment.Test/Test::Field
+      IL_000d:  ldloc.0
+      IL_000e:  ldc.i4.6
+      IL_000f:  shl
+      IL_0010:  ldloc.0
+      IL_0011:  ldc.i4.2
+      IL_0012:  shr
+      IL_0013:  add
+      IL_0014:  add
+      IL_0015:  add
+      IL_0016:  stloc.0
+      IL_0017:  ldloc.0
+      IL_0018:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 Experiment.Test/Test::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
     } 
 
   } 
