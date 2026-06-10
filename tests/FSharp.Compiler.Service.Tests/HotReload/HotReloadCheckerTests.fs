@@ -2146,12 +2146,12 @@ let mutable newCounter = 0
 """
 
     [<Fact>]
-    let ``EmitHotReloadDelta cleanly rejects module value addition pending field emission`` () =
-        // Phase B1a allows the CLASSIFICATION of module-level value additions when the runtime
-        // advertises the static-field and method capabilities, but field-row EMISSION is Phase
-        // B1b. Until it lands, the emitter must reject the edit through the error channel —
-        // never produce a delta with accessor methods referencing a field row it cannot emit.
-        // This test is the executable cut line: B1b flips it to expect a successful delta.
+    let ``EmitHotReloadDelta emits added module value as static field delta`` () =
+        // Phase B1b: an added module-level value lowers to a static backing field on the
+        // startup-code class, get_/set_ accessor methods on the module type, and a startup
+        // constructor that initializes the field. The delta must append the Field row using
+        // the Roslyn EncLog shape: parent TypeDef tagged AddField immediately followed by
+        // the new Field row with the Default operation.
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-module-value-add", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -2183,12 +2183,58 @@ let mutable newCounter = 0
         let emitResult = checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate
 
         match emitResult with
-        | Ok _ ->
-            failwith
-                "Module value addition emitted a delta, but Phase B1b field emission has not landed; if field emission now works, update this test to validate the delta instead."
-        | Error (FSharpHotReloadError.UnsupportedEdit _)
-        | Error (FSharpHotReloadError.DeltaEmissionFailed _) -> ()
-        | Error other -> failwithf "Expected a clean emission rejection, got: %A" other
+        | Error error -> failwithf "Expected module value addition to emit a delta, got: %A" error
+        | Ok delta ->
+            Assert.NotEmpty(delta.Metadata)
+            Assert.NotEmpty(delta.IL)
+
+            // Accessor methods (get_/set_newCounter) and the startup constructor are emitted
+            // as added method bodies.
+            Assert.True(
+                delta.AddedOrChangedMethods.Length >= 3,
+                $"Expected at least 3 added/changed methods (accessors + startup ctor), got {delta.AddedOrChangedMethods.Length}")
+
+            let metadataBytes = System.Collections.Immutable.ImmutableArray.CreateRange(delta.Metadata)
+            use provider = MetadataReaderProvider.FromMetadataImage(metadataBytes)
+            let reader = provider.GetMetadataReader()
+
+            // `let mutable newCounter = 0` lowers to TWO static fields on the startup-code
+            // class: the backing field `newCounter@<line>` and the init-guard `init@`.
+            Assert.Equal(2, reader.GetTableRowCount(TableIndex.Field))
+
+            let encLog = reader.GetEditAndContinueLogEntries() |> Seq.toArray
+
+            // Every (TypeDef, AddField) parent entry must be immediately followed by its Field row.
+            let addFieldIndexes =
+                encLog
+                |> Array.indexed
+                |> Array.filter (fun (_, entry) ->
+                    entry.Operation = EditAndContinueOperation.AddField
+                    && entry.Handle.Kind = HandleKind.TypeDefinition)
+                |> Array.map fst
+
+            Assert.Equal(2, addFieldIndexes.Length)
+
+            for index in addFieldIndexes do
+                Assert.True(index + 1 < encLog.Length, "AddField parent entry must be followed by the Field row.")
+                let fieldEntry = encLog.[index + 1]
+                Assert.Equal(HandleKind.FieldDefinition, fieldEntry.Handle.Kind)
+                Assert.Equal(EditAndContinueOperation.Default, fieldEntry.Operation)
+
+            // Accessor methods are logged as method additions.
+            let methodAddCount =
+                encLog
+                |> Array.filter (fun entry ->
+                    entry.Operation = EditAndContinueOperation.AddMethod
+                    || (entry.Operation = EditAndContinueOperation.Default
+                        && entry.Handle.Kind = HandleKind.MethodDefinition))
+                |> Array.length
+
+            Assert.True(methodAddCount >= 3, $"Expected at least 3 method EncLog entries, got {methodAddCount}")
+
+            // The Field row (and no TypeDef row) must be present in EncMap.
+            let encMap = reader.GetEditAndContinueMapEntries() |> Seq.toArray
+            Assert.Contains(encMap, fun handle -> handle.Kind = HandleKind.FieldDefinition)
 
         checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()

@@ -191,10 +191,27 @@ let emitWithUserStrings
         encLog.Add(struct (TableNames.Module, 1, EditAndContinueOperation.Default))
         encMap.Add(struct (TableNames.Module, 1))
 
+        // ---------------------------------------------------------------------------------
+        // EncLog shape for ADDED members (Roslyn DeltaMetadataWriter.PopulateEncLogTableRows
+        // parity, verified against a hotreload-delta-gen C# reference delta and the CLR's
+        // EnC applier CMiniMdRW::ApplyDelta): an added member is logged as its PARENT row
+        // tagged with the Add* operation, immediately followed by the new member row with
+        // the Default operation. The runtime reads the parent token from the Add* entry and
+        // links the member created by the FOLLOWING entry into the parent's member list, so
+        // each pair must stay adjacent and the parent must already exist when processed:
+        //   AddMethod / AddField -> parent TypeDef row
+        //   AddParameter         -> parent MethodDef row
+        //   AddProperty/AddEvent -> parent PropertyMap/EventMap row
+        // Only the added member row (never the parent entry) appears in EncMap.
+        // ---------------------------------------------------------------------------------
+        let methodEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let methodRowsByKey = Dictionary<MethodDefinitionKey, MethodDefinitionRowInfo>(HashIdentity.Structural)
+
         for row in methodDefinitionRows do
             match updatesByKey.TryGetValue row.Key with
             | true, update ->
                 tableMirror.AddMethodRow(row, update.Body)
+                methodRowsByKey[row.Key] <- row
                 if shouldTraceMethodRows () then
                     printfn
                         "[fsharp-hotreload][writer] method-row key=%s::%s rowId=%d isAdded=%b"
@@ -203,34 +220,41 @@ let emitWithUserStrings
                         row.RowId
                         row.IsAdded
 
-                let operation = if row.IsAdded then EditAndContinueOperation.AddMethod else EditAndContinueOperation.Default
-                encLog.Add(struct (TableNames.Method, row.RowId, operation))
+                if row.IsAdded then
+                    match row.ParentTypeDefRowId with
+                    | Some parentRowId ->
+                        methodEncLogEntries.Add(struct (TableNames.TypeDef, parentRowId, EditAndContinueOperation.AddMethod))
+                    | None ->
+                        invalidOp
+                            $"Added method '{row.Key.DeclaringType}::{row.Key.Name}' has no parent TypeDef row id; the AddMethod EncLog entry cannot be emitted."
+
+                methodEncLogEntries.Add(struct (TableNames.Method, row.RowId, EditAndContinueOperation.Default))
                 encMap.Add(struct (TableNames.Method, row.RowId))
             | _ ->
                 if shouldTraceMetadata () then
                     printfn "[fsharp-hotreload][metadata-writer] missing update payload for %A" row.Key
 
+        let parameterEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
         for row in parameterDefinitionRows do
             tableMirror.AddParameterRow row
 
-            let operation = if row.IsAdded then EditAndContinueOperation.AddParameter else EditAndContinueOperation.Default
-            encLog.Add(struct (TableNames.Param, row.RowId, operation))
+            if row.IsAdded then
+                match methodRowsByKey.TryGetValue row.Key.Method with
+                | true, methodRow ->
+                    parameterEncLogEntries.Add(struct (TableNames.Method, methodRow.RowId, EditAndContinueOperation.AddParameter))
+                | _ ->
+                    invalidOp
+                        $"Added parameter (sequence {row.SequenceNumber}) of '{row.Key.Method.DeclaringType}::{row.Key.Method.Name}' has no method row; the AddParameter EncLog entry cannot be emitted."
+
+            parameterEncLogEntries.Add(struct (TableNames.Param, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.Param, row.RowId))
 
-        // Added fields enter the Field table and EncMap here; their EncLog entries are the
-        // Roslyn-style (TypeDef, AddField) + (Field, Default) pairs built below, which are
-        // spliced into the log rather than added to `encLog` so the per-table sorting cannot
-        // separate the parent entry from its field row.
         for row in fieldDefinitionRows do
             if row.IsAdded then
                 tableMirror.AddFieldRow row
                 encMap.Add(struct (TableNames.Field, row.RowId))
 
-        // Roslyn parity (verified against a hotreload-delta-gen C# delta that adds a static
-        // field): the EncLog logs the parent TypeDef row tagged AddField immediately followed
-        // by the new Field row with the Default operation, and only the Field row appears in
-        // EncMap. The runtime associates the Field row with the immediately preceding AddField
-        // parent, so each pair must stay adjacent.
         let fieldEncLogPairs =
             fieldDefinitionRows
             |> List.filter (fun row -> row.IsAdded)
@@ -277,65 +301,107 @@ let emitWithUserStrings
             encLog.Add(struct (TableNames.CustomAttribute, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.CustomAttribute, row.RowId))
 
+        // Newly created PropertyMap/EventMap rows are logged as plain Default entries (the
+        // row content is applied via ApplyTableDelta) and MUST precede the AddProperty /
+        // AddEvent entries that reference them as parents.
+        let propertyMapEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let propertyMapRowIdByType = Dictionary<string, int>(StringComparer.Ordinal)
+
+        for row in propertyMapRows do
+            if row.IsAdded then
+                tableMirror.AddPropertyMapRow row
+                propertyMapEncLogEntries.Add(struct (TableNames.PropertyMap, row.RowId, EditAndContinueOperation.Default))
+                encMap.Add(struct (TableNames.PropertyMap, row.RowId))
+
+            propertyMapRowIdByType[row.DeclaringType] <- row.RowId
+
+        let eventMapEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let eventMapRowIdByType = Dictionary<string, int>(StringComparer.Ordinal)
+
+        for row in eventMapRows do
+            if row.IsAdded then
+                tableMirror.AddEventMapRow row
+                eventMapEncLogEntries.Add(struct (TableNames.EventMap, row.RowId, EditAndContinueOperation.Default))
+                encMap.Add(struct (TableNames.EventMap, row.RowId))
+
+            eventMapRowIdByType[row.DeclaringType] <- row.RowId
+
+        let propertyEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
         for row in propertyDefinitionRows do
             if row.IsAdded then
                 tableMirror.AddPropertyRow row
 
-                encLog.Add(struct (TableNames.Property, row.RowId, EditAndContinueOperation.AddProperty))
+                let parentMapRowId =
+                    match row.ParentPropertyMapRowId with
+                    | Some rowId -> rowId
+                    | None ->
+                        match propertyMapRowIdByType.TryGetValue row.Key.DeclaringType with
+                        | true, rowId -> rowId
+                        | _ ->
+                            invalidOp
+                                $"Added property '{row.Key.DeclaringType}::{row.Key.Name}' has no parent PropertyMap row id; the AddProperty EncLog entry cannot be emitted."
+
+                propertyEncLogEntries.Add(struct (TableNames.PropertyMap, parentMapRowId, EditAndContinueOperation.AddProperty))
+                propertyEncLogEntries.Add(struct (TableNames.Property, row.RowId, EditAndContinueOperation.Default))
                 encMap.Add(struct (TableNames.Property, row.RowId))
+
+        let eventEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in eventDefinitionRows do
             if row.IsAdded then
                 tableMirror.AddEventRow row
 
-                encLog.Add(struct (TableNames.Event, row.RowId, EditAndContinueOperation.AddEvent))
+                let parentMapRowId =
+                    match row.ParentEventMapRowId with
+                    | Some rowId -> rowId
+                    | None ->
+                        match eventMapRowIdByType.TryGetValue row.Key.DeclaringType with
+                        | true, rowId -> rowId
+                        | _ ->
+                            invalidOp
+                                $"Added event '{row.Key.DeclaringType}::{row.Key.Name}' has no parent EventMap row id; the AddEvent EncLog entry cannot be emitted."
+
+                eventEncLogEntries.Add(struct (TableNames.EventMap, parentMapRowId, EditAndContinueOperation.AddEvent))
+                eventEncLogEntries.Add(struct (TableNames.Event, row.RowId, EditAndContinueOperation.Default))
                 encMap.Add(struct (TableNames.Event, row.RowId))
 
-        for row in propertyMapRows do
-            if row.IsAdded then
-                encLog.Add(struct (TableNames.PropertyMap, row.RowId, EditAndContinueOperation.AddProperty))
-                encMap.Add(struct (TableNames.PropertyMap, row.RowId))
-                tableMirror.AddPropertyMapRow row
-
-        for row in eventMapRows do
-            if row.IsAdded then
-                encLog.Add(struct (TableNames.EventMap, row.RowId, EditAndContinueOperation.AddEvent))
-                encMap.Add(struct (TableNames.EventMap, row.RowId))
-                tableMirror.AddEventMapRow row
+        // MethodSemantics rows are logged as plain Default entries (Roslyn parity); the CLR
+        // applies them via ApplyTableDelta like any other appended row.
+        let methodSemanticsEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in methodSemanticsRows do
             if row.IsAdded then
                 tableMirror.AddMethodSemanticsRow row
 
-                encLog.Add(struct (TableNames.MethodSemantics, row.RowId, EditAndContinueOperation.AddMethod))
+                methodSemanticsEncLogEntries.Add(struct (TableNames.MethodSemantics, row.RowId, EditAndContinueOperation.Default))
                 encMap.Add(struct (TableNames.MethodSemantics, row.RowId))
 
         for _, newToken, literal in userStringUpdates do
             let offset = newToken &&& 0x00FFFFFF
             tableMirror.AddUserStringLiteral(offset, literal)
 
-        // Sort EncLog entries by table order (Roslyn's canonical ordering), then by row ID.
-        // This ensures consistent delta format across generations.
+        // Assemble the EncLog. Groups follow the established F# ordering (Module first, then
+        // member tables, then reference tables); parent/member Add* pairs are appended as
+        // pre-built adjacent sequences so no per-table sorting can separate a parent entry
+        // from the member row it creates. Map rows precede the Add* entries that use them as
+        // parents, and method entries precede the parameter pairs that reference them.
         let encLogEntries =
             let snapshot = encLog |> Seq.toArray
-            // Roslyn orders EncLog by this specific table sequence
-            let orderedTables =
-                [| TableNames.Module
-                   TableNames.Method
-                   TableNames.Param
-                   TableNames.TypeRef
+
+            let referenceTables =
+                [| TableNames.TypeRef
                    TableNames.MemberRef
                    TableNames.MethodSpec
                    TableNames.AssemblyRef
                    TableNames.StandAloneSig
-                   TableNames.CustomAttribute
-                   TableNames.Property
-                   TableNames.Event
-                   TableNames.PropertyMap
-                   TableNames.EventMap
-                   TableNames.MethodSemantics |]
+                   TableNames.CustomAttribute |]
 
-            let orderedTableSet = orderedTables |> Set.ofArray
+            let handledTables =
+                Set.ofList
+                    [ TableNames.Module.Index
+                      yield! referenceTables |> Seq.map (fun t -> t.Index) ]
+
             let builder = ResizeArray()
             let appendEntries (table: TableName) =
                 snapshot
@@ -344,16 +410,21 @@ let emitWithUserStrings
                 |> Seq.iter builder.Add
 
             appendEntries TableNames.Module
-            // Added-field (TypeDef AddField, Field) pairs are placed between the Module row
-            // and the Method entries: ECMA table order puts TypeDef (0x02) and Field (0x04)
-            // before Method (0x06), and Roslyn likewise logs the field pair ahead of the
-            // method rows that consume the new field.
+            // ECMA table order: TypeDef (0x02) / Field (0x04) precede Method (0x06); Roslyn
+            // likewise logs added-field pairs ahead of the method rows that consume them.
             fieldEncLogPairs |> List.iter builder.Add
-            orderedTables |> Array.skip 1 |> Array.iter appendEntries
+            builder.AddRange methodEncLogEntries
+            builder.AddRange parameterEncLogEntries
+            referenceTables |> Array.iter appendEntries
+            builder.AddRange propertyMapEncLogEntries
+            builder.AddRange propertyEncLogEntries
+            builder.AddRange eventMapEncLogEntries
+            builder.AddRange eventEncLogEntries
+            builder.AddRange methodSemanticsEncLogEntries
 
-            // Any tables not in the canonical order are appended sorted by token
+            // Any tables not handled above are appended sorted by token.
             snapshot
-            |> Seq.filter (fun struct (table, _, _) -> not (orderedTableSet |> Set.exists (fun t -> t.Index = table.Index)))
+            |> Seq.filter (fun struct (table, _, _) -> not (handledTables |> Set.contains table.Index))
             |> Seq.sortBy (fun struct (table, rowId, _) ->
                 (table.Index <<< 24) ||| (rowId &&& 0x00FFFFFF))
             |> Seq.iter builder.Add

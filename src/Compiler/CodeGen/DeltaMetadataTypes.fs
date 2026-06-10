@@ -16,6 +16,10 @@ type MethodDefinitionRowInfo =
     { Key: MethodDefinitionKey
       RowId: int
       IsAdded: bool
+      /// Row id of the baseline TypeDef that receives an ADDED method. Required for added
+      /// rows: the CLR EnC applier (CMiniMdRW::ApplyDelta) reads the parent TypeDef from
+      /// the AddMethod EncLog entry and links the new method into that type's member list.
+      ParentTypeDefRowId: int option
       Attributes: MethodAttributes
       ImplAttributes: MethodImplAttributes
       Name: string
@@ -96,6 +100,9 @@ type PropertyDefinitionRowInfo =
     { Key: PropertyDefinitionKey
       RowId: int
       IsAdded: bool
+      /// PropertyMap row id owning an ADDED property; the AddProperty EncLog entry must
+      /// carry the parent PropertyMap token (CLR links via AddPropertyToPropertyMap).
+      ParentPropertyMapRowId: int option
       Name: string
       NameOffset: StringOffset option
       Signature: byte[]
@@ -106,6 +113,9 @@ type EventDefinitionRowInfo =
     { Key: EventDefinitionKey
       RowId: int
       IsAdded: bool
+      /// EventMap row id owning an ADDED event; the AddEvent EncLog entry must carry the
+      /// parent EventMap token (CLR links via AddEventToEventMap).
+      ParentEventMapRowId: int option
       Name: string
       NameOffset: StringOffset option
       Attributes: EventAttributes

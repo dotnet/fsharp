@@ -187,8 +187,34 @@ let metadataSnapshotFromBytes (bytes: byte[]) : MetadataSnapshot option =
         | Some tables ->
             let _, rowCounts, _ = parseTablesStream bytes tables
 
+            // SRM's StringHeap trims the #Strings alignment padding down to a single
+            // terminating zero (StringHeap.TrimEnd), and EnC heap aggregation (runtime,
+            // MetadataAggregator, Roslyn EmitBaseline) places generation-1 strings right
+            // after that TRIMMED size. The baseline snapshot must use the same virtual size
+            // or every delta-heap string reference is shifted by the padding bytes.
+            // #US/#Blob/#GUID are not trimmed by SRM and keep the stream header size.
+            let trimmedStringHeapSize =
+                match stringsStream with
+                | None -> 0
+                | Some stream ->
+                    if stream.Size = 0 then
+                        0
+                    else
+                        let last = stream.Offset + stream.Size - 1
+                        let mutable i = last
+
+                        while i >= stream.Offset && bytes.[i] = 0uy do
+                            i <- i - 1
+
+                        if i = last then
+                            // No trailing zero: malformed but mirror SRM and keep the raw size.
+                            stream.Size
+                        else
+                            // Keep one terminating zero after the last non-zero byte.
+                            i - stream.Offset + 2
+
             let heapSizeInfo =
-                { StringHeapSize = stringsStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0
+                { StringHeapSize = trimmedStringHeapSize
                   UserStringHeapSize = userStringsStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0
                   BlobHeapSize = blobStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0
                   GuidHeapSize = guidStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0 }

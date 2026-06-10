@@ -131,13 +131,15 @@ module DeltaEmitterTests =
             (mkILExportedTypes [])
             "v4.0.30319"
 
+    // Instance-field additions remain rejected (Phase B2); static-field additions are
+    // supported as of Phase B1b and exercised by ``emitDelta emits added static fields``.
     let private createModuleWithOptionalField includeField =
         let ilg = PrimaryAssemblyILGlobals
         let methodDef = createMethod ilg "GetValue" 1
 
         let fields =
             if includeField then
-                mkILFields [ mkILStaticField("trackedField", ilg.typ_Int32, None, None, ILMemberAccess.Private) ]
+                mkILFields [ mkILInstanceField("trackedField", ilg.typ_Int32, None, ILMemberAccess.Private) ]
             else
                 mkILFields []
 
@@ -870,7 +872,7 @@ module DeltaEmitterTests =
         Assert.Empty(delta.MethodBodies)
 
     [<Fact>]
-    let ``emitDelta rejects added fields`` () =
+    let ``emitDelta rejects added instance fields`` () =
         let _, baseline = createFieldHolderBaseline false
         let updatedModule = createModuleWithOptionalField true |> TestHelpers.withDebuggableAttribute
         let request =
@@ -888,6 +890,105 @@ module DeltaEmitterTests =
 
         let ex = Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
         Assert.Contains("Sample.FieldHolder::trackedField", ex.Message)
+
+    let private createModuleWithStaticField () =
+        let ilg = PrimaryAssemblyILGlobals
+        let methodDef = createMethod ilg "GetValue" 1
+
+        let typeDef =
+            mkILSimpleClass
+                ilg
+                (
+                    "Sample.FieldHolder",
+                    ILTypeDefAccess.Public,
+                    mkILMethods [ methodDef ],
+                    mkILFields [ mkILStaticField("trackedField", ilg.typ_Int32, None, None, ILMemberAccess.Private) ],
+                    emptyILTypeDefs,
+                    mkILProperties [],
+                    mkILEvents [],
+                    emptyILCustomAttrs,
+                    ILTypeInit.BeforeField
+                )
+
+        mkILSimpleModule
+            "SampleAssembly"
+            "SampleModule"
+            true
+            (4, 0)
+            false
+            (mkILTypeDefs [ typeDef ])
+            None
+            None
+            0
+            (mkILExportedTypes [])
+            "v4.0.30319"
+
+    [<Fact>]
+    let ``emitDelta emits added static fields`` () =
+        // Phase B1b: a static field added to a baseline type is appended to the Field table
+        // with the Roslyn EncLog shape (parent TypeDef tagged AddField immediately followed
+        // by the Field row), and the delta token is chained into the updated baseline.
+        let _, baseline = createFieldHolderBaseline false
+        let updatedModule = createModuleWithStaticField () |> TestHelpers.withDebuggableAttribute
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baseline
+                UpdatedTypes = [ "Sample.FieldHolder" ]
+                UpdatedMethods = [ methodKey baseline "GetValue" ]
+                UpdatedAccessors = []
+                Module = updatedModule
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+            }
+
+        let delta = emitDelta request
+
+        let parentTypeDefRowId =
+            match baseline.TypeTokens |> Map.tryFind "Sample.FieldHolder" with
+            | Some token -> token &&& 0x00FFFFFF
+            | None -> failwith "Baseline missing Sample.FieldHolder type token."
+
+        let baselineFieldRowCount =
+            baseline.Metadata.TableRowCounts.[TableNames.Field.Index]
+
+        let expectedFieldRowId = baselineFieldRowCount + 1
+
+        // The AddField parent entry must be immediately followed by the Field row.
+        let encLog = delta.EncLog
+
+        let addFieldIndex =
+            encLog
+            |> Array.tryFindIndex (fun (table, rowId, op) ->
+                table = TableNames.TypeDef
+                && rowId = parentTypeDefRowId
+                && op = EditAndContinueOperation.AddField)
+
+        match addFieldIndex with
+        | None -> failwithf "Expected (TypeDef, AddField) EncLog entry; got %A" encLog
+        | Some index ->
+            let table, rowId, op = encLog.[index + 1]
+            Assert.Equal(TableNames.Field, table)
+            Assert.Equal(expectedFieldRowId, rowId)
+            Assert.Equal(EditAndContinueOperation.Default, op)
+
+        Assert.Contains(
+            (TableNames.Field, expectedFieldRowId),
+            delta.EncMap)
+
+        // The added field token must chain into the next-generation baseline.
+        match delta.UpdatedBaseline with
+        | None -> failwith "Expected an updated baseline after static field addition."
+        | Some updatedBaseline ->
+            let containsField =
+                updatedBaseline.FieldTokens
+                |> Map.exists (fun key token ->
+                    key.DeclaringType = "Sample.FieldHolder"
+                    && key.Name = "trackedField"
+                    && token = (0x04000000 ||| expectedFieldRowId))
+
+            Assert.True(containsField, "Updated baseline missing the added field token.")
 
     [<Fact>]
     let ``emitDelta updates multiple methods`` () =
@@ -965,12 +1066,20 @@ module DeltaEmitterTests =
 
         Assert.Equal(0x06000000 ||| expectedRowId, addedToken)
 
-        let hasMethodAdd =
+        // Roslyn/CLR shape: the AddMethod entry carries the parent TypeDef token and is
+        // immediately followed by the new Method row with the Default operation.
+        let addMethodIndex =
             delta.EncLog
-            |> Array.exists (fun (table, row, op) ->
-                table = TableNames.Method && row = expectedRowId && op = EditAndContinueOperation.AddMethod)
+            |> Array.tryFindIndex (fun (table, _, op) ->
+                table = TableNames.TypeDef && op = EditAndContinueOperation.AddMethod)
 
-        Assert.True(hasMethodAdd, "Expected MethodDef add operation in EncLog.")
+        match addMethodIndex with
+        | None -> failwith "Expected (TypeDef, AddMethod) parent entry in EncLog."
+        | Some index ->
+            let table, row, op = delta.EncLog.[index + 1]
+            Assert.Equal(TableNames.Method, table)
+            Assert.Equal(expectedRowId, row)
+            Assert.Equal(EditAndContinueOperation.Default, op)
 
         match delta.UpdatedBaseline with
         | Some updatedBaseline ->
@@ -1011,24 +1120,34 @@ module DeltaEmitterTests =
         let addedToken = Assert.Single(delta.UpdatedMethodTokens)
         Assert.True(addedToken <> 0, "Added method token missing.")
 
-        let paramAdds =
+        // Roslyn/CLR shape: each added parameter logs the PARENT MethodDef tagged
+        // AddParameter immediately followed by the Param row with Default. Return-parameter
+        // rows are NOT synthesized (Roslyn parity): only real parameters get rows.
+        let paramRows =
             delta.EncLog
             |> Array.filter (fun (table, _, _) -> table = TableNames.Param)
 
-        Assert.Equal(3, paramAdds.Length)
+        Assert.Equal(2, paramRows.Length)
 
         let baselineParamCount = baselineArtifacts.Baseline.Metadata.TableRowCounts.[TableNames.Param.Index]
-        let expectedParamRows = [ baselineParamCount + 1; baselineParamCount + 2; baselineParamCount + 3 ]
+        let expectedParamRows = [ baselineParamCount + 1; baselineParamCount + 2 ]
 
         let actualRows =
-            paramAdds
+            paramRows
             |> Array.map (fun (_, row, op) ->
-                Assert.Equal(EditAndContinueOperation.AddParameter, op)
+                Assert.Equal(EditAndContinueOperation.Default, op)
                 row)
             |> Array.sort
             |> Array.toList
 
         Assert.Equal<int list>(expectedParamRows, actualRows)
+
+        let addParameterParents =
+            delta.EncLog
+            |> Array.filter (fun (table, _, op) ->
+                table = TableNames.Method && op = EditAndContinueOperation.AddParameter)
+
+        Assert.Equal(2, addParameterParents.Length)
 
     /// Updated methods do NOT synthesize Param rows - baseline already has them (matches Roslyn)
     [<Fact>]
@@ -1129,7 +1248,7 @@ module DeltaEmitterTests =
 
         let propertyAdds =
             delta.EncLog
-            |> Array.filter (fun (table, _, op) -> table = TableNames.Property && op = EditAndContinueOperation.AddProperty)
+            |> Array.filter (fun (table, _, op) -> table = TableNames.Property && op = EditAndContinueOperation.Default)
 
         let propertyMapAdds =
             delta.EncLog
@@ -1137,7 +1256,7 @@ module DeltaEmitterTests =
 
         let semanticsAdds =
             delta.EncLog
-            |> Array.filter (fun (table, _, op) -> table = TableNames.MethodSemantics && op = EditAndContinueOperation.AddMethod)
+            |> Array.filter (fun (table, _, op) -> table = TableNames.MethodSemantics && op = EditAndContinueOperation.Default)
 
         Assert.Single propertyAdds |> ignore
         Assert.Single propertyMapAdds |> ignore
@@ -1194,7 +1313,7 @@ module DeltaEmitterTests =
 
         let eventAdds =
             delta.EncLog
-            |> Array.filter (fun (table, _, op) -> table = TableNames.Event && op = EditAndContinueOperation.AddEvent)
+            |> Array.filter (fun (table, _, op) -> table = TableNames.Event && op = EditAndContinueOperation.Default)
 
         let eventMapAdds =
             delta.EncLog
@@ -1202,7 +1321,7 @@ module DeltaEmitterTests =
 
         let semanticsAdds =
             delta.EncLog
-            |> Array.filter (fun (table, _, op) -> table = TableNames.MethodSemantics && op = EditAndContinueOperation.AddMethod)
+            |> Array.filter (fun (table, _, op) -> table = TableNames.MethodSemantics && op = EditAndContinueOperation.Default)
 
         Assert.Single eventAdds |> ignore
         Assert.Single eventMapAdds |> ignore
@@ -1257,18 +1376,25 @@ module DeltaEmitterTests =
 
         let propertyAdds =
             delta.EncLog
-            |> Array.filter (fun (table, _, op) -> table = TableNames.Property && op = EditAndContinueOperation.AddProperty)
+            |> Array.filter (fun (table, _, op) -> table = TableNames.Property && op = EditAndContinueOperation.Default)
 
-        let propertyMapAdds =
+        // The AddProperty PARENT entry references the EXISTING baseline PropertyMap row;
+        // no NEW PropertyMap row (Default entry) may be emitted when the map already exists.
+        let propertyMapParentAdds =
             delta.EncLog
             |> Array.filter (fun (table, _, op) -> table = TableNames.PropertyMap && op = EditAndContinueOperation.AddProperty)
 
+        let propertyMapRowAdds =
+            delta.EncLog
+            |> Array.filter (fun (table, _, op) -> table = TableNames.PropertyMap && op = EditAndContinueOperation.Default)
+
         let semanticsAdds =
             delta.EncLog
-            |> Array.filter (fun (table, _, op) -> table = TableNames.MethodSemantics && op = EditAndContinueOperation.AddMethod)
+            |> Array.filter (fun (table, _, op) -> table = TableNames.MethodSemantics && op = EditAndContinueOperation.Default)
 
         Assert.Single propertyAdds |> ignore
-        Assert.Empty propertyMapAdds
+        Assert.Single propertyMapParentAdds |> ignore
+        Assert.Empty propertyMapRowAdds
         Assert.Single semanticsAdds |> ignore
 
     [<Fact>]
@@ -1301,18 +1427,25 @@ module DeltaEmitterTests =
 
         let eventAdds =
             delta.EncLog
-            |> Array.filter (fun (table, _, op) -> table = TableNames.Event && op = EditAndContinueOperation.AddEvent)
+            |> Array.filter (fun (table, _, op) -> table = TableNames.Event && op = EditAndContinueOperation.Default)
 
-        let eventMapAdds =
+        // The AddEvent PARENT entry references the EXISTING baseline EventMap row; no NEW
+        // EventMap row (Default entry) may be emitted when the map already exists.
+        let eventMapParentAdds =
             delta.EncLog
             |> Array.filter (fun (table, _, op) -> table = TableNames.EventMap && op = EditAndContinueOperation.AddEvent)
 
+        let eventMapRowAdds =
+            delta.EncLog
+            |> Array.filter (fun (table, _, op) -> table = TableNames.EventMap && op = EditAndContinueOperation.Default)
+
         let semanticsAdds =
             delta.EncLog
-            |> Array.filter (fun (table, _, op) -> table = TableNames.MethodSemantics && op = EditAndContinueOperation.AddMethod)
+            |> Array.filter (fun (table, _, op) -> table = TableNames.MethodSemantics && op = EditAndContinueOperation.Default)
 
         Assert.Single eventAdds |> ignore
-        Assert.Empty eventMapAdds
+        Assert.Single eventMapParentAdds |> ignore
+        Assert.Empty eventMapRowAdds
         Assert.Single semanticsAdds |> ignore
 
     [<Fact>]

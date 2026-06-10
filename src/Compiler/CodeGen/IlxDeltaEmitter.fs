@@ -549,6 +549,7 @@ let private buildUpdatedBaseline
     (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
     (methodTokenToKey: Dictionary<int, MethodDefinitionKey>)
     (addedMethodDeltaTokens: Dictionary<MethodDefinitionKey, int>)
+    (addedFieldDeltaTokens: Dictionary<FieldDefinitionKey, int>)
     (addedPropertyDeltaTokens: Dictionary<PropertyDefinitionKey, int>)
     (addedEventDeltaTokens: Dictionary<EventDefinitionKey, int>)
     =
@@ -604,6 +605,12 @@ let private buildUpdatedBaseline
         addedMethodDeltaTokens
         |> Seq.fold (fun acc (KeyValue(key, token)) -> acc |> Map.add key token) updatedBaselineCore.MethodTokens
 
+    // Chain added field tokens into the next-generation baseline so a later generation can
+    // resolve (and not re-add) the field, mirroring AddedOrChangedMethods chaining.
+    let updatedFieldTokenMap =
+        addedFieldDeltaTokens
+        |> Seq.fold (fun acc (KeyValue(key, token)) -> acc |> Map.add key token) updatedBaselineCore.FieldTokens
+
     let updatedPropertyTokenMap =
         addedPropertyDeltaTokens
         |> Seq.fold (fun acc (KeyValue(key, token)) -> acc |> Map.add key token) updatedBaselineCore.PropertyTokens
@@ -614,6 +621,7 @@ let private buildUpdatedBaseline
 
     { updatedBaselineCore with
         MethodTokens = updatedMethodTokenMap
+        FieldTokens = updatedFieldTokenMap
         PropertyTokens = updatedPropertyTokenMap
         EventTokens = updatedEventTokenMap
         PropertyMapEntries = updatedPropertyMapEntries
@@ -878,7 +886,14 @@ let private buildParameterDefinitionRowsSnapshot
                         let resolvedOffset =
                             match baselineParameterHandles |> Map.tryFind key |> Option.bind (fun info -> info.NameOffset) with
                             | Some offset -> Some offset
-                            | None -> if parameter.Name.IsNil then None else Some (StringOffset (MetadataTokens.GetHeapOffset parameter.Name))
+                            | None ->
+                                // Added parameter rows must write their name into the delta
+                                // string heap; fresh-compile heap offsets are not valid
+                                // against the baseline+delta heap layout.
+                                if isAdded || parameter.Name.IsNil then
+                                    None
+                                else
+                                    Some(StringOffset(MetadataTokens.GetHeapOffset parameter.Name))
                         parameter.Attributes, int parameter.SequenceNumber, name, resolvedOffset
                     | _ ->
                         let attrs =
@@ -918,20 +933,34 @@ let private buildMethodDefinitionRowsSnapshot
     (firstParamRowByMethod: Dictionary<MethodDefinitionKey, int>)
     (baselineMethodTokens: Map<MethodDefinitionKey, int>)
     (methodDefinitionIndex: DefinitionIndex<MethodDefinitionKey>)
+    (remapAddedSignature: byte[] -> byte[])
+    (tryGetTypeDefRowId: string -> int option)
     : MethodDefinitionRowInfo list =
 
     let tryBuildMethodRow rowId key isAdded =
         match methodMetadataLookup.TryGetValue key with
         | true, (attrs, implAttrs, name, signature, emittedNameOffset, emittedSignatureOffset) ->
             let baselineHandles = baselineMethodHandles |> Map.tryFind key
+            // Added methods have no baseline heap entries: their name/signature must be
+            // written into the delta heaps (offset None). Offsets captured from the fresh
+            // compile's heaps are meaningless against the baseline+delta heap layout and
+            // produce out-of-range or garbage references (observed as mdv aggregator
+            // "future generation" failures when a module value addition shifts the heap).
             let resolvedNameOffset =
                 match baselineHandles |> Option.bind (fun info -> info.NameOffset) with
                 | Some offset -> Some offset
-                | None -> emittedNameOffset
+                | None -> if isAdded then None else emittedNameOffset
             let resolvedSignatureOffset =
                 match baselineHandles |> Option.bind (fun info -> info.SignatureOffset) with
                 | Some offset -> Some offset
-                | None -> emittedSignatureOffset
+                | None -> if isAdded then None else emittedSignatureOffset
+            // Added-method signature blobs enter the delta blob heap, so their embedded
+            // TypeDefOrRef coded indexes must be remapped from the fresh compile to baseline rows.
+            let resolvedSignature =
+                if isAdded && resolvedSignatureOffset.IsNone then
+                    remapAddedSignature signature
+                else
+                    signature
             let resolvedAttributes =
                 match baselineHandles |> Option.bind (fun info -> info.Attributes) with
                 | Some value -> value
@@ -953,15 +982,21 @@ let private buildMethodDefinitionRowsSnapshot
                     | Some _ as baselineRow -> baselineRow
                     | None -> None
 
+            // Parent TypeDef row id is required for ADDED methods: the CLR EnC applier links
+            // the new method into the parent's member list via the AddMethod EncLog entry.
+            let parentTypeDefRowId =
+                if isAdded then tryGetTypeDefRowId key.DeclaringType else None
+
             Some
                 { MethodDefinitionRowInfo.Key = key
                   RowId = rowId
                   IsAdded = isAdded
+                  ParentTypeDefRowId = parentTypeDefRowId
                   Attributes = resolvedAttributes
                   ImplAttributes = resolvedImplAttributes
                   Name = name
                   NameOffset = resolvedNameOffset
-                  Signature = signature
+                  Signature = resolvedSignature
                   SignatureOffset = resolvedSignatureOffset
                   FirstParameterRowId = firstParam
                   CodeRva = resolvedCodeRva }
@@ -1048,6 +1083,7 @@ let private buildPropertyEventAndSemanticsRows
     (baselineEventLookup: Dictionary<string * string, EventDefinitionKey * int>)
     (baselineTableRowCounts: int[])
     (tryGetMethodToken: MethodDefinitionKey -> int option)
+    (remapAddedSignature: byte[] -> byte[])
     =
     let propertyDefinitionRowsSnapshot =
         propertyDefinitionIndex.Rows
@@ -1056,13 +1092,14 @@ let private buildPropertyEventAndSemanticsRows
             | true, handle when not handle.IsNil ->
                 let propertyDef = metadataReader.GetPropertyDefinition handle
                 let name = metadataReader.GetString propertyDef.Name
-                let signature = metadataReader.GetBlobBytes propertyDef.Signature
                 let baselineHandles = baselinePropertyHandles |> Map.tryFind key
+                // Added properties write their name/signature into the delta heaps:
+                // fresh-compile heap offsets are not valid against baseline+delta heaps.
                 let resolvedNameOffset =
                     match baselineHandles |> Option.bind (fun info -> info.NameOffset) with
                     | Some offset -> Some offset
                     | None ->
-                        if propertyDef.Name.IsNil then
+                        if isAdded || propertyDef.Name.IsNil then
                             None
                         else
                             Some(StringOffset(MetadataTokens.GetHeapOffset propertyDef.Name))
@@ -1070,14 +1107,24 @@ let private buildPropertyEventAndSemanticsRows
                     match baselineHandles |> Option.bind (fun info -> info.SignatureOffset) with
                     | Some offset -> Some offset
                     | None ->
-                        if propertyDef.Signature.IsNil then
+                        if isAdded || propertyDef.Signature.IsNil then
                             None
                         else
                             Some(BlobOffset(MetadataTokens.GetHeapOffset propertyDef.Signature))
+                let signature =
+                    let rawSignature = metadataReader.GetBlobBytes propertyDef.Signature
+                    // PropertySig blobs entering the delta blob heap need their embedded
+                    // TypeDefOrRef coded indexes remapped to baseline rows.
+                    if isAdded && resolvedSignatureOffset.IsNone then
+                        remapAddedSignature rawSignature
+                    else
+                        rawSignature
                 Some
                     { PropertyDefinitionRowInfo.Key = key
                       RowId = rowId
                       IsAdded = isAdded
+                      // Filled below once the PropertyMap row ids are allocated.
+                      ParentPropertyMapRowId = None
                       Name = name
                       NameOffset = resolvedNameOffset
                       Signature = signature
@@ -1099,7 +1146,9 @@ let private buildPropertyEventAndSemanticsRows
                     match baselineEventHandles |> Map.tryFind key |> Option.bind (fun info -> info.NameOffset) with
                     | Some offset -> Some offset
                     | None ->
-                        if eventDef.Name.IsNil then
+                        // Added events write their name into the delta string heap (see the
+                        // property snapshot above for rationale).
+                        if isAdded || eventDef.Name.IsNil then
                             None
                         else
                             Some(StringOffset(MetadataTokens.GetHeapOffset eventDef.Name))
@@ -1107,6 +1156,8 @@ let private buildPropertyEventAndSemanticsRows
                     { EventDefinitionRowInfo.Key = key
                       RowId = rowId
                       IsAdded = isAdded
+                      // Filled below once the EventMap row ids are allocated.
+                      ParentEventMapRowId = None
                       Name = name
                       NameOffset = resolvedNameOffset
                       Attributes = eventDef.Attributes
@@ -1302,6 +1353,25 @@ let private buildPropertyEventAndSemanticsRows
                         | None -> None
                         | _ -> None
                     | _ -> None)
+
+    // Fill parent map row ids for ADDED properties/events now that map rows are allocated;
+    // the AddProperty/AddEvent EncLog entries carry the parent map token (CLR requirement).
+    // Covers both newly added map rows and maps that already exist in the baseline.
+    let propertyDefinitionRowsSnapshot =
+        propertyDefinitionRowsSnapshot
+        |> List.map (fun row ->
+            if row.IsAdded && row.ParentPropertyMapRowId.IsNone && propertyMapDefinitionIndex.Contains row.Key.DeclaringType then
+                { row with ParentPropertyMapRowId = Some(propertyMapDefinitionIndex.GetRowId row.Key.DeclaringType) }
+            else
+                row)
+
+    let eventDefinitionRowsSnapshot =
+        eventDefinitionRowsSnapshot
+        |> List.map (fun row ->
+            if row.IsAdded && row.ParentEventMapRowId.IsNone && eventMapDefinitionIndex.Contains row.Key.DeclaringType then
+                { row with ParentEventMapRowId = Some(eventMapDefinitionIndex.GetRowId row.Key.DeclaringType) }
+            else
+                row)
 
     propertyDefinitionRowsSnapshot,
     eventDefinitionRowsSnapshot,
@@ -1778,7 +1848,9 @@ let private buildMethodAndParameterRows
     (methodDefinitionIndex: DefinitionIndex<MethodDefinitionKey>)
     (traceMetadata: bool)
     (baselineMethodSpecRowCount: int)
-    (methodSpecRowsByToken: Dictionary<int, MethodSpecificationRowInfo>) =
+    (methodSpecRowsByToken: Dictionary<int, MethodSpecificationRowInfo>)
+    (tryGetTypeDefRowId: string -> int option)
+    (baselineParamRowCount: int) =
     let methodUpdatesWithDefs, methodMetadataLookup =
         buildMethodUpdatesWithMetadata
             orderedMethodInputs
@@ -1806,6 +1878,8 @@ let private buildMethodAndParameterRows
             firstParamRowByMethod
             baselineMethodTokens
             methodDefinitionIndex
+            (remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken))
+            tryGetTypeDefRowId
 
     let methodSpecificationRowsSnapshot =
         buildMethodSpecificationRowsSnapshot
@@ -1813,6 +1887,45 @@ let private buildMethodAndParameterRows
             methodUpdatesWithDefs
             baselineMethodSpecRowCount
             methodSpecRowsByToken
+
+    // Keep the ParamList column of ADDED method rows monotone (Roslyn parity / ECMA list
+    // encoding): a parameterless added method points at the NEXT param row rather than 0,
+    // so readers compute an empty [next, next) range instead of a bogus one. The runtime
+    // ignores this column for EnC deltas (suppressed), but mdv and other readers do not.
+    let methodDefinitionRowsSnapshot =
+        let paramRowsByMethod =
+            parameterDefinitionRowsSnapshot
+            |> List.groupBy (fun row -> row.Key.Method)
+            |> dict
+
+        // Added param rows continue from the baseline Param table, so the cursor starts at
+        // the first appended row id (or one past the baseline table when nothing is added).
+        let mutable nextParamRowId =
+            parameterDefinitionRowsSnapshot
+            |> List.filter (fun row -> row.IsAdded)
+            |> List.map (fun row -> row.RowId)
+            |> function
+                | [] -> baselineParamRowCount + 1
+                | rows -> List.min rows
+
+        methodDefinitionRowsSnapshot
+        |> List.sortBy (fun row -> row.RowId)
+        |> List.map (fun row ->
+            if not row.IsAdded then
+                row
+            else
+                let ownParams =
+                    match paramRowsByMethod.TryGetValue row.Key with
+                    | true, rows -> rows |> List.filter (fun p -> p.IsAdded)
+                    | _ -> []
+
+                match ownParams with
+                | [] -> { row with FirstParameterRowId = Some nextParamRowId }
+                | rows ->
+                    let firstRow = rows |> List.map (fun p -> p.RowId) |> List.min
+                    let lastRow = rows |> List.map (fun p -> p.RowId) |> List.max
+                    nextParamRowId <- lastRow + 1
+                    { row with FirstParameterRowId = Some firstRow })
 
     methodUpdatesWithDefs,
     parameterDefinitionRowsSnapshot,
@@ -1859,6 +1972,7 @@ let private finalizeDeltaArtifacts
     (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
     (methodTokenToKey: Dictionary<int, MethodDefinitionKey>)
     (addedMethodDeltaTokens: Dictionary<MethodDefinitionKey, int>)
+    (addedFieldDeltaTokens: Dictionary<FieldDefinitionKey, int>)
     (addedPropertyDeltaTokens: Dictionary<PropertyDefinitionKey, int>)
     (addedEventDeltaTokens: Dictionary<EventDefinitionKey, int>)
     =
@@ -1902,6 +2016,7 @@ let private finalizeDeltaArtifacts
             methodSemanticsRowsSnapshot
             methodTokenToKey
             addedMethodDeltaTokens
+            addedFieldDeltaTokens
             addedPropertyDeltaTokens
             addedEventDeltaTokens
 
@@ -2345,6 +2460,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     let propertyTokenMap = Dictionary<int, int>()
     let eventTokenMap = Dictionary<int, int>()
     let addedMethodTokens = Dictionary<MethodDefinitionKey, int>(HashIdentity.Structural)
+    let addedFieldTokens = Dictionary<FieldDefinitionKey, int>(HashIdentity.Structural)
     let addedPropertyTokens = Dictionary<PropertyDefinitionKey, int>(HashIdentity.Structural)
     let addedEventTokens = Dictionary<EventDefinitionKey, int>(HashIdentity.Structural)
     let addedPropertyTokenLookup = Dictionary<int, PropertyDefinitionKey>()
@@ -2552,10 +2668,21 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 let newFieldToken = emittedTokenMappings.FieldDefTokenMap(enclosing, typeDef) fieldDef
                 addMapping fieldTokenMap newFieldToken baselineFieldToken
             | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
+            | None when fieldDef.IsStatic && request.Baseline.TypeTokens |> Map.containsKey baselineDeclaringType ->
+                // Added static field on a type that exists in the baseline (module-level
+                // values lower to static backing fields plus accessor methods). The field is
+                // appended to the delta Field table; the parent TypeDef row is logged with
+                // the AddField operation by the metadata writer.
+                if not (addedFieldTokens.ContainsKey fieldKey) then
+                    let newFieldToken = emittedTokenMappings.FieldDefTokenMap(enclosing, typeDef) fieldDef
+                    addedFieldTokens[fieldKey] <- newFieldToken
             | None ->
                 let fieldDisplay = $"{declaringTypeRef.FullName}::{fieldDef.Name}"
                 let message =
-                    $"Edit adds field '{fieldDisplay}'. Hot reload currently supports method-body changes only; please rebuild."
+                    if fieldDef.IsStatic then
+                        $"Edit adds static field '{fieldDisplay}' to a type that has no baseline TypeDef token; please rebuild."
+                    else
+                        $"Edit adds instance field '{fieldDisplay}'. Hot reload supports adding static fields only; please rebuild."
                 raise (HotReloadUnsupportedEditException message))
 
         typeDef.Methods.AsList()
@@ -2716,6 +2843,27 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             let deltaToken = 0x06000000 ||| rowId
             addedMethodDeltaTokens[key] <- deltaToken
             addMapping methodTokenMap newToken deltaToken
+
+    // Allocate delta Field rows for added static fields. Row ids continue from the baseline
+    // Field table (like AddedOrChangedMethods); the fresh-compile token maps to the delta
+    // token so accessor/initializer bodies referencing the new field resolve to the appended
+    // row. Iterate in fresh-compile token order to keep delta row ids deterministic.
+    let baselineFieldRowCount = baselineTableRowCounts.[TableNames.Field.Index]
+
+    let fieldRowLookup (key: FieldDefinitionKey) =
+        request.Baseline.FieldTokens
+        |> Map.tryFind key
+        |> Option.map (fun token -> token &&& 0x00FFFFFF)
+
+    let fieldDefinitionIndex = DefinitionIndex<FieldDefinitionKey>(fieldRowLookup, baselineFieldRowCount)
+    let addedFieldDeltaTokens = Dictionary<FieldDefinitionKey, int>(HashIdentity.Structural)
+
+    for KeyValue(key, newToken) in addedFieldTokens |> Seq.sortBy (fun kvp -> kvp.Value) do
+        if not (fieldDefinitionIndex.IsAdded key) then
+            let rowId = fieldDefinitionIndex.Add key
+            let deltaToken = 0x04000000 ||| rowId
+            addedFieldDeltaTokens[key] <- deltaToken
+            addMapping fieldTokenMap newToken deltaToken
 
     // Keep definition-token projection separate from metadata-reference remapping.
     let definitionTokenRemapper =
@@ -2950,15 +3098,14 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 parameterDefinitionIndex.AddExisting paramKey
                 Some baselineRow
             | _ ->
-                // Only synthesize a return parameter row for ADDED methods.
-                // For existing methods being updated, if the baseline had no return param row,
-                // we shouldn't add one - that would change the method's ParamList incorrectly.
-                if isAdded then
-                    let rowId = addSyntheticParameter key 0 ParameterAttributes.None
-                    returnParameterKeys.Add paramKey |> ignore
-                    Some rowId
-                else
-                    None
+                // Never SYNTHESIZE a return parameter row (Roslyn parity): the fresh compile
+                // emits Param rows only for parameters that exist, and rows must stay ordered
+                // by sequence number within a method. A synthesized seq-0 row appended after
+                // real seq-1+ rows is out of sequence, which forces the CLR EnC applier
+                // (FixParamSequence) onto the indirect ParamPtr-table path and makes
+                // ApplyUpdate reject the delta (observed with added module-value accessors).
+                ignore isAdded
+                None
 
     let enqueueParameters key methodHandle =
         let methodDef = metadataReader.GetMethodDefinition methodHandle
@@ -3105,6 +3252,11 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 traceMetadata.Value
                 baselineMethodSpecRowCount
                 methodSpecRowsByToken
+                (fun typeName ->
+                    request.Baseline.TypeTokens
+                    |> Map.tryFind typeName
+                    |> Option.map (fun token -> token &&& 0x00FFFFFF))
+                lastParamRowId
         let (propertyDefinitionRowsSnapshot,
              eventDefinitionRowsSnapshot,
              propertyMapRowsSnapshot,
@@ -3124,8 +3276,57 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 baselineEventLookup
                 baselineTableRowCounts
                 tryGetMethodToken
+                (remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken))
 
         let methodUpdates = methodUpdatesWithDefs |> List.map (fun (update, _, _) -> update)
+
+        // Snapshot the added Field rows from the fresh compile. Field signatures (FieldSig,
+        // ECMA-335 II.23.2.4) embed TypeDefOrRef coded indexes of the in-memory compile, so
+        // they flow through the same signature-blob remapper as method/local signatures
+        // before entering the delta blob heap.
+        let fieldDefinitionRowsSnapshot : FieldDefinitionRowInfo list =
+            addedFieldDeltaTokens
+            |> Seq.sortBy (fun kvp -> kvp.Value)
+            |> Seq.map (fun (KeyValue(key, deltaToken)) ->
+                let newToken = addedFieldTokens.[key]
+                let fieldHandle = MetadataTokens.FieldDefinitionHandle(newToken &&& 0x00FFFFFF)
+                let fieldDef = metadataReader.GetFieldDefinition fieldHandle
+
+                let signature =
+                    metadataReader.GetBlobBytes fieldDef.Signature
+                    |> remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken)
+
+                let parentRowId =
+                    match request.Baseline.TypeTokens |> Map.tryFind key.DeclaringType with
+                    | Some typeToken -> typeToken &&& 0x00FFFFFF
+                    | None ->
+                        // Registration already gated on the baseline type token, so this only
+                        // fires if the baseline maps changed under us; fail closed.
+                        raise (
+                            HotReloadUnsupportedEditException(
+                                $"Added field '{key.DeclaringType}::{key.Name}' has no baseline TypeDef token; please rebuild."
+                            )
+                        )
+
+                { FieldDefinitionRowInfo.Key = key
+                  RowId = deltaToken &&& 0x00FFFFFF
+                  IsAdded = true
+                  ParentTypeDefRowId = parentRowId
+                  Attributes = fieldDef.Attributes
+                  Name = metadataReader.GetString fieldDef.Name
+                  NameOffset = None
+                  Signature = signature
+                  SignatureOffset = None })
+            |> Seq.toList
+
+        if traceMethodUpdates.Value then
+            for row in fieldDefinitionRowsSnapshot do
+                printfn
+                    "[fsharp-hotreload][field-add] %s::%s rowId=%d parentTypeDef=%d"
+                    row.Key.DeclaringType
+                    row.Key.Name
+                    row.RowId
+                    row.ParentTypeDefRowId
 
         let baselineHeapOffsets =
             request.Baseline.Metadata.HeapSizes
@@ -3177,7 +3378,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 moduleMvid
                 methodDefinitionRowsSnapshot
                 parameterDefinitionRowsSnapshot
-                ([] : FieldDefinitionRowInfo list)
+                fieldDefinitionRowsSnapshot
                 typeReferenceRowList
                 memberReferenceRowList
                 methodSpecificationRowsSnapshot
@@ -3211,5 +3412,6 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             methodSemanticsRowsSnapshot
             methodTokenToKey
             addedMethodDeltaTokens
+            addedFieldDeltaTokens
             addedPropertyDeltaTokens
             addedEventDeltaTokens

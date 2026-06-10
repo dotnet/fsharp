@@ -290,13 +290,15 @@ type Type =
             match service.EmitDeltaForCompilation(updatedTcGlobals, updatedImplementation, updatedModule) with
             | Error error -> failwithf "EmitDeltaForCompilation failed for method insertion: %A" error
             | Ok result ->
+                // Roslyn/CLR shape: the AddMethod operation tags the PARENT TypeDef row and
+                // is immediately followed by the new Method row with the Default operation.
                 let hasMethodAdd =
                     result.Delta.EncLog
                     |> Array.exists (fun (table, _, op) ->
-                        table = FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Method
+                        table = FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.TypeDef
                         && op = FSharp.Compiler.AbstractIL.ILDeltaHandles.EditAndContinueOperation.AddMethod)
 
-                Assert.True(hasMethodAdd, "Expected MethodDef add operation for inserted method.")
+                Assert.True(hasMethodAdd, "Expected (TypeDef, AddMethod) parent operation for inserted method.")
 
                 match result.Delta.UpdatedBaseline with
                 | Some updatedBaseline ->
@@ -482,6 +484,294 @@ type Type =
                     Assert.Equal(2, afterValue)
                     printfn "[applyupdate-test] SUCCESS: value changed from %d to %d" beforeValue afterValue
 
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
+    let private moduleValueBaselineSource =
+        """
+module Sample.Library
+
+let existing () = 1
+"""
+
+    let private moduleValueUpdatedSource =
+        """
+module Sample.Library
+
+let existing () = 1
+let mutable newCounter = 41
+"""
+
+    let private moduleFunctionUpdatedSource =
+        """
+module Sample.Library
+
+let existing () = 1
+let extra () = 99
+"""
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added module function`` () =
+        // Added module functions lower to plain static methods on the module type; this
+        // exercises the (TypeDef, AddMethod) + (Method, Default) EncLog pairing at runtime.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-methodadd", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "MethodAddLibrary.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "MethodAddLibrary.runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, moduleValueBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString moduleValueBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                // The unit-argument function classifies through the module-value path, so the
+                // static-field capability is required alongside the method capability.
+                let capabilities =
+                    [ "Baseline"; "AddMethodToExistingType"; "AddStaticFieldToExistingType" ]
+
+                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let moduleType = assembly.GetType("Sample.Library", throwOnError = true)
+                let existingMethod = moduleType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(1, existingMethod.Invoke(null, [||]) :?> int)
+
+                File.WriteAllText(fsPath, moduleFunctionUpdatedSource)
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                let updatedOptions =
+                    { projectOptions with
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.filter (fun opt ->
+                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                let compileDiagnostics2, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
+
+                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                | Ok delta ->
+                    let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+
+                    try
+                        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        printfn "[methodadd-test] ApplyUpdate succeeded!"
+                    with :? InvalidOperationException as ex ->
+                        failwithf "ApplyUpdate failed (delta rejected): %s" ex.Message
+
+                    Assert.Equal(1, existingMethod.Invoke(null, [||]) :?> int)
+
+                    let extraMethod = moduleType.GetMethod("extra", BindingFlags.Public ||| BindingFlags.Static)
+                    Assert.True(not (isNull extraMethod), "extra method not found after ApplyUpdate.")
+                    Assert.Equal(99, extraMethod.Invoke(null, [||]) :?> int)
+                    printfn "[methodadd-test] SUCCESS: added module function invocable after ApplyUpdate"
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added module value`` () =
+        // Phase B1b: `let mutable newCounter = 41` lowers to static backing fields on the
+        // startup-code class plus get_/set_ accessors on the module type. After ApplyUpdate
+        // the accessors must be invocable; the observed initialization semantics are
+        // asserted below and documented in docs/hot-reload-member-additions.md.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-fieldadd", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            // Unique assembly simple name: other ApplyUpdate tests load a 'Library' assembly
+            // into the default load context and LoadFrom refuses same-name/different-path loads.
+            let dllPath = Path.Combine(projectDir, "FieldAddLibrary.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "FieldAddLibrary.runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, moduleValueBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString moduleValueBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                // Adding a module value needs both the static-field and method capabilities.
+                let capabilities =
+                    [ "Baseline"; "AddMethodToExistingType"; "AddStaticFieldToExistingType" ]
+
+                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+
+                let moduleType = assembly.GetType("Sample.Library", throwOnError = true)
+                let existingMethod = moduleType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(1, existingMethod.Invoke(null, [||]) :?> int)
+
+                File.WriteAllText(fsPath, moduleValueUpdatedSource)
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                let updatedOptions =
+                    { projectOptions with
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.filter (fun opt ->
+                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                let compileDiagnostics2, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
+
+                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                | Ok delta ->
+                    Assert.NotEmpty(delta.Metadata)
+                    Assert.NotEmpty(delta.IL)
+
+                    let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+
+                    printfn
+                        "[fieldadd-test] Applying delta: metadata=%d IL=%d PDB=%d"
+                        delta.Metadata.Length
+                        delta.IL.Length
+                        pdbBytes.Length
+
+                    try
+                        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        printfn "[fieldadd-test] ApplyUpdate succeeded!"
+                    with :? InvalidOperationException as ex ->
+                        failwithf "ApplyUpdate failed (delta rejected): %s" ex.Message
+
+                    // Existing method must still work after the update.
+                    Assert.Equal(1, existingMethod.Invoke(null, [||]) :?> int)
+
+                    // The added accessors must be visible and invocable via reflection.
+                    let getter = moduleType.GetMethod("get_newCounter", BindingFlags.Public ||| BindingFlags.Static)
+                    Assert.True(not (isNull getter), "get_newCounter accessor not found after ApplyUpdate.")
+                    let setter = moduleType.GetMethod("set_newCounter", BindingFlags.Public ||| BindingFlags.Static)
+                    Assert.True(not (isNull setter), "set_newCounter accessor not found after ApplyUpdate.")
+
+                    // Initialization semantics (matches C# EnC, verified against a Roslyn
+                    // delta): the initializer lives in the startup-code class constructor.
+                    // If that type has NOT been initialized yet — here the baseline startup
+                    // class had no static state, so nothing ever triggered it — the added
+                    // constructor runs lazily on first field access and the value reads its
+                    // initializer (41). Had the type already been initialized, the added
+                    // field would read default(T) instead.
+                    let initialValue = getter.Invoke(null, [||]) :?> int
+                    printfn "[fieldadd-test] initial newCounter value = %d" initialValue
+                    Assert.Equal(41, initialValue)
+
+                    // The accessors are wired to the same backing field.
+                    setter.Invoke(null, [| box 7 |]) |> ignore
+                    Assert.Equal(7, getter.Invoke(null, [||]) :?> int)
+                    printfn "[fieldadd-test] SUCCESS: added module value readable/writable after ApplyUpdate"
             finally
                 try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()

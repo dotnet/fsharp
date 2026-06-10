@@ -531,6 +531,37 @@ let mapSymbolChangesToDelta
     let updatedMethods = updatedMethods |> List.rev |> deduplicate
     let methodResolutionErrors = methodResolutionErrors |> List.rev
 
+    // Added module-level values lower to a static backing field plus accessor methods, with
+    // initialization appended to the startup-code class constructor
+    // (`<StartupCode$asm>.$Path.Module..cctor`). The startup constructor is not a typed-tree
+    // binding, so the diff cannot pair its body change — when the baseline already contains
+    // it, resolve it here so the emitter re-emits the body that now initializes the new
+    // value. When the baseline has no startup constructor yet (first value added to the
+    // module), the fresh compile introduces it and the emitter discovers it as an added
+    // method, so nothing needs to resolve here.
+    let startupInitMethods =
+        changes.Added
+        |> List.filter (fun symbol ->
+            symbol.Kind = SymbolKind.Value
+            && symbol.MemberKind.IsNone
+            && (match symbol.TotalArgCount with
+                | Some argCount -> argCount = 0
+                | None -> true))
+        |> List.collect (fun symbol ->
+            let modulePath = joinPath symbol.Path
+
+            baseline.MethodTokens
+            |> Map.toSeq
+            |> Seq.map fst
+            |> Seq.filter (fun key ->
+                key.Name = ".cctor"
+                && key.DeclaringType.StartsWith("<StartupCode$", StringComparison.Ordinal)
+                && key.DeclaringType.EndsWith("$" + modulePath, StringComparison.Ordinal))
+            |> Seq.toList)
+        |> deduplicate
+
+    let updatedMethods = deduplicate (updatedMethods @ startupInitMethods)
+
     let accessorCandidates =
         [ yield! FSharpSymbolChanges.propertyAccessorsAdded changes |> List.map (fun symbol -> symbol, None)
           yield! FSharpSymbolChanges.propertyAccessorsUpdated changes |> List.map (fun change -> change.Symbol, change.ContainingEntity)

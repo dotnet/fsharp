@@ -581,15 +581,18 @@ type EditAndContinueOperation =
     | AddProperty
     | AddEvent
 
-    /// Get the numeric value for serialization
+    /// Get the numeric value for serialization.
+    /// Values match the CLR EnC operation codes (and SRM's
+    /// System.Reflection.Metadata.Ecma335.EditAndContinueOperation):
+    /// Default=0, AddMethod=1, AddField=2, AddParameter=3, AddProperty=4, AddEvent=5.
     member this.Value =
         match this with
         | Default -> 0
         | AddMethod -> 1
         | AddField -> 2
-        | AddParameter -> 4
-        | AddProperty -> 5
-        | AddEvent -> 6
+        | AddParameter -> 3
+        | AddProperty -> 4
+        | AddEvent -> 5
 
     override this.GetHashCode() = this.Value
     override this.Equals obj =
