@@ -960,9 +960,10 @@ let main4
     ReportTime tcConfig "TAST -> IL"
     use _ = UseBuildPhase BuildPhase.IlxGen
 
-    let compilerGlobalState = tcGlobals.CompilerGlobalState.Value
-
-    compilerEmitHook.PrepareForCodeGeneration(tcConfig.emitCaptureArtifacts, compilerGlobalState)
+    // The hook receives the optimized impl files about to be lowered so the hot reload
+    // closure mapping can extract lambda occurrences from the same tree IlxGen lowers
+    // (stamp-keyed) and install naming state on this compilation's CompilerGlobalState.
+    compilerEmitHook.PrepareForCodeGeneration(tcConfig.emitCaptureArtifacts, tcGlobals, optimizedImpls)
 
     // Create the Abstract IL generator
     let ilxGenerator =

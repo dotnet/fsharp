@@ -249,8 +249,15 @@ type ICompilerEmitHook =
     abstract ValidateConfiguration:
         emitCaptureArtifacts: bool * debugInfo: bool * localOptimizationsEnabled: bool -> unit
 
+    /// Runs after type checking/optimization and immediately before IlxGen lowering. The
+    /// hook receives the typed implementation files being lowered so the hot reload
+    /// closure mapping can extract lambda occurrences from the SAME tree IlxGen lowers
+    /// (stamp-keyed) and install per-compile naming state on the compilation's
+    /// CompilerGlobalState (tcGlobals.CompilerGlobalState).
     abstract PrepareForCodeGeneration:
-        emitCaptureArtifacts: bool * compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
+        emitCaptureArtifacts: bool *
+        tcGlobals: FSharp.Compiler.TcGlobals.TcGlobals *
+        optimizedImpls: TypedTree.CheckedAssemblyAfterOptimization -> unit
 
     abstract BeforeFileEmit:
         emitCaptureArtifacts: bool * compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit

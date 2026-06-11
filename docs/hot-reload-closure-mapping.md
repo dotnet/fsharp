@@ -13,6 +13,11 @@ C3 allocator landed (2026-06-10) — occurrence-keyed closure name allocation mo
 C3 wiring commit 1 landed (2026-06-10) — lambda root stamps on `LambdaOccurrence` plus
 baseline stamp→name capture at the IlxGen closure call site, joined in the fsc emit path and
 stored token-keyed as `FSharpEmitBaseline.EncClosureNames` (see "Lowering wiring" below).
+C3 wiring commit 2 landed (2026-06-10) — occurrence-keyed closure naming in delta compiles:
+the emit hook's codegen step runs the allocator before lowering and installs the
+stamp→assigned-name table the closure call site consults first; refreshed tables chain into
+the next-generation baseline alongside the refreshed EnC debug infos. C3 is complete; C4
+(emitting the added members in deltas) is the next phase.
 C4–C5 pending. Implementation notes are folded into the relevant sections below.
 Source research: Roslyn main @ June 2026 (`ClosureConversion.cs`, `EncVariableSlotAllocator.cs`, `EditAndContinueMethodDebugInformation.cs`, `DefinitionMap.cs`, `AbstractEditAndContinueAnalyzer.ReportLambdaAndClosureRudeEdits`).
 
@@ -257,8 +262,8 @@ TryGetPreviousClosure` analogue, expressed as a pure data transformation over th
   identical names across three body-edit generations, so deltas can update the existing closure
   method bodies in place.
 
-**Lowering wiring design.** Step 1 (the stamp bridge + baseline capture, points 2–3 below)
-landed; the delta-compile hook step (point 4) is the remaining wiring. As implemented:
+**Lowering wiring design.** Fully landed (stamp bridge + baseline capture, then the
+delta-compile hook step). As implemented:
 
 - `LambdaOccurrence.RootExprStamp` records the unique stamp of the occurrence's root lambda
   (the OUTERMOST `Expr.Lambda` of a curried group, looking through `Expr.DebugPoint`/`Expr.Link`)
@@ -285,6 +290,35 @@ landed; the delta-compile hook step (point 4) is the remaining wiring. As implem
   empty map: the occurrence-keyed naming stays inert there and delta compiles keep pure
   sequence-replay behavior (fail closed; names are not persisted in the PDB because the CDI
   blob format has no name slots).
+- **Delta compiles (the hook codegen step)**: `ICompilerEmitHook.PrepareForCodeGeneration` now
+  receives `tcGlobals` and the `optimizedImpls` about to be lowered (fsc `main4`, immediately
+  before `GenerateIlxCode`). When a session with non-empty `EncClosureNames` is active, the hook
+  calls `HotReloadBaseline.computeOccurrenceKeyedClosureNames`: extract occurrences from the
+  session's previous-generation impl files and from the fresh tree (unique-compiled-name keying,
+  fail closed on ambiguity), resolve each member's baseline chain→name table via its MethodDef
+  token, run `ClosureNameAllocator.allocateMemberClosureNames` per member with
+  `generation = session.CurrentGeneration`, and install the resulting stamp→assigned-name map
+  via `ClosureNameAllocationState.setAssignedClosureNames`.
+- **Call-site semantics (consume-then-override)**: the closure call site still consumes its
+  replay-map slot unconditionally (`GetUniqueCompilerGeneratedName` memoizes per stamp, exactly
+  one slot per closure), so non-closure synthesized names sharing a basic name keep their
+  baseline replay positions; the occurrence-keyed table then overrides the closure's own name
+  when its stamp was allocated. Stamps absent from the table (fail-closed members, IlxGen-
+  synthesized closures such as object expressions/sequence closures) keep the replayed name —
+  for unchanged lambda sets the allocator's `Reused` names equal the replayed names, so the
+  body-edit behavior is unchanged by construction.
+- **Chaining**: `DeltaEmissionRequest.RefreshedClosureNameRows` carries the allocator's
+  refreshed per-method tables (recomputed in `EmitDeltaForCompilation` from the same session
+  state + fresh tree — deterministic, so it agrees with what the emit-time install produced)
+  and `HotReloadBaseline.chainClosureNameRows` replaces/drops the updated methods' tables in
+  the next-generation baseline, exactly mirroring `chainEncMethodDebugInfos`. Flag-on
+  recapture compiles (the component-test flow) instead re-record and re-join, so the replaced
+  baseline's tables carry the generation's final names either way.
+- **Known residual (accepted)**: when a lambda set changes, replay slots consumed by overridden
+  closures shift the replay sequence for any OTHER synthesized-name consumer sharing the same
+  basic name; such members are exactly the ones still classified rude for emission today, and
+  the collision window (closure base names shared with non-closure synthesized names) predates
+  this wiring.
 
 The original design rationale, recorded before the wiring landed:
 
@@ -355,9 +389,10 @@ lambda signature changes, mid-sequence resume-point insertion, struct-closure ca
   landed: occurrence-keyed closure name allocation model (`ClosureNameAllocator.fs`): matched
   occurrences reuse baseline closure class names verbatim, new occurrences get generation-suffixed
   names (`…@hotreload#g{gen}_o{ord}`), removed names are never reused (see "C3 occurrence-keyed
-  closure name allocation as implemented"). Remaining: thread the allocation into IlxGen for delta
-  compiles via the stamp-keyed seam documented there. Flag-off behavior byte-identical
-  (EmittedIL gate).
+  closure name allocation as implemented"). Commit 2 ✅ landed: lambda root stamps + baseline
+  stamp→name capture (`EncClosureNames`). Commit 3 ✅ landed: the allocator threaded into IlxGen
+  for delta compiles via the stamp-keyed seam, with chain-forward through
+  `RefreshedClosureNameRows`. Flag-off behavior byte-identical (EmittedIL gate).
 - **C4** `feat(hot-reload): emit added lambda members in deltas` — new methods on existing closure
   classes (`AddMethodToExistingType`), new display classes (`NewTypeDefinition`), new capture fields
   (`AddInstanceFieldToExistingType`), throwing stubs for incompatible occurrences; capability-gated

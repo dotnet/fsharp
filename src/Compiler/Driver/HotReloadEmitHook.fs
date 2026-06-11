@@ -64,7 +64,32 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                 if localOptimizationsEnabled then
                     error (Error(FSComp.SR.fscHotReloadIncompatibleWithOptimization (), rangeStartup))
 
-        member _.PrepareForCodeGeneration(emitCaptureArtifacts, compilerGlobalState) =
+        member _.PrepareForCodeGeneration(emitCaptureArtifacts, tcGlobals, optimizedImpls) =
+            let compilerGlobalState = tcGlobals.CompilerGlobalState.Value
+
+            // Closure mapping (C3), the codegen-time hook step: when a session with
+            // baseline closure-name tables is active, run the occurrence-keyed allocator
+            // over (previous-generation impl files, the impl files about to be lowered)
+            // and install the stamp -> assigned-name table for the IlxGen closure call
+            // site. Fail closed: no session, or a baseline without tables (flag-off
+            // capture, checker read-from-disk baselines), installs nothing and lowering
+            // keeps pure sequence-replay naming.
+            (match editAndContinueService.TryGetSession() with
+             | ValueSome session when not (Map.isEmpty session.Baseline.EncClosureNames) ->
+                 let assignedNames, _refreshedRows =
+                     HotReloadBaseline.computeOccurrenceKeyedClosureNames
+                         tcGlobals
+                         session.Baseline
+                         session.ImplementationFiles
+                         optimizedImpls
+                         session.CurrentGeneration
+
+                 ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) assignedNames
+             | _ ->
+                 // Explicitly drop any previously installed table in case the
+                 // CompilerGlobalState instance is reused across compiles.
+                 ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) Map.empty)
+
             if emitCaptureArtifacts then
                 // Closure mapping (C3): capture stamp -> emitted-closure-name pairs during
                 // IlxGen so the emit path can join them with the same tree's lambda
@@ -113,6 +138,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
             if not emitCaptureArtifacts then
                 editAndContinueService.EndSession()
                 clearCompilerGeneratedNameMap (compilerGlobalState :> obj)
+                ClosureNameAllocationState.clearClosureNameState (compilerGlobalState :> obj)
 
         // Emit through the in-memory writer first so disk bytes and baseline capture share
         // identical inputs; this avoids subtle drift from a second writer invocation.
@@ -160,6 +186,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
         member _.FallbackEmit(compilerGlobalState) =
             editAndContinueService.EndSession()
             clearCompilerGeneratedNameMap (compilerGlobalState :> obj)
+            ClosureNameAllocationState.clearClosureNameState (compilerGlobalState :> obj)
 
 let createHotReloadCompilerEmitHook (editAndContinueService: FSharpEditAndContinueLanguageService) : ICompilerEmitHook =
     DefaultHotReloadEmitHook(editAndContinueService) :> ICompilerEmitHook

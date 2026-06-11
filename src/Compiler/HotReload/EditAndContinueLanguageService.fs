@@ -262,6 +262,13 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         let chainedBaseline =
                             chainEncMethodDebugInfos updatedBaseline request.RefreshedEncDebugInfos updatedMethodTokens
 
+                        // Closure mapping (C3): chain the refreshed occurrence-chain ->
+                        // closure-name tables forward with the same replace-or-drop
+                        // semantics, so the NEXT delta compile's allocator sees this
+                        // generation's names for the updated methods.
+                        let chainedBaseline =
+                            chainClosureNameRows chainedBaseline request.RefreshedClosureNameRows updatedMethodTokens
+
                         if trace then
                             printfn
                                 "[fsharp-hotreload][service] staging pending baseline encId=%O baseId=%O newBaselineEncId=%O"
@@ -357,7 +364,19 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                               // Recomputed occurrence data from the fresh typed tree; EmitDelta
                               // chains it into the next-generation baseline for the updated methods.
                               RefreshedEncDebugInfos =
-                                computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation }
+                                computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation
+                              // Closure mapping (C3): the same allocator run the emit hook used
+                              // when the delta compile was lowered (deterministic over identical
+                              // session state + fresh tree), keeping the chained tables in sync
+                              // with the closure names the compile actually emitted.
+                              RefreshedClosureNameRows =
+                                computeOccurrenceKeyedClosureNames
+                                    tcGlobals
+                                    session.Baseline
+                                    session.ImplementationFiles
+                                    updatedImplementation
+                                    session.CurrentGeneration
+                                |> snd }
 
                         match this.EmitDelta request with
                         | Ok result ->

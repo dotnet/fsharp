@@ -1771,7 +1771,8 @@ module DeltaEmitterTests =
               UpdatedMethods = [ methodKey baseline "GetValue" ]
               UpdatedAccessors = []
               SymbolChanges = None
-              RefreshedEncDebugInfos = Map.empty }
+              RefreshedEncDebugInfos = Map.empty
+              RefreshedClosureNameRows = Map.empty }
 
         let delta1 =
             match service.EmitDelta requestGen1 with
@@ -1797,7 +1798,8 @@ module DeltaEmitterTests =
               UpdatedMethods = [ methodKey baseline "GetValue" ]
               UpdatedAccessors = []
               SymbolChanges = None
-              RefreshedEncDebugInfos = Map.empty }
+              RefreshedEncDebugInfos = Map.empty
+              RefreshedClosureNameRows = Map.empty }
 
         let delta2 =
             match service.EmitDelta requestGen2 with
@@ -1822,7 +1824,8 @@ module DeltaEmitterTests =
               UpdatedMethods = [ methodKey baseline "GetValue" ]
               UpdatedAccessors = []
               SymbolChanges = None
-              RefreshedEncDebugInfos = Map.empty }
+              RefreshedEncDebugInfos = Map.empty
+              RefreshedClosureNameRows = Map.empty }
 
         let pendingDelta =
             match service.EmitDelta request with
@@ -1884,7 +1887,8 @@ module DeltaEmitterTests =
               UpdatedMethods = [ methodKey baseline "GetValue" ]
               UpdatedAccessors = []
               SymbolChanges = None
-              RefreshedEncDebugInfos = Map.empty }
+              RefreshedEncDebugInfos = Map.empty
+              RefreshedClosureNameRows = Map.empty }
 
         match service.EmitDelta request with
         | Ok result ->

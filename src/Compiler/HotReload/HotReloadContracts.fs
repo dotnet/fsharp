@@ -32,6 +32,15 @@ type internal DeltaEmissionRequest =
         /// empty map.
         /// </summary>
         RefreshedEncDebugInfos: Map<int, EncMethodDebugInformation>
+        /// <summary>
+        /// Per-method closure-name tables (occurrence-chain -> closure class name)
+        /// recomputed by the occurrence-keyed allocator from the fresh typed tree, keyed
+        /// by baseline MethodDef token (see
+        /// HotReloadBaseline.computeOccurrenceKeyedClosureNames). Chained into the
+        /// next-generation baseline with the same replace-or-drop semantics as
+        /// RefreshedEncDebugInfos. Callers without typed-tree access pass the empty map.
+        /// </summary>
+        RefreshedClosureNameRows: Map<int, Map<int list, string>>
     }
 
 /// <summary>Payload returned to tooling after a delta has been produced.</summary>

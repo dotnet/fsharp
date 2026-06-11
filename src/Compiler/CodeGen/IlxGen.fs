@@ -7193,14 +7193,28 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             assert (g.CompilerGlobalState |> Option.isSome)
             let compilerGlobalState = g.CompilerGlobalState.Value
 
-            let cloName =
+            // The replay-map slot is consumed UNCONDITIONALLY (GetUniqueCompilerGeneratedName
+            // memoizes per stamp, so exactly one slot per closure): other synthesized names
+            // sharing the same basic name then keep their baseline replay positions even when
+            // an occurrence-keyed override below picks a different name for this closure.
+            let replayName =
                 compilerGlobalState.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
-            // Hot reload closure mapping (Phase C3): record the lambda stamp -> emitted
-            // closure type name so the baseline capture can join it with the typed-tree
-            // lambda occurrence extraction of the same tree (the stamp bridge documented
-            // in docs/hot-reload-closure-mapping.md). No recorder installed (flag-off or
-            // non-capture compiles) -> strict no-op.
+            // Hot reload closure mapping (Phase C3): in a session's delta compile the emit
+            // hook runs the occurrence-keyed allocator before lowering and installs a
+            // stamp -> assigned-name table; consult it FIRST so surviving closures reuse
+            // their baseline class names verbatim and added closures get generation-suffixed
+            // names. No table installed (flag-off, non-session compiles, or fail-closed
+            // members) -> existing sequence-replay behavior, byte-identical.
+            let cloName =
+                match ClosureNameAllocationState.tryGetAssignedClosureName (compilerGlobalState :> obj) uniq with
+                | Some assignedName -> assignedName
+                | None -> replayName
+
+            // Baseline capture: record the lambda stamp -> emitted closure type name so the
+            // fsc emit path can join it with the typed-tree lambda occurrence extraction of
+            // the same tree (the stamp bridge documented in docs/hot-reload-closure-mapping.md).
+            // No recorder installed -> strict no-op.
             ClosureNameAllocationState.recordClosureStampName (compilerGlobalState :> obj) uniq cloName
             cloName
 

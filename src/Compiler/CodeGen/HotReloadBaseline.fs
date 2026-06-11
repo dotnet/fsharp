@@ -696,6 +696,131 @@ let resolveClosureNameRowsByToken
             | Some methodToken -> Map.add methodToken rows acc
             | None -> acc)
 
+/// Same character cleanup IlxGen applies to closure base names before minting type
+/// names (IlxGen.CleanUpGeneratedTypeName, not exposed through IlxGen.fsi).
+let private cleanUpGeneratedTypeName (nm: string) =
+    if nm.IndexOfAny IllegalCharactersInTypeAndNamespaceNames = -1 then
+        nm
+    else
+        (nm, IllegalCharactersInTypeAndNamespaceNames)
+        ||> Array.fold (fun nm c -> nm.Replace(string c, "-"))
+
+/// Per-member compiled-name -> occurrence-list view of an implementation, restricted to
+/// compiled names claimed by exactly one member binding (the shared fail-closed keying).
+let private memberOccurrencesByUniqueName
+    (g: TcGlobals)
+    (implementationFiles: CheckedAssemblyAfterOptimization)
+    : Map<string, TypedTreeDiff.LambdaOccurrence list> =
+    let (CheckedAssemblyAfterOptimization implFiles) = implementationFiles
+
+    let allMembers =
+        implFiles
+        |> List.map (fun implFile -> implFile.ImplFile)
+        |> List.collect (TypedTreeDiff.collectMemberLambdaOccurrences g)
+
+    let ambiguousNames =
+        allMembers
+        |> List.choose (fun (symbol, _) -> symbol.CompiledName)
+        |> List.countBy id
+        |> List.filter (fun (_, count) -> count > 1)
+        |> List.map fst
+        |> Set.ofList
+
+    (Map.empty, allMembers)
+    ||> List.fold (fun acc (symbol: TypedTreeDiff.SymbolId, occurrences) ->
+        match symbol.CompiledName with
+        | Some methName when not (Set.contains methName ambiguousNames) -> Map.add methName occurrences acc
+        | _ -> acc)
+
+/// <summary>
+/// Runs the occurrence-keyed closure name allocator (Phase C3) for a delta compile:
+/// aligns the fresh implementation's lambda occurrences with the previous generation's
+/// (the implementation files the session chains) and assigns each fresh occurrence its
+/// closure class name — the baseline name verbatim for compatible survivors, a
+/// generation-suffixed fresh name otherwise. Returns:
+///  - the stamp -> assigned-name table to install on the compiling CompilerGlobalState
+///    (the IlxGen closure call site consults it before sequence replay), and
+///  - the refreshed per-method occurrence-chain -> name tables keyed by baseline
+///    MethodDef token, to chain into the next-generation baseline alongside the
+///    refreshed EnC debug infos (see chainClosureNameRows).
+/// Fail closed at every join: members without a unique compiled name, without a
+/// resolvable baseline MethodDef token, or without a baseline chain -> name table get no
+/// assignments (their closures keep pure sequence-replay naming) and no refreshed table.
+/// Both tables are derived deterministically from session state + the fresh typed tree,
+/// so the emit-time install (fsc hook) and the delta-emission refresh (checker) agree.
+/// </summary>
+let computeOccurrenceKeyedClosureNames
+    (g: TcGlobals)
+    (baseline: FSharpEmitBaseline)
+    (baselineImplementation: CheckedAssemblyAfterOptimization)
+    (freshImplementation: CheckedAssemblyAfterOptimization)
+    (generation: int)
+    : Map<int64, string> * Map<int, Map<int list, string>> =
+
+    if Map.isEmpty baseline.EncClosureNames then
+        Map.empty, Map.empty
+    else
+        let baselineOccurrencesByName = memberOccurrencesByUniqueName g baselineImplementation
+        let freshOccurrencesByName = memberOccurrencesByUniqueName g freshImplementation
+        let tokensByUniqueName = tokensByUniqueMethodName baseline
+
+        ((Map.empty, Map.empty), freshOccurrencesByName)
+        ||> Map.fold (fun (assignedNames, refreshedRows) methName freshOccurrences ->
+            let baselineTable =
+                Map.tryFind methName tokensByUniqueName
+                |> Option.bind (fun token ->
+                    Map.tryFind token baseline.EncClosureNames
+                    |> Option.map (fun table -> token, table))
+
+            match freshOccurrences, baselineTable with
+            | _ :: _, Some(methodToken, namesByChain) ->
+                let baselineOccurrences =
+                    Map.tryFind methName baselineOccurrencesByName |> Option.defaultValue []
+
+                let allocation =
+                    ClosureNameAllocator.allocateMemberClosureNames
+                        baselineOccurrences
+                        namesByChain
+                        freshOccurrences
+                        (cleanUpGeneratedTypeName methName)
+                        generation
+
+                let assignedNames =
+                    (assignedNames, allocation.Assignments)
+                    ||> List.fold (fun acc (occurrence, assignment) ->
+                        // Stamp 0 is the extraction's "no root lambda" sentinel and can
+                        // never be a real Expr stamp; never install a name for it.
+                        if occurrence.RootExprStamp = 0L then
+                            acc
+                        else
+                            Map.add occurrence.RootExprStamp assignment.Name acc)
+
+                assignedNames, Map.add methodToken allocation.RefreshedNamesByOccurrenceChain refreshedRows
+            | _ -> assignedNames, refreshedRows)
+
+/// <summary>
+/// Carries the per-method closure-name tables forward into the next-generation baseline
+/// after a delta, with exactly the chainEncMethodDebugInfos semantics: every updated or
+/// added method's table is replaced by the one recomputed from the fresh compile, or
+/// dropped when the fresh compile produced none (fail closed — the method's closures
+/// then fall back to sequence replay in later generations). Unchanged methods keep their
+/// baseline tables.
+/// </summary>
+let chainClosureNameRows
+    (baseline: FSharpEmitBaseline)
+    (refreshedClosureNameRows: Map<int, Map<int list, string>>)
+    (updatedMethodTokens: int list)
+    : FSharpEmitBaseline =
+    let chainedRows =
+        (baseline.EncClosureNames, updatedMethodTokens)
+        ||> List.fold (fun acc methodToken ->
+            match Map.tryFind methodToken refreshedClosureNameRows with
+            | Some rows -> Map.add methodToken rows acc
+            | None -> Map.remove methodToken acc)
+
+    { baseline with
+        EncClosureNames = chainedRows }
+
 /// <summary>Create an <see cref="FSharpEmitBaseline"/> without capturing the ILX environment snapshot.</summary>
 let create
     (ilModule: ILModuleDef)
