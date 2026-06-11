@@ -99,10 +99,33 @@ Field additions are capability-gated as of Phase B1b/B2:
 - STRUCT (and record/union/enum) field additions stay `TypeLayoutChange`
   permanently — the runtime cannot re-layout value types (C# identical).
 
-The same gating pattern applies later to
-`GenericAddMethodToExistingType`/`GenericUpdateMethod` (generic-aware gating),
-`ChangeCustomAttributes` and `UpdateParameters`. `NewTypeDefinition` gates
-added-lambda closure classes (Phase C4).
+Generic edits are capability-gated as of Phase E (Roslyn parity:
+`AbstractEditAndContinueAnalyzer.InGenericContext`, which walks the symbol chain
+for a generic method arity or a generic containing type):
+
+- BODY EDITS of a member in a generic context (the compiled method has its own
+  generic parameters — including auto-generalized module functions — or is
+  declared in a generic type) require `GenericUpdateMethod`; without it the
+  diff reports `RudeEditKind.NotSupportedByRuntime` with the
+  `hotReloadGenericUpdateNotSupportedByRuntime` FSComp message (FSHRDL016)
+  naming the capability. (Roslyn reports
+  `RudeEditKind.UpdatingGenericNotSupportedByRuntime`.)
+- METHOD ADDITIONS in a generic context additionally require
+  `GenericAddMethodToExistingType` on top of `AddMethodToExistingType`
+  (Roslyn `GetRequiredAddMethodCapabilities`).
+- FIELD ADDITIONS in a generic context (binding-level and the entity-level
+  field diff in `compareEntities`) additionally require
+  `GenericAddFieldToExistingType` (Roslyn `GetRequiredAddFieldCapabilities`).
+
+`InGenericContext` is computed on `BindingSnapshot` from the compiled-form
+typar split (`GetValReprTypeInCompiledForm`, method typars vs enclosing
+typars); erased (measure) typars do not count, so measure-only generic types
+stay gated like non-generic IL. `EntitySnapshot.IsGeneric` mirrors this for
+the entity-level field diff.
+
+The same gating pattern applies later to `ChangeCustomAttributes` and
+`UpdateParameters`. `NewTypeDefinition` gates added-lambda closure classes
+(Phase C4).
 
 ## Roslyn references
 

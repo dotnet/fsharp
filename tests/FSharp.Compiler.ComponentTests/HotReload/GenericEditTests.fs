@@ -52,7 +52,11 @@ module GenericEditTests =
     /// capabilities, loads the baseline assembly, asserts via `verify` (generation 0),
     /// then for each (updatedSource, verify) generation: recompiles, emits the delta,
     /// applies it with MetadataUpdater.ApplyUpdate and asserts `verify` again.
-    let private applyGenerationsAndVerify
+    /// `diskStartedSession` simulates the dotnet-watch topology: ALL in-process session
+    /// state left by the baseline capture compile is dropped before the session starts,
+    /// so the on-disk dll + pdb are the only baseline inputs.
+    let private applyGenerationsAndVerifyCore
+        (diskStartedSession: bool)
         (capabilities: string list)
         (testLabel: string)
         (baselineSource: string)
@@ -123,6 +127,16 @@ module GenericEditTests =
 
                 compileOnce "baseline" projectOptions
 
+                if diskStartedSession then
+                    // Simulate the process boundary (dotnet-watch topology): drop ALL
+                    // in-process session state the capture compile created so the session
+                    // is reconstructed from the on-disk dll + pdb only.
+                    FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                    match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
+                    | ValueSome _ -> failwithf "[%s] expected no in-process session after the reset." testLabel
+                    | ValueNone -> ()
+
                 match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
                 | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
                 | Ok () -> ()
@@ -159,6 +173,9 @@ module GenericEditTests =
                 try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
+
+    let private applyGenerationsAndVerify capabilities testLabel baselineSource verifyBaseline generations =
+        applyGenerationsAndVerifyCore false capabilities testLabel baselineSource verifyBaseline generations
 
     /// Compiles `baselineSource`, starts a session with the given capabilities, applies
     /// `updatedSource` and hands the EmitHotReloadDelta result to `handleResult`.
@@ -617,3 +634,43 @@ module Lib =
             genericFunctionBaseline
             updated
             [ "GenericUpdateMethod" ]
+
+    [<Fact>]
+    let ``Disk-started session applies a generic method body edit`` () =
+        // dotnet-watch topology: the session is reconstructed from the on-disk dll + pdb
+        // only (no in-process baseline state) and a generic method body edit applies.
+        let updated = genericFunctionBaseline.Replace("Hello ", "Welcome ")
+
+        applyGenerationsAndVerifyCore
+            true
+            fullCapabilities
+            "disk-started-generic-body-edit"
+            genericFunctionBaseline
+            (fun assembly -> invokeDescribe assembly "Hello ")
+            [ updated, (fun assembly -> invokeDescribe assembly "Welcome ") ]
+
+    [<Fact>]
+    let ``Disk-started session applies an added generic module function`` () =
+        let updated =
+            """
+namespace Sample
+
+module Lib =
+    let describe<'T> (value: 'T) = "Hello " + value.ToString()
+    let pair (x: 'a) (y: 'b) = (x, y)
+"""
+
+        applyGenerationsAndVerifyCore
+            true
+            fullCapabilities
+            "disk-started-added-generic-function"
+            genericFunctionBaseline
+            (fun assembly -> invokeDescribe assembly "Hello ")
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Lib", throwOnError = true)
+                  let pairDef = libType.GetMethod("pair", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.True(pairDef.IsGenericMethodDefinition)
+                  let forIntString = pairDef.MakeGenericMethod(typeof<int>, typeof<string>)
+                  let result = forIntString.Invoke(null, [| box 1; box "a" |]) :?> int * string
+                  Assert.Equal((1, "a"), result)) ]

@@ -447,8 +447,9 @@ above (gen-1 entry `9: TypeSpec 0x1b000001 Default`):
   ("Bad binary signature") once the blobs no longer coincided with baseline
   content.
 
-Generic closure CLASSES (closures over generic methods) still need
-GenericParam rows — a distinct gap; the emitter keeps failing closed there.
+Generic closure CLASSES (closures over generic methods) get their
+GenericParam rows as of Phase E (see "Generic edits" below); the historic
+fail-closed gate there is lifted.
 
 ### Session wiring (watch flow)
 
@@ -470,8 +471,9 @@ Known divergences from the C# reference (deliberate this slice):
   TypeSpec) resolves through the content-validated TypeSpec remap: it reuses
   a matching baseline row, or appends a new TypeSpec row to the delta for a
   genuinely NEW instantiation (see "TypeSpec row emission" above).
-- Added GENERIC closure classes (closures over generic methods) need
-  GenericParam rows — not supported yet; the emitter fails closed.
+- Added GENERIC closure classes (closures over generic methods) are
+  supported as of Phase E: the new TypeDef row gets GenericParam rows (see
+  "Generic edits" below). Constrained typars still fail closed.
 - The AsyncStateMachineAttribute synthesis heuristic (nested
   `{method}@hotreload*` type) now additionally requires a `MoveNext` method,
   so ordinary closure classes sharing the naming no longer pick up a spurious
@@ -492,11 +494,107 @@ Known divergences from the C# reference (deliberate this slice):
 - `CaptureSetChanged` stays rude this slice (capture-field mapping is a
   later slice).
 
+## Generic edits (Phase E)
+
+### C# reference EncLog (Roslyn EmitDifference, csharp_enc_reference `generics` scenarios)
+
+Four recorded scenarios (mdv outputs:
+`csharp_enc_reference/reference_mdv_generic_{method_update,class_update,class_add,method_add}.txt`):
+
+1. **Body edit of `T Identity<T>(T x)`** (`generic_method_update`): MethodDef
+   1 UPDATE + Param 1 update + a new StandAloneSig (locals use MVAR `!!0`) +
+   TypeRef/AssemblyRef adds. **NO GenericParam rows** — they are baseline rows
+   and are never re-emitted for updates; the re-emitted MethodDef row's
+   GenericParameters column renders nil.
+2. **Body edit of `Container<T>.Get()`** (`generic_class_update`): MethodDef
+   UPDATE only. The body reaches `this.Value` through a **MemberRef parented
+   by the TypeSpec self-instantiation** `Container'1<!0>` (delta-appended
+   MemberRef + TypeSpec rows). No GenericParam rows.
+3. **Adding `T GetAgain()` to `Container<T>`** (`generic_class_add`): the
+   ordinary `(TypeDef, AddMethod) + (MethodDef, Default)` pair; the added
+   method's signature simply uses VAR (`20-00-13-00` = HASTHIS, 0 params,
+   ret `!0`). **No GenericParam rows** for non-generic methods of generic
+   types.
+4. **Adding `T Identity<T>(T x)` to a class** (`generic_method_add`): the
+   AddMethod and AddParameter pairs are followed by a **`GenericParam
+   0x2a000001 Default`** EncLog entry (plain row add, operation 0); the row
+   appears in EncMap as an add. GenericParam row: Number=0, Flags=0,
+   Owner=the NEW MethodDef (TypeOrMethodDef coded index), Name='T'. The
+   delta's #~ header keeps GenericParam in the sorted mask.
+
+### Roslyn capability semantics mirrored in classification
+
+`AbstractEditAndContinueAnalyzer`: body updates in a generic context
+(`InGenericContext`: own arity > 0 or any containing type generic) require
+`GenericUpdateMethod` (else `UpdatingGenericNotSupportedByRuntime`); method
+additions in a generic context require `AddMethodToExistingType +
+GenericAddMethodToExistingType`; field additions require the static/instance
+field capability + `GenericAddFieldToExistingType`. See
+`docs/hot-reload-capabilities.md` for the F# gating implementation.
+
+### F# emission
+
+- **Generic body updates needed no emitter change**: `MethodDefinitionKey`
+  carries `GenericArity`, the II.23.2 signature walker copies VAR/MVAR
+  elements verbatim through the blob remapper, and member-of-generic-type
+  field access flows through the content-validated MemberRef/TypeSpec remap
+  (the TypeSpec self-instantiation pattern). Pinned by runtime tests
+  (`GenericEditTests`): generic module function and generic-class member
+  body edits ApplyUpdate and observe the edit via reflection with two
+  instantiations (int, string); a two-generation chain whose second edit
+  introduces a brand-new generic instantiation (`List.replicate<'T>`,
+  MethodSpec with an MVAR blob) also applies. A template test asserts a
+  generic body-update delta carries ZERO GenericParam rows.
+- **Added generic methods** emit one GenericParam row per type parameter
+  (`GenericParamRowInfo`: Number/Flags/Owner/Name per ECMA-335 II.22.20),
+  snapshotted from the fresh compile's SRM reader, owner = the new delta
+  MethodDef row, row ids continuing from the chained baseline GenericParam
+  row count, ordered by (owner coded index, number) to respect the table's
+  sort key. Logged as plain Default entries after the parameter pairs;
+  EncMap adds. Before Phase E the added MethodDef row shipped WITHOUT its
+  GenericParam rows: ApplyUpdate accepted the delta but the method was
+  corrupt (`MakeGenericMethod` threw NullReferenceException, member access
+  BadImageFormatException) — there was no fail-closed gate.
+- **Added methods on generic types** need no GenericParam rows (template 3);
+  they worked once classification allowed them and are pinned by a runtime
+  test (VAR signature + TypeSpec-parented field access).
+- **Added generic closure classes** (an added lambda inside a generic member
+  mentioning 'T): the C4 added-TypeDef path no longer fails closed on
+  generic closures; the new TypeDef row carries GenericParam rows (owner
+  tag TypeDef). Validated at runtime: a generic member with one baseline
+  lambda gains a second 'T-typed lambda, ApplyUpdate succeeds, both
+  instantiations observe the edit. (Members gaining their FIRST lambda still
+  fail closed — the C4 occurrence mapping needs a baseline chain table for
+  the member; that constraint is orthogonal to generics.)
+- **Constrained typars on ADDED definitions fail closed precisely**: the
+  writer does not emit GenericParamConstraint rows yet, so an added generic
+  method/closure whose typar carries an IL constraint (e.g.
+  `'T :> IDisposable`; `'T : struct` also emits a ValueType constraint row)
+  raises `HotReloadUnsupportedEditException` naming GenericParamConstraint.
+  Flag-only constraints (`not struct`, `new()`) live in the Flags column and
+  emit fine. F#-only constraints (`equality`, `comparison`) have no IL
+  encoding and do not constrain emission.
+- dotnet-watch topology: disk-started sessions (baseline reconstructed from
+  the on-disk dll + pdb after a full session reset) apply both a generic
+  body edit and an added generic function (runtime tests).
+
+### Honest scoping (stays rude / fail-closed)
+
+- SRTP/`inline` changes: already `InlineChange` rude (inline bodies are
+  statically expanded into callers the delta cannot reach).
+- Constraint changes on EXISTING members: `SignatureChange` rude
+  (typar-constraint digest comparison).
+- Statically-resolved instantiation changes that alter lowered shapes
+  surface through the existing lowered-shape classifiers (state machine /
+  lambda shape) or the emitter's fail-closed gates with precise messages.
+
 ## Known gaps / later slices
 
 - Custom attributes on added fields/properties (e.g. `DebuggerBrowsable` on
   backing fields, `CompilationMapping` on the module-value property) are not
   emitted into the delta yet; the members function without them.
+- GenericParamConstraint rows are not emitted: added generic definitions
+  with IL-constrained typars fail closed (see "Generic edits" above).
 - mdv renders `<bad metadata>` after every non-empty member-list range in EnC
   generations by convention (member lists are associated via EncLog); this is
   a rendering artifact, not delta corruption — Roslyn deltas render the same.
