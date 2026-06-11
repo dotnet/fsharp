@@ -329,6 +329,36 @@ module Library =
         point.X + point.Y + 1
 """
 
+    let private moduleAdded =
+        """
+namespace Sample
+
+module Tools =
+    let mutable counter = 5
+    let bump (x: int) =
+        counter <- counter + x
+        counter
+    let peek (x: int) = counter + x
+
+module Library =
+    let compute (x: int) = Tools.peek x + 1
+"""
+
+    let private moduleAddedGen2 =
+        """
+namespace Sample
+
+module Tools =
+    let mutable counter = 5
+    let bump (x: int) =
+        counter <- counter + x + 100
+        counter
+    let peek (x: int) = counter + x
+
+module Library =
+    let compute (x: int) = Tools.peek x + 1
+"""
+
     // -----------------------------------------------------------------------------
     // Runtime tests
     // -----------------------------------------------------------------------------
@@ -443,6 +473,130 @@ module Library =
                   Assert.Equal(0, shapeType.GetProperty("Tag").GetValue(circle) :?> int)
                   Assert.True(shapeType.GetProperty("IsCircle").GetValue(circle) :?> bool)) ]
 
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added module with function and mutable value`` () =
+        // The idiomatic F# new-type case (C# parity: adding a static class, which Roslyn
+        // supports): an added module lowers to a sealed abstract static class TypeDef.
+        // Its functions are AddMethod pairs on the new row; the mutable value lowers to a
+        // property on the new row plus a backing field AND the startup-class constructor
+        // on the BASELINE startup TypeDef (AddField/AddMethod on an existing type) — the
+        // addition spans a new TypeDef and existing-type member additions in one delta.
+        // Generation 2 body-edits the added module's function in place.
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-module"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ moduleAdded,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+
+                  // compute routes through the added module: counter (5) + 41 + 1.
+                  Assert.Equal(47, compute.Invoke(null, [| box 41 |]) :?> int)
+
+                  let toolsType = assembly.GetType("Sample.Tools", throwOnError = true)
+
+                  // The mutable value's initializer ran: the baseline startup class had
+                  // no static state, so the ADDED startup constructor runs lazily on
+                  // first field access (same semantics as the added-module-value test).
+                  let counter = toolsType.GetProperty("counter", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(5, counter.GetValue(null) :?> int)
+
+                  // The added module's function mutates the added value.
+                  let bump = toolsType.GetMethod("bump", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(8, bump.Invoke(null, [| box 3 |]) :?> int)
+                  Assert.Equal(8, counter.GetValue(null) :?> int)
+
+                  // The property setter is wired to the same backing field.
+                  counter.SetValue(null, box 10)
+                  Assert.Equal(52, compute.Invoke(null, [| box 41 |]) :?> int))
+              moduleAddedGen2,
+              (fun assembly ->
+                  let toolsType = assembly.GetType("Sample.Tools", throwOnError = true)
+                  let counter = toolsType.GetProperty("counter", BindingFlags.Public ||| BindingFlags.Static)
+                  let bump = toolsType.GetMethod("bump", BindingFlags.Public ||| BindingFlags.Static)
+
+                  // Generation-1 state survives generation 2 (counter was set to 10),
+                  // and the edited body adds 100: 10 + 1 + 100.
+                  Assert.Equal(111, bump.Invoke(null, [| box 1 |]) :?> int)
+                  Assert.Equal(111, counter.GetValue(null) :?> int)) ]
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added module containing a nested module`` () =
+        // Nested modules lower to nested static classes: the inner module's TypeDef is
+        // detected as nested-in-added (parents visit first in collectTypeMappings) and
+        // carries a NestedClass row pointing at the outer module's NEW delta TypeDef row.
+        let updated =
+            """
+namespace Sample
+
+module Tools =
+    let double (x: int) = x * 2
+
+    module Inner =
+        let triple (x: int) = x * 3
+
+module Library =
+    let compute (x: int) = Tools.double x + Tools.Inner.triple x + 1
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-nested-module"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+
+                  // 2*2 + 3*2 ... compute 2 = 4 + 6 + 1.
+                  Assert.Equal(11, compute.Invoke(null, [| box 2 |]) :?> int)
+
+                  let innerType = assembly.GetType("Sample.Tools+Inner", throwOnError = true)
+                  let triple = innerType.GetMethod("triple", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(9, triple.Invoke(null, [| box 3 |]) :?> int)) ]
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for module added inside an existing module`` () =
+        // The added module's TypeDef nests in a BASELINE TypeDef: the NestedClass row's
+        // EnclosingClass resolves to the existing module's baseline row.
+        let updated =
+            """
+namespace Sample
+
+module Library =
+    module Helpers =
+        let twice (x: int) = x * 2
+
+    let compute (x: int) = Helpers.twice x + 1
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "module-added-inside-module"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(83, compute.Invoke(null, [| box 41 |]) :?> int)
+
+                  let helpersType = assembly.GetType("Sample.Library+Helpers", throwOnError = true)
+                  let twice = helpersType.GetMethod("twice", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(14, twice.Invoke(null, [| box 7 |]) :?> int)) ]
+
     // -----------------------------------------------------------------------------
     // Template-shape tests
     // -----------------------------------------------------------------------------
@@ -499,6 +653,89 @@ module Library =
                 Assert.Contains(0x19, encMapTables))
 
     [<Fact>]
+    let ``Added module delta matches the C# static-class template shape`` () =
+        // C# parity: an added module is an added static class (no InterfaceImpl rows).
+        // The new TypeDef row is a plain Default entry preceding its AddMethod pairs;
+        // the mutable value's backing field and the startup constructor land as
+        // AddField/AddMethod pairs on the BASELINE startup TypeDef in the same log.
+        emitDeltaAndInspect
+            fullCapabilities
+            "added-module-template"
+            baseline
+            moduleAdded
+            (fun delta ->
+                use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.ToImmutableArray(delta.Metadata: byte[]))
+                let reader = provider.GetMetadataReader()
+
+                let encLog =
+                    reader.GetEditAndContinueLogEntries()
+                    |> Seq.map (fun entry ->
+                        MetadataTokens.GetToken entry.Handle >>> 24, MetadataTokens.GetRowNumber entry.Handle, entry.Operation)
+                    |> Seq.toList
+
+                printfn "[added-module-template] EncLog: %A" encLog
+
+                let typeDefDefaultIndex =
+                    encLog |> List.findIndex (fun (table, _, op) -> table = 0x02 && op = EditAndContinueOperation.Default)
+
+                let firstAddMethodIndex =
+                    encLog |> List.findIndex (fun (table, _, op) -> table = 0x02 && op = EditAndContinueOperation.AddMethod)
+
+                Assert.True(typeDefDefaultIndex < firstAddMethodIndex)
+
+                // get_counter + set_counter + bump + peek on the new module TypeDef, plus
+                // the startup-class .cctor on the baseline startup TypeDef.
+                let addMethodCount =
+                    encLog
+                    |> List.filter (fun (table, _, op) -> table = 0x02 && op = EditAndContinueOperation.AddMethod)
+                    |> List.length
+
+                Assert.Equal(5, addMethodCount)
+
+                // counter@ backing field + init@ sentinel on the baseline startup class.
+                let addFieldCount =
+                    encLog
+                    |> List.filter (fun (table, _, op) -> table = 0x02 && op = EditAndContinueOperation.AddField)
+                    |> List.length
+
+                Assert.Equal(2, addFieldCount)
+
+                // The module value surfaces as a property of the new TypeDef: a fresh
+                // PropertyMap row (Default) is the AddProperty PARENT, followed by the
+                // Property row (CLR Add* pairing; the parent is the map row, not the
+                // TypeDef).
+                Assert.Contains(encLog, fun (table, _, op) -> table = 0x15 && op = EditAndContinueOperation.AddProperty)
+                Assert.Contains(encLog, fun (table, _, op) -> table = 0x17 && op = EditAndContinueOperation.Default)
+
+                // A static class implements nothing: no InterfaceImpl/MethodImpl rows.
+                Assert.Equal(0, reader.GetTableRowCount(TableIndex.InterfaceImpl))
+                Assert.Equal(0, reader.GetTableRowCount(TableIndex.MethodImpl)))
+
+    [<Fact>]
+    let ``Disk-started session applies an added module`` () =
+        // dotnet-watch topology: the session is reconstructed from the on-disk dll +
+        // pdb only, and the added module (new TypeDef + startup-class member additions)
+        // still applies.
+        applyGenerationsAndVerifyCore
+            true
+            fullCapabilities
+            "disk-started-added-module"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ moduleAdded,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(47, compute.Invoke(null, [| box 41 |]) :?> int)
+
+                  let toolsType = assembly.GetType("Sample.Tools", throwOnError = true)
+                  let counter = toolsType.GetProperty("counter", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(5, counter.GetValue(null) :?> int)) ]
+
+    [<Fact>]
     let ``Disk-started session applies an added class with interface`` () =
         // dotnet-watch topology: the session is reconstructed from the on-disk dll +
         // pdb only, and the new-type addition (TypeDef + InterfaceImpl + MethodImpl
@@ -537,6 +774,18 @@ module Library =
             [ "NewTypeDefinition" ]
 
     [<Fact>]
+    let ``EmitHotReloadDelta rejects added module without NewTypeDefinition`` () =
+        // The module's TypeDef is a new type definition: without the capability the
+        // entity addition is NotSupportedByRuntime naming NewTypeDefinition, even though
+        // the member-addition capabilities are granted.
+        emitDeltaAndExpectUnsupported
+            [ "Baseline"; "AddMethodToExistingType"; "AddStaticFieldToExistingType"; "AddInstanceFieldToExistingType" ]
+            "added-module-no-capability"
+            baseline
+            moduleAdded
+            [ "NewTypeDefinition" ]
+
+    [<Fact>]
     let ``EmitHotReloadDelta rejects added interface declaration`` () =
         // Interfaces have abstract slots without bodies; the writer cannot express
         // bodiless added methods, so interface additions fail closed at classification.
@@ -556,4 +805,4 @@ module Library =
             "added-interface"
             baseline
             updated
-            [ "only classes, records, unions, and structs" ]
+            [ "only classes, records, unions, structs, and modules" ]

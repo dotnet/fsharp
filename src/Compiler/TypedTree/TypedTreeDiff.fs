@@ -1478,10 +1478,15 @@ type private EntitySnapshot =
       /// when a field addition is emitted as a TypeDefinition edit.
       CompiledFullName: string option
       /// True for representations the delta writer can emit as a NEW TypeDef (classes,
-      /// records, unions, structs). Interfaces (abstract slots have no bodies), enums
-      /// (their values need Constant rows), delegates, and exotic representations stay
-      /// rude when added.
+      /// records, unions, structs, modules). Interfaces (abstract slots have no bodies),
+      /// enums (their values need Constant rows), delegates, and exotic representations
+      /// stay rude when added.
       SupportsAddition: bool
+      /// True when the entity is an F# module (lowered to a sealed abstract static
+      /// class). Modules share their logical name space with types (`module X` +
+      /// `type X` is legal; the module compiles with a ModuleSuffix), so the entity
+      /// map key carries a module marker to keep the two snapshots distinct.
+      IsModule: bool
       IsSynthesized: bool }
 
 let private hasLoweredShapeDigestSegmentValues (segmentName: string) (digest: string) =
@@ -1561,7 +1566,39 @@ let private bindingKey (snapshot: BindingSnapshot) =
     let entityKey = snapshot.ContainingEntity |> Option.defaultValue ""
     $"{snapshot.Symbol.QualifiedName}|{snapshot.SignatureText}|{entityKey}"
 
-let private entityKey (snapshot: EntitySnapshot) = snapshot.Symbol.QualifiedName
+let private entityKey (snapshot: EntitySnapshot) =
+    // `module X` and `type X` can coexist (the module compiles with a ModuleSuffix);
+    // the marker keeps their snapshots from colliding in the entity map.
+    if snapshot.IsModule then
+        snapshot.Symbol.QualifiedName + "|module"
+    else
+        snapshot.Symbol.QualifiedName
+
+/// Snapshot for an F# MODULE entity. A module lowers to a sealed abstract static class;
+/// its representation never changes shape on its own (members are diffed as module
+/// bindings, nested types as their own entities), so the digest is a fixed marker — the
+/// snapshot exists so an ADDED module classifies as a NewTypeDefinition insert instead of
+/// failing closed at emission against the missing module TypeDef.
+let private snapshotModuleEntity (moduleEntity: ModuleOrNamespace) path : EntitySnapshot =
+    let reprText = "kind:Type|module"
+
+    let compiledFullName =
+        try
+            Some moduleEntity.CompiledRepresentationForNamedType.FullName
+        with _ ->
+            None
+
+    { Symbol = symbolId path moduleEntity.LogicalName moduleEntity.Stamp SymbolKind.Entity None false None None None None None
+      RepresentationHash = stableHash reprText
+      RepresentationText = reprText
+      NonFieldRepresentationText = reprText
+      Fields = Map.empty
+      IsFSharpClass = false
+      IsGeneric = false
+      CompiledFullName = compiledFullName
+      SupportsAddition = true
+      IsModule = true
+      IsSynthesized = false }
 
 let rec private snapshotModuleBinding g denv (path: string list) (map, entities) binding =
     match binding with
@@ -1569,6 +1606,20 @@ let rec private snapshotModuleBinding g denv (path: string list) (map, entities)
         let snapshot = snapshotBinding g denv path b
         (Map.add (bindingKey snapshot) snapshot map, entities)
     | ModuleOrNamespaceBinding.Module (moduleEntity, contents) ->
+        // Snapshot MODULE entities (not namespaces — namespaces have no TypeDef): a
+        // module lowers to a sealed abstract static class, so an ADDED module is a new
+        // type definition the emitter can express through the C4 added-TypeDef
+        // machinery (gated on NewTypeDefinition like any other type addition). The
+        // module's bindings are snapshotted as ordinary module bindings below; when the
+        // module is added they classify through the long-standing module-function/
+        // module-value addition paths and ride into the same delta.
+        let entities =
+            if moduleEntity.IsModule then
+                let snapshot = snapshotModuleEntity moduleEntity path
+                Map.add (entityKey snapshot) snapshot entities
+            else
+                entities
+
         snapshotModuleContents g denv (path @ [ moduleEntity.LogicalName ]) (map, entities) contents
 
 and private snapshotModuleContents g denv path (map, entities) contents =
@@ -1843,6 +1894,7 @@ and private snapshotTycon denv path (tycon: Tycon) =
       IsGeneric = tycon.TyparsNoRange |> List.exists (fun typar -> not typar.IsErased)
       CompiledFullName = compiledFullName
       SupportsAddition = supportsAddition
+      IsModule = false
       IsSynthesized = false }: EntitySnapshot
 
 let private collectSnapshots g denv (CheckedImplFile (qualifiedNameOfFile = qual; contents = contents)) =
@@ -2536,7 +2588,7 @@ let private compareEntities
                     { Symbol = Some updatedEntity.Symbol
                       Kind = RudeEditKind.DeclarationAdded
                       Message =
-                        $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: only classes, records, unions, and structs can be added (interfaces, enums, delegates, and other representations require a rebuild)." }
+                        $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: only classes, records, unions, structs, and modules can be added (interfaces, enums, delegates, and other representations require a rebuild)." }
                 )
             elif not (capabilities.Supports EditAndContinueCapability.NewTypeDefinition) then
                 rude.Add(

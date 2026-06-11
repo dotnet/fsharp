@@ -558,7 +558,14 @@ let mapSymbolChangesToDelta
                 | Some argCount -> argCount = 0
                 | None -> true))
         |> List.collect (fun symbol ->
-            let modulePath = joinPath symbol.Path
+            // The startup class is per implementation FILE (`$<file qualified name>`),
+            // while the added value's symbol path appends every enclosing module
+            // segment. Matching every path PREFIX covers both shapes: a value added
+            // directly to the file's top-level module (full path = file name, the
+            // historical match) and a value inside an ADDED or nested module (the
+            // file-name prefix matches the startup class; the deeper segments do not).
+            let pathPrefixes =
+                [ for prefixLength in 1 .. symbol.Path.Length -> joinPath (symbol.Path |> List.truncate prefixLength) ]
 
             baseline.MethodTokens
             |> Map.toSeq
@@ -566,7 +573,8 @@ let mapSymbolChangesToDelta
             |> Seq.filter (fun key ->
                 key.Name = ".cctor"
                 && key.DeclaringType.StartsWith("<StartupCode$", StringComparison.Ordinal)
-                && key.DeclaringType.EndsWith("$" + modulePath, StringComparison.Ordinal))
+                && pathPrefixes
+                   |> List.exists (fun prefix -> key.DeclaringType.EndsWith("$" + prefix, StringComparison.Ordinal)))
             |> Seq.toList)
         |> deduplicate
 
