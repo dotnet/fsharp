@@ -327,8 +327,8 @@ let private rewriteMethodBody (remapUserString: int -> int) (remapEntityToken: i
     rewritten, (referencedMethodSpecs |> Seq.toList)
 
 /// Remaps a TypeDefOrRefOrSpec coded index (ECMA-335 II.23.2.8) using the entity-token remapper.
-/// TypeSpec rows cannot be appended by the delta writer yet; they pass through unchanged, matching
-/// MemberRef parent handling.
+/// TypeSpec coded indexes route through the content-validated TypeSpec remap, which reuses a
+/// matching baseline row or appends a new TypeSpec row to the delta.
 let private remapTypeDefOrRefCodedIndexWith (remapEntityToken: int -> int) (coded: int) : int =
     let rowId = coded >>> 2
 
@@ -338,6 +338,7 @@ let private remapTypeDefOrRefCodedIndexWith (remapEntityToken: int -> int) (code
         match coded &&& 0x3 with
         | 0 -> (((remapEntityToken (0x02000000 ||| rowId)) &&& 0x00FFFFFF) <<< 2)
         | 1 -> (((remapEntityToken (0x01000000 ||| rowId)) &&& 0x00FFFFFF) <<< 2) ||| 1
+        | 2 -> (((remapEntityToken (0x1B000000 ||| rowId)) &&& 0x00FFFFFF) <<< 2) ||| 2
         | _ -> coded
 
 /// Rewrites the TypeDefOrRefOrSpec coded indexes embedded in an ECMA-335 signature blob so the blob
@@ -577,6 +578,7 @@ let private memberRefParentToken (parent: MemberRefParent) =
 let private buildUpdatedBaseline
     (updatedBaselineCore: FSharpEmitBaseline)
     (memberReferenceRowList: MemberReferenceRowInfo list)
+    (typeSpecificationRowList: TypeSpecificationRowInfo list)
     (propertyMapRowsSnapshot: PropertyMapRowInfo list)
     (eventMapRowsSnapshot: EventMapRowInfo list)
     (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
@@ -674,9 +676,19 @@ let private buildUpdatedBaseline
                       Signature = row.Signature })
             updatedBaselineCore.MemberReferenceRows
 
+    // Chain delta-appended TypeSpec rows (signature blobs already in baseline
+    // coordinates) so the next generation's content search recognizes and reuses
+    // them instead of appending duplicates.
+    let updatedTypeSpecSignatures =
+        typeSpecificationRowList
+        |> List.fold
+            (fun acc (row: TypeSpecificationRowInfo) -> acc |> Map.add row.RowId row.Signature)
+            updatedBaselineCore.TypeSpecSignatures
+
     { updatedBaselineCore with
         TypeTokens = updatedTypeTokenMap
         MemberReferenceRows = updatedMemberReferenceRows
+        TypeSpecSignatures = updatedTypeSpecSignatures
         MethodTokens = updatedMethodTokenMap
         FieldTokens = updatedFieldTokenMap
         PropertyTokens = updatedPropertyTokenMap
@@ -735,6 +747,7 @@ let private buildReferenceRows
     (typeReferenceRows: ResizeArray<TypeReferenceRowInfo>)
     (memberReferenceRows: ResizeArray<MemberReferenceRowInfo>)
     (assemblyReferenceRows: ResizeArray<AssemblyReferenceRowInfo>)
+    (typeSpecificationRows: ResizeArray<TypeSpecificationRowInfo>)
     (methodSpecificationRowsSnapshot: MethodSpecificationRowInfo list)
     (customAttributeRowList: CustomAttributeRowInfo list)
     =
@@ -753,12 +766,18 @@ let private buildReferenceRows
         |> Seq.sortBy (fun row -> row.RowId)
         |> Seq.toList
 
+    let typeSpecificationRowList =
+        typeSpecificationRows
+        |> Seq.sortBy (fun row -> row.RowId)
+        |> Seq.toList
+
     if traceMetadata then
         printfn
-            "[fsharp-hotreload][metadata] row-counts typeRef=%d memberRef=%d methodSpec=%d assemblyRef=%d customAttr=%d"
+            "[fsharp-hotreload][metadata] row-counts typeRef=%d memberRef=%d methodSpec=%d typeSpec=%d assemblyRef=%d customAttr=%d"
             typeReferenceRowList.Length
             memberReferenceRowList.Length
             methodSpecificationRowsSnapshot.Length
+            typeSpecificationRowList.Length
             assemblyReferenceRowList.Length
             customAttributeRowList.Length
 
@@ -785,10 +804,13 @@ let private buildReferenceRows
                 row.Method.CodedTag
                 row.Method.RowId
 
+        for row in typeSpecificationRowList do
+            printfn "[fsharp-hotreload][metadata] typespec rowId=%d blobLength=%d" row.RowId row.Signature.Length
+
         for row in assemblyReferenceRowList do
             printfn "[fsharp-hotreload][metadata] assemblyref rowId=%d name=%s" row.RowId row.Name
 
-    typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList
+    typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList, typeSpecificationRowList
 
 let private emitMetadataDelta
     (traceMetadata: bool)
@@ -806,6 +828,7 @@ let private emitMetadataDelta
     (typeReferenceRowList: TypeReferenceRowInfo list)
     (memberReferenceRowList: MemberReferenceRowInfo list)
     (methodSpecificationRowsSnapshot: MethodSpecificationRowInfo list)
+    (typeSpecificationRowList: TypeSpecificationRowInfo list)
     (assemblyReferenceRowList: AssemblyReferenceRowInfo list)
     (propertyDefinitionRowsSnapshot: PropertyDefinitionRowInfo list)
     (eventDefinitionRowsSnapshot: EventDefinitionRowInfo list)
@@ -835,6 +858,7 @@ let private emitMetadataDelta
             typeReferenceRowList
             memberReferenceRowList
             methodSpecificationRowsSnapshot
+            typeSpecificationRowList
             assemblyReferenceRowList
             propertyDefinitionRowsSnapshot
             eventDefinitionRowsSnapshot
@@ -852,13 +876,14 @@ let private emitMetadataDelta
         let count idx = metadataDelta.TableRowCounts.[idx]
 
         printfn
-            "[fsharp-hotreload][metadata] table-counts module=%d method=%d param=%d typeRef=%d memberRef=%d methodSpec=%d assemblyRef=%d customAttr=%d standAloneSig=%d"
+            "[fsharp-hotreload][metadata] table-counts module=%d method=%d param=%d typeRef=%d memberRef=%d methodSpec=%d typeSpec=%d assemblyRef=%d customAttr=%d standAloneSig=%d"
             (count TableNames.Module.Index)
             (count TableNames.Method.Index)
             (count TableNames.Param.Index)
             (count TableNames.TypeRef.Index)
             (count TableNames.MemberRef.Index)
             (count TableNames.MethodSpec.Index)
+            (count TableNames.TypeSpec.Index)
             (count TableNames.AssemblyRef.Index)
             (count TableNames.CustomAttribute.Index)
             (count TableNames.StandAloneSig.Index)
@@ -1000,25 +1025,23 @@ let private buildMethodDefinitionRowsSnapshot
 
     let tryBuildMethodRow rowId key isAdded =
         match methodMetadataLookup.TryGetValue key with
-        | true, (attrs, implAttrs, name, signature, emittedNameOffset, emittedSignatureOffset) ->
+        | true, (attrs, implAttrs, name, signature, _, _) ->
             let baselineHandles = baselineMethodHandles |> Map.tryFind key
-            // Added methods have no baseline heap entries: their name/signature must be
-            // written into the delta heaps (offset None). Offsets captured from the fresh
-            // compile's heaps are meaningless against the baseline+delta heap layout and
-            // produce out-of-range or garbage references (observed as mdv aggregator
-            // "future generation" failures when a module value addition shifts the heap).
+            // Methods without baseline heap entries - added this generation OR added by an
+            // EARLIER delta and re-emitted now (the handle cache only covers the on-disk
+            // baseline) - must write their name/signature into THIS delta's heaps (offset
+            // None). Offsets captured from the fresh compile's heaps are meaningless
+            // against the baseline+delta heap layout and produce garbage references
+            // (observed as "Bad binary signature" when a generation-2 body edit re-emitted
+            // a generation-1 closure's method row with fresh-compile offsets).
             let resolvedNameOffset =
-                match baselineHandles |> Option.bind (fun info -> info.NameOffset) with
-                | Some offset -> Some offset
-                | None -> if isAdded then None else emittedNameOffset
+                baselineHandles |> Option.bind (fun info -> info.NameOffset)
             let resolvedSignatureOffset =
-                match baselineHandles |> Option.bind (fun info -> info.SignatureOffset) with
-                | Some offset -> Some offset
-                | None -> if isAdded then None else emittedSignatureOffset
-            // Added-method signature blobs enter the delta blob heap, so their embedded
-            // TypeDefOrRef coded indexes must be remapped from the fresh compile to baseline rows.
+                baselineHandles |> Option.bind (fun info -> info.SignatureOffset)
+            // Signature blobs entering the delta blob heap embed TypeDefOrRef coded
+            // indexes of the fresh compile; remap them to baseline rows.
             let resolvedSignature =
-                if isAdded && resolvedSignatureOffset.IsNone then
+                if resolvedSignatureOffset.IsNone then
                     remapAddedSignature signature
                 else
                     signature
@@ -2048,6 +2071,7 @@ let private finalizeDeltaArtifacts
     (userStringEntries: (int * int * string) list)
     (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
     (memberReferenceRowList: MemberReferenceRowInfo list)
+    (typeSpecificationRowList: TypeSpecificationRowInfo list)
     (propertyMapRowsSnapshot: PropertyMapRowInfo list)
     (eventMapRowsSnapshot: EventMapRowInfo list)
     (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
@@ -2111,6 +2135,7 @@ let private finalizeDeltaArtifacts
         buildUpdatedBaseline
             updatedBaselineCore
             memberReferenceRowList
+            typeSpecificationRowList
             propertyMapRowsSnapshot
             eventMapRowsSnapshot
             methodSemanticsRowsSnapshot
@@ -2194,6 +2219,7 @@ type private MetadataReferenceRemapContext =
       BaselineTypeSpecSignatures: Map<int, byte[]>
       BaselineTypeSpecRowCount: int
       TypeSpecTokenMap: Dictionary<int, int>
+      TypeSpecificationRows: ResizeArray<TypeSpecificationRowInfo>
       TryReuseBaselineTypeRef: TypeReferenceKey -> int option
       RemapDefinitionToken: int -> int
       TypeReferenceRows: ResizeArray<TypeReferenceRowInfo>
@@ -2211,7 +2237,9 @@ type private MetadataReferenceRemapContext =
       GetNextAssemblyRefRowId: unit -> int
       SetNextAssemblyRefRowId: int -> unit
       GetNextMethodSpecRowId: unit -> int
-      SetNextMethodSpecRowId: int -> unit }
+      SetNextMethodSpecRowId: int -> unit
+      GetNextTypeSpecRowId: unit -> int
+      SetNextTypeSpecRowId: int -> unit }
 
 let private createMetadataReferenceRemapper (context: MetadataReferenceRemapContext) : MetadataReferenceRemapper =
     let metadataReader = context.MetadataReader
@@ -2450,9 +2478,11 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
             // Legacy baselines without TypeSpec snapshots keep the historical positional
             // passthrough; validated baselines compare the remapped fresh signature blob
             // against the baseline row (and search for the instantiation elsewhere in the
-            // baseline when the row order shifted).
+            // baseline when the row order shifted). An empty snapshot with a zero row
+            // count is NOT legacy — the baseline genuinely has no TypeSpec rows, so every
+            // fresh TypeSpec is a new instantiation and must be appended.
             let mapped =
-                if Map.isEmpty context.BaselineTypeSpecSignatures then
+                if Map.isEmpty context.BaselineTypeSpecSignatures && context.BaselineTypeSpecRowCount > 0 then
                     token
                 else
                     let handle = MetadataTokens.TypeSpecificationHandle rowId
@@ -2487,21 +2517,25 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
                         match matches with
                         | [ (baselineRowId, _) ] -> 0x1B000000 ||| baselineRowId
                         | _ ->
+                            // Genuinely new generic instantiation: append a TypeSpec row to
+                            // the delta (C# reference template parity — Roslyn's added-lambda
+                            // delta carries "TypeSpec 0x1b00xxxx Default"). The signature blob
+                            // is already remapped to baseline coordinates; the new row id
+                            // chains forward through the next-generation baseline snapshot so
+                            // later compiles content-match it (mirrors appended MemberRef rows).
+                            let nextRowId = context.GetNextTypeSpecRowId () + 1
+                            context.SetNextTypeSpecRowId nextRowId
+
+                            context.TypeSpecificationRows.Add(
+                                { TypeSpecificationRowInfo.RowId = nextRowId
+                                  Signature = signature
+                                  SignatureOffset = None })
+
                             if traceMetadata then
                                 let hex (bytes: byte[]) = bytes |> Array.map (sprintf "%02X") |> String.concat "-"
-                                printfn "[fsharp-hotreload][typespec-miss] token=0x%08X remapped=%s" token (hex signature)
-                                for KeyValue(rowIdB, blob) in context.BaselineTypeSpecSignatures do
-                                    printfn "[fsharp-hotreload][typespec-miss] baseline row=%d blob=%s" rowIdB (hex blob)
+                                printfn "[fsharp-hotreload][typespec-add] token=0x%08X rowId=%d blob=%s" token nextRowId (hex signature)
 
-                            // The delta writer cannot emit TypeSpec rows yet; a genuinely
-                            // new instantiation cannot be expressed (documented gap).
-                            raise (
-                                HotReloadUnsupportedEditException(
-                                    sprintf
-                                        "Edit references a generic instantiation (TypeSpec 0x%08X) with no matching baseline row; the delta writer cannot emit TypeSpec rows yet. Please rebuild."
-                                        token
-                                )
-                            )
+                            0x1B000000 ||| nextRowId
 
             context.TypeSpecTokenMap[token] <- mapped
 
@@ -3102,6 +3136,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     let typeReferenceRows = ResizeArray<TypeReferenceRowInfo>()
     let memberReferenceRows = ResizeArray<MemberReferenceRowInfo>()
     let assemblyReferenceRows = ResizeArray<AssemblyReferenceRowInfo>()
+    let typeSpecificationRows = ResizeArray<TypeSpecificationRowInfo>()
     let baselineTypeReferenceTokens = request.Baseline.TypeReferenceTokens
     let baselineAssemblyReferenceTokens = request.Baseline.AssemblyReferenceTokens
     if traceMetadata.Value then
@@ -3121,6 +3156,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     let methodSpecTokenMap = Dictionary<int, int>()
     let methodSpecRowsByToken = Dictionary<int, MethodSpecificationRowInfo>()
     let mutable nextMethodSpecRowId = baselineMethodSpecRowCount
+    let mutable nextTypeSpecRowId = baselineTableRowCounts.[TableNames.TypeSpec.Index]
 
     for KeyValue(key, newToken) in addedMethodTokens do
         if not (methodDefinitionIndex.IsAdded key) then
@@ -3168,6 +3204,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
               BaselineTypeSpecSignatures = request.Baseline.TypeSpecSignatures
               BaselineTypeSpecRowCount = baselineTableRowCounts.[TableNames.TypeSpec.Index]
               TypeSpecTokenMap = Dictionary<int, int>()
+              TypeSpecificationRows = typeSpecificationRows
               TryReuseBaselineTypeRef = tryReuseBaselineTypeRef
               RemapDefinitionToken = definitionTokenRemapper.RemapDefinitionToken
               TypeReferenceRows = typeReferenceRows
@@ -3185,7 +3222,9 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
               GetNextAssemblyRefRowId = (fun () -> nextAssemblyRefRowId)
               SetNextAssemblyRefRowId = (fun value -> nextAssemblyRefRowId <- value)
               GetNextMethodSpecRowId = (fun () -> nextMethodSpecRowId)
-              SetNextMethodSpecRowId = (fun value -> nextMethodSpecRowId <- value) }
+              SetNextMethodSpecRowId = (fun value -> nextMethodSpecRowId <- value)
+              GetNextTypeSpecRowId = (fun () -> nextTypeSpecRowId)
+              SetNextTypeSpecRowId = (fun value -> nextTypeSpecRowId <- value) }
 
     let remapEntityToken = metadataReferenceRemapper.RemapEntityToken
     let remapAssemblyRefToken = metadataReferenceRemapper.RemapAssemblyRefToken
@@ -3676,9 +3715,10 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                                 let mapped = definitionTokenRemapper.RemapDefinitionToken baseToken
                                 Some(TDR_TypeDef(TypeDefHandle(mapped &&& 0x00FFFFFF)))
                             | HandleKind.TypeSpecification ->
-                                // Content-validated TypeSpec remap (no TypeSpec table in the
-                                // delta writer yet): resolves to the matching baseline row or
-                                // fails closed for genuinely new instantiations.
+                                // Content-validated TypeSpec remap: resolves to the matching
+                                // baseline row, or appends a new TypeSpec row to the delta
+                                // for a genuinely new instantiation (e.g. the first
+                                // FSharpFunc<A,B> closure of that shape in the assembly).
                                 let mapped = remapEntityToken baseToken
                                 Some(TDR_TypeSpec(TypeSpecHandle(mapped &&& 0x00FFFFFF)))
                             | kind ->
@@ -3749,12 +3789,13 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
         nextTypeRefRowId <- nextTypeRefRowIdAfterAttributes
         nextMemberRefRowId <- nextMemberRefRowIdAfterAttributes
 
-        let typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList =
+        let typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList, typeSpecificationRowList =
             buildReferenceRows
                 traceMetadata.Value
                 typeReferenceRows
                 memberReferenceRows
                 assemblyReferenceRows
+                typeSpecificationRows
                 methodSpecificationRowsSnapshot
                 customAttributeRowList
 
@@ -3777,6 +3818,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 typeReferenceRowList
                 memberReferenceRowList
                 methodSpecificationRowsSnapshot
+                typeSpecificationRowList
                 assemblyReferenceRowList
                 propertyDefinitionRowsSnapshot
                 eventDefinitionRowsSnapshot
@@ -3803,6 +3845,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             userStringEntries
             methodDefinitionRowsSnapshot
             memberReferenceRowList
+            typeSpecificationRowList
             propertyMapRowsSnapshot
             eventMapRowsSnapshot
             methodSemanticsRowsSnapshot

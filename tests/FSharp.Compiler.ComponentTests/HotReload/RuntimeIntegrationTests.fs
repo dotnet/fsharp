@@ -2183,6 +2183,244 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
+    // -----------------------------------------------------------------------------
+    // TypeSpec row emission: added lambdas whose closure classes extend a generic
+    // instantiation with NO matching baseline TypeSpec row (the common case for any
+    // brand-new FSharpFunc<A,B> shape).
+    // -----------------------------------------------------------------------------
+
+    // Baseline carries only int -> int closures (FSharpFunc<int32,int32> TypeSpec rows).
+    let private newInstantiationBaselineSource =
+        """
+module Sample.NewInstantiation
+
+let transform (input: int list) =
+    List.map (fun x -> x + 1) input
+
+let probe () = List.sum (transform [ 1; 2; 3 ])
+"""
+
+    // Generation 1: the added List.filter lambda's closure class extends
+    // FSharpFunc<int32,bool> - an instantiation absent from the baseline TypeSpec
+    // table, so the delta must APPEND a TypeSpec row (Default op, C# template parity).
+    let private newInstantiationGen1Source =
+        """
+module Sample.NewInstantiation
+
+let transform (input: int list) =
+    List.map (fun x -> x + 1) (List.filter (fun x -> x % 2 = 0) input)
+
+let probe () = List.sum (transform [ 1; 2; 3 ])
+"""
+
+    // Generation 2: ANOTHER added lambda with another brand-new instantiation
+    // (FSharpFunc<int32, FSharpList<int32>> for List.collect); its TypeSpec row id
+    // must continue past the row appended in generation 1 (baseline chaining). The
+    // new stage is added INNERMOST so the surviving lambdas keep their source
+    // occurrence order (the C3 closure-identity constraint, same shape as the C4
+    // added-lambda test).
+    let private newInstantiationGen2Source =
+        """
+module Sample.NewInstantiation
+
+let transform (input: int list) =
+    List.map (fun x -> x + 1) (List.filter (fun x -> x % 2 = 0) (List.collect (fun x -> [ x; x * 10 ]) input))
+
+let probe () = List.sum (transform [ 1; 2; 3 ])
+"""
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added lambdas with new generic instantiations across generations`` () =
+        // TypeSpec emission payoff: each generation adds a lambda whose closure class
+        // extends a generic instantiation that no baseline TypeSpec row matches. The
+        // delta must carry an appended TypeSpec row with the plain Default operation
+        // (mirroring the recorded C# reference template's "TypeSpec 0x1b000001 Default"
+        // entry), apply cleanly via MetadataUpdater, and chain the row forward so the
+        // next generation reuses it instead of failing or duplicating.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-new-instantiation", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "NewInstantiation.fs")
+            let dllPath = Path.Combine(projectDir, "NewInstantiation.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "NewInstantiation.runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, newInstantiationBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString newInstantiationBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                let capabilities =
+                    [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
+
+                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let moduleType = assembly.GetType("Sample.NewInstantiation", throwOnError = true)
+                let probe = moduleType.GetMethod("probe", BindingFlags.Public ||| BindingFlags.Static)
+
+                // Baseline: map(+1) [1;2;3] = [2;3;4], sum 9.
+                Assert.Equal(9, probe.Invoke(null, [||]) :?> int)
+
+                let baselineTypeSpecCount =
+                    use peReader = new PEReader(File.OpenRead runtimeDllPath)
+                    peReader.GetMetadataReader().GetTableRowCount(TableIndex.TypeSpec)
+
+                let applyGeneration gen (source: string) expectedValue =
+                    File.WriteAllText(fsPath, source)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    let updatedOptions =
+                        { projectOptions with
+                            OtherOptions =
+                                projectOptions.OtherOptions
+                                |> Array.filter (fun opt ->
+                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                    let compileDiagnostics, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    | Ok delta ->
+                        let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                        printfn "[typespec-add] Gen %d: metadata=%d IL=%d PDB=%d" gen delta.Metadata.Length delta.IL.Length pdbBytes.Length
+
+                        match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DUMP_DIR") with
+                        | null | "" -> ()
+                        | dumpDir ->
+                            Directory.CreateDirectory(dumpDir) |> ignore
+                            File.Copy(runtimeDllPath, Path.Combine(dumpDir, "baseline.dll"), true)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dmeta"), delta.Metadata)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dil"), delta.IL)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dpdb"), pdbBytes)
+
+                        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+
+                        let value = probe.Invoke(null, [||]) :?> int
+                        printfn "[typespec-add] Gen %d result: %d (expected %d)" gen value expectedValue
+                        Assert.Equal(expectedValue, value)
+                        delta
+
+                // mdv-style structural validation on the raw delta metadata: the appended
+                // TypeSpec row appears in the EncLog with the plain Default (= 0) operation
+                // and a row id PAST the chained TypeSpec table, the same token is present in
+                // the (token-sorted) EncMap, and the EncMap is complete - every appended
+                // TypeSpec row in the delta's physical table has exactly one EncMap entry.
+                let assertTypeSpecAdd (metadata: byte[]) (minRowIdExclusive: int) =
+                    use provider =
+                        MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> metadata)
+
+                    let reader = provider.GetMetadataReader()
+
+                    let typeSpecEncLog =
+                        reader.GetEditAndContinueLogEntries()
+                        |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+                        |> Seq.filter (fun (token, _) -> token >>> 24 = 0x1B)
+                        |> Seq.toArray
+
+                    let added =
+                        typeSpecEncLog
+                        |> Array.filter (fun (token, op) -> (token &&& 0x00FFFFFF) > minRowIdExclusive && op = 0)
+
+                    Assert.True(
+                        added.Length >= 1,
+                        sprintf "Expected an appended TypeSpec row (Default op, rowId > %d); got %A" minRowIdExclusive typeSpecEncLog)
+
+                    let encMapTokens =
+                        reader.GetEditAndContinueMapEntries()
+                        |> Seq.map MetadataTokens.GetToken
+                        |> Seq.toArray
+
+                    let encMapTypeSpecs = encMapTokens |> Array.filter (fun token -> token >>> 24 = 0x1B)
+
+                    for token, _ in typeSpecEncLog do
+                        Assert.Contains(token, encMapTypeSpecs)
+
+                    // EncMap completeness for the TypeSpec table: one entry per physical row.
+                    Assert.Equal(reader.GetTableRowCount TableIndex.TypeSpec, encMapTypeSpecs.Length)
+
+                    // EncMap must be token-sorted (readers reject unsorted maps).
+                    Assert.Equal<int[]>(encMapTokens |> Array.sort, encMapTokens)
+
+                    added |> Array.map fst
+
+                // Generation 1: filter [1;2;3] = [2], map(+1) = [3], sum 3.
+                let delta1 = applyGeneration 1 newInstantiationGen1Source 3
+                let gen1Added = assertTypeSpecAdd delta1.Metadata baselineTypeSpecCount
+                let gen1MaxRowId = gen1Added |> Array.map (fun token -> token &&& 0x00FFFFFF) |> Array.max
+
+                // Generation 2: collect [1;2;3] = [1;10;2;20;3;30], filter (%2=0) =
+                // [10;2;20;30], map(+1) = [11;3;21;31], sum 66. The new TypeSpec row
+                // chains PAST generation 1's appended rows; the FSharpFunc<int32,bool>
+                // row added in generation 1 is reused, never re-appended.
+                let delta2 = applyGeneration 2 newInstantiationGen2Source 66
+                let gen2Added = assertTypeSpecAdd delta2.Metadata gen1MaxRowId
+
+                Assert.True(
+                    gen2Added |> Array.forall (fun token -> (token &&& 0x00FFFFFF) > gen1MaxRowId),
+                    "Generation 2 TypeSpec rows must chain past generation 1's appended rows.")
+
+                printfn "[typespec-add] SUCCESS: new generic instantiations applied across two generations"
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
     [<Fact>]
     let ``Disk-started session reconstructs closure names and applies an added lambda`` () =
         // Phase C6 payoff (the dotnet-watch topology): the baseline is built by the

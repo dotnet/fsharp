@@ -923,6 +923,7 @@ module FSharpDeltaMetadataWriterTests =
                 [] // type reference rows
                 [] // member reference rows
                 [] // method spec rows
+                [] // type spec rows
                 [] // assembly reference rows
                 [] // property rows
                 [] // event rows
@@ -2810,6 +2811,7 @@ module FSharpDeltaMetadataWriterTests =
           TypeRef = emptyRowArrays
           MemberRef = emptyRowArrays
           MethodSpec = emptyRowArrays
+          TypeSpec = emptyRowArrays
           AssemblyRef = emptyRowArrays
           StandAloneSig = emptyRowArrays
           CustomAttribute = emptyRowArrays

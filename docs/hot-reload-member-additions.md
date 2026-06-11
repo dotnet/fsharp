@@ -408,13 +408,47 @@ table offset past InterfaceImpl misread). The remapper then:
 1. trusts a positional row id only when the fresh row's content (with parent
    and signature REMAPPED to baseline coordinates) matches the baseline row;
 2. otherwise searches the baseline table for a unique content match;
-3. otherwise appends a new MemberRef row (always legal) — or, for TypeSpecs,
-   fails closed (the writer cannot emit TypeSpec rows yet).
+3. otherwise appends a new MemberRef — or TypeSpec — row (always legal).
 
-Delta-appended MemberRef rows chain into the next generation's
-`MemberReferenceRows` so later compiles can validate/reuse them. Baselines
-without byte-derived snapshots (legacy construction paths) keep the historic
-positional behavior.
+Delta-appended MemberRef and TypeSpec rows chain into the next generation's
+`MemberReferenceRows`/`TypeSpecSignatures` so later compiles can
+validate/reuse them. Baselines without byte-derived snapshots (legacy
+construction paths) keep the historic positional behavior; an empty TypeSpec
+snapshot with a zero baseline row count is treated as validated (every fresh
+TypeSpec is genuinely new and is appended).
+
+### TypeSpec row emission (new generic instantiations)
+
+An added lambda whose closure class extends a generic instantiation with no
+matching baseline TypeSpec row (the common case: the first
+`FSharpFunc<A,B>` of that shape in the assembly, e.g. a `List.filter`
+predicate added to a baseline that only has `int -> int` closures) appends a
+TypeSpec row to the delta, mirroring the recorded C# reference template
+above (gen-1 entry `9: TypeSpec 0x1b000001 Default`):
+
+- The row is a single #Blob signature column (ECMA-335 II.22.39); the blob
+  is taken from the fresh compile and remapped to baseline coordinates via
+  `remapTypeSpecBlobWith` (inner TypeDefOrRef coded indexes through the
+  entity remapper). TypeSpec coded indexes embedded in signature blobs
+  (TypeDefOrRefOrSpec tag 2) route through the same content-validated remap.
+- EncLog logs the row with the plain **Default** operation (applied via
+  ApplyTableDelta, like TypeRef/MemberRef adds); the row id appears in the
+  token-sorted EncMap.
+- The appended row id and signature chain into the next-generation
+  baseline's `TypeSpecSignatures`, so a later generation content-matches and
+  reuses the row (a generation-2 lambda adding yet another new instantiation
+  appends its TypeSpec row PAST the generation-1 row; validated by
+  `ApplyUpdate succeeds for added lambdas with new generic instantiations
+  across generations`).
+- Methods added by an earlier generation and re-emitted by a later delta
+  write their name/signature into the later delta's heaps (the baseline
+  handle cache only covers the on-disk assembly); fresh-compile heap offsets
+  were previously emitted for these rows and produced garbage references
+  ("Bad binary signature") once the blobs no longer coincided with baseline
+  content.
+
+Generic closure CLASSES (closures over generic methods) still need
+GenericParam rows — a distinct gap; the emitter keeps failing closed there.
 
 ### Session wiring (watch flow)
 
@@ -433,11 +467,9 @@ Known divergences from the C# reference (deliberate this slice):
   emission for added types can reuse the existing CustomAttribute row path
   later.
 - `Extends` pointing at a generic instantiation (`FSharpFunc`2<A,B>` =
-  TypeSpec) resolves through the content-validated TypeSpec remap: it must
-  match an instantiation already present in the baseline (true whenever the
-  same closure shape occurs anywhere in it). A genuinely NEW instantiation
-  needs TypeSpec rows in the delta writer — not supported yet; the emitter
-  fails closed with a rebuild-required message.
+  TypeSpec) resolves through the content-validated TypeSpec remap: it reuses
+  a matching baseline row, or appends a new TypeSpec row to the delta for a
+  genuinely NEW instantiation (see "TypeSpec row emission" above).
 - Added GENERIC closure classes (closures over generic methods) need
   GenericParam rows — not supported yet; the emitter fails closed.
 - The AsyncStateMachineAttribute synthesis heuristic (nested

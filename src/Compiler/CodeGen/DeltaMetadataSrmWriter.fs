@@ -124,6 +124,7 @@ let serialize
     (typeReferenceRows: TypeReferenceRowInfo list)
     (memberReferenceRows: MemberReferenceRowInfo list)
     (methodSpecificationRows: MethodSpecificationRowInfo list)
+    (typeSpecificationRows: TypeSpecificationRowInfo list)
     (assemblyReferenceRows: AssemblyReferenceRowInfo list)
     (propertyDefinitionRows: PropertyDefinitionRowInfo list)
     (eventDefinitionRows: EventDefinitionRowInfo list)
@@ -144,6 +145,7 @@ let serialize
     let typeRefCount = typeReferenceRows.Length
     let memberRefCount = memberReferenceRows.Length
     let methodSpecCount = methodSpecificationRows.Length
+    let typeSpecCount = typeSpecificationRows.Length
     let assemblyRefCount = assemblyReferenceRows.Length
     let customAttributeCount = customAttributeRows.Length
     let standaloneSigCount = standaloneSignatureRows.Length
@@ -176,7 +178,7 @@ let serialize
     metadataBuilder.SetCapacity(TableIndex.MethodSemantics, methodSemanticsAddCount)
     metadataBuilder.SetCapacity(TableIndex.MethodImpl, 0)
     metadataBuilder.SetCapacity(TableIndex.ModuleRef, 0)
-    metadataBuilder.SetCapacity(TableIndex.TypeSpec, 0)
+    metadataBuilder.SetCapacity(TableIndex.TypeSpec, typeSpecCount)
     metadataBuilder.SetCapacity(TableIndex.ImplMap, 0)
     metadataBuilder.SetCapacity(TableIndex.FieldRva, 0)
     metadataBuilder.SetCapacity(TableIndex.Assembly, 0)
@@ -289,6 +291,10 @@ let serialize
         let signatureHandle = toBlobHandle metadataBuilder row.Signature row.SignatureOffset
         metadataBuilder.AddMethodSpecification(methodHandle, signatureHandle) |> ignore
 
+    for row in typeSpecificationRows do
+        let signatureHandle = toBlobHandle metadataBuilder row.Signature row.SignatureOffset
+        metadataBuilder.AddTypeSpecification signatureHandle |> ignore
+
     for row in assemblyReferenceRows do
         let nameHandle = toStringHandle metadataBuilder row.Name row.NameOffset
         let cultureHandle = toOptionalStringHandle metadataBuilder row.Culture row.CultureOffset
@@ -375,6 +381,7 @@ let private trackedParityTables =
        TableIndex.Param
        TableIndex.MemberRef
        TableIndex.MethodSpec
+       TableIndex.TypeSpec
        TableIndex.StandAloneSig
        TableIndex.CustomAttribute
        TableIndex.Property

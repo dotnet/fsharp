@@ -61,6 +61,8 @@ type EventDefinitionRowInfo = DeltaMetadataTypes.EventDefinitionRowInfo
 
 type MethodSpecificationRowInfo = DeltaMetadataTypes.MethodSpecificationRowInfo
 
+type TypeSpecificationRowInfo = DeltaMetadataTypes.TypeSpecificationRowInfo
+
 type PropertyMapRowInfo = DeltaMetadataTypes.PropertyMapRowInfo
 
 type EventMapRowInfo = DeltaMetadataTypes.EventMapRowInfo
@@ -109,6 +111,7 @@ let emitWithTypeDefinitions
     (typeReferenceRows: TypeReferenceRowInfo list)
     (memberReferenceRows: MemberReferenceRowInfo list)
     (methodSpecificationRows: MethodSpecificationRowInfo list)
+    (typeSpecificationRows: TypeSpecificationRowInfo list)
     (assemblyReferenceRows: AssemblyReferenceRowInfo list)
     (propertyDefinitionRows: PropertyDefinitionRowInfo list)
     (eventDefinitionRows: EventDefinitionRowInfo list)
@@ -313,6 +316,15 @@ let emitWithTypeDefinitions
             encLog.Add(struct (TableNames.MethodSpec, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.MethodSpec, row.RowId))
 
+        // Appended TypeSpec rows (new generic instantiations) are plain Default adds
+        // applied via ApplyTableDelta, exactly like the C# reference template's
+        // "TypeSpec 0x1b00xxxx Default" entry for an added-lambda delta.
+        for row in typeSpecificationRows do
+            tableMirror.AddTypeSpecificationRow row
+
+            encLog.Add(struct (TableNames.TypeSpec, row.RowId, EditAndContinueOperation.Default))
+            encMap.Add(struct (TableNames.TypeSpec, row.RowId))
+
         for row in assemblyReferenceRows do
             tableMirror.AddAssemblyReferenceRow row
 
@@ -425,6 +437,7 @@ let emitWithTypeDefinitions
                 [| TableNames.TypeRef
                    TableNames.MemberRef
                    TableNames.MethodSpec
+                   TableNames.TypeSpec
                    TableNames.AssemblyRef
                    TableNames.StandAloneSig
                    TableNames.CustomAttribute |]
@@ -520,6 +533,7 @@ let emitWithTypeDefinitions
                         typeReferenceRows
                         memberReferenceRows
                         methodSpecificationRows
+                        typeSpecificationRows
                         assemblyReferenceRows
                         propertyDefinitionRows
                         eventDefinitionRows
@@ -647,6 +661,7 @@ let emitWithUserStrings
         typeReferenceRows
         memberReferenceRows
         methodSpecificationRows
+        ([] : TypeSpecificationRowInfo list)
         assemblyReferenceRows
         propertyDefinitionRows
         eventDefinitionRows

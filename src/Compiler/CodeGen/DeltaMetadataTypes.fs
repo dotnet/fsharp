@@ -107,6 +107,16 @@ type MethodSpecificationRowInfo =
       Signature: byte[]
       SignatureOffset: BlobOffset option }
 
+/// Row model for a TypeSpec table entry (ECMA-335 II.22.39: a single #Blob signature
+/// column carrying a bare Type, II.23.2.14). Appended with a plain Default EncLog entry
+/// (C# reference template parity) when an edit references a generic instantiation that
+/// has no matching baseline row — e.g. an added lambda whose closure class extends a
+/// brand-new FSharpFunc<A,B> instantiation.
+type TypeSpecificationRowInfo =
+    { RowId: int
+      Signature: byte[]
+      SignatureOffset: BlobOffset option }
+
 type AssemblyReferenceRowInfo =
     { RowId: int
       Version: Version
@@ -184,6 +194,7 @@ type TableRows =
       TypeRef: RowElementData[][]
       MemberRef: RowElementData[][]
       MethodSpec: RowElementData[][]
+      TypeSpec: RowElementData[][]
       AssemblyRef: RowElementData[][]
       StandAloneSig: RowElementData[][]
       CustomAttribute: RowElementData[][]

@@ -193,8 +193,8 @@ type FSharpEmitBaseline =
         /// positional (legacy behavior).
         MemberReferenceRows: Map<int, BaselineMemberRefRow>
         /// Baseline TypeSpec signature blobs keyed by row id, for content-validated
-        /// TypeSpec token passthrough (the delta writer cannot emit TypeSpec rows yet,
-        /// so an unmatched fresh TypeSpec fails closed).
+        /// TypeSpec token reuse. An unmatched fresh TypeSpec appends a new delta row;
+        /// appended rows chain into this map for the next generation's content search.
         TypeSpecSignatures: Map<int, byte[]>
         TableEntriesAdded: int[]
         StringStreamLengthAdded: int

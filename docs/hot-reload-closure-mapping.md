@@ -351,9 +351,12 @@ delta-compile hook step). As implemented:
   in-process capture session it replaces (same MVID) because disk artifacts cannot encode
   the tables, and MemberRef/TypeSpec token passthrough became content-validated (an added
   lambda shifts the fresh compile's reference-row order; see the member-additions doc).
+  Genuinely new generic instantiations are no longer rude: the delta writer appends
+  TypeSpec rows (Default op, C# template parity), so an added lambda whose closure class
+  extends a brand-new `FSharpFunc<A,B>` emits and applies (see the member-additions doc).
   Still rude: capture-set changes of matched occurrences (capture-field mapping is a later
-  slice), genuinely new generic instantiations (TypeSpec emission), and generic closure
-  classes (GenericParam emission). The C4-era MVID-matched `EncClosureNames` carry-over in
+  slice) and generic closure classes (GenericParam emission). The C4-era MVID-matched
+  `EncClosureNames` carry-over in
   `checker.StartHotReloadSession` is superseded by the C6 reconstruction and demoted to a
   consistency check.
 

@@ -154,7 +154,7 @@ let ``ilx delta emitter phases stay explicit`` () =
         sliceBetween
             source
             "let emitDelta (request: IlxDeltaRequest) : IlxDelta ="
-            "        let typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList ="
+            "        let typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList, typeSpecificationRowList ="
 
     Assert.Contains("let private buildMethodAndParameterRows", source)
     Assert.Contains("let private buildPropertyEventAndSemanticsRows", source)

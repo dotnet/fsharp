@@ -2314,3 +2314,83 @@ let transform (values: int list) =
 
         checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()
+
+    // Variant of the capability-refresh scenario where the added lambda is a List.filter
+    // predicate: its closure class extends FSharpFunc<int,bool>, a generic instantiation
+    // with NO matching baseline TypeSpec row (the baseline only carries int -> int
+    // closures), so the emission must APPEND a TypeSpec row to the delta.
+    let private newInstantiationUpdated =
+        """
+module Sample.Library
+
+let transform (values: int list) =
+    values
+    |> List.map (fun v -> v + 1)
+    |> List.filter (fun v -> v % 2 = 0)
+"""
+
+    [<Fact>]
+    let ``EmitHotReloadDelta emits TypeSpec rows for an added lambda with a new generic instantiation`` () =
+        let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-typespec-add", Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(projectDir) |> ignore
+
+        let fsPath = Path.Combine(projectDir, "Library.fs")
+        let dllPath = Path.Combine(projectDir, "Library.dll")
+
+        File.WriteAllText(fsPath, capabilityRefreshBaseline)
+
+        let checker = createChecker ()
+        let projectOptions = prepareProjectOptions checker fsPath dllPath capabilityRefreshBaseline
+
+        checker.InvalidateAll()
+        compileProject checker projectOptions true
+
+        let capabilities =
+            [ "Baseline"
+              "AddMethodToExistingType"
+              "AddStaticFieldToExistingType"
+              "AddInstanceFieldToExistingType"
+              "NewTypeDefinition" ]
+
+        match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+        | Error error -> failwithf "Failed to start session: %A" error
+        | Ok () -> ()
+
+        let baselineTypeSpecCount =
+            use peReader = new PEReader(File.OpenRead dllPath)
+            peReader.GetMetadataReader().GetTableRowCount(TableIndex.TypeSpec)
+
+        File.WriteAllText(fsPath, newInstantiationUpdated)
+        checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+        compileProject checker projectOptions false
+
+        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "Expected the new-instantiation lambda to emit a delta, got: %A" error
+        | Ok delta ->
+            Assert.NotEmpty(delta.Metadata)
+
+            let metadataBytes = System.Collections.Immutable.ImmutableArray.CreateRange(delta.Metadata)
+            use provider = MetadataReaderProvider.FromMetadataImage(metadataBytes)
+            let reader = provider.GetMetadataReader()
+
+            // The appended TypeSpec row is a plain Default add past the baseline table
+            // (C# reference template parity) and appears in EncMap.
+            Assert.True(reader.GetTableRowCount(TableIndex.TypeSpec) >= 1, "Expected at least one TypeSpec row in the delta.")
+
+            let typeSpecAdds =
+                reader.GetEditAndContinueLogEntries()
+                |> Seq.filter (fun entry ->
+                    entry.Handle.Kind = HandleKind.TypeSpecification
+                    && entry.Operation = EditAndContinueOperation.Default
+                    && MetadataTokens.GetRowNumber entry.Handle > baselineTypeSpecCount)
+                |> Seq.toArray
+
+            Assert.True(typeSpecAdds.Length >= 1, "Expected an appended TypeSpec row (Default op) in the EncLog.")
+
+            let encMap = reader.GetEditAndContinueMapEntries() |> Seq.toArray
+
+            for entry in typeSpecAdds do
+                Assert.Contains(encMap, fun handle -> handle = entry.Handle)
+
+        checker.EndHotReloadSession()
+        try Directory.Delete(projectDir, true) with _ -> ()

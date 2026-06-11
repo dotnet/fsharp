@@ -306,6 +306,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let typeRefRows = RowTableBuilder()
     let memberRefRows = RowTableBuilder()
     let methodSpecRows = RowTableBuilder()
+    let typeSpecRows = RowTableBuilder()
     let assemblyRefRows = RowTableBuilder()
     let standAloneSigRows = RowTableBuilder()
     let customAttributeRows = RowTableBuilder()
@@ -603,6 +604,12 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
             |]
         methodSpecRows.Add rowElements
 
+    member _.AddTypeSpecificationRow(row: TypeSpecificationRowInfo) =
+        // TypeSpec row per ECMA-335 II.22.39: a single #Blob signature column.
+        let signatureToken = addExistingBlobOffset row.SignatureOffset row.Signature
+        let rowElements = [| blobElement signatureToken |]
+        typeSpecRows.Add rowElements
+
     member _.AddAssemblyReferenceRow(row: AssemblyReferenceRowInfo) =
         let publicKeyToken = addExistingBlobOffset row.PublicKeyOrTokenOffset row.PublicKeyOrToken
         let nameToken = addExistingStringOffset row.NameOffset row.Name
@@ -784,6 +791,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
           TypeRef = typeRefRows.Entries
           MemberRef = memberRefRows.Entries
           MethodSpec = methodSpecRows.Entries
+          TypeSpec = typeSpecRows.Entries
           AssemblyRef = assemblyRefRows.Entries
           StandAloneSig = standAloneSigRows.Entries
           CustomAttribute = customAttributeRows.Entries
@@ -810,6 +818,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         counts[TableNames.TypeRef.Index] <- typeRefRows.Count
         counts[TableNames.MemberRef.Index] <- memberRefRows.Count
         counts[TableNames.MethodSpec.Index] <- methodSpecRows.Count
+        counts[TableNames.TypeSpec.Index] <- typeSpecRows.Count
         counts[TableNames.AssemblyRef.Index] <- assemblyRefRows.Count
         counts[TableNames.StandAloneSig.Index] <- standAloneSigRows.Count
         counts[TableNames.CustomAttribute.Index] <- customAttributeRows.Count
