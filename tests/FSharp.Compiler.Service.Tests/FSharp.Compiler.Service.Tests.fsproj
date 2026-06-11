@@ -93,6 +93,7 @@
     <Compile Include="HotReload/FSharpDeltaMetadataWriterTests.fs" />
     <Compile Include="HotReload/RoslynBaselineComparisons.fs" />
     <Compile Include="HotReload/NameMapTests.fs" />
+    <Compile Include="HotReload/ClosureNameAllocatorTests.fs" />
     <Compile Include="HotReload/RudeEditDiagnosticsTests.fs" />
     <Compile Include="HotReload/ThreadSafetyTests.fs" />
     <Compile Include="HotReload/CodedIndexTests.fs" />

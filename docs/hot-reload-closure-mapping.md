@@ -7,7 +7,10 @@ portable PDB under `--enable:hotreloaddeltas`.
 C2 commit 3 landed (2026-06-10) — baseline EnC CDI read into the hot reload session
 (`FSharpEmitBaseline.EncMethodDebugInfos`) plus in-memory generation chaining; delta-PDB CDI
 re-emission deferred (see "C2 baseline CDI read" below).
-C3–C5 pending. Implementation notes are folded into the relevant sections below.
+C3 allocator landed (2026-06-10) — occurrence-keyed closure name allocation model
+(`ClosureNameAllocator.fs`) with the generation-suffixed name format; lowering wiring pending
+(see "C3 occurrence-keyed closure name allocation" below for the wiring design and its blockers).
+C4–C5 pending. Implementation notes are folded into the relevant sections below.
 Source research: Roslyn main @ June 2026 (`ClosureConversion.cs`, `EncVariableSlotAllocator.cs`, `EditAndContinueMethodDebugInformation.cs`, `DefinitionMap.cs`, `AbstractEditAndContinueAnalyzer.ReportLambdaAndClosureRudeEdits`).
 
 ## Problem
@@ -210,6 +213,74 @@ lacks tokens). Details:
   generation-N state) is the remaining gap. Methods *added* by a delta also carry no entry yet
   (no baseline token at refresh time) — added lambda members are a C4 concern.
 
+### C3 occurrence-keyed closure name allocation as implemented (allocator; lowering wiring pending)
+
+`src/Compiler/TypedTree/ClosureNameAllocator.fs` is the F# `EncVariableSlotAllocator.TryGetPreviousLambda/
+TryGetPreviousClosure` analogue, expressed as a pure data transformation over the C1 occurrence model
+(no IO, no IlxGen state — fully unit-tested by `ClosureNameAllocatorTests`):
+
+- **API**: `allocateMemberClosureNames baselineOccurrences baselineNamesByOccurrenceChain
+  freshOccurrences freshNameBase generation` → per-occurrence `Assignments`
+  (`Reused of name` | `Fresh of name`, in occurrence order) plus
+  `RefreshedNamesByOccurrenceChain`, the chain-forward table the next generation consumes.
+  Tables are keyed by the **unpacked** root-first ordinal chain (`int list`), so the allocator
+  carries none of the CDI packing limits; CDI keys translate via
+  `EncMethodDebugInformation.decodeOccurrenceKey`.
+- **Alignment**: exactly the C1 two-pass LCS — the index-pair core was extracted from
+  `alignLambdaOccurrences` into `TypedTreeDiff.alignLambdaOccurrenceIndexPairs` and is shared by
+  both consumers, so diff classification and name allocation can never disagree about pairing.
+- **Decision rules** (all fail closed): matched pair with equal capture sets and a recorded
+  baseline name → `Reused` (verbatim baseline closure class name). Matched but
+  capture-incompatible (a pass-2 shape-only pair) → `Fresh` (Roslyn parity: the previous closure
+  member is stubbed, a new one is synthesized). Matched but no recorded name (unmappable method,
+  dropped chain entry) → `Fresh` — a name is never guessed. Unmatched (added) → `Fresh`. Removed
+  occurrences contribute nothing to the refreshed table, so their names are unused forever and
+  can never be reused (later allocations are always generation-suffixed, and the generation
+  counter never repeats within a session).
+- **Generation-suffixed name format** (the Roslyn `DebugId(ordinal, generation)` analogue):
+  `{baseName}@hotreload#g{generation}_o{occurrenceOrdinal}`, e.g. `f@hotreload#g2_o3`. It extends
+  the baseline replay naming (`f@hotreload`, `f@hotreload-1`, ...) — same `@hotreload` marker, but
+  the `#g…_o…` suffix is disjoint from the `-{int}` replay-ordinal space (it never parses in
+  `tryGetHotReloadOrdinal`, so snapshot canonicalization leaves it alone). Occurrence ordinals are
+  unique within a member and generations strictly increase, so a (baseName, generation, ordinal)
+  triple is allocated at most once per session.
+
+**Lowering wiring design (pending).** The remaining work is threading the allocation into IlxGen
+for delta compiles. The precise design and why it was not forced into the allocator commit:
+
+1. *Where closure names are born*: one call site — `IlxGen.GetIlxClosureFreeVars` calls
+   `StableNameGenerator.GetUniqueCompilerGeneratedName(basename, expr.Range, uniq)`, which lands in
+   `ICompilerGeneratedNameMap.GetOrAddName basicName`. The seam is keyed by basic-name SEQUENCE
+   only: it carries no occurrence identity and no name-kind discrimination (closure type names,
+   static-field helpers, record/union helpers all flow through the same `GetOrAddName`).
+2. *Bridging identity*: IlxGen cannot replay the C1 occurrence numbering (curried-group merging,
+   member-top stripping, delay-lambda elimination happen in extraction, not lowering, and closure
+   formation can be deferred for let-rec/local type functions). The identity available at BOTH
+   ends within one compile is the lambda expression's unique stamp (`Expr.Lambda(uniq, ...)`),
+   already in hand at the call site. Plan: record the root expression stamp on `LambdaOccurrence`
+   (extraction-time capture, never part of the structural digest), so an allocation can be turned
+   into a stamp→name table by extracting occurrences from the very tree IlxGen lowers.
+3. *Baseline derivation gap*: the baseline CDI stores occurrence keys, not names, and the name-map
+   snapshot stores names by basic-name sequence — joining them by allocation order would
+   re-introduce exactly the sequence keying C3 removes. The trustworthy generation-1
+   chain→name table must be captured during baseline IlxGen: record stamp→emitted closure type
+   name at the call site and join with the stamp→chain table from the same tree's extraction in
+   the fsc emit path (where C2 already computes CDI rows from `optimizedImpls`); store per
+   MethodDef token on the session baseline and chain it like `EncMethodDebugInfos`. (The CDI blob
+   format has no name slots — Roslyn recomputes C# names from `DebugId` alone, which F# cannot do
+   for baseline occurrences whose names embed line numbers or replay ordinals.)
+4. *Process topology*: in the watch flow the delta IL is produced by the fsc emit pipeline (the
+   emit hook's `PrepareForCodeGeneration` installs the replay map on fsc's `CompilerGlobalState`)
+   while the session chains state in the checker. The hook contract must grow a codegen-time step
+   that (a) pulls the session's per-method chain tables, (b) extracts fresh occurrences from the
+   impl files being lowered (same-tree stamps), (c) runs the allocator per member, and (d)
+   installs the stamp→name table next to the name map (a `ConditionalWeakTable` seam like
+   `CompilerGeneratedNameMapState`) for the closure call site to consult before falling back to
+   sequence replay. Flag-off and non-session compiles see no table and stay byte-identical.
+5. *Seam discrimination*: no heuristics on name text — the closure call site consults the
+   occurrence table directly (name-kind discrimination by construction: only that call site
+   looks); every other synthesized name keeps the existing `GetOrAddName` replay behavior.
+
 ### State machines (Phase D, builds on the same map)
 
 - F# `async` lowers to closure chains → covered by the lambda/closure map directly (a major
@@ -240,9 +311,13 @@ lambda signature changes, mid-sequence resume-point insertion, struct-closure ca
   CDI emission as implemented"). Commit 3 ✅ landed: baseline read into the session +
   in-memory generation chaining (see "C2 baseline CDI read & in-memory chaining as
   implemented"); delta-PDB CDI re-emission deferred.
-- **C3** `feat(hot-reload): generation-aware closure identity in IlxGen lowering` — `ClosureSlotAllocator`
-  seam; matched occurrences reuse closure class/method/field identity; new occurrences get
-  generation-suffixed names. Flag-off behavior byte-identical (EmittedIL gate).
+- **C3** `feat(hot-reload): generation-aware closure identity in IlxGen lowering` — commit 1 ✅
+  landed: occurrence-keyed closure name allocation model (`ClosureNameAllocator.fs`): matched
+  occurrences reuse baseline closure class names verbatim, new occurrences get generation-suffixed
+  names (`…@hotreload#g{gen}_o{ord}`), removed names are never reused (see "C3 occurrence-keyed
+  closure name allocation as implemented"). Remaining: thread the allocation into IlxGen for delta
+  compiles via the stamp-keyed seam documented there. Flag-off behavior byte-identical
+  (EmittedIL gate).
 - **C4** `feat(hot-reload): emit added lambda members in deltas` — new methods on existing closure
   classes (`AddMethodToExistingType`), new display classes (`NewTypeDefinition`), new capture fields
   (`AddInstanceFieldToExistingType`), throwing stubs for incompatible occurrences; capability-gated

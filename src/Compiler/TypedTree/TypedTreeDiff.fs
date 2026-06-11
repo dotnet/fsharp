@@ -1184,21 +1184,16 @@ let private classifyCaptureScopeMoves (edits: LambdaEdit list) =
                 LambdaEdit.CaptureSetChanged(baseline, updated, upgraded)
             | other -> other)
 
-/// Aligns the baseline and updated occurrence sequences of a matched member.
+/// Two-pass LCS index alignment of a baseline and an updated lambda occurrence
+/// sequence, shared by the C1 lambda-edit classification (alignLambdaOccurrences)
+/// and the C3 occurrence-keyed closure name allocator (ClosureNameAllocator).
 ///
-/// Pass 1 runs an LCS over the full structural digests (position, shape, captures):
-/// pairs matched here are compatible and become BodyEdited when their bodies differ.
-/// Pass 2 re-aligns the leftovers on the shape-only digest: pairs matched here either
-/// survived a reordering (capture sets still equal → BodyEdited) or have incompatible
-/// capture sets (→ CaptureSetChanged). Anything still unmatched is Added/Removed.
-///
-/// Two identical occurrences that are reordered are indistinguishable by construction
-/// and therefore align positionally — this is intentional (their closures are
-/// interchangeable, so positional identity is correct).
-let private alignLambdaOccurrences (baseline: LambdaOccurrence list) (updated: LambdaOccurrence list) =
-    let olds = Array.ofList baseline
-    let news = Array.ofList updated
-
+/// Pass 1 runs an LCS over the full structural digests (position, shape, captures);
+/// pass 2 re-aligns the leftovers on the shape-only digest (sans captures), pairing
+/// reordered survivors and capture-incompatible occurrences. The result is the list
+/// of (baselineIndex, updatedIndex) pairs; indexes absent from the pairs are
+/// removals (baseline side) or additions (updated side).
+let alignLambdaOccurrenceIndexPairs (olds: LambdaOccurrence[]) (news: LambdaOccurrence[]) : (int * int) list =
     let pass1 =
         lcsMatchIndexes
             (fun i j -> occurrenceStructuralKey olds[i] = occurrenceStructuralKey news[j])
@@ -1223,7 +1218,24 @@ let private alignLambdaOccurrences (baseline: LambdaOccurrence list) (updated: L
             leftoverNew.Length
         |> List.map (fun (i, j) -> leftoverOld[i], leftoverNew[j])
 
-    let allPairs = pass1 @ pass2
+    pass1 @ pass2
+
+/// Aligns the baseline and updated occurrence sequences of a matched member.
+///
+/// Pass 1 runs an LCS over the full structural digests (position, shape, captures):
+/// pairs matched here are compatible and become BodyEdited when their bodies differ.
+/// Pass 2 re-aligns the leftovers on the shape-only digest: pairs matched here either
+/// survived a reordering (capture sets still equal → BodyEdited) or have incompatible
+/// capture sets (→ CaptureSetChanged). Anything still unmatched is Added/Removed.
+///
+/// Two identical occurrences that are reordered are indistinguishable by construction
+/// and therefore align positionally — this is intentional (their closures are
+/// interchangeable, so positional identity is correct).
+let private alignLambdaOccurrences (baseline: LambdaOccurrence list) (updated: LambdaOccurrence list) =
+    let olds = Array.ofList baseline
+    let news = Array.ofList updated
+
+    let allPairs = alignLambdaOccurrenceIndexPairs olds news
     let pairedOld = HashSet(allPairs |> List.map fst)
     let pairedNew = HashSet(allPairs |> List.map snd)
 
