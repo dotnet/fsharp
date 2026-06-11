@@ -85,6 +85,7 @@
     <Compile Include="HotReload/EditAndContinueCapabilitiesTests.fs" />
     <Compile Include="HotReload/TypedTreeDiffTests.fs" />
     <Compile Include="HotReload/HotReloadCheckerTests.fs" />
+    <Compile Include="HotReload/ActiveStatementTests.fs" />
     <Compile Include="HotReload/GeneratedNamesTests.fs" />
     <Compile Include="HotReload/ArchitectureGuardTests.fs" />
     <Compile Include="HotReload/DeltaBuilderTests.fs" />

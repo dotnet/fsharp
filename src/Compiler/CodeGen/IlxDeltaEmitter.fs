@@ -2357,6 +2357,7 @@ let private finalizeDeltaArtifacts
     (updatedTypeTokens: int list)
     (updatedMethodTokenList: int list)
     (methodTokenMap: Dictionary<int, int>)
+    (matchedMethodTokenPairs: Dictionary<int, int>)
     (userStringEntries: (int * int * string) list)
     (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
     (memberReferenceRowList: MemberReferenceRowInfo list)
@@ -2447,7 +2448,7 @@ let private finalizeDeltaArtifacts
         else
             let mutable chained = Map.empty
 
-            for KeyValue(newToken, mappedToken) in methodTokenMap do
+            for KeyValue(newToken, mappedToken) in matchedMethodTokenPairs do
                 match Map.tryFind newToken freshSequencePointsByToken with
                 | Some points -> chained <- Map.add mappedToken points chained
                 | None -> ()
@@ -3069,6 +3070,11 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let typeTokenMap = Dictionary<int, int>()
     let fieldTokenMap = Dictionary<int, int>()
     let methodTokenMap = Dictionary<int, int>()
+    // Every fresh-compile method paired with its baseline (or delta-added) token, INCLUDING
+    // identity pairs: methodTokenMap deliberately records only tokens that DIFFER (its consumers
+    // remap IL), but the Phase G sequence-point analysis must see every matched method —
+    // unchanged compiles keep identical tokens.
+    let matchedMethodTokenPairs = Dictionary<int, int>()
     let propertyTokenMap = Dictionary<int, int>()
     let eventTokenMap = Dictionary<int, int>()
     let addedMethodTokens = Dictionary<MethodDefinitionKey, int>(HashIdentity.Structural)
@@ -3463,6 +3469,9 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
             match request.Baseline.MethodTokens |> Map.tryFind methodKey with
             | Some baselineMethodToken ->
+                if newMethodToken <> 0 && baselineMethodToken <> 0 then
+                    matchedMethodTokenPairs[newMethodToken] <- baselineMethodToken
+
                 addMapping methodTokenMap newMethodToken baselineMethodToken
             | None when addedTypeDeltaTokens.ContainsKey declaringTypeRef.FullName ->
                 // Method of an ADDED type (closure .ctor / Invoke override): emitted as an
@@ -3592,7 +3601,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let segments = ResizeArray<ActiveStatementAnalysis.LineShiftSegment>()
             let recompileTokens = ResizeArray<int>()
 
-            for KeyValue(newToken, baselineToken) in methodTokenMap do
+            for KeyValue(newToken, baselineToken) in matchedMethodTokenPairs do
                 if not (Set.contains baselineToken requestRecompiledBaselineTokens) then
                     match
                         Map.tryFind baselineToken committedSequencePoints,
@@ -3742,6 +3751,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let rowId = methodDefinitionIndex.Add key
             let deltaToken = 0x06000000 ||| rowId
             addedMethodDeltaTokens[key] <- deltaToken
+            matchedMethodTokenPairs[newToken] <- deltaToken
             addMapping methodTokenMap newToken deltaToken
 
     // Allocate delta Field rows for added static fields. Row ids continue from the baseline
@@ -4159,7 +4169,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             else
                 let mutable chained = Map.empty
 
-                for KeyValue(newToken, mappedToken) in methodTokenMap do
+                for KeyValue(newToken, mappedToken) in matchedMethodTokenPairs do
                     match Map.tryFind newToken freshSequencePointsByToken with
                     | Some points -> chained <- Map.add mappedToken points chained
                     | None -> ()
@@ -4704,6 +4714,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             updatedTypeTokens
             updatedMethodTokenList
             methodTokenMap
+            matchedMethodTokenPairs
             userStringEntries
             methodDefinitionRowsSnapshot
             memberReferenceRowList
