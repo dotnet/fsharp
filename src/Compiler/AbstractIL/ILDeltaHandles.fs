@@ -438,6 +438,11 @@ type TypeOrMethodDef =
         | TOMD_TypeDef _ -> 0x02
         | TOMD_MethodDef _ -> 0x06
 
+    member this.CodedTag =
+        match this with
+        | TOMD_TypeDef _ -> tomd_TypeDef.Tag
+        | TOMD_MethodDef _ -> tomd_MethodDef.Tag
+
     member this.RowId =
         match this with
         | TOMD_TypeDef(TypeDefHandle rid) -> rid

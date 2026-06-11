@@ -117,6 +117,23 @@ type TypeSpecificationRowInfo =
       Signature: byte[]
       SignatureOffset: BlobOffset option }
 
+/// Row model for a GenericParam table entry (ECMA-335 II.22.20: Number (u2),
+/// Flags (u2), Owner (TypeOrMethodDef coded index), Name (#Strings)). Emitted for
+/// the generic parameters of ADDED generic methods (and added generic types).
+/// Logged as a plain Default EncLog entry and listed in EncMap as an add — the
+/// recorded C# reference template (csharp_enc_reference 'generic_method_add')
+/// shows 'GenericParam 0x2a000001 Default' trailing the AddMethod/AddParameter
+/// pairs, with the row present in EncMap. GenericParam rows of UPDATED methods
+/// are baseline rows and are never re-emitted.
+type GenericParamRowInfo =
+    { RowId: int
+      /// Zero-based ordinal of the generic parameter within its owner.
+      Number: int
+      Attributes: GenericParameterAttributes
+      Owner: TypeOrMethodDef
+      Name: string
+      NameOffset: StringOffset option }
+
 type AssemblyReferenceRowInfo =
     { RowId: int
       Version: Version
@@ -195,6 +212,7 @@ type TableRows =
       MemberRef: RowElementData[][]
       MethodSpec: RowElementData[][]
       TypeSpec: RowElementData[][]
+      GenericParam: RowElementData[][]
       AssemblyRef: RowElementData[][]
       StandAloneSig: RowElementData[][]
       CustomAttribute: RowElementData[][]

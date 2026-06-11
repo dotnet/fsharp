@@ -849,6 +849,7 @@ let private emitMetadataDelta
     (memberReferenceRowList: MemberReferenceRowInfo list)
     (methodSpecificationRowsSnapshot: MethodSpecificationRowInfo list)
     (typeSpecificationRowList: TypeSpecificationRowInfo list)
+    (genericParamRowsSnapshot: GenericParamRowInfo list)
     (assemblyReferenceRowList: AssemblyReferenceRowInfo list)
     (propertyDefinitionRowsSnapshot: PropertyDefinitionRowInfo list)
     (eventDefinitionRowsSnapshot: EventDefinitionRowInfo list)
@@ -879,6 +880,7 @@ let private emitMetadataDelta
             memberReferenceRowList
             methodSpecificationRowsSnapshot
             typeSpecificationRowList
+            genericParamRowsSnapshot
             assemblyReferenceRowList
             propertyDefinitionRowsSnapshot
             eventDefinitionRowsSnapshot
@@ -2955,14 +2957,10 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                     // has no baseline counterpart. Allocate the next delta TypeDef row;
                     // the type's fields/methods are registered as added members below,
                     // parented to this new row via AddField/AddMethod EncLog entries.
+                    // Generic closure classes (closures inside generic members) are
+                    // supported as of Phase E: the writer emits GenericParam rows for the
+                    // added TypeDef (constrained typars still fail closed at row build).
                     let fullName = (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
-
-                    if not typeDef.GenericParams.IsEmpty then
-                        raise (
-                            HotReloadUnsupportedEditException(
-                                $"Added closure class '{fullName}' is generic; the delta writer cannot emit GenericParam rows yet. Please rebuild."
-                            )
-                        )
 
                     match addedTypeDeltaTokens.TryGetValue fullName with
                     | true, token -> token
@@ -3876,6 +3874,76 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                     row.EnclosingTypeDefRowId
                     row.Extends
 
+        // GenericParam rows for ADDED generic methods and ADDED generic types (closure
+        // classes over generic members). C# reference template (csharp_enc_reference
+        // 'generic_method_add'): the added MethodDef's AddMethod/AddParameter pairs are
+        // followed by a plain 'GenericParam ... Default' EncLog entry, and the row appears
+        // in EncMap as an add. GenericParam rows of UPDATED definitions are baseline rows
+        // and are never re-emitted. Constrained generic parameters need
+        // GenericParamConstraint rows the writer does not emit yet — fail closed there.
+        let genericParamRowsSnapshot : GenericParamRowInfo list =
+            let pending = ResizeArray<int * GenericParameterHandle * TypeOrMethodDef * string>()
+
+            let collect (display: string) (owner: TypeOrMethodDef) (handles: GenericParameterHandleCollection) =
+                for handle in handles do
+                    let genericParam = metadataReader.GetGenericParameter handle
+
+                    if genericParam.GetConstraints().Count > 0 then
+                        raise (
+                            HotReloadUnsupportedEditException(
+                                $"Added generic definition '{display}' has constrained type parameter '{metadataReader.GetString genericParam.Name}'; the delta writer cannot emit GenericParamConstraint rows yet. Please rebuild."
+                            )
+                        )
+
+                    pending.Add(genericParam.Index, handle, owner, display)
+
+            for KeyValue(key, deltaToken) in addedMethodDeltaTokens do
+                let freshToken = addedMethodTokens.[key]
+                let methodHandle = MetadataTokens.MethodDefinitionHandle(freshToken &&& 0x00FFFFFF)
+                let freshMethodDef = metadataReader.GetMethodDefinition methodHandle
+
+                collect
+                    $"{key.DeclaringType}::{key.Name}"
+                    (TOMD_MethodDef(MethodDefHandle(deltaToken &&& 0x00FFFFFF)))
+                    (freshMethodDef.GetGenericParameters())
+
+            for (_, _, fullName) in addedTypeDefs do
+                let deltaToken = addedTypeDeltaTokens.[fullName]
+                let newToken = addedTypeNewTokens.[fullName]
+                let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
+                let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
+
+                collect
+                    fullName
+                    (TOMD_TypeDef(TypeDefHandle(deltaToken &&& 0x00FFFFFF)))
+                    (freshTypeDef.GetGenericParameters())
+
+            let baselineGenericParamRowCount = baselineTableRowCounts.[TableNames.GenericParam.Index]
+
+            // The GenericParam table is sorted by the Owner coded index (ECMA-335 II.22.20:
+            // owner, then Number); keep the appended delta rows in the same relative order.
+            pending
+            |> Seq.sortBy (fun (number, _, owner, _) -> (owner.RowId <<< 1) ||| owner.CodedTag, number)
+            |> Seq.mapi (fun index (number, handle, owner, _) ->
+                let genericParam = metadataReader.GetGenericParameter handle
+
+                { GenericParamRowInfo.RowId = baselineGenericParamRowCount + index + 1
+                  Number = number
+                  Attributes = genericParam.Attributes
+                  Owner = owner
+                  Name = metadataReader.GetString genericParam.Name
+                  NameOffset = None })
+            |> Seq.toList
+
+        if traceMethodUpdates.Value then
+            for row in genericParamRowsSnapshot do
+                printfn
+                    "[fsharp-hotreload][generic-param] rowId=%d number=%d owner=%A name=%s"
+                    row.RowId
+                    row.Number
+                    row.Owner
+                    row.Name
+
         let baselineHeapOffsets =
             request.Baseline.Metadata.HeapSizes
             |> MetadataHeapOffsets.OfHeapSizes
@@ -3934,6 +4002,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 memberReferenceRowList
                 methodSpecificationRowsSnapshot
                 typeSpecificationRowList
+                genericParamRowsSnapshot
                 assemblyReferenceRowList
                 propertyDefinitionRowsSnapshot
                 eventDefinitionRowsSnapshot

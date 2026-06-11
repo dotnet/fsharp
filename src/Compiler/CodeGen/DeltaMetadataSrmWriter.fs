@@ -125,6 +125,7 @@ let serialize
     (memberReferenceRows: MemberReferenceRowInfo list)
     (methodSpecificationRows: MethodSpecificationRowInfo list)
     (typeSpecificationRows: TypeSpecificationRowInfo list)
+    (genericParamRows: GenericParamRowInfo list)
     (assemblyReferenceRows: AssemblyReferenceRowInfo list)
     (propertyDefinitionRows: PropertyDefinitionRowInfo list)
     (eventDefinitionRows: EventDefinitionRowInfo list)
@@ -191,7 +192,7 @@ let serialize
     metadataBuilder.SetCapacity(TableIndex.ExportedType, 0)
     metadataBuilder.SetCapacity(TableIndex.ManifestResource, 0)
     metadataBuilder.SetCapacity(TableIndex.NestedClass, nestedClassRows.Length)
-    metadataBuilder.SetCapacity(TableIndex.GenericParam, 0)
+    metadataBuilder.SetCapacity(TableIndex.GenericParam, genericParamRows.Length)
     metadataBuilder.SetCapacity(TableIndex.MethodSpec, methodSpecCount)
     metadataBuilder.SetCapacity(TableIndex.GenericParamConstraint, 0)
     metadataBuilder.SetCapacity(TableIndex.EncLog, encLogEntries.Length)
@@ -294,6 +295,15 @@ let serialize
     for row in typeSpecificationRows do
         let signatureHandle = toBlobHandle metadataBuilder row.Signature row.SignatureOffset
         metadataBuilder.AddTypeSpecification signatureHandle |> ignore
+
+    for row in genericParamRows |> List.sortBy (fun row -> row.RowId) do
+        let ownerHandle =
+            match row.Owner with
+            | TOMD_TypeDef handle -> toEntityHandle TableNames.TypeDef handle.RowId
+            | TOMD_MethodDef handle -> toEntityHandle TableNames.Method handle.RowId
+
+        let nameHandle = toStringHandle metadataBuilder row.Name row.NameOffset
+        metadataBuilder.AddGenericParameter(ownerHandle, row.Attributes, nameHandle, row.Number) |> ignore
 
     for row in assemblyReferenceRows do
         let nameHandle = toStringHandle metadataBuilder row.Name row.NameOffset

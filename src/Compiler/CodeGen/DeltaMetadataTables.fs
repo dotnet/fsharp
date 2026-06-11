@@ -307,6 +307,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let memberRefRows = RowTableBuilder()
     let methodSpecRows = RowTableBuilder()
     let typeSpecRows = RowTableBuilder()
+    let genericParamRows = RowTableBuilder()
     let assemblyRefRows = RowTableBuilder()
     let standAloneSigRows = RowTableBuilder()
     let customAttributeRows = RowTableBuilder()
@@ -341,6 +342,9 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let rowElementHasSemantics tag value = rowElement (Encoding.RowElementTags.HasSemantics tag) value
     let rowElementMethodDefOrRef (methodRef: MethodDefOrRef) =
         rowElement (Encoding.RowElementTags.MethodDefOrRef (mkMethodDefOrRefTag methodRef.CodedTag)) methodRef.RowId
+
+    let rowElementTypeOrMethodDef (owner: TypeOrMethodDef) =
+        rowElement (Encoding.RowElementTags.TypeOrMethodDef (mkTypeOrMethodDefTag owner.CodedTag)) owner.RowId
 
     let rowElementResolutionScope (scope: ResolutionScope) =
         rowElement (Encoding.RowElementTags.ResolutionScopeMin + scope.CodedTag) scope.RowId
@@ -610,6 +614,27 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         let rowElements = [| blobElement signatureToken |]
         typeSpecRows.Add rowElements
 
+    member _.AddGenericParamRow(row: GenericParamRowInfo) =
+        // GenericParam row per ECMA-335 II.22.20: Number, Flags, Owner
+        // (TypeOrMethodDef coded index), Name.
+        if row.RowId <= 0 then
+            invalidArg "row" $"GenericParam RowId must be > 0, got {row.RowId}"
+
+        if row.Number < 0 then
+            invalidArg "row" $"GenericParam Number must be >= 0, got {row.Number}"
+
+        let nameToken = addExistingStringOffset row.NameOffset row.Name
+
+        let rowElements =
+            [|
+                rowElementUShort (uint16 row.Number)
+                rowElementUShort (uint16 row.Attributes)
+                rowElementTypeOrMethodDef row.Owner
+                stringElement nameToken
+            |]
+
+        genericParamRows.Add rowElements
+
     member _.AddAssemblyReferenceRow(row: AssemblyReferenceRowInfo) =
         let publicKeyToken = addExistingBlobOffset row.PublicKeyOrTokenOffset row.PublicKeyOrToken
         let nameToken = addExistingStringOffset row.NameOffset row.Name
@@ -792,6 +817,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
           MemberRef = memberRefRows.Entries
           MethodSpec = methodSpecRows.Entries
           TypeSpec = typeSpecRows.Entries
+          GenericParam = genericParamRows.Entries
           AssemblyRef = assemblyRefRows.Entries
           StandAloneSig = standAloneSigRows.Entries
           CustomAttribute = customAttributeRows.Entries
@@ -819,6 +845,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         counts[TableNames.MemberRef.Index] <- memberRefRows.Count
         counts[TableNames.MethodSpec.Index] <- methodSpecRows.Count
         counts[TableNames.TypeSpec.Index] <- typeSpecRows.Count
+        counts[TableNames.GenericParam.Index] <- genericParamRows.Count
         counts[TableNames.AssemblyRef.Index] <- assemblyRefRows.Count
         counts[TableNames.StandAloneSig.Index] <- standAloneSigRows.Count
         counts[TableNames.CustomAttribute.Index] <- customAttributeRows.Count

@@ -15,9 +15,11 @@ namespace FSharp.Compiler.ComponentTests.HotReload
 //     plain Default EncLog entry, present in EncMap as an add.
 
 open System
+open System.Collections.Immutable
 open System.IO
 open System.Reflection
 open System.Reflection.Metadata
+open System.Reflection.Metadata.Ecma335
 open System.Runtime.Loader
 open Xunit
 
@@ -159,14 +161,13 @@ module GenericEditTests =
                 try Directory.Delete(projectDir, true) with _ -> ()
 
     /// Compiles `baselineSource`, starts a session with the given capabilities, applies
-    /// `updatedSource` and asserts EmitHotReloadDelta fails with a message containing
-    /// every fragment of `expectedMessageParts`.
-    let private emitDeltaAndExpectUnsupported
+    /// `updatedSource` and hands the EmitHotReloadDelta result to `handleResult`.
+    let private emitDeltaAndHandleResult
         (capabilities: string list)
         (testLabel: string)
         (baselineSource: string)
         (updatedSource: string)
-        (expectedMessageParts: string list)
+        (handleResult: Result<FSharpHotReloadDelta, FSharpHotReloadError> -> unit)
         =
         let checker =
             FSharpChecker.Create(
@@ -242,16 +243,44 @@ module GenericEditTests =
 
             compileOnce "updated" updatedOptions
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-            | Ok _ -> failwithf "[%s] expected EmitHotReloadDelta to fail, but it succeeded." testLabel
-            | Error error ->
-                let message = string error
-                for part in expectedMessageParts do
-                    Assert.Contains(part, message)
+            checker.EmitHotReloadDelta(projectOptions)
+            |> Async.RunImmediate
+            |> handleResult
         finally
             try checker.EndHotReloadSession() with _ -> ()
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
+
+    /// Asserts EmitHotReloadDelta fails with a message containing every fragment of
+    /// `expectedMessageParts`.
+    let private emitDeltaAndExpectUnsupported
+        (capabilities: string list)
+        (testLabel: string)
+        (baselineSource: string)
+        (updatedSource: string)
+        (expectedMessageParts: string list)
+        =
+        emitDeltaAndHandleResult capabilities testLabel baselineSource updatedSource (fun result ->
+            match result with
+            | Ok _ -> failwithf "[%s] expected EmitHotReloadDelta to fail, but it succeeded." testLabel
+            | Error error ->
+                let message = string error
+
+                for part in expectedMessageParts do
+                    Assert.Contains(part, message))
+
+    /// Asserts EmitHotReloadDelta succeeds and hands the delta to `inspect`.
+    let private emitDeltaAndInspect
+        (capabilities: string list)
+        (testLabel: string)
+        (baselineSource: string)
+        (updatedSource: string)
+        (inspect: FSharpHotReloadDelta -> unit)
+        =
+        emitDeltaAndHandleResult capabilities testLabel baselineSource updatedSource (fun result ->
+            match result with
+            | Error error -> failwithf "[%s] EmitHotReloadDelta failed: %A" testLabel error
+            | Ok delta -> inspect delta)
 
     // -----------------------------------------------------------------------------
     // Sources
@@ -345,6 +374,236 @@ module Lib =
             (fun assembly -> invokeDescribe assembly "Hello ")
             [ generation1, (fun assembly -> invokeDescribe assembly "Welcome ")
               generation2, (fun assembly -> invokeDescribe assembly "Welcome x2 ") ]
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added generic module function`` () =
+        // The added method is generic: the delta must carry a GenericParam row for 'T
+        // (and one per typar) parented to the NEW MethodDef row — the C# reference
+        // template ('generic_method_add') shape. Without those rows the added method's
+        // metadata is corrupt (MakeGenericMethod throws).
+        let updated =
+            """
+namespace Sample
+
+module Lib =
+    let describe<'T> (value: 'T) = "Hello " + value.ToString()
+    let pair (x: 'a) (y: 'b) = (x, y)
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-generic-function"
+            genericFunctionBaseline
+            (fun assembly -> invokeDescribe assembly "Hello ")
+            [ updated,
+              (fun assembly ->
+                  // Baseline members still work after the update.
+                  invokeDescribe assembly "Hello "
+                  let libType = assembly.GetType("Sample.Lib", throwOnError = true)
+                  let pairDef = libType.GetMethod("pair", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.True(pairDef.IsGenericMethodDefinition)
+
+                  let genericArgs = pairDef.GetGenericArguments()
+                  Assert.Equal(2, genericArgs.Length)
+                  Assert.Equal("a", genericArgs.[0].Name)
+                  Assert.Equal("b", genericArgs.[1].Name)
+
+                  let forIntString = pairDef.MakeGenericMethod(typeof<int>, typeof<string>)
+                  let result = forIntString.Invoke(null, [| box 1; box "a" |]) :?> int * string
+                  Assert.Equal((1, "a"), result)
+
+                  let forStringInt = pairDef.MakeGenericMethod(typeof<string>, typeof<int>)
+                  let result2 = forStringInt.Invoke(null, [| box "b"; box 2 |]) :?> string * int
+                  Assert.Equal(("b", 2), result2)) ]
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for method added to generic class`` () =
+        // The added method itself is NOT generic; its signature references the declaring
+        // type's VAR (!0) and its body reaches the field through the TypeSpec
+        // self-instantiation MemberRef. The C# reference template ('generic_class_add')
+        // shows an ordinary AddMethod pair with NO GenericParam rows.
+        let updated =
+            """
+namespace Sample
+
+type Container<'T>(value: 'T) =
+    member _.Describe() = "Hello " + value.ToString()
+    member _.DescribeAgain() = "Again " + value.ToString()
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-method-on-generic-class"
+            genericClassBaseline
+            (fun assembly -> invokeContainerDescribe assembly "Hello ")
+            [ updated,
+              (fun assembly ->
+                  invokeContainerDescribe assembly "Hello "
+                  let containerDef = assembly.GetType("Sample.Container`1", throwOnError = true)
+
+                  let intContainer = Activator.CreateInstance(containerDef.MakeGenericType(typeof<int>), box 42)
+                  let describeAgain = intContainer.GetType().GetMethod("DescribeAgain")
+                  Assert.Equal("Again 42", describeAgain.Invoke(intContainer, [||]) :?> string)
+
+                  let stringContainer = Activator.CreateInstance(containerDef.MakeGenericType(typeof<string>), box "watch")
+                  let describeAgainString = stringContainer.GetType().GetMethod("DescribeAgain")
+                  Assert.Equal("Again watch", describeAgainString.Invoke(stringContainer, [||]) :?> string)) ]
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added lambda creating a generic closure class`` () =
+        // The added lambda lives inside a generic member and mentions 'T, so its closure
+        // class is generic over 'T: the delta's new TypeDef row carries a GenericParam
+        // row (TypeOrMethodDef owner, TypeDef tag) — the C4 gap closed by Phase E.
+        // The baseline member already contains one lambda (C4 occurrence mapping needs a
+        // baseline chain table for the member; first-lambda members stay fail-closed).
+        let baseline =
+            """
+namespace Sample
+
+module Lib =
+    let describe<'T> (value: 'T) =
+        let format = fun (x: 'T) -> "Hello " + x.ToString()
+        format value
+"""
+
+        let updated =
+            """
+namespace Sample
+
+module Lib =
+    let describe<'T> (value: 'T) =
+        let format = fun (x: 'T) -> "Hello " + x.ToString()
+        let again = fun (x: 'T) -> " and again " + x.ToString()
+        format value + again value
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-generic-closure-class"
+            baseline
+            (fun assembly -> invokeDescribe assembly "Hello ")
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Lib", throwOnError = true)
+                  let methodDef = libType.GetMethod("describe", BindingFlags.Public ||| BindingFlags.Static)
+
+                  let forInt = methodDef.MakeGenericMethod(typeof<int>)
+                  Assert.Equal("Hello 42 and again 42", forInt.Invoke(null, [| box 42 |]) :?> string)
+
+                  let forString = methodDef.MakeGenericMethod(typeof<string>)
+                  Assert.Equal("Hello watch and again watch", forString.Invoke(null, [| box "watch" |]) :?> string)) ]
+
+    [<Fact>]
+    let ``Added generic function delta matches the C# GenericParam template shape`` () =
+        // Recorded C# reference (csharp_enc_reference 'generic_method_add', Roslyn
+        // EmitDifference): EncLog carries (TypeDef, AddMethod) + (MethodDef, Default)
+        // followed later by a plain (GenericParam, Default) entry; EncMap lists the
+        // GenericParam row as an add. A generic body UPDATE must carry NO GenericParam
+        // rows (they are baseline rows).
+        let updated =
+            """
+namespace Sample
+
+module Lib =
+    let describe<'T> (value: 'T) = "Hello " + value.ToString()
+    let pair (x: 'a) (y: 'b) = (x, y)
+"""
+
+        emitDeltaAndInspect
+            fullCapabilities
+            "added-generic-function-template"
+            genericFunctionBaseline
+            updated
+            (fun delta ->
+                use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.ToImmutableArray(delta.Metadata: byte[]))
+                let reader = provider.GetMetadataReader()
+
+                let encLog =
+                    reader.GetEditAndContinueLogEntries()
+                    |> Seq.map (fun entry ->
+                        let typ, row = MetadataTokens.GetToken entry.Handle >>> 24, MetadataTokens.GetRowNumber entry.Handle
+                        typ, row, entry.Operation)
+                    |> Seq.toList
+
+                // AddMethod parent pair for the added generic method.
+                Assert.Contains(
+                    encLog,
+                    fun (table, _, op) -> table = 0x02 && op = System.Reflection.Metadata.Ecma335.EditAndContinueOperation.AddMethod
+                )
+
+                // Plain Default GenericParam entries, one per typar of 'pair'.
+                let genericParamEntries =
+                    encLog
+                    |> List.filter (fun (table, _, op) ->
+                        table = 0x2A && op = System.Reflection.Metadata.Ecma335.EditAndContinueOperation.Default)
+
+                Assert.Equal(2, genericParamEntries.Length)
+
+                // EncMap lists the same GenericParam rows (token-sorted adds).
+                let encMapGenericParams =
+                    reader.GetEditAndContinueMapEntries()
+                    |> Seq.map MetadataTokens.GetToken
+                    |> Seq.filter (fun token -> token >>> 24 = 0x2A)
+                    |> Seq.toList
+
+                Assert.Equal(2, encMapGenericParams.Length)
+
+                // The GenericParam rows are physically present in the delta tables.
+                Assert.Equal(2, reader.GetTableRowCount(TableIndex.GenericParam)))
+
+    [<Fact>]
+    let ``Generic body update delta carries no GenericParam rows`` () =
+        let updated = genericFunctionBaseline.Replace("Hello ", "Welcome ")
+
+        emitDeltaAndInspect
+            fullCapabilities
+            "generic-body-update-template"
+            genericFunctionBaseline
+            updated
+            (fun delta ->
+                use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.ToImmutableArray(delta.Metadata: byte[]))
+                let reader = provider.GetMetadataReader()
+                // C# template parity: GenericParam rows of UPDATED methods are baseline
+                // rows and are never re-emitted.
+                Assert.Equal(0, reader.GetTableRowCount(TableIndex.GenericParam)))
+
+    [<Fact>]
+    let ``EmitHotReloadDelta rejects added generic function without GenericAddMethodToExistingType`` () =
+        let updated =
+            """
+namespace Sample
+
+module Lib =
+    let describe<'T> (value: 'T) = "Hello " + value.ToString()
+    let pair (x: 'a) (y: 'b) = (x, y)
+"""
+
+        emitDeltaAndExpectUnsupported
+            [ "Baseline"; "AddMethodToExistingType"; "GenericUpdateMethod" ]
+            "added-generic-function-no-capability"
+            genericFunctionBaseline
+            updated
+            [ "GenericAddMethodToExistingType" ]
+
+    [<Fact>]
+    let ``EmitHotReloadDelta rejects added generic function with constrained typar`` () =
+        // GenericParamConstraint rows are not emitted yet: an added generic method whose
+        // typar carries an IL constraint fails closed with a precise message.
+        let updated =
+            """
+namespace Sample
+
+module Lib =
+    let describe<'T> (value: 'T) = "Hello " + value.ToString()
+    let dispose<'T when 'T :> System.IDisposable> (x: 'T) = x.Dispose()
+"""
+
+        emitDeltaAndExpectUnsupported
+            fullCapabilities
+            "added-constrained-generic-function"
+            genericFunctionBaseline
+            updated
+            [ "GenericParamConstraint" ]
 
     [<Fact>]
     let ``EmitHotReloadDelta rejects generic body edit without GenericUpdateMethod capability`` () =

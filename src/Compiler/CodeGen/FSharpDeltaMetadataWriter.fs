@@ -63,6 +63,8 @@ type MethodSpecificationRowInfo = DeltaMetadataTypes.MethodSpecificationRowInfo
 
 type TypeSpecificationRowInfo = DeltaMetadataTypes.TypeSpecificationRowInfo
 
+type GenericParamRowInfo = DeltaMetadataTypes.GenericParamRowInfo
+
 type PropertyMapRowInfo = DeltaMetadataTypes.PropertyMapRowInfo
 
 type EventMapRowInfo = DeltaMetadataTypes.EventMapRowInfo
@@ -112,6 +114,7 @@ let emitWithTypeDefinitions
     (memberReferenceRows: MemberReferenceRowInfo list)
     (methodSpecificationRows: MethodSpecificationRowInfo list)
     (typeSpecificationRows: TypeSpecificationRowInfo list)
+    (genericParamRows: GenericParamRowInfo list)
     (assemblyReferenceRows: AssemblyReferenceRowInfo list)
     (propertyDefinitionRows: PropertyDefinitionRowInfo list)
     (eventDefinitionRows: EventDefinitionRowInfo list)
@@ -149,6 +152,7 @@ let emitWithTypeDefinitions
     let hasRowPayload =
         not (List.isEmpty updates)
         || not (List.isEmpty typeDefinitionRows)
+        || not (List.isEmpty genericParamRows)
         || fieldDefinitionRows |> List.exists (fun row -> row.IsAdded)
         || propertyDefinitionRows |> List.exists (fun row -> row.IsAdded)
         || eventDefinitionRows |> List.exists (fun row -> row.IsAdded)
@@ -325,6 +329,18 @@ let emitWithTypeDefinitions
             encLog.Add(struct (TableNames.TypeSpec, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.TypeSpec, row.RowId))
 
+        // GenericParam rows of ADDED generic methods/types are plain Default adds applied
+        // via ApplyTableDelta — the C# reference template ('generic_method_add') logs
+        // 'GenericParam 0x2a000001 Default' trailing the AddMethod/AddParameter pairs and
+        // lists the row in EncMap. Kept as a dedicated group appended after the parameter
+        // pairs so the owning method rows are already logged.
+        let genericParamEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        for row in genericParamRows |> List.sortBy (fun row -> row.RowId) do
+            tableMirror.AddGenericParamRow row
+            genericParamEncLogEntries.Add(struct (TableNames.GenericParam, row.RowId, EditAndContinueOperation.Default))
+            encMap.Add(struct (TableNames.GenericParam, row.RowId))
+
         for row in assemblyReferenceRows do
             tableMirror.AddAssemblyReferenceRow row
 
@@ -463,6 +479,10 @@ let emitWithTypeDefinitions
             fieldEncLogPairs |> List.iter builder.Add
             builder.AddRange methodEncLogEntries
             builder.AddRange parameterEncLogEntries
+            // GenericParam rows trail the method/parameter pairs that introduced their
+            // owners (C# reference order: the GenericParam Default entry is logged after
+            // the AddParameter pair of the added generic method).
+            builder.AddRange genericParamEncLogEntries
             referenceTables |> Array.iter appendEntries
             builder.AddRange propertyMapEncLogEntries
             builder.AddRange propertyEncLogEntries
@@ -534,6 +554,7 @@ let emitWithTypeDefinitions
                         memberReferenceRows
                         methodSpecificationRows
                         typeSpecificationRows
+                        genericParamRows
                         assemblyReferenceRows
                         propertyDefinitionRows
                         eventDefinitionRows
@@ -662,6 +683,7 @@ let emitWithUserStrings
         memberReferenceRows
         methodSpecificationRows
         ([] : TypeSpecificationRowInfo list)
+        ([] : GenericParamRowInfo list)
         assemblyReferenceRows
         propertyDefinitionRows
         eventDefinitionRows
