@@ -23,7 +23,9 @@
 - **`has_conflicts`** (labelops-pr-maintenance) — PR has merge conflicts.
 - **`ci_blocked`** (labelops-pr-maintenance) — CI hasn't started yet (queued or blocked by other workflows).
 - **`12h stuck guard`** (labelops-pr-maintenance) — Skip the PR if LabelOps already committed within the last 12 hours AND checks are still red. Prevents retry storms.
+- **`messages` safe-output** — gh-aw runtime mechanism for posting lifecycle status updates (run-started, run-success, run-failure) and a per-run footer to a user-visible target (issue/PR comment). Templates support placeholders like `{workflow_name}`, `{run_url}`, `{event_type}`. Not rate-limited via `max:` — it's a per-run signaling channel, not a content output.
 - **milestone 29 / `2026-05-12` cutoff** — Repo-specific operational constants: milestone 29 is applied by `add_to_project.yml` (internal milestone number; title unconfirmed from source); the `2026-05-12` cutoff in `labelops-pr-security-scan` is the date the scanner went live — PRs opened before that date are skipped to avoid re-scanning historical PRs.
+- **`⚠️ Affects-*` family** (labelops-pr-security-scan) — agent-applied warning labels indicating which repository area a PR touches: `Build-Infra`, `Compiler-Output`, `Bootstrap`, `Restore`, `Design-Time`, `Test-Tooling`, `Agent-Config`. Drive reviewer attention to PRs touching sensitive code paths.
 
 ## Legend
 
@@ -49,7 +51,7 @@
 | `labelops-pr-security-scan.md` | schedule 1h, dispatch | none | `noop`, `add-labels`, `add-comment` |
 | `regression-pr-shepherd.md` | schedule 4h, dispatch | none | `noop`, `add-comment`, `push-to-pull-request-branch`, `remove-labels` |
 | `repo-assist.md` | schedule 12h, dispatch, slash_command `/repo-assist`, reaction `eyes` | none | `noop`, `messages`, `add-comment`, `create-pull-request`, `push-to-pull-request-branch`, `create-issue`, `update-issue`, `add-labels`, `remove-labels` |
-| `add_to_project.yml` | issues (opened, transferred), pull_request_target (opened, main) | — | add label `Needs-Triage`, set milestone 29 |
+| `add_to_project.yml` | issues (opened, transferred); pull_request_target (opened, main — gated off) | — | add label `Needs-Triage`, set milestone 29 |
 | `backport.yml` | issue_comment (created), schedule (cron `0 13 * * *`) | — | delegates to `dotnet/arcade` backport-base.yml |
 | `branch-merge.yml` | push (main, release/\*) | — | delegates to `dotnet/arcade` inter-branch-merge-base.yml |
 | `check_release_notes.yml` | pull_request_target (opened/sync/reopened/labeled/unlabeled; main, release/\*) | — | create or update PR comment |
@@ -57,6 +59,22 @@
 | `copilot-setup-steps.yml` | dispatch | none | build environment setup for Copilot agent |
 | `repository_lockdown_check.yml` | pull_request_target (opened/sync/reopened; main, release/\*) | — | create, update, or delete lockdown comment |
 | `skill-validation.yml` | pull_request (`.github/skills/**`, `.github/agents/**`), push (main), dispatch | none | validate skills and agents |
+
+---
+
+## Handover Map
+
+> **Cross-workflow signals at a glance.** Workflows talk to each other via labels, dispatch, indirect handoffs, and state-store branches. This map shows every cross-workflow signal documented below.
+
+| Source Workflow | Signal | Target | Mechanism | Notes |
+|---|---|---|---|---|
+| `labelops-pr-maintenance.md` | Proven flake (flaky-test-detector ≥3 distinct unrelated PRs; test not introduced by current PR) | `labelops-flake-fix.md` | `dispatch-workflow: workflows: [labelops-flake-fix]` | Passes inputs; max 3/run |
+| `aw-auto-update.md` | CHANGED_FILES non-empty after `gh aw upgrade + compile` | Copilot Coding Agent (CCA) | `create-agent-session` (base: main, max: 1) | CCA writes `.lock.yml` files using `COPILOT_GITHUB_TOKEN` |
+| `agentic-state-machine.md` | State-machine doc changed | PR reviewer (human) | `create-pull-request` (labels: automation, NO_RELEASE_NOTES; allowed-files: .github/docs/**) | Writes `.github/docs/state-machine.md` |
+| `repo-assist.md` | Regression test PR created (Task 2) | `regression-pr-shepherd.md` | Indirect via label `AI-Issue-Regression-PR` on PR | Shepherd picks up in subsequent scheduled run |
+| `commands.yml` | `/run <cmd>` approved PR comment | PR branch | `git push origin HEAD:branch` (direct write) | Requires commenter admin/write access |
+| `backport.yml` | `/backport to <branch>` PR comment | `dotnet/arcade` backport-base.yml | `uses: dotnet/arcade/.github/workflows/backport-base.yml@main` | Reusable workflow; schedule trigger only cleans old runs |
+| `branch-merge.yml` | Push to `release/*` or `main` | `dotnet/arcade` inter-branch-merge-base.yml | `uses: dotnet/arcade/.github/workflows/inter-branch-merge-base.yml@main` | Config: `.config/service-branch-merge.json` |
 
 ---
 
@@ -235,6 +253,7 @@ stateDiagram-v2
         LPSS_MorePRs --> LPSS_WriteMemory : ⚙️ no
         LPSS_WriteMemory --> [*] : ⚙️ save state.json to safety/scanned-PRs branch
     }
+    LPM_DispatchFlakeFix --> LFF_Validate : 🤖 dispatch-workflow (cross-workflow, passes inputs)
 ```
 
 ### Safe-outputs configuration
@@ -330,6 +349,7 @@ stateDiagram-v2
         RA_TaskFinal --> RA_WriteMemory : ⚙️ Task FINAL: update Monthly Activity Summary issue (update-issue)
         RA_WriteMemory --> [*] : 🤖 write state.json to memory/repo-assist branch, messages safe-output
     }
+    RA_T2_CreatePR --> RPS_ListPRs : 🤖 async via label AI-Issue-Regression-PR (picked up in next RPS run)
 ```
 
 > **`repo-assist` Task 2 — Step A skip conditions** (any of these → no PR):
@@ -349,7 +369,7 @@ stateDiagram-v2
 | `regression-pr-shepherd.md` | `add-comment` | 5 | hide-older-comments |
 | `regression-pr-shepherd.md` | `push-to-pull-request-branch` | 10 | title `Add regression test: `; labels `AI-Issue-Regression-PR`; allowed-files `tests/**`, `vsintegration/tests/**`; protected-files fallback-to-issue |
 | `regression-pr-shepherd.md` | `remove-labels` | 5 | allowed `AI-thinks-issue-fixed` |
-| `repo-assist.md` | `messages` | — | footer, run-started, run-success, run-failure |
+| `repo-assist.md` | `messages` | n/a | lifecycle signaling — see Glossary |
 | `repo-assist.md` | `add-comment` | 10 | hide-older-comments |
 | `repo-assist.md` | `create-pull-request` | 10 | title `Add regression test: `; labels `NO_RELEASE_NOTES, AI-Issue-Regression-PR`; reviewers abonie, T-Gro; auto-merge; allowed-files `tests/**`, `vsintegration/tests/**` |
 | `repo-assist.md` | `push-to-pull-request-branch` | 4 | title `[Repo Assist] `; protected-files fallback-to-issue |
@@ -538,22 +558,8 @@ All labels in one place — who adds, removes, or reads each. **Cross-workflow f
 | `⚠️ Suspicious-Prompting`, `⚠️ Scope-Review-Needed` | agent-add | LPSS | — | — | review-trigger flags |
 | `AI-thinks-issue-fixed` | agent-add + agent-remove | RA | RPS, RA | — | **bidirectional** — RA proposes, RPS/RA retract |
 | `AI-thinks-windows-only` | agent-add + agent-remove | RA | RA | — | RA self-corrects in Task 3 |
-| `AI-Auto-Resolve-CI`, `AI-Auto-Resolve-Conflicts` | filter (read-only) | — (external) | — | LPM (`gh pr list --search label:...`) | **selection signal into LPM** |
+| `AI-Auto-Resolve-CI`, `AI-Auto-Resolve-Conflicts` | filter (read-only) | humans (manual, opt-in) | — | LPM (`gh pr list --search label:...`) | **selection signal into LPM** |
 | `Needs-Triage` | imperative | ATP (`apply-label` job, github-script) | — | — | classic workflow, not gh-aw |
-
----
-
-## Handover Map
-
-| Source Workflow | Signal | Target | Mechanism | Notes |
-|---|---|---|---|---|
-| `labelops-pr-maintenance.md` | Proven flake (flaky-test-detector ≥3 distinct unrelated PRs; test not introduced by current PR) | `labelops-flake-fix.md` | `dispatch-workflow: workflows: [labelops-flake-fix]` | Passes inputs; max 3/run |
-| `aw-auto-update.md` | CHANGED_FILES non-empty after `gh aw upgrade + compile` | Copilot Coding Agent (CCA) | `create-agent-session` (base: main, max: 1) | CCA writes `.lock.yml` files using `COPILOT_GITHUB_TOKEN` |
-| `agentic-state-machine.md` | State-machine doc changed | PR reviewer (human) | `create-pull-request` (labels: automation, NO_RELEASE_NOTES; allowed-files: .github/docs/**) | Writes `.github/docs/state-machine.md` |
-| `repo-assist.md` | Regression test PR created (Task 2) | `regression-pr-shepherd.md` | Indirect via label `AI-Issue-Regression-PR` on PR | Shepherd picks up in subsequent scheduled run |
-| `commands.yml` | `/run <cmd>` approved PR comment | PR branch | `git push origin HEAD:branch` (direct write) | Requires commenter admin/write access |
-| `backport.yml` | `/backport to <branch>` PR comment | `dotnet/arcade` backport-base.yml | `uses: dotnet/arcade/.github/workflows/backport-base.yml@main` | Reusable workflow; schedule trigger only cleans old runs |
-| `branch-merge.yml` | Push to `release/*` or `main` | `dotnet/arcade` inter-branch-merge-base.yml | `uses: dotnet/arcade/.github/workflows/inter-branch-merge-base.yml@main` | Config: `.config/service-branch-merge.json` |
 
 ---
 
