@@ -45,6 +45,15 @@ type FSharpSynthesizedTypeMaps() =
             None
 
     let canonicalizeSnapshotNames basicName (names: string[]) =
+        // Occurrence-keyed closure names ({base}@hotreload#g{N}_o{chain}, Phase C3/C6)
+        // are managed by the closure name allocator's assigned-name table, never by
+        // sequence replay, so they are dropped from the replay bucket. The replay SLOT
+        // each one consumed at allocation time (consume-then-override at the IlxGen
+        // closure call site) is preserved by the ordinal-positioned placement below.
+        let names =
+            names
+            |> Array.filter (fun name -> not (GeneratedNames.IsHotReloadGenerationSuffixedName name))
+
         let parsed =
             names
             |> Array.mapi (fun index name -> index, name, tryGetHotReloadOrdinal basicName name)
@@ -52,9 +61,33 @@ type FSharpSynthesizedTypeMaps() =
         if parsed |> Array.forall (fun (_, _, ordinalOpt) -> ordinalOpt.IsSome) then
             // IL metadata can enumerate synthesized helpers in a different order than allocation.
             // Normalize pure hot-reload buckets so replay always starts at ordinal 0, then 1, etc.
-            parsed
-            |> Array.sortBy (fun (index, _, ordinalOpt) -> struct (ordinalOpt.Value, index))
-            |> Array.map (fun (_, name, _) -> name)
+            let sorted =
+                parsed
+                |> Array.sortBy (fun (index, _, ordinalOpt) -> struct (ordinalOpt.Value, index))
+
+            let ordinalsAreDistinct =
+                let ordinals = sorted |> Array.map (fun (_, _, ordinalOpt) -> ordinalOpt.Value)
+                (Array.distinct ordinals).Length = ordinals.Length
+
+            if ordinalsAreDistinct && sorted.Length > 0 then
+                // Place every name at the slot index its ordinal records, filling holes
+                // with the computed name for that slot. Holes arise exactly where an
+                // allocation's replay name never surfaced in IL (e.g. the slot was
+                // consumed by a closure whose emitted name was overridden with an
+                // occurrence-keyed name); the filler equals what GetOrAddName produced
+                // for that slot originally, so replay positions are exact.
+                let maxOrdinal =
+                    sorted |> Array.map (fun (_, _, ordinalOpt) -> ordinalOpt.Value) |> Array.max
+
+                let namesByOrdinal =
+                    sorted |> Array.map (fun (_, name, ordinalOpt) -> ordinalOpt.Value, name) |> Map.ofArray
+
+                Array.init (maxOrdinal + 1) (fun slot ->
+                    match Map.tryFind slot namesByOrdinal with
+                    | Some name -> name
+                    | None -> makeHotReloadName basicName slot)
+            else
+                sorted |> Array.map (fun (_, name, _) -> name)
         else
             names
 

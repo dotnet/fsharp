@@ -26,16 +26,25 @@
 ///
 /// Generation-suffixed name format (documented in docs/hot-reload-closure-mapping.md):
 ///
-///     {baseName}@hotreload#g{generation}_o{occurrenceOrdinal}
+///     {baseName}@hotreload#g{generation}_o{occurrenceChain}
 ///
-/// e.g. <c>f@hotreload#g2_o3</c> for the occurrence with ordinal 3 first allocated in
-/// generation 2 of a session. The format extends the existing baseline naming
-/// (<c>f@hotreload</c>, <c>f@hotreload-1</c>, ...) produced by FSharpSynthesizedTypeMaps:
-/// it shares the <c>@hotreload</c> marker so the names remain recognizably hot-reload
-/// managed, while <c>#g…_o…</c> can never collide with the baseline <c>-{ordinal}</c>
-/// suffix space (and never parses as a baseline replay ordinal). Occurrence ordinals are
-/// unique within a member and generations are strictly increasing within a session, so a
-/// (baseName, generation, ordinal) triple is allocated at most once.
+/// where the occurrence chain renders the root-first ordinal chain with underscore
+/// separators: <c>f@hotreload#g2_o3</c> for the top-level occurrence with ordinal 3
+/// first allocated in generation 2 of a session, <c>f@hotreload#g2_o0_3</c> for the
+/// nested occurrence with ordinal 3 inside occurrence 0. Generation 0 is reserved for
+/// the BASELINE compile (Phase C6): under the flag, baseline closure names are derived
+/// from the same chain (<c>f@hotreload#g0_o3</c>), so they are a pure function of
+/// occurrence identity and can be reconstructed from the persisted EnC CDI occurrence
+/// keys by a session started from disk in another process. The format extends the
+/// replay naming (<c>f@hotreload</c>, <c>f@hotreload-1</c>, ...) produced by
+/// FSharpSynthesizedTypeMaps: it shares the <c>@hotreload</c> marker so the names
+/// remain recognizably hot-reload managed, while <c>#g…_o…</c> can never collide with
+/// the replay <c>-{ordinal}</c> suffix space (and never parses as a replay ordinal).
+/// Occurrence chains are unique within a member and generations strictly increase
+/// within a session (with 0 minted only at baseline), so a (baseName, generation,
+/// chain) triple is allocated at most once. Chains are bounded by the CDI occurrence
+/// key encoding (depth <= 2, ordinals <= 0xFFFF — deeper chains fail closed before any
+/// name is derived), so the rendered suffix is bounded too; names are never truncated.
 ///
 /// This is a pure data transformation: it consumes the per-method occurrence data the
 /// session already chains (baseline EnC CDI occurrence keys + the C1 extraction of the
@@ -100,24 +109,34 @@ let occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
     List.rev occurrence.Id.ParentChain @ [ occurrence.Id.Ordinal ]
 
 /// <summary>
-/// Formats the generation-suffixed fresh closure class name for an occurrence first
-/// allocated in <paramref name="generation"/>:
-/// <c>{baseName}@hotreload#g{generation}_o{occurrenceOrdinal}</c>. See the module
-/// documentation for the collision-freedom argument.
+/// Renders a root-first occurrence ordinal chain into the name-suffix key:
+/// <c>[3]</c> -> <c>"3"</c>, <c>[0; 3]</c> -> <c>"0_3"</c>. Parseable back by
+/// splitting on <c>'_'</c>; ordinals are plain non-negative decimals so the rendering
+/// is unambiguous.
 /// </summary>
-let formatGenerationSuffixedClosureName (baseName: string) (generation: int) (occurrenceOrdinal: int) =
-    CompilerGeneratedNameSuffix baseName $"hotreload#g{generation}_o{occurrenceOrdinal}"
+let formatOccurrenceChainKey (ordinalChain: int list) =
+    ordinalChain |> List.map string |> String.concat "_"
 
 /// <summary>
-/// Recognizes the generation-suffixed fresh closure class names produced by
-/// <see cref="formatGenerationSuffixedClosureName"/> (<c>{base}@hotreload#g{N}_o{i}</c>).
-/// These names only ever exist for occurrences ADDED in a delta compile (the allocator
-/// reuses baseline names verbatim for survivors), so the delta emitter uses this marker
+/// Formats the generation-suffixed closure class name for an occurrence first
+/// allocated in <paramref name="generation"/> (0 = the baseline compile itself):
+/// <c>{baseName}@hotreload#g{generation}_o{occurrenceChain}</c>. See the module
+/// documentation for the collision-freedom argument.
+/// </summary>
+let formatGenerationSuffixedClosureName (baseName: string) (generation: int) (ordinalChain: int list) =
+    CompilerGeneratedNameSuffix baseName $"hotreload#g{generation}_o{formatOccurrenceChainKey ordinalChain}"
+
+/// <summary>
+/// Recognizes the generation-suffixed closure class names produced by
+/// <see cref="formatGenerationSuffixedClosureName"/> (<c>{base}@hotreload#g{N}_o{chain}</c>).
+/// Under occurrence-derived baseline naming (Phase C6) generation-0 names exist in the
+/// baseline itself; names of LATER generations only ever exist for occurrences ADDED in
+/// a delta compile (the allocator reuses baseline names verbatim for survivors), so the
+/// delta emitter uses this marker together with the absence of a baseline TypeDef token
 /// to identify closure classes that must be emitted as NEW TypeDef rows.
 /// </summary>
 let isGenerationSuffixedClosureName (name: string) =
-    not (System.String.IsNullOrEmpty name)
-    && name.IndexOf("@hotreload#g", System.StringComparison.Ordinal) >= 0
+    GeneratedNames.IsHotReloadGenerationSuffixedName name
 
 /// <summary>
 /// Allocates closure class names for the lambda occurrences of one member in a delta
@@ -181,7 +200,7 @@ let allocateMemberClosureNames
                 | Some name -> ClosureNameAssignment.Reused name
                 | None ->
                     ClosureNameAssignment.Fresh(
-                        formatGenerationSuffixedClosureName freshNameBase generation freshOcc.Id.Ordinal
+                        formatGenerationSuffixedClosureName freshNameBase generation (occurrenceOrdinalChain freshOcc)
                     )
 
             freshOcc, assignment)

@@ -755,6 +755,47 @@ let private memberOccurrencesByUniqueName
         | _ -> acc)
 
 /// <summary>
+/// Derives the stamp -> closure-class-name table a flag-on BASELINE compile installs
+/// before lowering (Phase C6): every lambda occurrence's closure class is named
+/// <c>{memberCompiledName}@hotreload#g0_o{occurrenceChain}</c> — a pure function of
+/// occurrence identity, so a session started from the on-disk baseline in another
+/// process can re-derive the same names from the persisted EnC CDI occurrence keys
+/// (see deriveEncClosureNamesFromEncDebugInfos). Gating mirrors the C2 CDI emission
+/// exactly, so a name is derived if and only if the corresponding occurrence key is
+/// persisted: members without a unique compiled name are dropped, and a member is
+/// dropped entirely when ANY of its occurrence chains is not CDI-encodable (depth > 2
+/// or ordinals past the packing limits) — such members keep pure sequence-replay
+/// naming, exactly like flag-off behavior, and stay fail-closed for lambda set changes.
+/// </summary>
+let computeBaselineOccurrenceKeyedClosureNames
+    (g: TcGlobals)
+    (optimizedImpls: CheckedAssemblyAfterOptimization)
+    : Map<int64, string> =
+    (Map.empty, memberOccurrencesByUniqueName g optimizedImpls)
+    ||> Map.fold (fun acc methName occurrences ->
+        let chains = occurrences |> List.map ClosureNameAllocator.occurrenceOrdinalChain
+
+        let allChainsEncodable =
+            chains |> List.forall (fun chain -> (tryEncodeOccurrenceKey chain).IsSome)
+
+        if not allChainsEncodable then
+            acc
+        else
+            let nameBase = cleanUpGeneratedTypeName methName
+
+            (acc, List.zip occurrences chains)
+            ||> List.fold (fun acc (occurrence, chain) ->
+                // Stamp 0 is the extraction's "no root lambda" sentinel and can never
+                // be a real Expr stamp; never install a name for it.
+                if occurrence.RootExprStamp = 0L then
+                    acc
+                else
+                    Map.add
+                        occurrence.RootExprStamp
+                        (ClosureNameAllocator.formatGenerationSuffixedClosureName nameBase 0 chain)
+                        acc))
+
+/// <summary>
 /// Runs the occurrence-keyed closure name allocator (Phase C3) for a delta compile:
 /// aligns the fresh implementation's lambda occurrences with the previous generation's
 /// (the implementation files the session chains) and assigns each fresh occurrence its

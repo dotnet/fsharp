@@ -70,10 +70,37 @@ module NameMapTests =
         map.LoadSnapshot outOfOrderSnapshot
         map.BeginSession()
 
-        let replayed = [| for _ in 0 .. 3 -> map.GetOrAddName "closure" |]
-        let expected = [| "closure@hotreload"; "closure@hotreload-1"; "closure@hotreload-2"; "closure@hotreload-10" |]
+        // Replay is ordinal-positioned (slot i replays the name with ordinal i), so a
+        // gapped bucket keeps every surviving name at its exact allocation slot and
+        // re-computes the missing slots' names — they are deterministic functions of
+        // the slot index, so this reproduces the original allocation byte for byte.
+        let replayed = [| for _ in 0 .. 10 -> map.GetOrAddName "closure" |]
+
+        let expected =
+            [| "closure@hotreload"
+               yield! [| for i in 1 .. 10 -> $"closure@hotreload-{i}" |] |]
 
         Assert.Equal<string>(expected, replayed)
+        Assert.Equal("closure@hotreload-10", replayed[10])
+
+    [<Fact>]
+    let ``LoadSnapshot drops occurrence-keyed closure names and preserves replay slots`` () =
+        // Occurrence-keyed closure names ({base}@hotreload#g{N}_o{chain}) are managed by
+        // the closure name allocator, never by replay. The slots they consumed at
+        // allocation time (consume-then-override) must stay reserved so OTHER
+        // synthesized names sharing the basic name replay at their original positions:
+        // here the closure consumed slot 0, so the surviving helper names keep
+        // ordinals 1 and 2.
+        let map = FSharpSynthesizedTypeMaps()
+
+        let snapshot =
+            [| struct ("f", [| "f@hotreload-2"; "f@hotreload#g0_o0"; "f@hotreload-1" |]) |]
+
+        map.LoadSnapshot snapshot
+        map.BeginSession()
+
+        let replayed = [| for _ in 0 .. 2 -> map.GetOrAddName "f" |]
+        Assert.Equal<string>([| "f@hotreload"; "f@hotreload-1"; "f@hotreload-2" |], replayed)
 
     [<Fact>]
     let ``LoadSnapshot validates name prefix`` () =

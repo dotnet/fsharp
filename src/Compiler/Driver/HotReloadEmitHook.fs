@@ -93,6 +93,26 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                          (assignedNames |> Map.toList)
 
                  ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) assignedNames
+             | _ when emitCaptureArtifacts ->
+                 // Closure mapping (C6): a BASELINE capture compile (no session tables to
+                 // chain from) derives every closure class name from occurrence identity:
+                 // {memberName}@hotreload#g0_o{chain}, installed stamp-keyed exactly like
+                 // the delta-compile allocator output. Names are then a pure function of
+                 // the occurrence keys the C2 CDI emission persists in the portable PDB,
+                 // so a session started from the on-disk baseline in ANOTHER process can
+                 // reconstruct the chain -> name tables without any in-memory carry-over.
+                 // Members the derivation fails closed on (no unique compiled name,
+                 // unencodable chains) keep pure sequence-replay naming.
+                 let derivedNames =
+                     HotReloadBaseline.computeBaselineOccurrenceKeyedClosureNames tcGlobals optimizedImpls
+
+                 if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                     printfn
+                         "[fsharp-hotreload][closure-names] baseline install: derived=%d names=%A"
+                         (Map.count derivedNames)
+                         (derivedNames |> Map.toList)
+
+                 ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) derivedNames
              | _ ->
                  // Explicitly drop any previously installed table in case the
                  // CompilerGlobalState instance is reused across compiles.

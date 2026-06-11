@@ -112,7 +112,17 @@ let result = makeAdder 3 4
 
         let compilation = compileHotReloadLibrary source
         let names : string list = getTypeNames compilation
-        let closureNames = names |> List.filter (fun name -> name.Contains("lambda@") || name.Contains("inner@"))
+
+        // Occurrence-derived baseline naming (Phase C6) keys closure classes by the
+        // ENCLOSING MEMBER's compiled name + occurrence chain
+        // (makeAdder@hotreload#g0_o0), matching the allocator's fresh-name base used
+        // for delta compiles; members the derivation fails closed on keep the replay
+        // names (inner@hotreload, lambda@hotreload, ...).
+        let closureNames =
+            names
+            |> List.filter (fun name ->
+                name.Contains("lambda@") || name.Contains("inner@") || name.Contains("makeAdder@"))
+
         Assert.True(not (List.isEmpty closureNames), "Expected at least one closure type to be generated.")
         Assert.True(closureNames |> List.exists (fun name -> name.Contains("@hotreload")), "Expected at least one closure using @hotreload naming.")
         assertNoLineNumberSuffix names

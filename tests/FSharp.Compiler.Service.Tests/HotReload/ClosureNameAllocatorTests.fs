@@ -53,8 +53,22 @@ module ClosureNameAllocatorTests =
 
     [<Fact>]
     let ``generation-suffixed name format is baseName at hotreload hash g underscore o`` () =
-        Assert.Equal("f@hotreload#g2_o3", formatGenerationSuffixedClosureName "f" 2 3)
-        Assert.Equal("makeAdder@hotreload#g10_o0", formatGenerationSuffixedClosureName "makeAdder" 10 0)
+        Assert.Equal("f@hotreload#g2_o3", formatGenerationSuffixedClosureName "f" 2 [ 3 ])
+        Assert.Equal("makeAdder@hotreload#g10_o0", formatGenerationSuffixedClosureName "makeAdder" 10 [ 0 ])
+        // Nested chains render root-first with underscore separators; generation 0 is
+        // the baseline derivation (Phase C6).
+        Assert.Equal("f@hotreload#g0_o0_3", formatGenerationSuffixedClosureName "f" 0 [ 0; 3 ])
+
+    [<Fact>]
+    let ``generation-suffixed names are recognized and parse their generation`` () =
+        Assert.True(isGenerationSuffixedClosureName "f@hotreload#g0_o2")
+        Assert.True(isGenerationSuffixedClosureName "f@hotreload#g3_o0_1")
+        Assert.False(isGenerationSuffixedClosureName "f@hotreload")
+        Assert.False(isGenerationSuffixedClosureName "f@hotreload-1")
+
+        Assert.Equal(Some 0, FSharp.Compiler.GeneratedNames.TryGetHotReloadNameGeneration "f@hotreload#g0_o2")
+        Assert.Equal(Some 12, FSharp.Compiler.GeneratedNames.TryGetHotReloadNameGeneration "f@hotreload#g12_o0_1")
+        Assert.Equal(None, FSharp.Compiler.GeneratedNames.TryGetHotReloadNameGeneration "f@hotreload-1")
 
     [<Fact>]
     let ``occurrence ordinal chain is root-first ending with own ordinal`` () =
