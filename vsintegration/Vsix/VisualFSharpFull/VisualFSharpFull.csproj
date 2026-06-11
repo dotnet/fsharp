@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <OutputType>Library</OutputType>
     <ExtensionInstallationFolder>Microsoft\FSharp</ExtensionInstallationFolder>
     <PackageTargetFallback>netcoreapp1.0</PackageTargetFallback>
