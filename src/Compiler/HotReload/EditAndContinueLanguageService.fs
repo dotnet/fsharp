@@ -217,8 +217,12 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
     /// <summary>
     /// Emits a delta for the supplied request; callers may commit the delta by invoking <see cref="OnDeltaApplied"/>.
+    /// <paramref name="freshDebugPdb"/> optionally carries the fresh compile's on-disk portable PDB
+    /// (Phase G): modules read back from disk have no debug points, so the sibling PDB is the real
+    /// source of the fresh sequence points for line-shift detection, active-statement remapping and
+    /// the emitted PDB delta.
     /// </summary>
-    member _.EmitDelta(request: DeltaEmissionRequest) =
+    member _.EmitDelta(request: DeltaEmissionRequest, ?freshDebugPdb: byte[]) =
         let trace = shouldTraceMetadata ()
         if trace then
             let asm = typeof<FSharpEditAndContinueLanguageService>.Assembly
@@ -257,7 +261,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                       PreviousGenerationId = session.PreviousGenerationId
                       SynthesizedNames = Some synthesizedMap }
 
-                let delta = FSharp.Compiler.IlxDeltaEmitter.emitDelta deltaRequest
+                let delta = FSharp.Compiler.IlxDeltaEmitter.emitDeltaWithDebugData freshDebugPdb deltaRequest
                 if trace then
                     let line = $"[fsharp-hotreload][service] EmitDelta produced encLog={delta.EncLog}\n"
                     printf "%s" line
@@ -353,7 +357,8 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     member this.EmitDeltaForCompilation(
         tcGlobals: TcGlobals,
         updatedImplementation: CheckedAssemblyAfterOptimization,
-        ilModule: ILModuleDef
+        ilModule: ILModuleDef,
+        ?freshDebugPdb: byte[]
     ) : Result<DeltaEmissionResult, HotReloadError> =
         // Restore from the last committed snapshot before emitting if an overlapping
         // compile cleared the currently active session.
@@ -431,7 +436,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                                 session.CurrentGeneration
                             |> snd }
 
-                    match this.EmitDelta request with
+                    match this.EmitDelta(request, ?freshDebugPdb = freshDebugPdb) with
                     | Ok result ->
                         let delta = result.Delta
 

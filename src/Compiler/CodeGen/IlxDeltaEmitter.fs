@@ -2944,7 +2944,14 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
 /// Emits the delta artifacts for a request. The current implementation populates token projections
 /// while leaving the raw metadata/IL/PDB payload empty; future work will replace the placeholders
 /// with fully emitted heaps.
-let emitDelta (request: IlxDeltaRequest) : IlxDelta =
+///
+/// <paramref name="freshDebugPdb"/> carries the FRESH compile's on-disk portable PDB when the
+/// caller has one (the FSharpChecker flow reads the IL module from disk WITHOUT debug points, so
+/// the in-memory rewrite's PDB has nil sequence-point blobs; the on-disk PDB is the real source).
+/// When provided it feeds both the Phase G sequence-point analysis and the emitted PDB delta;
+/// None falls back to the in-memory rewrite's PDB (callers that construct modules with debug
+/// points, e.g. the component tests, need no sibling file).
+let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequest) : IlxDelta =
     let synthesizedBuckets =
         request.SynthesizedNames
         |> Option.map (fun map ->
@@ -3017,6 +3024,14 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     let writerOptions = defaultWriterOptions ilg HashAlgorithm.Sha256
     let assemblyBytes, pdbBytesOpt, emittedTokenMappings, _ =
         ILWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, request.Module, id)
+
+    // The fresh compile's debug data: the caller-supplied on-disk PDB when available (the
+    // in-memory rewrite has no debug points when the module was read back from disk), else the
+    // in-memory write's PDB. Feeds the Phase G sequence-point analysis and the PDB delta.
+    let effectiveDebugPdb =
+        match freshDebugPdb with
+        | Some _ -> freshDebugPdb
+        | None -> pdbBytesOpt
     if traceUserStringUpdates.Value then
         try
             let tempDll =
@@ -3557,7 +3572,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     let committedSequencePoints = request.Baseline.SequencePointSnapshots
 
     let freshSequencePointsByToken =
-        match pdbBytesOpt with
+        match effectiveDebugPdb with
         | Some freshPdbBytes when not (Map.isEmpty committedSequencePoints) ->
             ActiveStatementAnalysis.decodeMethodSequencePoints freshPdbBytes
         | _ -> Map.empty
@@ -4679,7 +4694,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
 
         finalizeDeltaArtifacts
             request
-            pdbBytesOpt
+            effectiveDebugPdb
             sequencePointUpdates
             freshSequencePointsByToken
             encId
@@ -4703,3 +4718,6 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             addedPropertyDeltaTokens
             addedEventDeltaTokens
             addedTypeDeltaTokens
+
+/// Emits a delta using only the in-memory rewrite's debug data (no sibling on-disk PDB).
+let emitDelta (request: IlxDeltaRequest) : IlxDelta = emitDeltaWithDebugData None request
