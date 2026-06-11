@@ -518,6 +518,35 @@ let main1
     | Some parallelReferenceResolution -> tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
     | None -> ()
 
+    // Hot reload baseline capture (--enable:hotreloaddeltas) requires byte-reproducible
+    // output: a recapture compile of identical source must lay out metadata rows, heaps
+    // and closure ordinals exactly like the running baseline, or every chained delta is
+    // built against the wrong tokens. Pin the determinism knobs silently here, after all
+    // flags are processed (a flag-implies-flag rule, like other config finalization above):
+    //  - deterministic: stable MVID/timestamp and deterministic PE emission;
+    //  - parallelIlxGen off: parallel IlxGen name-set merge ordering can permute
+    //    synthesized closure/type rows between runs (dotnet/fsharp #19732, #19928);
+    //  - optimization processing mode Sequential: parallel optimization can reorder
+    //    optimized method bodies feeding codegen.
+    // msbuild cannot reliably switch parallelism off itself (dotnet/fsharp #19935), so
+    // the pin lives in the compiler, not in build logic, and is not a user-facing error:
+    // capture already requires --debug+ --optimize-, where these settings have no cost.
+    // Graph type-checking is deliberately left as configured: lambda occurrence keys and
+    // typed-tree emission order depend on the file order of the compilation, not on the
+    // order files are CHECKED in, so TypeCheckingMode.Graph cannot perturb captured output.
+    if tcConfigB.emitCaptureArtifacts then
+        tcConfigB.deterministic <- true
+        tcConfigB.parallelIlxGen <- false
+
+        if
+            tcConfigB.optSettings.processingMode
+            <> Optimizer.OptimizationProcessingMode.Sequential
+        then
+            tcConfigB.optSettings <-
+                { tcConfigB.optSettings with
+                    processingMode = Optimizer.OptimizationProcessingMode.Sequential
+                }
+
     if tcConfigB.utf8output && Console.OutputEncoding <> Encoding.UTF8 then
         let previousEncoding = Console.OutputEncoding
         Console.OutputEncoding <- Encoding.UTF8
