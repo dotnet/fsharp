@@ -82,17 +82,6 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-      IL_000b:  pop
-      IL_000c:  ret
-    } 
-
     .method public static class assembly/Foo Foo.X(class assembly/Foo f, int32 i) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
@@ -105,6 +94,25 @@
       IL_0008:  ret
     } 
 
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
+  } 
+
+  .method public specialname static class assembly/Foo get_f() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::f@11
+    IL_0005:  ret
   } 
 
   .method private specialname rtspecialname static void  .cctor() cil managed
@@ -116,14 +124,6 @@
     IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
     IL_000b:  pop
     IL_000c:  ret
-  } 
-
-  .method public specialname static class assembly/Foo get_f() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::f@11
-    IL_0005:  ret
   } 
 
   .method assembly specialname static class assembly/Foo get_f@8() cil managed

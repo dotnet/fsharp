@@ -89,15 +89,6 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32>
   {
     .field static assembly initonly class M/get_F@41 @_instance
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void M/get_F@41::.ctor()
-      IL_0005:  stsfld     class M/get_F@41 M/get_F@41::@_instance
-      IL_000a:  ret
-    } 
-
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -117,6 +108,15 @@
       IL_0001:  tail.
       IL_0003:  call       int32 M::I(class M/C)
       IL_0008:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void M/get_F@41::.ctor()
+      IL_0005:  stsfld     class M/get_F@41 M/get_F@41::@_instance
+      IL_000a:  ret
     } 
 
   } 

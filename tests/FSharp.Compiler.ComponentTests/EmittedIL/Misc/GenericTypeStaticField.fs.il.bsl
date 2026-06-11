@@ -39,6 +39,17 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly class assembly/Foo`1<!a> theInstance
     .field static assembly int32 init@2
+    .method public specialname rtspecialname instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  pop
+      IL_0008:  ret
+    } 
+
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -49,17 +60,6 @@
       IL_000b:  volatile.
       IL_000d:  stsfld     int32 class assembly/Foo`1<!a>::init@2
       IL_0012:  ret
-    } 
-
-    .method public specialname rtspecialname instance void  .ctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  pop
-      IL_0008:  ret
     } 
 
     .method public specialname static class assembly/Foo`1<!a> get_Instance() cil managed
@@ -95,6 +95,17 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly class assembly/Bar`2<!a,!b> theInstance
     .field static assembly int32 'init@6-1'
+    .method public specialname rtspecialname instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  pop
+      IL_0008:  ret
+    } 
+
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -105,17 +116,6 @@
       IL_000b:  volatile.
       IL_000d:  stsfld     int32 class assembly/Bar`2<!a,!b>::'init@6-1'
       IL_0012:  ret
-    } 
-
-    .method public specialname rtspecialname instance void  .ctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  pop
-      IL_0008:  ret
     } 
 
     .method public specialname static class assembly/Bar`2<!a,!b> get_Instance() cil managed

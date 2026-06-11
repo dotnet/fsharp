@@ -37,6 +37,27 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
     .field static assembly initonly class assembly/f33@47 @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  tail.
+      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
+      IL_0008:  ret
+    } 
+
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -46,6 +67,12 @@
       IL_000a:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f33@47-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f33@47-1' @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -53,26 +80,18 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  tail.
-      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
-      IL_0008:  ret
+      IL_0001:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'f33@47-1'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-  {
-    .field static assembly initonly class assembly/'f33@47-1' @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -82,6 +101,12 @@
       IL_000a:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit f34@48
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field static assembly initonly class assembly/f34@48 @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -89,24 +114,20 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  ret
+      IL_0001:  tail.
+      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
+      IL_0008:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f34@48
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
-  {
-    .field static assembly initonly class assembly/f34@48 @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -116,6 +137,12 @@
       IL_000a:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f34@48-2'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field static assembly initonly class assembly/'f34@48-2' @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -137,12 +164,6 @@
       IL_0008:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'f34@48-2'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
-  {
-    .field static assembly initonly class assembly/'f34@48-2' @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -152,6 +173,12 @@
       IL_000a:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f34@48-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f34@48-1' @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -159,26 +186,18 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  tail.
-      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
-      IL_0008:  ret
+      IL_0001:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'f34@48-1'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-  {
-    .field static assembly initonly class assembly/'f34@48-1' @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -188,6 +207,12 @@
       IL_000a:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f34@48-3'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f34@48-3' @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -207,12 +232,6 @@
       IL_0001:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'f34@48-3'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-  {
-    .field static assembly initonly class assembly/'f34@48-3' @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -222,6 +241,12 @@
       IL_000a:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit f35@49
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field static assembly initonly class assembly/f35@49 @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -229,24 +254,20 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  ret
+      IL_0001:  tail.
+      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
+      IL_0008:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit f35@49
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
-  {
-    .field static assembly initonly class assembly/f35@49 @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -256,6 +277,12 @@
       IL_000a:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f35@49-2'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field static assembly initonly class assembly/'f35@49-2' @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -277,12 +304,6 @@
       IL_0008:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'f35@49-2'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
-  {
-    .field static assembly initonly class assembly/'f35@49-2' @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -292,6 +313,12 @@
       IL_000a:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f35@49-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f35@49-1' @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -299,26 +326,18 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> x) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  tail.
-      IL_0003:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Identity<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(!!0)
-      IL_0008:  ret
+      IL_0001:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'f35@49-1'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-  {
-    .field static assembly initonly class assembly/'f35@49-1' @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -328,6 +347,12 @@
       IL_000a:  ret
     } 
 
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'f35@49-3'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+  {
+    .field static assembly initonly class assembly/'f35@49-3' @_instance
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -347,12 +372,6 @@
       IL_0001:  ret
     } 
 
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'f35@49-3'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-  {
-    .field static assembly initonly class assembly/'f35@49-3' @_instance
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -360,25 +379,6 @@
       IL_0000:  newobj     instance void assembly/'f35@49-3'::.ctor()
       IL_0005:  stsfld     class assembly/'f35@49-3' assembly/'f35@49-3'::@_instance
       IL_000a:  ret
-    } 
-
-    .method assembly specialname rtspecialname instance void  .ctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit x) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ret
     } 
 
   } 
@@ -1044,6 +1044,264 @@
     IL_0025:  ldloca.s   V_0
     IL_0027:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
     IL_002c:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f2() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+    IL_0005:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f3() cil managed
+  {
+    
+    .maxstack  4
+    .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_4)
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  stloc.1
+    IL_0003:  ldc.i4.1
+    IL_0004:  stloc.2
+    IL_0005:  br.s       IL_001f
+
+    IL_0007:  ldloc.2
+    IL_0008:  stloc.3
+    IL_0009:  ldloca.s   V_0
+    IL_000b:  stloc.s    V_4
+    IL_000d:  ldloc.s    V_4
+    IL_000f:  ldloc.3
+    IL_0010:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_0015:  nop
+    IL_0016:  ldloc.2
+    IL_0017:  ldc.i4.1
+    IL_0018:  add
+    IL_0019:  stloc.2
+    IL_001a:  ldloc.1
+    IL_001b:  ldc.i4.1
+    IL_001c:  conv.i8
+    IL_001d:  add
+    IL_001e:  stloc.1
+    IL_001f:  ldloc.1
+    IL_0020:  ldc.i4.s   10
+    IL_0022:  conv.i8
+    IL_0023:  blt.un.s   IL_0007
+
+    IL_0025:  ldloca.s   V_0
+    IL_0027:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_002c:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f4() cil managed
+  {
+    
+    .maxstack  4
+    .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_4)
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  stloc.1
+    IL_0003:  ldc.i4.1
+    IL_0004:  stloc.2
+    IL_0005:  br.s       IL_001f
+
+    IL_0007:  ldloc.2
+    IL_0008:  stloc.3
+    IL_0009:  ldloca.s   V_0
+    IL_000b:  stloc.s    V_4
+    IL_000d:  ldloc.s    V_4
+    IL_000f:  ldloc.3
+    IL_0010:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_0015:  nop
+    IL_0016:  ldloc.2
+    IL_0017:  ldc.i4.2
+    IL_0018:  add
+    IL_0019:  stloc.2
+    IL_001a:  ldloc.1
+    IL_001b:  ldc.i4.1
+    IL_001c:  conv.i8
+    IL_001d:  add
+    IL_001e:  stloc.1
+    IL_001f:  ldloc.1
+    IL_0020:  ldc.i4.5
+    IL_0021:  conv.i8
+    IL_0022:  blt.un.s   IL_0007
+
+    IL_0024:  ldloca.s   V_0
+    IL_0026:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_002b:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f5() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+    IL_0005:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f6() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+    IL_0005:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f7() cil managed
+  {
+    
+    .maxstack  4
+    .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_4)
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  stloc.1
+    IL_0003:  ldc.i4.s   10
+    IL_0005:  stloc.2
+    IL_0006:  br.s       IL_0020
+
+    IL_0008:  ldloc.2
+    IL_0009:  stloc.3
+    IL_000a:  ldloca.s   V_0
+    IL_000c:  stloc.s    V_4
+    IL_000e:  ldloc.s    V_4
+    IL_0010:  ldloc.3
+    IL_0011:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_0016:  nop
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.m1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.1
+    IL_001c:  ldc.i4.1
+    IL_001d:  conv.i8
+    IL_001e:  add
+    IL_001f:  stloc.1
+    IL_0020:  ldloc.1
+    IL_0021:  ldc.i4.s   10
+    IL_0023:  conv.i8
+    IL_0024:  blt.un.s   IL_0008
+
+    IL_0026:  ldloca.s   V_0
+    IL_0028:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_002d:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f8() cil managed
+  {
+    
+    .maxstack  4
+    .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_4)
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  stloc.1
+    IL_0003:  ldc.i4.s   10
+    IL_0005:  stloc.2
+    IL_0006:  br.s       IL_0021
+
+    IL_0008:  ldloc.2
+    IL_0009:  stloc.3
+    IL_000a:  ldloca.s   V_0
+    IL_000c:  stloc.s    V_4
+    IL_000e:  ldloc.s    V_4
+    IL_0010:  ldloc.3
+    IL_0011:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_0016:  nop
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.s   -2
+    IL_001a:  add
+    IL_001b:  stloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldc.i4.1
+    IL_001e:  conv.i8
+    IL_001f:  add
+    IL_0020:  stloc.1
+    IL_0021:  ldloc.1
+    IL_0022:  ldc.i4.5
+    IL_0023:  conv.i8
+    IL_0024:  blt.un.s   IL_0008
+
+    IL_0026:  ldloca.s   V_0
+    IL_0028:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_002d:  ret
+  } 
+
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f9(int32 start) cil managed
+  {
+    
+    .maxstack  4
+    .locals init (uint64 V_0,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1,
+             uint64 V_2,
+             int32 V_3,
+             int32 V_4,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_5)
+    IL_0000:  nop
+    IL_0001:  ldc.i4.s   10
+    IL_0003:  ldarg.0
+    IL_0004:  bge.s      IL_000b
+
+    IL_0006:  ldc.i4.0
+    IL_0007:  conv.i8
+    IL_0008:  nop
+    IL_0009:  br.s       IL_0014
+
+    IL_000b:  ldc.i4.s   10
+    IL_000d:  ldarg.0
+    IL_000e:  sub
+    IL_000f:  conv.i8
+    IL_0010:  ldc.i4.1
+    IL_0011:  conv.i8
+    IL_0012:  add
+    IL_0013:  nop
+    IL_0014:  stloc.0
+    IL_0015:  ldc.i4.0
+    IL_0016:  conv.i8
+    IL_0017:  stloc.2
+    IL_0018:  ldarg.0
+    IL_0019:  stloc.3
+    IL_001a:  br.s       IL_0036
+
+    IL_001c:  ldloc.3
+    IL_001d:  stloc.s    V_4
+    IL_001f:  ldloca.s   V_1
+    IL_0021:  stloc.s    V_5
+    IL_0023:  ldloc.s    V_5
+    IL_0025:  ldloc.s    V_4
+    IL_0027:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_002c:  nop
+    IL_002d:  ldloc.3
+    IL_002e:  ldc.i4.1
+    IL_002f:  add
+    IL_0030:  stloc.3
+    IL_0031:  ldloc.2
+    IL_0032:  ldc.i4.1
+    IL_0033:  conv.i8
+    IL_0034:  add
+    IL_0035:  stloc.2
+    IL_0036:  ldloc.2
+    IL_0037:  ldloc.0
+    IL_0038:  blt.un.s   IL_001c
+
+    IL_003a:  ldloca.s   V_1
+    IL_003c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_0041:  ret
   } 
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f10(int32 finish) cil managed
@@ -1861,14 +2119,6 @@
     IL_0045:  ldloca.s   V_2
     IL_0047:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
     IL_004c:  ret
-  } 
-
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f2() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-    IL_0005:  ret
   } 
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f20(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> f) cil managed
@@ -2791,49 +3041,6 @@
     IL_0046:  ret
   } 
 
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f3() cil managed
-  {
-    
-    .maxstack  4
-    .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
-             uint64 V_1,
-             int32 V_2,
-             int32 V_3,
-             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_4)
-    IL_0000:  ldc.i4.0
-    IL_0001:  conv.i8
-    IL_0002:  stloc.1
-    IL_0003:  ldc.i4.1
-    IL_0004:  stloc.2
-    IL_0005:  br.s       IL_001f
-
-    IL_0007:  ldloc.2
-    IL_0008:  stloc.3
-    IL_0009:  ldloca.s   V_0
-    IL_000b:  stloc.s    V_4
-    IL_000d:  ldloc.s    V_4
-    IL_000f:  ldloc.3
-    IL_0010:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-    IL_0015:  nop
-    IL_0016:  ldloc.2
-    IL_0017:  ldc.i4.1
-    IL_0018:  add
-    IL_0019:  stloc.2
-    IL_001a:  ldloc.1
-    IL_001b:  ldc.i4.1
-    IL_001c:  conv.i8
-    IL_001d:  add
-    IL_001e:  stloc.1
-    IL_001f:  ldloc.1
-    IL_0020:  ldc.i4.s   10
-    IL_0022:  conv.i8
-    IL_0023:  blt.un.s   IL_0007
-
-    IL_0025:  ldloca.s   V_0
-    IL_0027:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_002c:  ret
-  } 
-
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f30(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> f, class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
@@ -3353,213 +3560,6 @@
     IL_00ae:  ldloca.s   V_2
     IL_00b0:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Close()
     IL_00b5:  ret
-  } 
-
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f4() cil managed
-  {
-    
-    .maxstack  4
-    .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
-             uint64 V_1,
-             int32 V_2,
-             int32 V_3,
-             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_4)
-    IL_0000:  ldc.i4.0
-    IL_0001:  conv.i8
-    IL_0002:  stloc.1
-    IL_0003:  ldc.i4.1
-    IL_0004:  stloc.2
-    IL_0005:  br.s       IL_001f
-
-    IL_0007:  ldloc.2
-    IL_0008:  stloc.3
-    IL_0009:  ldloca.s   V_0
-    IL_000b:  stloc.s    V_4
-    IL_000d:  ldloc.s    V_4
-    IL_000f:  ldloc.3
-    IL_0010:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-    IL_0015:  nop
-    IL_0016:  ldloc.2
-    IL_0017:  ldc.i4.2
-    IL_0018:  add
-    IL_0019:  stloc.2
-    IL_001a:  ldloc.1
-    IL_001b:  ldc.i4.1
-    IL_001c:  conv.i8
-    IL_001d:  add
-    IL_001e:  stloc.1
-    IL_001f:  ldloc.1
-    IL_0020:  ldc.i4.5
-    IL_0021:  conv.i8
-    IL_0022:  blt.un.s   IL_0007
-
-    IL_0024:  ldloca.s   V_0
-    IL_0026:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_002b:  ret
-  } 
-
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f5() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-    IL_0005:  ret
-  } 
-
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f6() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-    IL_0005:  ret
-  } 
-
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f7() cil managed
-  {
-    
-    .maxstack  4
-    .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
-             uint64 V_1,
-             int32 V_2,
-             int32 V_3,
-             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_4)
-    IL_0000:  ldc.i4.0
-    IL_0001:  conv.i8
-    IL_0002:  stloc.1
-    IL_0003:  ldc.i4.s   10
-    IL_0005:  stloc.2
-    IL_0006:  br.s       IL_0020
-
-    IL_0008:  ldloc.2
-    IL_0009:  stloc.3
-    IL_000a:  ldloca.s   V_0
-    IL_000c:  stloc.s    V_4
-    IL_000e:  ldloc.s    V_4
-    IL_0010:  ldloc.3
-    IL_0011:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-    IL_0016:  nop
-    IL_0017:  ldloc.2
-    IL_0018:  ldc.i4.m1
-    IL_0019:  add
-    IL_001a:  stloc.2
-    IL_001b:  ldloc.1
-    IL_001c:  ldc.i4.1
-    IL_001d:  conv.i8
-    IL_001e:  add
-    IL_001f:  stloc.1
-    IL_0020:  ldloc.1
-    IL_0021:  ldc.i4.s   10
-    IL_0023:  conv.i8
-    IL_0024:  blt.un.s   IL_0008
-
-    IL_0026:  ldloca.s   V_0
-    IL_0028:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_002d:  ret
-  } 
-
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f8() cil managed
-  {
-    
-    .maxstack  4
-    .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
-             uint64 V_1,
-             int32 V_2,
-             int32 V_3,
-             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_4)
-    IL_0000:  ldc.i4.0
-    IL_0001:  conv.i8
-    IL_0002:  stloc.1
-    IL_0003:  ldc.i4.s   10
-    IL_0005:  stloc.2
-    IL_0006:  br.s       IL_0021
-
-    IL_0008:  ldloc.2
-    IL_0009:  stloc.3
-    IL_000a:  ldloca.s   V_0
-    IL_000c:  stloc.s    V_4
-    IL_000e:  ldloc.s    V_4
-    IL_0010:  ldloc.3
-    IL_0011:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-    IL_0016:  nop
-    IL_0017:  ldloc.2
-    IL_0018:  ldc.i4.s   -2
-    IL_001a:  add
-    IL_001b:  stloc.2
-    IL_001c:  ldloc.1
-    IL_001d:  ldc.i4.1
-    IL_001e:  conv.i8
-    IL_001f:  add
-    IL_0020:  stloc.1
-    IL_0021:  ldloc.1
-    IL_0022:  ldc.i4.5
-    IL_0023:  conv.i8
-    IL_0024:  blt.un.s   IL_0008
-
-    IL_0026:  ldloca.s   V_0
-    IL_0028:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_002d:  ret
-  } 
-
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f9(int32 start) cil managed
-  {
-    
-    .maxstack  4
-    .locals init (uint64 V_0,
-             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1,
-             uint64 V_2,
-             int32 V_3,
-             int32 V_4,
-             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_5)
-    IL_0000:  nop
-    IL_0001:  ldc.i4.s   10
-    IL_0003:  ldarg.0
-    IL_0004:  bge.s      IL_000b
-
-    IL_0006:  ldc.i4.0
-    IL_0007:  conv.i8
-    IL_0008:  nop
-    IL_0009:  br.s       IL_0014
-
-    IL_000b:  ldc.i4.s   10
-    IL_000d:  ldarg.0
-    IL_000e:  sub
-    IL_000f:  conv.i8
-    IL_0010:  ldc.i4.1
-    IL_0011:  conv.i8
-    IL_0012:  add
-    IL_0013:  nop
-    IL_0014:  stloc.0
-    IL_0015:  ldc.i4.0
-    IL_0016:  conv.i8
-    IL_0017:  stloc.2
-    IL_0018:  ldarg.0
-    IL_0019:  stloc.3
-    IL_001a:  br.s       IL_0036
-
-    IL_001c:  ldloc.3
-    IL_001d:  stloc.s    V_4
-    IL_001f:  ldloca.s   V_1
-    IL_0021:  stloc.s    V_5
-    IL_0023:  ldloc.s    V_5
-    IL_0025:  ldloc.s    V_4
-    IL_0027:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-    IL_002c:  nop
-    IL_002d:  ldloc.3
-    IL_002e:  ldc.i4.1
-    IL_002f:  add
-    IL_0030:  stloc.3
-    IL_0031:  ldloc.2
-    IL_0032:  ldc.i4.1
-    IL_0033:  conv.i8
-    IL_0034:  add
-    IL_0035:  stloc.2
-    IL_0036:  ldloc.2
-    IL_0037:  ldloc.0
-    IL_0038:  blt.un.s   IL_001c
-
-    IL_003a:  ldloca.s   V_1
-    IL_003c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_0041:  ret
   } 
 
 } 

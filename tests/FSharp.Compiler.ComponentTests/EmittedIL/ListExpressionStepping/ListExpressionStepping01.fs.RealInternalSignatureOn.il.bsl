@@ -37,17 +37,6 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$ListExpressionSteppingTest1::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$ListExpressionSteppingTest1::init@
-      IL_000b:  pop
-      IL_000c:  ret
-    } 
-
     .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f0() cil managed
     {
       
@@ -61,6 +50,17 @@
       IL_000a:  ldloca.s   V_0
       IL_000c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
       IL_0011:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$ListExpressionSteppingTest1::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$ListExpressionSteppingTest1::init@
+      IL_000b:  pop
+      IL_000c:  ret
     } 
 
     .method assembly static void  staticInitialization@() cil managed

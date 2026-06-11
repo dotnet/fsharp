@@ -35,15 +35,21 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .field static assembly int64 c@3
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .method private specialname rtspecialname static void  .cctor() cil managed
+  .method public specialname static int64 get_c() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
+    IL_0000:  ldsfld     int64 assembly::c@3
+    IL_0005:  ret
+  } 
+
+  .method public specialname static void set_c(int64 'value') cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  stsfld     int64 assembly::c@3
+    IL_0006:  ret
   } 
 
   .method public static void  f1() cil managed
@@ -78,74 +84,6 @@
     IL_001c:  blt.un.s   IL_0009
 
     IL_001e:  ret
-  } 
-
-  .method public static void  f10() cil managed
-  {
-    
-    .maxstack  4
-    .locals init (uint64 V_0,
-             int64 V_1)
-    IL_0000:  ldc.i4.0
-    IL_0001:  conv.i8
-    IL_0002:  stloc.0
-    IL_0003:  ldc.i4.s   10
-    IL_0005:  conv.i8
-    IL_0006:  stloc.1
-    IL_0007:  br.s       IL_0019
-
-    IL_0009:  ldloc.1
-    IL_000a:  call       void assembly::set_c(int64)
-    IL_000f:  ldloc.1
-    IL_0010:  ldc.i4.m1
-    IL_0011:  conv.i8
-    IL_0012:  add
-    IL_0013:  stloc.1
-    IL_0014:  ldloc.0
-    IL_0015:  ldc.i4.1
-    IL_0016:  conv.i8
-    IL_0017:  add
-    IL_0018:  stloc.0
-    IL_0019:  ldloc.0
-    IL_001a:  ldc.i4.s   10
-    IL_001c:  conv.i8
-    IL_001d:  blt.un.s   IL_0009
-
-    IL_001f:  ret
-  } 
-
-  .method public static void  f11() cil managed
-  {
-    
-    .maxstack  4
-    .locals init (uint64 V_0,
-             int64 V_1)
-    IL_0000:  ldc.i4.0
-    IL_0001:  conv.i8
-    IL_0002:  stloc.0
-    IL_0003:  ldc.i4.s   10
-    IL_0005:  conv.i8
-    IL_0006:  stloc.1
-    IL_0007:  br.s       IL_001a
-
-    IL_0009:  ldloc.1
-    IL_000a:  call       void assembly::set_c(int64)
-    IL_000f:  ldloc.1
-    IL_0010:  ldc.i4.s   -2
-    IL_0012:  conv.i8
-    IL_0013:  add
-    IL_0014:  stloc.1
-    IL_0015:  ldloc.0
-    IL_0016:  ldc.i4.1
-    IL_0017:  conv.i8
-    IL_0018:  add
-    IL_0019:  stloc.0
-    IL_001a:  ldloc.0
-    IL_001b:  ldc.i4.5
-    IL_001c:  conv.i8
-    IL_001d:  blt.un.s   IL_0009
-
-    IL_001f:  ret
   } 
 
   .method public static void  f2() cil managed
@@ -669,21 +607,83 @@
     IL_002c:  ret
   } 
 
-  .method public specialname static int64 get_c() cil managed
+  .method public static void  f10() cil managed
   {
     
-    .maxstack  8
-    IL_0000:  ldsfld     int64 assembly::c@3
-    IL_0005:  ret
+    .maxstack  4
+    .locals init (uint64 V_0,
+             int64 V_1)
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  stloc.0
+    IL_0003:  ldc.i4.s   10
+    IL_0005:  conv.i8
+    IL_0006:  stloc.1
+    IL_0007:  br.s       IL_0019
+
+    IL_0009:  ldloc.1
+    IL_000a:  call       void assembly::set_c(int64)
+    IL_000f:  ldloc.1
+    IL_0010:  ldc.i4.m1
+    IL_0011:  conv.i8
+    IL_0012:  add
+    IL_0013:  stloc.1
+    IL_0014:  ldloc.0
+    IL_0015:  ldc.i4.1
+    IL_0016:  conv.i8
+    IL_0017:  add
+    IL_0018:  stloc.0
+    IL_0019:  ldloc.0
+    IL_001a:  ldc.i4.s   10
+    IL_001c:  conv.i8
+    IL_001d:  blt.un.s   IL_0009
+
+    IL_001f:  ret
   } 
 
-  .method public specialname static void set_c(int64 'value') cil managed
+  .method public static void  f11() cil managed
+  {
+    
+    .maxstack  4
+    .locals init (uint64 V_0,
+             int64 V_1)
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  stloc.0
+    IL_0003:  ldc.i4.s   10
+    IL_0005:  conv.i8
+    IL_0006:  stloc.1
+    IL_0007:  br.s       IL_001a
+
+    IL_0009:  ldloc.1
+    IL_000a:  call       void assembly::set_c(int64)
+    IL_000f:  ldloc.1
+    IL_0010:  ldc.i4.s   -2
+    IL_0012:  conv.i8
+    IL_0013:  add
+    IL_0014:  stloc.1
+    IL_0015:  ldloc.0
+    IL_0016:  ldc.i4.1
+    IL_0017:  conv.i8
+    IL_0018:  add
+    IL_0019:  stloc.0
+    IL_001a:  ldloc.0
+    IL_001b:  ldc.i4.5
+    IL_001c:  conv.i8
+    IL_001d:  blt.un.s   IL_0009
+
+    IL_001f:  ret
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  stsfld     int64 assembly::c@3
-    IL_0006:  ret
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed

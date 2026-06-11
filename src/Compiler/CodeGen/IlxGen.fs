@@ -2076,16 +2076,15 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
         // Methods come from two sources with different ordering semantics:
         //   1. User method definitions added during the SEQUENTIAL spine walk (e.g. ctors,
-        //      properties, F# `member` bindings). Sort by (Name, insertion-idx) — this gives
-        //      a stable order independent of intra-file walk timing AND matches what the
-        //      #19732 baseline regeneration assumes ('.cctor' before '.ctor' alphabetically,
-        //      overloads in name order).
+        //      properties, F# `member` bindings). Their insertion order is deterministic
+        //      across SEQ and PAR codegen — we preserve it to match main's behavior and the
+        //      inline IL baselines in tests/fsharp/Compiler/CodeGen/EmittedIL/*.fs.
         //
         //   2. Method bodies emitted by the DEFERRED codegen pass — primarily closure
         //      invokers (`Invoke@<line>`, `MoveNext`) and other compiler-generated methods.
         //      Under `--parallelcompilation+` these are added in scheduler order, not source
         //      order. Their names always carry the compiler-generated '@' marker, so we sort
-        //      them by name to get a stable order.
+        //      them by name to get a stable order, appended after all user methods.
         //
         // See https://github.com/dotnet/fsharp/issues/19928.
         let sortedMethods =
@@ -2100,7 +2099,11 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                 else
                     userMethods.Add(entry)
 
-            let sortedUser = userMethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
+            let sortedUser =
+                userMethods
+                |> Seq.sortBy (fun (struct (_, k), _) -> k)
+                |> Seq.map snd
+                |> List.ofSeq
 
             let sortedDeferred = deferredMethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
 

@@ -41,17 +41,6 @@
            extends [runtime]System.Object
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldc.i4.0
-        IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-        IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-        IL_000b:  pop
-        IL_000c:  ret
-      } 
-
       .method public specialname static int32 get_y() cil managed
       {
         
@@ -68,6 +57,17 @@
         IL_0005:  ret
       } 
 
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldc.i4.0
+        IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+        IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+        IL_000b:  pop
+        IL_000c:  ret
+      } 
+
       .property int32 y()
       {
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
@@ -80,6 +80,14 @@
       } 
     } 
 
+    .method public specialname static int32 get_x() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::x@5
+      IL_0005:  ret
+    } 
+
     .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
@@ -89,14 +97,6 @@
       IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
       IL_000b:  pop
       IL_000c:  ret
-    } 
-
-    .method public specialname static int32 get_x() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::x@5
-      IL_0005:  ret
     } 
 
     .property int32 x()

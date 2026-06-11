@@ -171,17 +171,6 @@
 
     } 
 
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-      IL_000b:  pop
-      IL_000c:  ret
-    } 
-
     .method public static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> f2() cil managed
     {
       
@@ -201,6 +190,17 @@
       IL_0015:  tail.
       IL_0017:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Delay<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
       IL_001c:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_000b:  pop
+      IL_000c:  ret
     } 
 
     .method assembly static void  staticInitialization@() cil managed

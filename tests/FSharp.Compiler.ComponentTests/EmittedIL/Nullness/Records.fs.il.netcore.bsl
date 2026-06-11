@@ -62,6 +62,85 @@
     .field assembly !Z GenericNotNullField@
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .method public hidebysig specialname instance int32  get_JustInt() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 class MyTestModule/MyRecord`3<!X,!Y,!Z>::JustInt@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance valuetype [runtime]System.Nullable`1<int32>  get_NullInt() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      valuetype [runtime]System.Nullable`1<int32> class MyTestModule/MyRecord`3<!X,!Y,!Z>::NullInt@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance string  get_JustString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      string class MyTestModule/MyRecord`3<!X,!Y,!Z>::JustString@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance string  get_NullableString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .param [0]
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      string class MyTestModule/MyRecord`3<!X,!Y,!Z>::NullableString@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance !X  get_GenericNormalField() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      !0 class MyTestModule/MyRecord`3<!X,!Y,!Z>::GenericNormalField@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance !Y  get_GenericNullableField() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      !1 class MyTestModule/MyRecord`3<!X,!Y,!Z>::GenericNullableField@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance !Z  get_GenericNotNullField() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      !2 class MyTestModule/MyRecord`3<!X,!Y,!Z>::GenericNotNullField@
+      IL_0006:  ret
+    } 
+
     .method public specialname rtspecialname 
             instance void  .ctor(int32 justInt,
                                  valuetype [runtime]System.Nullable`1<int32> nullInt,
@@ -117,85 +196,6 @@
       IL_0015:  ret
     } 
 
-    .method public hidebysig specialname instance !X  get_GenericNormalField() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      !0 class MyTestModule/MyRecord`3<!X,!Y,!Z>::GenericNormalField@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance !Z  get_GenericNotNullField() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      !2 class MyTestModule/MyRecord`3<!X,!Y,!Z>::GenericNotNullField@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance !Y  get_GenericNullableField() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      !1 class MyTestModule/MyRecord`3<!X,!Y,!Z>::GenericNullableField@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance int32  get_JustInt() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 class MyTestModule/MyRecord`3<!X,!Y,!Z>::JustInt@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance string  get_JustString() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      string class MyTestModule/MyRecord`3<!X,!Y,!Z>::JustString@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance valuetype [runtime]System.Nullable`1<int32>  get_NullInt() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      valuetype [runtime]System.Nullable`1<int32> class MyTestModule/MyRecord`3<!X,!Y,!Z>::NullInt@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance string  get_NullableString() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      string class MyTestModule/MyRecord`3<!X,!Y,!Z>::NullableString@
-      IL_0006:  ret
-    } 
-
     .property instance int32 JustInt()
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
@@ -242,6 +242,16 @@
     } 
   } 
 
+  .method public specialname static string get_maybeString() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  ret
+  } 
+
   .method public static class MyTestModule/MyRecord`3<int32,string,string> createAnInstance() cil managed
   {
     .param [0]
@@ -264,16 +274,6 @@
                                                                                                  !1,
                                                                                                  !2)
     IL_0020:  ret
-  } 
-
-  .method public specialname static string get_maybeString() cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  ret
   } 
 
   .method public static string  stringOfInst() cil managed

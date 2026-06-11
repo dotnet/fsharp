@@ -68,16 +68,6 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.AutoOpenAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .method public static void  Builder.UseCosmosDb(class Program/Builder builder,
-                                                    class [runtime]System.Action`1<int32> configuration) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ret
-    } 
-
     .method public static void  UseCosmosDb(class Program/Builder builder,
                                             [opt] bool storeScopesAndAppsInMemory) cil managed
     {
@@ -85,6 +75,16 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationSourceNameAttribute::.ctor(string) = ( 01 00 0B 55 73 65 43 6F 73 6D 6F 73 44 62 00 00 ) 
       .param [2] = bool(false)
+      
+      .maxstack  8
+      IL_0000:  ret
+    } 
+
+    .method public static void  Builder.UseCosmosDb(class Program/Builder builder,
+                                                    class [runtime]System.Action`1<int32> configuration) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ret

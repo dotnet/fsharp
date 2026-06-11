@@ -91,15 +91,6 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .field static assembly initonly class assembly/g@13 @_instance
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/g@13::.ctor()
-      IL_0005:  stsfld     class assembly/g@13 assembly/g@13::@_instance
-      IL_000a:  ret
-    } 
-
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -133,6 +124,15 @@
       IL_002a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_002f:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/g@13::.ctor()
+      IL_0005:  stsfld     class assembly/g@13 assembly/g@13::@_instance
+      IL_000a:  ret
     } 
 
   } 
