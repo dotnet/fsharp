@@ -46,6 +46,8 @@
 module internal FSharp.Compiler.ClosureNameAllocator
 
 open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeDiff
 
 /// <summary>
@@ -186,3 +188,54 @@ let allocateMemberClosureNames
 
     { Assignments = assignments
       RefreshedNamesByOccurrenceChain = refreshedNames }
+
+/// <summary>
+/// Joins a baseline compile's stamp -> emitted-closure-name recording (captured at the
+/// IlxGen closure call site) with the lambda occurrence extraction of the SAME typed
+/// tree, producing the per-member occurrence-chain -> closure-class-name tables the
+/// allocator consumes in later generations. Keying is by IL method (compiled) name with
+/// the same fail-closed rules as the C2 CDI emission (the token resolution happens where
+/// baseline MethodDef tokens are known):
+///  - members without a compiled name, or whose compiled name is claimed by more than
+///    one member binding in the assembly, are dropped (a table can never describe the
+///    wrong method);
+///  - a member is dropped entirely when ANY of its occurrences has no recorded name
+///    (closure formation diverged from extraction) — a partial table could force fresh
+///    names onto surviving closures, so the member instead stays on sequence replay.
+/// Members without lambda occurrences (including extraction-unsupported members, which
+/// report an empty occurrence list) carry no table.
+/// </summary>
+let computeBaselineClosureNameRows
+    (g: TcGlobals)
+    (implFiles: CheckedImplFile list)
+    (closureNamesByStamp: Map<int64, string>)
+    : Map<string, Map<int list, string>> =
+
+    if Map.isEmpty closureNamesByStamp then
+        Map.empty
+    else
+        let allMembers = implFiles |> List.collect (collectMemberLambdaOccurrences g)
+
+        let ambiguousNames =
+            allMembers
+            |> List.choose (fun (symbol, _) -> symbol.CompiledName)
+            |> List.countBy id
+            |> List.filter (fun (_, count) -> count > 1)
+            |> List.map fst
+            |> Set.ofList
+
+        (Map.empty, allMembers)
+        ||> List.fold (fun acc (symbol: SymbolId, occurrences) ->
+            match symbol.CompiledName, occurrences with
+            | Some methName, _ :: _ when not (Set.contains methName ambiguousNames) ->
+                let entries =
+                    occurrences
+                    |> List.map (fun occ ->
+                        Map.tryFind occ.RootExprStamp closureNamesByStamp
+                        |> Option.map (fun name -> occurrenceOrdinalChain occ, name))
+
+                if entries |> List.forall Option.isSome then
+                    Map.add methName (entries |> List.map Option.get |> Map.ofList) acc
+                else
+                    acc
+            | _ -> acc)

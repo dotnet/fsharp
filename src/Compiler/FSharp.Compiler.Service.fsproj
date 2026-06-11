@@ -314,6 +314,7 @@
     </Compile>
     <Compile Include="Generated\GeneratedNames.fs" />
     <Compile Include="Generated\CompilerGeneratedNameMapState.fs" />
+    <Compile Include="Generated\ClosureNameAllocationState.fs" />
     <Compile Include="$(FsYaccOutputFolder)pplex.fsi">
       <Link>SyntaxTree\FsLexOutput\pplex.fsi</Link>
     </Compile>

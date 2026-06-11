@@ -71,6 +71,49 @@ let transform (input: int list) =
 """
 
     [<Fact>]
+    let ``baseline capture records occurrence-chain to closure-name tables on the session`` () =
+        try
+            // Two top-level lambdas in one member: the baseline capture must join the
+            // IlxGen stamp -> name recording with the C1 occurrence extraction and store
+            // chain -> name tables, keyed by MethodDef token, on the session baseline.
+            let compilation =
+                genSource "x > 0" "x * 2 + List.length input"
+                |> compileHotReloadLibrary
+
+            let emittedNames =
+                compilation
+                |> getHotReloadTypeNames
+                |> List.map (fun fullName ->
+                    match fullName.LastIndexOf('+') with
+                    | -1 -> fullName
+                    | i -> fullName.Substring(i + 1))
+                |> Set.ofList
+
+            let session =
+                match global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
+                | ValueSome session -> session
+                | ValueNone -> failwith "Expected the flag-on compile to start a hot reload session."
+
+            let closureNameTables = session.Baseline.EncClosureNames
+            Assert.False(Map.isEmpty closureNameTables, "Baseline EncClosureNames must be populated by the capture compile.")
+
+            // 'transform' contains exactly two top-level occurrences with chains [0] and [1].
+            let transformTable =
+                closureNameTables
+                |> Map.toList
+                |> List.map snd
+                |> List.tryFind (fun table -> table |> Map.exists (fun _ name -> name.StartsWith("transform@", StringComparison.Ordinal)))
+                |> Option.defaultWith (fun () -> failwith $"No closure-name table found for 'transform' in %A{closureNameTables}.")
+
+            Assert.Equal<Set<int list>>(Set.ofList [ [ 0 ]; [ 1 ] ], transformTable |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+
+            // Every recorded name is a closure class the compile actually emitted.
+            for KeyValue(_, name) in transformTable do
+                Assert.Contains(name, emittedNames)
+        finally
+            global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+    [<Fact>]
     let ``closure class names are identical across body-edit delta generations`` () =
         try
             // Generation 1 (baseline): a member with two lambdas — a capture-free

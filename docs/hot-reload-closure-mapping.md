@@ -10,6 +10,9 @@ re-emission deferred (see "C2 baseline CDI read" below).
 C3 allocator landed (2026-06-10) — occurrence-keyed closure name allocation model
 (`ClosureNameAllocator.fs`) with the generation-suffixed name format; lowering wiring pending
 (see "C3 occurrence-keyed closure name allocation" below for the wiring design and its blockers).
+C3 wiring commit 1 landed (2026-06-10) — lambda root stamps on `LambdaOccurrence` plus
+baseline stamp→name capture at the IlxGen closure call site, joined in the fsc emit path and
+stored token-keyed as `FSharpEmitBaseline.EncClosureNames` (see "Lowering wiring" below).
 C4–C5 pending. Implementation notes are folded into the relevant sections below.
 Source research: Roslyn main @ June 2026 (`ClosureConversion.cs`, `EncVariableSlotAllocator.cs`, `EditAndContinueMethodDebugInformation.cs`, `DefinitionMap.cs`, `AbstractEditAndContinueAnalyzer.ReportLambdaAndClosureRudeEdits`).
 
@@ -254,8 +257,36 @@ TryGetPreviousClosure` analogue, expressed as a pure data transformation over th
   identical names across three body-edit generations, so deltas can update the existing closure
   method bodies in place.
 
-**Lowering wiring design (pending).** The remaining work is threading the allocation into IlxGen
-for delta compiles. The precise design and why it was not forced into the allocator commit:
+**Lowering wiring design.** Step 1 (the stamp bridge + baseline capture, points 2–3 below)
+landed; the delta-compile hook step (point 4) is the remaining wiring. As implemented:
+
+- `LambdaOccurrence.RootExprStamp` records the unique stamp of the occurrence's root lambda
+  (the OUTERMOST `Expr.Lambda` of a curried group, looking through `Expr.DebugPoint`/`Expr.Link`)
+  — extraction bookkeeping only, never part of the structural digest or alignment, and only
+  meaningful within the compilation that produced the expression.
+- The IlxGen closure call site (`GetIlxClosureFreeVars`) records stamp→emitted-closure-name into
+  `ClosureNameAllocationState` (a `ConditionalWeakTable` side channel keyed by
+  `CompilerGlobalState`, mirroring `CompilerGeneratedNameMapState`). Recording is armed only by
+  the emit hook's `PrepareForCodeGeneration` for capture compiles; everywhere else the call site
+  performs a single failed weak-table lookup and behaves byte-identically (EmittedIL gate).
+- The fsc emit path (`main6`, next to the C2 CDI row computation over the same `optimizedImpls`)
+  joins the recording with the C1 extraction via
+  `ClosureNameAllocator.computeBaselineClosureNameRows`: per-member occurrence-chain→name tables,
+  keyed by compiled name with the C2 fail-closed rules, plus a member-level completeness rule —
+  if ANY occurrence of a member has no recorded name (closure formation diverged from
+  extraction), the member gets no table and stays on sequence replay rather than risking fresh
+  names for surviving closures.
+- The rows ride the hook contract (`ICompilerEmitHook.TryEmitWithArtifacts` /
+  `CompilerEmitArtifacts.ClosureNameRows`) into the capture, where
+  `HotReloadBaseline.resolveClosureNameRowsByToken` re-keys them by MethodDef token (unique-name
+  resolution shared with `computeRefreshedEncMethodDebugInfos`) and stores them as
+  `FSharpEmitBaseline.EncClosureNames`, the C3 companion of `EncMethodDebugInfos`. Baselines
+  created without an in-process flag-on emit (e.g. the checker's read-from-disk path) carry the
+  empty map: the occurrence-keyed naming stays inert there and delta compiles keep pure
+  sequence-replay behavior (fail closed; names are not persisted in the PDB because the CDI
+  blob format has no name slots).
+
+The original design rationale, recorded before the wiring landed:
 
 1. *Where closure names are born*: one call site — `IlxGen.GetIlxClosureFreeVars` calls
    `StableNameGenerator.GetUniqueCompilerGeneratedName(basename, expr.Range, uniq)`, which lands in

@@ -42,6 +42,13 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                 portablePdbSnapshot
                 ilxGenEnvironment
 
+        // Closure mapping (C3): attach the per-method occurrence-chain -> closure-name
+        // tables joined in the emit path, re-keyed by MethodDef token (fail closed on
+        // non-unique names) so delta compiles can reuse baseline closure identity.
+        let baseline =
+            { baseline with
+                EncClosureNames = HotReloadBaseline.resolveClosureNameRowsByToken baseline artifacts.ClosureNameRows }
+
         editAndContinueService.StartSession(baseline, artifacts.OptimizedImpls) |> ignore
 
         match tryGetCompilerGeneratedNameMap (compilerGlobalState :> obj) with
@@ -59,6 +66,12 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
 
         member _.PrepareForCodeGeneration(emitCaptureArtifacts, compilerGlobalState) =
             if emitCaptureArtifacts then
+                // Closure mapping (C3): capture stamp -> emitted-closure-name pairs during
+                // IlxGen so the emit path can join them with the same tree's lambda
+                // occurrence extraction (only capture compiles record; everything else
+                // sees a strict no-op at the closure call site).
+                ClosureNameAllocationState.beginClosureStampNameRecording (compilerGlobalState :> obj)
+
                 match tryGetCompilerGeneratedNameMap (compilerGlobalState :> obj) with
                 | Some map -> map.BeginSession()
                 | None ->
@@ -111,6 +124,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
             normalizeAssemblyRefs,
             optimizedImpls,
             ilxGenEnvSnapshot,
+            methodClosureNameRows,
             outputFile,
             pdbfile
         ) =
@@ -135,7 +149,8 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                       AssemblyBytes = assemblyBytes
                       PortablePdbBytes = pdbBytesOpt
                       IlxGenEnvSnapshot = ilxGenEnvSnapshot
-                      OptimizedImpls = optimizedImpls }
+                      OptimizedImpls = optimizedImpls
+                      ClosureNameRows = methodClosureNameRows }
 
                 true
 

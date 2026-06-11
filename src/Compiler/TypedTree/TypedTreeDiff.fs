@@ -175,6 +175,12 @@ type LambdaOccurrence =
       /// Digest of the occurrence expression, used to detect pure body edits between two
       /// occurrences that share the same structural digest. Never part of identity.
       BodyHash: int
+      /// Unique stamp of the occurrence's root lambda expression (the outermost
+      /// Expr.Lambda of a curried group). This is the bridge to IlxGen's closure naming
+      /// call site, which sees the same stamp when lowering the same tree — extraction
+      /// bookkeeping only, never part of the structural digest or alignment, and only
+      /// meaningful within the compilation that produced the expression.
+      RootExprStamp: int64
       /// Source range of the occurrence. Diagnostics only — never identity.
       Range: range }
 
@@ -1016,6 +1022,14 @@ let private extractLambdaOccurrences
         let ordinal = nextOrdinal
         nextOrdinal <- nextOrdinal + 1
 
+        // Stamp of the occurrence's root lambda: for a curried group this is the
+        // OUTERMOST lambda's stamp — the same expression (and stamp) IlxGen's closure
+        // call site receives when it forms the single closure for the curried chain.
+        let rootExprStamp =
+            match stripDebugPointsAndLinks lambdaExpr with
+            | Expr.Lambda (uniq, _, _, _, _, _, _) -> uniq
+            | _ -> 0L
+
         let groups, innerBody = gatherCurriedGroups [] lambdaExpr
 
         match groups with
@@ -1043,6 +1057,7 @@ let private extractLambdaOccurrences
                           Captures = captureIdentities lambdaExpr
                           ReturnTypeIdentity = returnIdentity
                           BodyHash = exprDigest denv lambdaExpr
+                          RootExprStamp = rootExprStamp
                           Range = lambdaExpr.Range }
                 | None -> ()
 

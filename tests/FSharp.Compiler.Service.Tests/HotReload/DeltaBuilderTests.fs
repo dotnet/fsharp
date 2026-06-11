@@ -58,7 +58,8 @@ module DeltaBuilderTests =
           BlobStreamLengthAdded = 0
           GuidStreamLengthAdded = 0
           AddedOrChangedMethods = []
-          EncMethodDebugInfos = Map.empty }
+          EncMethodDebugInfos = Map.empty
+          EncClosureNames = Map.empty }
 
     let private mkSymbol
         (path: string list)

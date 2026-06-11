@@ -43,6 +43,9 @@ module ClosureNameAllocatorTests =
             |> List.map (fun (name, ty) -> { LogicalName = name; Type = ty })
           ReturnTypeIdentity = intTy
           BodyHash = bodyHash
+          // The stamp bridge to IlxGen is extraction bookkeeping; synthetic
+          // occurrences carry a dummy stamp (never part of identity or alignment).
+          RootExprStamp = 0L
           Range = Range.range0 }
 
     let private assignmentNames (allocation: MemberClosureNameAllocation) =

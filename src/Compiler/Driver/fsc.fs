@@ -1196,6 +1196,30 @@ let main6
                         else
                             Map.empty
 
+                    // Hot reload closure mapping (C3): join the stamp -> closure-name pairs
+                    // recorded at the IlxGen closure call site with the lambda occurrence
+                    // extraction of the same optimized tree, producing the per-method
+                    // occurrence-chain -> name tables the baseline capture stores (the CDI
+                    // blobs above carry occurrence keys but no name slots). Flag-off builds
+                    // recorded nothing and pass the empty map.
+                    let methodClosureNameRows =
+                        if tcConfig.emitCaptureArtifacts then
+                            let recordedClosureNames =
+                                ClosureNameAllocationState.getRecordedClosureStampNames
+                                    (tcGlobals.CompilerGlobalState.Value :> obj)
+
+                            if Map.isEmpty recordedClosureNames then
+                                Map.empty
+                            else
+                                let (CheckedAssemblyAfterOptimization implFiles) = optimizedImpls
+
+                                let implFiles =
+                                    implFiles |> List.map (fun implFile -> implFile.ImplFile)
+
+                                ClosureNameAllocator.computeBaselineClosureNameRows tcGlobals implFiles recordedClosureNames
+                        else
+                            Map.empty
+
                     let ilWriteOptions: ILBinaryWriter.options =
                         {
                             ilg = tcGlobals.ilg
@@ -1230,6 +1254,7 @@ let main6
                             normalizeAssemblyRefs,
                             optimizedImpls,
                             ilxGenEnvSnapshot,
+                            methodClosureNameRows,
                             outfile,
                             pdbfile
                         )

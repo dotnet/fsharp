@@ -193,6 +193,19 @@ type FSharpEmitBaseline =
         /// session restarts is the remaining gap.
         /// </summary>
         EncMethodDebugInfos: Map<int, EncMethodDebugInformation>
+        /// <summary>
+        /// Per-method closure-class name tables (occurrence-chain -> emitted closure type
+        /// name), keyed by MethodDef token (0x06xxxxxx) — the C3 companion of
+        /// EncMethodDebugInfos. The Roslyn CDI blob formats carry no name slots (C# names
+        /// are recomputed from DebugId alone, which F# cannot do for baseline names that
+        /// embed line numbers or replay ordinals), so the trustworthy chain -> name table
+        /// is captured during baseline IlxGen (stamp -> name recording at the closure call
+        /// site, joined with the same tree's occurrence extraction) and chained in memory
+        /// like EncMethodDebugInfos. Empty for baselines created without an in-process
+        /// flag-on emit (e.g. read back from disk): the occurrence-keyed naming then stays
+        /// inert and delta compiles keep sequence replay (fail closed).
+        /// </summary>
+        EncClosureNames: Map<int, Map<int list, string>>
     }
 
 type private BaselineMaps =
@@ -513,6 +526,10 @@ let private createCore
             portablePdbSnapshot
             |> Option.map (fun snapshot -> readEncMethodDebugInfoFromPortablePdb snapshot.Bytes)
             |> Option.defaultValue Map.empty
+        // Closure-name tables are joined from the emit-time stamp recording, which is
+        // only available to the capture hook; it attaches them after creation (see
+        // resolveClosureNameRowsByToken).
+        EncClosureNames = Map.empty
         ModuleNameOffset = None
     }
 
@@ -620,6 +637,19 @@ let chainEncMethodDebugInfos
 /// delta have no baseline token yet and carry no entry (added lambda members are a C4
 /// concern).
 /// </summary>
+/// Baseline MethodDef tokens keyed by method name, restricted to names identifying
+/// exactly ONE baseline MethodDef row — the shared fail-closed name -> token resolution
+/// for typed-tree-derived per-method side tables (EnC debug info, closure-name tables).
+let private tokensByUniqueMethodName (baseline: FSharpEmitBaseline) =
+    baseline.MethodTokens
+    |> Map.toSeq
+    |> Seq.groupBy (fun (key, _) -> key.Name)
+    |> Seq.choose (fun (name, entries) ->
+        match entries |> Seq.truncate 2 |> List.ofSeq with
+        | [ (_, token) ] -> Some(name, token)
+        | _ -> None)
+    |> Map.ofSeq
+
 let computeRefreshedEncMethodDebugInfos
     (g: TcGlobals)
     (baseline: FSharpEmitBaseline)
@@ -635,20 +665,35 @@ let computeRefreshedEncMethodDebugInfos
     if Map.isEmpty infosByName then
         Map.empty
     else
-        let tokensByUniqueName =
-            baseline.MethodTokens
-            |> Map.toSeq
-            |> Seq.groupBy (fun (key, _) -> key.Name)
-            |> Seq.choose (fun (name, entries) ->
-                match entries |> Seq.truncate 2 |> List.ofSeq with
-                | [ (_, token) ] -> Some(name, token)
-                | _ -> None)
-            |> Map.ofSeq
+        let tokensByUniqueName = tokensByUniqueMethodName baseline
 
         (Map.empty, infosByName)
         ||> Map.fold (fun acc methName info ->
             match Map.tryFind methName tokensByUniqueName with
             | Some methodToken -> Map.add methodToken info acc
+            | None -> acc)
+
+/// <summary>
+/// Re-keys name-keyed per-method closure-name tables (occurrence-chain -> closure type
+/// name, produced by ClosureNameAllocator.computeBaselineClosureNameRows in the fsc emit
+/// path) by baseline MethodDef token, for storage as FSharpEmitBaseline.EncClosureNames.
+/// Resolution is fail closed exactly like computeRefreshedEncMethodDebugInfos: only
+/// compiled names identifying exactly one baseline MethodDef row resolve, so a table can
+/// never attach to the wrong method.
+/// </summary>
+let resolveClosureNameRowsByToken
+    (baseline: FSharpEmitBaseline)
+    (rowsByMethodName: Map<string, Map<int list, string>>)
+    : Map<int, Map<int list, string>> =
+    if Map.isEmpty rowsByMethodName then
+        Map.empty
+    else
+        let tokensByUniqueName = tokensByUniqueMethodName baseline
+
+        (Map.empty, rowsByMethodName)
+        ||> Map.fold (fun acc methName rows ->
+            match Map.tryFind methName tokensByUniqueName with
+            | Some methodToken -> Map.add methodToken rows acc
             | None -> acc)
 
 /// <summary>Create an <see cref="FSharpEmitBaseline"/> without capturing the ILX environment snapshot.</summary>

@@ -391,6 +391,7 @@ module EdgeCaseTests =
                 GuidStreamLengthAdded = 0
                 AddedOrChangedMethods = []
                 EncMethodDebugInfos = Map.empty
+                EncClosureNames = Map.empty
             }
 
         [<Fact>]

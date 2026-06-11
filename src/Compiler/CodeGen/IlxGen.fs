@@ -7191,7 +7191,18 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let cloName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            let compilerGlobalState = g.CompilerGlobalState.Value
+
+            let cloName =
+                compilerGlobalState.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+
+            // Hot reload closure mapping (Phase C3): record the lambda stamp -> emitted
+            // closure type name so the baseline capture can join it with the typed-tree
+            // lambda occurrence extraction of the same tree (the stamp bridge documented
+            // in docs/hot-reload-closure-mapping.md). No recorder installed (flag-off or
+            // non-capture compiles) -> strict no-op.
+            ClosureNameAllocationState.recordClosureStampName (compilerGlobalState :> obj) uniq cloName
+            cloName
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 

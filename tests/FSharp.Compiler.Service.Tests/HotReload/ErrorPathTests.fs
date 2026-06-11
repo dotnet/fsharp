@@ -75,6 +75,7 @@ module ErrorPathTests =
             GuidStreamLengthAdded = 0
             AddedOrChangedMethods = []
             EncMethodDebugInfos = Map.empty
+            EncClosureNames = Map.empty
         }
 
     module ArgumentValidationTests =
