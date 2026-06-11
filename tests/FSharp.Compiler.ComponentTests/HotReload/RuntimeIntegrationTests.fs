@@ -4437,3 +4437,36 @@ type Type =
 """
 
         applySingleStringUpdateAndAssertRuntimeResult "async-gains-trywith" baseline updated "Hello, watch" "Welcome, watch"
+
+    [<Fact>]
+    let ``EmitHotReloadDelta rejects async added bind with a precise closure-chain message`` () =
+        // async lowers to closure CHAINS whose classes outnumber the C1 lambda
+        // occurrences (inlined AsyncPrimitives internals) and carry legacy `-N` names:
+        // a structural CE change shifts the numbering, so the synthesized-type mapping
+        // cannot align the chain and must fail closed with a precise message (never
+        // silently pair shifted classes - the delta would patch the wrong rows).
+        let baseline =
+            """
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        async {
+            let! prefix = async { return "Hello" }
+            return prefix + ", watch"
+        }
+        |> Async.RunSynchronously
+"""
+
+        let updated =
+            baseline.Replace(
+                "return prefix + \", watch\"",
+                "let! name = async { return \"watch\" }\n            return prefix + \", \" + name")
+
+        assertEmitRejectedWithMessage
+            "async-added-bind"
+            baseline
+            updated
+            (fun message ->
+                Assert.Contains("synthesized type", message)
+                Assert.Contains("ebuild", message))

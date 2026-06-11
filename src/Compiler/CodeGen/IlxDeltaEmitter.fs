@@ -2761,6 +2761,12 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     let propertyHandleLookup = Dictionary<PropertyDefinitionKey, PropertyDefinitionHandle>()
     let eventHandleLookup = Dictionary<EventDefinitionKey, EventDefinitionHandle>()
     let baselineTypeNameByNew = Dictionary<string, string>(StringComparer.Ordinal)
+    // Reverse of baselineTypeNameByNew: the new->baseline synthesized type mapping must
+    // stay INJECTIVE. Closure-chain CE lowerings (async) carry legacy `-N`-suffixed
+    // names; a structural CE change shifts the numbering, and alias-bucket matching
+    // could then silently pair two different fresh closures with one baseline class -
+    // emitting fresh bodies into the wrong rows. Fail closed instead.
+    let newTypeNameByBaseline = Dictionary<string, string>(StringComparer.Ordinal)
 
     let getAliasCandidates (typeName: string) =
         match synthesizedBuckets with
@@ -2903,6 +2909,15 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             | Some (baseline, token) -> baseline, Some token
             | None -> newFullName, None
 
+        match newTypeNameByBaseline.TryGetValue baselineName with
+        | true, existingNewName when not (String.Equals(existingNewName, newFullName, StringComparison.Ordinal)) ->
+            raise (
+                HotReloadUnsupportedEditException(
+                    $"Computation-expression closure chain changed: synthesized types '{existingNewName}' and '{newFullName}' both map to baseline type '{baselineName}'; the closure chain cannot be aligned with the baseline. Please rebuild."
+                )
+            )
+        | _ -> newTypeNameByBaseline[baselineName] <- newFullName
+
         baselineTypeNameByNew[newFullName] <- baselineName
         if traceSynthesizedMappings.Value then
             printfn "[fsharp-hotreload][synthesized-map] stored %s -> %s" newFullName baselineName
@@ -2958,6 +2973,19 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                         addedTypeNewTokens[fullName] <- newTypeToken
                         addedTypeDefs.Add(enclosing, typeDef, fullName)
                         deltaToken
+                | None when typeDef.Name.Contains "@hotreload" ->
+                    // A legacy (non-generation-suffixed) hot-reload closure name with no
+                    // baseline counterpart: closure-chain CE lowerings (async) number
+                    // their classes `-N` by emission order, so a structural CE change
+                    // shifts every later name off its baseline row. Tokens looked up
+                    // through the baseline mappings would be garbage; fail closed.
+                    let fullName = (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
+
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Computation-expression closure chain changed: synthesized type '{fullName}' has no baseline counterpart; the closure chain cannot be aligned with the baseline. Please rebuild."
+                        )
+                    )
                 | None -> request.Baseline.TokenMappings.TypeDefTokenMap(enclosing, typeDef)
         addMapping typeTokenMap newTypeToken baselineTypeToken
 
@@ -2997,6 +3025,25 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 if not (addedFieldTokens.ContainsKey fieldKey) then
                     let newFieldToken = emittedTokenMappings.FieldDefTokenMap(enclosing, typeDef) fieldDef
                     addedFieldTokens[fieldKey] <- newFieldToken
+            | None when
+                not fieldDef.IsStatic
+                && typeDef.IsStructOrEnum
+                && request.Baseline.TypeTokens |> Map.containsKey baselineDeclaringType ->
+                // A fresh instance field on an EXISTING struct: struct layouts are
+                // immutable under hot reload. This must run BEFORE the synthesized-name
+                // skip below - for compiler-generated structs the field is a state
+                // machine's new awaiter or hoisted local (Phase D backstop: before this
+                // gate, the skip silently dropped the field and the patched MoveNext
+                // crashed at runtime with garbage field tokens).
+                let fieldDisplay = $"{declaringTypeRef.FullName}::{fieldDef.Name}"
+
+                let message =
+                    if IsCompilerGeneratedName typeDef.Name then
+                        $"Edit changes the layout of state machine struct '{declaringTypeRef.FullName}': field '{fieldDef.Name}' has no baseline counterpart (a resume point or hoisted local changed); struct layouts cannot change under hot reload. Please rebuild."
+                    else
+                        $"Edit adds instance field '{fieldDisplay}' to a struct; struct layouts cannot change under hot reload. Please rebuild."
+
+                raise (HotReloadUnsupportedEditException message)
             | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
             | None when
                 (fieldDef.IsStatic || not typeDef.IsStructOrEnum)
@@ -3018,6 +3065,35 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                     else
                         $"Edit adds field '{fieldDisplay}' to a type that has no baseline TypeDef token; please rebuild."
                 raise (HotReloadUnsupportedEditException message))
+
+        // Reverse direction of the struct layout gate above: a BASELINE field missing
+        // from the fresh compile of an existing compiler-generated struct (a removed
+        // awaiter or hoisted local of a state machine) is the same immutable-layout
+        // violation as an added field, and is invisible to the per-fresh-field loop.
+        if typeDef.IsStructOrEnum && IsCompilerGeneratedName typeDef.Name then
+            let declaringTypeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+            let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
+
+            if
+                not (addedTypeDeltaTokens.ContainsKey declaringTypeRef.FullName)
+                && request.Baseline.TypeTokens |> Map.containsKey baselineDeclaringType
+            then
+                let freshFieldNames =
+                    typeDef.Fields.AsList()
+                    |> List.map (fun f -> normalizeGeneratedFieldName f.Name)
+                    |> Set.ofList
+
+                request.Baseline.FieldTokens
+                |> Map.iter (fun key _ ->
+                    if
+                        String.Equals(key.DeclaringType, baselineDeclaringType, StringComparison.Ordinal)
+                        && not (Set.contains (normalizeGeneratedFieldName key.Name) freshFieldNames)
+                    then
+                        raise (
+                            HotReloadUnsupportedEditException(
+                                $"Edit changes the layout of state machine struct '{declaringTypeRef.FullName}': baseline field '{key.Name}' is gone (a resume point or hoisted local changed); struct layouts cannot change under hot reload. Please rebuild."
+                            )
+                        ))
 
         typeDef.Methods.AsList()
         |> List.iter (fun methodDef ->

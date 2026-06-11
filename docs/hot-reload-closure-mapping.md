@@ -561,6 +561,25 @@ replaced by typed resumable-code evidence:
   MethodBody updates; structural CE changes keep failing closed at emission via the
   synthesized-type-mapping guard (precise `UnsupportedEdit`, see ground truth above).
 
+#### Emission backstops (D2, `IlxDeltaEmitter.collectTypeMappings`)
+
+Classification runs on typed trees; the delta emitter independently guards the lowered
+artifacts (defense in depth, and the only guard in skew scenarios such as a disk-started
+session whose on-disk binary diverges from the baseline source):
+
+- **Struct layout gate**: a fresh instance field on an EXISTING struct raises a precise
+  `UnsupportedEdit` BEFORE the compiler-generated-name skip (which previously swallowed
+  it). For compiler-generated structs the message names the state machine and the
+  changed resume-point/hoisted layout — this was the exact hole behind the pre-Phase-D
+  task added-await runtime crash.
+- **Injective synthesized-type mapping**: the new→baseline type-name mapping must be
+  1:1; two fresh closures alias-matching one baseline class (legacy `-N` numbering
+  shift after a structural async CE change) fail closed instead of patching the wrong
+  rows.
+- **Legacy closure fallthrough**: a non-generation-suffixed `@hotreload` type with no
+  baseline counterpart raises a precise "closure chain cannot be aligned" message
+  instead of falling through to garbage baseline token lookups.
+
 ### Rude-edit surface after Phase C/D (parity with C#)
 
 Allowed: adding/removing/reordering lambdas; editing lambda bodies; editing bodies inside
