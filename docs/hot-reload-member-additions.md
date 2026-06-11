@@ -696,7 +696,10 @@ attribute state (`Seq.exactlyOne` pins the absence of duplicated rows);
 template tests pin the in-place row id and the zeroed columns; negative
 tests pin the ChangeCustomAttributes gate and the Property-parented
 fail-closed path. Legacy baselines without byte-derived CA snapshots keep
-the historic append-only behavior.
+the historic append-only behavior. Consolidation: a two-generation chain
+(gen 1 APPENDS the attribute row, gen 2 UPDATES the chained row in place —
+`exactlyOne` would catch a duplicate append) and a disk-started session
+(the CA row snapshot reconstructed from the on-disk dll) both apply.
 
 ### Parameter metadata updates (sub-slice 3)
 
@@ -786,7 +789,8 @@ Insert edit.
 - Template test pins: TypeDef Default entry precedes the AddMethod pairs,
   three AddMethod pairs, InterfaceImpl + MethodImpl Default entries and
   EncMap adds. Negative tests pin the NewTypeDefinition gate and the
-  interface-addition fail-closed message.
+  interface-addition fail-closed message. A disk-started session (dotnet-watch
+  topology) applies the added-class-with-interface scenario.
 
 ### Honest scoping (stays rude / fail-closed)
 

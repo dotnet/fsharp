@@ -680,3 +680,82 @@ module Library =
             baseline
             updated
             [ "Property or Event row" ]
+
+    // -----------------------------------------------------------------------------
+    // Consolidation: multi-generation chaining and disk-started sessions
+    // -----------------------------------------------------------------------------
+
+    [<Fact>]
+    let ``Attribute add then change chains across generations`` () =
+        // Generation 1 APPENDS the CA row (attr_add template); generation 2 must UPDATE
+        // the generation-1 row chained into the baseline CustomAttributeRows map —
+        // appending again would surface two attributes through reflection.
+        let gen1 =
+            """
+namespace Sample
+
+module Library =
+    [<System.Obsolete("a")>]
+    let existing (x: int) = x + 1
+"""
+
+        let gen2 = gen1.Replace("\"a\"", "\"b\"")
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "attr-add-then-change"
+            moduleBaseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Empty(existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)))
+            [ gen1,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+
+                  let obsolete =
+                      existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)
+                      |> Seq.cast<ObsoleteAttribute>
+                      |> Seq.exactlyOne
+
+                  Assert.Equal("a", obsolete.Message))
+              gen2,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+
+                  let obsolete =
+                      existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)
+                      |> Seq.cast<ObsoleteAttribute>
+                      |> Seq.exactlyOne
+
+                  Assert.Equal("b", obsolete.Message)) ]
+
+    [<Fact>]
+    let ``Disk-started session applies an attribute change on an existing method`` () =
+        // dotnet-watch topology: the baseline (including the CustomAttribute row
+        // snapshot driving in-place updates) is reconstructed from the on-disk dll +
+        // pdb only.
+        let updated = attributedBaseline.Replace("\"a\"", "\"b\"")
+
+        applyGenerationsAndVerifyCore
+            true
+            fullCapabilities
+            "disk-started-attr-change"
+            attributedBaseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.NotEmpty(existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)))
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+
+                  let obsolete =
+                      existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)
+                      |> Seq.cast<ObsoleteAttribute>
+                      |> Seq.exactlyOne
+
+                  Assert.Equal("b", obsolete.Message)) ]

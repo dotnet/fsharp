@@ -48,7 +48,8 @@ module NewTypeDefinitionTests =
           "GenericAddMethodToExistingType"
           "GenericAddFieldToExistingType" ]
 
-    let private applyGenerationsAndVerify
+    let private applyGenerationsAndVerifyCore
+        (diskStartedSession: bool)
         (capabilities: string list)
         (testLabel: string)
         (baselineSource: string)
@@ -119,6 +120,16 @@ module NewTypeDefinitionTests =
 
                 compileOnce "baseline" projectOptions
 
+                if diskStartedSession then
+                    // Simulate the process boundary (dotnet-watch topology): drop ALL
+                    // in-process session state so the session is reconstructed from the
+                    // on-disk dll + pdb only.
+                    FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                    match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
+                    | ValueSome _ -> failwithf "[%s] expected no in-process session after the reset." testLabel
+                    | ValueNone -> ()
+
                 match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
                 | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
                 | Ok () -> ()
@@ -155,6 +166,9 @@ module NewTypeDefinitionTests =
                 try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
+
+    let private applyGenerationsAndVerify capabilities testLabel baselineSource verifyBaseline generations =
+        applyGenerationsAndVerifyCore false capabilities testLabel baselineSource verifyBaseline generations
 
     let private emitDeltaAndHandleResult
         (capabilities: string list)
@@ -483,6 +497,31 @@ module Library =
                 Assert.Contains(0x02, encMapTables)
                 Assert.Contains(0x09, encMapTables)
                 Assert.Contains(0x19, encMapTables))
+
+    [<Fact>]
+    let ``Disk-started session applies an added class with interface`` () =
+        // dotnet-watch topology: the session is reconstructed from the on-disk dll +
+        // pdb only, and the new-type addition (TypeDef + InterfaceImpl + MethodImpl
+        // rows) still applies.
+        applyGenerationsAndVerifyCore
+            true
+            fullCapabilities
+            "disk-started-added-class"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ classAdded,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(52, compute.Invoke(null, [| box 41 |]) :?> int)
+
+                  let helperType = assembly.GetType("Sample.Helper", throwOnError = true)
+                  let helper = Activator.CreateInstance(helperType, box 5)
+                  Assert.Equal(7, helperType.GetMethod("Boost").Invoke(helper, [| box 2 |]) :?> int)
+                  Assert.True(typeof<IDisposable>.IsAssignableFrom helperType)) ]
 
     // -----------------------------------------------------------------------------
     // Negative tests
