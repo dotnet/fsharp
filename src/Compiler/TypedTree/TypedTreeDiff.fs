@@ -460,14 +460,19 @@ let private tryGetMethodTyparOrdinalsAndGenericArity (g: TcGlobals) (var: Val) =
             |> Map.ofList
 
         // Split method typars using the compiled-form enclosing count (same partition used by IlxGen).
-        let methodTypars =
+        let methodTypars, enclosingTypars =
             if numEnclosingTypars <= tps.Length then
-                tps |> List.skip numEnclosingTypars
+                tps |> List.skip numEnclosingTypars, tps |> List.truncate numEnclosingTypars
             else
-                []
+                [], tps
 
         let methodGenericArity = methodTypars |> List.filter (fun typar -> not typar.IsErased) |> List.length
-        Some(typarOrdinals, methodGenericArity)
+
+        // Non-erased enclosing typars: > 0 when the member is declared in a generic type
+        // (in IL terms its signatures may reference VAR elements). Measure-only generic
+        // enclosing types erase to non-generic IL and do not count.
+        let enclosingGenericArity = enclosingTypars |> List.filter (fun typar -> not typar.IsErased) |> List.length
+        Some(typarOrdinals, methodGenericArity, enclosingGenericArity)
 
 let private tryGetParameterTypeIdentities (g: TcGlobals) (typarOrdinals: Map<Stamp, int>) (var: Val) =
     let parameterTypes =
@@ -1398,6 +1403,12 @@ type private BindingSnapshot =
       LambdaOccurrenceData: LambdaOccurrenceExtraction
       IsSynthesized: bool
       ContainingEntity: string option
+      /// True when editing this member touches generic IL: the compiled method has its own
+      /// generic parameters (MVAR) or is declared in a generic type (VAR). Mirrors Roslyn's
+      /// InGenericContext: such updates require the GenericUpdateMethod runtime capability,
+      /// and such additions additionally require GenericAddMethodToExistingType /
+      /// GenericAddFieldToExistingType.
+      InGenericContext: bool
       AdditionInfo: MethodAdditionInfo }
 
 /// Structured digest of a single entity field (Phase B2): staticness drives the runtime
@@ -1419,6 +1430,10 @@ type private EntitySnapshot =
       /// True only for TFSharpClass representations: the CLR can append fields to classes
       /// (AddInstanceFieldToExistingType); struct/record/union layouts stay immutable.
       IsFSharpClass: bool
+      /// True when the entity compiles to a generic IL type (non-erased typars). Field
+      /// additions then also require GenericAddFieldToExistingType (Roslyn parity:
+      /// GetRequiredAddFieldCapabilities ORs it in when InGenericContext).
+      IsGeneric: bool
       /// IL-compiled full name, used to address the entity against baseline TypeDef tokens
       /// when a field addition is emitted as a TypeDefinition edit.
       CompiledFullName: string option
@@ -1569,8 +1584,21 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
                 info.TotalArgCount)
 
     let methodTypeInfo = tryGetMethodTyparOrdinalsAndGenericArity g var
-    let typarOrdinals = methodTypeInfo |> Option.map fst |> Option.defaultValue Map.empty
-    let genericArity = methodTypeInfo |> Option.map snd
+
+    let typarOrdinals =
+        methodTypeInfo
+        |> Option.map (fun (ordinals, _, _) -> ordinals)
+        |> Option.defaultValue Map.empty
+
+    let genericArity = methodTypeInfo |> Option.map (fun (_, arity, _) -> arity)
+
+    // Roslyn InGenericContext parity: the member itself is generic, or it is declared in
+    // a generic type. When the compiled-form split is unavailable, fall back to the
+    // declared typars (conservative: erased-only typars do not count).
+    let inGenericContext =
+        match methodTypeInfo with
+        | Some(_, methodArity, enclosingArity) -> methodArity > 0 || enclosingArity > 0
+        | None -> var.Typars |> List.exists (fun typar -> not typar.IsErased)
     let parameterTypeIdentities = tryGetParameterTypeIdentities g typarOrdinals var
     let returnTypeIdentity = tryGetReturnTypeIdentity g typarOrdinals var
 
@@ -1641,6 +1669,7 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
       LambdaOccurrenceData = lambdaOccurrenceData
       IsSynthesized = var.IsCompilerGenerated
       ContainingEntity = containingEntity
+      InGenericContext = inGenericContext
       AdditionInfo = additionInfo }: BindingSnapshot
 
 and private snapshotTycon denv path (tycon: Tycon) =
@@ -1734,6 +1763,7 @@ and private snapshotTycon denv path (tycon: Tycon) =
       NonFieldRepresentationText = nonFieldText
       Fields = fields
       IsFSharpClass = isFSharpClass
+      IsGeneric = tycon.TyparsNoRange |> List.exists (fun typar -> not typar.IsErased)
       CompiledFullName = compiledFullName
       IsSynthesized = false }: EntitySnapshot
 
@@ -1992,11 +2022,32 @@ let private compareBindings
                             baselineBinding.BodyHash
                             updatedBinding.BodyHash
 
-                    handleEdit
-                        baselineBinding
-                        SemanticEditKind.MethodBody
-                        (Some baselineBinding.BodyHash)
-                        (Some updatedBinding.BodyHash)
+                    // Updating within a generic context (the method is generic, or it is a
+                    // member of a generic type) requires the GenericUpdateMethod runtime
+                    // capability (Roslyn parity: AbstractEditAndContinueAnalyzer reports
+                    // RudeEditKind.UpdatingGenericNotSupportedByRuntime when
+                    // InGenericContext(oldSymbol) and the capability is not granted).
+                    let requiredGenericCapability = EditAndContinueCapability.GenericUpdateMethod
+
+                    if
+                        (baselineBinding.InGenericContext || updatedBinding.InGenericContext)
+                        && not (capabilities.Supports requiredGenericCapability)
+                    then
+                        rude.Add(
+                            { Symbol = Some baselineBinding.Symbol
+                              Kind = RudeEditKind.NotSupportedByRuntime
+                              Message =
+                                FSComp.SR.hotReloadGenericUpdateNotSupportedByRuntime (
+                                    baselineBinding.Symbol.QualifiedName,
+                                    requiredGenericCapability.Name
+                                ) }
+                        )
+                    else
+                        handleEdit
+                            baselineBinding
+                            SemanticEditKind.MethodBody
+                            (Some baselineBinding.BodyHash)
+                            (Some updatedBinding.BodyHash)
 
     let addRemovedDeclarationRudeEdit (baselineBinding: BindingSnapshot) =
         match tryClassifySynthesizedLoweredShapeChurn baselineBinding with
@@ -2034,17 +2085,27 @@ let private compareBindings
         | None ->
             let info = updatedBinding.AdditionInfo
 
-            // Module-level values lower to a static field on the module type plus accessor
-            // methods (get_/set_), with initialization appended to the startup-code class
-            // constructor. Applying one therefore needs BOTH the static-field and the method
-            // runtime capabilities (Roslyn parity: a C# static field with initializer needs
-            // AddStaticFieldToExistingType, and our accessors additionally need
-            // AddMethodToExistingType).
-            let addModuleValueInsertOrRude () =
-                let requiredCapabilities =
-                    [ capabilityForAddition AdditionKind.StaticField
-                      capabilityForAddition AdditionKind.Method ]
+            // Additions in a generic context (the added member is generic, or its declaring
+            // type is generic) additionally require the generic-aware runtime capabilities
+            // (Roslyn parity: GetRequiredAddMethodCapabilities /
+            // GetRequiredAddFieldCapabilities OR in GenericAddMethodToExistingType /
+            // GenericAddFieldToExistingType when InGenericContext).
+            let genericMethodAdditionCapabilities =
+                if updatedBinding.InGenericContext then
+                    [ EditAndContinueCapability.GenericAddMethodToExistingType ]
+                else
+                    []
 
+            let genericFieldAdditionCapabilities =
+                if updatedBinding.InGenericContext then
+                    [ EditAndContinueCapability.GenericAddFieldToExistingType ]
+                else
+                    []
+
+            // Single insertion seam: emit the Insert edit when every required capability is
+            // granted, otherwise report RudeEditKind.NotSupportedByRuntime naming the first
+            // missing capability.
+            let insertOrRude (requiredCapabilities: EditAndContinueCapability list) =
                 match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
                 | None -> handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
                 | Some missing ->
@@ -2058,6 +2119,21 @@ let private compareBindings
                             ) }
                     )
 
+            // Module-level values lower to a static field on the module type plus accessor
+            // methods (get_/set_), with initialization appended to the startup-code class
+            // constructor. Applying one therefore needs BOTH the static-field and the method
+            // runtime capabilities (Roslyn parity: a C# static field with initializer needs
+            // AddStaticFieldToExistingType, and our accessors additionally need
+            // AddMethodToExistingType). Generic module values (type functions) lower to
+            // generic methods, so the generic addition capabilities join the requirement.
+            let addModuleValueInsertOrRude () =
+                insertOrRude (
+                    [ capabilityForAddition AdditionKind.StaticField
+                      capabilityForAddition AdditionKind.Method ]
+                    @ genericFieldAdditionCapabilities
+                    @ genericMethodAdditionCapabilities
+                )
+
             // Check restrictions following Roslyn patterns
             if info.IsField then
                 if info.IsModuleBinding then
@@ -2070,20 +2146,10 @@ let private compareBindings
                     // here is gated on the same runtime capability. Struct field additions
                     // stay rude via the entity-level TypeLayoutChange (runtime restriction,
                     // identical for C#).
-                    let requiredCapability = capabilityForAddition AdditionKind.InstanceField
-
-                    if capabilities.Supports requiredCapability then
-                        handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
-                    else
-                        rude.Add(
-                            { Symbol = Some updatedBinding.Symbol
-                              Kind = RudeEditKind.NotSupportedByRuntime
-                              Message =
-                                FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
-                                    updatedBinding.Symbol.QualifiedName,
-                                    requiredCapability.Name
-                                ) }
-                        )
+                    insertOrRude (
+                        capabilityForAddition AdditionKind.InstanceField
+                        :: genericFieldAdditionCapabilities
+                    )
             elif info.IsExplicitInterfaceImplementation then
                 rude.Add(
                     { Symbol = Some updatedBinding.Symbol
@@ -2123,40 +2189,15 @@ let private compareBindings
                 // capabilities the runtime negotiated at session start (Roslyn parity:
                 // AbstractEditAndContinueAnalyzer reports RudeEditKind.NotSupportedByRuntime
                 // when an otherwise-valid edit exceeds the runtime's capabilities).
-                let requiredCapability = capabilityForAddition AdditionKind.Method
-
-                if capabilities.Supports requiredCapability then
-                    // Method can be added - emit as Insert edit
-                    handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
-                else
-                    rude.Add(
-                        { Symbol = Some updatedBinding.Symbol
-                          Kind = RudeEditKind.NotSupportedByRuntime
-                          Message =
-                            FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
-                                updatedBinding.Symbol.QualifiedName,
-                                requiredCapability.Name
-                            ) }
-                    )
+                insertOrRude (capabilityForAddition AdditionKind.Method :: genericMethodAdditionCapabilities)
             elif info.IsModuleBinding then
                 match updatedBinding.Symbol.TotalArgCount with
                 | Some argCount when argCount > 0 ->
                     // Module-level functions lower to plain static methods on the module type —
-                    // the same edit shape as adding a type member, gated the same way.
-                    let requiredCapability = capabilityForAddition AdditionKind.Method
-
-                    if capabilities.Supports requiredCapability then
-                        handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
-                    else
-                        rude.Add(
-                            { Symbol = Some updatedBinding.Symbol
-                              Kind = RudeEditKind.NotSupportedByRuntime
-                              Message =
-                                FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
-                                    updatedBinding.Symbol.QualifiedName,
-                                    requiredCapability.Name
-                                ) }
-                        )
+                    // the same edit shape as adding a type member, gated the same way (generic
+                    // functions, including auto-generalized ones, also need the generic
+                    // addition capability).
+                    insertOrRude (capabilityForAddition AdditionKind.Method :: genericMethodAdditionCapabilities)
                 | _ ->
                     // Immutable module-level value: static field (+ getter) initialized from the
                     // startup-code class constructor — same capability pair as the mutable case.
@@ -2250,11 +2291,17 @@ let private compareEntities
                     let requiredCapabilities =
                         addedFields
                         |> Map.toList
-                        |> List.map (fun (_, digest) ->
-                            if digest.IsStatic then
-                                capabilityForAddition AdditionKind.StaticField
-                            else
-                                capabilityForAddition AdditionKind.InstanceField)
+                        |> List.collect (fun (_, digest) ->
+                            // Adding a field to a GENERIC type also requires the
+                            // generic-aware runtime capability (Roslyn parity:
+                            // GetRequiredAddFieldCapabilities ORs in
+                            // GenericAddFieldToExistingType when InGenericContext).
+                            [ if digest.IsStatic then
+                                  capabilityForAddition AdditionKind.StaticField
+                              else
+                                  capabilityForAddition AdditionKind.InstanceField
+                              if updatedEntity.IsGeneric then
+                                  EditAndContinueCapability.GenericAddFieldToExistingType ])
                         |> List.distinct
 
                     match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with

@@ -797,6 +797,11 @@
         <target state="new">Adding '{0}' requires the runtime capability '{1}', which the current runtime does not support.</target>
         <note />
       </trans-unit>
+      <trans-unit id="hotReloadGenericUpdateNotSupportedByRuntime">
+        <source>Updating '{0}' requires the runtime capability '{1}' because the member is generic or declared in a generic type, which the current runtime does not support.</source>
+        <target state="new">Updating '{0}' requires the runtime capability '{1}' because the member is generic or declared in a generic type, which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ifExpressionTuple">
         <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">'if' 식은 컨텍스트 유형 요구 사항을 충족하기 위해 형식이\n    {1}    \n이고 길이가 {0}인 튜플을 반환해야 합니다. 해당 식은 현재 형식이     {3}이고 길이가\n    {2}인 튜플을 반환합니다.    \n</target>

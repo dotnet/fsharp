@@ -1852,3 +1852,215 @@ type MyClass() =
         Assert.Contains(
             result.SemanticEdits,
             fun e -> e.Kind = SemanticEditKind.TypeDefinition && e.Symbol.LogicalName = "MyClass")
+
+    // =========================================================================
+    // Generic edit gating (Phase E)
+    // Roslyn parity (AbstractEditAndContinueAnalyzer): updating a member that is
+    // generic or declared in a generic type requires GenericUpdateMethod
+    // (RudeEditKind.UpdatingGenericNotSupportedByRuntime); additions in a generic
+    // context additionally require GenericAddMethodToExistingType /
+    // GenericAddFieldToExistingType.
+    // =========================================================================
+
+    [<Fact>]
+    let ``generic function body edit without GenericUpdateMethod produces NotSupportedByRuntime`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = "module Library\nlet identity<'T> (x: 'T) = x\n"
+        let updated_source = "module Library\nlet identity<'T> (x: 'T) = let y = x in y\n"
+
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // Session default (BaselineOnly): the runtime did not advertise GenericUpdateMethod.
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("GenericUpdateMethod", rudeEdit.Message)
+
+    [<Fact>]
+    let ``generic function body edit with GenericUpdateMethod produces method body edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = "module Library\nlet identity<'T> (x: 'T) = x\n"
+        let updated_source = "module Library\nlet identity<'T> (x: 'T) = let y = x in y\n"
+
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let capabilities = EditAndContinueCapabilities.Parse [ "GenericUpdateMethod" ]
+        let result = harness.DiffWith capabilities baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits)
+        Assert.Equal(SemanticEditKind.MethodBody, edit.Kind)
+
+    [<Fact>]
+    let ``auto-generalized function body edit without GenericUpdateMethod produces NotSupportedByRuntime`` () =
+        use harness = new DiffTestHarness()
+        // No explicit typars: automatic generalization still compiles a generic method.
+        let baseline_source = "module Library\nlet pair x y = (x, y)\n"
+        let updated_source = "module Library\nlet pair x y = let t = (x, y) in t\n"
+
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Contains(
+            result.RudeEdits,
+            fun rude -> rude.Kind = RudeEditKind.NotSupportedByRuntime && rude.Message.Contains "GenericUpdateMethod"
+        )
+
+    [<Fact>]
+    let ``generic class member body edit without GenericUpdateMethod produces NotSupportedByRuntime`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type Container<'T>(value: 'T) =
+    member _.Describe() = "Hello " + value.ToString()
+"""
+        let updated_source = """
+module Library
+type Container<'T>(value: 'T) =
+    member _.Describe() = "Welcome " + value.ToString()
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("GenericUpdateMethod", rudeEdit.Message)
+
+    [<Fact>]
+    let ``generic class member body edit with GenericUpdateMethod produces method body edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type Container<'T>(value: 'T) =
+    member _.Describe() = "Hello " + value.ToString()
+"""
+        let updated_source = """
+module Library
+type Container<'T>(value: 'T) =
+    member _.Describe() = "Welcome " + value.ToString()
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let capabilities = EditAndContinueCapabilities.Parse [ "GenericUpdateMethod" ]
+        let result = harness.DiffWith capabilities baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits)
+        Assert.Equal(SemanticEditKind.MethodBody, edit.Kind)
+
+    [<Fact>]
+    let ``non-generic body edit needs no GenericUpdateMethod capability`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = "module Library\nlet value () = 1\n"
+        let updated_source = "module Library\nlet value () = 2\n"
+
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // BaselineOnly still applies plain method-body edits of non-generic members.
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits)
+        Assert.Equal(SemanticEditKind.MethodBody, edit.Kind)
+
+    [<Fact>]
+    let ``adding generic function without GenericAddMethodToExistingType produces NotSupportedByRuntime`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = "module Library\nlet value () = 1\n"
+        let updated_source = "module Library\nlet value () = 1\nlet pair x y = (x, y)\n"
+
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // AddMethodToExistingType alone is not enough for a generic method.
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddMethodToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("GenericAddMethodToExistingType", rudeEdit.Message)
+
+    [<Fact>]
+    let ``adding method to generic class without GenericAddMethodToExistingType produces NotSupportedByRuntime`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type Container<'T>(value: 'T) =
+    member _.Get() = value
+"""
+        let updated_source = """
+module Library
+type Container<'T>(value: 'T) =
+    member _.Get() = value
+    member _.GetAgain() = value
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddMethodToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("GenericAddMethodToExistingType", rudeEdit.Message)
+
+    [<Fact>]
+    let ``adding field to generic class without GenericAddFieldToExistingType produces NotSupportedByRuntime`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type Container<'T>(value: 'T) =
+    member _.Get() = value
+"""
+        let updated_source = """
+module Library
+type Container<'T>(value: 'T) =
+    [<DefaultValue>] val mutable Extra: int
+    member _.Get() = value
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let capabilities =
+            EditAndContinueCapabilities.Parse [ "AddInstanceFieldToExistingType"; "GenericUpdateMethod" ]
+
+        let result = harness.DiffWith capabilities baseline updated
+
+        Assert.Contains(
+            result.RudeEdits,
+            fun rude ->
+                rude.Kind = RudeEditKind.NotSupportedByRuntime
+                && rude.Message.Contains "GenericAddFieldToExistingType"
+        )

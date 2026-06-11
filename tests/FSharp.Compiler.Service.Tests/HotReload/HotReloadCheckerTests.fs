@@ -1289,7 +1289,9 @@ type Calculator<'T>() =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        // Body-editing a member of a generic type requires the GenericUpdateMethod
+        // runtime capability (Phase E gating, Roslyn parity).
+        match checker.StartHotReloadSession(projectOptions, capabilities = [ "GenericUpdateMethod" ]) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1345,7 +1347,9 @@ type Calculator() =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        // Body-editing a generic method requires the GenericUpdateMethod runtime
+        // capability (Phase E gating, Roslyn parity).
+        match checker.StartHotReloadSession(projectOptions, capabilities = [ "GenericUpdateMethod" ]) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
