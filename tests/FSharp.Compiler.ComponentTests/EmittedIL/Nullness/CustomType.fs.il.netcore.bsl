@@ -38,10 +38,10 @@
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> dict
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 01 02 02 00 00 ) 
-    .field assembly int32 JustSomeInt@
-    .field assembly string NonNullable@
     .field assembly string Nullable@
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .field assembly string NonNullable@
+    .field assembly int32 JustSomeInt@
     .field static assembly int32 init@6
     .method public specialname rtspecialname instance void  .ctor(string x, string y) cil managed
     {

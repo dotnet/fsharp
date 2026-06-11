@@ -48,8 +48,8 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly int32 x
-    .field assembly valuetype [runtime]System.DateTime s
     .field static assembly int32 init@4
+    .field assembly valuetype [runtime]System.DateTime s
     .method public hidebysig virtual final instance int32  CompareTo(valuetype assembly/C obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
