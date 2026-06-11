@@ -397,17 +397,17 @@
 
   } 
 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>> todo1@16
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>> computation@25
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>> 'computation@44-1'
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> matchValue@25
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>> computation@25
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>> todo2@35
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> 'matchValue@44-1'
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>> 'computation@44-1'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>> todo1@16
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>> todo2@35
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpResult`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>> get_todo1() cil managed
   {
