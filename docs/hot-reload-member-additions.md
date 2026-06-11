@@ -774,17 +774,22 @@ MethodDef update of the generation-1 row, no type/field/interface rows.
 
 `compareEntities` (TypedTreeDiff): an ADDED entity gates on
 `NewTypeDefinition` (Roslyn parity; previously always `DeclarationAdded`
-rude). Allowed representations: **class, record, union, struct**
-(`EntitySnapshot.SupportsAddition`); interfaces (abstract slots have no IL
-bodies), enums (values need Constant rows the writer cannot emit), delegates
-and exotic representations stay `DeclarationAdded` rude with a precise
-message (surfaced through FSHRDL004, whose diagnostic now appends the diff
-detail). The allowed addition becomes a `SemanticEditKind.Insert` edit whose
-symbol path mirrors the IL name; the new type's member bindings (including
-ctors, explicit interface implementations and the SYNTHESIZED record/union
-members that would otherwise hit the member-addition or lowered-shape gates)
-are SKIPPED by the binding diff — they ride along with the single entity
-Insert edit.
+rude). Allowed representations: **class, record, union, struct, enum,
+interface, delegate, module** (`EntitySnapshot.SupportsAddition`; enums,
+interfaces, delegates and modules joined in the post-Phase-F slices below;
+units of measure classify as added classes — their TypeDef carries
+MeasureAttribute and their uses erase). Type abbreviations and exotic
+representations stay
+`DeclarationAdded` rude with a precise message (surfaced through FSHRDL004,
+whose diagnostic now appends the diff detail). The allowed addition becomes a
+`SemanticEditKind.Insert` edit whose symbol path mirrors the IL name; the new
+type's member bindings (including ctors, explicit interface implementations
+and the SYNTHESIZED record/union members that would otherwise hit the
+member-addition or lowered-shape gates) are SKIPPED by the binding diff —
+they ride along with the single entity Insert edit. (Exception: MODULE
+bindings carry `ContainingEntity = None` and keep flowing through the
+long-standing module-function/module-value addition classification — see
+"Added modules" below.)
 
 ### Emission
 
@@ -808,7 +813,9 @@ Insert edit.
   remap through the MethodDef/MemberRef remappers; sorted by Class.
 - PropertyMap/EventMap rows of added types parent the NEW delta TypeDef row
   (previously baseline-only lookup).
-- Added methods without IL bodies (abstract/extern) fail closed precisely.
+- Added methods without IL bodies originally failed closed; abstract and
+  runtime-implemented members are now supported (see "Added interfaces and
+  delegates" below) — only extern/pinvoke stays fail-closed.
 
 ### Runtime evidence (`NewTypeDefinitionTests`)
 
@@ -820,23 +827,122 @@ Insert edit.
   type (structural Equals validated), IComparable assignable, the using
   function reads fields.
 - Added union: case constructors, Tag/IsCircle accessors work; nested case
-  classes flow as nested-in-added types.
+  classes flow as nested-in-added types; the Tags holder's literal constants
+  decode (Constant rows, see "Added enums and Constant rows" below).
 - Template test pins: TypeDef Default entry precedes the AddMethod pairs,
   three AddMethod pairs, InterfaceImpl + MethodImpl Default entries and
   EncMap adds. Negative tests pin the NewTypeDefinition gate and the
-  interface-addition fail-closed message. A disk-started session (dotnet-watch
-  topology) applies the added-class-with-interface scenario.
+  unsupported-representation message (type abbreviations). A disk-started
+  session (dotnet-watch topology) applies the added-class-with-interface
+  scenario.
+
+## Added modules (post-Phase-F)
+
+The idiomatic F# new-type case (C# parity: adding a static class, which
+Roslyn supports). An added module lowers to a sealed abstract static class
+TypeDef; the addition spans the new TypeDef AND member additions on the
+EXISTING startup-class TypeDef in one delta.
+
+- **Classification**: module entities are snapshotted (namespaces are not —
+  they have no TypeDef) with a fixed representation digest and
+  `SupportsAddition = true`; an added module classifies as a
+  `NewTypeDefinition` Insert exactly like an added class. The entity map key
+  carries a `|module` marker because `module X` and `type X` can coexist (the
+  module compiles with a ModuleSuffix). Module BINDINGS keep flowing through
+  the long-standing module-function/module-value addition paths (they carry
+  `ContainingEntity = None`), so the value backing field and the startup
+  constructor resolve normally.
+- **Emission**: the C4 added-TypeDef machinery applies unchanged — the module
+  TypeDef row is a plain Default entry preceding its AddMethod pairs; the
+  module value's property lands as a PropertyMap-parented AddProperty pair on
+  the NEW TypeDef; the `counter@`/`init@` backing fields and the startup
+  `.cctor` land as AddField/AddMethod pairs on the BASELINE startup TypeDef.
+  `DeltaBuilder`'s startup-constructor resolution matches every symbol path
+  PREFIX (the startup class is per implementation FILE while a value inside an
+  added or nested module carries the module segments in its path).
+- **Runtime evidence** (`NewTypeDefinitionTests`): added module with a
+  function and a mutable value called from an edited method — the initializer
+  is observed because the ADDED startup constructor runs lazily on first
+  access (C# EnC semantics; had the startup class already been initialized the
+  value would read default(T)); generation 2 body-edits the added module's
+  function in place with state preserved; an added module CONTAINING a nested
+  module (NestedClass row against the new TypeDef) and a module added INSIDE
+  an existing module (NestedClass row against the baseline TypeDef) both
+  apply; disk-started session variant; template test pins the static-class
+  shape (no InterfaceImpl rows, 5 AddMethod / 2 AddField pairs, AddProperty).
+
+## Added enums and Constant rows (post-Phase-F)
+
+C# reference template ('new_enum', reference_mdv_new_enum.txt): the added
+enum's TypeDef row is a plain Default entry; `value__` + each member are
+AddField pairs; one **Constant row per literal member trails the
+generation-1 log** as a plain Default entry (EncMap add). Constant row
+columns (ECMA-335 II.22.9): Type = 1-byte ELEMENT_TYPE code (e.g. 0x08 I4,
+physically a little-endian u2 whose high byte is the zero padding), Parent =
+the new Field row through the HasConstant coded index (tag Field=0), Value =
+a blob in the DELTA blob heap.
+
+- **Writer**: `ConstantRowInfo` (TypeCode/Parent/Value) through
+  DeltaMetadataTypes/Tables/Serializer and the SRM shadow writer (SRM's
+  `AddConstant` infers the ELEMENT_TYPE from the boxed value, so the blob is
+  decoded per type code for parity). Rows are ordered by parent Field row id
+  (the HasConstant sort key) and numbered past the chained baseline Constant
+  row count.
+- **The emitter collects Constant rows for EVERY added field** whose
+  fresh-compile FieldDef carries a default value: enum members, union Tags
+  holder constants (this CLOSED a latent Phase-F gap — added unions shipped
+  their Tags literals withOUT Constant rows and the constants did not decode),
+  and `[<Literal>]` module values.
+- **Runtime evidence**: added enum consumed by an edited function
+  (Enum.Parse/GetName/GetRawConstantValue decode the Constant rows on the
+  live type); added `[<Literal>]` module value (the non-enum Constant case on
+  an EXISTING TypeDef). CoreCLR reflection enumerates an EnC-added literal
+  field TWICE (the EnC AddField path creates a FieldDesc enumerated as
+  RtFieldInfo while PopulateLiteralFields' metadata walk produces MdFieldInfo;
+  a baseline literal has no FieldDesc so the paths never overlap) and only
+  the MdFieldInfo implements GetRawConstantValue — a runtime quirk the test
+  pins, not delta corruption.
+
+## Added interfaces and delegates (post-Phase-F): bodiless methods
+
+C# reference templates ('new_interface'/'new_delegate'): Roslyn emits
+bodiless members as ordinary AddMethod pairs whose MethodDef rows carry
+**RVA 0x00000000** — the added interface's abstract slot (Abstract|Virtual)
+and the added delegate's `.ctor`/`Invoke`/`BeginInvoke`/`EndInvoke`
+(ImplAttributes 0x03 = Runtime). F# delegates emit the same four
+runtime-managed members.
+
+- The C4-era "bodiless added methods fail closed" gate now EXEMPTS added
+  methods that are abstract or runtime-implemented: no IL chunk enters the
+  delta and the MethodDef row's RVA column stays 0. Extern/pinvoke methods
+  keep failing closed precisely (they would also need ImplMap rows).
+- **Runtime evidence** (`NewTypeDefinitionTests`): an added interface
+  implemented by an added class is consumed from an edited body through
+  interface dispatch (the InterfaceImpl row's Interface coded index points at
+  the NEW delta TypeDef, the MethodImpl row's Declaration at the NEW bodiless
+  MethodDef); an added delegate is constructed inside an added module (the
+  synthesized closure class flows through the nested-in-added path), invoked
+  from the edited function, and `Delegate.CreateDelegate` over the live added
+  method dispatches through the runtime-implemented Invoke.
 
 ### Honest scoping (stays rude / fail-closed)
 
-- New MODULES (and types/values inside them) are not classified as type
-  additions (module entities are not snapshotted); their member additions
-  fail closed at emission against the missing module TypeDef.
-- Added interfaces/enums/delegates: rude with precise messages (above).
+- Type abbreviations: `DeclarationAdded` rude with the precise
+  supported-representation list (fully erased — no TypeDef). Units of measure
+  are NOT rude: a `[<Measure>] type` compiles to a sealed class TypeDef
+  (MeasureAttribute) and classifies as an ordinary added class; its uses
+  erase (runtime test pins ApplyUpdate + the live measure TypeDef).
 - Attributes ON InterfaceImpl rows (F# allows them) are not emitted.
-- DeclSecurity, ClassLayout (explicit struct layout), Constant rows
-  (literals), FieldMarshal/ImplMap (interop) have no writer support; types
-  needing them surface through the emitter's fail-closed gates.
+- ClassLayout (explicitly sized/packed added types), FieldLayout
+  (`[<FieldOffset>]`), FieldMarshal (interop marshalling) and FieldRVA
+  (static data blobs) have no writer support; the added-type/added-field
+  paths fail closed PRECISELY on each (negative test: explicit-layout struct
+  names FieldLayout). DeclSecurity likewise has no writer support.
+- Constant rows are emitted for added FIELDS only; added PARAMS with default
+  values (`[<Optional; DefaultParameterValue>]`) do not carry their Param-
+  parented Constant rows yet.
+- Extern/pinvoke added methods (bodiless but needing ImplMap): fail closed
+  precisely at the bodiless gate.
 
 ## Known gaps / later slices
 

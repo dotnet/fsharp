@@ -1478,8 +1478,9 @@ type private EntitySnapshot =
       /// when a field addition is emitted as a TypeDefinition edit.
       CompiledFullName: string option
       /// True for representations the delta writer can emit as a NEW TypeDef (classes,
-      /// records, unions, structs, enums, interfaces, delegates, modules). Type
-      /// abbreviations, units of measure, and exotic representations stay rude when
+      /// records, unions, structs, enums, interfaces, delegates, modules; measure
+      /// types classify as classes — their TypeDef carries MeasureAttribute and their
+      /// uses erase). Type abbreviations and exotic representations stay rude when
       /// added.
       SupportsAddition: bool
       /// True when the entity is an F# module (lowered to a sealed abstract static
@@ -2596,7 +2597,7 @@ let private compareEntities
                     { Symbol = Some updatedEntity.Symbol
                       Kind = RudeEditKind.DeclarationAdded
                       Message =
-                        $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: only classes, records, unions, structs, enums, interfaces, delegates, and modules can be added (type abbreviations, units of measure, and other representations require a rebuild)." }
+                        $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: only classes, records, unions, structs, enums, interfaces, delegates, and modules can be added (type abbreviations and other representations require a rebuild)." }
                 )
             elif not (capabilities.Supports EditAndContinueCapability.NewTypeDefinition) then
                 rude.Add(

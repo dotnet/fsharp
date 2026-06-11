@@ -4282,6 +4282,32 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 let fieldHandle = MetadataTokens.FieldDefinitionHandle(newToken &&& 0x00FFFFFF)
                 let fieldDef = metadataReader.GetFieldDefinition fieldHandle
 
+                // FieldLayout (explicit [<FieldOffset>]), FieldMarshal (interop
+                // marshalling) and FieldRVA (static data blobs, e.g. large array
+                // initializers) rows have no writer support; shipping the Field row
+                // without them silently corrupts layout/marshalling/data. Fail closed
+                // precisely.
+                if fieldDef.GetOffset() >= 0 then
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added field '{key.DeclaringType}::{key.Name}' declares an explicit offset (FieldLayout); hot reload deltas cannot express FieldLayout rows yet. Please rebuild."
+                        )
+                    )
+
+                if not (fieldDef.GetMarshallingDescriptor().IsNil) then
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added field '{key.DeclaringType}::{key.Name}' carries marshalling metadata (FieldMarshal); hot reload deltas cannot express FieldMarshal rows yet. Please rebuild."
+                        )
+                    )
+
+                if fieldDef.GetRelativeVirtualAddress() <> 0 then
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added field '{key.DeclaringType}::{key.Name}' maps static data (FieldRVA); hot reload deltas cannot express FieldRVA rows yet. Please rebuild."
+                        )
+                    )
+
                 let signature =
                     metadataReader.GetBlobBytes fieldDef.Signature
                     |> remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken)
@@ -4404,6 +4430,18 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
                     let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
                     let name = metadataReader.GetString freshTypeDef.Name
+
+                    // Explicit/sized layouts need a ClassLayout row (ECMA-335 II.22.8)
+                    // the writer cannot express; shipping the TypeDef without it would
+                    // corrupt the runtime layout. Fail closed precisely.
+                    let typeLayout = freshTypeDef.GetLayout()
+
+                    if not typeLayout.IsDefault then
+                        raise (
+                            HotReloadUnsupportedEditException(
+                                $"Added type '{fullName}' declares an explicit layout (ClassLayout PackingSize={typeLayout.PackingSize}, Size={typeLayout.Size}); hot reload deltas cannot express ClassLayout rows yet. Please rebuild."
+                            )
+                        )
 
                     let namespaceName =
                         if freshTypeDef.Namespace.IsNil then "" else metadataReader.GetString freshTypeDef.Namespace

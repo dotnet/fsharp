@@ -1063,6 +1063,81 @@ module Library =
             [ "NewTypeDefinition" ]
 
     [<Fact>]
+    let ``EmitHotReloadDelta rejects added enum without NewTypeDefinition`` () =
+        emitDeltaAndExpectUnsupported
+            [ "Baseline"; "AddMethodToExistingType"; "AddStaticFieldToExistingType"; "AddInstanceFieldToExistingType" ]
+            "added-enum-no-capability"
+            baseline
+            enumAdded
+            [ "NewTypeDefinition" ]
+
+    [<Fact>]
+    let ``EmitHotReloadDelta rejects added explicit-layout struct`` () =
+        // Explicit layouts need FieldLayout rows (and a ClassLayout row when sized);
+        // the writer cannot express them, so the added struct fails closed precisely
+        // at emission instead of shipping a silently corrupt layout.
+        let updated =
+            """
+namespace Sample
+
+open System.Runtime.InteropServices
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Overlay =
+    [<FieldOffset(0)>] val mutable A: int
+    [<FieldOffset(0)>] val mutable B: single
+
+module Library =
+    let compute (x: int) =
+        let mutable overlay = Overlay()
+        overlay.A <- x
+        overlay.A + 1
+"""
+
+        emitDeltaAndExpectUnsupported
+            fullCapabilities
+            "added-explicit-layout-struct"
+            baseline
+            updated
+            [ "FieldLayout" ]
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added unit of measure`` () =
+        // A [<Measure>] type compiles to a sealed class TypeDef carrying
+        // MeasureAttribute (its USES erase: float<kg> is float at runtime), so the
+        // addition classifies as an ordinary added class and the measure TypeDef rides
+        // the delta. The edited body computes through measure-typed values.
+        let updated =
+            """
+namespace Sample
+
+[<Measure>] type kg
+
+module Library =
+    let compute (x: int) =
+        let weight = float x * 1.0<kg>
+        int (weight / 1.0<kg>) + 1
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-measure"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int)
+
+                  // The measure TypeDef is present on the live assembly.
+                  let kgType = assembly.GetType("Sample.kg", throwOnError = true)
+                  Assert.True(kgType.GetCustomAttributes() |> Seq.exists (fun attr -> attr.GetType().Name = "MeasureAttribute"))) ]
+
+    [<Fact>]
     let ``EmitHotReloadDelta rejects added type abbreviation`` () =
         // Type abbreviations are fully erased (no TypeDef); the entity diff cannot
         // classify them as type additions and fails closed with the precise list of
