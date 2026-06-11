@@ -87,14 +87,22 @@ not support it, the diff reports `RudeEditKind.NotSupportedByRuntime` with the
 
 ## Phase B and beyond
 
-Field additions (`AdditionKind.InstanceField`/`StaticField` →
-`AddInstanceFieldToExistingType`/`AddStaticFieldToExistingType`) currently stay
-`RudeEditKind.FieldAdded` regardless of capabilities because Phase A does not implement
-field-row emission. Phase B flips them on by implementing emission and routing the field
-branch through `capabilityForAddition`, exactly like the method path — no new classification
-structure is needed. The same pattern applies later to `NewTypeDefinition`,
+Field additions are capability-gated as of Phase B1b/B2:
+
+- Module-level values (static backing field + accessors) require
+  `AddStaticFieldToExistingType` + `AddMethodToExistingType` (B1b).
+- Instance fields on CLASSES (`let mutable` / `[<DefaultValue>] val mutable` /
+  auto-property backing fields) require `AddInstanceFieldToExistingType`,
+  checked by the entity-level field diff in `compareEntities` (a pure field
+  addition no longer reports `TypeLayoutChange`); per-field staticness selects
+  the static or instance capability (B2).
+- STRUCT (and record/union/enum) field additions stay `TypeLayoutChange`
+  permanently — the runtime cannot re-layout value types (C# identical).
+
+The same gating pattern applies later to
 `GenericAddMethodToExistingType`/`GenericUpdateMethod` (generic-aware gating),
-`ChangeCustomAttributes` and `UpdateParameters`.
+`ChangeCustomAttributes` and `UpdateParameters`. `NewTypeDefinition` gates
+added-lambda closure classes (Phase C4).
 
 ## Roslyn references
 

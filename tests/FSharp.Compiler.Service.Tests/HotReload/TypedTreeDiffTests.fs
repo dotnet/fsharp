@@ -762,7 +762,7 @@ let newValue = 42
     // =========================================================================
 
     [<Fact>]
-    let ``adding auto-property to class produces rude edit due to backing field`` () =
+    let ``adding auto-property to class with capabilities produces accessor inserts and field edit`` () =
         use harness = new DiffTestHarness()
         let baseline_source = """
 module Library
@@ -782,11 +782,55 @@ type MyClass() =
 
         let result = harness.DiffWith allCapabilities baseline updated
 
-        // Adding an auto-property creates a backing field, which changes type layout
-        // This is correctly detected as a rude edit (TypeLayoutChange)
-        Assert.NotEmpty(result.RudeEdits)
-        let layoutChange = result.RudeEdits |> List.exists (fun e -> e.Kind = RudeEditKind.TypeLayoutChange)
-        Assert.True(layoutChange, "Expected TypeLayoutChange rude edit for auto-property addition")
+        // An auto-property lowers to get_/set_ accessor methods plus a backing instance
+        // field initialized in the primary constructor. With the method and instance-field
+        // capabilities the addition is fully supported: accessor Insert edits, a
+        // constructor body update, and a TypeDefinition edit for the grown field table.
+        Assert.Empty(result.RudeEdits)
+
+        let insertNames =
+            result.SemanticEdits
+            |> List.filter (fun e -> e.Kind = SemanticEditKind.Insert)
+            |> List.map (fun e -> e.Symbol.LogicalName)
+            |> List.sort
+
+        Assert.Equal<string list>([ "get_NewProp"; "set_NewProp" ], insertNames)
+
+        Assert.Contains(
+            result.SemanticEdits,
+            fun e -> e.Kind = SemanticEditKind.TypeDefinition && e.Symbol.LogicalName = "MyClass")
+
+        Assert.Contains(
+            result.SemanticEdits,
+            fun e -> e.Kind = SemanticEditKind.MethodBody && e.Symbol.LogicalName = ".ctor")
+
+    [<Fact>]
+    let ``adding auto-property without instance field capability names the missing capability`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type MyClass() =
+    member val ExistingProp = 1 with get, set
+"""
+        let updated_source = """
+module Library
+type MyClass() =
+    member val ExistingProp = 1 with get, set
+    member val NewProp = 42 with get, set
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // Accessor methods are allowed, but the backing field needs the instance-field
+        // capability: the entity-level field diff must name it.
+        let methodOnly = EditAndContinueCapabilities.Parse [ "Baseline"; "AddMethodToExistingType" ]
+        let result = harness.DiffWith methodOnly baseline updated
+
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("AddInstanceFieldToExistingType", rudeEdit.Message)
 
     [<Fact>]
     let ``adding readonly property to class produces semantic edit`` () =
@@ -819,7 +863,7 @@ type MyClass() =
     // =========================================================================
 
     [<Fact>]
-    let ``adding event with backing field produces rude edit due to type layout change`` () =
+    let ``adding event with backing field at baseline capabilities names missing capabilities`` () =
         use harness = new DiffTestHarness()
         let baseline_source = """
 module Library
@@ -849,11 +893,18 @@ type MyClass() =
 
         let result = harness.Diff baseline updated
 
-        // Adding an event with a backing field (let newEvent = ...) adds a field to the class,
-        // which changes the type layout. This is correctly detected as a TypeLayoutChange rude edit.
+        // Adding an event with a backing field (let newEvent = ...) needs both the method
+        // capability (add_/remove_ accessors) and the instance-field capability (the
+        // backing field on the class). At baseline-only capabilities every part of the
+        // addition is NotSupportedByRuntime, naming the missing capabilities.
         Assert.NotEmpty(result.RudeEdits)
-        let hasLayoutChange = result.RudeEdits |> List.exists (fun e -> e.Kind = RudeEditKind.TypeLayoutChange)
-        Assert.True(hasLayoutChange, "Expected TypeLayoutChange rude edit for event backing field")
+        Assert.All(result.RudeEdits, fun e -> Assert.Equal(RudeEditKind.NotSupportedByRuntime, e.Kind))
+
+        let mentionsFieldCapability =
+            result.RudeEdits
+            |> List.exists (fun e -> e.Message.Contains("AddInstanceFieldToExistingType"))
+
+        Assert.True(mentionsFieldCapability, "Expected the backing-field addition to name AddInstanceFieldToExistingType")
 
     [<Fact>]
     let ``adding mutable module value with field and method capabilities produces insert edit`` () =
@@ -978,7 +1029,7 @@ let newFunction (x: int) = x + 1
         Assert.Contains("AddMethodToExistingType", rudeEdit.Message)
 
     [<Fact>]
-    let ``adding instance field stays rude even with all capabilities`` () =
+    let ``adding instance field to class with capability produces type definition edit`` () =
         use harness = new DiffTestHarness()
         let baseline_source = """
 module Library
@@ -996,12 +1047,107 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        // Instance-field emission is Phase B2: must stay rude regardless of capabilities so we
-        // never advertise an edit we cannot emit.
+        // Phase B2: instance fields on classes are capability-gated. A [<DefaultValue>]
+        // val mutable produces no binding/constructor change, so the addition surfaces as
+        // a single TypeDefinition edit (the emitter discovers the new Field row from the
+        // fresh compile); the symbol path mirrors the IL type name.
         let result = harness.DiffWith allCapabilities baseline updated
 
-        Assert.NotEmpty(result.RudeEdits)
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits)
+        Assert.Equal(SemanticEditKind.TypeDefinition, edit.Kind)
+        Assert.Equal("MyClass", edit.Symbol.LogicalName)
+
+    [<Fact>]
+    let ``adding instance field without capability names the missing capability`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type MyClass() =
+    member this.Existing() = 1
+"""
+        let updated_source = """
+module Library
+type MyClass() =
+    [<DefaultValue>] val mutable NewField: int
+    member this.Existing() = 1
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
         Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("AddInstanceFieldToExistingType", rudeEdit.Message)
+
+    [<Fact>]
+    let ``adding let-bound instance field to class with capability pairs constructor update`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type MyClass() =
+    member this.Existing() = 1
+"""
+        let updated_source = """
+module Library
+type MyClass() =
+    let mutable total = 41
+    member this.Existing() = 1 + total
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // A `let mutable` class field folds its initializer into the primary constructor:
+        // the diff pairs the constructor (and any member reading the field) as MethodBody
+        // updates plus the TypeDefinition edit for the grown field table.
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        Assert.Empty(result.RudeEdits)
+
+        Assert.Contains(
+            result.SemanticEdits,
+            fun e -> e.Kind = SemanticEditKind.TypeDefinition && e.Symbol.LogicalName = "MyClass")
+
+        Assert.Contains(
+            result.SemanticEdits,
+            fun e -> e.Kind = SemanticEditKind.MethodBody && e.Symbol.LogicalName = ".ctor")
+
+        Assert.Contains(
+            result.SemanticEdits,
+            fun e -> e.Kind = SemanticEditKind.MethodBody && e.Symbol.LogicalName = "Existing")
+
+    [<Fact>]
+    let ``adding field to struct stays rude even with all capabilities`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+[<Struct>]
+type MyStruct =
+    val mutable A: int
+"""
+        let updated_source = """
+module Library
+[<Struct>]
+type MyStruct =
+    val mutable A: int
+    val mutable B: int
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // Struct layouts are immutable under hot reload (runtime restriction, identical
+        // for C#): the addition stays a TypeLayoutChange regardless of capabilities.
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        Assert.Contains(result.RudeEdits, fun e -> e.Kind = RudeEditKind.TypeLayoutChange)
 
     // =========================================================================
     // Lambda occurrence model tests (Phase C1)

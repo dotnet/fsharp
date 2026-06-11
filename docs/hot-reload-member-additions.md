@@ -1,9 +1,9 @@
-# Hot reload: emitting added members (Phase B1b)
+# Hot reload: emitting added members (Phases B1b, B2, B3)
 
 This note records the delta format decisions behind emitting ADDED members
-(static fields, methods, parameters, properties, events) in F# hot reload
-deltas, the C# reference deltas they were validated against, and the runtime
-(CoreCLR) behavior that forced the EncLog shape used today.
+(static fields, instance fields, methods, parameters, properties, events) in
+F# hot reload deltas, the C# reference deltas they were validated against, and
+the runtime (CoreCLR) behavior that forced the EncLog shape used today.
 
 ## C# reference EncLog (hotreload-delta-gen)
 
@@ -117,6 +117,70 @@ the F# runtime test:
   whose startup class had no prior static state.
 - If the type was already initialized, the constructor does not re-run and
   the added field reads `default(T)`.
+
+## Instance field additions (Phase B2)
+
+### C# reference EncLog (Roslyn EmitDifference, csharp_enc_reference `members` scenario)
+
+Scenario `field_add`: `public int NewInstanceField = 42;` added to an existing
+class with an explicit constructor (edits: Insert(field) + Update(.ctor)).
+Generation-1 delta (mdv: `csharp_enc_reference/reference_mdv_field_add.txt`):
+
+```
+EnC Log:
+1: AssemblyRef  0x23000002  Default
+2: MemberRef    0x0a000006  Default      (Object::.ctor for the re-emitted ctor body)
+3: TypeRef      0x01000007  Default      (Object)
+4: TypeDef      0x02000002  AddField     <- PARENT of the added field
+5: Field        0x04000002  Default      <- the added instance Field row
+6: MethodDef    0x06000001  Default      (updated .ctor body, runs the initializer)
+
+EnC Map: TypeRef add, Field add, MethodDef 1 UPDATE, MemberRef add,
+         AssemblyRef add (token-sorted; NO entry for the AddField parent)
+```
+
+Identical `(TypeDef, AddField) + (Field, Default)` pairing as the B1b static
+case; the only structural difference from a static field add is the paired
+constructor update instead of a `.cctor` update.
+
+### F# lowering and classification
+
+- `type C() = let mutable x = 41` folds the initializer into the primary
+  constructor: the typed-tree diff pairs the `.ctor` binding (and any member
+  body reading the field) as plain MethodBody updates, and the field itself
+  surfaces only through the ENTITY representation (`fsobjmodel_rfields`).
+  Constructor pairing therefore needs no by-name resolution (unlike the B1b
+  startup `.cctor`): the ctor IS a typed-tree binding. The diff's runtime
+  return-type identity for constructors is `void` (the IL truth), not the
+  constructed type — required for `.ctor` MethodBody edits to resolve against
+  baseline method tokens.
+- `[<DefaultValue>] val mutable` produces NO binding or body change at all:
+  the entity-level field diff emits a `SemanticEditKind.TypeDefinition` edit
+  (symbol path mirrors the IL type name) so delta emission runs, and the
+  generation-1 delta is a pure Field-row append with zero method updates. The
+  metadata writer's empty-delta short-circuit keys on row payload (method
+  updates OR added type/field/property/event rows), not method updates alone.
+- Entity classification (`compareEntities`) recognizes a PURE field addition
+  (non-field representation unchanged, baseline fields preserved verbatim,
+  only new fields) on a CLASS (`TFSharpClass`) and gates it on
+  `AddInstanceFieldToExistingType` / `AddStaticFieldToExistingType` per added
+  field; a missing capability reports `RudeEditKind.NotSupportedByRuntime`
+  naming it. STRUCT (and record/union/enum) field additions remain
+  `TypeLayoutChange` permanently — the runtime cannot re-layout value types
+  (C# identical). The emitter enforces the same restriction fail-closed
+  (`typeDef.IsStructOrEnum`).
+
+### Initialization semantics (validated at runtime)
+
+C# EnC parity, asserted by the runtime tests:
+
+- Instances constructed BEFORE the update read `default(T)` for the added
+  field (their constructor never ran the new initializer); their existing
+  state is preserved across generations.
+- Instances constructed AFTER the update run the UPDATED constructor and see
+  the initializer value.
+- Multi-generation: a second added field chains through the updated baseline
+  (gen-1 field tokens resolve; only the new Field row is appended).
 
 ## New type definitions (Phase C4: added closure classes)
 
@@ -297,8 +361,6 @@ Known divergences from the C# reference (deliberate this slice):
 
 ## Known gaps / later slices
 
-- Instance field additions remain rejected (Phase B2); classification keeps
-  them rude, and the emitter fails closed with a static-fields-only message.
 - Custom attributes on added fields/properties (e.g. `DebuggerBrowsable` on
   backing fields, `CompilationMapping` on the module-value property) are not
   emitted into the delta yet; the members function without them.

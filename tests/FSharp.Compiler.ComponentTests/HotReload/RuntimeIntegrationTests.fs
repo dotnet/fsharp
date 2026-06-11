@@ -2307,3 +2307,404 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
+
+    // -----------------------------------------------------------------------------
+    // Phase B2: added instance fields on existing classes
+    // -----------------------------------------------------------------------------
+
+    let private instanceFieldBaselineSource =
+        """
+module Sample.Fields
+
+type Counter() =
+    member _.Snapshot() = -1
+"""
+
+    // Generation 1: `let mutable` field — initializer folds into the primary ctor,
+    // and Snapshot's body update reads the new field.
+    let private instanceFieldUpdatedSource =
+        """
+module Sample.Fields
+
+type Counter() =
+    let mutable total = 41
+    member _.Snapshot() = total
+"""
+
+    // Generation 2: a SECOND field; gen-1's field token must resolve from the chained
+    // baseline so only the new field row is appended.
+    let private instanceFieldSecondUpdateSource =
+        """
+module Sample.Fields
+
+type Counter() =
+    let mutable total = 41
+    let mutable extra = 7
+    member _.Snapshot() = total + extra * 1000
+"""
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added instance field`` () =
+        // Phase B2: adding `let mutable total = 41` to a class appends an instance Field
+        // row ((TypeDef, AddField) + (Field, Default), the recorded C# field_add template)
+        // paired with the primary-constructor body update that runs the initializer.
+        // Runtime semantics match C# EnC: EXISTING instances read default(T) for the new
+        // field; newly constructed instances run the updated ctor and see the initializer.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-instancefield", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "InstanceFieldLibrary.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "InstanceFieldLibrary.runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, instanceFieldBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString instanceFieldBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                let capabilities =
+                    [ "Baseline"; "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
+
+                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let counterType = assembly.GetType("Sample.Fields+Counter", throwOnError = true)
+                let snapshot (instance: obj) =
+                    counterType.GetMethod("Snapshot", BindingFlags.Public ||| BindingFlags.Instance).Invoke(instance, [||]) :?> int
+
+                // Instance constructed BEFORE the update: must keep working afterwards
+                // with the new field zeroed.
+                let preUpdateInstance = Activator.CreateInstance(counterType)
+                Assert.Equal(-1, snapshot preUpdateInstance)
+
+                let baselineFieldRowCount, baselineTypeDefRowCount =
+                    use peReader = new PEReader(File.OpenRead runtimeDllPath)
+                    let reader = peReader.GetMetadataReader()
+                    reader.GetTableRowCount(TableIndex.Field), reader.GetTableRowCount(TableIndex.TypeDef)
+
+                let applyGeneration gen (source: string) =
+                    File.WriteAllText(fsPath, source)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    let updatedOptions =
+                        { projectOptions with
+                            OtherOptions =
+                                projectOptions.OtherOptions
+                                |> Array.filter (fun opt ->
+                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                    let compileDiagnostics, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    | Ok delta ->
+                        let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                        printfn "[instancefield] Gen %d: metadata=%d IL=%d PDB=%d" gen delta.Metadata.Length delta.IL.Length pdbBytes.Length
+
+                        try
+                            MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        with :? InvalidOperationException as ex ->
+                            failwithf "Gen %d ApplyUpdate failed (delta rejected): %s" gen ex.Message
+
+                        delta
+
+                // ---------------- Generation 1 ----------------
+                let delta1 = applyGeneration 1 instanceFieldUpdatedSource
+
+                // EncLog pattern parity with the recorded C# field_add template:
+                // (TypeDef, AddField=2) immediately followed by the new Field row.
+                let encLog1 =
+                    use provider =
+                        MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> delta1.Metadata)
+
+                    provider.GetMetadataReader().GetEditAndContinueLogEntries()
+                    |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+                    |> Seq.toArray
+
+                let addFieldIndex =
+                    encLog1
+                    |> Array.tryFindIndex (fun (token, op) -> token >>> 24 = 0x02 && op = 2)
+
+                match addFieldIndex with
+                | None -> failwithf "Expected (TypeDef, AddField) pair in gen-1 EncLog; got %A" encLog1
+                | Some index ->
+                    let fieldToken, fieldOp = encLog1.[index + 1]
+                    Assert.Equal(0x04, fieldToken >>> 24)
+                    Assert.Equal(baselineFieldRowCount + 1, fieldToken &&& 0x00FFFFFF)
+                    Assert.Equal(0, fieldOp)
+
+                // No new TypeDef rows: the field lands on the existing class.
+                let newTypeDefRows =
+                    encLog1
+                    |> Array.filter (fun (token, _) ->
+                        token >>> 24 = 0x02 && (token &&& 0x00FFFFFF) > baselineTypeDefRowCount)
+
+                Assert.True(Array.isEmpty newTypeDefRows, sprintf "Expected no new TypeDef rows; got %A" encLog1)
+
+                // The pre-update instance never ran the new initializer: zeroed field (C#
+                // EnC semantics), updated body reads 0.
+                Assert.Equal(0, snapshot preUpdateInstance)
+
+                // A new instance runs the UPDATED constructor and sees the initializer.
+                let postUpdateInstance = Activator.CreateInstance(counterType)
+                Assert.Equal(41, snapshot postUpdateInstance)
+
+                // The added field is real instance state: writable via reflection.
+                let totalField = counterType.GetField("total", BindingFlags.NonPublic ||| BindingFlags.Instance)
+                Assert.True(not (isNull totalField), "Added field 'total' not found via reflection after ApplyUpdate.")
+                totalField.SetValue(postUpdateInstance, 5)
+                Assert.Equal(5, snapshot postUpdateInstance)
+                printfn "[instancefield] SUCCESS gen 1: zeroed existing instance, initialized new instance"
+
+                // ---------------- Generation 2 ----------------
+                let _delta2 = applyGeneration 2 instanceFieldSecondUpdateSource
+
+                // Gen-1 instance state survives; the gen-2 field reads default(int).
+                Assert.Equal(5, snapshot postUpdateInstance)
+
+                // A fresh instance runs the gen-2 constructor: 41 + 7 * 1000.
+                let gen2Instance = Activator.CreateInstance(counterType)
+                Assert.Equal(7041, snapshot gen2Instance)
+                printfn "[instancefield] SUCCESS gen 2: chained second instance field"
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
+    let private defaultValueFieldBaselineSource =
+        """
+module Sample.Slots
+
+type Holder() =
+    member this.Read() = -1
+"""
+
+    // Generation 1: [<DefaultValue>] val mutable — no constructor pairing needed and no
+    // method-body change at all: the delta is just the appended Field row.
+    let private defaultValueFieldUpdatedSource =
+        """
+module Sample.Slots
+
+type Holder() =
+    [<DefaultValue>] val mutable Slot: int
+    member this.Read() = -1
+"""
+
+    // Generation 2: a body update reads the field added in generation 1.
+    let private defaultValueFieldSecondUpdateSource =
+        """
+module Sample.Slots
+
+type Holder() =
+    [<DefaultValue>] val mutable Slot: int
+    member this.Read() = this.Slot
+"""
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added DefaultValue field without method updates`` () =
+        // Phase B2: a [<DefaultValue>] val mutable field needs no initializer pairing —
+        // the generation-1 delta carries ONLY the appended Field row (no method updates),
+        // exercising the TypeDefinition-edit-only path through the delta builder.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-defaultvaluefield", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "DefaultValueFieldLibrary.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "DefaultValueFieldLibrary.runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, defaultValueFieldBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString defaultValueFieldBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                let capabilities = [ "Baseline"; "AddInstanceFieldToExistingType" ]
+
+                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let holderType = assembly.GetType("Sample.Slots+Holder", throwOnError = true)
+                let read (instance: obj) =
+                    holderType.GetMethod("Read", BindingFlags.Public ||| BindingFlags.Instance).Invoke(instance, [||]) :?> int
+
+                let instance = Activator.CreateInstance(holderType)
+                Assert.Equal(-1, read instance)
+
+                let applyGeneration gen (source: string) =
+                    File.WriteAllText(fsPath, source)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    let updatedOptions =
+                        { projectOptions with
+                            OtherOptions =
+                                projectOptions.OtherOptions
+                                |> Array.filter (fun opt ->
+                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                    let compileDiagnostics, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    | Ok delta ->
+                        let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+
+                        match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DUMP_DIR") with
+                        | null | "" -> ()
+                        | dumpDir ->
+                            Directory.CreateDirectory(dumpDir) |> ignore
+                            File.Copy(runtimeDllPath, Path.Combine(dumpDir, "baseline.dll"), true)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dmeta"), delta.Metadata)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dil"), delta.IL)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dpdb"), pdbBytes)
+
+                        try
+                            MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        with :? InvalidOperationException as ex ->
+                            failwithf "Gen %d ApplyUpdate failed (delta rejected): %s" gen ex.Message
+
+                        delta
+
+                // Generation 1: field-only delta.
+                let delta1 = applyGeneration 1 defaultValueFieldUpdatedSource
+
+                let encLog1 =
+                    use provider =
+                        MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> delta1.Metadata)
+
+                    provider.GetMetadataReader().GetEditAndContinueLogEntries()
+                    |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+                    |> Seq.toArray
+
+                Assert.Contains(encLog1, fun (token, op) -> token >>> 24 = 0x02 && op = 2)
+                Assert.Contains(encLog1, fun (token, op) -> token >>> 24 = 0x04 && op = 0)
+
+                let methodUpdates = encLog1 |> Array.filter (fun (token, _) -> token >>> 24 = 0x06)
+                Assert.True(Array.isEmpty methodUpdates, sprintf "Expected a field-only delta; got %A" encLog1)
+
+                // The live instance gained the field (zeroed), readable and writable via
+                // reflection.
+                let slotField = holderType.GetField("Slot", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull slotField), "Added field 'Slot' not found via reflection after ApplyUpdate.")
+                Assert.Equal(0, slotField.GetValue(instance) :?> int)
+                slotField.SetValue(instance, 9)
+                Assert.Equal(9, slotField.GetValue(instance) :?> int)
+
+                // Generation 2: a body update reads the gen-1 field on the SAME instance.
+                applyGeneration 2 defaultValueFieldSecondUpdateSource |> ignore
+                Assert.Equal(9, read instance)
+                printfn "[defaultvaluefield] SUCCESS: field-only delta applied, state visible to gen-2 body"
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()

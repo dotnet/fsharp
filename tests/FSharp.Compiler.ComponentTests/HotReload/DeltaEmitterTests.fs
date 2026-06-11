@@ -131,8 +131,8 @@ module DeltaEmitterTests =
             (mkILExportedTypes [])
             "v4.0.30319"
 
-    // Instance-field additions remain rejected (Phase B2); static-field additions are
-    // supported as of Phase B1b and exercised by ``emitDelta emits added static fields``.
+    // Instance-field additions on classes are supported as of Phase B2 (struct layouts
+    // stay immutable); static-field additions landed in Phase B1b.
     let private createModuleWithOptionalField includeField =
         let ilg = PrimaryAssemblyILGlobals
         let methodDef = createMethod ilg "GetValue" 1
@@ -872,7 +872,11 @@ module DeltaEmitterTests =
         Assert.Empty(delta.MethodBodies)
 
     [<Fact>]
-    let ``emitDelta rejects added instance fields`` () =
+    let ``emitDelta emits added instance fields`` () =
+        // Phase B2: an instance field added to a baseline CLASS is appended to the Field
+        // table with the same (TypeDef, AddField) + (Field, Default) EncLog pairing as the
+        // B1b static path (validated against the Roslyn csharp_enc_reference field_add
+        // template; the CLR appends the field and existing instances read default(T)).
         let _, baseline = createFieldHolderBaseline false
         let updatedModule = createModuleWithOptionalField true |> TestHelpers.withDebuggableAttribute
         let request =
@@ -888,8 +892,78 @@ module DeltaEmitterTests =
                 SynthesizedNames = None
             }
 
+        let delta = emitDelta request
+
+        let parentTypeDefRowId =
+            match baseline.TypeTokens |> Map.tryFind "Sample.FieldHolder" with
+            | Some token -> token &&& 0x00FFFFFF
+            | None -> failwith "Baseline missing Sample.FieldHolder type token."
+
+        let expectedFieldRowId =
+            baseline.Metadata.TableRowCounts.[TableNames.Field.Index] + 1
+
+        let addFieldIndex =
+            delta.EncLog
+            |> Array.tryFindIndex (fun (table, rowId, op) ->
+                table = TableNames.TypeDef
+                && rowId = parentTypeDefRowId
+                && op = EditAndContinueOperation.AddField)
+
+        match addFieldIndex with
+        | None -> failwithf "Expected (TypeDef, AddField) EncLog entry; got %A" delta.EncLog
+        | Some index ->
+            let table, rowId, op = delta.EncLog.[index + 1]
+            Assert.Equal(TableNames.Field, table)
+            Assert.Equal(expectedFieldRowId, rowId)
+            Assert.Equal(EditAndContinueOperation.Default, op)
+
+        Assert.Contains((TableNames.Field, expectedFieldRowId), delta.EncMap)
+
+        match delta.UpdatedBaseline with
+        | None -> failwith "Expected an updated baseline after instance field addition."
+        | Some updatedBaseline ->
+            let containsField =
+                updatedBaseline.FieldTokens
+                |> Map.exists (fun key token ->
+                    key.DeclaringType = "Sample.FieldHolder"
+                    && key.Name = "trackedField"
+                    && token = (0x04000000 ||| expectedFieldRowId))
+
+            Assert.True(containsField, "Updated baseline missing the added instance field token.")
+
+    [<Fact>]
+    let ``emitDelta rejects added instance fields on structs`` () =
+        // Struct layouts cannot grow under hot reload (runtime restriction, identical for
+        // C#): the emitter fails closed when the declaring fresh TypeDef is a value type.
+        let _, baseline = createFieldHolderBaseline false
+
+        let updatedModule =
+            let asStruct (typeDef: ILTypeDef) =
+                if typeDef.Name = "Sample.FieldHolder" then
+                    typeDef.With(newAdditionalFlags = ILTypeDefAdditionalFlags.ValueType)
+                else
+                    typeDef
+
+            let baseModule = createModuleWithOptionalField true |> TestHelpers.withDebuggableAttribute
+            { baseModule with
+                TypeDefs = mkILTypeDefs (baseModule.TypeDefs.AsList() |> List.map asStruct) }
+
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baseline
+                UpdatedTypes = [ "Sample.FieldHolder" ]
+                UpdatedMethods = [ methodKey baseline "GetValue" ]
+                UpdatedAccessors = []
+                Module = updatedModule
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+            }
+
         let ex = Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
         Assert.Contains("Sample.FieldHolder::trackedField", ex.Message)
+        Assert.Contains("struct", ex.Message)
 
     let private createModuleWithStaticField () =
         let ilg = PrimaryAssemblyILGlobals
@@ -2047,10 +2121,21 @@ module DeltaEmitterTests =
         //
         // Note: The specific attribute resolution failures are hard to trigger in tests because
         // they require missing runtime types. This test verifies the exception pattern is used
-        // consistently by testing the field addition rejection path which uses the same pattern.
+        // consistently by testing the struct field addition rejection path (Phase B2 allows
+        // instance fields on classes; struct layouts stay immutable) which uses the same pattern.
 
         let _, baseline = createFieldHolderBaseline false
-        let updatedModule = createModuleWithOptionalField true |> TestHelpers.withDebuggableAttribute
+
+        let updatedModule =
+            let asStruct (typeDef: ILTypeDef) =
+                if typeDef.Name = "Sample.FieldHolder" then
+                    typeDef.With(newAdditionalFlags = ILTypeDefAdditionalFlags.ValueType)
+                else
+                    typeDef
+
+            let baseModule = createModuleWithOptionalField true |> TestHelpers.withDebuggableAttribute
+            { baseModule with
+                TypeDefs = mkILTypeDefs (baseModule.TypeDefs.AsList() |> List.map asStruct) }
 
         let request =
             {

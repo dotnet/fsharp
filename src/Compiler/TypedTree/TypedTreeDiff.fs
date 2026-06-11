@@ -491,15 +491,21 @@ let private tryGetParameterTypeIdentities (g: TcGlobals) (typarOrdinals: Map<Sta
         None
 
 let private tryGetReturnTypeIdentity (g: TcGlobals) (typarOrdinals: Map<Stamp, int>) (var: Val) =
-    match var.ValReprInfo with
-    | Some valReprInfo ->
-        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal var
-        let _, _, _, returnTy, _ = GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars var.Type var.Range
+    // Constructors are typed as returning the constructed type in the typed tree, but the
+    // emitted .ctor/.cctor MethodDef returns void — use the IL truth so constructor body
+    // updates resolve against baseline method tokens (Phase B2 ctor pairing).
+    if var.IsConstructor || var.IsClassConstructor then
+        Some RuntimeTypeIdentity.VoidType
+    else
+        match var.ValReprInfo with
+        | Some valReprInfo ->
+            let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal var
+            let _, _, _, returnTy, _ = GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars var.Type var.Range
 
-        match returnTy with
-        | None -> Some RuntimeTypeIdentity.VoidType
-        | Some ty -> tryTypeIdentityFromTType g typarOrdinals ty
-    | None -> None
+            match returnTy with
+            | None -> Some RuntimeTypeIdentity.VoidType
+            | Some ty -> tryTypeIdentityFromTType g typarOrdinals ty
+        | None -> None
 
 /// Generates a stable digest of type parameter constraints for change detection.
 let private constraintDigest (denv: DisplayEnv) (constraint_: TyparConstraint) =
@@ -1326,10 +1332,28 @@ type private BindingSnapshot =
       ContainingEntity: string option
       AdditionInfo: MethodAdditionInfo }
 
+/// Structured digest of a single entity field (Phase B2): staticness drives the runtime
+/// capability required to add it; the digest captures mutability and formal type.
+type private EntityFieldDigest =
+    { IsStatic: bool
+      Digest: string }
+
 type private EntitySnapshot =
     { Symbol: SymbolId
       RepresentationHash: int
       RepresentationText: string
+      /// Representation digest with the field segment removed. When this matches between
+      /// baseline and update and the baseline fields are preserved verbatim, the only
+      /// representation change is added fields (the Phase B2 capability-gated edit).
+      NonFieldRepresentationText: string
+      /// Field digests keyed by logical name (class-like representations only).
+      Fields: Map<string, EntityFieldDigest>
+      /// True only for TFSharpClass representations: the CLR can append fields to classes
+      /// (AddInstanceFieldToExistingType); struct/record/union layouts stay immutable.
+      IsFSharpClass: bool
+      /// IL-compiled full name, used to address the entity against baseline TypeDef tokens
+      /// when a field addition is emitted as a TypeDefinition edit.
+      CompiledFullName: string option
       IsSynthesized: bool }
 
 let private hasLoweredShapeDigestSegmentValues (segmentName: string) (digest: string) =
@@ -1552,7 +1576,14 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
       AdditionInfo = additionInfo }: BindingSnapshot
 
 and private snapshotTycon denv path (tycon: Tycon) =
-    let reprText =
+    // The field segment of class-like representations is kept separate so a pure field
+    // addition (non-field digest unchanged, baseline fields preserved) can be classified
+    // against the runtime field-addition capabilities instead of as a layout change.
+    let mutable fields: Map<string, EntityFieldDigest> = Map.empty
+    let mutable isFSharpClass = false
+    let fieldSegment = StringBuilder()
+
+    let nonFieldText =
         let sb = StringBuilder()
         sb.Append("kind:").Append(tycon.TypeOrMeasureKind.ToString()) |> ignore
 
@@ -1577,13 +1608,24 @@ and private snapshotTycon denv path (tycon: Tycon) =
             | FSharpTyconKind.TFSharpClass
             | FSharpTyconKind.TFSharpInterface
             | FSharpTyconKind.TFSharpEnum ->
+                isFSharpClass <-
+                    match data.fsobjmodel_kind with
+                    | FSharpTyconKind.TFSharpClass -> true
+                    | _ -> false
+
                 data.fsobjmodel_rfields.FieldsByIndex
                 |> Array.iter (fun field ->
-                    sb.Append("|field:") |> ignore
-                    sb.Append(field.LogicalName) |> ignore
-                    if field.IsMutable then sb.Append("[mutable]") |> ignore
-                    sb.Append("=") |> ignore
-                    sb.Append(tyToString denv field.FormalType) |> ignore)
+                    fieldSegment.Append("|field:") |> ignore
+                    fieldSegment.Append(field.LogicalName) |> ignore
+                    if field.IsMutable then fieldSegment.Append("[mutable]") |> ignore
+                    fieldSegment.Append("=") |> ignore
+                    fieldSegment.Append(tyToString denv field.FormalType) |> ignore
+
+                    let digest =
+                        let mutability = if field.IsMutable then "[mutable]" else ""
+                        $"{mutability}={tyToString denv field.FormalType}"
+
+                    fields <- fields.Add(field.LogicalName, { IsStatic = field.IsStatic; Digest = digest }))
             | FSharpTyconKind.TFSharpDelegate slotSig ->
                 sb.Append("|delegate:") |> ignore
                 sb.Append(slotSig.Name) |> ignore
@@ -1608,9 +1650,23 @@ and private snapshotTycon denv path (tycon: Tycon) =
 
         sb.ToString()
 
+    // Field digests append directly after the fs-kind segment today, so concatenation
+    // reproduces the historical representation text byte for byte.
+    let reprText = nonFieldText + fieldSegment.ToString()
+
+    let compiledFullName =
+        try
+            Some tycon.CompiledRepresentationForNamedType.FullName
+        with _ ->
+            None
+
     { Symbol = symbolId path tycon.LogicalName tycon.Stamp SymbolKind.Entity None false None None None None None
       RepresentationHash = stableHash reprText
       RepresentationText = reprText
+      NonFieldRepresentationText = nonFieldText
+      Fields = fields
+      IsFSharpClass = isFSharpClass
+      CompiledFullName = compiledFullName
       IsSynthesized = false }: EntitySnapshot
 
 let private collectSnapshots g denv (CheckedImplFile (qualifiedNameOfFile = qual; contents = contents)) =
@@ -1909,13 +1965,26 @@ let private compareBindings
                     // Mutable module-level value: static field + get_/set_ accessors.
                     addModuleValueInsertOrRude ()
                 else
-                    // Instance fields (class let-bounds / val mutable) are Phase B2: emission is
-                    // not implemented yet, so they stay rude regardless of runtime capabilities.
-                    rude.Add(
-                        { Symbol = Some updatedBinding.Symbol
-                          Kind = RudeEditKind.FieldAdded
-                          Message = "Adding fields is not supported. Fields change type layout." }
-                    )
+                    // Instance fields on classes are capability-gated (Phase B2). Class
+                    // let-bounds normally surface through the entity-level field diff (the
+                    // binding folds into the constructor body); any field binding reaching
+                    // here is gated on the same runtime capability. Struct field additions
+                    // stay rude via the entity-level TypeLayoutChange (runtime restriction,
+                    // identical for C#).
+                    let requiredCapability = capabilityForAddition AdditionKind.InstanceField
+
+                    if capabilities.Supports requiredCapability then
+                        handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
+                    else
+                        rude.Add(
+                            { Symbol = Some updatedBinding.Symbol
+                              Kind = RudeEditKind.NotSupportedByRuntime
+                              Message =
+                                FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
+                                    updatedBinding.Symbol.QualifiedName,
+                                    requiredCapability.Name
+                                ) }
+                        )
             elif info.IsExplicitInterfaceImplementation then
                 rude.Add(
                     { Symbol = Some updatedBinding.Symbol
@@ -2041,19 +2110,97 @@ let private compareBindings
 
     edits |> Seq.toList, rude |> Seq.toList, memberLambdaEdits |> Seq.toList
 
-let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Map<string, EntitySnapshot>) =
+let private compareEntities
+    (capabilities: EditAndContinueCapabilities)
+    (baseline: Map<string, EntitySnapshot>)
+    (updated: Map<string, EntitySnapshot>)
+    =
+    let edits = ResizeArray()
     let rude = ResizeArray()
 
     for KeyValue(key, baselineEntity) in baseline do
         match Map.tryFind key updated with
         | Some updatedEntity ->
             if baselineEntity.RepresentationHash <> updatedEntity.RepresentationHash then
-                rude.Add(
-                    { Symbol = Some baselineEntity.Symbol
-                      Kind = RudeEditKind.TypeLayoutChange
-                      Message =
-                        $"Type representation changed from '{baselineEntity.RepresentationText}' to '{updatedEntity.RepresentationText}'." }
-                )
+                let addTypeLayoutChange () =
+                    rude.Add(
+                        { Symbol = Some baselineEntity.Symbol
+                          Kind = RudeEditKind.TypeLayoutChange
+                          Message =
+                            $"Type representation changed from '{baselineEntity.RepresentationText}' to '{updatedEntity.RepresentationText}'." }
+                    )
+
+                // Pure field addition: the non-field representation is unchanged and every
+                // baseline field survives verbatim — the only difference is new fields.
+                let isPureFieldAddition =
+                    baselineEntity.NonFieldRepresentationText = updatedEntity.NonFieldRepresentationText
+                    && updatedEntity.Fields.Count > baselineEntity.Fields.Count
+                    && baselineEntity.Fields
+                       |> Map.forall (fun name digest -> updatedEntity.Fields.TryFind name = Some digest)
+
+                // Only CLASS layouts can grow: the CLR appends fields to classes under the
+                // field-addition capabilities, while struct/record/union/enum layout changes
+                // stay rude permanently (runtime restriction, identical for C#).
+                if not (isPureFieldAddition && updatedEntity.IsFSharpClass) then
+                    addTypeLayoutChange ()
+                else
+                    let addedFields =
+                        updatedEntity.Fields
+                        |> Map.filter (fun name _ -> not (baselineEntity.Fields.ContainsKey name))
+
+                    let requiredCapabilities =
+                        addedFields
+                        |> Map.toList
+                        |> List.map (fun (_, digest) ->
+                            if digest.IsStatic then
+                                capabilityForAddition AdditionKind.StaticField
+                            else
+                                capabilityForAddition AdditionKind.InstanceField)
+                        |> List.distinct
+
+                    match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
+                    | Some missing ->
+                        rude.Add(
+                            { Symbol = Some updatedEntity.Symbol
+                              Kind = RudeEditKind.NotSupportedByRuntime
+                              Message =
+                                FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
+                                    updatedEntity.Symbol.QualifiedName,
+                                    missing.Name
+                                ) }
+                        )
+                    | None ->
+                        match updatedEntity.CompiledFullName with
+                        | None ->
+                            // Fail closed: without a compiled type name the emitter cannot
+                            // address the baseline TypeDef row for the AddField pair.
+                            addTypeLayoutChange ()
+                        | Some compiledFullName ->
+                            // Surface the entity as an updated type so delta emission runs even
+                            // when the addition produces no method-body edits (e.g. a
+                            // [<DefaultValue>] val mutable field needs no constructor update).
+                            // The symbol path mirrors the IL name so the delta builder can
+                            // resolve it against baseline TypeDef tokens.
+                            let segments =
+                                compiledFullName.Split([| '.'; '+' |], StringSplitOptions.RemoveEmptyEntries)
+                                |> Array.toList
+
+                            let symbol =
+                                match List.rev segments with
+                                | [] -> updatedEntity.Symbol
+                                | last :: revPrefix ->
+                                    { updatedEntity.Symbol with
+                                        Path = List.rev revPrefix
+                                        LogicalName = last }
+
+                            edits.Add(
+                                { Symbol = symbol
+                                  Kind = SemanticEditKind.TypeDefinition
+                                  BaselineHash = Some baselineEntity.RepresentationHash
+                                  UpdatedHash = Some updatedEntity.RepresentationHash
+                                  IsSynthesized = false
+                                  ContainingEntity = None }
+                            )
         | None ->
             rude.Add(
                 { Symbol = Some baselineEntity.Symbol
@@ -2069,7 +2216,7 @@ let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Ma
                   Message = "Type declaration added." }
             )
 
-    rude |> Seq.toList
+    edits |> Seq.toList, rude |> Seq.toList
 
 /// Per-member lambda occurrence sequences for an implementation file, extracted with the
 /// same Phase-C1 occurrence model the typed-tree diff uses (Phase C2: baseline-time EnC
@@ -2100,8 +2247,8 @@ let diffImplementationFile (g: TcGlobals) (capabilities: EditAndContinueCapabili
     let semanticEdits, bindingRudeEdits, lambdaEdits =
         compareBindings capabilities baselineBindings updatedBindings
 
-    let entityRudeEdits = compareEntities baselineEntities updatedEntities
+    let entityEdits, entityRudeEdits = compareEntities capabilities baselineEntities updatedEntities
 
-    { SemanticEdits = semanticEdits
+    { SemanticEdits = semanticEdits @ entityEdits
       RudeEdits = bindingRudeEdits @ entityRudeEdits
       LambdaEdits = lambdaEdits }

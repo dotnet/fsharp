@@ -2917,21 +2917,25 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                     let newFieldToken = emittedTokenMappings.FieldDefTokenMap(enclosing, typeDef) fieldDef
                     addedFieldTokens[fieldKey] <- newFieldToken
             | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
-            | None when fieldDef.IsStatic && request.Baseline.TypeTokens |> Map.containsKey baselineDeclaringType ->
-                // Added static field on a type that exists in the baseline (module-level
-                // values lower to static backing fields plus accessor methods). The field is
-                // appended to the delta Field table; the parent TypeDef row is logged with
-                // the AddField operation by the metadata writer.
+            | None when
+                (fieldDef.IsStatic || not typeDef.IsStructOrEnum)
+                && request.Baseline.TypeTokens |> Map.containsKey baselineDeclaringType ->
+                // Added field on a type that exists in the baseline: static backing fields
+                // for module-level values (Phase B1b) and instance fields on classes
+                // (Phase B2 — the CLR appends them; existing instances read default(T)).
+                // The field is appended to the delta Field table; the parent TypeDef row is
+                // logged with the AddField operation by the metadata writer. Struct layouts
+                // cannot grow, so instance fields on structs fail closed below.
                 if not (addedFieldTokens.ContainsKey fieldKey) then
                     let newFieldToken = emittedTokenMappings.FieldDefTokenMap(enclosing, typeDef) fieldDef
                     addedFieldTokens[fieldKey] <- newFieldToken
             | None ->
                 let fieldDisplay = $"{declaringTypeRef.FullName}::{fieldDef.Name}"
                 let message =
-                    if fieldDef.IsStatic then
-                        $"Edit adds static field '{fieldDisplay}' to a type that has no baseline TypeDef token; please rebuild."
+                    if not fieldDef.IsStatic && typeDef.IsStructOrEnum then
+                        $"Edit adds instance field '{fieldDisplay}' to a struct; struct layouts cannot change under hot reload. Please rebuild."
                     else
-                        $"Edit adds instance field '{fieldDisplay}'. Hot reload supports adding static fields only; please rebuild."
+                        $"Edit adds field '{fieldDisplay}' to a type that has no baseline TypeDef token; please rebuild."
                 raise (HotReloadUnsupportedEditException message))
 
         typeDef.Methods.AsList()

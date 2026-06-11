@@ -140,7 +140,17 @@ let emitWithTypeDefinitions
         else
             Array.zeroCreate DeltaTokens.TableCount
 
-    if List.isEmpty updates then
+    // A delta can carry row additions without any method-body update: a [<DefaultValue>]
+    // instance field (Phase B2) appends a Field row but changes no constructor. Only
+    // short-circuit when there is genuinely nothing to write.
+    let hasRowPayload =
+        not (List.isEmpty updates)
+        || not (List.isEmpty typeDefinitionRows)
+        || fieldDefinitionRows |> List.exists (fun row -> row.IsAdded)
+        || propertyDefinitionRows |> List.exists (fun row -> row.IsAdded)
+        || eventDefinitionRows |> List.exists (fun row -> row.IsAdded)
+
+    if not hasRowPayload then
         let emptyMirror = DeltaMetadataTables(heapOffsets)
         let emptySizes = DeltaMetadataSerializer.computeMetadataSizes emptyMirror normalizedExternalRowCounts
 
