@@ -259,14 +259,14 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         foreach (var (setting, value) in settingValues.Where(x => x.Item2 == FSharpExtensionSettings.UNSET))
         {
             await this.Extensibility.Settings().WriteAsync(batch =>
-                batch.WriteSetting(setting, FSharpExtensionSettings.BOTH), "write default settings", cancellationToken);
+                batch.WriteSetting(setting, FSharpExtensionSettings.OLD), "write default settings", cancellationToken);
         }
 
         var enabled = new[] { FSharpExtensionSettings.LSP, FSharpExtensionSettings.BOTH };
 
         var serverConfig = new FSharpLanguageServerConfig(
             new FSharpLanguageServerFeatures(
-                diagnostics: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetDiagnosticsFrom, defaultValue: FSharpExtensionSettings.BOTH)),
+                diagnostics: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetDiagnosticsFrom, defaultValue: FSharpExtensionSettings.OLD)),
                 codeActions: true
                 ));
 

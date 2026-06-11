@@ -50,7 +50,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 let settingsManager = serviceProvider.GetService(typeof<SVsUnifiedSettingsManager>) :?> Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager
                 let reader = settingsManager.GetReader()
                 reader.GetValueOrThrow<string>("fsharp.getDiagnosticsFrom")
-            with _ -> "both"
+            with _ -> "old"
         match settingValue with
         | "both"
         | "old" -> true
