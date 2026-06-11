@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,16 +51,21 @@ internal partial class SolutionExplorerInProcess
         await AddProjectAsync(name, template, cancellationToken);
     }
 
-    // Repo root from compile-time source path -- no runtime resolution needed.
-    private static readonly string RepoRoot = Path.GetFullPath(Path.Combine(
-        Path.GetDirectoryName(GetSourceFilePath())!, "..", "..", "..", ".."));
-
-    // Configuration the test assembly itself was built with (Release on CI, typically Debug locally).
+    // RepoRoot, LocalCompilerConfiguration: derived at runtime from the test assembly's location,
+    // NOT from [CallerFilePath]. Arcade builds with deterministic source-root mapping that rewrites
+    // CallerFilePath to "/_/..." (for symbol-server reproducibility); using it at runtime gives
+    // "D:\_" on Windows CI agents, which then breaks Process.Start(WorkingDirectory) and fsc.dll
+    // path resolution. Assembly.Location IS the real post-build path on disk in all environments.
+    //
     // Layout: <RepoRoot>/artifacts/bin/FSharp.Editor.IntegrationTests/<Configuration>/<tfm>/FSharp.Editor.IntegrationTests.dll
-    // The synthesized standalone project (CreateStandaloneProjectFile) must reference the matching
-    // fsc.dll, otherwise the VS build fails with "Could not find file ...artifacts/bin/fsc/<wrong>/<tfm>/fsc.dll".
-    private static readonly string LocalCompilerConfiguration = new DirectoryInfo(
-        Path.GetDirectoryName(typeof(SolutionExplorerInProcess).Assembly.Location)!).Parent!.Name;
+    private static readonly string AssemblyDir =
+        Path.GetDirectoryName(typeof(SolutionExplorerInProcess).Assembly.Location)!;
+
+    private static readonly string LocalCompilerConfiguration =
+        new DirectoryInfo(AssemblyDir).Parent!.Name;
+
+    private static readonly string RepoRoot = Path.GetFullPath(
+        Path.Combine(AssemblyDir, "..", "..", "..", "..", ".."));
 
     // Repo-pinned dotnet host installed by Arcade. Falls back to PATH lookup if not present
     // (developer scenarios that build the integration project outside the repo's eng infra).
@@ -100,9 +104,6 @@ internal partial class SolutionExplorerInProcess
   </ItemGroup>
 </Project>";
     }
-
-    private static string GetSourceFilePath([CallerFilePath] string path = "")
-        => path;
 
     public async Task CreateSolutionAsync(string solutionName, CancellationToken cancellationToken)
     {
