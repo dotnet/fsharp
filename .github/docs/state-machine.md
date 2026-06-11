@@ -60,6 +60,19 @@
 | `repository_lockdown_check.yml` | pull_request_target (opened/sync/reopened; main, release/\*) | — | create, update, or delete lockdown comment |
 | `skill-validation.yml` | pull_request (`.github/skills/**`, `.github/agents/**`), push (main), dispatch | none | validate skills and agents |
 
+### Operational limits
+
+| Workflow | Timeout | Concurrency |
+|---|---|---|
+| `labelops-pr-maintenance.md` | 90 min | `labelops-pr-maintenance`, cancel-in-progress: false |
+| `labelops-flake-fix.md` | 60 min | `labelops-flake-fix-${{inputs.failing_test}}`, cancel-in-progress: false |
+| `labelops-pr-security-scan.md` | 15 min | `labelops-pr-security-scan`, cancel-in-progress: false |
+| `repo-assist.md` | 60 min | (per-issue/PR, default) |
+| `regression-pr-shepherd.md` | 30 min | (default per-run) |
+| `skill-validation.yml` | (Actions default) | `skill-validation-${{pr#||ref}}`, cancel-in-progress: true |
+
+> **Defaults** for unlisted gh-aw workflows: `agentic-state-machine.md`, `aw-auto-update.md` — 15 min timeout, no serialization. Classic `.yml` workflows use GitHub Actions defaults unless noted.
+
 ---
 
 ## Handover Map
@@ -92,7 +105,10 @@ stateDiagram-v2
         ASM_ModeCheck --> ASM_Noop : ⚙️ NOOP — INCREMENTAL + all SHAs unchanged
         ASM_ModeCheck --> ASM_Generate : ⚙️ FULL_REWRITE or changed SHAs
         ASM_Noop --> [*] : ⚙️ noop (report-as-issue: false)
-        ASM_Generate --> ASM_Validate : ⚙️ build model, draft diagrams, run all structural + behavioral audits
+        ASM_Generate --> ASM_AuditPassed : ⚙️ build model, draft diagrams, run all structural + behavioral audits
+        state ASM_AuditPassed <<choice>>
+        ASM_AuditPassed --> ASM_Noop : ⚙️ audit failed — abort, no PR
+        ASM_AuditPassed --> ASM_Validate : ⚙️ audit passed
         ASM_Validate --> [*] : 🤖 create-pull-request
     }
     state "aw-auto-update" as AWU {
@@ -151,15 +167,15 @@ stateDiagram-v2
         LFF_InputOK --> LFF_Reverify : ⚙️ valid
         state LFF_Confirmed <<choice>>
         LFF_Reverify --> LFF_Confirmed : ⚙️ flaky-test-detector: evidence across ≥3 of affected_prs?
-        LFF_Confirmed --> LFF_NoopComment : ⚙️ not confirmed
+        LFF_Confirmed --> LFF_SkipExplain : ⚙️ not confirmed
         LFF_Confirmed --> LFF_CheckAuthor : ⚙️ confirmed
         state LFF_AuthorIntro <<choice>>
         LFF_CheckAuthor --> LFF_AuthorIntro : ⚙️ originating PR introduced or modified this test (gh pr diff)?
-        LFF_AuthorIntro --> LFF_NoopComment : ⚙️ yes — skip (would defeat PR purpose)
+        LFF_AuthorIntro --> LFF_SkipExplain : ⚙️ yes — skip (would defeat PR purpose)
         LFF_AuthorIntro --> LFF_Reproduce : ⚙️ no
         LFF_Reproduce --> LFF_AllFail : ⚙️ reproduce loop up to 20 iterations, 15 min cap
         state LFF_AllFail <<choice>>
-        LFF_AllFail --> LFF_NoopComment : ⚙️ N/N failures — hard failure, not a flake
+        LFF_AllFail --> LFF_SkipExplain : ⚙️ N/N failures — hard failure, not a flake
         LFF_AllFail --> LFF_AnyFail : ⚙️ not all failed
         state LFF_AnyFail <<choice>>
         LFF_AnyFail --> LFF_Quarantine : ⚙️ 0/N — no local repro, prefer quarantine (Option B)
@@ -169,7 +185,7 @@ stateDiagram-v2
         LFF_TrackingIssue --> LFF_OpenPR : 🤖 create-issue (labels: Flaky, automation, max: 1)
         LFF_OpenPR --> LFF_Comment : 🤖 create-pull-request (fix)
         LFF_Comment --> [*] : 🤖 add-comment on originating PR (max: 1)
-        LFF_NoopComment --> [*] : 🤖 add-comment explaining skip OR noop
+        LFF_SkipExplain --> [*] : 🤖 add-comment explaining the skip reason on originating PR
     }
     state "labelops-pr-maintenance" as LPM {
         direction LR
@@ -337,7 +353,7 @@ stateDiagram-v2
         RA_RunInstructions --> RA_InstructionResult : ⚙️ follow user instructions, apply guidelines
         RA_InstructionResult --> [*] : ⚙️ no actionable work => noop
         RA_InstructionResult --> RA_CmdOutputs : ⚙️ work done
-        RA_CmdOutputs --> [*] : 🤖 any of repo-assist's 9 safe-outputs (see Safe-outputs below)
+        RA_CmdOutputs --> [*] : 🤖 any of repo-assist's 9 safe-outputs (8 in table + noop)
         RA_T1 --> RA_T3 : ⚙️ Task 1: investigate issues, add AI-thinks-issue-fixed/windows-only
         RA_T3 --> RA_T2 : ⚙️ Task 3: revisit AI-thinks-windows-only, remove-labels if FCS-testable
         RA_T2 --> RA_T2_SkipCheck : ⚙️ Task 2: Step A — check 6 skip conditions

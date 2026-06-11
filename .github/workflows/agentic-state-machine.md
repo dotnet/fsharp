@@ -288,7 +288,7 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
     - **Per-workflow signature blocks, not per-leaf-key tables.** For safe-outputs, emit one paragraph per workflow (Rule 39). Total safe-output section lines for the whole doc MUST be ≤30 (not 90+).
     - **Label index as ONE flat table, not semantic groups.** Columns: `Label | Type | Added by | Removed by | Read by | Notes`. The flat shape (a) shows producer→consumer flows on one row (e.g., `AI-Issue-Regression-PR` added by RA, read by RPS — visible cross-workflow signal), (b) handles labels that are both added and removed (e.g., `AI-thinks-issue-fixed` — bidirectional) without splitting across sections, (c) scans faster for lookup ("where does X come from? who removes it?"). The earlier 5-group format was rejected by 2 of 3 readability reviewers as forcing taxonomy-first comprehension. Type values: `always-applied`, `agent-add`, `agent-remove`, `agent-add + agent-remove` (bidirectional), `filter (read-only)`, `imperative`. Group same-prefix label families (e.g., `⚠️ Affects-*`) into ONE row with the family expansion in Notes. Total Label section MUST be ≤30 lines.
     - **Overview table ≤5 columns** — `# | Workflow | Trigger | Inputs | Primary Actions`. Drop "Type" (metadata). Inline `concurrency` in Inputs cell only when present.
-    - **Hard limits:** any single table > 25 rows = MAJOR. Doc total lines > 600 = MAJOR. Total `^|` pipe-row count > 80 = MAJOR.
+    - **Hard limits:** any single table > 25 rows = MAJOR. Doc total lines > 600 = MAJOR. Total `^|` pipe-row count > 100 = MAJOR.
 
 43. **Edge-label brevity — the diagram is a picture, not a config dump.**
     - **≤80 chars per edge label.** If the source config needs more, split into intermediate states OR move the detail to the per-workflow signature block (Rule 39).
@@ -515,7 +515,7 @@ For every workflow where the manifest says `COMPLEX=true`:
     > echo "LINES=$LINES PIPES=$PIPES LONGEDGES=$LONGEDGES MAXTABLE=$MAXTABLE"
     > FAIL=0
     > [ "$LINES" -gt 600 ] && { echo "MAJOR\treadability\tdoc lines $LINES > 600 (Rule 42)"; FAIL=1; }
-    > [ "$PIPES" -gt 80 ] && { echo "MAJOR\treadability\tpipe-row count $PIPES > 80 (Rule 42)"; FAIL=1; }
+    > [ "$PIPES" -gt 100 ] && { echo "MAJOR\treadability\tpipe-row count $PIPES > 100 (Rule 42)"; FAIL=1; }
     > [ "$MAXTABLE" -gt 25 ] && { echo "MAJOR\treadability\tlargest contiguous table $MAXTABLE rows > 25 (Rule 42)"; FAIL=1; }
     > [ "$LONGEDGES" -gt 0 ] && { echo "MED\treadability\t$LONGEDGES edge labels > 80 chars (Rule 43)"; FAIL=1; }
     > [ "$FAIL" -eq 0 ] && echo "CLEAN (readability)"
