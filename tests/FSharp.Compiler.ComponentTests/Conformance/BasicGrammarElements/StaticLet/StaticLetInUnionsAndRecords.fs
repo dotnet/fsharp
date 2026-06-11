@@ -272,7 +272,21 @@ let ``Static let record - generics - IL test`` compilation =
     compilation
     |> withLangVersion80
     |> compile
-    |> verifyIL ["""        .method private specialname rtspecialname static void  .cctor() cil managed
+    |> verifyIL ["""        .method public specialname rtspecialname instance void  .ctor(!T x) cil managed
+    {
+      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+                                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 0F 54 65 73 74 2B 4D 79 52 65   
+                                                                                                                                                     63 6F 72 64 60 31 00 00 )                         
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void [runtime]System.Object::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  ldarg.1
+      IL_0008:  stfld      !0 class Test/MyRecord`1<!T>::X@
+      IL_000d:  ret
+    } """;
+    """        .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  8
@@ -288,24 +302,8 @@ let ``Static let record - generics - IL test`` compilation =
       IL_0029:  volatile.
       IL_002b:  stsfld     int32 class Test/MyRecord`1<!T>::init@7
       IL_0030:  ret
-    } 
-
-    .method public specialname rtspecialname instance void  .ctor(!T x) cil managed
-    {
-      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 0F 54 65 73 74 2B 4D 79 52 65   
-                                                                                                                                                     63 6F 72 64 60 31 00 00 )                         
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void [runtime]System.Object::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      !0 class Test/MyRecord`1<!T>::X@
-      IL_000d:  ret
-    } 
-
-    .method public static string  GetMyName() cil managed
+    } """;
+    """        .method public static string  GetMyName() cil managed
     {
       
       .maxstack  8
@@ -589,17 +587,6 @@ Console.Write(MyTypes.X.GetX)
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
   .field static assembly int32 x_value
   .field static assembly int32 init@6
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Test::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Test::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
   .method public specialname static int32 get_GetX() cil managed
   {
     
@@ -614,6 +601,17 @@ Console.Write(MyTypes.X.GetX)
 
     IL_0011:  ldsfld     int32 MyTypes.X::x_value
     IL_0016:  ret
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Test::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Test::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
   .property int32 GetX()
@@ -716,17 +714,6 @@ Console.Write(MyTypes.X.GetX)
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
   .field static assembly int32 x_value
   .field static assembly int32 init@6
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Test::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Test::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
   .method public specialname static int32 get_GetX() cil managed
   {
     
@@ -741,6 +728,17 @@ Console.Write(MyTypes.X.GetX)
 
     IL_0011:  ldsfld     int32 MyTypes.X::x_value
     IL_0016:  ret
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Test::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Test::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed
