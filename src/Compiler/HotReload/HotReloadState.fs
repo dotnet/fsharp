@@ -414,6 +414,30 @@ type internal HotReloadSessionStore() =
         lock sessionLock (fun () ->
             projects <- projects |> Map.map (fun _ state -> { state with PendingUpdate = None }))
 
+/// <summary>
+/// The project being compiled in-process on behalf of a hot reload session: the store of the
+/// session that owns it plus the project's identity inside that store. The session owner
+/// (<c>FSharpChecker.Compile</c>) sets this around an in-process compile of a session-tracked
+/// project so the fsc emit hook serves THAT session's chained closure-name/synthesized-name
+/// state, instead of consulting a process-wide ambient registration.
+/// </summary>
+type HotReloadEmissionContext =
+    {
+        Store: HotReloadSessionStore
+        ProjectKey: HotReloadProjectKey
+    }
+
+let private emissionContextLock = obj ()
+
+let mutable private currentEmissionContext: HotReloadEmissionContext option = None
+
+/// Sets (or clears, with None) the scoped emission context consulted by the fsc emit hook.
+let setCurrentEmissionContext (context: HotReloadEmissionContext option) =
+    lock emissionContextLock (fun () -> currentEmissionContext <- context)
+
+let tryGetCurrentEmissionContext () =
+    lock emissionContextLock (fun () -> currentEmissionContext)
+
 let private activeStoreLock = obj ()
 let mutable private activeSessionStore = HotReloadSessionStore()
 

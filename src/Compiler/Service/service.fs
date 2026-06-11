@@ -579,7 +579,13 @@ type FSharpHotReloadSession
     (
         hotReloadService: FSharpHotReloadService,
         parseAndCheckSnapshot: FSharpProjectSnapshot -> string -> Async<FSharpCheckProjectResults>,
-        tryGetOutputPath: FSharpProjectSnapshot -> string option
+        tryGetOutputPath: FSharpProjectSnapshot -> string option,
+        // Registers a successfully baselined project (resolved output path + project key) in
+        // the owning checker's live-session registry, which FSharpChecker.Compile consults to
+        // scope in-process compiles of session-tracked projects to this session.
+        onProjectBaselined: string -> FSharp.Compiler.HotReloadState.HotReloadProjectKey -> unit,
+        // Removes this session's entries from that registry when the session ends.
+        onDispose: unit -> unit
     ) =
 
     let mutable disposed = 0
@@ -638,11 +644,19 @@ type FSharpHotReloadSession
             | Some path -> lock outputPathGate (fun () -> outputPathOverrides[projectKey] <- path)
             | None -> ()
 
-            return!
+            let resolvedOutputPath = resolveOutputPath projectKey projectSnapshot
+
+            let! result =
                 hotReloadService.AddHotReloadProject
                     projectKey
                     (fun () -> parseAndCheckSnapshot projectSnapshot opName)
-                    (resolveOutputPath projectKey projectSnapshot)
+                    resolvedOutputPath
+
+            match result, resolvedOutputPath with
+            | Ok(), Some path -> onProjectBaselined path projectKey
+            | _ -> ()
+
+            return result
         }
 
     /// <summary>
@@ -734,6 +748,7 @@ type FSharpHotReloadSession
     interface IDisposable with
         member _.Dispose() =
             if Interlocked.Exchange(&disposed, 1) = 0 then
+                onDispose ()
                 hotReloadService.EndSession()
 
 [<Sealed; AutoSerializable(false)>]
@@ -1174,6 +1189,67 @@ type FSharpChecker
 
     let hotReloadService = createHotReloadService hotReloadSessionStore
 
+    // Projects tracked by LIVE session entities created via CreateHotReloadSession, keyed by
+    // the resolved output path each AddProject baselined (most recent first). Compile consults
+    // this to resolve the scoped emission context — which session, and which project inside
+    // it, a given in-process compile serves. Disposing a session removes its entries.
+    let liveHotReloadEmissionTargets =
+        ResizeArray<
+            string *
+            FSharp.Compiler.HotReloadState.HotReloadSessionStore *
+            FSharp.Compiler.HotReloadState.HotReloadProjectKey
+         >()
+
+    let liveHotReloadEmissionTargetsGate = obj ()
+
+    let normalizeOutputPathForEmissionTargets (path: string) =
+        try
+            Path.GetFullPath(path)
+        with _ ->
+            path
+
+    let registerHotReloadEmissionTarget
+        (store: FSharp.Compiler.HotReloadState.HotReloadSessionStore)
+        (outputPath: string)
+        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
+        =
+        let normalized = normalizeOutputPathForEmissionTargets outputPath
+
+        lock liveHotReloadEmissionTargetsGate (fun () ->
+            // A recapture of the same project in the same session replaces its entry.
+            liveHotReloadEmissionTargets.RemoveAll(fun (_, existingStore, existingKey) ->
+                obj.ReferenceEquals(existingStore, store) && existingKey = projectKey)
+            |> ignore
+
+            liveHotReloadEmissionTargets.Insert(0, (normalized, store, projectKey)))
+
+    let unregisterHotReloadEmissionTargets (store: FSharp.Compiler.HotReloadState.HotReloadSessionStore) =
+        lock liveHotReloadEmissionTargetsGate (fun () ->
+            liveHotReloadEmissionTargets.RemoveAll(fun (_, existingStore, _) -> obj.ReferenceEquals(existingStore, store))
+            |> ignore)
+
+    // Resolves the session entity (and tracked project) an in-process compile belongs to by
+    // the compile's output path. The most recently baselined project wins when several live
+    // sessions track the same output.
+    let tryResolveHotReloadEmissionContext (outputPath: string option) =
+        match outputPath with
+        | None -> None
+        | Some outputPath ->
+            let target = normalizeOutputPathForEmissionTargets outputPath
+
+            lock liveHotReloadEmissionTargetsGate (fun () ->
+                liveHotReloadEmissionTargets
+                |> Seq.tryPick (fun (registeredPath, store, projectKey) ->
+                    if String.Equals(registeredPath, target, StringComparison.OrdinalIgnoreCase) then
+                        Some(
+                            {
+                                FSharp.Compiler.HotReloadState.HotReloadEmissionContext.Store = store
+                                FSharp.Compiler.HotReloadState.HotReloadEmissionContext.ProjectKey = projectKey
+                            }
+                        )
+                    else
+                        None))
+
     static member getParallelReferenceResolutionFromEnvironment() =
         getParallelReferenceResolutionFromEnvironment ()
 
@@ -1356,7 +1432,9 @@ type FSharpChecker
         new FSharpHotReloadSession(
             sessionService,
             (fun projectSnapshot opName -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName)),
-            tryGetOutputPathFromProjectSnapshot
+            tryGetOutputPathFromProjectSnapshot,
+            (fun outputPath projectKey -> registerHotReloadEmissionTarget sessionStore outputPath projectKey),
+            (fun () -> unregisterHotReloadEmissionTargets sessionStore)
         )
 
     member _.EndHotReloadSession() =
@@ -1467,11 +1545,20 @@ type FSharpChecker
 
             inlineEnabled || splitEnabled
 
+        // A non-capture compile of a project tracked by a live session entity is scoped to
+        // that session: the emit hook then replays the session's chained closure-name and
+        // synthesized-name state into this compile (capture compiles stay session-independent).
+        let emissionContext =
+            if hasEnableArgument "hotreloaddeltas" argv then
+                None
+            else
+                tryResolveHotReloadEmissionContext (tryGetOutputPathFromCommandLineOptions "" argv)
+
         let ensureHotReloadSessionHookArgument (argv: string[]) =
             // Keep synthesized-name replay active for checker-owned hot reload sessions even when
             // callers intentionally compile updates without --enable:hotreloaddeltas.
             if
-                hotReloadService.SessionActive
+                (hotReloadService.SessionActive || emissionContext.IsSome)
                 && not (hasEnableArgument "hotreloaddeltas" argv)
                 && not (hasEnableArgument "hotreloadhook" argv)
             then
@@ -1483,7 +1570,16 @@ type FSharpChecker
 
         async {
             let ctok = CompilationThreadToken()
-            return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
+
+            match emissionContext with
+            | Some context ->
+                FSharp.Compiler.HotReloadState.setCurrentEmissionContext (Some context)
+
+                try
+                    return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
+                finally
+                    FSharp.Compiler.HotReloadState.setCurrentEmissionContext None
+            | None -> return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
         }
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.

@@ -20,6 +20,18 @@ open FSharp.Compiler.Text.Range
 /// Hot reload emit hook implementation used when --enable:hotreloaddeltas is active.
 type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndContinueLanguageService) =
 
+    // Scoped emission context: when the host compiles a session-tracked project in-process
+    // (FSharpChecker.Compile sets the context around the compile), the hook serves THAT
+    // session's chained closure-name/synthesized-name state. Without a context the hook
+    // falls back to the service it was constructed with (the ambient store).
+    let resolveSessionAccess () =
+        match HotReloadState.tryGetCurrentEmissionContext () with
+        | Some context -> FSharpEditAndContinueLanguageService(context.Store), Some context.ProjectKey
+        | None -> editAndContinueService, None
+
+    let hasScopedEmissionContext () =
+        (HotReloadState.tryGetCurrentEmissionContext ()).IsSome
+
     // Build and register a baseline snapshot from the exact emitted artifacts, then
     // activate synthesized-name replay for subsequent deltas in the same process.
     let captureArtifacts
@@ -102,6 +114,11 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
         member _.PrepareForCodeGeneration(emitCaptureArtifacts, tcGlobals, optimizedImpls) =
             let compilerGlobalState = tcGlobals.CompilerGlobalState.Value
 
+            // Resolve the session this compile serves: the scoped emission context when the
+            // host set one (a session entity's tracked project), the ambient service otherwise.
+            let sessionService, scopedProjectKey = resolveSessionAccess ()
+            let tryGetActiveSession () = sessionService.TryGetSession(?projectKey = scopedProjectKey)
+
             // Closure mapping (C3), the codegen-time hook step: when a session with
             // baseline closure-name tables is active, run the occurrence-keyed allocator
             // over (previous-generation impl files, the impl files about to be lowered)
@@ -109,7 +126,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
             // site. Fail closed: no session, or a baseline without tables (flag-off
             // capture, checker read-from-disk baselines), installs nothing and lowering
             // keeps pure sequence-replay naming.
-            (match editAndContinueService.TryGetSession() with
+            (match tryGetActiveSession () with
              | ValueSome session when not (Map.isEmpty session.Baseline.EncClosureNames) ->
                  let assignedNames, _refreshedRows =
                      HotReloadBaseline.computeOccurrenceKeyedClosureNames
@@ -166,14 +183,14 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                     let map = FSharpSynthesizedTypeMaps()
                     map.BeginSession()
                     setCompilerGeneratedNameMap (compilerGlobalState :> obj) (map :> ICompilerGeneratedNameMap)
-            elif editAndContinueService.IsSessionActive then
+            elif (tryGetActiveSession ()).IsSome then
                 // Preserve synthesized-name replay while a hot reload session is active,
                 // even when the output build itself is emitted without capture flags.
                 let activeMap =
                     match tryGetCompilerGeneratedNameMap (compilerGlobalState :> obj) with
                     | Some existing -> Some existing
                     | None ->
-                        match editAndContinueService.TryGetSession() with
+                        match tryGetActiveSession () with
                         | ValueSome session ->
                             let restored = FSharpSynthesizedTypeMaps()
 
@@ -199,7 +216,12 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
             // In IDE scenarios, MSBuild may run in the background and we don't want
             // to clear an active hot reload session being used for live editing.
             if not emitCaptureArtifacts then
-                editAndContinueService.EndSession()
+                // A scoped compile serves a live session entity that owns its own lifecycle;
+                // the compile must not end it (the legacy ambient cleanup stays for
+                // context-less compiles).
+                if not (hasScopedEmissionContext ()) then
+                    editAndContinueService.EndSession()
+
                 clearCompilerGeneratedNameMap (compilerGlobalState :> obj)
                 ClosureNameAllocationState.clearClosureNameState (compilerGlobalState :> obj)
 
@@ -247,7 +269,11 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
             captureArtifacts compilerGlobalState artifacts
 
         member _.FallbackEmit(compilerGlobalState) =
-            editAndContinueService.EndSession()
+            // Same ownership rule as BeforeFileEmit: never end a session entity's session
+            // from a compile it merely scoped.
+            if not (hasScopedEmissionContext ()) then
+                editAndContinueService.EndSession()
+
             clearCompilerGeneratedNameMap (compilerGlobalState :> obj)
             ClosureNameAllocationState.clearClosureNameState (compilerGlobalState :> obj)
 
