@@ -438,6 +438,9 @@ type internal FSharpHotReloadService
             currentOutputFingerprint <- None
             editAndContinueService.ResetSessionState())
 
+    member _.UpdateCapabilities(capabilities: EditAndContinueCapabilities) =
+        editAndContinueService.UpdateCapabilities(capabilities)
+
     member _.SessionActive = editAndContinueService.IsSessionActive
 
     member _.Capabilities =
@@ -1003,6 +1006,9 @@ type FSharpChecker
 
     member _.EndHotReloadSession() =
         hotReloadService.EndSession()
+
+    member _.UpdateHotReloadCapabilities(capabilities: string seq) =
+        hotReloadService.UpdateCapabilities(EditAndContinueCapabilities.Parse capabilities)
 
     member _.HotReloadSessionActive = hotReloadService.SessionActive
 

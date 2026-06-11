@@ -2238,3 +2238,79 @@ let mutable newCounter = 0
 
         checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()
+
+    let private capabilityRefreshBaseline =
+        """
+module Sample.Library
+
+let transform (values: int list) =
+    values |> List.map (fun v -> v + 1)
+"""
+
+    let private capabilityRefreshUpdated =
+        """
+module Sample.Library
+
+let transform (values: int list) =
+    values
+    |> List.map (fun v -> v + 1)
+    |> List.map (fun v -> v * 2)
+"""
+
+    [<Fact>]
+    let ``UpdateHotReloadCapabilities widens classification without restarting the session`` () =
+        // Mirrors the dotnet-watch sequence: the session is prestarted before the running
+        // process reports its capabilities, an edit arrives and is rejected as exceeding the
+        // (baseline-only) capability set, the host then learns the real capabilities and
+        // updates the LIVE session — a restart is not an option because the sources on disk
+        // already contain the edit, so a re-captured baseline would diff as empty.
+        let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-cap-refresh", Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(projectDir) |> ignore
+
+        let fsPath = Path.Combine(projectDir, "Library.fs")
+        let dllPath = Path.Combine(projectDir, "Library.dll")
+
+        File.WriteAllText(fsPath, capabilityRefreshBaseline)
+
+        let checker = createChecker ()
+        let projectOptions = prepareProjectOptions checker fsPath dllPath capabilityRefreshBaseline
+
+        checker.InvalidateAll()
+        compileProject checker projectOptions true
+
+        // Prestart semantics: no capabilities known yet.
+        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "Failed to start session: %A" error
+        | Ok () -> ()
+
+        File.WriteAllText(fsPath, capabilityRefreshUpdated)
+        checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+        compileProject checker projectOptions false
+
+        // The added List.map lambda needs NewTypeDefinition (its closure class); baseline-only
+        // must reject it. The int->int instantiation already exists in the baseline, so the
+        // post-update emission does not require TypeSpec row emission (a separate gap).
+        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        | Ok _ -> failwith "Expected the added lambda to be rejected under baseline-only capabilities"
+        | Error (FSharpHotReloadError.UnsupportedEdit msg) ->
+            Assert.Contains("NewTypeDefinition", msg)
+        | Error other -> failwithf "Expected UnsupportedEdit, got: %A" other
+
+        // The running process reports its real capabilities; the live session widens in place.
+        let updated =
+            checker.UpdateHotReloadCapabilities(
+                [ "Baseline"
+                  "AddMethodToExistingType"
+                  "AddStaticFieldToExistingType"
+                  "AddInstanceFieldToExistingType"
+                  "NewTypeDefinition" ])
+
+        Assert.True(updated, "Expected an active session to accept the capability update")
+
+        // The same edit now emits a delta.
+        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        | Ok delta -> Assert.NotEmpty(delta.Metadata)
+        | Error error -> failwithf "Expected the added lambda to emit after the capability update, got: %A" error
+
+        checker.EndHotReloadSession()
+        try Directory.Delete(projectDir, true) with _ -> ()

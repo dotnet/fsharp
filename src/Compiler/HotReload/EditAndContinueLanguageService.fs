@@ -189,6 +189,14 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     member _.OnDeltaApplied(generationId: Guid) =
         sessionStore().RecordDeltaApplied(generationId)
 
+    /// <summary>
+    /// Replaces the runtime capability set consulted by edit classification for the active
+    /// session. Safe at any point: capabilities are read per-emit. Returns false when no
+    /// session is active.
+    /// </summary>
+    member _.UpdateCapabilities(capabilities: EditAndContinueCapabilities) =
+        sessionStore().UpdateCapabilities(capabilities)
+
     /// <summary>Clears the session, typically when hot reload is disabled or the build finishes.</summary>
     member _.EndSession() =
         sessionStore().ClearBaseline()

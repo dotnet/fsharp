@@ -2158,6 +2158,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean HotReloadSessionActive
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean UpdateHotReloadCapabilities(System.Collections.Generic.IEnumerable`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean UsesTransparentCompiler
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_HotReloadSessionActive()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_UsesTransparentCompiler()

@@ -158,6 +158,15 @@ type public FSharpChecker =
     /// <summary>Ends the active process-wide hot reload session, if any.</summary>
     member EndHotReloadSession: unit -> unit
 
+    /// <summary>
+    /// Replaces the runtime capability set consulted by hot reload edit classification for the
+    /// active session, without restarting it. Hosts call this when the running process reports
+    /// its edit-and-continue capabilities after the session was started (for example, a session
+    /// prestarted before the application launched). Returns false when no session is active.
+    /// </summary>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member UpdateHotReloadCapabilities: capabilities: string seq -> bool
+
     /// <summary>Indicates whether a process-wide hot reload session is currently active.</summary>
     member HotReloadSessionActive: bool
 

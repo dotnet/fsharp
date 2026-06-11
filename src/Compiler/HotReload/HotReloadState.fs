@@ -102,6 +102,24 @@ type internal HotReloadSessionStore() =
                     ValueSome restored
                 | ValueNone -> ValueNone)
 
+    /// Replaces the runtime capability set consulted by edit classification. Safe at any point
+    /// in the session: capabilities are read per-emit and never affect already-emitted deltas.
+    /// Hosts use this when the running process reports its capabilities after the session was
+    /// started (the dotnet-watch session is prestarted before the application launches).
+    member _.UpdateCapabilities(capabilities: EditAndContinueCapabilities) =
+        lock sessionLock (fun () ->
+            match session with
+            | ValueSome state ->
+                session <- ValueSome { state with Capabilities = capabilities }
+
+                match lastCommittedSession with
+                | ValueSome committed ->
+                    lastCommittedSession <- ValueSome { committed with Capabilities = capabilities }
+                | ValueNone -> ()
+
+                true
+            | ValueNone -> false)
+
     member _.UpdateImplementationFiles(implementationFiles: CheckedAssemblyAfterOptimization) =
         lock sessionLock (fun () ->
             match session with
