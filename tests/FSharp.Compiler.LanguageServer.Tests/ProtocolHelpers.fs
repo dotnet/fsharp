@@ -173,6 +173,16 @@ let openAndRequestCodeActions (client: TestRpcClient) (fileUri: Uri) (content: s
         return! requestCodeActions client fileUri line
     }
 
+let pullSemanticTokensFull (client: TestRpcClient) (fileUri: Uri) =
+    client.JsonRpc.InvokeAsync<SemanticTokens>(
+        Methods.TextDocumentSemanticTokensFullName,
+        SemanticTokensParams(TextDocument = TextDocumentIdentifier(Uri = fileUri)))
+
+let pullSemanticTokensFullInContext (client: TestRpcClient) (fileUri: Uri) (projectContext: VSProjectContext) =
+    client.JsonRpc.InvokeAsync<SemanticTokens>(
+        Methods.TextDocumentSemanticTokensFullName,
+        SemanticTokensParams(TextDocument = VSTextDocumentIdentifier(Uri = fileUri, ProjectContext = projectContext)))
+
 let pullDiagnosticsInContext (client: TestRpcClient) (fileUri: Uri) (projectContext: VSProjectContext) =
     task {
         let! response =
@@ -206,3 +216,20 @@ let setupMultiTargetLikeProject (client: TestRpcClient) (content: string) (share
     let pidA = client.Workspace.Projects.AddOrUpdate(configA, [ fileOnDisk.LocalPath ])
     let pidB = client.Workspace.Projects.AddOrUpdate(configB, [ fileOnDisk.LocalPath ])
     fileOnDisk, pidA, pidB
+
+let pullSemanticTokensRange (client: TestRpcClient) (fileUri: Uri) (range: Range) =
+    client.JsonRpc.InvokeAsync<SemanticTokens>(
+        Methods.TextDocumentSemanticTokensRangeName,
+        SemanticTokensRangeParams(TextDocument = TextDocumentIdentifier(Uri = fileUri), Range = range))
+
+let openAndPullSemanticTokens (client: TestRpcClient) (fileUri: Uri) (content: string) =
+    task {
+        do! openDocument client fileUri content 1
+        return! pullSemanticTokensFull client fileUri
+    }
+
+let getSemanticTokensLegend (client: TestRpcClient) =
+    let options = client.Capabilities.SemanticTokensOptions
+    if isNull (box options) then
+        failwith "Server did not advertise SemanticTokensOptions capability"
+    options.Legend

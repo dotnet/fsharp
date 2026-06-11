@@ -191,7 +191,7 @@ let ``FS0043 produces both == and != fixes for respective operators`` () =
 [<Fact>]
 let ``Server with code actions disabled does not advertise code action capabilities`` () =
     task {
-        let config = { FSharpLanguageServerConfig.Default with EnabledFeatures = { Diagnostics = true; CodeActions = false } }
+        let config = { FSharpLanguageServerConfig.Default with EnabledFeatures = { FSharpLanguageServerFeatures.Default with Diagnostics = true; CodeActions = false } }
         let! client = createLanguageServer (FSharpWorkspace()) (Some config)
         Assert.False(client.Capabilities.CodeActionProvider.HasValue)
     }

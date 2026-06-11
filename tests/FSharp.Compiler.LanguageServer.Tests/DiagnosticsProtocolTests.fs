@@ -172,7 +172,7 @@ let ``Diagnostics for file not in any project`` () =
 [<Fact>]
 let ``Server with diagnostics disabled does not advertise diagnostic capabilities`` () =
     task {
-        let config = { FSharpLanguageServerConfig.Default with EnabledFeatures = { Diagnostics = false; CodeActions = false } }
+        let config = { FSharpLanguageServerConfig.Default with EnabledFeatures = { FSharpLanguageServerFeatures.Default with Diagnostics = false; CodeActions = false } }
         let! client = createLanguageServer (FSharpWorkspace()) (Some config)
         Assert.Null(client.Capabilities.DiagnosticOptions)
     }

@@ -30,6 +30,9 @@ module TelemetryEvents =
     let GetProjectContexts = "lsp/getprojectcontexts"
 
     [<Literal>]
+    let GetSemanticTokens = "lsp/getsemantictokens"
+
+    [<Literal>]
     let ServerFault = "lsp/fault"
 
 /// Abstraction for telemetry reporting in the F# LSP server.
@@ -67,9 +70,7 @@ type TraceTelemetry() =
     interface ILspTelemetry with
         member _.ReportEvent(name, properties) =
             let propsStr =
-                properties
-                |> Array.map (fun (k, v) -> $"{k}={v}")
-                |> String.concat ", "
+                properties |> Array.map (fun (k, v) -> $"{k}={v}") |> String.concat ", "
 
             Trace.TraceInformation($"[Telemetry] {name} ({propsStr})")
 
@@ -82,9 +83,7 @@ type TraceTelemetry() =
                     sw.Stop()
 
                     let propsStr =
-                        properties
-                        |> Array.map (fun (k, v) -> $"{k}={v}")
-                        |> String.concat ", "
+                        properties |> Array.map (fun (k, v) -> $"{k}={v}") |> String.concat ", "
 
                     Trace.TraceInformation($"[Telemetry] {name} completed in {sw.ElapsedMilliseconds}ms ({propsStr})")
             }

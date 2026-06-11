@@ -4,12 +4,14 @@ type FSharpLanguageServerFeatures =
     {
         Diagnostics: bool
         CodeActions: bool
+        SemanticTokens: bool
     }
 
     static member Default =
         {
             Diagnostics = true
             CodeActions = true
+            SemanticTokens = true
         }
 
 type FSharpLanguageServerConfig =

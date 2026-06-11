@@ -36,14 +36,19 @@ type CapabilitiesManager(config: FSharpLanguageServerConfig, scOverrides: IServe
                 (if config.EnabledFeatures.CodeActions then
                      System.Nullable(
                          SumType<bool, CodeActionOptions>(
-                             CodeActionOptions(
-                                 CodeActionKinds = [| CodeActionKind.QuickFix |],
-                                 ResolveProvider = false
-                             )
+                             CodeActionOptions(CodeActionKinds = [| CodeActionKind.QuickFix |], ResolveProvider = false)
                          )
                      )
                  else
-                     System.Nullable())
+                     System.Nullable()),
+            SemanticTokensOptions =
+                addIf
+                    config.EnabledFeatures.SemanticTokens
+                    (SemanticTokensOptions(
+                        Legend = LspSemanticTokens.legend (),
+                        Full = System.Nullable(SumType<bool, SemanticTokensFullOptions>(true)),
+                        Range = System.Nullable(SumType<bool, obj>(true))
+                    ))
             //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
             //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
         )

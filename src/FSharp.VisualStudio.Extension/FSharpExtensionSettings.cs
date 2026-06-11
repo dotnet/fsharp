@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.Extensibility;
+using System.Linq;
+using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Settings;
 
 namespace FSharp.VisualStudio.Extension
@@ -9,14 +10,14 @@ namespace FSharp.VisualStudio.Extension
     {
         public const string OLD = "old";
         public const string LSP = "lsp";
-        public const string BOTH = "both";
         public const string UNSET = "unset";
 
-        public static EnumSettingEntry[] ExtensionChoice { get; } =
+        // Semantic classification can only come from one source at a time
+        // (the two would fight over the same spans), so there is no "both".
+        public static EnumSettingEntry[] ExtensionEitherChoice { get; } =
         [
             new(OLD, "%FSharpSettings.Old%"),
             new(LSP, "%FSharpSettings.LSP%"),
-            new(BOTH, "%FSharpSettings.Both%"),
             new(UNSET, "%FSharpSettings.Unset%"),
         ];
 
@@ -25,19 +26,26 @@ namespace FSharp.VisualStudio.Extension
         public static SettingCategory FSharpCategory { get; } = new("fsharp", "%F#%");
 
         [VisualStudioContribution]
-        public static Setting.Enum GetDiagnosticsFrom { get; } = new(
-            "getDiagnosticsFrom",
-            "%FSharpSettings.GetDiagnosticsFrom%",
+        public static Setting.Enum SemanticClassificationProvider { get; } = new(
+            "semanticClassificationProvider",
+            "%FSharpSettings.SemanticClassificationProvider%",
             FSharpCategory,
-            ExtensionChoice,
+            ExtensionEitherChoice,
             defaultValue: UNSET)
         {
-            Description = "%FSharpSettings.GetDiagnosticsFrom.Description%",
+            Description = "%FSharpSettings.SemanticClassificationProvider.Description%",
         };
 
-        public static Setting<string>[] AllStringSettings { get; } =
+        // Each setting carries the concrete value to persist (and treat as effective)
+        // the first time it is read as UNSET. Semantic classification defaults to
+        // OLD so the in-proc classifier stays in charge until the user opts in
+        // (or is flipped into the LSP path by a controlled rollout).
+        public static (Setting<string> Setting, string DefaultIfUnset)[] AllSettingsWithDefaults { get; } =
         [
-            GetDiagnosticsFrom,
+            (SemanticClassificationProvider, OLD),
         ];
+
+        public static Setting<string>[] AllStringSettings { get; } =
+            AllSettingsWithDefaults.Select(x => x.Setting).ToArray();
     }
 }

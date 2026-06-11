@@ -34,14 +34,32 @@ public class FSharpApexTestBase : ApexTest
     [TestInitialize]
     public void Initialize()
     {
-        if (VsHost?.IsRunning != true)
+        if (VsHost?.IsRunning == true)
         {
-            // Previous host may be a zombie (crashed but not disposed).
-            // Dispose it before creating a new one.
-            try { VsHost?.Stop(); } catch { /* best effort cleanup */ }
-            VsHost = Operations.CreateHost<VisualStudioHost>(s_configuration);
-            VsHost.Start();
+            return;
         }
+
+        // Previous host may be a zombie (crashed but not disposed).
+        // Dispose it before creating a new one.
+        try { VsHost?.Stop(); } catch { /* best effort cleanup */ }
+
+        StartVisualStudioHost();
+    }
+
+    protected void RestartVisualStudioHost()
+    {
+        if (VsHost?.IsRunning == true)
+        {
+            VsHost.Stop();
+        }
+
+        StartVisualStudioHost();
+    }
+
+    private void StartVisualStudioHost()
+    {
+        VsHost = Operations.CreateHost<VisualStudioHost>(s_configuration);
+        VsHost.Start();
     }
 
     [TestCleanup]

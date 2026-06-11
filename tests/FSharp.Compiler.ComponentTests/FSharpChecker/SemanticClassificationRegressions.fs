@@ -864,3 +864,44 @@ let () = r.Count <- r.Count + 1
             sprintf "Expected MutableRecordField classification for `Count`, found: %A"
                 (items |> Array.map (fun i -> i.Range.StartLine, i.Range.StartColumn, i.Range.EndColumn, i.Type)))
     }
+/// Computation expression builders like `async { }` are captured by FCS as BOTH
+/// `Item.Value` (the identifier resolution) and `Item.CustomBuilder` (the builder usage)
+/// at the same range. `takeCustomBuilder` deduplicates them in favor of the
+/// `Item.CustomBuilder` so the identifier shows up as a `ComputationExpression` (rendered
+/// as a keyword by editors). Before the fix, the deduplication only ran when callers
+/// passed a `Some range`; whole-file callers (`None` range, used by the LSP background
+/// classifier) saw `Item.Value` win and `async` rendered as a regular value.
+[<Fact>]
+let ``Computation expression builder is classified as ComputationExpression (whole-file)`` () =
+    let source =
+        """
+module Test
+
+let _ =
+    async {
+        let! v = async.Return 1
+        return v
+    }
+"""
+
+    let items = getClassifications source
+
+    // Line 5 contains "    async {". Look for a classification covering 'async' (col 4..9).
+    let asyncBuilderItems =
+        items
+        |> Array.filter (fun item ->
+            item.Range.StartLine = 5
+            && item.Range.StartColumn = 4
+            && item.Range.EndColumn = 9)
+
+    let computationExpressionItems =
+        asyncBuilderItems
+        |> Array.filter (fun item -> item.Type = SemanticClassificationType.ComputationExpression)
+
+    Assert.True(
+        computationExpressionItems.Length = 1,
+        sprintf
+            "Expected exactly one ComputationExpression classification for 'async' on line 5, got %d. All classifications at that span: %A"
+            computationExpressionItems.Length
+            (asyncBuilderItems |> Array.map (fun i -> i.Type))
+    )

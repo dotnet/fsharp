@@ -17,10 +17,13 @@
 
 	<ItemGroup>
 		<Compile Include="ProtocolHelpers.fs" />
+		<Compile Include="SemanticTokensHelpers.fs" />
 		<Compile Include="Protocol.fs" />
 		<Compile Include="DiagnosticsProtocolTests.fs" />
 		<Compile Include="CodeActionProtocolTests.fs" />
 		<Compile Include="ProjectContextsProtocolTests.fs" />
+		<Compile Include="ProjectContextSelectionTests.fs" />
+		<Compile Include="SemanticTokensProtocolTests.fs" />
 	</ItemGroup>
 
 	<ItemGroup>

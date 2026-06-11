@@ -14,12 +14,9 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-open Microsoft.VisualStudio.Shell
 open FSharp.Compiler.Diagnostics
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
-open Microsoft.VisualStudio.Settings
-open Microsoft.Internal.VisualStudio.Shell.Interop
 
 [<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
 type internal DiagnosticsType =
@@ -38,29 +35,12 @@ type private CachedDiagnostics =
     }
 
 [<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>); PartCreationPolicy(CreationPolicy.Shared)>]
-type internal FSharpDocumentDiagnosticAnalyzer
-    [<ImportingConstructor>]
-    (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
-    ) =
+type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
-    let produceDiagnostic =
-        let settingValue =
-            try
-                let settingsManager = serviceProvider.GetService(typeof<SVsUnifiedSettingsManager>) :?> Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager
-                let reader = settingsManager.GetReader()
-                reader.GetValueOrThrow<string>("fsharp.getDiagnosticsFrom")
-            with _ -> "old"
-        match settingValue with
-        | "both"
-        | "old" -> true
-        | "unset"
-        | "lsp" -> false
-        | _ -> true
-
-
-    let shouldProduceDiagnostics (_document: Document) =
-        produceDiagnostic
+    // The in-proc (devenv) analyzer always produces diagnostics. The LSP
+    // diagnostics endpoint is intentionally not advertised, so there is no
+    // setting to consult here.
+    let shouldProduceDiagnostics (_document: Document) = true
 
 
     // DocumentId keys survive solution snapshots, and holding them weakly means a document dropped from the

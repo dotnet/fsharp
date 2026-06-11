@@ -44,45 +44,19 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
 {
     public ServerCapabilities OverrideServerCapabilities(FSharpLanguageServerConfig config, ServerCapabilities value, ClientCapabilities clientCapabilities)
     {
+        // Only the semantic-tokens capability is advertised. Diagnostics and
+        // code actions are unconditionally suppressed so the in-proc (devenv)
+        // implementations remain authoritative until the LSP server's
+        // diagnostics + code actions are graduated in a follow-up rollout.
+        // Project contexts stay on because they're metadata for the client, not UX.
         var capabilities = new VSInternalServerCapabilities
         {
             TextDocumentSync = value.TextDocumentSync,
-            SupportsDiagnosticRequests = config.EnabledFeatures.Diagnostics,
+            SupportsDiagnosticRequests = false,
             ProjectContextProvider = true,
-            CodeActionProvider = config.EnabledFeatures.CodeActions
-                ? new CodeActionOptions
-                {
-                    CodeActionKinds = [CodeActionKind.QuickFix],
-                    ResolveProvider = false,
-                }
-                : null,
-            DiagnosticProvider =
-                config.EnabledFeatures.Diagnostics ?
-
-            new()
-            {
-                SupportsMultipleContextsDiagnostics = false,
-                DiagnosticKinds = [
-                        // Support a specialized requests dedicated to task-list items.  This way the client can ask just
-                        // for these, independently of other diagnostics.  They can also throttle themselves to not ask if
-                        // the task list would not be visible.
-                        //VSInternalDiagnosticKind.Task,
-                        // Dedicated request for workspace-diagnostics only.  We will only respond to these if FSA is on.
-                        VSInternalDiagnosticKind.Syntax,
-                        // Fine-grained diagnostics requests.  Importantly, this separates out syntactic vs semantic
-                        // requests, allowing the former to quickly reach the user without blocking on the latter.  In a
-                        // similar vein, compiler diagnostics are explicitly distinct from analyzer-diagnostics, allowing
-                        // the former to appear as soon as possible as they are much more critical for the user and should
-                        // not be delayed by a slow analyzer.
-                        //new("Semantic"),
-                        //new(PullDiagnosticCategories.DocumentAnalyzerSyntax),
-                        //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
-                    ]
-            } : null,
-            //HoverProvider = new HoverOptions()
-            //{
-            //    WorkDoneProgress = true
-            //}
+            SemanticTokensOptions = value.SemanticTokensOptions,
+            CodeActionProvider = null,
+            DiagnosticProvider = null,
         };
         return capabilities;
     }
@@ -253,21 +227,27 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
 
         var settingsReadResult = await this.Extensibility.Settings().ReadEffectiveValuesAsync(FSharpExtensionSettings.AllStringSettings, cancellationToken);
 
-        var settingValues = FSharpExtensionSettings.AllStringSettings.Select(
-            setting => (setting, settingsReadResult.ValueOrDefault(setting, defaultValue: FSharpExtensionSettings.UNSET)));
+        var settingValues = FSharpExtensionSettings.AllSettingsWithDefaults.Select(
+            x => (x.Setting, x.DefaultIfUnset, value: settingsReadResult.ValueOrDefault(x.Setting, defaultValue: FSharpExtensionSettings.UNSET)));
 
-        foreach (var (setting, value) in settingValues.Where(x => x.Item2 == FSharpExtensionSettings.UNSET))
+        foreach (var (setting, defaultIfUnset, value) in settingValues.Where(x => x.value == FSharpExtensionSettings.UNSET))
         {
             await this.Extensibility.Settings().WriteAsync(batch =>
-                batch.WriteSetting(setting, FSharpExtensionSettings.OLD), "write default settings", cancellationToken);
+                batch.WriteSetting(setting, defaultIfUnset), "write default settings", cancellationToken);
         }
 
-        var enabled = new[] { FSharpExtensionSettings.LSP, FSharpExtensionSettings.BOTH };
+        var effectiveSettingValues = settingValues.ToDictionary(
+            x => x.Setting,
+            x => x.value == FSharpExtensionSettings.UNSET ? x.DefaultIfUnset : x.value);
 
+        // Only semantic tokens are wired up. Diagnostics and code actions stay
+        // false here so the capabilities override (which also hardcodes them
+        // off) and the feature config agree.
         var serverConfig = new FSharpLanguageServerConfig(
             new FSharpLanguageServerFeatures(
-                diagnostics: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetDiagnosticsFrom, defaultValue: FSharpExtensionSettings.OLD)),
-                codeActions: true
+                diagnostics: false,
+                codeActions: false,
+                semanticTokens: effectiveSettingValues[FSharpExtensionSettings.SemanticClassificationProvider] == FSharpExtensionSettings.LSP
                 ));
 
         var disposeToEndSubscription =
@@ -343,8 +323,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
 
             await projectQuery(project.AsQueryable()).SubscribeAsync(observer, CancellationToken.None);
 
-            // TODO: should we do this, or are we guaranteed it will get processed?
-            // observer.ProcessProject(project);
+            //observer.ProcessProject(project);
         }
 
         var ((inputStream, outputStream), _server) = FSharpLanguageServer.Create(workspace, serverConfig, (serviceCollection) =>
