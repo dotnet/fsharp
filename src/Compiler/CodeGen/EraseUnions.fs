@@ -694,7 +694,8 @@ let private rewriteNullableAttrForFlattenedField (g: TcGlobals) (existingAttrs: 
         let replacementAttr =
             match existingAttrs[idx] with
             // Single byte: change non-nullable (1) to WithNull (2); leave nullable (2) and ambivalent (0) as-is
-            | ILAttribute.Encoded(method, _data, [ ILAttribElem.Byte 1uy ]) -> mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
+            | ILAttribute.Encoded(method, _data, [ ILAttribElem.Byte 1uy ]) ->
+                mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
             // Array of bytes: change first element only (field itself); leave generic type arg nullability unchanged
             | ILAttribute.Encoded(method, _data, [ ILAttribElem.Array(elemType, ILAttribElem.Byte 1uy :: otherElems) ]) ->
                 mkILCustomAttribMethRef (method, [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 2uy) :: otherElems) ], [])
