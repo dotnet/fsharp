@@ -1140,10 +1140,9 @@ let private buildPropertyEventAndSemanticsRows
     (eventHandleLookup: Dictionary<EventDefinitionKey, EventDefinitionHandle>)
     (baselinePropertyHandles: Map<PropertyDefinitionKey, PropertyDefinitionMetadataHandles>)
     (baselineEventHandles: Map<EventDefinitionKey, EventDefinitionMetadataHandles>)
-    (baselinePropertyLookup: Dictionary<string * string, PropertyDefinitionKey * int>)
-    (baselineEventLookup: Dictionary<string * string, EventDefinitionKey * int>)
     (baselineTableRowCounts: int[])
-    (tryGetMethodToken: MethodDefinitionKey -> int option)
+    (remapMethodToken: int -> int)
+    (remapEventTypeToken: int -> int)
     (remapAddedSignature: byte[] -> byte[])
     =
     let propertyDefinitionRowsSnapshot =
@@ -1213,6 +1212,21 @@ let private buildPropertyEventAndSemanticsRows
                             None
                         else
                             Some(StringOffset(MetadataTokens.GetHeapOffset eventDef.Name))
+                let eventType =
+                    // Added events carry a fresh-compile TypeDefOrRef in their EventType
+                    // column; remap it to baseline/delta rows (the content-validated
+                    // reference remapper appends TypeRef rows as needed).
+                    if isAdded && not eventDef.Type.IsNil then
+                        let remappedToken = remapEventTypeToken (MetadataTokens.GetToken eventDef.Type)
+                        let rowNumber = remappedToken &&& 0x00FFFFFF
+
+                        match remappedToken >>> 24 with
+                        | 0x02 -> TDR_TypeDef(TypeDefHandle rowNumber)
+                        | 0x01 -> TDR_TypeRef(TypeRefHandle rowNumber)
+                        | 0x1b -> TDR_TypeSpec(TypeSpecHandle rowNumber)
+                        | _ -> TDR_TypeDef(TypeDefHandle 0)
+                    else
+                        entityHandleToTypeDefOrRef eventDef.Type
                 Some
                     { EventDefinitionRowInfo.Key = key
                       RowId = rowId
@@ -1222,7 +1236,7 @@ let private buildPropertyEventAndSemanticsRows
                       Name = name
                       NameOffset = resolvedNameOffset
                       Attributes = eventDef.Attributes
-                      EventType = entityHandleToTypeDefOrRef eventDef.Type }
+                      EventType = eventType }
             | _ -> None)
 
     let propertyRowsByType =
@@ -1230,19 +1244,9 @@ let private buildPropertyEventAndSemanticsRows
         |> Seq.groupBy (fun row -> row.Key.DeclaringType)
         |> dict
 
-    let propertyRowsByName =
-        propertyDefinitionRowsSnapshot
-        |> Seq.groupBy (fun row -> struct (row.Key.DeclaringType, row.Key.Name))
-        |> dict
-
     let eventRowsByType =
         eventDefinitionRowsSnapshot
         |> Seq.groupBy (fun row -> row.Key.DeclaringType)
-        |> dict
-
-    let eventRowsByName =
-        eventDefinitionRowsSnapshot
-        |> Seq.groupBy (fun row -> struct (row.Key.DeclaringType, row.Key.Name))
         |> dict
 
     let baselinePropertyMapRowCount = baselineTableRowCounts.[TableNames.PropertyMap.Index]
@@ -1328,92 +1332,98 @@ let private buildPropertyEventAndSemanticsRows
                       IsAdded = true }
             | _ -> None)
 
-    let tryGetPropertyAssociation typeName propertyName =
-        match propertyRowsByName.TryGetValue(struct (typeName, propertyName)) with
-        | true, rows ->
-            rows
-            |> Seq.sortBy _.RowId
-            |> Seq.tryHead
-            |> Option.map (fun row -> struct (row.RowId, row.Key))
-        | _ ->
-            match baselinePropertyLookup.TryGetValue((typeName, propertyName)) with
-            | true, (key, rowId) -> Some(struct (rowId, key))
-            | _ -> None
-
-    let tryGetEventAssociation typeName eventName =
-        match eventRowsByName.TryGetValue(struct (typeName, eventName)) with
-        | true, rows ->
-            rows
-            |> Seq.sortBy _.RowId
-            |> Seq.tryHead
-            |> Option.map (fun row -> struct (row.RowId, row.Key))
-        | _ ->
-            match baselineEventLookup.TryGetValue((typeName, eventName)) with
-            | true, (key, rowId) -> Some(struct (rowId, key))
-            | _ -> None
-
-    let semanticsAttributeForMemberKind memberKind =
-        match memberKind with
-        | SymbolMemberKind.PropertyGet _ -> MethodSemanticsAttributes.Getter
-        | SymbolMemberKind.PropertySet _ -> MethodSemanticsAttributes.Setter
-        | SymbolMemberKind.EventAdd _ -> MethodSemanticsAttributes.Adder
-        | SymbolMemberKind.EventRemove _ -> MethodSemanticsAttributes.Remover
-        | SymbolMemberKind.EventInvoke _ -> MethodSemanticsAttributes.Raiser
-        | _ -> MethodSemanticsAttributes.Other
-
-    let accessorName memberKind =
-        match memberKind with
-        | SymbolMemberKind.PropertyGet name
-        | SymbolMemberKind.PropertySet name -> Some name
-        | SymbolMemberKind.EventAdd name
-        | SymbolMemberKind.EventRemove name
-        | SymbolMemberKind.EventInvoke name -> Some name
-        | _ -> None
-
     let mutable nextMethodSemanticsRowId = baselineTableRowCounts.[TableNames.MethodSemantics.Index]
 
+    // MethodSemantics rows for ADDED properties/events are derived from the fresh
+    // compile's accessor relationships (Roslyn parity: DeltaMetadataWriter emits the
+    // semantics rows from the symbol model, not from the edit list), so every added
+    // Property/Event row carries its Getter/Setter/Adder/Remover/Raiser bindings even
+    // when the accessors are compiler-synthesized (module values, [<CLIEvent>] members).
+    // Accessor method tokens come from the fresh metadata and are remapped to
+    // baseline/delta MethodDef rows. A Property/Event row without its semantics rows is
+    // corrupt metadata, so a missing/unmappable accessor fails closed below.
     let methodSemanticsRowsSnapshot =
-        request.UpdatedAccessors
-        |> List.choose (fun accessor ->
-            match accessor.Method with
-            | None -> None
-            | Some methodKey ->
-                match tryGetMethodToken methodKey with
-                | None -> None
-                | Some methodToken ->
-                    let typeName = accessor.ContainingType
-                    let attrs = semanticsAttributeForMemberKind accessor.MemberKind
-                    match accessor.MemberKind, accessorName accessor.MemberKind with
-                    | (SymbolMemberKind.PropertyGet _
-                      | SymbolMemberKind.PropertySet _), Some propertyName ->
-                        match tryGetPropertyAssociation typeName propertyName with
-                        | Some(struct (propertyRowId, propertyKey)) when propertyDefinitionIndex.IsAdded propertyKey ->
-                            nextMethodSemanticsRowId <- nextMethodSemanticsRowId + 1
-                            Some
-                                { MethodSemanticsMetadataUpdate.RowId = nextMethodSemanticsRowId
-                                  MethodToken = methodToken
-                                  Attributes = attrs
-                                  IsAdded = true
-                                  AssociationInfo =
-                                    MethodSemanticsAssociation.PropertyAssociation(propertyKey, propertyRowId) }
-                        | None -> None
-                        | _ -> None
-                    | (SymbolMemberKind.EventAdd _
-                      | SymbolMemberKind.EventRemove _
-                      | SymbolMemberKind.EventInvoke _), Some eventName ->
-                        match tryGetEventAssociation typeName eventName with
-                        | Some(struct (eventRowId, eventKey)) when eventDefinitionIndex.IsAdded eventKey ->
-                            nextMethodSemanticsRowId <- nextMethodSemanticsRowId + 1
-                            Some
-                                { MethodSemanticsMetadataUpdate.RowId = nextMethodSemanticsRowId
-                                  MethodToken = methodToken
-                                  Attributes = attrs
-                                  IsAdded = true
-                                  AssociationInfo =
-                                    MethodSemanticsAssociation.EventAssociation(eventKey, eventRowId) }
-                        | None -> None
-                        | _ -> None
-                    | _ -> None)
+        let accessorRow (memberDisplay: string) (attrs: MethodSemanticsAttributes) (handle: MethodDefinitionHandle) association =
+            if handle.IsNil then
+                None
+            else
+                let freshToken = MetadataTokens.GetToken(EntityHandle.op_Implicit handle)
+                let mappedToken = remapMethodToken freshToken
+
+                if mappedToken >>> 24 <> 0x06 || mappedToken &&& 0x00FFFFFF = 0 then
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added member '{memberDisplay}' has an accessor that does not map to a baseline or delta MethodDef row; please rebuild."
+                        )
+                    )
+
+                nextMethodSemanticsRowId <- nextMethodSemanticsRowId + 1
+
+                Some
+                    { MethodSemanticsMetadataUpdate.RowId = nextMethodSemanticsRowId
+                      MethodToken = mappedToken
+                      Attributes = attrs
+                      IsAdded = true
+                      AssociationInfo = association }
+
+        let propertySemantics =
+            propertyDefinitionRowsSnapshot
+            |> List.filter (fun row -> row.IsAdded)
+            |> List.collect (fun row ->
+                let display = $"{row.Key.DeclaringType}::{row.Key.Name}"
+                let association = MethodSemanticsAssociation.PropertyAssociation(row.Key, row.RowId)
+
+                let rows =
+                    match propertyHandleLookup.TryGetValue row.Key with
+                    | true, handle when not handle.IsNil ->
+                        let accessors = (metadataReader.GetPropertyDefinition handle).GetAccessors()
+
+                        [ yield! accessorRow display MethodSemanticsAttributes.Getter accessors.Getter association |> Option.toList
+                          yield! accessorRow display MethodSemanticsAttributes.Setter accessors.Setter association |> Option.toList
+                          for other in accessors.Others do
+                              yield! accessorRow display MethodSemanticsAttributes.Other other association |> Option.toList ]
+                    | _ -> []
+
+                if List.isEmpty rows then
+                    // Fail closed: a Property row whose accessors cannot be bound would be
+                    // unreachable, corrupt metadata after apply.
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added property '{display}' has no resolvable accessor methods; please rebuild."
+                        )
+                    )
+
+                rows)
+
+        let eventSemantics =
+            eventDefinitionRowsSnapshot
+            |> List.filter (fun row -> row.IsAdded)
+            |> List.collect (fun row ->
+                let display = $"{row.Key.DeclaringType}::{row.Key.Name}"
+                let association = MethodSemanticsAssociation.EventAssociation(row.Key, row.RowId)
+
+                let rows =
+                    match eventHandleLookup.TryGetValue row.Key with
+                    | true, handle when not handle.IsNil ->
+                        let accessors = (metadataReader.GetEventDefinition handle).GetAccessors()
+
+                        [ yield! accessorRow display MethodSemanticsAttributes.Adder accessors.Adder association |> Option.toList
+                          yield! accessorRow display MethodSemanticsAttributes.Remover accessors.Remover association |> Option.toList
+                          yield! accessorRow display MethodSemanticsAttributes.Raiser accessors.Raiser association |> Option.toList
+                          for other in accessors.Others do
+                              yield! accessorRow display MethodSemanticsAttributes.Other other association |> Option.toList ]
+                    | _ -> []
+
+                if List.isEmpty rows then
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added event '{display}' has no resolvable accessor methods; please rebuild."
+                        )
+                    )
+
+                rows)
+
+        propertySemantics @ eventSemantics
 
     // Fill parent map row ids for ADDED properties/events now that map rows are allocated;
     // the AddProperty/AddEvent EncLog entries carry the parent map token (CLR requirement).
@@ -3196,12 +3206,6 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     for KeyValue(token, key) in addedPropertyTokenLookup do
         propertyTokenToKey[token] <- key
 
-    let baselinePropertyLookup =
-        let dict = Dictionary<string * string, PropertyDefinitionKey * int>()
-        for KeyValue(key, token) in request.Baseline.PropertyTokens do
-            dict.Add((key.DeclaringType, key.Name), (key, token &&& 0x00FFFFFF))
-        dict
-
     let eventTokenToKey =
         let dict = Dictionary<int, EventDefinitionKey>()
         for KeyValue(key, token) in request.Baseline.EventTokens do
@@ -3210,12 +3214,6 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
 
     for KeyValue(token, key) in addedEventTokenLookup do
         eventTokenToKey[token] <- key
-
-    let baselineEventLookup =
-        let dict = Dictionary<string * string, EventDefinitionKey * int>()
-        for KeyValue(key, token) in request.Baseline.EventTokens do
-            dict.Add((key.DeclaringType, key.Name), (key, token &&& 0x00FFFFFF))
-        dict
 
     let methodTokenToKey =
         let dict = Dictionary<int, MethodDefinitionKey>()
@@ -3544,10 +3542,9 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 eventHandleLookup
                 baselinePropertyHandles
                 baselineEventHandles
-                baselinePropertyLookup
-                baselineEventLookup
                 baselineTableRowCounts
-                tryGetMethodToken
+                definitionTokenRemapper.RemapDefinitionToken
+                remapEntityToken
                 (remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken))
 
         let methodUpdates = methodUpdatesWithDefs |> List.map (fun (update, _, _) -> update)

@@ -562,11 +562,13 @@ let mapSymbolChangesToDelta
 
     let updatedMethods = deduplicate (updatedMethods @ startupInitMethods)
 
+    // ADDED accessors are intentionally absent: the emitter discovers added accessor
+    // methods by walking the fresh compile and derives the MethodSemantics rows binding
+    // them to their added Property/Event rows from the fresh metadata's accessor
+    // relationships, so no baseline method resolution exists (or is needed) for them.
     let accessorCandidates =
-        [ yield! FSharpSymbolChanges.propertyAccessorsAdded changes |> List.map (fun symbol -> symbol, None)
-          yield! FSharpSymbolChanges.propertyAccessorsUpdated changes |> List.map (fun change -> change.Symbol, change.ContainingEntity)
+        [ yield! FSharpSymbolChanges.propertyAccessorsUpdated changes |> List.map (fun change -> change.Symbol, change.ContainingEntity)
           yield! FSharpSymbolChanges.propertyAccessorsDeleted changes |> List.map (fun symbol -> symbol, None)
-          yield! FSharpSymbolChanges.eventAccessorsAdded changes |> List.map (fun symbol -> symbol, None)
           yield! FSharpSymbolChanges.eventAccessorsUpdated changes |> List.map (fun change -> change.Symbol, change.ContainingEntity)
           yield! FSharpSymbolChanges.eventAccessorsDeleted changes |> List.map (fun symbol -> symbol, None) ]
         |> List.filter (fun (symbol, _) ->

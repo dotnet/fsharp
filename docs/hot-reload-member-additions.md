@@ -182,6 +182,86 @@ C# EnC parity, asserted by the runtime tests:
 - Multi-generation: a second added field chains through the updated baseline
   (gen-1 field tokens resolve; only the new Field row is appended).
 
+## Property and event additions (Phase B3)
+
+### C# reference EncLog (Roslyn EmitDifference, csharp_enc_reference `members` scenario)
+
+Scenario `prop_add`: `public int NewProp { get; set; }` added to a class that
+already has one auto-property (single edit: Insert(property); Roslyn
+synthesizes the accessors and backing field). Generation-1 delta (mdv:
+`csharp_enc_reference/reference_mdv_prop_add.txt`):
+
+```
+EnC Log:
+ 1: AssemblyRef     0x23000002  Default
+ 2: MemberRef       0x0a000008  Default      (CompilerGeneratedAttribute..ctor)
+ 3: MemberRef       0x0a000009  Default      (DebuggerBrowsableAttribute..ctor)
+ 4: TypeRef         0x0100000a  Default      (Object)
+ 5: TypeRef         0x0100000b  Default      (CompilerGeneratedAttribute)
+ 6: TypeRef         0x0100000c  Default      (DebuggerBrowsableState)
+ 7: TypeRef         0x0100000d  Default      (DebuggerBrowsableAttribute)
+ 8: TypeDef         0x02000002  AddField     <- backing field parent
+ 9: Field           0x04000002  Default      <- '<NewProp>k__BackingField'
+ a: TypeDef         0x02000002  AddMethod
+ b: MethodDef       0x06000005  Default      (get_NewProp)
+ c: TypeDef         0x02000002  AddMethod
+ d: MethodDef       0x06000006  Default      (set_NewProp)
+ e: PropertyMap     0x15000001  AddProperty  <- parent: the EXISTING baseline map row
+ f: Property        0x17000002  Default      <- the added Property row
+10: MethodDef       0x06000006  AddParameter
+11: Param           0x08000002  Default      ('value')
+12-15: CustomAttribute x4        Default     ([CompilerGenerated]/[DebuggerBrowsable]
+                                              on the backing field + accessors)
+16: MethodSemantics 0x18000003  Default      (getter binding)
+17: MethodSemantics 0x18000004  Default      (setter binding)
+
+Property row Get/Set columns render nil (EnC): accessors are linked through
+the MethodSemantics rows, exactly like FieldList/MethodList for added types.
+```
+
+### F# emission shape
+
+- **MethodSemantics rows are derived from the fresh compile's accessor
+  relationships** (`PropertyDefinition.GetAccessors()` /
+  `EventDefinition.GetAccessors()` on the fresh metadata, accessor method
+  tokens remapped to baseline/delta MethodDef rows) — Roslyn parity:
+  `DeltaMetadataWriter` emits semantics from the symbol model, not from the
+  edit list. Every ADDED Property/Event row therefore carries its
+  Getter/Setter/Adder/Remover/Raiser bindings even when the accessors are
+  compiler-synthesized (module values, `[<CLIEvent>]` members get them too —
+  previously the module-value property row shipped without semantics rows).
+  A Property/Event row whose accessors cannot be bound fails closed
+  (`HotReloadUnsupportedEditException`): such a row is corrupt metadata.
+- The delta builder does NOT resolve ADDED accessors against the baseline
+  (there is nothing to resolve): added accessor methods are discovered by the
+  emitter walking the fresh module, like any added method. `UpdatedAccessors`
+  remains the body-update path for EXISTING accessors.
+- Events bind BOTH adder and remover (and raiser when present); the
+  `EventType` column of ADDED Event rows is remapped from the fresh compile
+  to baseline/delta rows through the content-validated reference remapper
+  (appending a TypeRef row when no baseline row matches — Roslyn likewise
+  re-emits TypeRefs used by the delta).
+- New PropertyMap/EventMap rows are logged as plain `Default` entries before
+  the `AddProperty`/`AddEvent` entries referencing them; when the map row
+  already exists (baseline or chained from an earlier generation) the parent
+  entry reuses it and no map row is emitted. Validated across generations at
+  runtime (gen-1 adds the map row, gen-2 reuses it from the chained baseline).
+- An F# auto-property (`member val`) composes the B2 field machinery with the
+  accessor/property machinery: AddField pair (backing field, ctor-paired
+  initializer) + two AddMethod pairs + AddProperty pair + two MethodSemantics
+  rows — the recorded C# template minus the custom-attribute rows (CA
+  emission for added members is still deferred; see Known gaps).
+- A `[<CLIEvent>]` member lowers to a backing `Event<_,_>` instance field
+  (ctor-paired initializer) + add_/remove_ accessors + the Event row; the
+  typed-tree `get_<Name>` PropertyGet symbol has no IL counterpart and is
+  ignored. Validated at runtime: the added event is subscribable through
+  `Type.GetEvent` reflection and fires.
+
+Runtime validation: added properties are readable/writable through ordinary
+`Type.GetProperty` reflection on LIVE instances (semantics rows wired the
+accessors); auto-property state follows C# EnC semantics (existing instances
+read `default(T)`, new instances run the updated ctor and see initializers).
+
 ## New type definitions (Phase C4: added closure classes)
 
 ### C# reference EncLog (Roslyn EmitDifference, csharp_enc_reference harness)

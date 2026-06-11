@@ -1399,7 +1399,9 @@ module DeltaEmitterTests =
 
         Assert.Single eventAdds |> ignore
         Assert.Single eventMapAdds |> ignore
-        Assert.Single semanticsAdds |> ignore
+        // MethodSemantics rows are derived from the fresh compile's accessor
+        // relationships: an event binds BOTH its adder and remover (C# parity).
+        Assert.Equal(2, semanticsAdds.Length)
 
         let eventRowId =
             eventAdds
@@ -1520,7 +1522,8 @@ module DeltaEmitterTests =
         Assert.Single eventAdds |> ignore
         Assert.Single eventMapParentAdds |> ignore
         Assert.Empty eventMapRowAdds
-        Assert.Single semanticsAdds |> ignore
+        // Adder + remover semantics rows, derived from the fresh accessor relationships.
+        Assert.Equal(2, semanticsAdds.Length)
 
     [<Fact>]
     let ``metadata validator tool is available`` () =

@@ -145,8 +145,12 @@ module MdvValidationTests =
             Map.ofList
                 [ "Property", { StringBytes = metadataStringBytes; BlobBytes = metadataBlobBytes }
                   "PropertyUpdate", { StringBytes = metadataStringBytes; BlobBytes = metadataBlobBytes }
-                  "Event", { StringBytes = metadataStringBytes; BlobBytes = metadataBlobBytes }
-                  "EventUpdate", { StringBytes = metadataStringBytes; BlobBytes = metadataBlobBytes }
+                  // Added events remap their EventType column to baseline/delta rows; on
+                  // synthetic baselines without byte-derived TypeRef snapshots this appends
+                  // the event-type TypeRef (+ scope AssemblyRef) name strings (Roslyn also
+                  // re-emits TypeRef rows used by a delta rather than reusing baseline rows).
+                  "Event", { StringBytes = 80; BlobBytes = 32 }
+                  "EventUpdate", { StringBytes = 80; BlobBytes = 32 }
                   // Async/Closure scenarios now carry module + DebuggableAttribute strings; allow modest growth.
                   "Async", { StringBytes = 24; BlobBytes = metadataBlobBytes }
                   "AsyncUpdate", { StringBytes = 24; BlobBytes = metadataBlobBytes }

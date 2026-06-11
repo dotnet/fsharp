@@ -2708,3 +2708,389 @@ type Holder() =
                 try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
+
+    // -----------------------------------------------------------------------------
+    // Phase B3: added properties and events on existing classes
+    // -----------------------------------------------------------------------------
+
+    /// Shared scaffold for the member-addition runtime tests: compiles the baseline with
+    /// --enable:hotreloaddeltas, starts a session with the given runtime capabilities,
+    /// loads the runtime copy, and hands the test an applyGeneration function that
+    /// compiles updated source, emits the delta, applies it, and returns the delta.
+    let private runMemberAdditionScenario
+        (projectPrefix: string)
+        (assemblyName: string)
+        (capabilities: string list)
+        (baselineSource: string)
+        (action: Assembly -> (int -> string -> CodeAnalysis.FSharpHotReloadDelta) -> unit)
+        =
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), projectPrefix, System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, assemblyName + ".dll")
+            let runtimeDllPath = Path.Combine(projectDir, assemblyName + ".runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, baselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString baselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+
+                let applyGeneration gen (source: string) =
+                    File.WriteAllText(fsPath, source)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    let updatedOptions =
+                        { projectOptions with
+                            OtherOptions =
+                                projectOptions.OtherOptions
+                                |> Array.filter (fun opt ->
+                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                    let compileDiagnostics, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    | Ok delta ->
+                        let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                        printfn "[%s] Gen %d: metadata=%d IL=%d PDB=%d" projectPrefix gen delta.Metadata.Length delta.IL.Length pdbBytes.Length
+
+                        match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DUMP_DIR") with
+                        | null | "" -> ()
+                        | dumpDir ->
+                            Directory.CreateDirectory(dumpDir) |> ignore
+                            File.Copy(runtimeDllPath, Path.Combine(dumpDir, "baseline.dll"), true)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dmeta"), delta.Metadata)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dil"), delta.IL)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dpdb"), pdbBytes)
+
+                        try
+                            MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        with :? InvalidOperationException as ex ->
+                            failwithf "Gen %d ApplyUpdate failed (delta rejected): %s" gen ex.Message
+
+                        delta
+
+                action assembly applyGeneration
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
+    let private readDeltaEncLog (metadata: byte[]) =
+        use provider =
+            MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> metadata)
+
+        provider.GetMetadataReader().GetEditAndContinueLogEntries()
+        |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+        |> Seq.toArray
+
+    /// Asserts the EncLog contains an (Add* parent, op) entry immediately followed by a
+    /// Default entry for the added member row in the given table.
+    let private assertAddPair (encLog: (int * int)[]) (parentTable: int) (operation: int) (memberTable: int) =
+        let index =
+            encLog
+            |> Array.tryFindIndex (fun (token, op) -> token >>> 24 = parentTable && op = operation)
+
+        match index with
+        | None -> failwithf "Expected (table 0x%02X, op %d) EncLog entry; got %A" parentTable operation encLog
+        | Some i ->
+            let token, op = encLog.[i + 1]
+            Assert.Equal(memberTable, token >>> 24)
+            Assert.Equal(0, op)
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added properties`` () =
+        // Phase B3: generation 1 adds a getter-only property; generation 2 adds a
+        // getter+setter property over the same state. Mirrors the recorded C# prop_add
+        // EncLog template: (TypeDef, AddMethod)+(MethodDef, Default) per accessor,
+        // (PropertyMap, AddProperty)+(Property, Default), MethodSemantics rows binding
+        // the accessors. The PropertyMap row is NEW in generation 1 (the baseline class
+        // has no properties) and reused from the chained baseline in generation 2.
+        let baselineSource =
+            """
+module Sample.Props
+
+type Widget() =
+    let mutable state = 1
+    member _.State() = state
+"""
+
+        let gen1Source =
+            """
+module Sample.Props
+
+type Widget() =
+    let mutable state = 1
+    member _.State() = state
+    member _.Doubled = state * 2
+"""
+
+        let gen2Source =
+            """
+module Sample.Props
+
+type Widget() =
+    let mutable state = 1
+    member _.State() = state
+    member _.Doubled = state * 2
+    member _.Current
+        with get () = state
+        and set value = state <- value
+"""
+
+        runMemberAdditionScenario
+            "fsharp-hotreload-propadd"
+            "PropertyAddLibrary"
+            [ "Baseline"; "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
+            baselineSource
+            (fun assembly applyGeneration ->
+                let widgetType = assembly.GetType("Sample.Props+Widget", throwOnError = true)
+                let instance = Activator.CreateInstance(widgetType)
+                let state () =
+                    widgetType.GetMethod("State", BindingFlags.Public ||| BindingFlags.Instance).Invoke(instance, [||]) :?> int
+
+                Assert.Equal(1, state ())
+
+                // ---------------- Generation 1: getter-only property ----------------
+                let delta1 = applyGeneration 1 gen1Source
+                let encLog1 = readDeltaEncLog delta1.Metadata
+
+                // AddMethod pair for the getter, AddProperty pair for the Property row,
+                // and MethodSemantics binding (recorded C# template shape).
+                assertAddPair encLog1 0x02 1 0x06 // (TypeDef, AddMethod) + MethodDef
+                assertAddPair encLog1 0x15 4 0x17 // (PropertyMap, AddProperty) + Property
+                Assert.Contains(encLog1, fun (token, op) -> token >>> 24 = 0x18 && op = 0) // MethodSemantics
+
+                // The baseline class had no properties: the NEW PropertyMap row is logged
+                // as a plain Default entry BEFORE the AddProperty entry referencing it.
+                let mapRowIndex = encLog1 |> Array.findIndex (fun (token, op) -> token >>> 24 = 0x15 && op = 0)
+                let addPropertyIndex = encLog1 |> Array.findIndex (fun (token, op) -> token >>> 24 = 0x15 && op = 4)
+                Assert.True(mapRowIndex < addPropertyIndex, sprintf "PropertyMap row must precede AddProperty; got %A" encLog1)
+
+                // The added property is reachable through ordinary reflection on the LIVE
+                // instance: MethodSemantics rows wired the getter.
+                let doubled = widgetType.GetProperty("Doubled", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull doubled), "Added property 'Doubled' not found after ApplyUpdate.")
+                Assert.True(doubled.CanRead && not doubled.CanWrite, "Expected a getter-only property.")
+                Assert.Equal(2, doubled.GetValue(instance) :?> int)
+                printfn "[propadd] SUCCESS gen 1: getter-only property readable via reflection"
+
+                // ---------------- Generation 2: getter+setter property ----------------
+                let delta2 = applyGeneration 2 gen2Source
+                let encLog2 = readDeltaEncLog delta2.Metadata
+
+                // The PropertyMap row added in generation 1 chained into the baseline: the
+                // AddProperty parent reuses it, no NEW PropertyMap row may be emitted.
+                assertAddPair encLog2 0x15 4 0x17
+                Assert.DoesNotContain(encLog2, fun (token, op) -> token >>> 24 = 0x15 && op = 0)
+
+                let current = widgetType.GetProperty("Current", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull current), "Added property 'Current' not found after generation 2.")
+                Assert.True(current.CanRead && current.CanWrite, "Expected a readable+writable property.")
+                Assert.Equal(1, current.GetValue(instance) :?> int)
+                current.SetValue(instance, 21)
+                Assert.Equal(21, state ())
+                Assert.Equal(42, doubled.GetValue(instance) :?> int)
+                printfn "[propadd] SUCCESS gen 2: getter+setter property writable via reflection")
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added auto-property`` () =
+        // Phase B3 composing with the B2 field machinery: `member val` lowers to a
+        // backing instance field (initialized in the primary ctor) plus get_/set_
+        // accessors plus the Property row - the full recorded C# prop_add template
+        // (AddField pair + two AddMethod pairs + AddProperty pair + MethodSemantics).
+        // C# EnC semantics: existing instances read default(T) through the added
+        // property; new instances run the updated ctor and see the initializer.
+        let baselineSource =
+            """
+module Sample.AutoProps
+
+type Gadget() =
+    member _.Probe() = 0
+"""
+
+        let gen1Source =
+            """
+module Sample.AutoProps
+
+type Gadget() =
+    member _.Probe() = 0
+    member val Slot = 41 with get, set
+"""
+
+        runMemberAdditionScenario
+            "fsharp-hotreload-autoprop"
+            "AutoPropertyAddLibrary"
+            [ "Baseline"; "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
+            baselineSource
+            (fun assembly applyGeneration ->
+                let gadgetType = assembly.GetType("Sample.AutoProps+Gadget", throwOnError = true)
+                let preUpdateInstance = Activator.CreateInstance(gadgetType)
+
+                let delta1 = applyGeneration 1 gen1Source
+                let encLog1 = readDeltaEncLog delta1.Metadata
+
+                // Full template: backing field + both accessors + property + semantics.
+                assertAddPair encLog1 0x02 2 0x04 // (TypeDef, AddField) + Field
+                assertAddPair encLog1 0x02 1 0x06 // (TypeDef, AddMethod) + MethodDef
+                assertAddPair encLog1 0x15 4 0x17 // (PropertyMap, AddProperty) + Property
+
+                let addMethodPairs = encLog1 |> Array.filter (fun (token, op) -> token >>> 24 = 0x02 && op = 1)
+                Assert.Equal(2, addMethodPairs.Length)
+
+                let semanticsRows = encLog1 |> Array.filter (fun (token, op) -> token >>> 24 = 0x18 && op = 0)
+                Assert.Equal(2, semanticsRows.Length)
+
+                let slot = gadgetType.GetProperty("Slot", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull slot), "Added auto-property 'Slot' not found after ApplyUpdate.")
+
+                // Existing instance: zeroed backing field (its ctor never ran the
+                // initializer) - C# EnC semantics.
+                Assert.Equal(0, slot.GetValue(preUpdateInstance) :?> int)
+
+                // New instance: the updated ctor runs the initializer.
+                let postUpdateInstance = Activator.CreateInstance(gadgetType)
+                Assert.Equal(41, slot.GetValue(postUpdateInstance) :?> int)
+
+                // The property is real instance state, writable through the setter.
+                slot.SetValue(preUpdateInstance, 9)
+                Assert.Equal(9, slot.GetValue(preUpdateInstance) :?> int)
+                Assert.Equal(41, slot.GetValue(postUpdateInstance) :?> int)
+                printfn "[autoprop] SUCCESS: zeroed existing instance, initialized new instance, writable property")
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added CLIEvent`` () =
+        // Phase B3: a [<CLIEvent>] member lowers to a backing Event<_,_> instance field
+        // (initialized in the primary ctor) plus add_/remove_ accessors plus the Event
+        // row; MethodSemantics rows bind the adder/remover and the EventMap row parents
+        // the AddEvent entry.
+        let baselineSource =
+            """
+module Sample.Events
+
+open System
+
+type Notifier() =
+    let existing = Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member _.Existing = existing.Publish
+    member _.TriggerExisting() = existing.Trigger(null, EventArgs.Empty)
+"""
+
+        let gen1Source =
+            """
+module Sample.Events
+
+open System
+
+type Notifier() =
+    let existing = Event<EventHandler, EventArgs>()
+    let added = Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member _.Existing = existing.Publish
+    member _.TriggerExisting() = existing.Trigger(null, EventArgs.Empty)
+    [<CLIEvent>]
+    member _.Added = added.Publish
+    member _.TriggerAdded() = added.Trigger(null, EventArgs.Empty)
+"""
+
+        runMemberAdditionScenario
+            "fsharp-hotreload-clievent"
+            "CliEventAddLibrary"
+            [ "Baseline"; "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
+            baselineSource
+            (fun assembly applyGeneration ->
+                let notifierType = assembly.GetType("Sample.Events+Notifier", throwOnError = true)
+
+                let delta1 = applyGeneration 1 gen1Source
+                let encLog1 = readDeltaEncLog delta1.Metadata
+
+                // Backing field + accessor methods + Event row + semantics.
+                assertAddPair encLog1 0x02 2 0x04 // (TypeDef, AddField) + Field
+                assertAddPair encLog1 0x02 1 0x06 // (TypeDef, AddMethod) + MethodDef
+                assertAddPair encLog1 0x12 5 0x14 // (EventMap, AddEvent) + Event
+
+                let semanticsRows = encLog1 |> Array.filter (fun (token, op) -> token >>> 24 = 0x18 && op = 0)
+                Assert.Equal(2, semanticsRows.Length)
+
+                // New instance: ctor initializes the added backing field; the event is
+                // subscribable through ordinary reflection and the trigger fires it.
+                let instance = Activator.CreateInstance(notifierType)
+                let addedEvent = notifierType.GetEvent("Added", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull addedEvent), "Added event 'Added' not found after ApplyUpdate.")
+
+                let mutable fired = 0
+                let handler = EventHandler(fun _ _ -> fired <- fired + 1)
+                addedEvent.AddEventHandler(instance, handler)
+
+                notifierType.GetMethod("TriggerAdded", BindingFlags.Public ||| BindingFlags.Instance).Invoke(instance, [||])
+                |> ignore
+
+                Assert.Equal(1, fired)
+
+                addedEvent.RemoveEventHandler(instance, handler)
+                notifierType.GetMethod("TriggerAdded", BindingFlags.Public ||| BindingFlags.Instance).Invoke(instance, [||])
+                |> ignore
+
+                Assert.Equal(1, fired)
+                printfn "[clievent] SUCCESS: added CLIEvent subscribable and firing via reflection")
