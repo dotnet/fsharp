@@ -196,3 +196,293 @@ type FSharpActiveStatementRemapResult =
     | Remapped of update: FSharpManagedActiveStatementUpdate
     /// <summary>The containing method is untouched by this delta; the executing version remains current.</summary>
     | MethodUpToDate of instruction: FSharpManagedInstructionId
+
+namespace FSharp.Compiler.HotReload
+
+/// <summary>
+/// Sequence-point analysis backing the Phase G active-statement machinery: decoding per-method
+/// sequence points from Portable PDBs, classifying how a method's sequence points changed between
+/// the committed state and a fresh compile, and merging per-method line shifts into the
+/// debugger-facing <see cref="T:FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates"/> shape
+/// using Roslyn's <c>AbstractEditAndContinueAnalyzer.GetLineEdits</c> segment-merge algorithm.
+/// </summary>
+module internal ActiveStatementAnalysis =
+
+    open System
+    open System.Collections.Immutable
+    open System.Reflection.Metadata
+    open System.Reflection.Metadata.Ecma335
+    open FSharp.Compiler.CodeAnalysis
+
+    /// A visible (non-hidden) sequence point in raw Portable PDB coordinates (1-based lines/columns).
+    type VisibleSequencePoint =
+        {
+            ILOffset: int
+            StartLine: int
+            StartColumn: int
+            EndLine: int
+            EndColumn: int
+        }
+
+        /// Converts the raw PDB coordinates to a zero-based contract span (Roslyn SourceSpan convention).
+        member this.ToSourceSpan() : FSharpSourceSpan =
+            {
+                StartLine = this.StartLine - 1
+                StartColumn = this.StartColumn - 1
+                EndLine = this.EndLine - 1
+                EndColumn = this.EndColumn - 1
+            }
+
+    /// A decoded sequence point: hidden points carry only their IL offset.
+    [<RequireQualifiedAccess>]
+    type PdbSequencePoint =
+        | Hidden of ilOffset: int
+        | Visible of VisibleSequencePoint
+
+        member this.ILOffset =
+            match this with
+            | Hidden ilOffset -> ilOffset
+            | Visible visible -> visible.ILOffset
+
+    /// <summary>
+    /// The decoded sequence points of one method. <see cref="Document"/> is the PDB document name when
+    /// every sequence point of the method lives in a single document, and None for multi-document
+    /// methods (e.g. bodies spliced with <c>#line</c>) — those are never line-shift candidates.
+    /// </summary>
+    type MethodSequencePoints =
+        {
+            Document: string option
+            Points: PdbSequencePoint list
+        }
+
+        member this.VisiblePoints =
+            this.Points
+            |> List.choose (function
+                | PdbSequencePoint.Visible visible -> Some visible
+                | PdbSequencePoint.Hidden _ -> None)
+
+    /// <summary>
+    /// Decodes the MethodDebugInformation table of a Portable PDB image into per-method sequence
+    /// points, keyed by MethodDef token (0x06xxxxxx; MethodDebugInformation rows map 1:1 to MethodDef
+    /// rows). Methods without a sequence-point blob have no entry. Unreadable images decode to the
+    /// empty map (fail closed: the Phase G machinery then stays inert rather than guessing).
+    /// </summary>
+    let decodeMethodSequencePoints (pdbBytes: byte[]) : Map<int, MethodSequencePoints> =
+        try
+            use provider =
+                MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange pdbBytes)
+
+            let reader = provider.GetMetadataReader()
+            let mutable result = Map.empty
+
+            for rowId in 1 .. reader.MethodDebugInformation.Count do
+                let handle = MetadataTokens.MethodDebugInformationHandle rowId
+                let methodDebugInfo = reader.GetMethodDebugInformation handle
+
+                if not methodDebugInfo.SequencePointsBlob.IsNil then
+                    let sequencePoints = methodDebugInfo.GetSequencePoints() |> List.ofSeq
+
+                    let documentName =
+                        let documents =
+                            sequencePoints
+                            |> List.map (fun sp -> sp.Document)
+                            |> List.distinct
+
+                        match documents with
+                        | [ single ] when not single.IsNil ->
+                            let document = reader.GetDocument single
+                            Some(reader.GetString document.Name)
+                        | _ -> None
+
+                    let points =
+                        sequencePoints
+                        |> List.map (fun sp ->
+                            if sp.IsHidden then
+                                PdbSequencePoint.Hidden sp.Offset
+                            else
+                                PdbSequencePoint.Visible
+                                    {
+                                        ILOffset = sp.Offset
+                                        StartLine = sp.StartLine
+                                        StartColumn = sp.StartColumn
+                                        EndLine = sp.EndLine
+                                        EndColumn = sp.EndColumn
+                                    })
+
+                    let methodToken = 0x06000000 ||| rowId
+                    result <- Map.add methodToken { Document = documentName; Points = points } result
+
+            result
+        with :? BadImageFormatException ->
+            Map.empty
+
+    /// How a method's sequence points changed between the committed state and a fresh compile.
+    [<RequireQualifiedAccess>]
+    type SequencePointComparison =
+        /// The sequence points are byte-for-byte unchanged.
+        | Identical
+        /// Every visible sequence point moved by the same line delta with identical IL offsets,
+        /// columns and line extents — the method body did not change, the code around it did
+        /// (Roslyn: a line-edit segment; the debugger rebinds without recompilation).
+        | UniformLineShift of lineDelta: int
+        /// Anything else: changed offsets/columns/structure, document changes, multi-document
+        /// bodies. The method must be recompiled to keep its debug information accurate
+        /// (Roslyn: trivia edits force a member body update).
+        | Different
+
+    let compareMethodSequencePoints (committed: MethodSequencePoints) (fresh: MethodSequencePoints) =
+        if committed = fresh then
+            SequencePointComparison.Identical
+        elif
+            committed.Document.IsNone
+            || committed.Document <> fresh.Document
+            || List.length committed.Points <> List.length fresh.Points
+        then
+            SequencePointComparison.Different
+        else
+            let mutable lineDelta = ValueNone
+            let mutable different = false
+
+            for committedPoint, freshPoint in List.zip committed.Points fresh.Points do
+                match committedPoint, freshPoint with
+                | PdbSequencePoint.Hidden oldOffset, PdbSequencePoint.Hidden newOffset when oldOffset = newOffset -> ()
+                | PdbSequencePoint.Visible oldPoint, PdbSequencePoint.Visible newPoint when
+                    oldPoint.ILOffset = newPoint.ILOffset
+                    && oldPoint.StartColumn = newPoint.StartColumn
+                    && oldPoint.EndColumn = newPoint.EndColumn
+                    && newPoint.EndLine - newPoint.StartLine = oldPoint.EndLine - oldPoint.StartLine
+                    ->
+                    let delta = newPoint.StartLine - oldPoint.StartLine
+
+                    match lineDelta with
+                    | ValueNone -> lineDelta <- ValueSome delta
+                    | ValueSome existing when existing = delta -> ()
+                    | ValueSome _ -> different <- true
+                | _ -> different <- true
+
+            if different then
+                SequencePointComparison.Different
+            else
+                match lineDelta with
+                | ValueSome delta when delta <> 0 -> SequencePointComparison.UniformLineShift delta
+                // All-equal pairs reduce to structural equality, handled above; an all-hidden or
+                // zero-delta walk that still got here is by construction identical.
+                | _ -> SequencePointComparison.Identical
+
+    /// <summary>
+    /// One per-method line-shift segment feeding the line-update merge: the method's visible
+    /// sequence-point extent in the committed state (zero-based lines) plus the uniform line delta of
+    /// the fresh compile. Zero-delta segments are emitted for unchanged methods purely so overlaps
+    /// with shifted segments are detected (Roslyn parity). <see cref="MethodToken"/> is bookkeeping
+    /// for the recompile fallback and never serialized.
+    /// </summary>
+    type LineShiftSegment =
+        {
+            FileName: string
+            OldStartLine: int
+            OldEndLine: int
+            LineDelta: int
+            MethodToken: int
+        }
+
+    /// <summary>
+    /// Builds the line-shift segment of a method classified <c>Identical</c> (delta 0, overlap
+    /// detection only) or <c>UniformLineShift</c>. None for methods without a single document or
+    /// without visible sequence points.
+    /// </summary>
+    let tryCreateLineShiftSegment (methodToken: int) (committed: MethodSequencePoints) (lineDelta: int) =
+        match committed.Document, committed.VisiblePoints with
+        | Some document, (_ :: _ as visiblePoints) ->
+            Some
+                {
+                    FileName = document
+                    // PDB lines are 1-based; the contract is zero-based.
+                    OldStartLine = (visiblePoints |> List.map (fun p -> p.StartLine) |> List.min) - 1
+                    OldEndLine = (visiblePoints |> List.map (fun p -> p.EndLine) |> List.max) - 1
+                    LineDelta = lineDelta
+                    MethodToken = methodToken
+                }
+        | _ -> None
+
+    /// <summary>
+    /// Merges per-method segments into per-document line updates, mirroring Roslyn's
+    /// <c>AbstractEditAndContinueAnalyzer.GetLineEdits</c>: segments are sorted by document and old
+    /// start line; a zero-delta entry is inserted when a shifted segment range ends before the next
+    /// segment so the shift does not leak past it; segments overlapping a previous segment with a
+    /// DIFFERENT delta cannot be expressed as line updates and are returned as method tokens to
+    /// recompile instead (Roslyn recompiles the overlapping member for the same reason).
+    /// </summary>
+    let mergeLineShiftSegments
+        (segments: LineShiftSegment list)
+        : FSharpSequencePointUpdates list * int list =
+        match segments with
+        | [] -> [], []
+        | _ ->
+            let sorted =
+                segments
+                |> List.sortWith (fun x y ->
+                    let byFile = String.CompareOrdinal(x.FileName, y.FileName)
+                    if byFile <> 0 then byFile else compare x.OldStartLine y.OldStartLine)
+
+            let lineEdits = ResizeArray<FSharpSequencePointUpdates>()
+            let documentLineEdits = ResizeArray<FSharpSourceLineUpdate>()
+            let overlapRecompileTokens = ResizeArray<int>()
+
+            let mutable currentDocumentPath = sorted.Head.FileName
+            let mutable previousOldEndLine = -1
+            let mutable previousLineDelta = 0
+
+            for segment in sorted do
+                let mutable skipSegment = false
+
+                if segment.FileName <> currentDocumentPath then
+                    // Store results for the previous document and switch to the next one.
+                    if documentLineEdits.Count > 0 then
+                        lineEdits.Add
+                            {
+                                FileName = currentDocumentPath
+                                LineUpdates = List.ofSeq documentLineEdits
+                            }
+
+                        documentLineEdits.Clear()
+
+                    currentDocumentPath <- segment.FileName
+                    previousOldEndLine <- -1
+                    previousLineDelta <- 0
+                elif segment.OldStartLine <= previousOldEndLine && segment.LineDelta <> previousLineDelta then
+                    // The segment overlaps the previous one with a different line delta:
+                    // the method must be recompiled (the debugger filters line deltas that
+                    // correspond to recompiled methods).
+                    overlapRecompileTokens.Add segment.MethodToken
+                    skipSegment <- true
+
+                if not skipSegment then
+                    // Reset the delta to 0 for the lines between the previous segment and this one.
+                    if documentLineEdits.Count > 0 && segment.OldStartLine > previousOldEndLine + 1 then
+                        documentLineEdits.Add
+                            {
+                                OldLine = previousOldEndLine + 1
+                                NewLine = previousOldEndLine + 1
+                            }
+
+                        previousLineDelta <- 0
+
+                    // Skip zero-delta segments (overlap detection only) and repeated deltas.
+                    if segment.LineDelta <> 0 && segment.LineDelta <> previousLineDelta then
+                        documentLineEdits.Add
+                            {
+                                OldLine = segment.OldStartLine
+                                NewLine = segment.OldStartLine + segment.LineDelta
+                            }
+
+                    previousOldEndLine <- segment.OldEndLine
+                    previousLineDelta <- segment.LineDelta
+
+            if documentLineEdits.Count > 0 then
+                lineEdits.Add
+                    {
+                        FileName = currentDocumentPath
+                        LineUpdates = List.ofSeq documentLineEdits
+                    }
+
+            List.ofSeq lineEdits, List.ofSeq overlapRecompileTokens

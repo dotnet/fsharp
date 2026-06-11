@@ -90,7 +90,8 @@ type FSharpHotReloadDelta =
       AddedOrChangedMethods: FSharpAddedOrChangedMethodInfo list
       UserStringUpdates: struct (int * int * string) list
       GenerationId: Guid
-      BaseGenerationId: Guid }
+      BaseGenerationId: Guid
+      SequencePointUpdates: FSharpSequencePointUpdates list }
 
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
@@ -723,7 +724,8 @@ type FSharpChecker
                     CodeLength = info.CodeLength })
           UserStringUpdates = delta.UserStringUpdates |> List.map (fun (o, n, s) -> struct (o, n, s))
           GenerationId = delta.GenerationId
-          BaseGenerationId = delta.BaseGenerationId }
+          BaseGenerationId = delta.BaseGenerationId
+          SequencePointUpdates = delta.SequencePointUpdates }
 
     let mapHotReloadError =
         function

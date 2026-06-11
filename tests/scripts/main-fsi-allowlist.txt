@@ -7,4 +7,5 @@ src/Compiler/AbstractIL/ilwrite.fsi
 src/Compiler/AbstractIL/ilwritepdb.fsi
 src/Compiler/CodeGen/IlxGen.fsi
 src/Compiler/Driver/CompilerConfig.fsi
+src/Compiler/Optimize/LowerStateMachines.fsi
 src/Compiler/Service/service.fsi

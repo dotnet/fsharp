@@ -79,6 +79,7 @@ module ErrorPathTests =
             AddedOrChangedMethods = []
             EncMethodDebugInfos = Map.empty
             EncClosureNames = Map.empty
+            SequencePointSnapshots = Map.empty
         }
 
     module ArgumentValidationTests =

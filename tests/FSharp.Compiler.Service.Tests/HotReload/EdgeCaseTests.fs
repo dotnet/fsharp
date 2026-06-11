@@ -395,6 +395,7 @@ module EdgeCaseTests =
                 AddedOrChangedMethods = []
                 EncMethodDebugInfos = Map.empty
                 EncClosureNames = Map.empty
+                SequencePointSnapshots = Map.empty
             }
 
         [<Fact>]

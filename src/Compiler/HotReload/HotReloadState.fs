@@ -134,6 +134,30 @@ type internal HotReloadSessionStore() =
                 lastCommittedSession <- ValueSome(toCommittedSnapshot updated)
             | ValueNone -> ())
 
+    /// <summary>
+    /// Replaces the committed per-method sequence-point view after a line-shift-only update
+    /// (Phase G). Such updates carry no metadata/IL and consume no generation, so the full
+    /// pending-baseline commit flow does not apply — but the next emit must diff against the
+    /// lines the host just rebound in the debugger, exactly as Roslyn diffs line edits against
+    /// the last committed solution.
+    /// </summary>
+    member _.UpdateCommittedSequencePoints
+        (snapshots: Map<int, FSharp.Compiler.HotReload.ActiveStatementAnalysis.MethodSequencePoints>)
+        =
+        lock sessionLock (fun () ->
+            match session with
+            | ValueSome state ->
+                let updated =
+                    { state with
+                        Baseline =
+                            { state.Baseline with
+                                SequencePointSnapshots = snapshots }
+                    }
+
+                session <- ValueSome updated
+                lastCommittedSession <- ValueSome(toCommittedSnapshot updated)
+            | ValueNone -> ())
+
     member _.UpdateBaseline(baseline: FSharpEmitBaseline) =
         if baseline.EncId = Guid.Empty then
             invalidArg (nameof baseline) "Pending baseline must carry a non-empty EncId."

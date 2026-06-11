@@ -999,7 +999,8 @@ module internal TestHelpers =
               GuidStreamLengthAdded = 0
               AddedOrChangedMethods = []
               EncMethodDebugInfos = Map.empty
-              EncClosureNames = Map.empty }
+              EncClosureNames = Map.empty
+              SequencePointSnapshots = Map.empty }
 
         // Attach string handles from baseline metadata so delta can reuse them
         let baselineWithHandles = attachMetadataHandlesFromBytes assemblyBytes baseline

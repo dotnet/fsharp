@@ -360,40 +360,60 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         || not (List.isEmpty accessorUpdates)
                         || not (List.isEmpty symbolChanges.Added)
 
-                    if not hasUpdates then
-                        Error HotReloadError.NoChanges
-                    else
-                        let request : DeltaEmissionRequest =
-                            { IlModule = ilModule
-                              UpdatedTypes = updatedTypes
-                              UpdatedMethods = updatedMethods
-                              UpdatedAccessors = accessorUpdates
-                              SymbolChanges = Some symbolChanges
-                              // Recomputed occurrence data from the fresh typed tree; EmitDelta
-                              // chains it into the next-generation baseline for the updated methods.
-                              RefreshedEncDebugInfos =
-                                computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation
-                              // Closure mapping (C3): the same allocator run the emit hook used
-                              // when the delta compile was lowered (deterministic over identical
-                              // session state + fresh tree), keeping the chained tables in sync
-                              // with the closure names the compile actually emitted.
-                              RefreshedClosureNameRows =
-                                computeOccurrenceKeyedClosureNames
-                                    tcGlobals
-                                    session.Baseline
-                                    session.ImplementationFiles
-                                    updatedImplementation
-                                    session.CurrentGeneration
-                                |> snd }
+                    // Phase G: even when the typed-tree diff found no semantic edits (its hashes are
+                    // deliberately range-independent), the fresh compile's sequence points may have
+                    // moved — a line-shift edit (blank line/comment above a method). The emitter
+                    // detects those by diffing sequence points against the committed snapshot, so
+                    // emission proceeds and "no changes" is decided from the emitted artifacts
+                    // (Roslyn parity: line-only document changes are significant valid changes).
+                    let request : DeltaEmissionRequest =
+                        { IlModule = ilModule
+                          UpdatedTypes = updatedTypes
+                          UpdatedMethods = updatedMethods
+                          UpdatedAccessors = accessorUpdates
+                          SymbolChanges = Some symbolChanges
+                          // Recomputed occurrence data from the fresh typed tree; EmitDelta
+                          // chains it into the next-generation baseline for the updated methods.
+                          RefreshedEncDebugInfos =
+                            computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation
+                          // Closure mapping (C3): the same allocator run the emit hook used
+                          // when the delta compile was lowered (deterministic over identical
+                          // session state + fresh tree), keeping the chained tables in sync
+                          // with the closure names the compile actually emitted.
+                          RefreshedClosureNameRows =
+                            computeOccurrenceKeyedClosureNames
+                                tcGlobals
+                                session.Baseline
+                                session.ImplementationFiles
+                                updatedImplementation
+                                session.CurrentGeneration
+                            |> snd }
 
-                        match this.EmitDelta request with
-                        | Ok result ->
-                            if result.Delta.UpdatedBaseline.IsSome then
-                                this.CommitPendingUpdate(result.Delta.GenerationId)
+                    match this.EmitDelta request with
+                    | Ok result ->
+                        let delta = result.Delta
+
+                        if delta.UpdatedBaseline.IsSome then
+                            this.CommitPendingUpdate(delta.GenerationId)
+                            sessionStore().UpdateImplementationFiles(updatedImplementation)
+                            Ok result
+                        elif not (List.isEmpty delta.SequencePointUpdates) then
+                            // Line-shift-only update: no metadata/IL, no generation consumed.
+                            // Commit the rebound sequence-point view so the next emit diffs
+                            // against the lines the host just applied to the debugger.
+                            delta.ChainedSequencePoints
+                            |> Option.iter (sessionStore().UpdateCommittedSequencePoints)
 
                             sessionStore().UpdateImplementationFiles(updatedImplementation)
                             Ok result
-                        | Error error -> Error error
+                        elif hasUpdates then
+                            // Semantic edits that materialized into no emitted rows keep the
+                            // legacy behavior: surface the (empty) delta to the caller.
+                            sessionStore().UpdateImplementationFiles(updatedImplementation)
+                            Ok result
+                        else
+                            Error HotReloadError.NoChanges
+                    | Error error -> Error error
 
     /// <summary>Explicit commit hook mirroring Roslyn's service contract.</summary>
     member this.CommitPendingUpdate(generationId: Guid) =

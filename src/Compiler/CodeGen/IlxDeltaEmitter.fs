@@ -99,6 +99,20 @@ type IlxDelta =
         UserStringUpdates: (int * int * string) list
         MethodDefinitionRows: MethodDefinitionRowInfo list
         UpdatedBaseline: FSharpEmitBaseline option
+        /// Per-document line updates for methods whose code MOVED without changing (Phase G;
+        /// Roslyn SequencePointUpdates). The debugger rebinds these methods' sequence points
+        /// without any metadata/IL being applied for them.
+        SequencePointUpdates: FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates list
+        /// The next committed sequence-point view, keyed by baseline/delta MethodDef token —
+        /// the fresh compile's sequence points for every matched method (Phase G). None when the
+        /// analysis was unavailable (no baseline PDB or no fresh PDB). Hosts/sessions replace
+        /// FSharpEmitBaseline.SequencePointSnapshots with this map when the update is committed;
+        /// for deltas that chain a baseline this is already folded into UpdatedBaseline.
+        ChainedSequencePoints: Map<int, ActiveStatementAnalysis.MethodSequencePoints> option
+        /// Per-statement remap results for the host-supplied active statements (Phase G; Roslyn
+        /// ManagedHotReloadUpdate.ActiveStatements). Populated by the language service after a
+        /// successful emit; the raw emitter leaves it empty.
+        ActiveStatementUpdates: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult list
     }
 
 /// Request payload used when producing a delta. This will accumulate more fields as the emitter is implemented.
@@ -179,6 +193,9 @@ let private emptyDelta: IlxDelta =
         UserStringUpdates = []
         MethodDefinitionRows = []
         UpdatedBaseline = None
+        SequencePointUpdates = []
+        ChainedSequencePoints = None
+        ActiveStatementUpdates = []
     }
 
 let private defaultWriterOptions (ilg: ILGlobals) (checksumAlgorithm: HashAlgorithm) : ILWriter.options =
@@ -2331,6 +2348,8 @@ let private buildDeltaToUpdatedMethodTokenMap
 let private finalizeDeltaArtifacts
     (request: IlxDeltaRequest)
     (pdbBytesOpt: byte[] option)
+    (sequencePointUpdates: FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates list)
+    (freshSequencePointsByToken: Map<int, ActiveStatementAnalysis.MethodSequencePoints>)
     (encId: Guid)
     (encBaseId: Guid)
     (metadataDelta: MetadataWriter.MetadataDelta)
@@ -2418,6 +2437,30 @@ let private finalizeDeltaArtifacts
             addedEventDeltaTokens
             addedTypeDeltaTokens
 
+    // Phase G: replace the committed sequence-point view wholesale with the fresh compile's
+    // points, re-keyed from fresh tokens to baseline/delta tokens. Updated methods get their
+    // delta-PDB points; unchanged methods get their (possibly line-shift-adjusted) points,
+    // matching the line updates the host applies to the debugger alongside this delta.
+    let chainedSequencePoints =
+        if Map.isEmpty freshSequencePointsByToken then
+            None
+        else
+            let mutable chained = Map.empty
+
+            for KeyValue(newToken, mappedToken) in methodTokenMap do
+                match Map.tryFind newToken freshSequencePointsByToken with
+                | Some points -> chained <- Map.add mappedToken points chained
+                | None -> ()
+
+            Some chained
+
+    let updatedBaseline =
+        match chainedSequencePoints with
+        | Some chained ->
+            { updatedBaseline with
+                SequencePointSnapshots = chained }
+        | None -> updatedBaseline
+
     let delta =
         { emptyDelta with
             Metadata = metadataDelta.Metadata
@@ -2435,6 +2478,8 @@ let private finalizeDeltaArtifacts
             MethodDefinitionRows = methodDefinitionRowsSnapshot
             AddedOrChangedMethods = addedOrChangedMethods
             UpdatedBaseline = Some updatedBaseline
+            SequencePointUpdates = sequencePointUpdates
+            ChainedSequencePoints = chainedSequencePoints
         }
 
     if traceUserStringUpdates.Value then
@@ -3463,13 +3508,142 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     request.Module.TypeDefs.AsList()
     |> List.iter (collectTypeMappings [])
 
+    // An edit that declares nothing (no updated/added symbols, no accessor edits) cannot ADD
+    // definitions: fresh definitions without a baseline counterpart are then regeneration noise
+    // (e.g. a generative type provider re-emitting its members under a changed static argument
+    // while the consumed IL is unchanged), not additions. Such emits exist since Phase G runs
+    // the emitter even for semantically empty diffs to detect sequence-point line shifts; drop
+    // the spurious registrations so they cannot materialize into delta rows.
+    let editDeclaresDefinitions =
+        not (List.isEmpty request.UpdatedMethods)
+        || not (List.isEmpty request.UpdatedTypes)
+        || not (List.isEmpty request.UpdatedAccessors)
+        || (request.SymbolChanges
+            |> Option.map (fun changes -> not (List.isEmpty changes.Added))
+            |> Option.defaultValue false)
+
+    if not editDeclaresDefinitions then
+        if traceMethodUpdates.Value && addedMethodTokens.Count > 0 then
+            let names =
+                addedMethodTokens
+                |> Seq.map (fun kvp -> $"{kvp.Key.DeclaringType}::{kvp.Key.Name}")
+                |> String.concat ", "
+
+            printfn "[fsharp-hotreload][sequence-points] ignoring unmatched definitions of no-edit emit: %s" names
+
+        addedMethodTokens.Clear()
+        addedFieldTokens.Clear()
+        addedPropertyTokens.Clear()
+        addedEventTokens.Clear()
+        addedPropertyTokenLookup.Clear()
+        addedEventTokenLookup.Clear()
+        propertyHandleLookup.Clear()
+        eventHandleLookup.Clear()
+
     let addedMethodKeys =
         addedMethodTokens
         |> Seq.map (fun kvp -> kvp.Key)
         |> Seq.toList
 
+    // ------------------------------------------------------------------------------------------
+    // Phase G: sequence-point analysis. Diff every baseline-matched method's fresh sequence
+    // points against the committed snapshot (the debugger's current view of its lines):
+    //   - UniformLineShift -> a line-edit segment (the debugger rebinds without recompilation;
+    //     Roslyn: AbstractEditAndContinueAnalyzer.GetLineEdits)
+    //   - Different        -> recompile the method body so its debug information stays accurate
+    //     (Roslyn: trivia edits force a member body update)
+    // Methods already recompiled by the request are excluded (the debugger ignores line deltas
+    // for recompiled methods). An empty committed snapshot (no baseline PDB) keeps this inert.
+    let committedSequencePoints = request.Baseline.SequencePointSnapshots
+
+    let freshSequencePointsByToken =
+        match pdbBytesOpt with
+        | Some freshPdbBytes when not (Map.isEmpty committedSequencePoints) ->
+            ActiveStatementAnalysis.decodeMethodSequencePoints freshPdbBytes
+        | _ -> Map.empty
+
+    let lineShiftSegments, triviaRecompileTokens =
+        if Map.isEmpty freshSequencePointsByToken then
+            [], []
+        else
+            let requestRecompiledBaselineTokens =
+                let accessorMethodKeys =
+                    request.UpdatedAccessors |> List.choose (fun accessor -> accessor.Method)
+
+                request.UpdatedMethods @ accessorMethodKeys
+                |> List.choose (fun key -> request.Baseline.MethodTokens |> Map.tryFind key)
+                |> Set.ofList
+
+            let segments = ResizeArray<ActiveStatementAnalysis.LineShiftSegment>()
+            let recompileTokens = ResizeArray<int>()
+
+            for KeyValue(newToken, baselineToken) in methodTokenMap do
+                if not (Set.contains baselineToken requestRecompiledBaselineTokens) then
+                    match
+                        Map.tryFind baselineToken committedSequencePoints,
+                        Map.tryFind newToken freshSequencePointsByToken
+                    with
+                    | Some committed, Some fresh ->
+                        match ActiveStatementAnalysis.compareMethodSequencePoints committed fresh with
+                        | ActiveStatementAnalysis.SequencePointComparison.Identical ->
+                            // Zero-delta segment: overlap detection only (Roslyn parity).
+                            ActiveStatementAnalysis.tryCreateLineShiftSegment baselineToken committed 0
+                            |> Option.iter segments.Add
+                        | ActiveStatementAnalysis.SequencePointComparison.UniformLineShift lineDelta ->
+                            if traceMethodUpdates.Value then
+                                printfn
+                                    "[fsharp-hotreload][sequence-points] line shift token=0x%08X delta=%d"
+                                    baselineToken
+                                    lineDelta
+
+                            match ActiveStatementAnalysis.tryCreateLineShiftSegment baselineToken committed lineDelta with
+                            | Some segment -> segments.Add segment
+                            | None -> recompileTokens.Add baselineToken
+                        | ActiveStatementAnalysis.SequencePointComparison.Different ->
+                            if traceMethodUpdates.Value then
+                                printfn "[fsharp-hotreload][sequence-points] different token=0x%08X" baselineToken
+
+                            recompileTokens.Add baselineToken
+                    | None, None -> ()
+                    | Some _, None
+                    | None, Some _ ->
+                        // Debug information appeared or disappeared without a semantic edit;
+                        // recompile so the committed view stays accurate (fail closed).
+                        if traceMethodUpdates.Value then
+                            printfn
+                                "[fsharp-hotreload][sequence-points] debug info presence changed token=0x%08X new=0x%08X"
+                                baselineToken
+                                newToken
+
+                        recompileTokens.Add baselineToken
+
+            List.ofSeq segments, List.ofSeq recompileTokens
+
+    let sequencePointUpdates, overlapRecompileTokens =
+        ActiveStatementAnalysis.mergeLineShiftSegments lineShiftSegments
+
+    let triviaRecompileKeys =
+        let methodKeyByBaselineToken =
+            request.Baseline.MethodTokens
+            |> Map.toSeq
+            |> Seq.map (fun (key, token) -> token, key)
+            |> Map.ofSeq
+
+        triviaRecompileTokens @ overlapRecompileTokens
+        |> List.distinct
+        |> List.sort
+        |> List.choose (fun token -> Map.tryFind token methodKeyByBaselineToken)
+
+    if traceMethodUpdates.Value && not (List.isEmpty triviaRecompileKeys) then
+        let names =
+            triviaRecompileKeys
+            |> List.map (fun key -> $"{key.DeclaringType}::{key.Name}")
+            |> String.concat ", "
+
+        printfn "[fsharp-hotreload][sequence-points] trivia-edit recompiles: %s" names
+
     let allUpdatedMethods =
-        (request.UpdatedMethods @ addedMethodKeys)
+        (request.UpdatedMethods @ triviaRecompileKeys @ addedMethodKeys)
         |> dedupeMethodKeys
 
     let resolvedMethods =
@@ -3958,7 +4132,28 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
         |> List.map (fun struct (_, methodToken, _, _, _) -> methodToken)
 
     if List.isEmpty methodUpdateInputs && List.isEmpty updatedTypeTokens then
-        emptyDelta
+        // No metadata/IL to emit. Line-shift-only edits land here: the delta carries only
+        // SequencePointUpdates (plus the next committed sequence-point view) and consumes no
+        // generation — there is nothing for the runtime to apply, the host just rebinds the
+        // debugger's lines. (Roslyn emits a Module-row-only generation for this case; the F#
+        // emitter deliberately skips the no-op ApplyUpdate. See
+        // docs/hot-reload-active-statements.md.)
+        let chainedSequencePoints =
+            if Map.isEmpty freshSequencePointsByToken then
+                None
+            else
+                let mutable chained = Map.empty
+
+                for KeyValue(newToken, mappedToken) in methodTokenMap do
+                    match Map.tryFind newToken freshSequencePointsByToken with
+                    | Some points -> chained <- Map.add mappedToken points chained
+                    | None -> ()
+
+                Some chained
+
+        { emptyDelta with
+            SequencePointUpdates = sequencePointUpdates
+            ChainedSequencePoints = chainedSequencePoints }
     else
         let (methodUpdatesWithDefs,
              parameterDefinitionRowsSnapshot,
@@ -4485,6 +4680,8 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
         finalizeDeltaArtifacts
             request
             pdbBytesOpt
+            sequencePointUpdates
+            freshSequencePointsByToken
             encId
             encBaseId
             metadataDelta

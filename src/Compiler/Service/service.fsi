@@ -39,7 +39,17 @@ type FSharpHotReloadDelta =
       AddedOrChangedMethods: FSharpAddedOrChangedMethodInfo list
       UserStringUpdates: struct (int * int * string) list
       GenerationId: Guid
-      BaseGenerationId: Guid }
+      BaseGenerationId: Guid
+      /// <summary>
+      /// Per-document line updates for methods whose code MOVED without changing — e.g. an edit
+      /// above a method that only shifts its lines (mirrors Roslyn's
+      /// <c>ManagedHotReloadUpdate.SequencePoints</c>). The debugger host applies these to rebind
+      /// breakpoints/sequence points; dotnet-watch uses them to avoid restarting. A delta may carry
+      /// ONLY line updates: <see cref="Metadata"/>/<see cref="IL"/> are then empty, no generation
+      /// is consumed (<see cref="GenerationId"/> is <c>Guid.Empty</c>) and there is nothing to pass
+      /// to <c>MetadataUpdater.ApplyUpdate</c>.
+      /// </summary>
+      SequencePointUpdates: FSharpSequencePointUpdates list }
 
 [<System.Flags>]
 type FSharpHotReloadCapability =

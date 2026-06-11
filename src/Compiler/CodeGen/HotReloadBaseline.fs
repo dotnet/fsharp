@@ -14,6 +14,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
 module ILBaselineReader = FSharp.Compiler.AbstractIL.ILBaselineReader
+module ActiveStatementAnalysis = FSharp.Compiler.HotReload.ActiveStatementAnalysis
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.EnvironmentHelpers
 
@@ -253,6 +254,17 @@ type FSharpEmitBaseline =
         /// and delta compiles keep sequence replay (fail closed).
         /// </summary>
         EncClosureNames: Map<int, Map<int list, string>>
+        /// <summary>
+        /// Committed per-method sequence points keyed by MethodDef token (0x06xxxxxx) — the
+        /// debugger's current view of each method's lines (Phase G). Decoded from the baseline
+        /// portable PDB when the session starts and REPLACED wholesale after every committed delta
+        /// with the fresh compile's sequence points (updated methods get their delta-PDB points;
+        /// unchanged methods get their line-shift-adjusted points, matching the line updates the
+        /// host applied to the debugger). Line-shift detection and active-statement remapping diff
+        /// fresh compiles against this map; empty when the baseline had no portable PDB, which
+        /// keeps the Phase G machinery inert (fail closed).
+        /// </summary>
+        SequencePointSnapshots: Map<int, ActiveStatementAnalysis.MethodSequencePoints>
     }
 
 type private BaselineMaps =
@@ -632,6 +644,13 @@ let private createCore
         |> Option.map (fun snapshot -> readEncMethodDebugInfoFromPortablePdb snapshot.Bytes)
         |> Option.defaultValue Map.empty
 
+    // Phase G: seed the committed sequence-point view from the baseline PDB. No PDB means the
+    // map stays empty and line-shift detection / active-statement remapping stay inert.
+    let sequencePointSnapshots =
+        portablePdbSnapshot
+        |> Option.map (fun snapshot -> ActiveStatementAnalysis.decodeMethodSequencePoints snapshot.Bytes)
+        |> Option.defaultValue Map.empty
+
     {
         ModuleId = moduleId
         EncId = System.Guid.Empty
@@ -674,6 +693,7 @@ let private createCore
                 encMethodDebugInfos
                 (methodNamesByToken maps.MethodTokens)
                 (collectTypeDefSimpleNames ilModule)
+        SequencePointSnapshots = sequencePointSnapshots
         ModuleNameOffset = None
     }
 
