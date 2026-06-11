@@ -75,57 +75,39 @@ internal partial class EditorInProcess
 
     public async Task<IEnumerable<SuggestedActionSet>> InvokeCodeActionListAsync(CancellationToken cancellationToken)
     {
-        // Poll-and-retry: the lightbulb session can race with F# diagnostics computation in two ways:
-        //   - broker.GetSession(view) returns null when no session is active yet (NRE on cast).
-        //   - The session opens but self-dismisses before reaching Completed/CompletedWithoutData,
-        //     producing TaskCanceledException from LightBulbHelper.WaitForItemsAsync.
-        // Each retry posts a fresh ShowQuickFixes command (creating a new session) and tolerates
-        // both failure modes. Bounded to ~5 seconds; the outer test ct still caps total wait.
-        const int MaxAttempts = 20;
-        var attemptDelay = TimeSpan.FromMilliseconds(250);
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
         var shell = await GetRequiredGlobalServiceAsync<SVsUIShell, IVsUIShell>(cancellationToken);
-        var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
         var cmdGroup = typeof(VSConstants.VSStd14CmdID).GUID;
         var cmdID = VSConstants.VSStd14CmdID.ShowQuickFixes;
 
-        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+        // Post ShowQuickFixes once. PostExecCommand is fire-and-forget; the broker spins up the
+        // session asynchronously after F# diagnostics surface, so we have to wait for the session
+        // to materialize before LightBulbHelper.WaitForItemsAsync can subscribe to its events.
+        // Repeated PostExecCommand calls would dismiss any in-flight session and reset the race.
+        object? obj = null;
+        shell.PostExecCommand(cmdGroup, (uint)cmdID, (uint)OLECMDEXECOPT.OLECMDEXECOPT_DONTPROMPTUSER, ref obj);
+
+        var view = await GetActiveTextViewAsync(cancellationToken);
+        var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
+
+        // Poll for the session to appear (up to ~5 s). Without this wait, the F#-analyzer-driven
+        // code fixes (UnusedOpenDeclarations, AddMissingFunKeyword) NRE because broker.GetSession
+        // returns null before the lightbulb session is ready -- LightBulbHelper.WaitForItemsAsync
+        // then casts null to IAsyncLightBulbSession and subscribes to its events.
+        var sessionTimeout = TimeSpan.FromSeconds(5);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (broker.GetSession(view) is null)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-
-            object? obj = null;
-            shell.PostExecCommand(cmdGroup, (uint)cmdID, (uint)OLECMDEXECOPT.OLECMDEXECOPT_DONTPROMPTUSER, ref obj);
-            var view = await GetActiveTextViewAsync(cancellationToken);
-
-            try
+            if (sw.Elapsed > sessionTimeout)
             {
-                var lightbulbs = await LightBulbHelper.WaitForItemsAsync(broker, view, cancellationToken);
-                if (lightbulbs is not null && System.Linq.Enumerable.Any(lightbulbs))
-                {
-                    return lightbulbs;
-                }
+                // Final attempt -- let LightBulbHelper's existing NRE propagate so the test failure
+                // points at the actual root cause, not a manufactured timeout exception.
+                break;
             }
-            catch (NullReferenceException) when (attempt < MaxAttempts)
-            {
-                // broker.GetSession(view) returned null; F# analyzer hasn't surfaced a session yet.
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && attempt < MaxAttempts)
-            {
-                // Session opened but was dismissed before producing actions; try again.
-            }
-
-            await Task.Delay(attemptDelay, cancellationToken);
+            await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
         }
 
-        // Final attempt: let the underlying exception propagate so the test failure message
-        // points at the actual root cause (NRE / TaskCanceled) rather than a vague timeout.
-        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-        {
-            object? obj = null;
-            shell.PostExecCommand(cmdGroup, (uint)cmdID, (uint)OLECMDEXECOPT.OLECMDEXECOPT_DONTPROMPTUSER, ref obj);
-            var view = await GetActiveTextViewAsync(cancellationToken);
-            return await LightBulbHelper.WaitForItemsAsync(broker, view, cancellationToken);
-        }
+        return await LightBulbHelper.WaitForItemsAsync(broker, view, cancellationToken);
     }
 }
