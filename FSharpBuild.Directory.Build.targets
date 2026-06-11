@@ -33,9 +33,12 @@
     <Copy SourceFiles="@(IntermediateFilesToCopy)" DestinationFolder="$(FinalIntermediateOutputPath)" />
   </Target>
 
+  <!-- S5.5 follow-up: remove duplicate imports — `src/FSharpSource.targets:342-343` already imports
+       GenerateAssemblyAttributes.targets + GenerateInternalsVisibleTo.targets for legacy F# projects.
+       Keeping them here too causes MSB4011 "imported again" errors (136 of them) on every project
+       that imports BOTH paths. AssemblyVersions.props + ConvertPortablePdbs.targets are NOT
+       duplicated by FSharpSource.targets, so they stay. -->
   <Import Project="build\targets\AssemblyVersions.props" />
   <Import Project="build\targets\ConvertPortablePdbs.targets" />
-  <Import Project="build\targets\GenerateAssemblyAttributes.targets" />
-  <Import Project="build\targets\GenerateInternalsVisibleTo.targets" />
 
 </Project>

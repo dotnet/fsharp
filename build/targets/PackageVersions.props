@@ -1,5 +1,14 @@
 <Project>
 
+  <!-- S5.5 follow-up: suppress 15.9-era restore warning escalation. NU1603/1604/1605 are version-resolution
+       warnings (the 15.9 product pins many packages to specific 2017-era prerelease versions; modern feeds
+       only carry newer versions and NuGet auto-resolves with warnings). NU1903 is CVE flagging on 15.9-era
+       packages like Microsoft.Build.Tasks.Core 15.8.166 — the ship vehicle is supposed to use these old
+       versions (it's a SERVICING branch); CVE remediation is out of scope for the SQLite-only insertion. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);NU1603;NU1604;NU1605;NU1903</NoWarn>
+  </PropertyGroup>
+
   <PropertyGroup>
 
     <!-- version numbers from files -->
