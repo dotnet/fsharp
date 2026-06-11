@@ -458,6 +458,7 @@
     <Compile Include="CodeGen\IlxGen.fs" />
     <Compile Include="AbstractIL\ILBaselineReader.fs" />
     <Compile Include="CodeGen\EncMethodDebugInformation.fs" />
+    <Compile Include="HotReload\ActiveStatements.fs" />
     <Compile Include="CodeGen\HotReloadBaseline.fs" />
     <Compile Include="CodeGen\HotReloadPdb.fs" />
     <Compile Include="HotReload\FSharpSymbolChanges.fs" />

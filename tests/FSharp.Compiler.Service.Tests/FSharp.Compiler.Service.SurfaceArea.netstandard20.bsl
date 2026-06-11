@@ -2063,6 +2063,84 @@ FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.Docume
 FSharp.Compiler.CodeAnalysis.DocumentSource: Int32 Tag
 FSharp.Compiler.CodeAnalysis.DocumentSource: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.DocumentSource: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean IsMethodUpToDate
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean IsNonUserCode
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean IsPartiallyExecuted
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean IsStale
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean get_IsMethodUpToDate()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean get_IsNonUserCode()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean get_IsPartiallyExecuted()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Boolean get_IsStale()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind FrameKind
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind get_FrameKind()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags: Void .ctor(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind, Boolean, Boolean, Boolean, Boolean)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind+Tags: Int32 Leaf
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind+Tags: Int32 LeafAndNonLeaf
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind+Tags: Int32 NonLeaf
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean HasNonLeafFrame
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean IsLeaf
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean IsLeafAndNonLeaf
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean IsNonLeaf
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean get_HasNonLeafFrame()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean get_IsLeaf()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean get_IsLeafAndNonLeaf()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Boolean get_IsNonLeaf()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind Leaf
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind LeafAndNonLeaf
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind NonLeaf
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind get_Leaf()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind get_LeafAndNonLeaf()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind get_NonLeaf()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind+Tags
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Int32 Tag
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: Int32 get_Tag()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFrameKind: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult+MethodUpToDate: FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId get_instruction()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult+MethodUpToDate: FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId instruction
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult+Remapped: FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate get_update()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult+Remapped: FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate update
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult+Tags: Int32 MethodUpToDate
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult+Tags: Int32 Remapped
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Boolean IsMethodUpToDate
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Boolean IsRemapped
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Boolean get_IsMethodUpToDate()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Boolean get_IsRemapped()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult NewMethodUpToDate(FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult NewRemapped(FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult+MethodUpToDate
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult+Remapped
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult+Tags
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Int32 Tag
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: Int32 get_Tag()
+FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo)
 FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo: Boolean Equals(System.Object)
@@ -2335,6 +2413,72 @@ FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 GetHashCode(System.Coll
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 Tag
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags Flags
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags get_Flags()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId ActiveInstruction
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId get_ActiveInstruction()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: FSharp.Compiler.CodeAnalysis.FSharpSourceSpan SourceSpan
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: FSharp.Compiler.CodeAnalysis.FSharpSourceSpan get_SourceSpan()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Microsoft.FSharp.Core.FSharpOption`1[System.String] DocumentName
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_DocumentName()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Void .ctor(FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId, Microsoft.FSharp.Core.FSharpOption`1[System.String], FSharp.Compiler.CodeAnalysis.FSharpSourceSpan, FSharp.Compiler.CodeAnalysis.FSharpActiveStatementFlags)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId Method
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId get_Method()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: FSharp.Compiler.CodeAnalysis.FSharpSourceSpan NewSpan
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: FSharp.Compiler.CodeAnalysis.FSharpSourceSpan get_NewSpan()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Int32 ILOffset
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Int32 get_ILOffset()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementUpdate: Void .ctor(FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId, Int32, FSharp.Compiler.CodeAnalysis.FSharpSourceSpan)
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId)
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId Method
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId get_Method()
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId)
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Int32 ILOffset
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Int32 get_ILOffset()
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpManagedInstructionId: Void .ctor(FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId, Int32)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 Token
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 Version
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 get_Token()
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Int32 get_Version()
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpManagedModuleMethodId: Void .ctor(Int32, Int32)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(FSharp.Compiler.Text.Position)
@@ -2466,6 +2610,55 @@ FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String get_OutputFile()
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates)
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates)
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate] LineUpdates
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate] get_LineUpdates()
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: System.String FileName
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: System.String get_FileName()
+FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates: Void .ctor(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate])
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate)
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate)
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Int32 NewLine
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Int32 OldLine
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Int32 get_NewLine()
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Int32 get_OldLine()
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpSourceLineUpdate: Void .ctor(Int32, Int32)
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpSourceSpan)
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpSourceSpan, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpSourceSpan)
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 EndColumn
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 EndLine
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 StartColumn
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 StartLine
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 get_EndColumn()
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 get_EndLine()
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 get_StartColumn()
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Int32 get_StartLine()
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpSourceSpan: Void .ctor(Int32, Int32, Int32, Int32)
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromAttribute
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromComputationExpression
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromDefinition
