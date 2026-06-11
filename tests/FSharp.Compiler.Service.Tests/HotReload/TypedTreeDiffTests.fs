@@ -338,6 +338,200 @@ let runAsync () =
         Assert.DoesNotContain(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.DeclarationRemoved)
 
     [<Fact>]
+    let ``task body edit with stable resume points is a method body update`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+open System.Threading.Tasks
+let runTask () =
+    task {
+        let! value = Task.FromResult 1
+        return value + 1
+    }
+"""
+        let updated_source = """
+module Library
+open System.Threading.Tasks
+let runTask () =
+    task {
+        let! value = Task.FromResult 1
+        return value + 2
+    }
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        // The resumable step sequence (Delay/Bind/Return calls) is unchanged: the edit
+        // is a plain MoveNext body update, not a state machine shape change.
+        Assert.Empty(result.RudeEdits)
+        Assert.Contains(result.SemanticEdits, fun e -> e.Kind = SemanticEditKind.MethodBody)
+
+    [<Fact>]
+    let ``task await addition triggers state machine shape rude edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+open System.Threading.Tasks
+let runTask () =
+    task {
+        let! value = Task.FromResult 1
+        return value + 1
+    }
+"""
+        let updated_source = """
+module Library
+open System.Threading.Tasks
+let runTask () =
+    task {
+        let! value = Task.FromResult 1
+        let! extra = Task.FromResult 2
+        return value + extra
+    }
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        // A new `let!` is a new resume point: F# task state machines are structs whose
+        // awaiter/hoisted field layout cannot change, so this is rude (C# parity:
+        // ChangingStateMachineShape).
+        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.StateMachineShapeChange)
+
+    [<Fact>]
+    let ``task await removal triggers state machine shape rude edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+open System.Threading.Tasks
+let runTask () =
+    task {
+        let! value = Task.FromResult 1
+        let! extra = Task.FromResult 2
+        return value + extra
+    }
+"""
+        let updated_source = """
+module Library
+open System.Threading.Tasks
+let runTask () =
+    task {
+        let! value = Task.FromResult 1
+        return value + 2
+    }
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.StateMachineShapeChange)
+
+    [<Fact>]
+    let ``task await reorder triggers state machine shape rude edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+open System.Threading.Tasks
+let runTask () =
+    task {
+        let! first = Task.FromResult 1
+        let! second = Task.FromResult 2
+        return first - second
+    }
+"""
+        let updated_source = """
+module Library
+open System.Threading.Tasks
+let runTask () =
+    task {
+        let! second = Task.FromResult 2
+        let! first = Task.FromResult 1
+        return first - second
+    }
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        // Same step count, but resume-point state numbers are positional: an in-flight
+        // frame suspended at state 1 would resume into the other await's continuation.
+        // The reorder surfaces as continuation capture churn inside a resumable member.
+        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.StateMachineShapeChange)
+
+    [<Fact>]
+    let ``plain method gaining a while loop is a method body update`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let evaluate () =
+    1
+"""
+        let updated_source = """
+module Library
+let evaluate () =
+    let mutable acc = 0
+    let mutable i = 0
+    while i < 2 do
+        acc <- acc + 1
+        i <- i + 1
+    acc
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        // Plain control flow lowers to ordinary IL in the method body: while/for/try
+        // additions are NOT state machine evidence.
+        Assert.Empty(result.RudeEdits)
+        Assert.Contains(result.SemanticEdits, fun e -> e.Kind = SemanticEditKind.MethodBody)
+
+    [<Fact>]
+    let ``async body edit gaining inner try with is not a state machine rude edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let runAsync () =
+    async {
+        let! value = async { return 1 }
+        return value + 1
+    }
+"""
+        let updated_source = """
+module Library
+let runAsync () =
+    async {
+        let! value = async { return 1 }
+        let safe = (try value with _ -> 0)
+        return safe + 1
+    }
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        // async lowers to closure chains, not resumable state machines: an inner
+        // (expression-level) try/with is a closure body edit.
+        Assert.DoesNotContain(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.StateMachineShapeChange)
+
+    [<Fact>]
     let ``query lowering shape change falls back to lambda rude edit in structural-only mode`` () =
         use harness = new DiffTestHarness()
         let baseline_source = """

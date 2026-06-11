@@ -501,20 +501,74 @@ generations`.
 
 ### State machines (Phase D, builds on the same map)
 
-- F# `async` lowers to closure chains → covered by the lambda/closure map directly (a major
-  simplification vs C#: most F# CE code needs *no* extra state-machine machinery).
-- `task`/resumable code lowers to genuine state machines → port the *EnC State Machine State Map*
-  blob + state-number monotonicity rule (new resume points take numbers above the previous
-  generation's max; insertion mid-sequence stays rude, matching C#'s `ChangingStateMachineShape`).
-- Hoisted locals in resumable state machines reuse the Local Slot Map mechanism (slot append-only,
-  type-checked reuse).
+#### Ground truth (flag-on compiles, inspected via ikdasm + live session probes)
+
+- **`async`** lowers to closure chains: ~10 nested `FSharpFunc` subclasses for a two-bind
+  CE (`compute@hotreload`, `compute@hotreload-1` … `-9`), including classes produced by
+  inlined `AsyncPrimitives` internals — MORE closure classes than C1 lambda occurrences,
+  with legacy range-erased names (NOT occurrence-derived `#g0_oN` names). Consequences:
+  body edits inside `async { }` work end-to-end (deterministic names align 1:1), but
+  STRUCTURAL changes (added/removed `let!`, CE-level `try/with`) shift the `-N`
+  numbering and the synthesized-type mapping fails closed with the
+  "Ambiguous synthesized type mapping" `UnsupportedEdit` (observed live). The C4
+  added-closure path cannot cover these classes because they are not 1:1 with
+  occurrence-modelled lambdas (the C3 stamp seam never sees the inlined internals).
+- **`task`** lowers to ONE nested STRUCT state machine (`compute@hotreload`, extends
+  `ValueType`): fields `Data`, `ResumptionPoint`, hoisted locals (`input`, `x`), and
+  positionally named awaiters (`awaiter`, `awaiter0`, …); methods `MoveNext`,
+  `SetStateMachine`, `get_ResumptionPoint`, `get_Data`, `set_Data`. Resume-point state
+  numbers are assigned POSITIONALLY at lowering (`LowerStateMachines.genPC`, 1..N in
+  conversion order). Observed live (pre-Phase-D): a body edit with stable resume points
+  emitted, applied, and ran correctly; an ADDED `let!` emitted, applied, and then
+  CRASHED at invoke (the emitter's compiler-generated-field skip silently dropped the
+  new awaiter struct field). Reordered awaits failed closed via capture-set rude edits.
+- **`seq`** lowers to a CLASS state machine via `GenSequenceExpression` (not
+  ResumableCode); body edits apply end-to-end (`tier1-seq` test).
+
+#### Classification as shipped (D1)
+
+The old blanket `StateMachineShapeDigest` (a distinct-set of TryWith/TryFinally/While/
+ForLoop ops + `MoveNext` valref names) was BOTH over-broad (a plain method gaining a
+`while` loop, or an expression-level `try/with` inside `async { }`, was rude FSHRDL013)
+and under-protective (it never caught the `task` added-await crash above). It is
+replaced by typed resumable-code evidence:
+
+- A member contains a genuine state machine iff its body calls members returning
+  `ResumableCode<_,_>` (after abbreviation stripping — `TaskCode` etc.; matched by
+  compiled identity because the diff compares trees across compilations), constructs a
+  `ResumableCode` delegate directly, or makes SRTP trait calls returning resumable code.
+- The digest is the ORDERED sequence of those calls with their type instantiations
+  (`resumable=[Delay<int,int>(2),Bind<int,int,int>(2),Return<int>(2)]`): state numbers
+  are positional and the struct's awaiter/hoisted layout follows the sequence, so order
+  is part of the shape.
+- Rules for resumable members (C# parity: `ChangingStateMachineShape`, FSHRDL013):
+  - step sequence unchanged + lambda occurrence edits all `BodyEdited` → MethodBody
+    update (MoveNext body flows through the existing method-update machinery; struct
+    TypeDef, fields, and state numbers survive);
+  - step sequence changed (added/removed/reordered `let!`/`do!`/`return!`/CE control
+    flow, including non-suspending steps like an inserted `Zero`/`Combine` — documented
+    over-approximation) → rude FSHRDL013 with the digest diff in the message;
+  - sequence unchanged but structural lambda churn (added/removed continuations or
+    capture-set changes) → rude FSHRDL013 (hoisted layout would change).
+  - Append-only new awaits are NOT allowed, unlike C# Debug-mode async methods: C#'s
+    Debug state machines are classes (new awaiter/hoisted fields ride
+    `AddInstanceFieldToExistingType`); F# task state machines are structs, whose layout
+    is immutable under EnC, so ANY resume-point addition is rude.
+- Plain control flow (while/for/try) is no longer state-machine evidence anywhere:
+  those constructs lower to ordinary IL in the containing (closure) body.
+- `async` stays under the lambda occurrence model (its builder returns `FSharpAsync`,
+  not `ResumableCode`): body edits (including new expression-level control flow) are
+  MethodBody updates; structural CE changes keep failing closed at emission via the
+  synthesized-type-mapping guard (precise `UnsupportedEdit`, see ground truth above).
 
 ### Rude-edit surface after Phase C/D (parity with C#)
 
-Allowed: adding/removing/reordering lambdas; editing lambda bodies; adding captures (new closure field
-via `AddInstanceFieldToExistingType`, or fresh closure class when incompatible); new hoisted locals.
-Still rude (same as C#): captured-variable rename/type/scope change (runtime rude edit → throwing stub),
-lambda signature changes, mid-sequence resume-point insertion, struct-closure capture additions.
+Allowed: adding/removing/reordering lambdas; editing lambda bodies; editing bodies inside
+`async`/`task`/`seq` CEs when the CE structure is unchanged; plain control-flow additions
+anywhere. Still rude: captured-variable rename/type/scope change, lambda signature
+changes, ANY resume-point sequence change in resumable (task) members (struct layout),
+structural `async` CE changes (closure-chain alignment, fails closed at emission),
+struct-closure capture additions.
 
 ## Commit plan (each independently reviewable, each with tests)
 

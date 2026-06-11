@@ -4202,3 +4202,238 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                 try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
+
+    // -----------------------------------------------------------------------------
+    // Phase D: state machine (task/async/seq CE) edit support.
+    // Ground truth (see docs/hot-reload-closure-mapping.md, "State machines"):
+    //   - `async` lowers to closure chains (FSharpFunc subclasses) - Phase C territory.
+    //   - `task` lowers to ONE nested struct state machine (Data/ResumptionPoint/
+    //     hoisted locals/awaiterN fields + MoveNext/SetStateMachine/accessors) whose
+    //     resume-point state numbers are assigned positionally by the lowering.
+    // -----------------------------------------------------------------------------
+
+    /// Runs baseline -> session -> edit -> EmitHotReloadDelta and asserts the delta is
+    /// REJECTED, handing the UnsupportedEdit message to the caller for assertions.
+    let private assertEmitRejectedWithMessage
+        (testLabel: string)
+        (baselineSource: string)
+        (updatedSource: string)
+        (assertMessage: string -> unit)
+        =
+        let checker =
+            FSharpChecker.Create(
+                keepAssemblyContents = true,
+                keepAllBackgroundResolutions = false,
+                keepAllBackgroundSymbolUses = false,
+                enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                enablePartialTypeChecking = false,
+                captureIdentifiersWhenParsing = false
+            )
+
+        let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-emit-reject", System.Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(projectDir) |> ignore
+        let fsPath = Path.Combine(projectDir, "Library.fs")
+        let dllPath = Path.Combine(projectDir, "Library.dll")
+
+        try
+            File.WriteAllText(fsPath, baselineSource)
+
+            let projectOptions, _ =
+                checker.GetProjectOptionsFromScript(
+                    fsPath,
+                    SourceText.ofString baselineSource,
+                    assumeDotNetFramework = false,
+                    useSdkRefs = true,
+                    useFsiAuxLib = false
+                )
+                |> Async.RunImmediate
+
+            let projectOptions =
+                { projectOptions with
+                    SourceFiles = [| fsPath |]
+                    OtherOptions =
+                        projectOptions.OtherOptions
+                        |> Array.append
+                            [| "--target:library"
+                               "--langversion:preview"
+                               "--optimize-"
+                               "--debug:portable"
+                               "--deterministic"
+                               "--enable:hotreloaddeltas"
+                               $"--out:{dllPath}" |] }
+
+            checker.InvalidateAll()
+
+            let compileDiagnostics, _ =
+                checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                |> Async.RunImmediate
+
+            let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+            if errors.Length > 0 then
+                failwithf "[%s] baseline compilation failed: %A" testLabel (errors |> Array.map (fun d -> d.Message))
+
+            // Grant the full member-addition capability set: the expected rejection must
+            // come from edit classification, never from a missing runtime capability.
+            let capabilities =
+                [ "Baseline"
+                  "AddMethodToExistingType"
+                  "AddStaticFieldToExistingType"
+                  "AddInstanceFieldToExistingType"
+                  "NewTypeDefinition" ]
+
+            match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+            | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
+            | Ok () -> ()
+
+            File.WriteAllText(fsPath, updatedSource)
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+            let updatedOptions =
+                { projectOptions with
+                    OtherOptions =
+                        projectOptions.OtherOptions
+                        |> Array.filter (fun opt ->
+                            not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+            let compileDiagnostics2, _ =
+                checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                |> Async.RunImmediate
+
+            let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+            if errors2.Length > 0 then
+                failwithf "[%s] update compilation failed: %A" testLabel (errors2 |> Array.map (fun d -> d.Message))
+
+            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+            | Ok _ -> failwithf "[%s] expected the edit to be rejected, but a delta was emitted." testLabel
+            | Error (FSharpHotReloadError.UnsupportedEdit message) -> assertMessage message
+            | Error other -> failwithf "[%s] expected UnsupportedEdit, got %A" testLabel other
+
+        finally
+            try checker.EndHotReloadSession() with _ -> ()
+            try checker.InvalidateAll() with _ -> ()
+            try Directory.Delete(projectDir, true) with _ -> ()
+
+    let private taskStableResumeBaselineSource =
+        """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        (task {
+            let! prefix = Task.FromResult "Hello"
+            let! name = Task.FromResult "watch"
+            return prefix + ", " + name
+        }).Result
+"""
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for task body edit with stable resume points`` () =
+        // The resumable step sequence (Delay/Bind/Bind/Return) is unchanged, so the edit
+        // is a MoveNext body update on the existing state machine struct: the struct's
+        // awaiter/hoisted field layout, the TypeDef, and the state numbers all survive.
+        applySingleStringUpdateAndAssertRuntimeResult
+            "task-body-edit"
+            taskStableResumeBaselineSource
+            (taskStableResumeBaselineSource.Replace("Hello", "Welcome"))
+            "Hello, watch"
+            "Welcome, watch"
+
+    [<Fact>]
+    let ``EmitHotReloadDelta rejects task await addition as a state machine shape change`` () =
+        // A new `let!` is a new resume point AND a new awaiter struct field; struct
+        // layouts are immutable under hot reload (C# parity: ChangingStateMachineShape).
+        // Before Phase D classification, this delta was emitted and the patched method
+        // crashed at runtime (the silent compiler-generated-field skip in the emitter).
+        let updated =
+            taskStableResumeBaselineSource.Replace(
+                "return prefix + \", \" + name",
+                "let! extra = Task.FromResult \"!\"\n            return prefix + \", \" + name + extra")
+
+        assertEmitRejectedWithMessage
+            "task-added-await"
+            taskStableResumeBaselineSource
+            updated
+            (fun message ->
+                // FSHRDL013 = RudeEditKind.StateMachineShapeChange
+                Assert.Contains("FSHRDL013", message)
+                Assert.Contains("state-machine", message))
+
+    [<Fact>]
+    let ``EmitHotReloadDelta rejects task await reorder as a state machine shape change`` () =
+        // Same resume-point count, but state numbers are positional: an in-flight frame
+        // suspended at state 1 would resume into the OTHER await's continuation.
+        let updated =
+            taskStableResumeBaselineSource.Replace(
+                "let! prefix = Task.FromResult \"Hello\"\n            let! name = Task.FromResult \"watch\"",
+                "let! name = Task.FromResult \"watch\"\n            let! prefix = Task.FromResult \"Hello\"")
+
+        assertEmitRejectedWithMessage
+            "task-reordered-awaits"
+            taskStableResumeBaselineSource
+            updated
+            (fun message -> Assert.Contains("FSHRDL013", message))
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for plain method gaining a while loop`` () =
+        // while/for/try lower to ordinary IL inside the method body; before Phase D the
+        // blanket lowered-shape digest misclassified their introduction as a
+        // state-machine shape change (FSHRDL013).
+        let baseline =
+            """
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        "Hello, watch"
+"""
+
+        let updated =
+            """
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        let mutable acc = ""
+        let mutable i = 0
+        while i < 2 do
+            acc <- acc + (if i = 0 then "Welcome" else ", watch")
+            i <- i + 1
+        acc
+"""
+
+        applySingleStringUpdateAndAssertRuntimeResult "plain-gains-while" baseline updated "Hello, watch" "Welcome, watch"
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for async body edit gaining inner try-with`` () =
+        // async lowers to closure chains: an expression-level try/with inside the CE is
+        // a closure body edit, not state machine evidence.
+        let baseline =
+            """
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        async {
+            let! prefix = async { return "Hello" }
+            return prefix + ", watch"
+        }
+        |> Async.RunSynchronously
+"""
+
+        let updated =
+            """
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        async {
+            let! prefix = async { return "Welcome" }
+            let safe = (try prefix with _ -> "x")
+            return safe + ", watch"
+        }
+        |> Async.RunSynchronously
+"""
+
+        applySingleStringUpdateAndAssertRuntimeResult "async-gains-trywith" baseline updated "Hello, watch" "Welcome, watch"

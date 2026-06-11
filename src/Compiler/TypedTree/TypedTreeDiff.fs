@@ -622,7 +622,11 @@ let private opDigest (denv: DisplayEnv) (op: TOp) =
 
 type private LoweredShapeCollector =
     { LambdaArities: ResizeArray<int>
-      StateMachineStructuralOperations: ResizeArray<string>
+      // Ordered (source-order) sequence of calls into resumable-code builder members
+      // (`task` and other [<ResumableCode>]-typed CEs). Genuine state machines lower
+      // these to MoveNext resume points whose state numbers are assigned positionally,
+      // so the ORDER of the sequence is part of the state machine shape.
+      ResumableCodeCalls: ResizeArray<string>
       QueryStructuralOperations: ResizeArray<string> }
 
 let private traitConstraintShapeDigest (denv: DisplayEnv) (traitInfo: TraitConstraintInfo) =
@@ -658,21 +662,69 @@ let private formatLoweredShapeDigest (structural: ResizeArray<string>) =
 
     $"struct=[{structuralDigest}]"
 
-let private collectLoweredShapeInfo (denv: DisplayEnv) (expr: Expr) =
+/// Formats the resumable-code call sequence digest. Unlike the unordered query digest,
+/// this is ORDER-PRESERVING: state machine resume points take their state numbers from
+/// the lowering's traversal order, so reordering builder calls changes the shape.
+let private formatResumableShapeDigest (calls: ResizeArray<string>) =
+    let digest = calls |> String.concat ","
+    $"resumable=[{digest}]"
+
+/// True when 'ty' is ResumableCode<_, _> (after stripping abbreviations such as
+/// TaskCode). Matches by COMPILED IDENTITY rather than TypedTreeOps.isResumableCodeTy's
+/// entity-reference equality: the diff compares trees from different compilations, and
+/// resolved nonlocal entity references only compare equal within one TcImports.
+let private isResumableCodeAppTy g ty =
+    match stripTyEqns g ty with
+    | TType_app (tcref, _, _) when tcref.LogicalName.Equals("ResumableCode`2", StringComparison.Ordinal) ->
+        (try
+            tcref.CompiledRepresentationForNamedType.FullName.Equals(
+                "Microsoft.FSharp.Core.CompilerServices.ResumableCode`2",
+                StringComparison.Ordinal
+            )
+         with _ ->
+             false)
+    | _ -> false
+
+/// True when 'ty' is (a function type returning) ResumableCode<_, _>: the typed-tree
+/// signature of a builder member participating in a genuine state machine CE.
+let rec private isReturnsResumableCodeAppTy g ty =
+    if isFunTy g ty then
+        isReturnsResumableCodeAppTy g (rangeOfFunTy g ty)
+    else
+        isResumableCodeAppTy g ty
+
+let private collectLoweredShapeInfo (g: TcGlobals) (denv: DisplayEnv) (expr: Expr) =
     let collector =
         { LambdaArities = ResizeArray()
-          StateMachineStructuralOperations = ResizeArray()
+          ResumableCodeCalls = ResizeArray()
           QueryStructuralOperations = ResizeArray() }
+
+    // Strips wrappers off the applied function expression so builder member calls
+    // (Expr.App over the member's Val) are recognized through debug points and links.
+    let rec stripAppliedFunction (expr: Expr) =
+        match expr with
+        | Expr.DebugPoint (_, inner) -> stripAppliedFunction inner
+        | Expr.Link eref -> stripAppliedFunction eref.Value
+        | _ -> expr
 
     let rec walk (expr: Expr) =
         match expr with
         | Expr.Const _ -> ()
-        | Expr.Val (vref, _, _) ->
-            // Keep state-machine classification tied to structural evidence from
-            // compiler-generated MoveNext references instead of fragile name lists.
-            if vref.LogicalName.Equals("MoveNext", StringComparison.Ordinal) then
-                addDistinct collector.StateMachineStructuralOperations vref.LogicalName
-        | Expr.App (funcExpr, _, _, args, _) ->
+        | Expr.Val _ -> ()
+        | Expr.App (funcExpr, _, tyargs, args, _) ->
+            // Calls returning ResumableCode-typed values are the typed-tree shape of a
+            // genuine state machine CE (`task` etc.): Bind/Combine/Delay/While/... all
+            // return ResumableCode. Record them in source order with their type
+            // instantiations: state numbers are positional, so this sequence IS the
+            // resume-point structure the lowering will produce.
+            (match stripAppliedFunction funcExpr with
+             | Expr.Val (vref, _, _) when isReturnsResumableCodeAppTy g vref.TauType ->
+                 let instantiation =
+                     tyargs |> List.map (tyToString denv) |> String.concat ","
+
+                 collector.ResumableCodeCalls.Add $"{vref.LogicalName}<{instantiation}>({args.Length})"
+             | _ -> ())
+
             walk funcExpr
             args |> List.iter walk
         | Expr.Sequential (expr1, expr2, _, _) ->
@@ -695,18 +747,34 @@ let private collectLoweredShapeInfo (denv: DisplayEnv) (expr: Expr) =
             targets
             |> Array.iter (fun (TTarget(_, targetExpr, _)) -> walk targetExpr)
         | Expr.Op (op, _, args, _) ->
+            // Plain control flow (try/with, try/finally, while, for) lowers to ordinary
+            // IL inside the containing method (or closure) body: it is NOT state machine
+            // evidence and stays freely editable. Genuine state machines are detected
+            // through ResumableCode-typed builder calls above.
             match op with
-            | TOp.TryWith _ -> addDistinct collector.StateMachineStructuralOperations "TryWith"
-            | TOp.TryFinally _ -> addDistinct collector.StateMachineStructuralOperations "TryFinally"
-            | TOp.While _ -> addDistinct collector.StateMachineStructuralOperations "While"
-            | TOp.IntegerForLoop _ -> addDistinct collector.StateMachineStructuralOperations "ForLoop"
             | TOp.TraitCall traitInfo ->
-                let traitDigest = traitConstraintShapeDigest denv traitInfo
-                addDistinct collector.QueryStructuralOperations traitDigest
+                // SRTP-resolved builder steps (e.g. `let!` on a TaskLike value) surface
+                // as trait calls; when they produce resumable code they are resume-point
+                // structure like the direct member calls above.
+                let isResumableTrait =
+                    match traitInfo.CompiledReturnType with
+                    | Some retTy -> isReturnsResumableCodeAppTy g retTy
+                    | None -> false
+
+                if isResumableTrait then
+                    collector.ResumableCodeCalls.Add $"trait:{traitConstraintShapeDigest denv traitInfo}"
+                else
+                    let traitDigest = traitConstraintShapeDigest denv traitInfo
+                    addDistinct collector.QueryStructuralOperations traitDigest
             | _ -> ()
 
             args |> List.iter walk
-        | Expr.Obj (_, _, _, ctorCall, overrides, interfaceImpls, _) ->
+        | Expr.Obj (_, objTy, _, ctorCall, overrides, interfaceImpls, _) ->
+            // Direct construction of a ResumableCode delegate (low-level resumable code,
+            // `ResumableCode(fun sm -> ...)`) is state machine structure too.
+            if isResumableCodeAppTy g objTy then
+                collector.ResumableCodeCalls.Add "ResumableCode-delegate"
+
             walk ctorCall
 
             overrides
@@ -739,7 +807,7 @@ let private collectLoweredShapeInfo (denv: DisplayEnv) (expr: Expr) =
         |> String.concat ","
 
     let stateMachineDigest =
-        formatLoweredShapeDigest collector.StateMachineStructuralOperations
+        formatResumableShapeDigest collector.ResumableCodeCalls
 
     let queryDigest =
         formatLoweredShapeDigest collector.QueryStructuralOperations
@@ -1384,7 +1452,7 @@ let private tryClassifySynthesizedLoweredShapeChurn (snapshot: BindingSnapshot) 
             hasQueryStructuralEvidence
 
         let hasStateMachineStructuralEvidence =
-            hasLoweredShapeDigestSegmentValues "struct" snapshot.StateMachineShapeDigest
+            hasLoweredShapeDigestSegmentValues "resumable" snapshot.StateMachineShapeDigest
 
         let hasStateMachineEvidence =
             hasStateMachineStructuralEvidence
@@ -1476,7 +1544,7 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
     let signature = tyToString denv var.Type
     let constraints = typarConstraintsDigest denv var.Typars
     let bodyHash = exprDigest denv expr
-    let lambdaShapeDigest, stateMachineShapeDigest, queryShapeDigest = collectLoweredShapeInfo denv expr
+    let lambdaShapeDigest, stateMachineShapeDigest, queryShapeDigest = collectLoweredShapeInfo g denv expr
     let containingEntity = tryGetContainingEntityFullName var
     let memberKind = memberKindOfVal var
     let vref = mkLocalValRef var
@@ -1791,16 +1859,32 @@ let private compareBindings
                     $"Query-expression lowering shape changed from '{baselineBinding.QueryShapeDigest}' to '{updatedBinding.QueryShapeDigest}'." }
             )
         elif baselineBinding.StateMachineShapeDigest <> updatedBinding.StateMachineShapeDigest then
+            // The resumable-code call sequence changed: the lowering assigns resume-point
+            // state numbers positionally, and the state machine struct's hoisted/awaiter
+            // field layout follows the sequence, so adding, removing, or reordering steps
+            // changes the state machine shape (C# parity: ChangingStateMachineShape; F#
+            // task state machines are structs, so even append-only new awaits would
+            // change the immutable struct layout).
             rude.Add(
                 { Symbol = Some baselineBinding.Symbol
                   Kind = RudeEditKind.StateMachineShapeChange
                   Message =
-                    $"State-machine lowering shape changed from '{baselineBinding.StateMachineShapeDigest}' to '{updatedBinding.StateMachineShapeDigest}'." }
+                    $"Resumable state-machine structure changed for '{baselineBinding.Symbol.QualifiedName}': the sequence of computation-expression steps (let!/do!/return!/control flow) changed from '{baselineBinding.StateMachineShapeDigest}' to '{updatedBinding.StateMachineShapeDigest}'. Adding, removing, or reordering steps in a task or resumable computation requires a rebuild." }
             )
         else
             // Lambda classification (Phase C1): when occurrence extraction succeeded on both
             // sides, align the occurrence sequences and classify per occurrence; otherwise
             // fall back to the legacy whole-body lambda digest comparison.
+            // A member whose body contains resumable code lowers to a struct state
+            // machine: its lambdas are the CE step continuations, hoisted into MoveNext,
+            // and its captures become struct fields. Structural lambda changes there are
+            // state machine shape changes, not closure-class edits — the C4 added-closure
+            // emission path does not apply (there is no new closure class; the lowering
+            // would re-lay-out the immutable struct instead).
+            let isResumableMember =
+                hasLoweredShapeDigestSegmentValues "resumable" baselineBinding.StateMachineShapeDigest
+                || hasLoweredShapeDigestSegmentValues "resumable" updatedBinding.StateMachineShapeDigest
+
             let lambdaRudeEdit =
                 match baselineBinding.LambdaOccurrenceData, updatedBinding.LambdaOccurrenceData with
                 | LambdaOccurrenceExtraction.Extracted baselineOccs, LambdaOccurrenceExtraction.Extracted updatedOccs ->
@@ -1810,6 +1894,12 @@ let private compareBindings
                         memberLambdaEdits.Add
                             { MemberSymbol = baselineBinding.Symbol
                               Edits = lambdaEditList }
+
+                    let hasStructuralLambdaEdit =
+                        lambdaEditList
+                        |> List.exists (function
+                            | LambdaEdit.BodyEdited _ -> false
+                            | _ -> true)
 
                     let added =
                         lambdaEditList
@@ -1829,7 +1919,16 @@ let private compareBindings
                             | LambdaEdit.CaptureSetChanged _ -> true
                             | _ -> false)
 
-                    if not captureChanged.IsEmpty then
+                    if isResumableMember && hasStructuralLambdaEdit then
+                        // Even with an unchanged step sequence, structural lambda churn
+                        // inside a resumable member (a CE continuation gained or lost, or
+                        // its captures changed) re-lays-out the state machine struct's
+                        // hoisted fields; struct layouts are immutable under hot reload.
+                        Some(
+                            RudeEditKind.StateMachineShapeChange,
+                            $"Resumable state-machine structure changed for '{baselineBinding.Symbol.QualifiedName}': computation-expression continuations were added, removed, or changed their captured values, which changes the state machine's hoisted-variable layout. This requires a rebuild."
+                        )
+                    elif not captureChanged.IsEmpty then
                         // Capture-set changes of MATCHED occurrences stay rude this slice
                         // (the C#-parity allowance for compatible closure growth needs
                         // capture-field mapping, a later slice).

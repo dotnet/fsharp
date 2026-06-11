@@ -100,7 +100,10 @@ let ``typed tree diff no longer relies on state-machine declaring-type string he
 let ``typed tree diff uses structural lowered-shape evidence only`` () =
     let source = readCompilerFile "src/Compiler/TypedTree/TypedTreeDiff.fs"
 
-    Assert.Contains("if vref.LogicalName.Equals(\"MoveNext\", StringComparison.Ordinal) then", source)
+    // State machine evidence is the typed signature of resumable code (calls returning
+    // ResumableCode<_, _>), not member-name lists or plain control-flow operators.
+    Assert.Contains("isReturnsResumableCodeAppTy g vref.TauType", source)
+    Assert.Contains("formatResumableShapeDigest", source)
     Assert.Contains("traitConstraintShapeDigest denv traitInfo", source)
     Assert.Contains("formatLoweredShapeDigest", source)
     Assert.Contains("hasLoweredShapeDigestSegmentValues", source)

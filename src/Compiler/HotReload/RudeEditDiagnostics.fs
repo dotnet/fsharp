@@ -30,7 +30,8 @@ module internal RudeEditDiagnostics =
         | RudeEditKind.LambdaShapeChange ->
             $"Changing lowered lambda shape for '{name}' requires a rebuild."
         | RudeEditKind.StateMachineShapeChange ->
-            $"Changing lowered state-machine shape for '{name}' requires a rebuild."
+            // The diff message carries the precise resume-point/step-sequence change.
+            $"Changing the state-machine shape of '{name}' requires a rebuild. {fallback}"
         | RudeEditKind.QueryExpressionShapeChange ->
             $"Changing lowered query-expression shape for '{name}' requires a rebuild."
         | RudeEditKind.SynthesizedDeclarationChange ->
