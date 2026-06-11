@@ -82,6 +82,7 @@
     <Compile Include="HotReload\ApplyUpdateRunner.fs" />
     <Compile Include="HotReload\ApplyUpdateConsole.fs" />
     <Compile Include="HotReload\RuntimeIntegrationTests.fs" />
+    <Compile Include="HotReload\GenericEditTests.fs" />
     <Compile Include="HotReload\DefinitionMapTests.fs" />
     <Compile Include="HotReload\SymbolChangesTests.fs" />
     <Compile Include="HotReload\MdvValidationTests.fs" />
