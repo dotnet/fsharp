@@ -1149,6 +1149,21 @@ let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
                                          GetKeyword = Some mGet
                                          SetKeyword = Some mSet
                                      }) ->
+            // Each accessor's xmlDoc must validate against the union of both accessors'
+            // parameter names; otherwise documenting the full property triggers spurious
+            // 'unknown parameter' / 'no documentation for parameter' warnings on the
+            // accessor that does not own that name. See issue #13684.
+            let argNamesOf (SynBinding(valData = SynValData(valInfo = info))) = info.ArgNames
+            let getArgs = argNamesOf getBinding
+            let setArgs = argNamesOf setBinding
+
+            let rewrap extra (SynBinding(a, k, isInline, isMutable, attrs, xmlDoc, vd, hp, ri, e, mB, sp, t)) =
+                let xmlDoc' = PreXmlDoc.WithExtraParamsForCheck(xmlDoc, extra)
+                SynBinding(a, k, isInline, isMutable, attrs, xmlDoc', vd, hp, ri, e, mB, sp, t)
+
+            let getBinding = rewrap setArgs getBinding
+            let setBinding = rewrap getArgs setBinding
+
             if Position.posLt mGet.Start mSet.Start then
                 [ SynMemberDefn.Member(getBinding, m); SynMemberDefn.Member(setBinding, m) ]
             else

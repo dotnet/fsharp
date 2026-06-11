@@ -1,0 +1,46 @@
+Module::f
+  (5,19-5,20)  l
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  callvirt GetEnumerator
+    IL_0008:  stloc.1
+    IL_0009:  br.s IL_0022
+
+  (5,5-5,15)  for i1, i2
+    IL_000b:  ldloc.1
+    IL_000c:  callvirt get_Current
+    IL_0011:  stloc.2
+    IL_0012:  ldloc.2
+    IL_0013:  call get_Item2
+    IL_0018:  stloc.3
+    IL_0019:  ldloc.2
+    IL_001a:  call get_Item1
+    IL_001f:  stloc.s 4
+
+  (6,9-6,11)  ()
+    IL_0021:  nop
+
+  (5,16-5,18)  in
+    IL_0022:  ldloc.1
+    IL_0023:  callvirt MoveNext
+    IL_0028:  brtrue.s IL_000b
+    IL_002a:  leave.s IL_0041
+    IL_002c:  ldloc.1
+    IL_002d:  isinst IDisposable
+    IL_0032:  stloc.s 5
+
+  <hidden>
+    IL_0034:  ldloc.s 5
+    IL_0036:  brfalse.s IL_0040
+
+  <hidden>
+    IL_0038:  ldloc.s 5
+    IL_003a:  callvirt Dispose
+    IL_003f:  endfinally
+
+  <hidden>
+    IL_0040:  endfinally
+
+  <hidden>
+    IL_0041:  ret
