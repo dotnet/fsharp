@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using Microsoft.CodeAnalysis.Testing;
+using System;
 using System.Threading.Tasks;
 using Xunit;
 using static Microsoft.VisualStudio.VSConstants;
@@ -11,6 +12,14 @@ namespace FSharp.Editor.IntegrationTests;
 
 public class GoToDefinitionTests : AbstractIntegrationTest
 {
+    // Roslyn's workspace propagates buffer edits to its solution snapshot asynchronously, and the
+    // F# checker schedules its own typecheck on top. WaitForProjectSystemAsync only covers VS
+    // project-system loading -- not these two async hops -- so GoToDefn invoked too quickly after
+    // SetTextAsync / OpenFileAsync sees a stale Document and no-ops. A short delay is the cheapest
+    // pragmatic bridge until a proper Roslyn-style WaitForAsyncOperationsAsync(FeatureAttribute.Workspace)
+    // partial is wired up here.
+    private static readonly TimeSpan FSharpCheckerSettleDelay = TimeSpan.FromSeconds(2);
+
     [IdeFact]
     public async Task GoesToDefinition()
     {
@@ -28,11 +37,9 @@ let increment = add 1
         await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
         await Editor.SetTextAsync(code, TestToken);
-        
+        await Task.Delay(FSharpCheckerSettleDelay, TestToken);
+
         await Editor.PlaceCaretAsync("add 1", TestToken);
-        // GoToDefn needs the F# language service to have typechecked the file; without an explicit
-        // wait the command is a no-op and Assert.Contains below fails with the caret line unchanged.
-        await Workspace.WaitForProjectSystemAsync(TestToken);
         await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
         var actualText = await Editor.GetCurrentLineTextAsync(TestToken);
         
@@ -75,8 +82,8 @@ let id (t: SomeType) = t
         await SolutionExplorer.BuildSolutionAsync(TestToken);
 
         await SolutionExplorer.OpenFileAsync("Library", "Module.fsi", TestToken);
+        await Task.Delay(FSharpCheckerSettleDelay, TestToken);
         await Editor.PlaceCaretAsync("SomeType ->", TestToken);
-        await Workspace.WaitForProjectSystemAsync(TestToken);
         await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
         var expectedText = "type SomeType =";
         var expectedWindow = "Module.fsi";
@@ -86,8 +93,8 @@ let id (t: SomeType) = t
         Assert.Equal(expectedWindow, actualWindow);
 
         await SolutionExplorer.OpenFileAsync("Library", "Module.fs", TestToken);
+        await Task.Delay(FSharpCheckerSettleDelay, TestToken);
         await Editor.PlaceCaretAsync("SomeType)", TestToken);
-        await Workspace.WaitForProjectSystemAsync(TestToken);
         await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
         expectedText = "type SomeType =";
         expectedWindow = "Module.fs";
