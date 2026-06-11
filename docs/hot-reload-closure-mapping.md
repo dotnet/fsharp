@@ -244,6 +244,15 @@ TryGetPreviousClosure` analogue, expressed as a pure data transformation over th
   `tryGetHotReloadOrdinal`, so snapshot canonicalization leaves it alone). Occurrence ordinals are
   unique within a member and generations strictly increase, so a (baseName, generation, ordinal)
   triple is allocated at most once per session.
+- **Tests**: `ClosureNameAllocatorTests` covers the synthetic match/add/remove/nested/
+  capture-incompatible/fail-closed cases and three-generation chaining, and additionally drives
+  the allocator over REAL C1 extraction (checker compiles via the shared `DiffTestHarness`):
+  an added filter lambda gets the generation-2 name while the surviving map lambda keeps the
+  baseline name, and generation 3 reuses both from the chained table. The component
+  `ClosureIdentityTests` pins the metadata-level invariant the delta path relies on today (and
+  C4 extends): flag-on recompiles of an unchanged lambda set produce closure classes with
+  identical names across three body-edit generations, so deltas can update the existing closure
+  method bodies in place.
 
 **Lowering wiring design (pending).** The remaining work is threading the allocation into IlxGen
 for delta compiles. The precise design and why it was not forced into the allocator commit:

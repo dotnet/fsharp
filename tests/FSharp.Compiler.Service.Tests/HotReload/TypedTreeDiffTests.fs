@@ -17,7 +17,9 @@ open FSharp.Compiler.TypedTreeDiff
 
 open FSharp.Compiler.Service.Tests.Common
 
-type private DiffTestHarness() =
+// Internal (not private) so the C3 closure-name-allocator tests can reuse the same
+// compile-and-extract harness against real typed trees.
+type internal DiffTestHarness() =
     let projectDir =
         let dir = Path.Combine(Path.GetTempPath(), "typed-tree-diff-tests", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(dir) |> ignore

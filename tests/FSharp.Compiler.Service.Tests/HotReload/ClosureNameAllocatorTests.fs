@@ -271,3 +271,105 @@ module ClosureNameAllocatorTests =
               ClosureNameAssignment.Reused "f@hotreload#g2_o2" ],
             assignmentNames gen4Allocation
         )
+
+    // -----------------------------------------------------------------------
+    // Allocator over REAL C1 extraction: the occurrences below come from actual
+    // checker compiles (DiffTestHarness), so ordinals, parent chains, parameter/
+    // return identities and capture sets are produced by the real extraction the
+    // delta path uses — not hand-built fixtures.
+    // -----------------------------------------------------------------------
+
+    let private boolTy = RuntimeTypeIdentity.NamedType("System.Boolean", [])
+
+    let private extractOccurrences (compiled: FSharp.Compiler.TcGlobals.TcGlobals * FSharp.Compiler.TypedTree.CheckedImplFile) memberName =
+        let tcGlobals, implFile = compiled
+
+        match
+            collectMemberLambdaOccurrences tcGlobals implFile
+            |> List.tryFind (fun (symbol: SymbolId, _) -> symbol.LogicalName = memberName)
+        with
+        | Some(_, occurrences) -> occurrences
+        | None -> failwith $"Member '{memberName}' not found in extraction output."
+
+    let private oneLambdaSource =
+        """module Library
+let transform (input: int list) =
+    input |> List.map (fun x -> x * 2)
+"""
+
+    let private twoLambdaSource =
+        """module Library
+let transform (input: int list) =
+    input |> List.filter (fun x -> x > 0) |> List.map (fun x -> x * 2)
+"""
+
+    let private twoLambdaEditedSource =
+        """module Library
+let transform (input: int list) =
+    input |> List.filter (fun x -> x > 0) |> List.map (fun x -> x * 3)
+"""
+
+    [<Fact>]
+    let ``real extraction: added lambda gets generation name while survivor keeps baseline name and gen3 chains`` () =
+        use harness = new DiffTestHarness()
+
+        harness.Rewrite oneLambdaSource
+        let gen1Occurrences = extractOccurrences (harness.Compile()) "transform"
+        Assert.Equal(1, List.length gen1Occurrences)
+
+        // The baseline compile assigned the single occurrence its replay name.
+        let gen1Names =
+            Map.ofList [ occurrenceOrdinalChain gen1Occurrences.Head, "transform@hotreload" ]
+
+        // Generation 2: a filter lambda is added in front of the surviving map lambda.
+        harness.Rewrite twoLambdaSource
+        let gen2Occurrences = extractOccurrences (harness.Compile()) "transform"
+        Assert.Equal(2, List.length gen2Occurrences)
+
+        let gen2Allocation =
+            allocateMemberClosureNames gen1Occurrences gen1Names gen2Occurrences "transform" 2
+
+        let assignmentFor returnTy =
+            gen2Allocation.Assignments
+            |> List.pick (fun (occ, assignment) ->
+                if occ.ReturnTypeIdentity = returnTy then Some assignment else None)
+
+        // The surviving map lambda (int return) reuses the baseline name verbatim;
+        // the added filter lambda (bool return) gets a generation-2 fresh name.
+        Assert.Equal(ClosureNameAssignment.Reused "transform@hotreload", assignmentFor intTy)
+
+        match assignmentFor boolTy with
+        | ClosureNameAssignment.Fresh name ->
+            Assert.StartsWith("transform@hotreload#g2_o", name)
+        | ClosureNameAssignment.Reused name ->
+            failwith $"Added lambda must not reuse a baseline name, got '{name}'."
+
+        // Generation 3: pure body edit of the surviving map lambda. Every name —
+        // including the generation-2 fresh one — must be reused from the chain.
+        harness.Rewrite twoLambdaEditedSource
+        let gen3Occurrences = extractOccurrences (harness.Compile()) "transform"
+        Assert.Equal(2, List.length gen3Occurrences)
+
+        let gen3Allocation =
+            allocateMemberClosureNames
+                gen2Occurrences
+                gen2Allocation.RefreshedNamesByOccurrenceChain
+                gen3Occurrences
+                "transform"
+                3
+
+        let reusedNames =
+            gen3Allocation.Assignments
+            |> List.map (fun (_, assignment) ->
+                match assignment with
+                | ClosureNameAssignment.Reused name -> name
+                | ClosureNameAssignment.Fresh name ->
+                    failwith $"Generation 3 must reuse every generation-2 name, but '{name}' was freshly allocated.")
+            |> Set.ofList
+
+        let gen2Names =
+            gen2Allocation.Assignments
+            |> List.map (fun (_, assignment) -> assignment.Name)
+            |> Set.ofList
+
+        Assert.Equal<Set<string>>(gen2Names, reusedNames)

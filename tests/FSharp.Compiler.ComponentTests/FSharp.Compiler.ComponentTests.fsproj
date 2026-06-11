@@ -72,6 +72,7 @@
     <Compile Include="Conformance\BasicGrammarElements\ModuleDefinitions\ModuleDefinitions.fs" />
     <Compile Include="HotReload\BaselineTests.fs" />
     <Compile Include="HotReload\NameMapTests.fs" />
+    <Compile Include="HotReload\ClosureIdentityTests.fs" />
     <Compile Include="HotReload\TestEnv.fs" />
     <Compile Include="HotReload\TestHelpers.fs" />
     <Compile Include="HotReload\DeltaEmitterTests.fs" />
