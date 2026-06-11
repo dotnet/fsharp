@@ -959,7 +959,8 @@ type Type =
     static member GetMessage() = "Hello from generation {gen}"
 """
 
-    let private applySingleStringUpdateAndAssertRuntimeResult
+    let private applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
+        (capabilities: string list option)
         (testLabel: string)
         (baselineSource: string)
         (updatedSource: string)
@@ -1028,7 +1029,12 @@ type Type =
                 if baselineErrors.Length > 0 then
                     failwithf "[%s] baseline compilation failed: %A" testLabel (baselineErrors |> Array.map (fun d -> d.Message))
 
-                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                let sessionStart =
+                    match capabilities with
+                    | Some capabilities -> checker.StartHotReloadSession(projectOptions, capabilities = capabilities)
+                    | None -> checker.StartHotReloadSession(projectOptions)
+
+                match sessionStart |> Async.RunImmediate with
                 | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
                 | Ok () -> ()
 
@@ -1082,6 +1088,16 @@ type Type =
                 try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
+
+    /// Single string update against a default (baseline-only capability) session.
+    let private applySingleStringUpdateAndAssertRuntimeResult testLabel baselineSource updatedSource baselineExpected updatedExpected =
+        applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
+            None
+            testLabel
+            baselineSource
+            updatedSource
+            baselineExpected
+            updatedExpected
 
     [<Fact>]
     let ``Computation-expression output shape is preserved across desugaring variants`` () =
@@ -4470,3 +4486,303 @@ type Type =
             (fun message ->
                 Assert.Contains("synthesized type", message)
                 Assert.Contains("ebuild", message))
+
+    [<Fact>]
+    let ``Disk-started session applies a task body edit with stable resume points`` () =
+        // The dotnet-watch topology for state machines (Phase D): the baseline is built
+        // by the command-line fsc path (persisting the EnC State Machine State Map CDI
+        // rows in the portable PDB), ALL in-process session state is dropped, and the
+        // session starts from the on-disk dll + pdb alone. A resume-point-stable body
+        // edit must classify as a MethodBody update, emit, apply, and run.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-task-disk-start", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "TaskDiskStart.fs")
+            let dllPath = Path.Combine(projectDir, "TaskDiskStart.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "TaskDiskStart.runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, taskStableResumeBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString taskStableResumeBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                Assert.True(File.Exists pdbPath, "Baseline PDB must exist on disk.")
+
+                // The persisted baseline must carry the state map for GetMessage (both
+                // resume points, state numbers 1 and 2).
+                let baselineStateInfos =
+                    FSharp.Compiler.EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes pdbPath)
+
+                let stateBearingMethods =
+                    baselineStateInfos
+                    |> Map.filter (fun _ info -> not info.StateMachineStates.IsEmpty)
+
+                Assert.True(
+                    Map.count stateBearingMethods = 1,
+                    $"expected exactly one state-map-bearing method in the baseline PDB, found %d{Map.count stateBearingMethods}")
+
+                let states = (Seq.head stateBearingMethods).Value.StateMachineStates
+                Assert.Equal<int list>([ 1; 2 ], states |> List.map (fun s -> s.StateNumber))
+
+                // Simulate the process boundary: the dll + pdb on disk are the only
+                // baseline inputs from here on.
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let methodType = assembly.GetType("Sample.Type", throwOnError = true)
+                let method = methodType.GetMethod("GetMessage", BindingFlags.Public ||| BindingFlags.Static)
+
+                Assert.Equal("Hello, watch", method.Invoke(null, [||]) :?> string)
+
+                let updatedSource = taskStableResumeBaselineSource.Replace("Hello", "Welcome")
+                File.WriteAllText(fsPath, updatedSource)
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                let updatedOptions =
+                    { projectOptions with
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.filter (fun opt ->
+                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                let compileDiagnostics2, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
+
+                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                | Ok delta ->
+                    let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                    MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+
+                    Assert.Equal("Welcome, watch", method.Invoke(null, [||]) :?> string)
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for seq body edit with added yield`` () =
+        // seq { } lowers to a CLASS state machine (GenSequenceExpression closure, not
+        // ResumableCode): MoveNext is regenerated whole and class layouts may grow, so
+        // a fresh enumeration after the update observes the new yields. NOTE the
+        // documented caveat (docs/hot-reload-closure-mapping.md, Phase D): enumerators
+        // already SUSPENDED mid-sequence at apply time resume on the new MoveNext with
+        // their old state number, exactly like C# Debug-mode iterator edits would - F#
+        // currently allows the edit where C# reports ChangingStateMachineShape.
+        let baseline =
+            """
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        seq {
+            yield "Hello"
+            yield ", watch"
+        }
+        |> String.concat ""
+"""
+
+        let updated =
+            """
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        seq {
+            yield "Welcome"
+            yield ", "
+            yield "watch"
+        }
+        |> String.concat ""
+"""
+
+        // The added yield is an added closure occurrence at this optimization level
+        // (the seq desugaring's closure chain), so the C4 capability set is required.
+        applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
+            (Some [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ])
+            "seq-added-yield"
+            baseline
+            updated
+            "Hello, watch"
+            "Welcome, watch"
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for async body edits across generations`` () =
+        // Three generations of resume-structure-stable async body edits: the closure
+        // chain keeps its deterministic names, so every generation is a set of method
+        // updates over the same TypeDefs.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let sourceFor (prefix: string) (suffix: string) =
+                $"""
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        async {{
+            let! prefix = async {{ return "{prefix}" }}
+            return prefix + ", " + "{suffix}"
+        }}
+        |> Async.RunSynchronously
+"""
+
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-async-multigen", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "AsyncMultiGen.fs")
+            let dllPath = Path.Combine(projectDir, "AsyncMultiGen.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "AsyncMultiGen.runtime.dll")
+
+            try
+                let baselineSource = sourceFor "Hello" "watch"
+                File.WriteAllText(fsPath, baselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString baselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let methodType = assembly.GetType("Sample.Type", throwOnError = true)
+                let method = methodType.GetMethod("GetMessage", BindingFlags.Public ||| BindingFlags.Static)
+
+                Assert.Equal("Hello, watch", method.Invoke(null, [||]) :?> string)
+
+                let updatedOptions =
+                    { projectOptions with
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.filter (fun opt ->
+                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                let applyGeneration gen (source: string) (expected: string) =
+                    File.WriteAllText(fsPath, source)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    let compileDiagnostics, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    | Ok delta ->
+                        let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        Assert.Equal(expected, method.Invoke(null, [||]) :?> string)
+
+                applyGeneration 1 (sourceFor "Welcome" "watch") "Welcome, watch"
+                applyGeneration 2 (sourceFor "Welcome" "world") "Welcome, world"
+                applyGeneration 3 (sourceFor "Hi" "world") "Hi, world"
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
