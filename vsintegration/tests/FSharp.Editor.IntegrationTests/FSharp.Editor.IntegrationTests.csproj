@@ -46,6 +46,10 @@
 
   <Target Name="SyncXunitDesktopDll" AfterTargets="Build" Condition="'$(OutputType)' == 'Exe'">
     <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)$(AssemblyName).dll" SkipUnchangedFiles="true" />
+    <!-- xunit.console.exe loads <dll>.config (not <exe>.config) for the test-AppDomain's binding redirects.
+         Without this copy, the IdeTestFramework's heavy VS-interop dependency graph fails to bind and the
+         custom xUnit test framework silently reports 0 discovered tests. -->
+    <Copy SourceFiles="$(TargetPath).config" DestinationFiles="$(TargetDir)$(AssemblyName).dll.config" SkipUnchangedFiles="true" Condition="Exists('$(TargetPath).config')" />
   </Target>
 
 </Project>
