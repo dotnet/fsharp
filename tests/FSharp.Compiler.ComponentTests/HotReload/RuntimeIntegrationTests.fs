@@ -3094,3 +3094,117 @@ type Notifier() =
 
                 Assert.Equal(1, fired)
                 printfn "[clievent] SUCCESS: added CLIEvent subscribable and firing via reflection")
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for mixed member additions across generations`` () =
+        // Coverage consolidation: a three-generation chain mixing the member-addition
+        // machineries. Gen 1 adds a method, gen 2 adds an instance field plus a method
+        // reading it, gen 3 adds an auto-property (field + accessors + property row).
+        // Every generation must chain through the updated baseline (earlier added rows
+        // resolve in place) and live instance state must survive each apply.
+        let baselineSource =
+            """
+module Sample.Mixed
+
+type Hub() =
+    member _.Version() = 0
+"""
+
+        let gen1Source =
+            """
+module Sample.Mixed
+
+type Hub() =
+    member _.Version() = 1
+    member _.Extra() = 10
+"""
+
+        let gen2Source =
+            """
+module Sample.Mixed
+
+type Hub() =
+    let mutable tally = 5
+    member _.Version() = 2
+    member _.Extra() = 10
+    member _.Tally() = tally
+    member _.Bump() = tally <- tally + 1
+"""
+
+        let gen3Source =
+            """
+module Sample.Mixed
+
+type Hub() =
+    let mutable tally = 5
+    member _.Version() = 3
+    member _.Extra() = 10
+    member _.Tally() = tally
+    member _.Bump() = tally <- tally + 1
+    member val Slot = 7 with get, set
+"""
+
+        runMemberAdditionScenario
+            "fsharp-hotreload-mixedadd"
+            "MixedAdditionLibrary"
+            [ "Baseline"; "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
+            baselineSource
+            (fun assembly applyGeneration ->
+                let hubType = assembly.GetType("Sample.Mixed+Hub", throwOnError = true)
+                let invoke (instance: obj) name =
+                    hubType.GetMethod(name, BindingFlags.Public ||| BindingFlags.Instance).Invoke(instance, [||])
+
+                let instance = Activator.CreateInstance(hubType)
+                Assert.Equal(0, invoke instance "Version" :?> int)
+
+                // ---------------- Generation 1: method addition ----------------
+                let delta1 = applyGeneration 1 gen1Source
+                let encLog1 = readDeltaEncLog delta1.Metadata
+                assertAddPair encLog1 0x02 1 0x06 // (TypeDef, AddMethod) + MethodDef
+
+                Assert.Equal(1, invoke instance "Version" :?> int)
+                Assert.Equal(10, invoke instance "Extra" :?> int)
+
+                // ---------------- Generation 2: field + methods ----------------
+                let delta2 = applyGeneration 2 gen2Source
+                let encLog2 = readDeltaEncLog delta2.Metadata
+                assertAddPair encLog2 0x02 2 0x04 // (TypeDef, AddField) + Field
+                assertAddPair encLog2 0x02 1 0x06 // (TypeDef, AddMethod) + MethodDef
+
+                Assert.Equal(2, invoke instance "Version" :?> int)
+                Assert.Equal(10, invoke instance "Extra" :?> int)
+
+                // The pre-gen2 instance reads the zeroed field; bumps mutate real state.
+                Assert.Equal(0, invoke instance "Tally" :?> int)
+                invoke instance "Bump" |> ignore
+                invoke instance "Bump" |> ignore
+                Assert.Equal(2, invoke instance "Tally" :?> int)
+
+                // A fresh instance runs the gen-2 ctor.
+                let gen2Instance = Activator.CreateInstance(hubType)
+                Assert.Equal(5, invoke gen2Instance "Tally" :?> int)
+
+                // ---------------- Generation 3: auto-property ----------------
+                let delta3 = applyGeneration 3 gen3Source
+                let encLog3 = readDeltaEncLog delta3.Metadata
+                assertAddPair encLog3 0x02 2 0x04 // backing field
+                assertAddPair encLog3 0x02 1 0x06 // accessors
+                assertAddPair encLog3 0x15 4 0x17 // (PropertyMap, AddProperty) + Property
+                Assert.Contains(encLog3, fun (token, op) -> token >>> 24 = 0x18 && op = 0)
+
+                Assert.Equal(3, invoke instance "Version" :?> int)
+
+                // State added in gen 2 survives the gen-3 apply on both instances.
+                Assert.Equal(2, invoke instance "Tally" :?> int)
+                Assert.Equal(5, invoke gen2Instance "Tally" :?> int)
+
+                let slot = hubType.GetProperty("Slot", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull slot), "Added auto-property 'Slot' not found after generation 3.")
+                Assert.Equal(0, slot.GetValue(instance) :?> int)
+
+                let gen3Instance = Activator.CreateInstance(hubType)
+                Assert.Equal(5, invoke gen3Instance "Tally" :?> int)
+                Assert.Equal(7, slot.GetValue(gen3Instance) :?> int)
+                slot.SetValue(gen3Instance, 11)
+                Assert.Equal(11, slot.GetValue(gen3Instance) :?> int)
+                printfn "[mixedadd] SUCCESS: method/field/property additions chained across three generations")

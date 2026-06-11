@@ -262,6 +262,27 @@ Runtime validation: added properties are readable/writable through ordinary
 accessors); auto-property state follows C# EnC semantics (existing instances
 read `default(T)`, new instances run the updated ctor and see initializers).
 
+### mdv parity notes (B2/B3 consolidation)
+
+- A three-generation chain mixing method, instance-field, and auto-property
+  additions aggregates cleanly under mdv (no `EnCMap`/table errors), and mdv
+  resolves the gen-3 Property row's accessors through the emitted
+  MethodSemantics rows.
+- Next-generation table-row chaining counts only APPENDED rows (EncMap
+  entries past the baseline row counts). The delta's physical tables also
+  carry re-emitted rows for UPDATED definitions; counting those advanced the
+  row cursors past a gap, so a later generation's added rows produced an
+  EncMap readers reject ("EnCMap table not sorted or has missing records")
+  and members the runtime could not link. Exposed by the mixed-additions
+  chain (gen 1 update+add in the same table), latent before B2/B3.
+- Divergences from the recorded C# templates, all deliberate this slice:
+  custom-attribute rows on added members are not emitted (C# adds
+  `[CompilerGenerated]`/`[DebuggerBrowsable]` on backing fields and
+  accessors); EncLog group ordering is the established F# one (see the C4
+  notes) rather than Roslyn's strict by-table interleaving; F# auto-property
+  backing fields keep their F# names (`NewProp@`) instead of C#'s
+  `<NewProp>k__BackingField`.
+
 ## New type definitions (Phase C4: added closure classes)
 
 ### C# reference EncLog (Roslyn EmitDifference, csharp_enc_reference harness)

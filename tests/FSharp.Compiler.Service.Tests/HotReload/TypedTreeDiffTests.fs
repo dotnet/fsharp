@@ -1532,3 +1532,129 @@ let added (values: int list) = values |> List.map (fun v -> v + 1)
         let edit = Assert.Single(result.SemanticEdits)
         Assert.Equal(SemanticEditKind.Insert, edit.Kind)
         Assert.Empty(allLambdaEdits result)
+
+    // =========================================================================
+    // Member addition coverage consolidation (Phase B2/B3 negative gating)
+    // =========================================================================
+
+    [<Fact>]
+    let ``adding readonly property without method capability names the missing capability`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+type MyClass() =
+    member this.Existing = 1
+"""
+        let updated_source = """
+module Library
+type MyClass() =
+    member this.Existing = 1
+    member this.NewReadonly = 42
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // A getter-only property is a pure accessor-method addition (no backing field):
+        // only the method capability gates it, and its absence must be named.
+        let fieldOnly =
+            EditAndContinueCapabilities.Parse [ "Baseline"; "AddInstanceFieldToExistingType" ]
+
+        let result = harness.DiffWith fieldOnly baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        let rudeEdit = Assert.Single(result.RudeEdits)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("AddMethodToExistingType", rudeEdit.Message)
+
+    [<Fact>]
+    let ``adding CLIEvent without method capability names the missing capability`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+open System
+
+type MyClass() =
+    let existingEvent = Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member this.ExistingEvent = existingEvent.Publish
+"""
+        let updated_source = """
+module Library
+open System
+
+type MyClass() =
+    let existingEvent = Event<EventHandler, EventArgs>()
+    let newEvent = Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member this.ExistingEvent = existingEvent.Publish
+    [<CLIEvent>]
+    member this.NewEvent = newEvent.Publish
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        // The backing field is allowed (field capability present); the add_/remove_
+        // accessor additions must name the missing method capability.
+        let fieldOnly =
+            EditAndContinueCapabilities.Parse [ "Baseline"; "AddInstanceFieldToExistingType" ]
+
+        let result = harness.DiffWith fieldOnly baseline updated
+
+        Assert.NotEmpty(result.RudeEdits)
+        Assert.All(result.RudeEdits, fun e -> Assert.Equal(RudeEditKind.NotSupportedByRuntime, e.Kind))
+
+        Assert.Contains(
+            result.RudeEdits,
+            fun e -> e.Message.Contains("AddMethodToExistingType"))
+
+    [<Fact>]
+    let ``adding CLIEvent with capabilities produces accessor inserts and field edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+open System
+
+type MyClass() =
+    let existingEvent = Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member this.ExistingEvent = existingEvent.Publish
+"""
+        let updated_source = """
+module Library
+open System
+
+type MyClass() =
+    let existingEvent = Event<EventHandler, EventArgs>()
+    let newEvent = Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member this.ExistingEvent = existingEvent.Publish
+    [<CLIEvent>]
+    member this.NewEvent = newEvent.Publish
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        Assert.Empty(result.RudeEdits)
+
+        let insertNames =
+            result.SemanticEdits
+            |> List.filter (fun e -> e.Kind = SemanticEditKind.Insert)
+            |> List.map (fun e -> e.Symbol.LogicalName)
+            |> List.sort
+
+        // add_/remove_ accessors plus the typed-tree get_NewEvent PropertyGet symbol
+        // (which has no IL counterpart for [<CLIEvent>] members and is ignored by the
+        // delta builder); the backing field surfaces as the TypeDefinition edit.
+        Assert.Equal<string list>([ "add_NewEvent"; "get_NewEvent"; "remove_NewEvent" ], insertNames)
+
+        Assert.Contains(
+            result.SemanticEdits,
+            fun e -> e.Kind = SemanticEditKind.TypeDefinition && e.Symbol.LogicalName = "MyClass")
