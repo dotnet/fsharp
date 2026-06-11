@@ -544,6 +544,19 @@ let internal remapSignatureBlobWith (remapTypeDefOrRefCodedIndex: int -> int) (s
 
 /// Remaps the TypeDefOrRef coded indexes embedded in a TypeSpec signature blob
 /// (ECMA-335 II.23.2.14: a bare Type, no calling-convention header).
+/// HasCustomAttribute tag -> owning table number (ECMA-335 II.24.2.6 ordering), used to
+/// project emitted CA row parents back to metadata tokens for baseline pairing/chaining.
+let private hcaTagToTable =
+    [| 0x06; 0x04; 0x01; 0x02; 0x08; 0x09; 0x0A; 0x00; 0x0E; 0x17; 0x14; 0x11; 0x1A; 0x1B; 0x20; 0x23; 0x26; 0x27; 0x28; 0x2A; 0x2C; 0x2B |]
+
+let internal hasCustomAttributeParentToken (parent: HasCustomAttribute) =
+    (hcaTagToTable.[parent.CodedTag] <<< 24) ||| parent.RowId
+
+let internal customAttributeConstructorToken (ctor: CustomAttributeType) =
+    match ctor with
+    | CAT_MethodDef handle -> 0x06000000 ||| handle.RowId
+    | CAT_MemberRef handle -> 0x0A000000 ||| handle.RowId
+
 let internal remapTypeSpecBlobWith (remapTypeDefOrRefCodedIndex: int -> int) (blob: byte[]) : byte[] =
     remapSignatureBlobCore true remapTypeDefOrRefCodedIndex blob
 
@@ -579,6 +592,7 @@ let private buildUpdatedBaseline
     (updatedBaselineCore: FSharpEmitBaseline)
     (memberReferenceRowList: MemberReferenceRowInfo list)
     (typeSpecificationRowList: TypeSpecificationRowInfo list)
+    (customAttributeRowList: CustomAttributeRowInfo list)
     (propertyMapRowsSnapshot: PropertyMapRowInfo list)
     (eventMapRowsSnapshot: EventMapRowInfo list)
     (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
@@ -685,10 +699,25 @@ let private buildUpdatedBaseline
             (fun acc (row: TypeSpecificationRowInfo) -> acc |> Map.add row.RowId row.Signature)
             updatedBaselineCore.TypeSpecSignatures
 
+    // Chain emitted CustomAttribute rows (updates REPLACE the baseline entry, adds extend
+    // the map) so the next generation's attribute pairing sees the current row contents.
+    let updatedCustomAttributeRows =
+        customAttributeRowList
+        |> List.fold
+            (fun acc (row: CustomAttributeRowInfo) ->
+                acc
+                |> Map.add
+                    row.RowId
+                    { HotReloadBaseline.BaselineCustomAttributeRow.ParentToken = hasCustomAttributeParentToken row.Parent
+                      ConstructorToken = customAttributeConstructorToken row.Constructor
+                      Value = row.Value })
+            updatedBaselineCore.CustomAttributeRows
+
     { updatedBaselineCore with
         TypeTokens = updatedTypeTokenMap
         MemberReferenceRows = updatedMemberReferenceRows
         TypeSpecSignatures = updatedTypeSpecSignatures
+        CustomAttributeRows = updatedCustomAttributeRows
         MethodTokens = updatedMethodTokenMap
         FieldTokens = updatedFieldTokenMap
         PropertyTokens = updatedPropertyTokenMap
@@ -1514,6 +1543,7 @@ let private buildCustomAttributeRows
     (traceMetadata: bool)
     (metadataReader: MetadataReader)
     (baselineTableRowCounts: int[])
+    (baselineCustomAttributeRows: Map<int, BaselineCustomAttributeRow>)
     (methodUpdateInputs: struct (MethodDefinitionKey * int * MethodDefinitionHandle * MethodDefinition * MethodBodyBlock) list)
     (methodDefinitionRowsRaw: struct (int * MethodDefinitionKey * bool) list)
     (methodDefinitionIndex: DefinitionIndex<MethodDefinitionKey>)
@@ -1527,10 +1557,28 @@ let private buildCustomAttributeRows
     (typeReferenceRows: ResizeArray<TypeReferenceRowInfo>)
     (memberReferenceRows: ResizeArray<MemberReferenceRowInfo>)
     =
+    // Rows UPDATING an existing CA row keep their baseline row ids; ADDED rows are
+    // renumbered past the chained baseline row count at the end.
+    let updatedRows = ResizeArray<CustomAttributeRowInfo>()
     let rows = ResizeArray<CustomAttributeRowInfo>()
-    let mutable nextRowId = baselineTableRowCounts.[TableNames.CustomAttribute.Index]
     let mutable nextTypeRefRowId = initialTypeRefRowId
     let mutable nextMemberRefRowId = initialMemberRefRowId
+
+    // Baselines without byte-derived CA snapshots (legacy construction paths) keep the
+    // historic append-only behavior; F# baselines always carry assembly-level attribute
+    // rows, so an empty map means the snapshot was unavailable.
+    let hasBaselineCaSnapshot = not (Map.isEmpty baselineCustomAttributeRows)
+
+    // Baseline CA rows grouped by parent token, ascending row id (Map iteration order).
+    let baselineRowsByParent = Dictionary<int, ResizeArray<int * BaselineCustomAttributeRow>>()
+
+    for KeyValue(rowId, row) in baselineCustomAttributeRows do
+        match baselineRowsByParent.TryGetValue row.ParentToken with
+        | true, list -> list.Add(rowId, row)
+        | _ ->
+            let list = ResizeArray()
+            list.Add(rowId, row)
+            baselineRowsByParent[row.ParentToken] <- list
 
     let methodRowIdToKey = Dictionary<int, MethodDefinitionKey>(HashIdentity.Structural)
     for struct (rowId, key, _) in methodDefinitionRowsRaw do
@@ -1881,11 +1929,11 @@ let private buildCustomAttributeRows
             | _ -> false
         | _ -> false
 
-    // Remaps the fresh-compile attribute constructor and builds the row payload. The
-    // value blob is written into the DELTA blob heap when `reuseFreshValueOffset` is
-    // false (added-member rows: fresh heap offsets are not valid against the
-    // baseline+delta heap layout); re-emitted rows of UPDATED methods keep the historic
-    // offset reuse (the baseline blob heap already carries the value at that offset).
+    // Remaps the fresh-compile attribute constructor and builds the row payload. RowId 0
+    // marks an APPENDED row (renumbered at the end); the value blob is written into the
+    // DELTA blob heap when `reuseFreshValueOffset` is false (fresh heap offsets are not
+    // valid against the baseline+delta heap layout); the legacy no-snapshot path keeps
+    // the historic offset reuse for re-emitted rows of updated methods.
     let buildAttributeRow (reuseFreshValueOffset: bool) (parent: HasCustomAttribute) (attribute: CustomAttribute) =
         let constructorToken = MetadataTokens.GetToken attribute.Constructor
         let remappedConstructorToken = remapEntityToken constructorToken
@@ -1903,9 +1951,7 @@ let private buildCustomAttributeRows
             | HandleKind.MemberReference -> CAT_MemberRef(MemberRefHandle ctorRowId)
             | _ -> CAT_MemberRef(MemberRefHandle ctorRowId)
 
-        nextRowId <- nextRowId + 1
-
-        { RowId = nextRowId
+        { RowId = 0
           Parent = parent
           Constructor = ctorType
           Value = valueBytes
@@ -1915,10 +1961,23 @@ let private buildCustomAttributeRows
             else
                 Some(BlobOffset(MetadataTokens.GetHeapOffset attribute.Value)) }
 
+    // A zeroed CA row deletes the attribute (C# attr_remove template: Parent/Constructor/
+    // Value columns all nil; raw row bytes 00000000-03000000-00000000 — the nil
+    // constructor keeps the MemberRef tag).
+    let zeroedAttributeRow (rowId: int) =
+        { CustomAttributeRowInfo.RowId = rowId
+          Parent = HCA_MethodDef(MethodDefHandle 0)
+          Constructor = CAT_MemberRef(MemberRefHandle 0)
+          Value = Array.empty
+          ValueOffset = None }
+
     for struct (key: MethodDefinitionKey, _, _, methodDef, _) in methodUpdateInputs do
         if methodDefinitionIndex.Contains key then
             let parentRowId = methodDefinitionIndex.GetRowId key
             let isAddedMethod = methodDefinitionIndex.IsAdded key
+            let parent = HCA_MethodDef(MethodDefHandle parentRowId)
+            let freshRows = ResizeArray<CustomAttributeRowInfo>()
+
             for attributeHandle in methodDef.GetCustomAttributes() do
                 let attribute = metadataReader.GetCustomAttribute attributeHandle
 
@@ -1938,9 +1997,46 @@ let private buildCustomAttributeRows
                         methodsWithNullableContextAttribute.Add methodKey |> ignore
                     | _ -> ()
 
-                rows.Add(
-                    buildAttributeRow (not isAddedMethod) (HCA_MethodDef(MethodDefHandle parentRowId)) attribute
-                )
+                freshRows.Add(buildAttributeRow (not (hasBaselineCaSnapshot || isAddedMethod)) parent attribute)
+
+            if not hasBaselineCaSnapshot then
+                // Legacy behavior: re-emit every attribute of the method as an appended row.
+                rows.AddRange freshRows
+            else
+                // Roslyn DeltaMetadataWriter parity (validated against the C# attr_add /
+                // attr_change / attr_remove templates): pair the fresh compile's attribute
+                // rows against the baseline rows of this parent IN ORDER — unchanged sets
+                // emit nothing, changed attributes UPDATE the baseline row in place, extra
+                // fresh attributes append new rows, extra baseline rows are ZEROED.
+                let parentToken = 0x06000000 ||| parentRowId
+
+                let baselineRows =
+                    match baselineRowsByParent.TryGetValue parentToken with
+                    | true, list -> list
+                    | _ -> ResizeArray()
+
+                let contentMatches =
+                    freshRows.Count = baselineRows.Count
+                    && Seq.forall2
+                        (fun (freshRow: CustomAttributeRowInfo) (_, baselineRow: BaselineCustomAttributeRow) ->
+                            customAttributeConstructorToken freshRow.Constructor = baselineRow.ConstructorToken
+                            && freshRow.Value = baselineRow.Value)
+                        freshRows
+                        baselineRows
+
+                if not contentMatches then
+                    let shared = min freshRows.Count baselineRows.Count
+
+                    for i in 0 .. shared - 1 do
+                        let existingRowId, _ = baselineRows.[i]
+                        updatedRows.Add { freshRows.[i] with RowId = existingRowId }
+
+                    for i in shared .. freshRows.Count - 1 do
+                        rows.Add freshRows.[i]
+
+                    for i in shared .. baselineRows.Count - 1 do
+                        let existingRowId, _ = baselineRows.[i]
+                        updatedRows.Add(zeroedAttributeRow existingRowId)
 
     // CustomAttribute rows of members ADDED by this delta: snapshot the fresh compile's
     // attribute rows for added fields/properties/events/types (added METHODS flow through
@@ -2028,9 +2124,8 @@ let private buildCustomAttributeRows
                 let stateMachineFullName = getFullTypeName stateMachineHandle
                 let valueBytes = encodeAsyncAttributeValue stateMachineFullName
 
-                nextRowId <- nextRowId + 1
                 rows.Add(
-                    { RowId = nextRowId
+                    { RowId = 0
                       Parent = HCA_MethodDef(MethodDefHandle methodRowId)
                       Constructor = CAT_MemberRef(MemberRefHandle ctorRowId)
                       Value = valueBytes
@@ -2044,9 +2139,8 @@ let private buildCustomAttributeRows
             if methodsWithNullableContextAttribute.Contains methodKey |> not then
                 let ctorToken = ensureNullableContextAttributeCtor ()
                 let ctorRowId = ctorToken &&& 0x00FFFFFF
-                nextRowId <- nextRowId + 1
                 rows.Add(
-                    { RowId = nextRowId
+                    { RowId = 0
                       Parent = HCA_MethodDef(MethodDefHandle methodRowId)
                       Constructor = CAT_MemberRef(MemberRefHandle ctorRowId)
                       Value = encodeNullableContextValue ()
@@ -2054,18 +2148,28 @@ let private buildCustomAttributeRows
                 methodsWithNullableContextAttribute.Add methodKey |> ignore
 
     // The CustomAttribute table sorts on the Parent coded index (ECMA-335 II.22.10);
-    // order the appended delta rows the same way (Roslyn DeltaMetadataWriter parity) and
-    // renumber them contiguously past the chained baseline row count.
-    let firstRowId = baselineTableRowCounts.[TableNames.CustomAttribute.Index] + 1
+    // order the APPENDED delta rows the same way (Roslyn DeltaMetadataWriter parity) and
+    // renumber them contiguously past the chained baseline row count. Rows UPDATING an
+    // existing CA row keep their baseline row ids; the final list is ordered by row id so
+    // the physical delta rows line up with the token-sorted EncMap entries.
+    let firstAddedRowId = baselineTableRowCounts.[TableNames.CustomAttribute.Index] + 1
 
-    let rowList =
+    let addedRowList =
         rows
         |> Seq.sortBy (fun row -> (row.Parent.RowId <<< 5) ||| row.Parent.CodedTag)
-        |> Seq.mapi (fun index row -> { row with RowId = firstRowId + index })
+        |> Seq.mapi (fun index row -> { row with RowId = firstAddedRowId + index })
         |> Seq.toList
 
+    let rowList =
+        (List.ofSeq updatedRows) @ addedRowList
+        |> List.sortBy (fun row -> row.RowId)
+
     if traceMetadata then
-        printfn "[fsharp-hotreload][metadata] custom-attributes rows=%d" (List.length rowList)
+        printfn
+            "[fsharp-hotreload][metadata] custom-attributes rows=%d (updates=%d adds=%d)"
+            (List.length rowList)
+            updatedRows.Count
+            addedRowList.Length
 
     rowList, nextTypeRefRowId, nextMemberRefRowId
 
@@ -2208,6 +2312,7 @@ let private finalizeDeltaArtifacts
     (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
     (memberReferenceRowList: MemberReferenceRowInfo list)
     (typeSpecificationRowList: TypeSpecificationRowInfo list)
+    (customAttributeRowList: CustomAttributeRowInfo list)
     (propertyMapRowsSnapshot: PropertyMapRowInfo list)
     (eventMapRowsSnapshot: EventMapRowInfo list)
     (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
@@ -2272,6 +2377,7 @@ let private finalizeDeltaArtifacts
             updatedBaselineCore
             memberReferenceRowList
             typeSpecificationRowList
+            customAttributeRowList
             propertyMapRowsSnapshot
             eventMapRowsSnapshot
             methodSemanticsRowsSnapshot
@@ -4071,6 +4177,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 traceMetadata.Value
                 metadataReader
                 baselineTableRowCounts
+                request.Baseline.CustomAttributeRows
                 methodUpdateInputs
                 methodDefinitionRowsRaw
                 methodDefinitionIndex
@@ -4152,6 +4259,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             methodDefinitionRowsSnapshot
             memberReferenceRowList
             typeSpecificationRowList
+            customAttributeRowList
             propertyMapRowsSnapshot
             eventMapRowsSnapshot
             methodSemanticsRowsSnapshot

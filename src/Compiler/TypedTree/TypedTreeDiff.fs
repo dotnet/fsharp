@@ -936,6 +936,36 @@ and private bindingDigest denv (TBind (var, body, _)) =
     let sigHash = tyToString denv var.Type |> stableHash
     hashCombine sigHash (exprDigest denv body)
 
+/// Structured digest of a declaration's custom attributes: attribute type (compiled name),
+/// positional arguments (evaluated-form digests), named arguments, getter/setter routing
+/// and explicit targets. Order-sensitive — attribute rows are emitted in source order, so
+/// a reorder is a content change exactly as for Roslyn.
+let private attribsDigest (denv: DisplayEnv) (attribs: Attrib list) =
+    attribs
+    |> List.map (fun (Attrib(tcref, _, unnamedArgs, namedArgs, appliedToGetterOrSetter, targets, _)) ->
+        let typeName =
+            try
+                tcref.CompiledRepresentationForNamedType.FullName
+            with _ ->
+                tcref.LogicalName
+
+        let unnamed =
+            unnamedArgs
+            |> List.map (fun (AttribExpr(_, evaluated)) -> string (exprDigest denv evaluated))
+            |> String.concat ","
+
+        let named =
+            namedArgs
+            |> List.map (fun (AttribNamedArg(name, ty, isField, AttribExpr(_, evaluated))) ->
+                $"{name}:{tyToString denv ty}:{isField}={exprDigest denv evaluated}")
+            |> String.concat ","
+
+        let target =
+            targets |> Option.map string |> Option.defaultValue ""
+
+        $"{typeName}({unnamed})[{named}]|getset={appliedToGetterOrSetter}|target={target}")
+    |> String.concat ";"
+
 // ---------------------------------------------------------------------------
 // Lambda occurrence extraction
 // ---------------------------------------------------------------------------
@@ -1409,6 +1439,11 @@ type private BindingSnapshot =
       /// and such additions additionally require GenericAddMethodToExistingType /
       /// GenericAddFieldToExistingType.
       InGenericContext: bool
+      /// Structured digest of the member's custom attributes (type, arguments, named
+      /// arguments, targets). A digest change on a matched binding is an attribute edit:
+      /// gated on the ChangeCustomAttributes runtime capability (Roslyn parity), emitted
+      /// as a member update when the attribute rows are MethodDef-parented.
+      AttributesDigest: string
       AdditionInfo: MethodAdditionInfo }
 
 /// Structured digest of a single entity field (Phase B2): staticness drives the runtime
@@ -1670,6 +1705,7 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
       IsSynthesized = var.IsCompilerGenerated
       ContainingEntity = containingEntity
       InGenericContext = inGenericContext
+      AttributesDigest = attribsDigest denv var.Attribs
       AdditionInfo = additionInfo }: BindingSnapshot
 
 and private snapshotTycon denv path (tycon: Tycon) =
@@ -1819,6 +1855,19 @@ let private formatCaptureSetChangeMessage (symbol: SymbolId) (captureChanged: La
 
     $"""Lambda capture set changed for '{symbol.QualifiedName}': {String.concat "; " parts}."""
 
+/// True when the binding's custom attributes are emitted as MethodDef-parented CA rows
+/// (plain members including constructors, and module functions). Property/event accessors
+/// and module values route their attributes to Property/Event rows, which the delta
+/// writer cannot update yet — attribute edits there fail closed.
+let private attributeRowsAreMethodParented (snapshot: BindingSnapshot) =
+    match snapshot.Symbol.MemberKind with
+    | Some SymbolMemberKind.Method -> true
+    | Some _ -> false
+    | None ->
+        match snapshot.Symbol.TotalArgCount with
+        | Some argCount when argCount > 0 -> true
+        | _ -> false
+
 let private compareBindings
     (capabilities: EditAndContinueCapabilities)
     (baseline: Map<string, BindingSnapshot>)
@@ -1880,6 +1929,36 @@ let private compareBindings
                 { Symbol = Some baselineBinding.Symbol
                   Kind = RudeEditKind.InlineChange
                   Message = "Inline annotation changed." }
+            )
+        elif
+            baselineBinding.AttributesDigest <> updatedBinding.AttributesDigest
+            && not (capabilities.Supports EditAndContinueCapability.ChangeCustomAttributes)
+        then
+            // Roslyn parity (AbstractEditAndContinueAnalyzer: attribute updates require
+            // EditAndContinueCapabilities.ChangeCustomAttributes, else
+            // RudeEditKind.ChangingAttributesNotSupportedByRuntime).
+            rude.Add(
+                { Symbol = Some baselineBinding.Symbol
+                  Kind = RudeEditKind.NotSupportedByRuntime
+                  Message =
+                    FSComp.SR.hotReloadAttributeChangeNotSupportedByRuntime (
+                        baselineBinding.Symbol.QualifiedName,
+                        EditAndContinueCapability.ChangeCustomAttributes.Name
+                    ) }
+            )
+        elif
+            baselineBinding.AttributesDigest <> updatedBinding.AttributesDigest
+            && not (attributeRowsAreMethodParented updatedBinding)
+        then
+            // The attribute rows of property/event accessors and module values are
+            // parented by Property/Event rows; the delta writer cannot update those rows
+            // yet, so the edit fails closed instead of applying without the attribute
+            // change.
+            rude.Add(
+                { Symbol = Some baselineBinding.Symbol
+                  Kind = RudeEditKind.Unsupported
+                  Message =
+                    $"Changing attributes of '{baselineBinding.Symbol.QualifiedName}' is not supported: its attribute rows are parented by a Property or Event row, which hot reload deltas cannot update yet. Please rebuild." }
             )
         elif baselineBinding.QueryShapeDigest <> updatedBinding.QueryShapeDigest then
             rude.Add(
@@ -2013,7 +2092,14 @@ let private compareBindings
                       Message = message }
                 )
             | None ->
-                if baselineBinding.BodyHash <> updatedBinding.BodyHash then
+                // An attribute-only change still re-emits the member (the CA rows pair
+                // against the baseline rows in emission), so it produces the same
+                // MethodBody edit as a body change — gated above on
+                // ChangeCustomAttributes and the MethodDef-parented restriction.
+                let attributesChanged =
+                    baselineBinding.AttributesDigest <> updatedBinding.AttributesDigest
+
+                if baselineBinding.BodyHash <> updatedBinding.BodyHash || attributesChanged then
                     if traceHotReloadMethodDiff then
                         printfn
                             "[fsharp-hotreload][typed-diff] body change symbol=%s synthesized=%b baselineHash=%d updatedHash=%d"

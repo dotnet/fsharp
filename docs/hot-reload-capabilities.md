@@ -123,9 +123,19 @@ typars); erased (measure) typars do not count, so measure-only generic types
 stay gated like non-generic IL. `EntitySnapshot.IsGeneric` mirrors this for
 the entity-level field diff.
 
-The same gating pattern applies later to `ChangeCustomAttributes` and
-`UpdateParameters`. `NewTypeDefinition` gates added-lambda closure classes
-(Phase C4).
+Attribute edits are capability-gated as of Phase F: changing the custom
+attributes of an EXISTING member (add/remove/argument change, detected via
+`BindingSnapshot.AttributesDigest`) requires `ChangeCustomAttributes`;
+without it the diff reports `RudeEditKind.NotSupportedByRuntime` with the
+`hotReloadAttributeChangeNotSupportedByRuntime` FSComp message (FSHRDL016)
+naming the capability (Roslyn:
+`RudeEditKind.ChangingAttributesNotSupportedByRuntime`). With the capability
+the edit is an ordinary member update; members whose attribute rows are
+Property/Event-parented (accessors, module values) fail closed — see
+docs/hot-reload-member-additions.md.
+
+The same gating pattern applies later to `UpdateParameters`.
+`NewTypeDefinition` gates added-lambda closure classes (Phase C4).
 
 ## Roslyn references
 

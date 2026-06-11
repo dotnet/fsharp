@@ -630,9 +630,66 @@ report `[CompilerGenerated]`; the template test pins Default-op CA EncLog
 entries, parent-sorted physical rows, and Field-/Property-parented rows.
 
 Known scoping: CA rows on added PARAM rows are not emitted (F#'s lowering
-does not decorate parameters in the supported scenarios); re-emitted CA rows
-of UPDATED methods keep the historic append behavior (Roslyn updates the
-prior generation's rows in place — see sub-slice 2).
+does not decorate parameters in the supported scenarios).
+
+### Attribute changes on existing members (sub-slice 2)
+
+C# reference templates (csharp_enc_reference `phasef` scenarios,
+`reference_mdv_attr_{add,change,remove}.txt`):
+
+- `attr_add` (`[Description("x")]` added to an existing method): MethodDef +
+  Param row updates plus ONE appended CustomAttribute row (parent = the
+  existing MethodDef token; EncMap add).
+- `attr_change` (argument changes): the CustomAttribute row is UPDATED at its
+  EXISTING row id (EncLog Default at that id; EncMap update).
+- `attr_remove`: the row is UPDATED with all-nil columns — raw row bytes
+  `00000000 03000000 00000000` (Parent = nil MethodDef, Constructor = nil
+  MemberRef tag 3, Value = nil blob).
+
+Classification (`TypedTreeDiff`): `BindingSnapshot.AttributesDigest` captures
+the member's attributes structurally (attribute type compiled name,
+positional/named argument digests, getter/setter routing, explicit targets;
+order-sensitive). Previously attribute-only edits were INVISIBLE to the diff
+(no digest covered them) — the delta applied without the attribute change. A
+digest change on a matched binding now:
+
+- without `ChangeCustomAttributes`: `RudeEditKind.NotSupportedByRuntime`
+  naming the capability (FSHRDL016, `hotReloadAttributeChangeNotSupportedByRuntime`);
+- with the capability, when the attribute rows are MethodDef-parented (plain
+  members/constructors, module functions): an ordinary member update edit —
+  emission pairs the rows (below);
+- with the capability but Property/Event-parented rows (property/event
+  accessors, module VALUES — F# routes their attrs to the Property row):
+  fail closed (`RudeEditKind.Unsupported`, precise message) — the writer
+  cannot update Property/Event-parented CA rows yet.
+
+Emission (`buildCustomAttributeRows` + `FSharpEmitBaseline.CustomAttributeRows`):
+the baseline now snapshots CustomAttribute row contents (decoded parent/ctor
+tokens + value blob) from the assembly bytes (SRM-free ILBaselineReader,
+which also fixed the simplified HasCustomAttribute coded-index width to the
+full 22-table ECMA set), chained with delta-emitted rows per generation. For
+each updated method the fresh compile's attributes pair IN ORDER against the
+baseline rows of that parent:
+
+- content-identical sets (remapped ctor token + value bytes) emit NOTHING —
+  this also retires the historic behavior of appending duplicate CA rows on
+  every body update of an attributed method;
+- changed attributes UPDATE the baseline row in place;
+- extra fresh attributes append rows (renumbered past the chained count,
+  parent-coded-index sorted);
+- extra baseline rows are ZEROED with the exact template encoding.
+
+The synthesized AsyncStateMachineAttribute path composes: when the fresh
+compile omits the attribute, pairing zeroes the stale baseline row and the
+synthesis appends the row pointing at the renamed state machine type.
+
+Runtime evidence (`AttributeEditTests`): attribute add/change/remove on an
+existing module function ApplyUpdate and reflection observes exactly the new
+attribute state (`Seq.exactlyOne` pins the absence of duplicated rows);
+template tests pin the in-place row id and the zeroed columns; negative
+tests pin the ChangeCustomAttributes gate and the Property-parented
+fail-closed path. Legacy baselines without byte-derived CA snapshots keep
+the historic append-only behavior.
 
 ## Known gaps / later slices
 

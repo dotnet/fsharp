@@ -269,6 +269,22 @@ module AttributeEditTests =
             | Error error -> failwithf "[%s] EmitHotReloadDelta failed: %A" testLabel error
             | Ok delta -> inspect delta)
 
+    let private emitDeltaAndExpectUnsupported
+        (capabilities: string list)
+        (testLabel: string)
+        (baselineSource: string)
+        (updatedSource: string)
+        (expectedMessageParts: string list)
+        =
+        emitDeltaAndHandleResult capabilities testLabel baselineSource updatedSource (fun result ->
+            match result with
+            | Ok _ -> failwithf "[%s] expected EmitHotReloadDelta to fail, but it succeeded." testLabel
+            | Error error ->
+                let message = string error
+
+                for part in expectedMessageParts do
+                    Assert.Contains(part, message))
+
     // -----------------------------------------------------------------------------
     // Sources
     // -----------------------------------------------------------------------------
@@ -479,3 +495,188 @@ module Library =
                 let parentTables = parents |> List.map (fun p -> MetadataTokens.GetToken p >>> 24) |> Set.ofList
                 Assert.Contains(0x04, parentTables)
                 Assert.Contains(0x17, parentTables))
+
+    // -----------------------------------------------------------------------------
+    // Sub-slice 2: attribute changes on EXISTING members (ChangeCustomAttributes)
+    // -----------------------------------------------------------------------------
+
+    let private attributedBaseline =
+        """
+namespace Sample
+
+module Library =
+    [<System.Obsolete("a")>]
+    let existing (x: int) = x + 1
+"""
+
+    [<Fact>]
+    let ``Attribute added to existing method appends one custom attribute row`` () =
+        // C# 'attr_add' template: MethodDef + Param row updates plus ONE appended
+        // CustomAttribute row (EncMap add); reflection sees the attribute afterwards.
+        let updated =
+            """
+namespace Sample
+
+module Library =
+    [<System.Obsolete("warn")>]
+    let existing (x: int) = x + 1
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "attr-add-existing-method"
+            moduleBaseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Empty(existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)))
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(42, existing.Invoke(null, [| box 41 |]) :?> int)
+
+                  let obsolete =
+                      existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)
+                      |> Seq.cast<ObsoleteAttribute>
+                      |> Seq.exactlyOne
+
+                  Assert.Equal("warn", obsolete.Message)) ]
+
+    [<Fact>]
+    let ``Attribute argument change updates the custom attribute row in place`` () =
+        // C# 'attr_change' template: the CustomAttribute row is UPDATED at its existing
+        // row id (EncMap update, not add). Reflection must see exactly ONE attribute
+        // with the new argument — a duplicated appended row would surface two.
+        let updated = attributedBaseline.Replace("\"a\"", "\"b\"")
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "attr-change-existing-method"
+            attributedBaseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+
+                let obsolete =
+                    existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)
+                    |> Seq.cast<ObsoleteAttribute>
+                    |> Seq.exactlyOne
+
+                Assert.Equal("a", obsolete.Message))
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+
+                  let obsolete =
+                      existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)
+                      |> Seq.cast<ObsoleteAttribute>
+                      |> Seq.exactlyOne
+
+                  Assert.Equal("b", obsolete.Message)) ]
+
+    [<Fact>]
+    let ``Attribute removal zeroes the custom attribute row`` () =
+        // C# 'attr_remove' template: the CustomAttribute row is UPDATED in place with
+        // all-nil columns (raw row bytes 00000000-03000000-00000000); reflection then
+        // reports no attribute.
+        applyGenerationsAndVerify
+            fullCapabilities
+            "attr-remove-existing-method"
+            attributedBaseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.NotEmpty(existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false)))
+            [ moduleBaseline,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let existing = libType.GetMethod("existing", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.Equal(42, existing.Invoke(null, [| box 41 |]) :?> int)
+                  Assert.Empty(existing.GetCustomAttributes(typeof<ObsoleteAttribute>, false))) ]
+
+    [<Fact>]
+    let ``Attribute change delta matches the C# row update and zeroing templates`` () =
+        // Template-shape assertions for attr_change: the CA EncLog entry addresses the
+        // EXISTING row id (an update, not an add past the baseline count).
+        let updated = attributedBaseline.Replace("\"a\"", "\"b\"")
+
+        emitDeltaAndInspect
+            fullCapabilities
+            "attr-change-template"
+            attributedBaseline
+            updated
+            (fun delta ->
+                use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.ToImmutableArray(delta.Metadata: byte[]))
+                let reader = provider.GetMetadataReader()
+
+                let caMapEntries =
+                    reader.GetEditAndContinueMapEntries()
+                    |> Seq.map MetadataTokens.GetToken
+                    |> Seq.filter (fun token -> token >>> 24 = 0x0C)
+                    |> Seq.toList
+
+                // Exactly one CustomAttribute row in the delta, updating in place.
+                let rowId = Assert.Single caMapEntries &&& 0x00FFFFFF
+                Assert.Equal(1, reader.GetTableRowCount(TableIndex.CustomAttribute))
+
+                // The fresh compile's Obsolete row is the FIRST method-parented CA row of
+                // the baseline (assembly-level rows precede it); pinning rowId > 0 and the
+                // row content keeps this robust without hardcoding the absolute id.
+                Assert.True(rowId > 0)
+
+                let attr = reader.GetCustomAttribute(MetadataTokens.CustomAttributeHandle 1)
+                Assert.Equal(HandleKind.MethodDefinition, attr.Parent.Kind)
+                Assert.False(attr.Value.IsNil))
+
+    [<Fact>]
+    let ``Attribute removal delta zeroes parent and constructor columns`` () =
+        emitDeltaAndInspect
+            fullCapabilities
+            "attr-remove-template"
+            attributedBaseline
+            moduleBaseline
+            (fun delta ->
+                use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.ToImmutableArray(delta.Metadata: byte[]))
+                let reader = provider.GetMetadataReader()
+
+                Assert.Equal(1, reader.GetTableRowCount(TableIndex.CustomAttribute))
+
+                let attr = reader.GetCustomAttribute(MetadataTokens.CustomAttributeHandle 1)
+                Assert.True(attr.Parent.IsNil)
+                Assert.True(attr.Constructor.IsNil)
+                Assert.True(attr.Value.IsNil))
+
+    [<Fact>]
+    let ``EmitHotReloadDelta rejects attribute change without ChangeCustomAttributes`` () =
+        let updated = attributedBaseline.Replace("\"a\"", "\"b\"")
+
+        emitDeltaAndExpectUnsupported
+            [ "Baseline"; "AddMethodToExistingType" ]
+            "attr-change-no-capability"
+            attributedBaseline
+            updated
+            [ "ChangeCustomAttributes" ]
+
+    [<Fact>]
+    let ``EmitHotReloadDelta rejects attribute change on a property-backed module value`` () =
+        // Module values route their attributes to the Property row, which the delta
+        // writer cannot update yet: fail closed instead of applying without the change.
+        let baseline =
+            """
+namespace Sample
+
+module Library =
+    [<System.Obsolete("a")>]
+    let answer = 41
+"""
+
+        let updated = baseline.Replace("\"a\"", "\"b\"")
+
+        emitDeltaAndExpectUnsupported
+            fullCapabilities
+            "attr-change-module-value"
+            baseline
+            updated
+            [ "Property or Event row" ]

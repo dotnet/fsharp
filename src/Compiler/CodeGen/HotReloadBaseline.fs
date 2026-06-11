@@ -129,6 +129,18 @@ type BaselineMemberRefRow =
       /// Signature blob bytes (baseline coordinates).
       Signature: byte[] }
 
+/// Content snapshot of a baseline CustomAttribute row. Attribute edits on EXISTING members
+/// (Phase F) pair the fresh compile's attributes against these rows so changed attributes
+/// UPDATE the row in place and removed attributes ZERO it (Roslyn DeltaMetadataWriter
+/// parity, validated against the csharp_enc_reference attr_change/attr_remove templates).
+type BaselineCustomAttributeRow =
+    { /// Decoded HasCustomAttribute parent as a metadata token.
+      ParentToken: int
+      /// Decoded CustomAttributeType constructor as a metadata token (0x06/0x0A tables).
+      ConstructorToken: int
+      /// Value blob bytes (baseline coordinates).
+      Value: byte[] }
+
 type BaselineHandleCache =
     { MethodHandles: Map<MethodDefinitionKey, MethodDefinitionMetadataHandles>
       ParameterHandles: Map<ParameterDefinitionKey, ParameterDefinitionMetadataHandles>
@@ -196,6 +208,12 @@ type FSharpEmitBaseline =
         /// TypeSpec token reuse. An unmatched fresh TypeSpec appends a new delta row;
         /// appended rows chain into this map for the next generation's content search.
         TypeSpecSignatures: Map<int, byte[]>
+        /// Baseline CustomAttribute row contents keyed by row id (decoded parent/ctor
+        /// tokens + value blob). Attribute edits on existing members update/zero these
+        /// rows in place; rows emitted by a delta chain into the map for the next
+        /// generation. Empty for baselines whose bytes were unavailable — CA emission
+        /// then stays append-only (legacy behavior).
+        CustomAttributeRows: Map<int, BaselineCustomAttributeRow>
         TableEntriesAdded: int[]
         StringStreamLengthAdded: int
         UserStringStreamLengthAdded: int
@@ -632,6 +650,7 @@ let private createCore
         AssemblyReferenceTokens = Map.empty
         MemberReferenceRows = Map.empty
         TypeSpecSignatures = Map.empty
+        CustomAttributeRows = Map.empty
         TableEntriesAdded = Array.zeroCreate tableCount
         StringStreamLengthAdded = 0
         UserStringStreamLengthAdded = 0
@@ -1206,6 +1225,20 @@ let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline
                     | None -> ()
             }
             |> Map.ofSeq
+
+        let customAttributeRows =
+            seq {
+                for rowId in 1 .. reader.CustomAttributeCount do
+                    match reader.GetCustomAttributeRow rowId with
+                    | Some row ->
+                        yield
+                            rowId,
+                            { BaselineCustomAttributeRow.ParentToken = reader.DecodeHasCustomAttributeToken row.Parent
+                              ConstructorToken = reader.DecodeCustomAttributeTypeToken row.Constructor
+                              Value = reader.GetBlob row.ValueOffset }
+                    | None -> ()
+            }
+            |> Map.ofSeq
         let cache =
             { MethodHandles = methodHandles
               ParameterHandles = parameterHandles
@@ -1221,7 +1254,8 @@ let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline
             TypeReferenceTokens = typeReferenceTokens
             AssemblyReferenceTokens = assemblyReferenceTokens
             MemberReferenceRows = memberReferenceRows
-            TypeSpecSignatures = typeSpecSignatures }
+            TypeSpecSignatures = typeSpecSignatures
+            CustomAttributeRows = customAttributeRows }
 
 /// <summary>
 /// Create a baseline directly from emitted assembly artifacts.

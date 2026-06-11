@@ -991,6 +991,7 @@ module internal TestHelpers =
               AssemblyReferenceTokens = Map.empty
               MemberReferenceRows = Map.empty
               TypeSpecSignatures = Map.empty
+              CustomAttributeRows = Map.empty
               TableEntriesAdded = Array.zeroCreate MetadataTokens.TableCount
               StringStreamLengthAdded = 0
               UserStringStreamLengthAdded = 0

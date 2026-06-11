@@ -256,6 +256,7 @@ module private TableIndices =
     let Field = 4
     let MethodDef = 6
     let Param = 8
+    let InterfaceImpl = 9
     let MemberRef = 10
     let Constant = 11
     let CustomAttribute = 12
@@ -320,12 +321,15 @@ let private typeDefOrRefSize (rowCounts: int[]) =
 let private hasConstantSize (rowCounts: int[]) =
     codedIndexSize rowCounts [| TableIndices.Field; TableIndices.Param; TableIndices.Property |] 2
 
-/// HasCustomAttribute coded index - 5 tag bits (22 possible tables)
+/// HasCustomAttribute coded index - 5 tag bits (22 possible tables, ECMA-335 II.24.2.6)
 let private hasCustomAttributeSize (rowCounts: int[]) =
-    // Simplified: just use the relevant tables
     let tables = [| TableIndices.MethodDef; TableIndices.Field; TableIndices.TypeRef; TableIndices.TypeDef;
-                    TableIndices.Param; TableIndices.Property; TableIndices.Event; TableIndices.Assembly;
-                    TableIndices.AssemblyRef; TableIndices.ModuleRef; TableIndices.TypeSpec; TableIndices.Module |]
+                    TableIndices.Param; TableIndices.InterfaceImpl; TableIndices.MemberRef; TableIndices.Module;
+                    TableIndices.DeclSecurity; TableIndices.Property; TableIndices.Event;
+                    TableIndices.StandAloneSig; TableIndices.ModuleRef; TableIndices.TypeSpec;
+                    TableIndices.Assembly; TableIndices.AssemblyRef; TableIndices.File;
+                    TableIndices.ExportedType; TableIndices.ManifestResource; TableIndices.GenericParam;
+                    TableIndices.GenericParamConstraint; TableIndices.MethodSpec |]
     codedIndexSize rowCounts tables 5
 
 /// HasFieldMarshal coded index - 1 tag bit
@@ -699,6 +703,33 @@ let private readMemberRefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffs
 
         Some { Parent = parent; NameOffset = nameOffset; SignatureOffset = sigOffset }
 
+/// CustomAttribute row data.
+type CustomAttributeRowData = {
+    /// Raw HasCustomAttribute coded index value (tag bits 0-4, row id above).
+    Parent: int
+    /// Raw CustomAttributeType coded index value (tag bits 0-2, row id above).
+    Constructor: int
+    ValueOffset: int
+}
+
+/// Read a CustomAttribute row by 1-based row ID.
+let private readCustomAttributeRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : CustomAttributeRowData option =
+    if rowId < 1 || rowId > ctx.RowCounts.[TableIndices.CustomAttribute] then
+        None
+    else
+        let rowSize = rowSizes.[TableIndices.CustomAttribute]
+        let offset = tableOffsets.[TableIndices.CustomAttribute] + (rowId - 1) * rowSize
+        let bytes = ctx.Bytes
+        let parentSize = hasCustomAttributeSize ctx.RowCounts
+        let ctorSize = customAttributeTypeSize ctx.RowCounts
+
+        // CustomAttribute: Parent(HasCustomAttribute) + Type(CustomAttributeType) + Value(blob)
+        let parent = readHeapIndex bytes offset parentSize
+        let ctor = readHeapIndex bytes (offset + parentSize) ctorSize
+        let valueOffset = readHeapIndex bytes (offset + parentSize + ctorSize) ctx.BlobIndexSize
+
+        Some { Parent = parent; Constructor = ctor; ValueOffset = valueOffset }
+
 /// Read a TypeSpec row by 1-based row ID; the row is a single #Blob signature column.
 let private readTypeSpecRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : int option =
     if rowId < 1 || rowId > ctx.RowCounts.[TableIndices.TypeSpec] then
@@ -882,6 +913,58 @@ type BaselineMetadataReader private (ctx: MetadataContext, rowSizes: int[], tabl
 
     /// Read a length-prefixed blob from the #Blob heap.
     member _.GetBlob(offset: int) = readBlobFromHeap ctx offset
+
+    /// Read a CustomAttribute row by 1-based row ID.
+    member _.GetCustomAttributeRow(rowId: int) = readCustomAttributeRow ctx rowSizes tableOffsets rowId
+
+    /// Get the CustomAttribute row count.
+    member _.CustomAttributeCount = ctx.RowCounts.[TableIndices.CustomAttribute]
+
+    /// Decode a HasCustomAttribute coded index to a metadata token.
+    /// Tag bits (5), ECMA-335 II.24.2.6 ordering.
+    member _.DecodeHasCustomAttributeToken(codedIndex: int) : int =
+        let tag = codedIndex &&& 0x1F
+        let rowId = codedIndex >>> 5
+
+        let table =
+            match tag with
+            | 0 -> 0x06 // MethodDef
+            | 1 -> 0x04 // Field
+            | 2 -> 0x01 // TypeRef
+            | 3 -> 0x02 // TypeDef
+            | 4 -> 0x08 // Param
+            | 5 -> 0x09 // InterfaceImpl
+            | 6 -> 0x0A // MemberRef
+            | 7 -> 0x00 // Module
+            | 8 -> 0x0E // DeclSecurity
+            | 9 -> 0x17 // Property
+            | 10 -> 0x14 // Event
+            | 11 -> 0x11 // StandAloneSig
+            | 12 -> 0x1A // ModuleRef
+            | 13 -> 0x1B // TypeSpec
+            | 14 -> 0x20 // Assembly
+            | 15 -> 0x23 // AssemblyRef
+            | 16 -> 0x26 // File
+            | 17 -> 0x27 // ExportedType
+            | 18 -> 0x28 // ManifestResource
+            | 19 -> 0x2A // GenericParam
+            | 20 -> 0x2C // GenericParamConstraint
+            | _ -> 0x2B // MethodSpec
+
+        (table <<< 24) ||| rowId
+
+    /// Decode a CustomAttributeType coded index to a metadata token.
+    /// Tag bits (3): 2=MethodDef, 3=MemberRef.
+    member _.DecodeCustomAttributeTypeToken(codedIndex: int) : int =
+        let tag = codedIndex &&& 0x7
+        let rowId = codedIndex >>> 3
+
+        let table =
+            match tag with
+            | 2 -> 0x06 // MethodDef
+            | _ -> 0x0A // MemberRef
+
+        (table <<< 24) ||| rowId
 
     /// Decode a MemberRefParent coded index to a metadata token.
     /// Tag bits (3): 0=TypeDef, 1=TypeRef, 2=ModuleRef, 3=MethodDef, 4=TypeSpec.

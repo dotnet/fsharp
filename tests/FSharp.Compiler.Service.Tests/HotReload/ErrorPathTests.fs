@@ -70,6 +70,7 @@ module ErrorPathTests =
             AssemblyReferenceTokens = Map.empty
             MemberReferenceRows = Map.empty
             TypeSpecSignatures = Map.empty
+            CustomAttributeRows = Map.empty
             TableEntriesAdded = Array.zeroCreate 64
             StringStreamLengthAdded = 0
             UserStringStreamLengthAdded = 0
