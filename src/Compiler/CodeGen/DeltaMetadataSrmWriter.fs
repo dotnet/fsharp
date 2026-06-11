@@ -128,6 +128,7 @@ let serialize
     (methodSpecificationRows: MethodSpecificationRowInfo list)
     (typeSpecificationRows: TypeSpecificationRowInfo list)
     (genericParamRows: GenericParamRowInfo list)
+    (genericParamConstraintRows: GenericParamConstraintRowInfo list)
     (assemblyReferenceRows: AssemblyReferenceRowInfo list)
     (propertyDefinitionRows: PropertyDefinitionRowInfo list)
     (eventDefinitionRows: EventDefinitionRowInfo list)
@@ -196,7 +197,7 @@ let serialize
     metadataBuilder.SetCapacity(TableIndex.NestedClass, nestedClassRows.Length)
     metadataBuilder.SetCapacity(TableIndex.GenericParam, genericParamRows.Length)
     metadataBuilder.SetCapacity(TableIndex.MethodSpec, methodSpecCount)
-    metadataBuilder.SetCapacity(TableIndex.GenericParamConstraint, 0)
+    metadataBuilder.SetCapacity(TableIndex.GenericParamConstraint, genericParamConstraintRows.Length)
     metadataBuilder.SetCapacity(TableIndex.EncLog, encLogEntries.Length)
     metadataBuilder.SetCapacity(TableIndex.EncMap, encMapEntries.Length)
 
@@ -319,6 +320,12 @@ let serialize
 
         let nameHandle = toStringHandle metadataBuilder row.Name row.NameOffset
         metadataBuilder.AddGenericParameter(ownerHandle, row.Attributes, nameHandle, row.Number) |> ignore
+
+    for row in genericParamConstraintRows |> List.sortBy (fun row -> row.RowId) do
+        metadataBuilder.AddGenericParameterConstraint(
+            MetadataTokens.GenericParameterHandle row.OwnerGenericParamRowId,
+            toTypeDefOrRefHandle row.Constraint)
+        |> ignore
 
     for row in assemblyReferenceRows do
         let nameHandle = toStringHandle metadataBuilder row.Name row.NameOffset

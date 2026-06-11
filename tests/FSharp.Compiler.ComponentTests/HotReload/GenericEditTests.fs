@@ -603,24 +603,43 @@ module Lib =
             [ "GenericAddMethodToExistingType" ]
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects added generic function with constrained typar`` () =
-        // GenericParamConstraint rows are not emitted yet: an added generic method whose
-        // typar carries an IL constraint fails closed with a precise message.
+    let ``ApplyUpdate succeeds for added generic function with constrained typar`` () =
+        // Phase F: the writer emits GenericParamConstraint rows (C# reference template
+        // 'generic_constraint_add': a plain Default entry trailing the GenericParam
+        // entry, EncMap add, Owner = the new GenericParam row, Constraint = the
+        // interface TypeRef). Previously this failed closed.
         let updated =
             """
 namespace Sample
 
 module Lib =
     let describe<'T> (value: 'T) = "Hello " + value.ToString()
-    let dispose<'T when 'T :> System.IDisposable> (x: 'T) = x.Dispose()
+    let dispose<'T when 'T :> System.IDisposable> (x: 'T) =
+        x.Dispose()
+        "disposed"
 """
 
-        emitDeltaAndExpectUnsupported
+        applyGenerationsAndVerify
             fullCapabilities
             "added-constrained-generic-function"
             genericFunctionBaseline
-            updated
-            [ "GenericParamConstraint" ]
+            (fun assembly -> invokeDescribe assembly "Hello ")
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Lib", throwOnError = true)
+                  let disposeDef = libType.GetMethod("dispose", BindingFlags.Public ||| BindingFlags.Static)
+                  Assert.True(disposeDef.IsGenericMethodDefinition)
+
+                  // The constraint row is live metadata: reflection reports the
+                  // IDisposable constraint on the added method's type parameter.
+                  let typar = Assert.Single(disposeDef.GetGenericArguments())
+                  let constraints = typar.GetGenericParameterConstraints()
+                  Assert.Contains(typeof<System.IDisposable>, constraints)
+
+                  // And the constrained method executes.
+                  let stream = new System.IO.MemoryStream()
+                  let forStream = disposeDef.MakeGenericMethod(typeof<System.IO.MemoryStream>)
+                  Assert.Equal("disposed", forStream.Invoke(null, [| box stream |]) :?> string)) ]
 
     [<Fact>]
     let ``EmitHotReloadDelta rejects generic body edit without GenericUpdateMethod capability`` () =

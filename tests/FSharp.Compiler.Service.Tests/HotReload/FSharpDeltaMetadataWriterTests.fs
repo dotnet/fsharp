@@ -927,6 +927,7 @@ module FSharpDeltaMetadataWriterTests =
                 [] // method spec rows
                 [] // type spec rows
                 [] // generic param rows
+                [] // generic param constraint rows
                 [] // assembly reference rows
                 [] // property rows
                 [] // event rows
@@ -2818,6 +2819,7 @@ module FSharpDeltaMetadataWriterTests =
           MethodSpec = emptyRowArrays
           TypeSpec = emptyRowArrays
           GenericParam = emptyRowArrays
+          GenericParamConstraint = emptyRowArrays
           AssemblyRef = emptyRowArrays
           StandAloneSig = emptyRowArrays
           CustomAttribute = emptyRowArrays

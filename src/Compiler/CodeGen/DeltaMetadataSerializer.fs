@@ -151,6 +151,7 @@ let private tableRowsByIndex (tables: TableRows) =
     rows[TableNames.MethodSpec.Index] <- tables.MethodSpec
     rows[TableNames.TypeSpec.Index] <- tables.TypeSpec
     rows[TableNames.GenericParam.Index] <- tables.GenericParam
+    rows[TableNames.GenericParamConstraint.Index] <- tables.GenericParamConstraint
     rows[TableNames.CustomAttribute.Index] <- tables.CustomAttribute
     rows[TableNames.AssemblyRef.Index] <- tables.AssemblyRef
     rows[TableNames.StandAloneSig.Index] <- tables.StandAloneSig

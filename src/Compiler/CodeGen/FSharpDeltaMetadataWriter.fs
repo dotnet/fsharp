@@ -65,6 +65,8 @@ type TypeSpecificationRowInfo = DeltaMetadataTypes.TypeSpecificationRowInfo
 
 type GenericParamRowInfo = DeltaMetadataTypes.GenericParamRowInfo
 
+type GenericParamConstraintRowInfo = DeltaMetadataTypes.GenericParamConstraintRowInfo
+
 type PropertyMapRowInfo = DeltaMetadataTypes.PropertyMapRowInfo
 
 type EventMapRowInfo = DeltaMetadataTypes.EventMapRowInfo
@@ -117,6 +119,7 @@ let emitWithTypeDefinitions
     (methodSpecificationRows: MethodSpecificationRowInfo list)
     (typeSpecificationRows: TypeSpecificationRowInfo list)
     (genericParamRows: GenericParamRowInfo list)
+    (genericParamConstraintRows: GenericParamConstraintRowInfo list)
     (assemblyReferenceRows: AssemblyReferenceRowInfo list)
     (propertyDefinitionRows: PropertyDefinitionRowInfo list)
     (eventDefinitionRows: EventDefinitionRowInfo list)
@@ -155,6 +158,7 @@ let emitWithTypeDefinitions
         not (List.isEmpty updates)
         || not (List.isEmpty typeDefinitionRows)
         || not (List.isEmpty genericParamRows)
+        || not (List.isEmpty genericParamConstraintRows)
         || not (List.isEmpty interfaceImplRows)
         || not (List.isEmpty methodImplRows)
         || fieldDefinitionRows |> List.exists (fun row -> row.IsAdded)
@@ -362,6 +366,15 @@ let emitWithTypeDefinitions
             tableMirror.AddGenericParamRow row
             genericParamEncLogEntries.Add(struct (TableNames.GenericParam, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.GenericParam, row.RowId))
+
+        // GenericParamConstraint rows of ADDED generic definitions are plain Default
+        // adds trailing the GenericParam entries (C# reference template
+        // 'generic_constraint_add': GenericParamConstraint 0x2c000001 Default follows
+        // GenericParam 0x2a000001 Default; both EncMap adds).
+        for row in genericParamConstraintRows |> List.sortBy (fun row -> row.RowId) do
+            tableMirror.AddGenericParamConstraintRow row
+            genericParamEncLogEntries.Add(struct (TableNames.GenericParamConstraint, row.RowId, EditAndContinueOperation.Default))
+            encMap.Add(struct (TableNames.GenericParamConstraint, row.RowId))
 
         for row in assemblyReferenceRows do
             tableMirror.AddAssemblyReferenceRow row
@@ -583,6 +596,7 @@ let emitWithTypeDefinitions
                         methodSpecificationRows
                         typeSpecificationRows
                         genericParamRows
+                        genericParamConstraintRows
                         assemblyReferenceRows
                         propertyDefinitionRows
                         eventDefinitionRows
@@ -714,6 +728,7 @@ let emitWithUserStrings
         methodSpecificationRows
         ([] : TypeSpecificationRowInfo list)
         ([] : GenericParamRowInfo list)
+        ([] : GenericParamConstraintRowInfo list)
         assemblyReferenceRows
         propertyDefinitionRows
         eventDefinitionRows

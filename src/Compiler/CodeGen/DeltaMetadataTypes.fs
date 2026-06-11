@@ -156,6 +156,17 @@ type GenericParamRowInfo =
       Name: string
       NameOffset: StringOffset option }
 
+/// Row model for a GenericParamConstraint table entry (ECMA-335 II.22.21: Owner — a
+/// GenericParam row index — and Constraint — a TypeDefOrRef coded index). Emitted for
+/// the IL constraints of ADDED generic definitions' type parameters; logged as a plain
+/// Default EncLog entry after the GenericParam entries and listed in EncMap as an add
+/// (C# reference template 'generic_constraint_add': GenericParamConstraint 0x2c000001
+/// Default trailing the GenericParam entry).
+type GenericParamConstraintRowInfo =
+    { RowId: int
+      OwnerGenericParamRowId: int
+      Constraint: TypeDefOrRef }
+
 type AssemblyReferenceRowInfo =
     { RowId: int
       Version: Version
@@ -237,6 +248,7 @@ type TableRows =
       MethodSpec: RowElementData[][]
       TypeSpec: RowElementData[][]
       GenericParam: RowElementData[][]
+      GenericParamConstraint: RowElementData[][]
       AssemblyRef: RowElementData[][]
       StandAloneSig: RowElementData[][]
       CustomAttribute: RowElementData[][]

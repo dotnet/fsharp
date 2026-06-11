@@ -565,14 +565,21 @@ field capability + `GenericAddFieldToExistingType`. See
   instantiations observe the edit. (Members gaining their FIRST lambda still
   fail closed — the C4 occurrence mapping needs a baseline chain table for
   the member; that constraint is orthogonal to generics.)
-- **Constrained typars on ADDED definitions fail closed precisely**: the
-  writer does not emit GenericParamConstraint rows yet, so an added generic
-  method/closure whose typar carries an IL constraint (e.g.
-  `'T :> IDisposable`; `'T : struct` also emits a ValueType constraint row)
-  raises `HotReloadUnsupportedEditException` naming GenericParamConstraint.
-  Flag-only constraints (`not struct`, `new()`) live in the Flags column and
-  emit fine. F#-only constraints (`equality`, `comparison`) have no IL
-  encoding and do not constrain emission.
+- **Constrained typars on ADDED definitions emit GenericParamConstraint
+  rows as of Phase F (sub-slice 5)**. C# reference template
+  ('generic_constraint_add', reference_mdv_generic_constraint_add.txt):
+  adding `void DisposeIt<T>(T x) where T : IDisposable` logs
+  `GenericParamConstraint 0x2c000001 Default` immediately after the
+  `GenericParam 0x2a000001 Default` entry; EncMap lists both as adds; the
+  constraint row's Owner is the NEW GenericParam row and its Constraint the
+  interface TypeRef. The F# writer mirrors this (Owner-sorted rows continuing
+  from the chained baseline count, constraint types remapped through the
+  TypeRef/TypeDef/TypeSpec remappers); validated at runtime
+  (`ApplyUpdate succeeds for added generic function with constrained typar`:
+  reflection reports the IDisposable constraint on the live type parameter
+  and the constrained method executes). Flag-only constraints (`not struct`,
+  `new()`) live in the Flags column as before; F#-only constraints
+  (`equality`, `comparison`) have no IL encoding.
 - dotnet-watch topology: disk-started sessions (baseline reconstructed from
   the on-disk dll + pdb after a full session reset) apply both a generic
   body edit and an added generic function (runtime tests).
@@ -794,8 +801,6 @@ Insert edit.
 
 ## Known gaps / later slices
 
-- GenericParamConstraint rows are not emitted: added generic definitions
-  with IL-constrained typars fail closed (see "Generic edits" above).
 - Attribute changes on PARAMETERS (e.g. adding `[<Optional>]`) are not
   classified yet (the attribute digest covers member-level attributes only);
   the Param row's flags/attributes re-emit from the fresh compile when the

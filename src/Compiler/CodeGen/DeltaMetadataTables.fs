@@ -310,6 +310,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let methodSpecRows = RowTableBuilder()
     let typeSpecRows = RowTableBuilder()
     let genericParamRows = RowTableBuilder()
+    let genericParamConstraintRows = RowTableBuilder()
     let assemblyRefRows = RowTableBuilder()
     let standAloneSigRows = RowTableBuilder()
     let customAttributeRows = RowTableBuilder()
@@ -662,6 +663,19 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
 
         genericParamRows.Add rowElements
 
+    /// Add a GenericParamConstraint table row per ECMA-335 II.22.21: Owner (GenericParam
+    /// row index) and Constraint (TypeDefOrRef coded index).
+    member _.AddGenericParamConstraintRow(row: GenericParamConstraintRowInfo) =
+        let constraintTag, constraintRow = encodeTypeDefOrRef row.Constraint
+
+        let rowElements =
+            [|
+                rowElementSimpleIndex TableNames.GenericParam row.OwnerGenericParamRowId
+                rowElementTypeDefOrRef constraintTag constraintRow
+            |]
+
+        genericParamConstraintRows.Add rowElements
+
     member _.AddAssemblyReferenceRow(row: AssemblyReferenceRowInfo) =
         let publicKeyToken = addExistingBlobOffset row.PublicKeyOrTokenOffset row.PublicKeyOrToken
         let nameToken = addExistingStringOffset row.NameOffset row.Name
@@ -847,6 +861,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
           MethodSpec = methodSpecRows.Entries
           TypeSpec = typeSpecRows.Entries
           GenericParam = genericParamRows.Entries
+          GenericParamConstraint = genericParamConstraintRows.Entries
           AssemblyRef = assemblyRefRows.Entries
           StandAloneSig = standAloneSigRows.Entries
           CustomAttribute = customAttributeRows.Entries
@@ -877,6 +892,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         counts[TableNames.MethodSpec.Index] <- methodSpecRows.Count
         counts[TableNames.TypeSpec.Index] <- typeSpecRows.Count
         counts[TableNames.GenericParam.Index] <- genericParamRows.Count
+        counts[TableNames.GenericParamConstraint.Index] <- genericParamConstraintRows.Count
         counts[TableNames.AssemblyRef.Index] <- assemblyRefRows.Count
         counts[TableNames.StandAloneSig.Index] <- standAloneSigRows.Count
         counts[TableNames.CustomAttribute.Index] <- customAttributeRows.Count

@@ -892,6 +892,7 @@ let private emitMetadataDelta
     (methodSpecificationRowsSnapshot: MethodSpecificationRowInfo list)
     (typeSpecificationRowList: TypeSpecificationRowInfo list)
     (genericParamRowsSnapshot: GenericParamRowInfo list)
+    (genericParamConstraintRowsSnapshot: GenericParamConstraintRowInfo list)
     (assemblyReferenceRowList: AssemblyReferenceRowInfo list)
     (propertyDefinitionRowsSnapshot: PropertyDefinitionRowInfo list)
     (eventDefinitionRowsSnapshot: EventDefinitionRowInfo list)
@@ -925,6 +926,7 @@ let private emitMetadataDelta
             methodSpecificationRowsSnapshot
             typeSpecificationRowList
             genericParamRowsSnapshot
+            genericParamConstraintRowsSnapshot
             assemblyReferenceRowList
             propertyDefinitionRowsSnapshot
             eventDefinitionRowsSnapshot
@@ -4180,22 +4182,15 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
         // 'generic_method_add'): the added MethodDef's AddMethod/AddParameter pairs are
         // followed by a plain 'GenericParam ... Default' EncLog entry, and the row appears
         // in EncMap as an add. GenericParam rows of UPDATED definitions are baseline rows
-        // and are never re-emitted. Constrained generic parameters need
-        // GenericParamConstraint rows the writer does not emit yet — fail closed there.
-        let genericParamRowsSnapshot : GenericParamRowInfo list =
+        // and are never re-emitted. IL constraints on the type parameters emit
+        // GenericParamConstraint rows owned by the new GenericParam rows (C# reference
+        // template 'generic_constraint_add').
+        let genericParamRowsSnapshot, genericParamConstraintRowsSnapshot =
             let pending = ResizeArray<int * GenericParameterHandle * TypeOrMethodDef * string>()
 
             let collect (display: string) (owner: TypeOrMethodDef) (handles: GenericParameterHandleCollection) =
                 for handle in handles do
                     let genericParam = metadataReader.GetGenericParameter handle
-
-                    if genericParam.GetConstraints().Count > 0 then
-                        raise (
-                            HotReloadUnsupportedEditException(
-                                $"Added generic definition '{display}' has constrained type parameter '{metadataReader.GetString genericParam.Name}'; the delta writer cannot emit GenericParamConstraint rows yet. Please rebuild."
-                            )
-                        )
-
                     pending.Add(genericParam.Index, handle, owner, display)
 
             for KeyValue(key, deltaToken) in addedMethodDeltaTokens do
@@ -4223,18 +4218,65 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
 
             // The GenericParam table is sorted by the Owner coded index (ECMA-335 II.22.20:
             // owner, then Number); keep the appended delta rows in the same relative order.
-            pending
-            |> Seq.sortBy (fun (number, _, owner, _) -> (owner.RowId <<< 1) ||| owner.CodedTag, number)
-            |> Seq.mapi (fun index (number, handle, owner, _) ->
-                let genericParam = metadataReader.GetGenericParameter handle
+            let orderedParams =
+                pending
+                |> Seq.sortBy (fun (number, _, owner, _) -> (owner.RowId <<< 1) ||| owner.CodedTag, number)
+                |> Seq.mapi (fun index (number, handle, owner, display) ->
+                    let genericParam = metadataReader.GetGenericParameter handle
 
-                { GenericParamRowInfo.RowId = baselineGenericParamRowCount + index + 1
-                  Number = number
-                  Attributes = genericParam.Attributes
-                  Owner = owner
-                  Name = metadataReader.GetString genericParam.Name
-                  NameOffset = None })
-            |> Seq.toList
+                    { GenericParamRowInfo.RowId = baselineGenericParamRowCount + index + 1
+                      Number = number
+                      Attributes = genericParam.Attributes
+                      Owner = owner
+                      Name = metadataReader.GetString genericParam.Name
+                      NameOffset = None },
+                    handle,
+                    display)
+                |> Seq.toList
+
+            // Constraint rows are owned by the new GenericParam rows. The table sorts on
+            // Owner (ECMA-335 II.22.21); the params are already in owner order, and the
+            // constraints of one param keep their fresh-compile order.
+            let baselineConstraintRowCount =
+                baselineTableRowCounts.[TableNames.GenericParamConstraint.Index]
+
+            let constraintRows =
+                let rows = ResizeArray<GenericParamConstraintRowInfo>()
+
+                for (paramRow, handle, display) in orderedParams do
+                    let genericParam = metadataReader.GetGenericParameter handle
+
+                    for constraintHandle in genericParam.GetConstraints() do
+                        let genericConstraint = metadataReader.GetGenericParameterConstraint constraintHandle
+                        let constraintToken = MetadataTokens.GetToken genericConstraint.Type
+
+                        let constraintRef =
+                            match genericConstraint.Type.Kind with
+                            | HandleKind.TypeReference ->
+                                TDR_TypeRef(TypeRefHandle(remapEntityToken constraintToken &&& 0x00FFFFFF))
+                            | HandleKind.TypeDefinition ->
+                                TDR_TypeDef(
+                                    TypeDefHandle(
+                                        definitionTokenRemapper.RemapDefinitionToken constraintToken &&& 0x00FFFFFF
+                                    )
+                                )
+                            | HandleKind.TypeSpecification ->
+                                TDR_TypeSpec(TypeSpecHandle(remapEntityToken constraintToken &&& 0x00FFFFFF))
+                            | kind ->
+                                raise (
+                                    HotReloadUnsupportedEditException(
+                                        $"Added generic definition '{display}' has a type-parameter constraint with unsupported handle kind {kind}; please rebuild."
+                                    )
+                                )
+
+                        rows.Add
+                            { GenericParamConstraintRowInfo.RowId = baselineConstraintRowCount + rows.Count + 1
+                              OwnerGenericParamRowId = paramRow.RowId
+                              Constraint = constraintRef }
+
+                rows |> List.ofSeq
+
+            orderedParams |> List.map (fun (row, _, _) -> row), constraintRows
 
         if traceMethodUpdates.Value then
             for row in genericParamRowsSnapshot do
@@ -4426,6 +4468,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 methodSpecificationRowsSnapshot
                 typeSpecificationRowList
                 genericParamRowsSnapshot
+                genericParamConstraintRowsSnapshot
                 assemblyReferenceRowList
                 propertyDefinitionRowsSnapshot
                 eventDefinitionRowsSnapshot
