@@ -47,18 +47,8 @@
          extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
   {
     .field static assembly initonly class assembly/p@5 @_instance
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/p@5::.ctor()
-      IL_0005:  stsfld     class assembly/p@5 assembly/p@5::@_instance
-      IL_000a:  ret
-    } 
-
-    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname 
+            instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -71,7 +61,8 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance object Specialize<a>() cil managed
+    .method public strict virtual instance object 
+            Specialize<a>() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -83,6 +74,18 @@
       IL_000b:  ret
     } 
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/p@5::.ctor()
+      IL_0005:  stsfld     class assembly/p@5 assembly/p@5::@_instance
+      IL_000a:  ret
+    } 
+
   } 
 
   .class auto ansi serializable sealed nested assembly beforefieldinit p@5T<a>
@@ -92,7 +95,8 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname instance void  .ctor(class assembly/p@5 self0@) cil managed
+    .method assembly specialname rtspecialname 
+            instance void  .ctor(class assembly/p@5 self0@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -106,7 +110,8 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(!a v) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit 
+            Invoke(!a v) cil managed
     {
       
       .maxstack  7
@@ -155,10 +160,10 @@
     IL_000d:  ldc.i4.1
     IL_000e:  ldloca.s   V_3
     IL_0010:  callvirt   instance bool class [runtime]System.Collections.Generic.Dictionary`2<int32,int32>::TryGetValue(!0,
-                                                                                                                                   !1&)
+                                                                                                                         !1&)
     IL_0015:  ldloc.3
     IL_0016:  newobj     instance void class [runtime]System.Tuple`2<bool,int32>::.ctor(!0,
-                                                                                               !1)
+                                                                                         !1)
     IL_001b:  stloc.2
     IL_001c:  ldloc.2
     IL_001d:  call       instance !1 class [runtime]System.Tuple`2<bool,int32>::get_Item2()
@@ -185,10 +190,10 @@
     IL_005a:  ldstr      "123"
     IL_005f:  ldloca.s   V_9
     IL_0061:  call       bool [runtime]System.Int64::TryParse(string,
-                                                                     int64&)
+                                                               int64&)
     IL_0066:  ldloc.s    V_9
     IL_0068:  newobj     instance void class [runtime]System.Tuple`2<bool,int64>::.ctor(!0,
-                                                                                               !1)
+                                                                                         !1)
     IL_006d:  stloc.s    V_8
     IL_006f:  ldloc.s    V_8
     IL_0071:  call       instance !1 class [runtime]System.Tuple`2<bool,int64>::get_Item2()
@@ -232,6 +237,7 @@
        extends [runtime]System.Object
 {
 } 
+
 
 
 

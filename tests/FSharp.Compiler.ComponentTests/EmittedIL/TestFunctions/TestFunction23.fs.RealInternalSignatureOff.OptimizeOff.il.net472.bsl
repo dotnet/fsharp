@@ -5,7 +5,6 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern runtime { }
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -69,7 +68,7 @@
       IL_0008:  ldarg.0
       IL_0009:  callvirt   instance string assembly/C::g()
       IL_000e:  call       string [runtime]System.String::Concat(string,
-                                                                        string)
+                                                                  string)
       IL_0013:  ret
     } 
 
@@ -89,15 +88,6 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .field static assembly initonly class assembly/g@13 @_instance
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/g@13::.ctor()
-      IL_0005:  stsfld     class assembly/g@13 assembly/g@13::@_instance
-      IL_000a:  ret
-    } 
-
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -124,6 +114,15 @@
       IL_0021:  ret
     } 
 
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/g@13::.ctor()
+      IL_0005:  stsfld     class assembly/g@13 assembly/g@13::@_instance
+      IL_000a:  ret
+    } 
+
   } 
 
   .method public static class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f<a>(!!a x) cil managed
@@ -140,7 +139,7 @@
     IL_000e:  ldnull
     IL_000f:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
     IL_0014:  newobj     instance void class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(!0,
-                                                                                                                                                                                !1)
+                                                                                                                                                                          !1)
     IL_0019:  ret
   } 
 
@@ -158,6 +157,7 @@
   } 
 
 } 
+
 
 
 

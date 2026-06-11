@@ -5,10 +5,10 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern System.Linq
+.assembly extern System.Core
 {
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 10:0:0:0
+  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         
+  .ver 4:0:0:0
 }
 .assembly assembly
 {
@@ -58,17 +58,6 @@
 
   } 
 
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
   .method public specialname static class [runtime]System.Collections.Generic.List`1<int32> get_r() cil managed
   {
     
@@ -107,14 +96,15 @@
     IL_001a:  ldnull
     IL_001b:  ldftn      bool assembly/clo@4::Invoke(int32)
     IL_0021:  newobj     instance void class [runtime]System.Func`2<int32,bool>::.ctor(object,
-                                                                                              native int)
-    IL_0026:  call       int32 [System.Linq]System.Linq.Enumerable::Count<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>,
+                                                                                        native int)
+    IL_0026:  call       int32 [System.Core]System.Linq.Enumerable::Count<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>,
                                                                                  class [runtime]System.Func`2<!!0,bool>)
     IL_002b:  pop
     IL_002c:  ret
   } 
 
 } 
+
 
 
 

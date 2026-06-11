@@ -26,38 +26,29 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
   .class auto ansi serializable nested public Myassembly
          extends [runtime]System.Object
   {
     .custom instance void [runtime]System.Reflection.DefaultMemberAttribute::.ctor(string) = ( 01 00 04 49 74 65 6D 00 00 )                      
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .field static assembly string uglyGlobalMutableString
     .field static assembly string uglyGlobalMutableNullableString
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> dict
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 01 02 02 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 01 02 02 00 00 ) 
     .field assembly string Nullable@
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .field assembly string NonNullable@
     .field assembly int32 JustSomeInt@
     .field static assembly int32 init@6
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
-      IL_000b:  pop
-      IL_000c:  ret
-    } 
-
-    .method public specialname rtspecialname instance void  .ctor(string x, string y) cil managed
+    .method public specialname rtspecialname 
+            instance void  .ctor(string x,
+                                 string y) cil managed
     {
       .param [1]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -76,28 +67,45 @@
       IL_001e:  ret
     } 
 
-    .method public hidebysig instance class MyTestModule/Myassembly GetThis() cil managed
+    .method public hidebysig specialname instance string  get_Nullable() cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .param [0]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ret
+      IL_0001:  ldfld      string MyTestModule/Myassembly::Nullable@
+      IL_0006:  ret
     } 
 
-    .method public hidebysig instance class MyTestModule/Myassembly GetThisOrNull() cil managed
+    .method public hidebysig specialname instance string  get_NonNullable() cil managed
     {
-      .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  ldnull
-      IL_0001:  ret
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      string MyTestModule/Myassembly::NonNullable@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance int32  get_JustSomeInt() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 MyTestModule/Myassembly::JustSomeInt@
+      IL_0006:  ret
     } 
 
     .method public static string  GiveMeNull() cil managed
     {
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldnull
@@ -119,12 +127,30 @@
       IL_0000:  ret
     } 
 
+    .method public hidebysig instance class MyTestModule/Myassembly GetThis() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ret
+    } 
+
+    .method public hidebysig instance class MyTestModule/Myassembly GetThisOrNull() cil managed
+    {
+      .param [0]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  ret
+    } 
+
     .method public hidebysig specialname instance string  get_Item(string index) cil managed
     {
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .param [1]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  volatile.
@@ -142,47 +168,14 @@
       IL_001e:  ret
     } 
 
-    .method public hidebysig specialname instance int32  get_JustSomeInt() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 MyTestModule/Myassembly::JustSomeInt@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance string  get_NonNullable() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      string MyTestModule/Myassembly::NonNullable@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance string  get_Nullable() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      string MyTestModule/Myassembly::Nullable@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance void  set_Item(string index, string 'value') cil managed
+    .method public hidebysig specialname 
+            instance void  set_Item(string index,
+                                    string 'value') cil managed
     {
       .param [1]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .param [2]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  volatile.
@@ -210,6 +203,17 @@
       IL_0033:  ret
     } 
 
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
     .method assembly static void  staticInitialization@() cil managed
     {
       
@@ -234,7 +238,7 @@
 
     .property instance string Nullable()
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .get instance string MyTestModule/Myassembly::get_Nullable()
     } 
     .property instance string NonNullable()
@@ -247,7 +251,7 @@
     } 
     .property instance string Item(string)
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .set instance void MyTestModule/Myassembly::set_Item(string,
                                                              string)
       .get instance string MyTestModule/Myassembly::get_Item(string)
@@ -278,7 +282,7 @@
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$MyTestModule
        extends [runtime]System.Object
 {
-  .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -292,6 +296,7 @@
   } 
 
 } 
+
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableAttribute
        extends [runtime]System.Attribute
 {
@@ -333,6 +338,7 @@
   } 
 
 } 
+
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableContextAttribute
        extends [runtime]System.Attribute
 {
@@ -355,3 +361,9 @@
   } 
 
 } 
+
+
+
+
+
+

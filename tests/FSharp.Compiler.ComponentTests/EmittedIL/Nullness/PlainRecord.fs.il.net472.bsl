@@ -32,21 +32,45 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 02 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .field assembly string NonNullableString@
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .field assembly string NullableString@
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .method public hidebysig specialname instance string  get_NonNullableString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      string MyTestModule/MyRecord::NonNullableString@
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig specialname instance string  get_NullableString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .param [0]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      string MyTestModule/MyRecord::NullableString@
+      IL_0006:  ret
+    } 
+
     .method public specialname rtspecialname instance void  .ctor(string nonNullableString, string nullableString) cil managed
     {
       .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 15 4D 79 54 65 73 74 4D 6F 64   
-                                                                                                                                                     75 6C 65 2B 4D 79 52 65 63 6F 72 64 00 00 )       
+                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 15 4D 79 54 65 73 74 4D 6F 64   
+                                                                                                                               75 6C 65 2B 4D 79 52 65 63 6F 72 64 00 00 )       
       .param [2]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -73,30 +97,6 @@
       IL_0015:  ret
     } 
 
-    .method public hidebysig specialname instance string  get_NonNullableString() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      string MyTestModule/MyRecord::NonNullableString@
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig specialname instance string  get_NullableString() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      string MyTestModule/MyRecord::NullableString@
-      IL_0006:  ret
-    } 
-
     .property instance string NonNullableString()
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
@@ -107,7 +107,7 @@
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 04 00 00 00 01 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .get instance string MyTestModule/MyRecord::get_NullableString()
     } 
   } 
@@ -118,6 +118,7 @@
        extends [runtime]System.Object
 {
 } 
+
 .class private auto ansi serializable sealed System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
        extends [runtime]System.Enum
 {
@@ -142,6 +143,7 @@
   .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicEvents = int32(0x00001000)
   .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes Interfaces = int32(0x00002000)
 } 
+
 .class private auto ansi beforefieldinit System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute
        extends [runtime]System.Attribute
 {
@@ -206,6 +208,7 @@
     .get instance class [runtime]System.Type System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::get_Type()
   } 
 } 
+
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableAttribute
        extends [runtime]System.Attribute
 {
@@ -247,6 +250,7 @@
   } 
 
 } 
+
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableContextAttribute
        extends [runtime]System.Attribute
 {
@@ -269,3 +273,9 @@
   } 
 
 } 
+
+
+
+
+
+

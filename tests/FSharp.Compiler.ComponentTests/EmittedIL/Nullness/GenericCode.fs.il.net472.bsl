@@ -26,13 +26,20 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .method public static void  strictlyNotNull(object x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ret
+  } 
+
   .method public static void  myGenericFunction1<class a>(!!a p) cil managed
   {
     .param type a 
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  3
     .locals init (!!a V_0,
@@ -58,9 +65,9 @@
   .method public static void  myGenericFunction2<class a>(!!a p) cil managed
   {
     .param type a 
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  3
     .locals init (!!a V_0,
@@ -105,9 +112,9 @@
   .method public static void  myGenericFunction3<class a>(!!a p) cil managed
   {
     .param type a 
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .param [1]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  3
     .locals init (!!a V_0,
@@ -136,19 +143,13 @@
     IL_001e:  ret
   } 
 
-  .method public static void  strictlyNotNull(object x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ret
-  } 
-
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$MyLibrary
        extends [runtime]System.Object
 {
 } 
+
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableAttribute
        extends [runtime]System.Attribute
 {
@@ -190,6 +191,7 @@
   } 
 
 } 
+
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableContextAttribute
        extends [runtime]System.Attribute
 {
@@ -212,3 +214,9 @@
   } 
 
 } 
+
+
+
+
+
+

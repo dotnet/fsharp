@@ -59,19 +59,6 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
       .field assembly int32 v
       .field assembly int32 u
-      .method public specialname rtspecialname instance void  .ctor(int32 v, int32 u) cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldarg.1
-        IL_0002:  stfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
-        IL_0007:  ldarg.0
-        IL_0008:  ldarg.2
-        IL_0009:  stfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
-        IL_000e:  ret
-      } 
-
       .method public hidebysig virtual final instance int32  CompareTo(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct obj) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -197,93 +184,6 @@
         IL_0044:  ret
       } 
 
-      .method public hidebysig instance bool Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
-        IL_0006:  ldarga.s   obj
-        IL_0008:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
-        IL_000d:  bne.un.s   IL_001f
-
-        IL_000f:  ldarg.0
-        IL_0010:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
-        IL_0015:  ldarga.s   obj
-        IL_0017:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
-        IL_001c:  ceq
-        IL_001e:  ret
-
-        IL_001f:  ldc.i4.0
-        IL_0020:  ret
-      } 
-
-      .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  5
-        .locals init (valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct V_0)
-        IL_0000:  ldarg.1
-        IL_0001:  isinst     assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct
-        IL_0006:  brfalse.s  IL_0018
-
-        IL_0008:  ldarg.1
-        IL_0009:  unbox.any  assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct
-        IL_000e:  stloc.0
-        IL_000f:  ldarg.0
-        IL_0010:  ldloc.0
-        IL_0011:  ldarg.2
-        IL_0012:  call       instance bool assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct,
-                                                                                                             class [runtime]System.Collections.IEqualityComparer)
-        IL_0017:  ret
-
-        IL_0018:  ldc.i4.0
-        IL_0019:  ret
-      } 
-
-      .method public hidebysig virtual final instance bool  Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct obj) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
-        IL_0006:  ldarga.s   obj
-        IL_0008:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
-        IL_000d:  bne.un.s   IL_001f
-
-        IL_000f:  ldarg.0
-        IL_0010:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
-        IL_0015:  ldarga.s   obj
-        IL_0017:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
-        IL_001c:  ceq
-        IL_001e:  ret
-
-        IL_001f:  ldc.i4.0
-        IL_0020:  ret
-      } 
-
-      .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.1
-        IL_0001:  isinst     assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct
-        IL_0006:  brfalse.s  IL_0015
-
-        IL_0008:  ldarg.0
-        IL_0009:  ldarg.1
-        IL_000a:  unbox.any  assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct
-        IL_000f:  call       instance bool assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct)
-        IL_0014:  ret
-
-        IL_0015:  ldc.i4.0
-        IL_0016:  ret
-      } 
-
       .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -333,13 +233,63 @@
         IL_000b:  ret
       } 
 
-      .method public hidebysig specialname instance int32  get_U() cil managed
+      .method public hidebysig instance bool Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
+        IL_0006:  ldarga.s   obj
+        IL_0008:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
+        IL_000d:  bne.un.s   IL_001f
+
+        IL_000f:  ldarg.0
+        IL_0010:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
+        IL_0015:  ldarga.s   obj
+        IL_0017:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
+        IL_001c:  ceq
+        IL_001e:  ret
+
+        IL_001f:  ldc.i4.0
+        IL_0020:  ret
+      } 
+
+      .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  5
+        .locals init (valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct V_0)
+        IL_0000:  ldarg.1
+        IL_0001:  isinst     assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct
+        IL_0006:  brfalse.s  IL_0018
+
+        IL_0008:  ldarg.1
+        IL_0009:  unbox.any  assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct
+        IL_000e:  stloc.0
+        IL_000f:  ldarg.0
+        IL_0010:  ldloc.0
+        IL_0011:  ldarg.2
+        IL_0012:  call       instance bool assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct,
+                                                                                                             class [runtime]System.Collections.IEqualityComparer)
+        IL_0017:  ret
+
+        IL_0018:  ldc.i4.0
+        IL_0019:  ret
+      } 
+
+      .method public specialname rtspecialname instance void  .ctor(int32 v, int32 u) cil managed
       {
         
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
-        IL_0006:  ret
+        IL_0001:  ldarg.1
+        IL_0002:  stfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
+        IL_0007:  ldarg.0
+        IL_0008:  ldarg.2
+        IL_0009:  stfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
+        IL_000e:  ret
       } 
 
       .method public hidebysig specialname instance int32  get_V() cil managed
@@ -349,6 +299,56 @@
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
         IL_0006:  ret
+      } 
+
+      .method public hidebysig specialname instance int32  get_U() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
+        IL_0006:  ret
+      } 
+
+      .method public hidebysig virtual final instance bool  Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct obj) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
+        IL_0006:  ldarga.s   obj
+        IL_0008:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::v
+        IL_000d:  bne.un.s   IL_001f
+
+        IL_000f:  ldarg.0
+        IL_0010:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
+        IL_0015:  ldarga.s   obj
+        IL_0017:  ldfld      int32 assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::u
+        IL_001c:  ceq
+        IL_001e:  ret
+
+        IL_001f:  ldc.i4.0
+        IL_0020:  ret
+      } 
+
+      .method public hidebysig virtual final instance bool  Equals(object obj) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.1
+        IL_0001:  isinst     assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct
+        IL_0006:  brfalse.s  IL_0015
+
+        IL_0008:  ldarg.0
+        IL_0009:  ldarg.1
+        IL_000a:  unbox.any  assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct
+        IL_000f:  call       instance bool assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct::Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct)
+        IL_0014:  ret
+
+        IL_0015:  ldc.i4.0
+        IL_0016:  ret
       } 
 
       .property instance int32 V()
@@ -367,17 +367,6 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .field static assembly valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct y@1
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-      IL_000b:  pop
-      IL_000c:  ret
-    } 
-
     .method assembly specialname static bool get_arg@1() cil managed
     {
       
@@ -400,6 +389,17 @@
       .maxstack  8
       IL_0000:  ldsfld     valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeStruct assembly/EqualsMicroPerfAndCodeGenerationTests::y@1
       IL_0005:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+      IL_000b:  pop
+      IL_000c:  ret
     } 
 
     .method assembly static void  staticInitialization@() cil managed
@@ -482,6 +482,7 @@
   } 
 
 } 
+
 
 
 

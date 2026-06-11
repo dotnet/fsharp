@@ -8,9 +8,8 @@
 .assembly extern netstandard
 {
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:0:0:0
+  .ver 2:1:0:0
 }
-.assembly extern runtime { }
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -39,17 +38,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
@@ -81,6 +69,7 @@
   } 
 
 } 
+
 
 
 
