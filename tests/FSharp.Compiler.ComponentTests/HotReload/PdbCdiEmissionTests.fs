@@ -38,14 +38,14 @@ let transform (values: int list) =
         | CompilationResult.Failure f ->
             failwithf "Compilation was expected to succeed, but failed with: %A" f.Diagnostics
 
-    let private compileSample extraOptions =
+    let private compileSource (source: string) extraOptions =
         // The flag-on compile starts a hot reload session as a side effect; keep the
         // shared service clean on both sides of the compile.
         let service = global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance
         service.EndSession()
 
         try
-            FSharp sampleSource
+            FSharp source
             |> withOptions ([ "--langversion:preview"; "--debug+"; "--optimize-" ] @ extraOptions)
             |> asLibrary
             |> compile
@@ -53,6 +53,8 @@ let transform (values: int list) =
             |> getOutputPath
         finally
             service.EndSession()
+
+    let private compileSample extraOptions = compileSource sampleSource extraOptions
 
     let private pdbPathFor (assemblyPath: string) =
         let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
@@ -226,3 +228,91 @@ let transform (values: int list) =
         // Fail safe on non-PDB inputs too: empty and garbage images decode to the empty map.
         Assert.True(Map.isEmpty (readEncMethodDebugInfoFromPortablePdb Array.empty))
         Assert.True(Map.isEmpty (readEncMethodDebugInfoFromPortablePdb [| 0xBAuy; 0xADuy; 0xF0uy; 0x0Duy |]))
+
+    /// Two resume points in 'computeAsync' (one per let!), state numbers 1 and 2 in
+    /// source order (LowerStateMachines.genPC assigns them positionally).
+    let private taskSampleSource =
+        """
+module CdiTaskSample
+
+open System.Threading.Tasks
+
+let computeAsync (input: int) =
+    task {
+        let! x = Task.FromResult (input + 1)
+        let! y = Task.FromResult (x * 2)
+        return x + y
+    }
+"""
+
+    [<Fact>]
+    let ``Compile with hot reload flag emits decodable EnC state machine state map for task members`` () =
+        let assemblyPath = compileSource taskSampleSource [ "--enable:hotreloaddeltas" ]
+        let pdbPath = pdbPathFor assemblyPath
+        let methodRowNumber = findMethodRowNumber assemblyPath "computeAsync"
+        let cdiRows = readMethodCdiRows pdbPath methodRowNumber
+
+        let stateMapBlobs =
+            cdiRows
+            |> List.filter (fun (kind, _) -> kind = PortableCustomDebugInfoKinds.encStateMachineStateMap)
+            |> List.map snd
+
+        Assert.True(
+            stateMapBlobs.Length = 1,
+            $"expected exactly one EnC state machine state map CDI row, found %d{stateMapBlobs.Length}")
+
+        // The blob decodes with the Roslyn-format decoder: two resume points, state
+        // numbers 1 and 2 (positional, from the lowering's conversion order), with the
+        // resume-point ORDINAL in the syntax-offset slot (the C2 occurrence-key
+        // philosophy: deterministic ints, not source offsets).
+        let states = deserializeStateMachineStates stateMapBlobs.Head
+
+        Assert.Equal(2, states.Length)
+        Assert.Equal(1, states[0].StateNumber)
+        Assert.Equal(0, states[0].SyntaxOffset)
+        Assert.Equal(2, states[1].StateNumber)
+        Assert.Equal(1, states[1].SyntaxOffset)
+
+    [<Fact>]
+    let ``Compile without hot reload flag emits no EnC state machine state map for task members`` () =
+        let assemblyPath = compileSource taskSampleSource []
+        let pdbPath = pdbPathFor assemblyPath
+
+        let bytes = ImmutableArray.CreateRange(File.ReadAllBytes pdbPath)
+        use provider = MetadataReaderProvider.FromPortablePdbImage bytes
+        let pdbReader = provider.GetMetadataReader()
+
+        let encRows =
+            [
+                for cdiHandle in pdbReader.CustomDebugInformation do
+                    let cdi = pdbReader.GetCustomDebugInformation cdiHandle
+                    let kind = pdbReader.GetGuid cdi.Kind
+
+                    if List.contains kind encKindGuids then
+                        kind
+            ]
+
+        Assert.Empty encRows
+
+    [<Fact>]
+    let ``Hot reload session baseline decodes the state machine state map for task members`` () =
+        // The baseline read side (readEncMethodDebugInfoFromPortablePdb, stored on the
+        // session as EncMethodDebugInfos) must surface the persisted resume points for
+        // disk-started sessions (the dotnet-watch topology).
+        let assemblyPath = compileSource taskSampleSource [ "--enable:hotreloaddeltas" ]
+        let pdbPath = pdbPathFor assemblyPath
+        let methodRowNumber = findMethodRowNumber assemblyPath "computeAsync"
+
+        let infos = readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes pdbPath)
+        let methodToken = 0x06000000 ||| methodRowNumber
+
+        match Map.tryFind methodToken infos with
+        | Some info ->
+            Assert.Equal(2, info.StateMachineStates.Length)
+            Assert.Equal(1, info.StateMachineStates[0].StateNumber)
+            Assert.Equal(2, info.StateMachineStates[1].StateNumber)
+        | None ->
+            failwithf
+                "expected EnC method debug information for method token %08x; found tokens %A"
+                methodToken
+                (infos |> Map.toList |> List.map fst)

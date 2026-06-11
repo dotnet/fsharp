@@ -1191,9 +1191,20 @@ let main6
                         if tcConfig.emitCaptureArtifacts then
                             let (CheckedAssemblyAfterOptimization implFiles) = optimizedImpls
 
-                            implFiles
-                            |> List.map (fun implFile -> implFile.ImplFile)
-                            |> EncMethodDebugInformation.computeMethodCustomDebugInfoRows tcGlobals
+                            // State machine resume points recorded by the IlxGen
+                            // lowering (Phase D): codegen has already run by this point,
+                            // so the recording is complete; flag-off compiles never
+                            // begin recording and read the empty map.
+                            let stateMachineResumePoints =
+                                ClosureNameAllocationState.getRecordedStateMachineResumePoints
+                                    (tcGlobals.CompilerGlobalState.Value :> obj)
+
+                            let implFiles = implFiles |> List.map (fun implFile -> implFile.ImplFile)
+
+                            EncMethodDebugInformation.computeMethodCustomDebugInfoRows
+                                tcGlobals
+                                implFiles
+                                stateMachineResumePoints
                         else
                             Map.empty
 

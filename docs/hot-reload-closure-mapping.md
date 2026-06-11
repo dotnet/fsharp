@@ -560,6 +560,15 @@ replaced by typed resumable-code evidence:
   not `ResumableCode`): body edits (including new expression-level control flow) are
   MethodBody updates; structural CE changes keep failing closed at emission via the
   synthesized-type-mapping guard (precise `UnsupportedEdit`, see ground truth above).
+- `seq { }` also stays under the lambda occurrence model (its desugaring is a closure
+  chain at `--optimize-`, not ResumableCode): body edits apply as MethodBody updates and
+  an ADDED yield rides the C4 added-closure path (requires `NewTypeDefinition` +
+  `AddMethodToExistingType`; fresh enumerations observe the new yields — pinned by
+  `ApplyUpdate succeeds for seq body edit with added yield`). Documented caveat,
+  deliberately weaker than C# (which reports `ChangingStateMachineShape` for iterator
+  edits): an enumerator already SUSPENDED mid-sequence at apply time resumes on the new
+  code with its old state; F# accepts the edit because the lowering regenerates the
+  whole closure chain consistently for fresh enumerations.
 
 #### Emission backstops (D2, `IlxDeltaEmitter.collectTypeMappings`)
 
@@ -579,6 +588,37 @@ session whose on-disk binary diverges from the baseline source):
 - **Legacy closure fallthrough**: a non-generation-suffixed `@hotreload` type with no
   baseline counterpart raises a precise "closure chain cannot be aligned" message
   instead of falling through to garbage baseline token lookups.
+
+#### EnC State Machine State Map persistence (D3)
+
+The Roslyn-format state map blob (C2's `serializeStateMachineStates`, previously unused)
+is now emitted at baseline and read back:
+
+- `LowerStateMachines` surfaces the conversion's resume points on
+  `LoweredStateMachine.resumptionPoints` — (state number, source range) in
+  state-number order, the AUTHORITATIVE numbering (`genPC`), not a typed-tree guess.
+- `IlxGen.GenStructStateMachine` records the state numbers into the C3 recording seam
+  (`ClosureNameAllocationState.recordStateMachineResumePoints`), keyed by the emitted
+  struct's full type name; recording shares the C3 lifecycle (capture compiles only,
+  flag-off byte-identical).
+- The fsc emit path joins recordings to members by the struct simple name's basic name
+  (`{member}@hotreload…` → `{member}` = the member's compiled name, this conduit's key),
+  failing closed on collisions (same-named members, nested CEs lowering several
+  machines in one member); the PDB writer additionally drops any name that does not
+  identify exactly one IL method row.
+- Blob semantics: `StateNumber` = the positional pc (1..N); the syntax-offset slot
+  carries the resume point's ORDINAL (the C2 occurrence-key philosophy — deterministic
+  ints, not source offsets). Decodable by Roslyn-format tooling.
+- The baseline read side (C2's `readEncMethodDebugInfoFromPortablePdb` →
+  `FSharpEmitBaseline.EncMethodDebugInfos`) decodes the rows for disk-started sessions.
+
+Deviations from Roslyn, stated precisely: (1) rows attach to the KICKOFF member's
+MethodDef, not MoveNext — F# state-machine MoveNexts share one name and the writer
+conduit is name-keyed, while every consumer addresses members; (2) disk-started-session
+CLASSIFICATION remains source-derived (the session re-typechecks the baseline source,
+so the resumable-call digests exist without the CDI), with binary skew guarded by the
+D2 struct-layout gates; CDI-driven cross-checking of fresh-vs-persisted state counts at
+emission is deferred until a scenario demands it.
 
 ### Rude-edit surface after Phase C/D (parity with C#)
 

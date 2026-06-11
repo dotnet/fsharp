@@ -562,25 +562,86 @@ let computeMethodEncDebugInfo (g: TcGlobals) (implFiles: CheckedImplFile list) :
 let computeMethodCustomDebugInfoRows
     (g: TcGlobals)
     (implFiles: CheckedImplFile list)
+    (stateMachineResumePointsByStructName: Map<string, int list>)
     : Map<string, PdbMethodCustomDebugInfo list> =
 
-    (Map.empty, computeMethodEncDebugInfo g implFiles)
-    ||> Map.fold (fun acc methName info ->
-        let lambdaMapBlob = serializeLambdaMap info
+    // State machine resume points are recorded by the IlxGen lowering against the
+    // emitted state machine STRUCT's full name ('{member}@hotreload...' nested in the
+    // member's enclosing type); the basic name of the struct's simple name is the
+    // owning member's compiled name, which is this conduit's key. Fail closed on
+    // collisions (two recordings reducing to one basic name: same-named members, or
+    // nested CEs lowering several machines inside one member) — a state map must never
+    // describe the wrong method. The PDB writer additionally drops any name that does
+    // not identify exactly one IL method row.
+    let stateMachineStatesByMethodName =
+        let simpleName (fullName: string) =
+            let separatorIndex = fullName.LastIndexOfAny [| '+'; '.' |]
 
-        if lambdaMapBlob.Length = 0 then
+            if separatorIndex >= 0 then
+                fullName.Substring(separatorIndex + 1)
+            else
+                fullName
+
+        let basicName (name: string) =
+            match name.IndexOf('@') with
+            | atIndex when atIndex > 0 -> name.Substring(0, atIndex)
+            | _ -> name
+
+        stateMachineResumePointsByStructName
+        |> Map.toList
+        |> List.map (fun (structFullName, resumePoints) -> basicName (simpleName structFullName), resumePoints)
+        |> List.groupBy fst
+        |> List.choose (fun (methName, group) ->
+            match group with
+            | [ (_, resumePoints) ] when not resumePoints.IsEmpty ->
+                // SyntaxOffset carries the resume point's ORDINAL (state numbers are
+                // positional in the F# lowering), keeping the C2 occurrence-key
+                // philosophy: deterministic ints, not source offsets.
+                let states =
+                    resumePoints
+                    |> List.sortBy id
+                    |> List.mapi (fun ordinal stateNumber ->
+                        { StateNumber = stateNumber
+                          SyntaxOffset = ordinal })
+
+                Some(methName, states)
+            | _ -> None)
+        |> Map.ofList
+
+    let lambdaRows =
+        (Map.empty, computeMethodEncDebugInfo g implFiles)
+        ||> Map.fold (fun acc methName info ->
+            let lambdaMapBlob = serializeLambdaMap info
+
+            if lambdaMapBlob.Length = 0 then
+                acc
+            else
+                // The EnC Local Slot Map stays omitted (see tryCreateFromLambdaOccurrences).
+                Map.add
+                    methName
+                    [
+                        { KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap
+                          Blob = lambdaMapBlob }
+                    ]
+                    acc)
+
+    (lambdaRows, stateMachineStatesByMethodName)
+    ||> Map.fold (fun acc methName states ->
+        let stateMapBlob =
+            serializeStateMachineStates
+                { EncMethodDebugInformation.Empty with
+                    StateMachineStates = states }
+
+        if stateMapBlob.Length = 0 then
             acc
         else
-            // Only the EnC Lambda and Closure Map is emitted at baseline; the
-            // EnC Local Slot Map and State Machine State Map are omitted (see
-            // tryCreateFromLambdaOccurrences).
-            Map.add
-                methName
-                [
-                    { KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap
-                      Blob = lambdaMapBlob }
-                ]
-                acc)
+            let stateRow =
+                { KindGuid = PortableCustomDebugInfoKinds.encStateMachineStateMap
+                  Blob = stateMapBlob }
+
+            match Map.tryFind methName acc with
+            | Some rows -> Map.add methName (rows @ [ stateRow ]) acc
+            | None -> Map.add methName [ stateRow ] acc)
 
 // ---------------------------------------------------------------------------
 // Baseline read bridge (Phase C2): portable-PDB EnC CDI rows -> the per-method map the

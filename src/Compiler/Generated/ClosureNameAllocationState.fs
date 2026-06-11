@@ -35,9 +35,15 @@ type private ClosureNameStateHolder() =
     let syncRoot = obj ()
     let mutable recordedNamesByStamp: Dictionary<int64, string> option = None
     let mutable assignedNamesByStamp: Map<int64, string> = Map.empty
+    // State machine resume points recorded by IlxGen lowering (Phase D), keyed by the
+    // emitted state machine struct's full type name. Shares the recording lifecycle of
+    // recordedNamesByStamp: both begin/clear together, so flag-off compiles never pay.
+    let mutable recordedResumePointsByTypeName: Dictionary<string, int list> option = None
 
     member _.BeginRecording() =
-        lock syncRoot (fun () -> recordedNamesByStamp <- Some(Dictionary<int64, string>()))
+        lock syncRoot (fun () ->
+            recordedNamesByStamp <- Some(Dictionary<int64, string>())
+            recordedResumePointsByTypeName <- Some(Dictionary<string, int list>()))
 
     member _.Record(stamp: int64, name: string) =
         lock syncRoot (fun () ->
@@ -52,6 +58,19 @@ type private ClosureNameStateHolder() =
                 recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
             | None -> Map.empty)
 
+    member _.RecordResumePoints(typeName: string, resumePoints: int list) =
+        lock syncRoot (fun () ->
+            match recordedResumePointsByTypeName with
+            | Some recorded -> recorded[typeName] <- resumePoints
+            | None -> ())
+
+    member _.RecordedResumePoints() =
+        lock syncRoot (fun () ->
+            match recordedResumePointsByTypeName with
+            | Some recorded ->
+                recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
+            | None -> Map.empty)
+
     member _.SetAssignedNames(names: Map<int64, string>) =
         lock syncRoot (fun () -> assignedNamesByStamp <- names)
 
@@ -61,7 +80,8 @@ type private ClosureNameStateHolder() =
     member _.Clear() =
         lock syncRoot (fun () ->
             recordedNamesByStamp <- None
-            assignedNamesByStamp <- Map.empty)
+            assignedNamesByStamp <- Map.empty
+            recordedResumePointsByTypeName <- None)
 
 let private holders = ConditionalWeakTable<obj, ClosureNameStateHolder>()
 
@@ -92,6 +112,21 @@ let recordClosureStampName (owner: obj) (stamp: int64) (name: string) =
 let getRecordedClosureStampNames (owner: obj) : Map<int64, string> =
     match tryGetHolder owner with
     | Some holder -> holder.RecordedNames()
+    | None -> Map.empty
+
+/// Records the resume-point state numbers of a lowered state machine against its
+/// emitted struct type's full name (Phase D). No-op unless recording was begun for
+/// the owner.
+let recordStateMachineResumePoints (owner: obj) (structTypeFullName: string) (resumePoints: int list) =
+    match tryGetHolder owner with
+    | Some holder -> holder.RecordResumePoints(structTypeFullName, resumePoints)
+    | None -> ()
+
+/// The state-machine-struct-name -> resume-point recording of the owner's compile;
+/// empty when recording was never begun.
+let getRecordedStateMachineResumePoints (owner: obj) : Map<string, int list> =
+    match tryGetHolder owner with
+    | Some holder -> holder.RecordedResumePoints()
     | None -> Map.empty
 
 /// Installs the allocator-assigned stamp -> closure-name table for a delta compile.

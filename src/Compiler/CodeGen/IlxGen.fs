@@ -6254,7 +6254,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                              thisVars,
                              (moveNextThisVar, moveNextBody),
                              (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody),
-                             (afterCodeThisVar, afterCodeBody))) =
+                             (afterCodeThisVar, afterCodeBody),
+                             resumptionPoints)) =
         res
 
     let m = moveNextBody.Range
@@ -6294,6 +6295,19 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let ilCloGenericActuals = cloinfo.cloSpec.GenericArgs
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
     let ilCloTy = mkILValueTy ilCloTypeRef ilCloGenericActuals
+
+    // Hot reload (Phase D): record the state machine's resume points against the
+    // emitted struct type name so the fsc emit path can persist them as the EnC State
+    // Machine State Map CDI rows. No recorder installed (flag-off and non-session
+    // compiles) -> strict no-op, byte-identical output.
+    do
+        match g.CompilerGlobalState with
+        | Some compilerGlobalState ->
+            ClosureNameAllocationState.recordStateMachineResumePoints
+                (compilerGlobalState :> obj)
+                ilCloTypeRef.FullName
+                (resumptionPoints |> List.map fst)
+        | None -> ()
 
     // The closure implements what ever interfaces the template implements.
     let interfaceTys =
