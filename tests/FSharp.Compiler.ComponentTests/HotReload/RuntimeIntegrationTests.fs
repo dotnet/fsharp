@@ -2016,6 +2016,45 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                     newTypeDefEntries.Length >= 1,
                     sprintf "Expected a new TypeDef row in the generation-1 EncLog; got %A" gen1EncLog)
 
+                // Pattern parity with the recorded C# reference template
+                // (docs/hot-reload-member-additions.md): the new TypeDef row's plain
+                // Default entry precedes every Add* entry that names it as the parent;
+                // each AddField/AddMethod entry is immediately followed by the member row
+                // with the Default operation; a NestedClass row trails (F# closure classes
+                // are nested in their module type); the Add* parent entries never appear
+                // in EncMap.
+                let newTypeToken = fst newTypeDefEntries.[0]
+                let newTypeRowIndex = gen1EncLog |> Array.findIndex (fun entry -> entry = (newTypeToken, 0))
+
+                let addMemberIndices =
+                    gen1EncLog
+                    |> Array.indexed
+                    |> Array.choose (fun (index, (token, op)) ->
+                        // AddMethod = 1, AddField = 2 (EditAndContinueOperation)
+                        if token = newTypeToken && (op = 1 || op = 2) then Some(index, op) else None)
+
+                Assert.True(addMemberIndices.Length >= 3, "Expected AddField/AddMethod pairs for the closure members.")
+
+                for index, op in addMemberIndices do
+                    Assert.True(newTypeRowIndex < index, "New TypeDef row must precede its Add* entries.")
+                    let memberToken, memberOp = gen1EncLog.[index + 1]
+                    Assert.Equal(0, memberOp)
+                    let expectedTable = if op = 2 then 0x04 else 0x06
+                    Assert.Equal(expectedTable, memberToken >>> 24)
+
+                Assert.Contains(gen1EncLog, fun (token, op) -> token >>> 24 = 0x29 && op = 0)
+
+                let gen1EncMap =
+                    use provider =
+                        MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> delta1.Metadata)
+
+                    provider.GetMetadataReader().GetEditAndContinueMapEntries()
+                    |> Seq.map MetadataTokens.GetToken
+                    |> Seq.toArray
+
+                Assert.Contains(newTypeToken, gen1EncMap)
+                Assert.Contains(gen1EncMap, fun token -> token >>> 24 = 0x29)
+
                 // NOTE: reflection does not reliably enumerate EnC-added nested types
                 // (GetNestedTypes on the live type still reports the baseline set), so the
                 // structural evidence is the EncLog above and the behavioral evidence is the
@@ -2045,6 +2084,224 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                     sprintf "Generation 2 must update the added closure in place; got %A" gen2EncLog)
 
                 printfn "[added-lambda] SUCCESS: closure addition + in-place follow-up edit applied"
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
+    [<Fact>]
+    let ``EmitHotReloadDelta rejects added lambda without NewTypeDefinition capability`` () =
+        // Negative gate for Phase C4: a capability-less session (BaselineOnly) must report
+        // the addition as NotSupportedByRuntime naming the missing capability, never emit.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-added-lambda-nocap", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "ClosureAdditionNoCap.fs")
+            let dllPath = Path.Combine(projectDir, "ClosureAdditionNoCap.dll")
+
+            try
+                File.WriteAllText(fsPath, closureAdditionBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString closureAdditionBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                // No capabilities negotiated: the session defaults to baseline-only.
+                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.WriteAllText(fsPath, closureAdditionUpdatedSource)
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                let updatedOptions =
+                    { projectOptions with
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.filter (fun opt ->
+                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                let compileDiagnostics2, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
+
+                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                | Ok _ -> failwith "Expected the added lambda to be rejected without the NewTypeDefinition capability."
+                | Error (FSharpHotReloadError.UnsupportedEdit message) ->
+                    Assert.Contains("NewTypeDefinition", message)
+                    // FSHRDL016 = RudeEditKind.NotSupportedByRuntime
+                    Assert.Contains("FSHRDL016", message)
+                | Error other -> failwithf "Expected UnsupportedEdit, got %A" other
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for removed lambda leaving baseline closure unused`` () =
+        // Removed-only lambda sets need no new metadata (C# parity: the deleted lambda's
+        // closure class just becomes unreachable). The delta is a plain set of method
+        // updates - no TypeDef/Field rows - and applies cleanly.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-removed-lambda", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "ClosureRemoval.fs")
+            let dllPath = Path.Combine(projectDir, "ClosureRemoval.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "ClosureRemoval.runtime.dll")
+
+            try
+                // Baseline: the THREE-lambda shape; the update removes the innermost map.
+                File.WriteAllText(fsPath, closureAdditionUpdatedSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString closureAdditionUpdatedSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                // Removed-only edits need no capabilities beyond baseline.
+                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let moduleType = assembly.GetType("Sample.Closures", throwOnError = true)
+                let probe = moduleType.GetMethod("probe", BindingFlags.Public ||| BindingFlags.Static)
+
+                // Baseline (3 lambdas): map(+1) -> filter -> map(*2+3) over [1;2;3] = 27.
+                Assert.Equal(27, probe.Invoke(null, [||]) :?> int)
+
+                File.WriteAllText(fsPath, closureAdditionBaselineSource)
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                let updatedOptions =
+                    { projectOptions with
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.filter (fun opt ->
+                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                let compileDiagnostics2, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
+
+                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                | Ok delta ->
+                    // No new types: the removed lambda's baseline closure class stays, unused.
+                    let encLog =
+                        use provider =
+                            MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> delta.Metadata)
+
+                        provider.GetMetadataReader().GetEditAndContinueLogEntries()
+                        |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+                        |> Seq.toArray
+
+                    let typeDefEntries = encLog |> Array.filter (fun (token, _) -> token >>> 24 = 0x02)
+
+                    Assert.True(
+                        Array.isEmpty typeDefEntries,
+                        sprintf "Removed-lambda delta must not touch the TypeDef table; got %A" encLog)
+
+                    let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                    MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+
+                    // 2 lambdas: filter -> map(*2+3) over [1;2;3] = 21.
+                    Assert.Equal(21, probe.Invoke(null, [||]) :?> int)
+                    printfn "[removed-lambda] SUCCESS: lambda removal applied as plain body update"
 
             finally
                 try checker.EndHotReloadSession() with _ -> ()

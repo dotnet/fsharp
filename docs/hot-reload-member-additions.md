@@ -288,7 +288,10 @@ Known divergences from the C# reference (deliberate this slice):
   capability (C# parity).
 - `LambdaEdit.Removed`-only sets are allowed at Baseline capabilities (C#
   parity: deleted lambda bodies just become unreachable; the baseline
-  closure class stays in place, unused).
+  closure class stays in place, unused). Validated at runtime
+  (`ApplyUpdate succeeds for removed lambda leaving baseline closure
+  unused`): the delta is a plain set of method updates touching no TypeDef
+  rows, and the new behavior takes effect on apply.
 - `CaptureSetChanged` stays rude this slice (capture-field mapping is a
   later slice).
 
