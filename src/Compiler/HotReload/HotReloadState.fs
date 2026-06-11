@@ -1,6 +1,7 @@
 module internal FSharp.Compiler.HotReloadState
 
 open System
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.TypedTree
@@ -14,6 +15,13 @@ type HotReloadSession =
         PendingUpdate: PendingHotReloadUpdate option
         /// Runtime capabilities negotiated when the session started; consulted by edit classification.
         Capabilities: EditAndContinueCapabilities
+        /// <summary>
+        /// Active statements supplied by the debugger host before emitting (Phase G). The next
+        /// emitted delta remaps each statement (or fails rude when an edit destroys one). Empty
+        /// when no debugger is attached or the host has not reported a break state; the setter
+        /// REPLACES the whole set, mirroring Roslyn's per-edit-session active statement fetch.
+        /// </summary>
+        ActiveStatements: FSharpManagedActiveStatementDebugInfo list
     }
 
 and PendingHotReloadUpdate =
@@ -63,6 +71,7 @@ type internal HotReloadSessionStore() =
                     PendingUpdate = None
                     // Hosts that do not negotiate capabilities get the Roslyn-conservative default.
                     Capabilities = defaultArg capabilities EditAndContinueCapabilities.BaselineOnly
+                    ActiveStatements = []
                 }
 
             session <- ValueSome newSession
@@ -115,6 +124,27 @@ type internal HotReloadSessionStore() =
                 match lastCommittedSession with
                 | ValueSome committed ->
                     lastCommittedSession <- ValueSome { committed with Capabilities = capabilities }
+                | ValueNone -> ()
+
+                true
+            | ValueNone -> false)
+
+    /// <summary>
+    /// Replaces the debugger-supplied active statements consulted by the next emit (Phase G).
+    /// Hosts call this whenever the debugger reports a break state (Roslyn analog: the
+    /// DebuggingSession fetching <c>ManagedActiveStatementDebugInfo</c> from the debugger per
+    /// edit session). Passing an empty list clears the set (no statements are active, e.g.
+    /// updates applied while the process runs free). Returns false when no session is active.
+    /// </summary>
+    member _.UpdateActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo list) =
+        lock sessionLock (fun () ->
+            match session with
+            | ValueSome state ->
+                session <- ValueSome { state with ActiveStatements = activeStatements }
+
+                match lastCommittedSession with
+                | ValueSome committed ->
+                    lastCommittedSession <- ValueSome { committed with ActiveStatements = activeStatements }
                 | ValueNone -> ()
 
                 true

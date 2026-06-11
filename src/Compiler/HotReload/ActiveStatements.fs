@@ -486,3 +486,161 @@ module internal ActiveStatementAnalysis =
                     }
 
             List.ofSeq lineEdits, List.ofSeq overlapRecompileTokens
+
+    /// Outcome of remapping a single active statement against an emitted delta.
+    [<RequireQualifiedAccess>]
+    type ActiveStatementRemapOutcome =
+        /// The containing method was recompiled; the statement maps to this new span.
+        | Update of FSharpManagedActiveStatementUpdate
+        /// The containing method is untouched by the delta.
+        | MethodUpToDate
+        /// The edit destroys or ambiguously moves the active statement; the update must be blocked.
+        | Rude of message: string
+
+    /// <summary>
+    /// Remaps one active statement after its containing method was recompiled by a delta
+    /// (<paramref name="freshPoints"/> = None means the method was NOT recompiled).
+    ///
+    /// The F# remap aligns the committed and fresh sequence points by ordinal: the statement's
+    /// instruction is resolved to the last visible committed sequence point at or before its IL
+    /// offset, and maps to the fresh visible sequence point with the same ordinal when both sides
+    /// have the SAME number of visible points. Roslyn instead tracks statement spans through the
+    /// syntax map; the F# diff is typed-tree based, so where the sequence-point alignment is
+    /// ambiguous the remap deliberately fails toward a rude edit (Roslyn parity for the
+    /// statement-destroying cases: deleting the active statement, or editing the statement a
+    /// non-leaf frame is suspended in, blocks the update):
+    ///
+    /// <list type="bullet">
+    ///   <item>stale / not-up-to-date / partially-executed statements in a recompiled method -> rude</item>
+    ///   <item>no committed sequence points for the method, or the IL offset resolves to no visible
+    ///   point -> rude</item>
+    ///   <item>visible sequence-point counts differ (a statement was added or deleted around or at
+    ///   the active statement) -> rude</item>
+    ///   <item>a NON-LEAF frame's statement whose aligned span changed by anything other than a pure
+    ///   line shift -> rude (the runtime cannot remap a frame that is not topmost; leaf frames are
+    ///   remapped by the debugger, so their statement may move freely)</item>
+    /// </list>
+    /// </summary>
+    let remapActiveStatement
+        (statement: FSharpManagedActiveStatementDebugInfo)
+        (committedPoints: MethodSequencePoints option)
+        (freshPoints: MethodSequencePoints option)
+        : ActiveStatementRemapOutcome =
+        let instruction = statement.ActiveInstruction
+        let describe = $"method 0x%08X{instruction.Method.Token} IL_%04X{instruction.ILOffset}"
+
+        match freshPoints with
+        | None -> ActiveStatementRemapOutcome.MethodUpToDate
+        | Some fresh ->
+            if statement.Flags.IsStale || not statement.Flags.IsMethodUpToDate then
+                ActiveStatementRemapOutcome.Rude
+                    $"Active statement in {describe} executes a stale version of the method; updating the method again cannot be remapped. Please rebuild."
+            elif statement.Flags.IsPartiallyExecuted then
+                ActiveStatementRemapOutcome.Rude
+                    $"Active statement in {describe} is partially executed and cannot be updated. Please rebuild."
+            else
+                match committedPoints with
+                | None ->
+                    ActiveStatementRemapOutcome.Rude
+                        $"Active statement in {describe} has no committed sequence points to remap from. Please rebuild."
+                | Some committed ->
+                    // Resolve the instruction to the last visible committed point at or before
+                    // its IL offset, tracking the point's ordinal among visible points.
+                    let mutable coveringOrdinal = -1
+                    let mutable coveringIsHidden = false
+                    let mutable visibleIndex = -1
+
+                    for point in committed.Points do
+                        if point.ILOffset <= instruction.ILOffset then
+                            match point with
+                            | PdbSequencePoint.Visible _ ->
+                                visibleIndex <- visibleIndex + 1
+                                coveringOrdinal <- visibleIndex
+                                coveringIsHidden <- false
+                            | PdbSequencePoint.Hidden _ -> coveringIsHidden <- true
+                        else
+                            match point with
+                            | PdbSequencePoint.Visible _ -> visibleIndex <- visibleIndex + 1
+                            | PdbSequencePoint.Hidden _ -> ()
+
+                    if coveringOrdinal < 0 || coveringIsHidden then
+                        ActiveStatementRemapOutcome.Rude
+                            $"Active statement in {describe} does not resolve to a visible sequence point. Please rebuild."
+                    else
+                        let committedVisible = committed.VisiblePoints
+                        let freshVisible = fresh.VisiblePoints
+
+                        if List.length committedVisible <> List.length freshVisible then
+                            ActiveStatementRemapOutcome.Rude
+                                $"Edit adds or deletes statements around the active statement in {describe}; the active statement cannot be remapped. Please rebuild."
+                        else
+                            let oldPoint = committedVisible[coveringOrdinal]
+                            let newPoint = freshVisible[coveringOrdinal]
+
+                            let pureLineShift =
+                                oldPoint.StartColumn = newPoint.StartColumn
+                                && oldPoint.EndColumn = newPoint.EndColumn
+                                && newPoint.EndLine - newPoint.StartLine = oldPoint.EndLine - oldPoint.StartLine
+
+                            if statement.Flags.FrameKind.HasNonLeafFrame && not pureLineShift then
+                                ActiveStatementRemapOutcome.Rude
+                                    $"Edit changes the active statement a non-leaf frame is suspended in ({describe}); the frame cannot be remapped. Please rebuild."
+                            else
+                                ActiveStatementRemapOutcome.Update
+                                    {
+                                        Method = instruction.Method
+                                        ILOffset = instruction.ILOffset
+                                        NewSpan = newPoint.ToSourceSpan()
+                                    }
+
+    /// <summary>
+    /// Remaps the host-supplied active statements against an emitted delta.
+    /// <paramref name="recompiledMethodTokens"/> are the MethodDef tokens recompiled by the delta;
+    /// <paramref name="freshSnapshots"/> is the delta's next committed sequence-point view (None
+    /// when sequence-point analysis was unavailable — any active statement in a recompiled method
+    /// is then rude, fail closed). Statements in methods the delta does not touch report
+    /// <see cref="FSharpActiveStatementRemapResult.MethodUpToDate"/>. Any rude statement blocks
+    /// the whole update (Roslyn parity).
+    /// </summary>
+    let remapActiveStatements
+        (committedSnapshots: Map<int, MethodSequencePoints>)
+        (freshSnapshots: Map<int, MethodSequencePoints> option)
+        (recompiledMethodTokens: Set<int>)
+        (statements: FSharpManagedActiveStatementDebugInfo list)
+        : Result<FSharpActiveStatementRemapResult list, string list> =
+        let results, rudeMessages =
+            (([], []), statements)
+            ||> List.fold (fun (results, rudeMessages) statement ->
+                let methodToken = statement.ActiveInstruction.Method.Token
+
+                if not (Set.contains methodToken recompiledMethodTokens) then
+                    FSharpActiveStatementRemapResult.MethodUpToDate statement.ActiveInstruction :: results,
+                    rudeMessages
+                else
+                    let committed = Map.tryFind methodToken committedSnapshots
+
+                    let fresh =
+                        match freshSnapshots with
+                        | Some snapshots -> Map.tryFind methodToken snapshots
+                        | None -> None
+
+                    match committed, fresh with
+                    | _, None ->
+                        // The method WAS recompiled but no fresh sequence points are available
+                        // (no PDB analysis, or the fresh body lost its debug information):
+                        // remapping is impossible, fail closed.
+                        results,
+                        $"Active statement in method 0x%08X{methodToken} cannot be remapped: no sequence points are available for the updated method body. Please rebuild."
+                        :: rudeMessages
+                    | committed, fresh ->
+                        match remapActiveStatement statement committed fresh with
+                        | ActiveStatementRemapOutcome.Update update ->
+                            FSharpActiveStatementRemapResult.Remapped update :: results, rudeMessages
+                        | ActiveStatementRemapOutcome.MethodUpToDate ->
+                            FSharpActiveStatementRemapResult.MethodUpToDate statement.ActiveInstruction :: results,
+                            rudeMessages
+                        | ActiveStatementRemapOutcome.Rude message -> results, message :: rudeMessages)
+
+        match rudeMessages with
+        | [] -> Ok(List.rev results)
+        | messages -> Error(List.rev messages)

@@ -49,7 +49,18 @@ type FSharpHotReloadDelta =
       /// is consumed (<see cref="GenerationId"/> is <c>Guid.Empty</c>) and there is nothing to pass
       /// to <c>MetadataUpdater.ApplyUpdate</c>.
       /// </summary>
-      SequencePointUpdates: FSharpSequencePointUpdates list }
+      SequencePointUpdates: FSharpSequencePointUpdates list
+      /// <summary>
+      /// Per-statement remap results for the active statements the host supplied via
+      /// <see cref="M:FSharp.Compiler.CodeAnalysis.FSharpChecker.SetHotReloadActiveStatements"/>
+      /// (mirrors Roslyn's <c>ManagedHotReloadUpdate.ActiveStatements</c>; F# additionally reports
+      /// statements in untouched methods as <c>MethodUpToDate</c>). Statements in methods this
+      /// delta recompiles carry the new source span the debugger should remap the frame to.
+      /// Edits that destroy an active statement (deleting it, or editing the statement a non-leaf
+      /// frame is suspended in) fail the emit with <c>FSharpHotReloadError.UnsupportedEdit</c>
+      /// instead. Empty when no active statements were supplied.
+      /// </summary>
+      ActiveStatementUpdates: FSharpActiveStatementRemapResult list }
 
 [<System.Flags>]
 type FSharpHotReloadCapability =
@@ -176,6 +187,23 @@ type public FSharpChecker =
     /// </summary>
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member UpdateHotReloadCapabilities: capabilities: string seq -> bool
+
+    /// <summary>
+    /// Replaces the debugger-supplied active statements consulted by the next
+    /// <c>EmitHotReloadDelta</c> for the active session (Phase G of the debugger EnC machinery).
+    /// Debugger hosts call this whenever the process reports a break state, passing the active
+    /// instructions (method token + IL offset, with the executing method version), their PDB
+    /// source spans and frame flags; the next emitted delta carries per-statement remap results on
+    /// <see cref="P:FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta.ActiveStatementUpdates"/> and
+    /// fails with <c>UnsupportedEdit</c> when an edit destroys an active statement. The setter
+    /// REPLACES the whole set — pass an empty sequence to clear it (e.g. when the process runs
+    /// free). This is the F#-shaped analog of Roslyn's per-edit-session active-statement fetch
+    /// (<c>IManagedHotReloadService.GetActiveStatementsAsync</c> consumed by
+    /// <c>EmitSolutionUpdate</c>): FCS has no callback seam into the host, so the host pushes the
+    /// break state instead. Returns false when no session is active.
+    /// </summary>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member SetHotReloadActiveStatements: activeStatements: FSharpManagedActiveStatementDebugInfo seq -> bool
 
     /// <summary>Indicates whether a process-wide hot reload session is currently active.</summary>
     member HotReloadSessionActive: bool

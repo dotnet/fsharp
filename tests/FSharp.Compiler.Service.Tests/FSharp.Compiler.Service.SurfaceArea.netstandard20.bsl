@@ -2236,6 +2236,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean HotReloadSessionActive
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean SetHotReloadActiveStatements(System.Collections.Generic.IEnumerable`1[FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean UpdateHotReloadCapabilities(System.Collections.Generic.IEnumerable`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean UsesTransparentCompiler
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_HotReloadSessionActive()
@@ -2351,6 +2352,8 @@ FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Int32 CompareTo(System.Object
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult] ActiveStatementUpdates
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult] get_ActiveStatementUpdates()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo] AddedOrChangedMethods
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo] get_AddedOrChangedMethods()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates] SequencePointUpdates
@@ -2368,7 +2371,7 @@ FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid GenerationId
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid get_BaseGenerationId()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.Guid get_GenerationId()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: System.String ToString()
-FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Void .ctor(Byte[], Byte[], Microsoft.FSharp.Core.FSharpOption`1[System.Byte[]], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo], Microsoft.FSharp.Collections.FSharpList`1[System.ValueTuple`3[System.Int32,System.Int32,System.String]], System.Guid, System.Guid, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates])
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta: Void .ctor(Byte[], Byte[], Microsoft.FSharp.Core.FSharpOption`1[System.Byte[]], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpAddedOrChangedMethodInfo], Microsoft.FSharp.Collections.FSharpList`1[System.ValueTuple`3[System.Int32,System.Int32,System.String]], System.Guid, System.Guid, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult])
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+CompilationFailed: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Item
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+CompilationFailed: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Item()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+DeltaEmissionFailed: System.String Item

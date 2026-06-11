@@ -197,6 +197,16 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     member _.UpdateCapabilities(capabilities: EditAndContinueCapabilities) =
         sessionStore().UpdateCapabilities(capabilities)
 
+    /// <summary>
+    /// Replaces the debugger-supplied active statements consulted by the next emit (Phase G).
+    /// Mirrors Roslyn's per-edit-session active-statement fetch from the debugger
+    /// (<c>IManagedHotReloadService.GetActiveStatementsAsync</c>), inverted to a push: FCS has no
+    /// callback seam into the host, so the host reports the break state before emitting.
+    /// Returns false when no session is active.
+    /// </summary>
+    member _.UpdateActiveStatements(activeStatements: FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo list) =
+        sessionStore().UpdateActiveStatements(activeStatements)
+
     /// <summary>Clears the session, typically when hot reload is disabled or the build finishes.</summary>
     member _.EndSession() =
         sessionStore().ClearBaseline()
@@ -256,6 +266,38 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         File.AppendAllText(path, line)
                     with :? IOException as ex ->
                         eprintfn "[fsharp-hotreload][service] Failed to write trace log: %s" ex.Message
+
+                // Phase G: remap the debugger-supplied active statements against the emitted
+                // delta BEFORE any session state is staged — a rude remap (an edit that destroys
+                // an active statement or changes the statement a non-leaf frame is suspended in)
+                // blocks the whole update, leaving the session at the previous generation.
+                let activeStatementRemap =
+                    let recompiledTokens =
+                        delta.AddedOrChangedMethods
+                        |> List.map (fun info -> info.MethodToken)
+                        |> Set.ofList
+
+                    ActiveStatementAnalysis.remapActiveStatements
+                        session.Baseline.SequencePointSnapshots
+                        delta.ChainedSequencePoints
+                        recompiledTokens
+                        session.ActiveStatements
+
+                match activeStatementRemap with
+                | Error rudeMessages ->
+                    let details = String.concat Environment.NewLine rudeMessages
+
+                    Error(
+                        HotReloadError.UnsupportedEdit(
+                            $"Updating an active statement requires restarting the application.{Environment.NewLine}{details}"
+                        )
+                    )
+                | Ok activeStatementResults ->
+
+                let delta =
+                    { delta with
+                        ActiveStatementUpdates = activeStatementResults }
+
                 let delta =
                     match delta.UpdatedBaseline with
                     | Some updatedBaseline ->

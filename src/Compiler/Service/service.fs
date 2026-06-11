@@ -91,7 +91,8 @@ type FSharpHotReloadDelta =
       UserStringUpdates: struct (int * int * string) list
       GenerationId: Guid
       BaseGenerationId: Guid
-      SequencePointUpdates: FSharpSequencePointUpdates list }
+      SequencePointUpdates: FSharpSequencePointUpdates list
+      ActiveStatementUpdates: FSharpActiveStatementRemapResult list }
 
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
@@ -442,6 +443,9 @@ type internal FSharpHotReloadService
     member _.UpdateCapabilities(capabilities: EditAndContinueCapabilities) =
         editAndContinueService.UpdateCapabilities(capabilities)
 
+    member _.SetActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo seq) =
+        editAndContinueService.UpdateActiveStatements(List.ofSeq activeStatements)
+
     member _.SessionActive = editAndContinueService.IsSessionActive
 
     member _.Capabilities =
@@ -725,7 +729,8 @@ type FSharpChecker
           UserStringUpdates = delta.UserStringUpdates |> List.map (fun (o, n, s) -> struct (o, n, s))
           GenerationId = delta.GenerationId
           BaseGenerationId = delta.BaseGenerationId
-          SequencePointUpdates = delta.SequencePointUpdates }
+          SequencePointUpdates = delta.SequencePointUpdates
+          ActiveStatementUpdates = delta.ActiveStatementUpdates }
 
     let mapHotReloadError =
         function
@@ -1011,6 +1016,9 @@ type FSharpChecker
 
     member _.UpdateHotReloadCapabilities(capabilities: string seq) =
         hotReloadService.UpdateCapabilities(EditAndContinueCapabilities.Parse capabilities)
+
+    member _.SetHotReloadActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo seq) =
+        hotReloadService.SetActiveStatements(activeStatements)
 
     member _.HotReloadSessionActive = hotReloadService.SessionActive
 
