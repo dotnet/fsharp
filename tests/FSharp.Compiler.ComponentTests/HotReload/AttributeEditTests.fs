@@ -1,3 +1,5 @@
+#nowarn "57" // experimental FCS hot reload session API
+
 namespace FSharp.Compiler.ComponentTests.HotReload
 
 // Phase F: custom attribute rows in deltas.
@@ -36,6 +38,12 @@ open FSharp.Test.Utilities
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module AttributeEditTests =
 
+    /// Snapshot of the project's CURRENT on-disk state (snapshots are immutable and
+    /// content-versioned, so each edit needs a fresh one).
+    let private snapshotOf (projectOptions: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
+        |> Async.RunImmediate
+
     /// The full capability set advertised by current CoreCLR runtimes.
     let private fullCapabilities =
         [ "Baseline"
@@ -70,6 +78,8 @@ module AttributeEditTests =
                     enablePartialTypeChecking = false,
                     captureIdentifiersWhenParsing = false
                 )
+
+            use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
             let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-attribute-edits", Guid.NewGuid().ToString("N"))
             Directory.CreateDirectory(projectDir) |> ignore
@@ -128,7 +138,7 @@ module AttributeEditTests =
                     | ValueSome _ -> failwithf "[%s] expected no in-process session after the reset." testLabel
                     | ValueNone -> ()
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
                 | Ok () -> ()
 
@@ -152,16 +162,18 @@ module AttributeEditTests =
                     checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
                     compileOnce "updated" updatedOptions
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "[%s] EmitHotReloadDelta failed: %A" testLabel error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
                     | Ok delta ->
                         Assert.NotEmpty(delta.Metadata)
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        // The runtime applied the update; commit so the next generation
+                        // diffs against this one (the session entity defers commits).
+                        session.Commit()
                         verifyUpdated assembly
             finally
                 try loadContext.Unload() with _ -> ()
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -184,6 +196,8 @@ module AttributeEditTests =
                 enablePartialTypeChecking = false,
                 captureIdentifiersWhenParsing = false
             )
+
+        use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
         let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-attribute-edits", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
@@ -233,7 +247,7 @@ module AttributeEditTests =
 
             compileOnce "baseline" projectOptions
 
-            match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
             | Ok () -> ()
 
@@ -249,11 +263,10 @@ module AttributeEditTests =
 
             compileOnce "updated" updatedOptions
 
-            checker.EmitHotReloadDelta(projectOptions)
+            session.EmitDelta(snapshotOf projectOptions)
             |> Async.RunImmediate
             |> handleResult
         finally
-            try checker.EndHotReloadSession() with _ -> ()
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -266,7 +279,7 @@ module AttributeEditTests =
         =
         emitDeltaAndHandleResult capabilities testLabel baselineSource updatedSource (fun result ->
             match result with
-            | Error error -> failwithf "[%s] EmitHotReloadDelta failed: %A" testLabel error
+            | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
             | Ok delta -> inspect delta)
 
     let private emitDeltaAndExpectUnsupported
@@ -278,7 +291,7 @@ module AttributeEditTests =
         =
         emitDeltaAndHandleResult capabilities testLabel baselineSource updatedSource (fun result ->
             match result with
-            | Ok _ -> failwithf "[%s] expected EmitHotReloadDelta to fail, but it succeeded." testLabel
+            | Ok _ -> failwithf "[%s] expected EmitDelta to fail, but it succeeded." testLabel
             | Error error ->
                 let message = string error
 
@@ -649,7 +662,7 @@ module Library =
                 Assert.True(attr.Value.IsNil))
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects attribute change without ChangeCustomAttributes`` () =
+    let ``EmitDelta rejects attribute change without ChangeCustomAttributes`` () =
         let updated = attributedBaseline.Replace("\"a\"", "\"b\"")
 
         emitDeltaAndExpectUnsupported
@@ -660,7 +673,7 @@ module Library =
             [ "ChangeCustomAttributes" ]
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects attribute change on a property-backed module value`` () =
+    let ``EmitDelta rejects attribute change on a property-backed module value`` () =
         // Module values route their attributes to the Property row, which the delta
         // writer cannot update yet: fail closed instead of applying without the change.
         let baseline =

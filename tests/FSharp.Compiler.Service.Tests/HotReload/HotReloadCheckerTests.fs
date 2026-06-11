@@ -12,6 +12,7 @@ open System.Runtime.Loader
 open Xunit
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.CodeAnalysis.Workspace
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
@@ -459,7 +460,7 @@ type Type =
         with _ -> ()
 
     [<Fact>]
-    let ``StartHotReloadSession and EmitHotReloadDelta produce delta`` () =
+    let ``AddProject and EmitDelta produce delta`` () =
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-checker", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -472,12 +473,14 @@ type Type =
 
         let projectOptions = prepareProjectOptions checker fsPath dllPath baselineSource
 
-        // Build the baseline assembly that StartHotReloadSession will use.
+        // Build the baseline assembly that AddProject will use.
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
+        use session = checker.CreateHotReloadSession()
+
         let startResult =
-            checker.StartHotReloadSession(projectOptions)
+            session.AddProject(createProjectSnapshot projectOptions)
             |> Async.RunImmediate
 
         match startResult with
@@ -491,25 +494,25 @@ type Type =
         compileProject checker projectOptions false
 
         let emitResult =
-            checker.EmitHotReloadDelta(projectOptions)
+            session.EmitDelta(createProjectSnapshot projectOptions)
             |> Async.RunImmediate
 
         match emitResult with
-        | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+        | Error error -> failwithf "EmitDelta failed: %A" error
         | Ok delta ->
             Assert.NotEmpty(delta.Metadata)
             Assert.NotEmpty(delta.IL)
             Assert.NotEmpty(delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
 
         try
             Directory.Delete(projectDir, true)
         with _ -> ()
 
     [<Fact>]
-    let ``StartHotReloadSession replaces existing process-wide session`` () =
+    let ``Starting a second session leaves the first session intact`` () =
+        // The retired compatibility surface replaced the process-wide session on every start;
+        // session entities are independent instances, so a second session for another project
+        // must leave the first session's baseline untouched.
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-checker-single-session", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -545,38 +548,54 @@ type Type =
 
         compileProject checker projectOptions1 true
 
-        match checker.StartHotReloadSession(projectOptions1) |> Async.RunImmediate with
+        use firstSession = checker.CreateHotReloadSession()
+        let firstSnapshot = createProjectSnapshot projectOptions1
+
+        match firstSession.AddProject(firstSnapshot) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start first hot reload session: %A" error
         | Ok () -> ()
 
-        let firstSession =
-            match FSharp.Compiler.HotReloadState.tryGetSession () with
-            | ValueSome session -> session
+        let firstView =
+            match firstSession.TryGetProjectView(firstSnapshot) with
+            | ValueSome view -> view
             | ValueNone -> failwith "Expected the first hot reload session to be active."
 
         compileProject checker projectOptions2 true
 
-        match checker.StartHotReloadSession(projectOptions2) |> Async.RunImmediate with
-        | Error error -> failwithf "Failed to start replacement hot reload session: %A" error
+        use secondSession = checker.CreateHotReloadSession()
+        let secondSnapshot = createProjectSnapshot projectOptions2
+
+        match secondSession.AddProject(secondSnapshot) |> Async.RunImmediate with
+        | Error error -> failwithf "Failed to start second hot reload session: %A" error
         | Ok () -> ()
 
-        let secondSession =
-            match FSharp.Compiler.HotReloadState.tryGetSession () with
-            | ValueSome session -> session
-            | ValueNone -> failwith "Expected replacement hot reload session to be active."
+        let secondView =
+            match secondSession.TryGetProjectView(secondSnapshot) with
+            | ValueSome view -> view
+            | ValueNone -> failwith "Expected second hot reload session to be active."
 
-        Assert.True(checker.HotReloadSessionActive)
-        Assert.NotEqual<Guid>(firstSession.Baseline.ModuleId, secondSession.Baseline.ModuleId)
+        // Distinct projects, distinct baselines; the first session is still alive and
+        // tracks exactly its own project after the second session started.
+        Assert.NotEqual<Guid>(firstView.Baseline.ModuleId, secondView.Baseline.ModuleId)
+        Assert.Equal<FSharpProjectIdentifier list>([ firstSnapshot.Identifier ], firstSession.ProjectIdentifiers)
+        Assert.Equal<FSharpProjectIdentifier list>([ secondSnapshot.Identifier ], secondSession.ProjectIdentifiers)
 
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
+        let firstViewAfter =
+            match firstSession.TryGetProjectView(firstSnapshot) with
+            | ValueSome view -> view
+            | ValueNone -> failwith "Expected the first session to survive the second session's start."
+
+        Assert.Equal<Guid>(firstView.Baseline.ModuleId, firstViewAfter.Baseline.ModuleId)
 
         try
             Directory.Delete(projectDir, true)
         with _ -> ()
 
     [<Fact>]
-    let ``StartHotReloadSession replacement clears pending update from prior session`` () =
+    let ``Pending updates are per session and survive another session's start`` () =
+        // The retired compatibility surface dropped the prior session's pending update when a
+        // new session started. Session entities stage pending updates per instance: another
+        // session starting cannot clear them, and a fresh session starts without any.
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-checker-session-replacement", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -585,12 +604,12 @@ type Type =
         let dllPath1 = Path.Combine(projectDir, "LibraryOne.dll")
         let dllPath2 = Path.Combine(projectDir, "LibraryTwo.dll")
 
-        let sourceOne =
-            """
+        let sourceOne (generation: int) =
+            $"""
 namespace SessionOne
 
 type Type =
-    static member GetValue() = 1
+    static member GetValue() = {generation}
 """
 
         let sourceTwo =
@@ -601,64 +620,72 @@ type Type =
     static member GetValue() = 2
 """
 
-        File.WriteAllText(fsPath1, sourceOne)
+        File.WriteAllText(fsPath1, sourceOne 1)
         File.WriteAllText(fsPath2, sourceTwo)
 
         let checker = createChecker ()
-        let projectOptions1 = prepareProjectOptions checker fsPath1 dllPath1 sourceOne
+        let projectOptions1 = prepareProjectOptions checker fsPath1 dllPath1 (sourceOne 1)
         let projectOptions2 = prepareProjectOptions checker fsPath2 dllPath2 sourceTwo
 
         checker.InvalidateAll()
 
         compileProject checker projectOptions1 true
 
-        match checker.StartHotReloadSession(projectOptions1) |> Async.RunImmediate with
+        use firstSession = checker.CreateHotReloadSession()
+        let firstSnapshot = createProjectSnapshot projectOptions1
+
+        match firstSession.AddProject(firstSnapshot) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start first hot reload session: %A" error
         | Ok () -> ()
 
-        let firstSession =
-            match FSharp.Compiler.HotReloadState.tryGetSession () with
-            | ValueSome session -> session
-            | ValueNone -> failwith "Expected first hot reload session to be active."
+        // Stage a REAL pending update in the first session: emit a delta and do not commit.
+        File.WriteAllText(fsPath1, sourceOne 100)
+        checker.NotifyFileChanged(fsPath1, projectOptions1) |> Async.RunImmediate
+        compileProject checker projectOptions1 false
 
-        let stagedPendingBaseline =
-            { firstSession.Baseline with
-                EncId = Guid.NewGuid()
-                NextGeneration = firstSession.Baseline.NextGeneration + 1 }
+        match firstSession.EmitDelta(createProjectSnapshot projectOptions1) |> Async.RunImmediate with
+        | Error error -> failwithf "Failed to stage a pending update in the first session: %A" error
+        | Ok _ -> ()
 
-        FSharp.Compiler.HotReloadState.updateBaseline stagedPendingBaseline
-
-        let firstSessionWithPending =
-            match FSharp.Compiler.HotReloadState.tryGetSession () with
-            | ValueSome session -> session
+        let firstViewWithPending =
+            match firstSession.TryGetProjectView(firstSnapshot) with
+            | ValueSome view -> view
             | ValueNone -> failwith "Expected first hot reload session to remain active after staging pending update."
 
-        Assert.True(firstSessionWithPending.PendingUpdate.IsSome)
+        Assert.True(firstViewWithPending.PendingUpdate.IsSome)
 
         compileProject checker projectOptions2 true
 
-        match checker.StartHotReloadSession(projectOptions2) |> Async.RunImmediate with
-        | Error error -> failwithf "Failed to start replacement hot reload session: %A" error
+        use secondSession = checker.CreateHotReloadSession()
+        let secondSnapshot = createProjectSnapshot projectOptions2
+
+        match secondSession.AddProject(secondSnapshot) |> Async.RunImmediate with
+        | Error error -> failwithf "Failed to start second hot reload session: %A" error
         | Ok () -> ()
 
-        let replacementSession =
-            match FSharp.Compiler.HotReloadState.tryGetSession () with
-            | ValueSome session -> session
-            | ValueNone -> failwith "Expected replacement hot reload session to be active."
+        let secondView =
+            match secondSession.TryGetProjectView(secondSnapshot) with
+            | ValueSome view -> view
+            | ValueNone -> failwith "Expected second hot reload session to be active."
 
-        Assert.True(checker.HotReloadSessionActive)
-        Assert.NotEqual<Guid>(firstSessionWithPending.Baseline.ModuleId, replacementSession.Baseline.ModuleId)
-        Assert.True(replacementSession.PendingUpdate.IsNone)
+        // The fresh session starts clean...
+        Assert.NotEqual<Guid>(firstViewWithPending.Baseline.ModuleId, secondView.Baseline.ModuleId)
+        Assert.True(secondView.PendingUpdate.IsNone)
 
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
+        // ...and the first session's staged update is still pending (per-session state).
+        let firstViewAfter =
+            match firstSession.TryGetProjectView(firstSnapshot) with
+            | ValueSome view -> view
+            | ValueNone -> failwith "Expected the first session to survive the second session's start."
+
+        Assert.True(firstViewAfter.PendingUpdate.IsSome)
 
         try
             Directory.Delete(projectDir, true)
         with _ -> ()
 
     [<Fact>]
-    let ``StartHotReloadSession and EmitHotReloadDelta accept project snapshots`` () =
+    let ``AddProject and EmitDelta accept pre-built project snapshots`` () =
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-checker-snapshot", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -674,7 +701,9 @@ type Type =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(baselineSnapshot) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(baselineSnapshot) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start hot reload session from snapshot: %A" error
         | Ok () -> ()
 
@@ -684,15 +713,12 @@ type Type =
 
         let updatedSnapshot = createProjectSnapshot projectOptions
 
-        match checker.EmitHotReloadDelta(updatedSnapshot) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for snapshot input: %A" error
+        match session.EmitDelta(updatedSnapshot) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for snapshot input: %A" error
         | Ok delta ->
             Assert.NotEmpty(delta.Metadata)
             Assert.NotEmpty(delta.IL)
             Assert.NotEmpty(delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
 
         try
             Directory.Delete(projectDir, true)
@@ -724,7 +750,9 @@ type Type =
             workspace.Query.GetProjectSnapshot(projectIdentifier)
             |> Option.defaultWith (fun () -> failwith "Expected workspace baseline snapshot.")
 
-        match checker.StartHotReloadSession(baselineSnapshot) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(baselineSnapshot) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start hot reload session from workspace snapshot: %A" error
         | Ok () -> ()
 
@@ -739,15 +767,12 @@ type Type =
             workspace.Query.GetProjectSnapshot(projectIdentifier)
             |> Option.defaultWith (fun () -> failwith "Expected workspace updated snapshot.")
 
-        match checker.EmitHotReloadDelta(updatedSnapshot) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for workspace snapshot input: %A" error
+        match session.EmitDelta(updatedSnapshot) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for workspace snapshot input: %A" error
         | Ok delta ->
             Assert.NotEmpty(delta.Metadata)
             Assert.NotEmpty(delta.IL)
             Assert.NotEmpty(delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
 
         try
             Directory.Delete(projectDir, true)
@@ -883,7 +908,7 @@ type Type =
             with _ -> ()
 
     [<Fact>]
-    let ``StartHotReloadSession accepts short output option`` () =
+    let ``AddProject accepts short output option`` () =
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-short-output", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -899,7 +924,9 @@ type Type =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start hot reload session with -o: output option: %A" error
         | Ok () -> ()
 
@@ -907,23 +934,21 @@ type Type =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Ok delta ->
             Assert.NotEmpty(delta.Metadata)
             Assert.NotEmpty(delta.IL)
         | Error FSharpHotReloadError.MissingOutputPath ->
             failwith "Expected -o: output option to resolve to a valid output path."
         | Error error ->
-            failwithf "EmitHotReloadDelta failed for -o: output option: %A" error
-
-        checker.EndHotReloadSession()
+            failwithf "EmitDelta failed for -o: output option: %A" error
 
         try
             Directory.Delete(projectDir, true)
         with _ -> ()
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects stale output assembly`` () =
+    let ``EmitDelta rejects stale output assembly`` () =
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-stale-output", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -938,7 +963,9 @@ type Type =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -946,13 +973,11 @@ type Type =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
 
         // Intentionally skip recompilation so the output assembly stays stale.
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error (FSharpHotReloadError.DeltaEmissionFailed message) ->
             Assert.Contains("stale build output", message, StringComparison.OrdinalIgnoreCase)
         | Error other -> failwithf "Expected DeltaEmissionFailed for stale output, got %A" other
         | Ok _ -> failwith "Expected stale output detection to reject delta emission."
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -976,7 +1001,9 @@ type Type =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -990,12 +1017,9 @@ type Type =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed after dependency invalidation: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed after dependency invalidation: %A" error
         | Ok delta -> Assert.Contains(getValueToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
 
         try
             Directory.Delete(projectDir, true)
@@ -1047,7 +1071,9 @@ let main _ =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1056,14 +1082,12 @@ let main _ =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for module loop method edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for module loop method edit: %A" error
         | Ok delta ->
             Assert.Contains(messageToken, delta.UpdatedMethods)
             let mainToken = getMethodToken dllPath "LoopDemo" "main"
             Assert.DoesNotContain(mainToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -1121,7 +1145,9 @@ let main _ =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1130,14 +1156,12 @@ let main _ =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for property loop edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for property loop edit: %A" error
         | Ok delta ->
             Assert.Contains(getterToken, delta.UpdatedMethods)
             let mainToken = getMethodToken dllPath "LoopProperties" "main"
             Assert.DoesNotContain(mainToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -1177,7 +1201,9 @@ type Calculator() =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1187,13 +1213,11 @@ type Calculator() =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for overload edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for overload edit: %A" error
         | Ok delta ->
             Assert.Contains(twoArgToken, delta.UpdatedMethods)
             Assert.DoesNotContain(oneArgToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -1233,7 +1257,9 @@ type Calculator() =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1243,13 +1269,11 @@ type Calculator() =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for same-arity overload edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for same-arity overload edit: %A" error
         | Ok delta ->
             Assert.Contains(stringOverloadToken, delta.UpdatedMethods)
             Assert.DoesNotContain(intOverloadToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -1291,7 +1315,9 @@ type Calculator<'T>() =
 
         // Body-editing a member of a generic type requires the GenericUpdateMethod
         // runtime capability (Phase E gating, Roslyn parity).
-        match checker.StartHotReloadSession(projectOptions, capabilities = [ "GenericUpdateMethod" ]) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession(capabilities = [ "GenericUpdateMethod" ])
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1301,13 +1327,11 @@ type Calculator<'T>() =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for typar overload edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for typar overload edit: %A" error
         | Ok delta ->
             Assert.Contains(genericOverloadToken, delta.UpdatedMethods)
             Assert.DoesNotContain(stringOverloadToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -1349,7 +1373,9 @@ type Calculator() =
 
         // Body-editing a generic method requires the GenericUpdateMethod runtime
         // capability (Phase E gating, Roslyn parity).
-        match checker.StartHotReloadSession(projectOptions, capabilities = [ "GenericUpdateMethod" ]) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession(capabilities = [ "GenericUpdateMethod" ])
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1363,13 +1389,11 @@ type Calculator() =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for generic arity overload edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for generic arity overload edit: %A" error
         | Ok delta ->
             Assert.Contains(genericOverloadToken, delta.UpdatedMethods)
             Assert.DoesNotContain(nonGenericOverloadToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -1416,7 +1440,9 @@ module Demo =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1425,8 +1451,8 @@ module Demo =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for async method edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for async method edit: %A" error
         | Ok delta ->
             Assert.Contains(getMessageToken, delta.UpdatedMethods)
 
@@ -1438,8 +1464,6 @@ module Demo =
             Assert.True(
                 updatedMethodDisplays |> List.exists (fun methodDisplay -> methodDisplay.Contains("@hotreload")),
                 $"Expected synthesized helper method update for async edit. Updated methods: {updatedMethodDisplayText}")
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -1499,7 +1523,9 @@ let view name =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1508,11 +1534,9 @@ let view name =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for computation-expression usage edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for computation-expression usage edit: %A" error
         | Ok delta -> Assert.Contains(viewToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -1574,7 +1598,9 @@ let view name =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1583,10 +1609,10 @@ let view name =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error ->
             failwithf
-                "EmitHotReloadDelta failed for computation-expression transformed-helper edit: %A"
+                "EmitDelta failed for computation-expression transformed-helper edit: %A"
                 error
         | Ok delta ->
             Assert.Contains(viewToken, delta.UpdatedMethods)
@@ -1599,8 +1625,6 @@ let view name =
             Assert.True(
                 updatedMethodDisplays |> List.exists (fun methodDisplay -> methodDisplay.Contains("@hotreload")),
                 $"Expected synthesized helper method update for CE local-lambda edit. Updated methods: {updatedMethodDisplayText}")
-
-        checker.EndHotReloadSession()
 
         try
             Directory.Delete(projectDir, true)
@@ -1652,7 +1676,9 @@ module Demo =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1661,12 +1687,9 @@ module Demo =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for type-provider erased usage edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for type-provider erased usage edit: %A" error
         | Ok delta -> Assert.Contains(renderToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
 
         try
             Directory.Delete(projectDir, true)
@@ -1716,7 +1739,9 @@ module Demo =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1724,15 +1749,12 @@ module Demo =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Ok _ ->
             failwith "Expected no semantic delta when only generative static argument changes and consumed IL is unchanged."
         | Error FSharpHotReloadError.NoChanges -> ()
         | Error error ->
             failwithf "Expected NoChanges for generative static-argument update, got: %A" error
-
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
 
         try
             Directory.Delete(projectDir, true)
@@ -1782,7 +1804,9 @@ module Demo =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1791,12 +1815,9 @@ module Demo =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-        | Error error -> failwithf "EmitHotReloadDelta failed for type-provider generative usage edit: %A" error
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+        | Error error -> failwithf "EmitDelta failed for type-provider generative usage edit: %A" error
         | Ok delta -> Assert.Contains(createToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
 
         try
             Directory.Delete(projectDir, true)
@@ -1857,7 +1878,9 @@ module Demo =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1873,15 +1896,12 @@ module Demo =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error ->
             failwithf
-                "EmitHotReloadDelta failed after type-provider dependency invalidation: %A"
+                "EmitDelta failed after type-provider dependency invalidation: %A"
                 error
         | Ok delta -> Assert.Contains(renderToken, delta.UpdatedMethods)
-
-        checker.EndHotReloadSession()
-        Assert.False(checker.HotReloadSessionActive)
 
         try
             Directory.Delete(projectDir, true)
@@ -1910,7 +1930,7 @@ type Type =
 """
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects signature change`` () =
+    let ``EmitDelta rejects signature change`` () =
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-sig-change", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -1925,7 +1945,9 @@ type Type =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1934,15 +1956,13 @@ type Type =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        let emitResult = checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate
+        let emitResult = session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate
 
         match emitResult with
         | Ok _ -> failwith "Expected signature change to be rejected"
         | Error (FSharpHotReloadError.UnsupportedEdit msg) ->
             Assert.Contains("Rude edits", msg, StringComparison.OrdinalIgnoreCase)
         | Error other -> failwithf "Expected UnsupportedEdit error, got: %A" other
-
-        checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()
 
     let private recordBaseline =
@@ -1966,7 +1986,7 @@ module Helpers =
 """
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects record field addition`` () =
+    let ``EmitDelta rejects record field addition`` () =
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-record-field", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -1981,7 +2001,9 @@ module Helpers =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -1990,7 +2012,7 @@ module Helpers =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        let emitResult = checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate
+        let emitResult = session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate
 
         match emitResult with
         | Ok _ -> failwith "Expected record field addition to be rejected"
@@ -2001,8 +2023,6 @@ module Helpers =
                 msg.Contains("Structural", StringComparison.OrdinalIgnoreCase),
                 $"Expected rude/structural edit message, got: {msg}")
         | Error other -> failwithf "Expected UnsupportedEdit error, got: %A" other
-
-        checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()
 
     let private moduleBaseline =
@@ -2023,7 +2043,7 @@ module Helpers =
 """
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects new function addition`` () =
+    let ``EmitDelta rejects new function addition`` () =
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-func-add", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -2038,7 +2058,9 @@ module Helpers =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -2047,7 +2069,7 @@ module Helpers =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        let emitResult = checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate
+        let emitResult = session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate
 
         match emitResult with
         | Ok _ -> failwith "Expected new function addition to be rejected"
@@ -2058,8 +2080,6 @@ module Helpers =
                 msg.Contains("Structural", StringComparison.OrdinalIgnoreCase),
                 $"Expected rude/structural edit message, got: {msg}")
         | Error other -> failwithf "Expected UnsupportedEdit error, got: %A" other
-
-        checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()
 
     let private unionBaseline =
@@ -2095,7 +2115,7 @@ module Shapes =
 """
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects union case addition`` () =
+    let ``EmitDelta rejects union case addition`` () =
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-union-case", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -2110,7 +2130,9 @@ module Shapes =
         checker.InvalidateAll()
         compileProject checker projectOptions true
 
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -2119,7 +2141,7 @@ module Shapes =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        let emitResult = checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate
+        let emitResult = session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate
 
         match emitResult with
         | Ok _ -> failwith "Expected union case addition to be rejected"
@@ -2130,8 +2152,6 @@ module Shapes =
                 msg.Contains("Structural", StringComparison.OrdinalIgnoreCase),
                 $"Expected rude/structural edit message, got: {msg}")
         | Error other -> failwithf "Expected UnsupportedEdit error, got: %A" other
-
-        checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()
 
     let private moduleValueAddBaseline =
@@ -2150,7 +2170,7 @@ let mutable newCounter = 0
 """
 
     [<Fact>]
-    let ``EmitHotReloadDelta emits added module value as static field delta`` () =
+    let ``EmitDelta emits added module value as static field delta`` () =
         // Phase B1b: an added module-level value lowers to a static backing field on the
         // startup-code class, get_/set_ accessor methods on the module type, and a startup
         // constructor that initializes the field. The delta must append the Field row using
@@ -2176,7 +2196,9 @@ let mutable newCounter = 0
               "AddStaticFieldToExistingType"
               "AddInstanceFieldToExistingType" ]
 
-        match checker.StartHotReloadSession(projectOptions, capabilities = fullCapabilities) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession(capabilities = fullCapabilities)
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -2184,7 +2206,7 @@ let mutable newCounter = 0
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        let emitResult = checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate
+        let emitResult = session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate
 
         match emitResult with
         | Error error -> failwithf "Expected module value addition to emit a delta, got: %A" error
@@ -2239,8 +2261,6 @@ let mutable newCounter = 0
             // The Field row (and no TypeDef row) must be present in EncMap.
             let encMap = reader.GetEditAndContinueMapEntries() |> Seq.toArray
             Assert.Contains(encMap, fun handle -> handle.Kind = HandleKind.FieldDefinition)
-
-        checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()
 
     let private capabilityRefreshBaseline =
@@ -2262,7 +2282,7 @@ let transform (values: int list) =
 """
 
     [<Fact>]
-    let ``UpdateHotReloadCapabilities widens classification without restarting the session`` () =
+    let ``UpdateCapabilities widens classification without restarting the session`` () =
         // Mirrors the dotnet-watch sequence: the session is prestarted before the running
         // process reports its capabilities, an edit arrives and is rejected as exceeding the
         // (baseline-only) capability set, the host then learns the real capabilities and
@@ -2283,7 +2303,9 @@ let transform (values: int list) =
         compileProject checker projectOptions true
 
         // Prestart semantics: no capabilities known yet.
-        match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession()
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -2294,29 +2316,24 @@ let transform (values: int list) =
         // The added List.map lambda needs NewTypeDefinition (its closure class); baseline-only
         // must reject it. The int->int instantiation already exists in the baseline, so the
         // post-update emission does not require TypeSpec row emission (a separate gap).
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Ok _ -> failwith "Expected the added lambda to be rejected under baseline-only capabilities"
         | Error (FSharpHotReloadError.UnsupportedEdit msg) ->
             Assert.Contains("NewTypeDefinition", msg)
         | Error other -> failwithf "Expected UnsupportedEdit, got: %A" other
 
         // The running process reports its real capabilities; the live session widens in place.
-        let updated =
-            checker.UpdateHotReloadCapabilities(
-                [ "Baseline"
-                  "AddMethodToExistingType"
-                  "AddStaticFieldToExistingType"
-                  "AddInstanceFieldToExistingType"
-                  "NewTypeDefinition" ])
-
-        Assert.True(updated, "Expected an active session to accept the capability update")
+        session.UpdateCapabilities(
+            [ "Baseline"
+              "AddMethodToExistingType"
+              "AddStaticFieldToExistingType"
+              "AddInstanceFieldToExistingType"
+              "NewTypeDefinition" ])
 
         // The same edit now emits a delta.
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Ok delta -> Assert.NotEmpty(delta.Metadata)
         | Error error -> failwithf "Expected the added lambda to emit after the capability update, got: %A" error
-
-        checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()
 
     // Variant of the capability-refresh scenario where the added lambda is a List.filter
@@ -2334,7 +2351,7 @@ let transform (values: int list) =
 """
 
     [<Fact>]
-    let ``EmitHotReloadDelta emits TypeSpec rows for an added lambda with a new generic instantiation`` () =
+    let ``EmitDelta emits TypeSpec rows for an added lambda with a new generic instantiation`` () =
         let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-typespec-add", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
@@ -2356,7 +2373,9 @@ let transform (values: int list) =
               "AddInstanceFieldToExistingType"
               "NewTypeDefinition" ]
 
-        match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+        use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+        match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Failed to start session: %A" error
         | Ok () -> ()
 
@@ -2368,7 +2387,7 @@ let transform (values: int list) =
         checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
         compileProject checker projectOptions false
 
-        match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+        match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Error error -> failwithf "Expected the new-instantiation lambda to emit a delta, got: %A" error
         | Ok delta ->
             Assert.NotEmpty(delta.Metadata)
@@ -2395,6 +2414,4 @@ let transform (values: int list) =
 
             for entry in typeSpecAdds do
                 Assert.Contains(encMap, fun handle -> handle = entry.Handle)
-
-        checker.EndHotReloadSession()
         try Directory.Delete(projectDir, true) with _ -> ()

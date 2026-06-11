@@ -1,3 +1,5 @@
+#nowarn "57" // experimental FCS hot reload session API
+
 namespace FSharp.Compiler.ComponentTests.HotReload
 
 // Phase E: generic method and generic-type-member edits.
@@ -33,6 +35,12 @@ open FSharp.Test.Utilities
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module GenericEditTests =
+
+    /// Snapshot of the project's CURRENT on-disk state (snapshots are immutable and
+    /// content-versioned, so each edit needs a fresh one).
+    let private snapshotOf (projectOptions: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
+        |> Async.RunImmediate
 
     /// The full capability set advertised by current CoreCLR runtimes, including the
     /// generic-edit capabilities (MetadataUpdater.GetCapabilities()).
@@ -76,6 +84,8 @@ module GenericEditTests =
                     enablePartialTypeChecking = false,
                     captureIdentifiersWhenParsing = false
                 )
+
+            use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
             let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-generic-edits", Guid.NewGuid().ToString("N"))
             Directory.CreateDirectory(projectDir) |> ignore
@@ -137,7 +147,7 @@ module GenericEditTests =
                     | ValueSome _ -> failwithf "[%s] expected no in-process session after the reset." testLabel
                     | ValueNone -> ()
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
                 | Ok () -> ()
 
@@ -161,16 +171,18 @@ module GenericEditTests =
                     checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
                     compileOnce "updated" updatedOptions
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "[%s] EmitHotReloadDelta failed: %A" testLabel error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
                     | Ok delta ->
                         Assert.NotEmpty(delta.Metadata)
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        // The runtime applied the update; commit so the next generation
+                        // diffs against this one (the session entity defers commits).
+                        session.Commit()
                         verifyUpdated assembly
             finally
                 try loadContext.Unload() with _ -> ()
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -178,7 +190,7 @@ module GenericEditTests =
         applyGenerationsAndVerifyCore false capabilities testLabel baselineSource verifyBaseline generations
 
     /// Compiles `baselineSource`, starts a session with the given capabilities, applies
-    /// `updatedSource` and hands the EmitHotReloadDelta result to `handleResult`.
+    /// `updatedSource` and hands the EmitDelta result to `handleResult`.
     let private emitDeltaAndHandleResult
         (capabilities: string list)
         (testLabel: string)
@@ -195,6 +207,8 @@ module GenericEditTests =
                 enablePartialTypeChecking = false,
                 captureIdentifiersWhenParsing = false
             )
+
+        use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
         let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-generic-edits", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
@@ -244,7 +258,7 @@ module GenericEditTests =
 
             compileOnce "baseline" projectOptions
 
-            match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
             | Ok () -> ()
 
@@ -260,15 +274,14 @@ module GenericEditTests =
 
             compileOnce "updated" updatedOptions
 
-            checker.EmitHotReloadDelta(projectOptions)
+            session.EmitDelta(snapshotOf projectOptions)
             |> Async.RunImmediate
             |> handleResult
         finally
-            try checker.EndHotReloadSession() with _ -> ()
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
-    /// Asserts EmitHotReloadDelta fails with a message containing every fragment of
+    /// Asserts EmitDelta fails with a message containing every fragment of
     /// `expectedMessageParts`.
     let private emitDeltaAndExpectUnsupported
         (capabilities: string list)
@@ -279,14 +292,14 @@ module GenericEditTests =
         =
         emitDeltaAndHandleResult capabilities testLabel baselineSource updatedSource (fun result ->
             match result with
-            | Ok _ -> failwithf "[%s] expected EmitHotReloadDelta to fail, but it succeeded." testLabel
+            | Ok _ -> failwithf "[%s] expected EmitDelta to fail, but it succeeded." testLabel
             | Error error ->
                 let message = string error
 
                 for part in expectedMessageParts do
                     Assert.Contains(part, message))
 
-    /// Asserts EmitHotReloadDelta succeeds and hands the delta to `inspect`.
+    /// Asserts EmitDelta succeeds and hands the delta to `inspect`.
     let private emitDeltaAndInspect
         (capabilities: string list)
         (testLabel: string)
@@ -296,7 +309,7 @@ module GenericEditTests =
         =
         emitDeltaAndHandleResult capabilities testLabel baselineSource updatedSource (fun result ->
             match result with
-            | Error error -> failwithf "[%s] EmitHotReloadDelta failed: %A" testLabel error
+            | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
             | Ok delta -> inspect delta)
 
     // -----------------------------------------------------------------------------
@@ -585,7 +598,7 @@ module Lib =
                 Assert.Equal(0, reader.GetTableRowCount(TableIndex.GenericParam)))
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects added generic function without GenericAddMethodToExistingType`` () =
+    let ``EmitDelta rejects added generic function without GenericAddMethodToExistingType`` () =
         let updated =
             """
 namespace Sample
@@ -642,7 +655,7 @@ module Lib =
                   Assert.Equal("disposed", forStream.Invoke(null, [| box stream |]) :?> string)) ]
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects generic body edit without GenericUpdateMethod capability`` () =
+    let ``EmitDelta rejects generic body edit without GenericUpdateMethod capability`` () =
         // Roslyn parity: updating a generic method requires the GenericUpdateMethod
         // runtime capability; a baseline-only session reports the rude edit naming it.
         let updated = genericFunctionBaseline.Replace("Hello ", "Welcome ")

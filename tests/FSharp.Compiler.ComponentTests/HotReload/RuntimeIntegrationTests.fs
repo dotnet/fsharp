@@ -1,3 +1,5 @@
+#nowarn "57" // experimental FCS hot reload session API
+
 namespace FSharp.Compiler.ComponentTests.HotReload
 
 open System
@@ -35,6 +37,12 @@ open FSharp.Compiler.ComponentTests.HotReload.TestHelpers
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module RuntimeIntegrationTests =
+
+    /// Snapshot of the project's CURRENT on-disk state (snapshots are immutable and
+    /// content-versioned, so each edit needs a fresh one).
+    let private snapshotOf (projectOptions: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
+        |> Async.RunImmediate
 
     let private reflectionFlags =
         BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public
@@ -529,7 +537,9 @@ let transform (values: int list) =
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
 
                 // Start hot reload session
-                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession()
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -567,9 +577,12 @@ let transform (values: int list) =
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
                 // Emit delta
-                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
+                    // The runtime is about to apply this update; commit immediately, matching
+                    // the retired checker surface's auto-commit semantics.
+                    session.Commit()
                     Assert.NotEmpty(delta.Metadata)
                     Assert.NotEmpty(delta.IL)
 
@@ -593,7 +606,6 @@ let transform (values: int list) =
                     printfn "[applyupdate-test] SUCCESS: value changed from %d to %d" beforeValue afterValue
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -693,7 +705,9 @@ let extra () = 99
                 let capabilities =
                     [ "Baseline"; "AddMethodToExistingType"; "AddStaticFieldToExistingType" ]
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -724,9 +738,12 @@ let extra () = 99
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
+                    // The runtime is about to apply this update; commit immediately, matching
+                    // the retired checker surface's auto-commit semantics.
+                    session.Commit()
                     let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
 
                     try
@@ -742,7 +759,6 @@ let extra () = 99
                     Assert.Equal(99, extraMethod.Invoke(null, [||]) :?> int)
                     printfn "[methodadd-test] SUCCESS: added module function invocable after ApplyUpdate"
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -813,7 +829,9 @@ let extra () = 99
                 let capabilities =
                     [ "Baseline"; "AddMethodToExistingType"; "AddStaticFieldToExistingType" ]
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -845,9 +863,12 @@ let extra () = 99
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
+                    // The runtime is about to apply this update; commit immediately, matching
+                    // the retired checker surface's auto-commit semantics.
+                    session.Commit()
                     Assert.NotEmpty(delta.Metadata)
                     Assert.NotEmpty(delta.IL)
 
@@ -907,9 +928,12 @@ let extra () = 99
                     let errors3 = compileDiagnostics3 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors3.Length > 0 then failwithf "Second update compilation failed: %A" (errors3 |> Array.map (fun d -> d.Message))
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "EmitHotReloadDelta (generation 2) failed: %A" error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "EmitDelta (generation 2) failed: %A" error
                     | Ok delta2 ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes2 = delta2.Pdb |> Option.defaultValue Array.empty
 
                         try
@@ -939,7 +963,6 @@ let extra () = 99
                         Assert.Equal(7, getter.Invoke(null, [||]) :?> int)
                         printfn "[fieldadd-test] SUCCESS: second module value readable/writable after generation 2"
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -1029,12 +1052,12 @@ type Type =
                 if baselineErrors.Length > 0 then
                     failwithf "[%s] baseline compilation failed: %A" testLabel (baselineErrors |> Array.map (fun d -> d.Message))
 
-                let sessionStart =
+                use session =
                     match capabilities with
-                    | Some capabilities -> checker.StartHotReloadSession(projectOptions, capabilities = capabilities)
-                    | None -> checker.StartHotReloadSession(projectOptions)
+                    | Some capabilities -> checker.CreateHotReloadSession(capabilities = capabilities)
+                    | None -> checker.CreateHotReloadSession()
 
-                match sessionStart |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
                 | Ok () -> ()
 
@@ -1071,9 +1094,12 @@ type Type =
                 if updateErrors.Length > 0 then
                     failwithf "[%s] updated compilation failed: %A" testLabel (updateErrors |> Array.map (fun d -> d.Message))
 
-                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                | Error error -> failwithf "[%s] EmitHotReloadDelta failed: %A" testLabel error
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
                 | Ok delta ->
+                    // The runtime is about to apply this update; commit immediately, matching
+                    // the retired checker surface's auto-commit semantics.
+                    session.Commit()
                     Assert.NotEmpty(delta.Metadata)
                     Assert.NotEmpty(delta.IL)
 
@@ -1085,7 +1111,6 @@ type Type =
 
             finally
                 try loadContext.Unload() with _ -> ()
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -1397,7 +1422,9 @@ type Type =
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
 
                 // Start hot reload session
-                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession()
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -1438,9 +1465,12 @@ type Type =
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
                     // Emit delta
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         printfn "[multigen-userstring] Gen %d: metadata=%d IL=%d PDB=%d" gen delta.Metadata.Length delta.IL.Length pdbBytes.Length
 
@@ -1463,7 +1493,6 @@ type Type =
                 printfn "[multigen-userstring] SUCCESS: All 3 generations applied correctly"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -1628,7 +1657,9 @@ type Type =
             if baselineErrors.Length > 0 then
                 failwithf "baseline compilation failed: %A" (baselineErrors |> Array.map (fun d -> d.Message))
 
-            match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "failed to start hot reload session: %A" error
             | Ok () -> ()
 
@@ -1728,9 +1759,12 @@ type Type =
             if updateErrors.Length > 0 then
                 failwithf "updated compilation failed: %A" (updateErrors |> Array.map (fun d -> d.Message))
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-            | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
+                // The runtime is about to apply this update; commit immediately, matching
+                // the retired checker surface's auto-commit semantics.
+                session.Commit()
                 Assert.NotEmpty(delta.Metadata)
                 Assert.NotEmpty(delta.IL)
 
@@ -1821,7 +1855,6 @@ type Type =
 
         finally
             try loadContext.Unload() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -1937,7 +1970,9 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 let capabilities =
                     [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -1976,9 +2011,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         printfn "[added-lambda] Gen %d: metadata=%d IL=%d PDB=%d" gen delta.Metadata.Length delta.IL.Length pdbBytes.Length
 
@@ -2102,12 +2140,11 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 printfn "[added-lambda] SUCCESS: closure addition + in-place follow-up edit applied"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects added lambda without NewTypeDefinition capability`` () =
+    let ``EmitDelta rejects added lambda without NewTypeDefinition capability`` () =
         // Negative gate for Phase C4: a capability-less session (BaselineOnly) must report
         // the addition as NotSupportedByRuntime naming the missing capability, never emit.
         let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
@@ -2165,7 +2202,9 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
 
                 // No capabilities negotiated: the session defaults to baseline-only.
-                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession()
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -2186,7 +2225,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Ok _ -> failwith "Expected the added lambda to be rejected without the NewTypeDefinition capability."
                 | Error (FSharpHotReloadError.UnsupportedEdit message) ->
                     Assert.Contains("NewTypeDefinition", message)
@@ -2195,7 +2234,6 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 | Error other -> failwithf "Expected UnsupportedEdit, got %A" other
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2311,7 +2349,9 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 let capabilities =
                     [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -2349,9 +2389,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         printfn "[typespec-add] Gen %d: metadata=%d IL=%d PDB=%d" gen delta.Metadata.Length delta.IL.Length pdbBytes.Length
 
@@ -2433,7 +2476,6 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 printfn "[typespec-add] SUCCESS: new generic instantiations applied across two generations"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2519,26 +2561,28 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 let capabilities =
                     [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
                 | Ok () -> ()
 
                 // Direct reconstruction evidence: the disk-started session carries the
                 // chain -> name tables re-derived from the CDI occurrence keys, naming
                 // both baseline occurrences with the generation-0 derived names.
-                let session =
-                    match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
-                    | ValueSome session -> session
+                let sessionView =
+                    match session.TryGetProjectView(snapshotOf projectOptions) with
+                    | ValueSome view -> view
                     | ValueNone -> failwith "Expected the disk-started session to be active."
 
                 let reconstructedNames =
-                    session.Baseline.EncClosureNames
+                    sessionView.Baseline.EncClosureNames
                     |> Map.toList
                     |> List.collect (fun (_, table) -> table |> Map.toList |> List.map snd)
                     |> Set.ofList
 
                 Assert.False(
-                    Map.isEmpty session.Baseline.EncClosureNames,
+                    Map.isEmpty sessionView.Baseline.EncClosureNames,
                     "Disk-started session must reconstruct closure-name tables from the baseline CDI."
                 )
 
@@ -2586,9 +2630,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
                         Assert.Equal(expectedValue, probe.Invoke(null, [||]) :?> int)
@@ -2643,7 +2690,6 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 printfn "[disk-start] SUCCESS: CDI-reconstructed names + cross-process closure addition applied"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2733,19 +2779,21 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 // Process boundary: disk artifacts only from here on.
                 FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
 
-                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession()
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
                 | Ok () -> ()
 
                 // The disk-started session reconstructed tables for all THREE baseline
                 // occurrences.
-                let session =
-                    match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
-                    | ValueSome session -> session
+                let sessionView =
+                    match session.TryGetProjectView(snapshotOf projectOptions) with
+                    | ValueSome view -> view
                     | ValueNone -> failwith "Expected the disk-started session to be active."
 
                 let reconstructedNames =
-                    session.Baseline.EncClosureNames
+                    sessionView.Baseline.EncClosureNames
                     |> Map.toList
                     |> List.collect (fun (_, table) -> table |> Map.toList |> List.map snd)
                     |> List.filter (fun name -> name.StartsWith("transform@", StringComparison.Ordinal))
@@ -2781,9 +2829,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
                         Assert.Equal(expectedValue, probe.Invoke(null, [||]) :?> int)
@@ -2816,7 +2867,6 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 printfn "[disk-removal] SUCCESS: cross-process lambda removal + survivor edit applied"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2904,13 +2954,15 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
             // output assembly.
             FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
 
-            match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
             | Ok () -> ()
 
             let diskStartedTables =
-                match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
-                | ValueSome session -> session.Baseline.EncClosureNames
+                match session.TryGetProjectView(snapshotOf projectOptions) with
+                | ValueSome view -> view.Baseline.EncClosureNames
                 | ValueNone -> failwith "Expected the disk-started session to be active."
 
             Assert.Equal<Map<int, Map<int list, string>>>(inProcessTables, diskStartedTables)
@@ -2928,7 +2980,6 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
             for chain, name in nestedEntries do
                 Assert.Contains($"""@hotreload#g0_o{chain |> List.map string |> String.concat "_"}""", name)
         finally
-            try checker.EndHotReloadSession() with _ -> ()
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2994,7 +3045,9 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
 
                 // Removed-only edits need no capabilities beyond baseline.
-                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession()
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -3027,9 +3080,12 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
+                    // The runtime is about to apply this update; commit immediately, matching
+                    // the retired checker surface's auto-commit semantics.
+                    session.Commit()
                     // No new types: the removed lambda's baseline closure class stays, unused.
                     let encLog =
                         use provider =
@@ -3053,7 +3109,6 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                     printfn "[removed-lambda] SUCCESS: lambda removal applied as plain body update"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -3157,7 +3212,9 @@ type Counter() =
                 let capabilities =
                     [ "Baseline"; "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -3199,9 +3256,12 @@ type Counter() =
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         printfn "[instancefield] Gen %d: metadata=%d IL=%d PDB=%d" gen delta.Metadata.Length delta.IL.Length pdbBytes.Length
 
@@ -3272,7 +3332,6 @@ type Counter() =
                 printfn "[instancefield] SUCCESS gen 2: chained second instance field"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -3367,7 +3426,9 @@ type Holder() =
 
                 let capabilities = [ "Baseline"; "AddInstanceFieldToExistingType" ]
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -3402,9 +3463,12 @@ type Holder() =
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
 
                         match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DUMP_DIR") with
@@ -3454,7 +3518,6 @@ type Holder() =
                 printfn "[defaultvaluefield] SUCCESS: field-only delta applied, state visible to gen-2 body"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -3528,7 +3591,9 @@ type Holder() =
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -3557,9 +3622,12 @@ type Holder() =
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         printfn "[%s] Gen %d: metadata=%d IL=%d PDB=%d" projectPrefix gen delta.Metadata.Length delta.IL.Length pdbBytes.Length
 
@@ -3581,7 +3649,6 @@ type Holder() =
 
                 action assembly applyGeneration
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -4356,7 +4423,9 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                 let capabilities =
                     [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
                 | Ok () -> ()
 
@@ -4379,9 +4448,12 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                     File.WriteAllBytes(dllPath, rebuiltDll)
                     File.WriteAllBytes(pdbPath, rebuiltPdb)
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
 
@@ -4441,7 +4513,6 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                 printfn "[force-rebuild] SUCCESS: gen-2 edit of a closure added over a force-rebuilt baseline applied and ran"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -4454,7 +4525,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
     //     resume-point state numbers are assigned positionally by the lowering.
     // -----------------------------------------------------------------------------
 
-    /// Runs baseline -> session -> edit -> EmitHotReloadDelta and asserts the delta is
+    /// Runs baseline -> session -> edit -> EmitDelta and asserts the delta is
     /// REJECTED, handing the UnsupportedEdit message to the caller for assertions.
     let private assertEmitRejectedWithMessage
         (testLabel: string)
@@ -4523,7 +4594,9 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                   "AddInstanceFieldToExistingType"
                   "NewTypeDefinition" ]
 
-            match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+            use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
             | Ok () -> ()
 
@@ -4545,13 +4618,12 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
             if errors2.Length > 0 then
                 failwithf "[%s] update compilation failed: %A" testLabel (errors2 |> Array.map (fun d -> d.Message))
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
             | Ok _ -> failwithf "[%s] expected the edit to be rejected, but a delta was emitted." testLabel
             | Error (FSharpHotReloadError.UnsupportedEdit message) -> assertMessage message
             | Error other -> failwithf "[%s] expected UnsupportedEdit, got %A" testLabel other
 
         finally
-            try checker.EndHotReloadSession() with _ -> ()
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -4583,7 +4655,7 @@ type Type =
             "Welcome, watch"
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects task await addition as a state machine shape change`` () =
+    let ``EmitDelta rejects task await addition as a state machine shape change`` () =
         // A new `let!` is a new resume point AND a new awaiter struct field; struct
         // layouts are immutable under hot reload (C# parity: ChangingStateMachineShape).
         // Before Phase D classification, this delta was emitted and the patched method
@@ -4603,7 +4675,7 @@ type Type =
                 Assert.Contains("state-machine", message))
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects task await reorder as a state machine shape change`` () =
+    let ``EmitDelta rejects task await reorder as a state machine shape change`` () =
         // Same resume-point count, but state numbers are positional: an in-flight frame
         // suspended at state 1 would resume into the OTHER await's continuation.
         let updated =
@@ -4681,7 +4753,7 @@ type Type =
         applySingleStringUpdateAndAssertRuntimeResult "async-gains-trywith" baseline updated "Hello, watch" "Welcome, watch"
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects async added bind with a precise closure-chain message`` () =
+    let ``EmitDelta rejects async added bind with a precise closure-chain message`` () =
         // async lowers to closure CHAINS whose classes outnumber the C1 lambda
         // occurrences (inlined AsyncPrimitives internals) and carry legacy `-N` names:
         // a structural CE change shifts the numbering, so the synthesized-type mapping
@@ -4799,7 +4871,9 @@ type Type =
                 // baseline inputs from here on.
                 FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
 
-                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession()
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
                 | Ok () -> ()
 
@@ -4830,16 +4904,18 @@ type Type =
                 let errors2 = compileDiagnostics2 |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors2.Length > 0 then failwithf "Update compilation failed: %A" (errors2 |> Array.map (fun d -> d.Message))
 
-                match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
+                    // The runtime is about to apply this update; commit immediately, matching
+                    // the retired checker surface's auto-commit semantics.
+                    session.Commit()
                     let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                     MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
 
                     Assert.Equal("Welcome, watch", method.Invoke(null, [||]) :?> string)
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -4964,7 +5040,9 @@ type Type =
                 let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                 if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
 
-                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                use session = checker.CreateHotReloadSession()
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "Failed to start hot reload session: %A" error
                 | Ok () -> ()
 
@@ -4997,9 +5075,12 @@ type Type =
                     let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
                     if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitDelta failed: %A" gen error
                     | Ok delta ->
+                        // The runtime is about to apply this update; commit immediately, matching
+                        // the retired checker surface's auto-commit semantics.
+                        session.Commit()
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
                         Assert.Equal(expected, method.Invoke(null, [||]) :?> string)
@@ -5009,6 +5090,5 @@ type Type =
                 applyGeneration 3 (sourceFor "Hi" "world") "Hi, world"
 
             finally
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()

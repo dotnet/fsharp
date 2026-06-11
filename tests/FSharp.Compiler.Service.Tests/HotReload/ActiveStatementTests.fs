@@ -33,6 +33,12 @@ module ActiveStatementTests =
             useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler
         )
 
+    /// Snapshot of the project's CURRENT on-disk state (snapshots are immutable and
+    /// content-versioned, so each edit needs a fresh one).
+    let private snapshotOf (projectOptions: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
+        |> Async.RunImmediate
+
     let private prepareProjectOptions
         (checker: FSharpChecker)
         (fsPath: string)
@@ -208,7 +214,9 @@ let target () = 41
             checker.InvalidateAll()
             compileBaseline checker projectOptions
 
-            match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "Failed to start session: %A" error
             | Ok() -> ()
 
@@ -216,7 +224,7 @@ let target () = 41
             checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
             compileUpdate checker projectOptions
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "Expected a line-update-only delta, got error: %A" error
             | Ok delta ->
                 // A pure line shift recompiles nothing: no metadata/IL rows, no generation.
@@ -236,9 +244,7 @@ let target () = 41
 
                 // The update starts at 'target''s old (zero-based) start line: 'let target () = 41'
                 // is the fifth line (index 4) of the baseline source.
-                Assert.Equal(4, lineUpdate.OldLine)
-
-            checker.EndHotReloadSession())
+                Assert.Equal(4, lineUpdate.OldLine))
 
     [<Fact>]
     let ``Line-shift edit produces sequence point updates in a disk-started session`` () =
@@ -250,17 +256,20 @@ let target () = 41
             checker.InvalidateAll()
             compileBaseline checker projectOptions
 
-            // Start a session, then throw it away and start over: the dotnet-watch topology,
-            // where the committed sequence-point view must be reconstructed from the on-disk
-            // dll + pdb rather than carried over in memory.
-            match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
-            | Error error -> failwithf "Failed to start session: %A" error
-            | Ok() -> ()
+            // Start a session, then throw it away and start a fresh one: the dotnet-watch
+            // topology, where the committed sequence-point view must be reconstructed from
+            // the on-disk dll + pdb rather than carried over in memory (sessions are
+            // independent instances, so the fresh session sees disk state only).
+            do
+                use discarded = checker.CreateHotReloadSession()
 
-            checker.EndHotReloadSession()
-            Assert.False(checker.HotReloadSessionActive)
+                match discarded.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start session: %A" error
+                | Ok() -> ()
 
-            match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "Failed to restart session from disk: %A" error
             | Ok() -> ()
 
@@ -268,16 +277,14 @@ let target () = 41
             checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
             compileUpdate checker projectOptions
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "Expected a line-update-only delta after restart, got error: %A" error
             | Ok delta ->
                 Assert.Empty(delta.UpdatedMethods)
                 let updates = Assert.Single(delta.SequencePointUpdates)
                 let lineUpdate = Assert.Single(updates.LineUpdates)
                 Assert.Equal(2, lineUpdate.NewLine - lineUpdate.OldLine)
-                Assert.Equal(4, lineUpdate.OldLine)
-
-            checker.EndHotReloadSession())
+                Assert.Equal(4, lineUpdate.OldLine))
 
     // ------------------------------------------------------------------------------------------
     // Active statement remapping
@@ -311,25 +318,25 @@ type Type =
             let getValueToken = getMethodToken dllPath "Type" "GetValue"
             let otherToken = getMethodToken dllPath "Type" "Other"
 
-            match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "Failed to start session: %A" error
             | Ok() -> ()
 
             // The debugger reports a break: a LEAF frame in GetValue at IL offset 0, and a
             // statement in the untouched Other method.
-            Assert.True(
-                checker.SetHotReloadActiveStatements(
+            session.SetActiveStatements(
                     [ mkActiveStatement getValueToken 0 FSharpActiveStatementFrameKind.Leaf
                       mkActiveStatement otherToken 0 FSharpActiveStatementFrameKind.Leaf ]
                 )
-            )
 
             File.WriteAllText(fsPath, remapUpdatedSource)
             checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
             compileUpdate checker projectOptions
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-            | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+            | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
                 Assert.Contains(getValueToken, delta.UpdatedMethods)
                 Assert.Equal(2, List.length delta.ActiveStatementUpdates)
@@ -365,9 +372,7 @@ type Type =
                 let row, points = Assert.Single(Map.toSeq deltaPoints)
                 Assert.Equal(1, row)
                 let _, firstSpan = points.Head
-                Assert.Equal(firstSpan, remapped.NewSpan)
-
-            checker.EndHotReloadSession())
+                Assert.Equal(firstSpan, remapped.NewSpan))
 
     let private deleteBaselineSource =
         """namespace Sample
@@ -412,21 +417,21 @@ type Type =
                 | Some(_ :: (offset, _) :: _) -> offset
                 | _ -> failwith "Expected Run to carry at least two visible sequence points"
 
-            match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "Failed to start session: %A" error
             | Ok() -> ()
 
-            Assert.True(
-                checker.SetHotReloadActiveStatements(
+            session.SetActiveStatements(
                     [ mkActiveStatement runToken midOffset FSharpActiveStatementFrameKind.Leaf ]
                 )
-            )
 
             File.WriteAllText(fsPath, deleteUpdatedSource)
             checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
             compileUpdate checker projectOptions
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
             | Ok _ -> failwith "Expected a rude edit for an edit deleting the active statement"
             | Error(FSharpHotReloadError.UnsupportedEdit message) ->
                 Assert.Contains("active statement", message, StringComparison.OrdinalIgnoreCase)
@@ -434,14 +439,12 @@ type Type =
 
             // The rude edit blocked the update without corrupting the session: clearing the
             // break state lets the same edit through as a regular method-body update.
-            Assert.True(checker.HotReloadSessionActive)
-            Assert.True(checker.SetHotReloadActiveStatements([]))
+            Assert.Equal(1, session.ProjectIdentifiers.Length)
+            session.SetActiveStatements([])
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "Expected the edit to apply once no statements are active: %A" error
-            | Ok delta -> Assert.Contains(runToken, delta.UpdatedMethods)
-
-            checker.EndHotReloadSession())
+            | Ok delta -> Assert.Contains(runToken, delta.UpdatedMethods))
 
     [<Fact>]
     let ``Editing the statement a non-leaf frame is suspended in is a rude edit`` () =
@@ -455,26 +458,24 @@ type Type =
 
             let getValueToken = getMethodToken dllPath "Type" "GetValue"
 
-            match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "Failed to start session: %A" error
             | Ok() -> ()
 
             // A NON-LEAF frame is suspended in the statement that the edit changes ('= 1' to
             // '= 100' changes the statement's span): the frame cannot be remapped.
-            Assert.True(
-                checker.SetHotReloadActiveStatements(
+            session.SetActiveStatements(
                     [ mkActiveStatement getValueToken 0 FSharpActiveStatementFrameKind.NonLeaf ]
                 )
-            )
 
             File.WriteAllText(fsPath, remapUpdatedSource)
             checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
             compileUpdate checker projectOptions
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
             | Ok _ -> failwith "Expected a rude edit for editing a non-leaf frame's active statement"
             | Error(FSharpHotReloadError.UnsupportedEdit message) ->
                 Assert.Contains("non-leaf", message, StringComparison.OrdinalIgnoreCase)
-            | Error error -> failwithf "Expected UnsupportedEdit, got: %A" error
-
-            checker.EndHotReloadSession())
+            | Error error -> failwithf "Expected UnsupportedEdit, got: %A" error)

@@ -1,4 +1,4 @@
-#nowarn "57"
+#nowarn "57" // experimental FCS hot reload session API
 
 namespace FSharp.Compiler.ComponentTests.HotReload
 
@@ -41,6 +41,12 @@ module DeltaWriter = FSharp.Compiler.CodeGen.FSharpDeltaMetadataWriter
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module MdvValidationTests =
+
+    /// Snapshot of the project's CURRENT on-disk state (snapshots are immutable and
+    /// content-versioned, so each edit needs a fresh one).
+    let private snapshotOf (projectOptions: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
+        |> Async.RunSynchronously
 
     let private keepArtifacts () =
         match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_KEEP_TEST_OUTPUT") with
@@ -651,11 +657,6 @@ module MdvValidationTests =
     let private runMdvWithGenerations baselinePath deltaPairs =
         runMdvInternal baselinePath deltaPairs
 
-    let private ensureGenerationCommitted generationId =
-        match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
-        | ValueSome session when session.PreviousGenerationId |> Option.contains generationId -> ()
-        | _ -> FSharpEditAndContinueLanguageService.Instance.CommitPendingUpdate(generationId)
-
     let private getGenerationSlice (output: string) (generation: int) =
         let marker = $">>> Generation {generation}:"
         let index = output.IndexOf(marker, StringComparison.Ordinal)
@@ -1046,7 +1047,7 @@ type Greeter =
                 options.OtherOptions[idx + 1] |> toAbsolute |> Some
             | _ -> None
     [<Fact>]
-    let ``FSharpChecker.EmitHotReloadDelta produces IL/metadata deltas`` () =
+    let ``FSharpHotReloadSession.EmitDelta produces IL/metadata deltas`` () =
         let checker =
             FSharpChecker.Create(
                 keepAssemblyContents = true,
@@ -1073,18 +1074,20 @@ type Greeter =
         try
             // Baseline build and start session via FSharpChecker
             let baselineOptions, _ = compileProject checker fsPath dllPath baselineSource
-            match checker.StartHotReloadSession(baselineOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             // Updated build (writes the new assembly)
             let updatedOptions, _ = compileProject checker fsPath dllPath updatedSource
-            let deltaResult = checker.EmitHotReloadDelta(updatedOptions) |> Async.RunSynchronously
+            let deltaResult = session.EmitDelta(snapshotOf updatedOptions) |> Async.RunSynchronously
 
             match deltaResult with
-            | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+            | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
-                ensureGenerationCommitted delta.GenerationId
+                session.Commit()
                 Assert.NotEmpty(delta.Metadata)
                 Assert.NotEmpty(delta.IL)
                 // Persist artifacts
@@ -1103,15 +1106,14 @@ type Greeter =
 
                 match runMdv dllPath metadataPath ilPath with
                 | Some output ->
-                    printfn "mdv output (EmitHotReloadDelta):%s%s" Environment.NewLine output
+                    printfn "mdv output (EmitDelta):%s%s" Environment.NewLine output
                     Assert.Contains("Generation 1", output)
                     Assert.Contains("Checker version 2", output)
                     assertGenerationContains output 1 "Checker version 2"
                 | None ->
-                    printfn "mdv not available; skipping textual verification for EmitHotReloadDelta scenario."
+                    printfn "mdv not available; skipping textual verification for EmitDelta scenario."
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
     [<Fact>]
@@ -1141,7 +1143,6 @@ module Target =
 """
 
         let cleanup () =
-            try checker.EndHotReloadSession() with _ -> ()
             try checker.InvalidateAll() with _ -> ()
             if not (keepArtifacts ()) then
                 try Directory.Delete(projectRoot, true) with _ -> ()
@@ -1212,8 +1213,10 @@ module Target =
 
             Directory.SetCurrentDirectory(originalCwd)
 
-            match checker.StartHotReloadSession(projectOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             File.WriteAllText(fsPath, updatedSource)
@@ -1236,10 +1239,10 @@ module Target =
 
             Directory.SetCurrentDirectory(originalCwd)
 
-            match checker.EmitHotReloadDelta(projectOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+            match session.EmitDelta(snapshotOf projectOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
-                ensureGenerationCommitted delta.GenerationId
+                session.Commit()
                 let deltaDir = Path.Combine(projectRoot, "project-delta")
                 Directory.CreateDirectory(deltaDir) |> ignore
                 let metadataPath = Path.Combine(deltaDir, "1.meta")
@@ -1296,16 +1299,18 @@ module Demo =
             let baselineCopy = Path.Combine(projectDir, "baseline.dll")
             File.Copy(dllPath, baselineCopy, true)
 
-            match checker.StartHotReloadSession(baselineOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             let updatedOptions, _ = compileProject checker fsPath dllPath updatedSource
 
-            match checker.EmitHotReloadDelta(updatedOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+            match session.EmitDelta(snapshotOf updatedOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
-                ensureGenerationCommitted delta.GenerationId
+                session.Commit()
                 Directory.CreateDirectory(deltaDir) |> ignore
                 let metadataPath = Path.Combine(deltaDir, "1.meta")
                 let ilPath = Path.Combine(deltaDir, "1.il")
@@ -1359,7 +1364,6 @@ module Demo =
                     printfn "mdv not available; skipping integration verification for simple method-body edit."
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             if not (keepArtifacts ()) then
                 try Directory.Delete(deltaDir, true) with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
@@ -1404,16 +1408,18 @@ let mutable newCounter = 41
             let capabilities =
                 [ "Baseline"; "AddMethodToExistingType"; "AddStaticFieldToExistingType" ]
 
-            match checker.StartHotReloadSession(baselineOptions, capabilities = capabilities) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             let updatedOptions, _ = compileProject checker fsPath dllPath updatedSource
 
-            match checker.EmitHotReloadDelta(updatedOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+            match session.EmitDelta(snapshotOf updatedOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
-                ensureGenerationCommitted delta.GenerationId
+                session.Commit()
                 Directory.CreateDirectory(deltaDir) |> ignore
                 let metadataPath = Path.Combine(deltaDir, "1.meta")
                 let ilPath = Path.Combine(deltaDir, "1.il")
@@ -1465,7 +1471,6 @@ let mutable newCounter = 41
                     printfn "mdv not available; skipping rendered verification for module value addition."
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             if not (keepArtifacts ()) then
                 try Directory.Delete(deltaDir, true) with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
@@ -1503,16 +1508,18 @@ type PropertyDemo() =
             let baselineCopy = Path.Combine(projectDir, "baseline.dll")
             File.Copy(dllPath, baselineCopy, true)
 
-            match checker.StartHotReloadSession(baselineOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             let updatedOptions, _ = compileProject checker fsPath dllPath updatedSource
 
-            match checker.EmitHotReloadDelta(updatedOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+            match session.EmitDelta(snapshotOf updatedOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
-                ensureGenerationCommitted delta.GenerationId
+                session.Commit()
                 Directory.CreateDirectory(deltaDir) |> ignore
                 let metadataPath = Path.Combine(deltaDir, "1.meta")
                 let ilPath = Path.Combine(deltaDir, "1.il")
@@ -1533,7 +1540,6 @@ type PropertyDemo() =
                     printfn "mdv not available; skipping Generation 1 verification for property getter edit."
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             if not (keepArtifacts ()) then
                 try Directory.Delete(deltaDir, true) with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
@@ -1591,16 +1597,18 @@ type EventDemo() =
             let baselineCopy = Path.Combine(projectDir, "baseline.dll")
             File.Copy(dllPath, baselineCopy, true)
 
-            match checker.StartHotReloadSession(baselineOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             let updatedOptions, _ = compileProject checker fsPath dllPath updatedSource
 
-            match checker.EmitHotReloadDelta(updatedOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+            match session.EmitDelta(snapshotOf updatedOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "EmitDelta failed: %A" error
             | Ok delta ->
-                ensureGenerationCommitted delta.GenerationId
+                session.Commit()
                 Directory.CreateDirectory(deltaDir) |> ignore
                 let metadataPath = Path.Combine(deltaDir, "1.meta")
                 let ilPath = Path.Combine(deltaDir, "1.il")
@@ -1621,7 +1629,6 @@ type EventDemo() =
                     printfn "mdv not available; skipping Generation 1 verification for custom event edit."
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             if not (keepArtifacts ()) then
                 try Directory.Delete(deltaDir, true) with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
@@ -2414,8 +2421,10 @@ module Demo =
             File.Copy(dllPath, baselineCopy, true)
             let baselineModule = readIlModule baselineCopy
 
-            match checker.StartHotReloadSession(baselineOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             let updatedOptions, _ = compileProject checker fsPath dllPath updatedSource
@@ -2424,10 +2433,10 @@ module Demo =
             logSynthesizedNameDifferences baselineModule updatedModule
 
             let delta =
-                match checker.EmitHotReloadDelta(updatedOptions) |> Async.RunSynchronously with
-                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                match session.EmitDelta(snapshotOf updatedOptions) |> Async.RunSynchronously with
+                | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
-                    ensureGenerationCommitted delta.GenerationId
+                    session.Commit()
                     delta
 
             let metadataPath = Path.Combine(deltaDir, "1.meta")
@@ -2456,7 +2465,6 @@ module Demo =
                 printfn "mdv not available; skipping closure verification."
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             try Directory.Delete(deltaDir, true) with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2514,16 +2522,18 @@ module Demo =
             let baselineCopy = Path.Combine(projectDir, "baseline.dll")
             File.Copy(dllPath, baselineCopy, true)
 
-            match checker.StartHotReloadSession(baselineOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             let updatedOptions1, _ = compileProject checker fsPath dllPath firstUpdateSource
             let delta1 =
-                match checker.EmitHotReloadDelta(updatedOptions1) |> Async.RunSynchronously with
-                | Error error -> failwithf "EmitHotReloadDelta (generation 1) failed: %A" error
+                match session.EmitDelta(snapshotOf updatedOptions1) |> Async.RunSynchronously with
+                | Error error -> failwithf "EmitDelta (generation 1) failed: %A" error
                 | Ok delta ->
-                    ensureGenerationCommitted delta.GenerationId
+                    session.Commit()
                     delta
 
             let meta1Path = Path.Combine(deltaDir, "1.meta")
@@ -2540,10 +2550,10 @@ module Demo =
             File.WriteAllText(fsPath, secondUpdateSource)
             let updatedOptions2, _ = compileProject checker fsPath dllPath secondUpdateSource
             let delta2 =
-                match checker.EmitHotReloadDelta(updatedOptions2) |> Async.RunSynchronously with
-                | Error error -> failwithf "EmitHotReloadDelta (generation 2) failed: %A" error
+                match session.EmitDelta(snapshotOf updatedOptions2) |> Async.RunSynchronously with
+                | Error error -> failwithf "EmitDelta (generation 2) failed: %A" error
                 | Ok delta ->
-                    ensureGenerationCommitted delta.GenerationId
+                    session.Commit()
                     delta
 
             // TODO: Once checker-based multi-delta sessions forward EncId chaining, assert delta2.BaseGenerationId here.
@@ -2569,7 +2579,6 @@ module Demo =
                 printfn "mdv not available; skipping closure multi-generation verification."
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             try Directory.Delete(deltaDir, true) with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2627,16 +2636,18 @@ module Demo =
             let baselineCopy = Path.Combine(projectDir, "baseline.dll")
             File.Copy(dllPath, baselineCopy, true)
 
-            match checker.StartHotReloadSession(baselineOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             let updatedOptions1, _ = compileProject checker fsPath dllPath firstUpdateSource
             let delta1 =
-                match checker.EmitHotReloadDelta(updatedOptions1) |> Async.RunSynchronously with
-                | Error error -> failwithf "EmitHotReloadDelta (generation 1) failed: %A" error
+                match session.EmitDelta(snapshotOf updatedOptions1) |> Async.RunSynchronously with
+                | Error error -> failwithf "EmitDelta (generation 1) failed: %A" error
                 | Ok delta ->
-                    ensureGenerationCommitted delta.GenerationId
+                    session.Commit()
                     delta
 
             let meta1Path = Path.Combine(deltaDir, "1.meta")
@@ -2647,10 +2658,10 @@ module Demo =
             File.WriteAllText(fsPath, secondUpdateSource)
             let updatedOptions2, _ = compileProject checker fsPath dllPath secondUpdateSource
             let delta2 =
-                match checker.EmitHotReloadDelta(updatedOptions2) |> Async.RunSynchronously with
-                | Error error -> failwithf "EmitHotReloadDelta (generation 2) failed: %A" error
+                match session.EmitDelta(snapshotOf updatedOptions2) |> Async.RunSynchronously with
+                | Error error -> failwithf "EmitDelta (generation 2) failed: %A" error
                 | Ok delta ->
-                    ensureGenerationCommitted delta.GenerationId
+                    session.Commit()
                     delta
 
             // TODO: Once checker-based multi-delta sessions forward EncId chaining, assert delta2.BaseGenerationId here.
@@ -2682,7 +2693,6 @@ module Demo =
             captureDeltaArtifacts "async-multigen" (File.ReadAllBytes(baselineCopy)) delta1 delta2
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             if not (keepArtifacts ()) then
                 try Directory.Delete(deltaDir, true) with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
@@ -2735,8 +2745,10 @@ module Demo =
             File.Copy(dllPath, baselineCopy, true)
             let baselineModule = readIlModule baselineCopy
 
-            match checker.StartHotReloadSession(baselineOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             let updatedOptions, _ = compileProject checker fsPath dllPath updatedSource
@@ -2745,10 +2757,10 @@ module Demo =
             logSynthesizedNameDifferences baselineModule updatedModule
 
             let delta =
-                match checker.EmitHotReloadDelta(updatedOptions) |> Async.RunSynchronously with
-                | Error error -> failwithf "EmitHotReloadDelta failed: %A" error
+                match session.EmitDelta(snapshotOf updatedOptions) |> Async.RunSynchronously with
+                | Error error -> failwithf "EmitDelta failed: %A" error
                 | Ok delta ->
-                    ensureGenerationCommitted delta.GenerationId
+                    session.Commit()
                     delta
 
             let metadataPath = Path.Combine(deltaDir, "1.meta")
@@ -2779,7 +2791,6 @@ module Demo =
                 printfn "mdv not available; skipping async verification."
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             try Directory.Delete(deltaDir, true) with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2825,17 +2836,19 @@ module Demo =
             let baselineCopy = Path.Combine(projectDir, "baseline.dll")
             File.Copy(dllPath, baselineCopy, true)
 
-            match checker.StartHotReloadSession(baselineOptions) |> Async.RunSynchronously with
-            | Error error -> failwithf "StartHotReloadSession failed: %A" error
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
+            | Error error -> failwithf "AddProject failed: %A" error
             | Ok () -> ()
 
             // First edit
             let updatedOptions1, _ = compileProject checker fsPath dllPath firstUpdateSource
             let delta1 =
-                match checker.EmitHotReloadDelta(updatedOptions1) |> Async.RunSynchronously with
-                | Error error -> failwithf "EmitHotReloadDelta (generation 1) failed: %A" error
+                match session.EmitDelta(snapshotOf updatedOptions1) |> Async.RunSynchronously with
+                | Error error -> failwithf "EmitDelta (generation 1) failed: %A" error
                 | Ok delta ->
-                    ensureGenerationCommitted delta.GenerationId
+                    session.Commit()
                     delta
 
             let meta1Path = Path.Combine(deltaDir, "1.meta")
@@ -2853,10 +2866,10 @@ module Demo =
             File.WriteAllText(fsPath, secondUpdateSource)
             let updatedOptions2, _ = compileProject checker fsPath dllPath secondUpdateSource
             let delta2 =
-                match checker.EmitHotReloadDelta(updatedOptions2) |> Async.RunSynchronously with
-                | Error error -> failwithf "EmitHotReloadDelta (generation 2) failed: %A" error
+                match session.EmitDelta(snapshotOf updatedOptions2) |> Async.RunSynchronously with
+                | Error error -> failwithf "EmitDelta (generation 2) failed: %A" error
                 | Ok delta ->
-                    ensureGenerationCommitted delta.GenerationId
+                    session.Commit()
                     delta
 
             // TODO: Once checker-based multi-delta sessions forward EncId chaining, assert delta2.BaseGenerationId here.
@@ -2887,7 +2900,6 @@ module Demo =
                 printfn "mdv not available; skipping Generation 2 verification for multi-generation scenario."
         finally
             try checker.InvalidateAll() with _ -> ()
-            try checker.EndHotReloadSession() with _ -> ()
             try Directory.Delete(deltaDir, true) with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 

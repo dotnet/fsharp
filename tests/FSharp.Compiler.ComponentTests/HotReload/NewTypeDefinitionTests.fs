@@ -1,3 +1,5 @@
+#nowarn "57" // experimental FCS hot reload session API
+
 namespace FSharp.Compiler.ComponentTests.HotReload
 
 // Phase F: user-defined new type definitions (NewTypeDefinition).
@@ -35,6 +37,12 @@ open FSharp.Test.Utilities
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module NewTypeDefinitionTests =
 
+    /// Snapshot of the project's CURRENT on-disk state (snapshots are immutable and
+    /// content-versioned, so each edit needs a fresh one).
+    let private snapshotOf (projectOptions: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
+        |> Async.RunImmediate
+
     /// The full capability set advertised by current CoreCLR runtimes.
     let private fullCapabilities =
         [ "Baseline"
@@ -69,6 +77,8 @@ module NewTypeDefinitionTests =
                     enablePartialTypeChecking = false,
                     captureIdentifiersWhenParsing = false
                 )
+
+            use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
             let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-new-types", Guid.NewGuid().ToString("N"))
             Directory.CreateDirectory(projectDir) |> ignore
@@ -130,7 +140,7 @@ module NewTypeDefinitionTests =
                     | ValueSome _ -> failwithf "[%s] expected no in-process session after the reset." testLabel
                     | ValueNone -> ()
 
-                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
                 | Ok () -> ()
 
@@ -154,16 +164,18 @@ module NewTypeDefinitionTests =
                     checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
                     compileOnce "updated" updatedOptions
 
-                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
-                    | Error error -> failwithf "[%s] EmitHotReloadDelta failed: %A" testLabel error
+                    match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
                     | Ok delta ->
                         Assert.NotEmpty(delta.Metadata)
                         let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
                         MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        // The runtime applied the update; commit so the next generation
+                        // diffs against this one (the session entity defers commits).
+                        session.Commit()
                         verifyUpdated assembly
             finally
                 try loadContext.Unload() with _ -> ()
-                try checker.EndHotReloadSession() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -186,6 +198,8 @@ module NewTypeDefinitionTests =
                 enablePartialTypeChecking = false,
                 captureIdentifiersWhenParsing = false
             )
+
+        use session = checker.CreateHotReloadSession(capabilities = capabilities)
 
         let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-new-types", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
@@ -235,7 +249,7 @@ module NewTypeDefinitionTests =
 
             compileOnce "baseline" projectOptions
 
-            match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
             | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
             | Ok () -> ()
 
@@ -251,24 +265,23 @@ module NewTypeDefinitionTests =
 
             compileOnce "updated" updatedOptions
 
-            checker.EmitHotReloadDelta(projectOptions)
+            session.EmitDelta(snapshotOf projectOptions)
             |> Async.RunImmediate
             |> handleResult
         finally
-            try checker.EndHotReloadSession() with _ -> ()
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
     let private emitDeltaAndInspect capabilities testLabel baselineSource updatedSource (inspect: FSharpHotReloadDelta -> unit) =
         emitDeltaAndHandleResult capabilities testLabel baselineSource updatedSource (fun result ->
             match result with
-            | Error error -> failwithf "[%s] EmitHotReloadDelta failed: %A" testLabel error
+            | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
             | Ok delta -> inspect delta)
 
     let private emitDeltaAndExpectUnsupported capabilities testLabel baselineSource updatedSource (expectedMessageParts: string list) =
         emitDeltaAndHandleResult capabilities testLabel baselineSource updatedSource (fun result ->
             match result with
-            | Ok _ -> failwithf "[%s] expected EmitHotReloadDelta to fail, but it succeeded." testLabel
+            | Ok _ -> failwithf "[%s] expected EmitDelta to fail, but it succeeded." testLabel
             | Error error ->
                 let message = string error
 
@@ -1042,7 +1055,7 @@ module Library =
     // -----------------------------------------------------------------------------
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects added type without NewTypeDefinition`` () =
+    let ``EmitDelta rejects added type without NewTypeDefinition`` () =
         emitDeltaAndExpectUnsupported
             [ "Baseline"; "AddMethodToExistingType"; "AddStaticFieldToExistingType"; "AddInstanceFieldToExistingType" ]
             "added-class-no-capability"
@@ -1051,7 +1064,7 @@ module Library =
             [ "NewTypeDefinition" ]
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects added module without NewTypeDefinition`` () =
+    let ``EmitDelta rejects added module without NewTypeDefinition`` () =
         // The module's TypeDef is a new type definition: without the capability the
         // entity addition is NotSupportedByRuntime naming NewTypeDefinition, even though
         // the member-addition capabilities are granted.
@@ -1063,7 +1076,7 @@ module Library =
             [ "NewTypeDefinition" ]
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects added enum without NewTypeDefinition`` () =
+    let ``EmitDelta rejects added enum without NewTypeDefinition`` () =
         emitDeltaAndExpectUnsupported
             [ "Baseline"; "AddMethodToExistingType"; "AddStaticFieldToExistingType"; "AddInstanceFieldToExistingType" ]
             "added-enum-no-capability"
@@ -1072,7 +1085,7 @@ module Library =
             [ "NewTypeDefinition" ]
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects added explicit-layout struct`` () =
+    let ``EmitDelta rejects added explicit-layout struct`` () =
         // Explicit layouts need FieldLayout rows (and a ClassLayout row when sized);
         // the writer cannot express them, so the added struct fails closed precisely
         // at emission instead of shipping a silently corrupt layout.
@@ -1138,7 +1151,7 @@ module Library =
                   Assert.True(kgType.GetCustomAttributes() |> Seq.exists (fun attr -> attr.GetType().Name = "MeasureAttribute"))) ]
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects added type abbreviation`` () =
+    let ``EmitDelta rejects added type abbreviation`` () =
         // Type abbreviations are fully erased (no TypeDef); the entity diff cannot
         // classify them as type additions and fails closed with the precise list of
         // supported representations.
