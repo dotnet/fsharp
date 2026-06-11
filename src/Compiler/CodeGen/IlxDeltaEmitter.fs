@@ -2080,10 +2080,27 @@ let private finalizeDeltaArtifacts
         request.SynthesizedNames
         |> Option.map (fun map -> map.Snapshot |> Seq.map (fun struct (k, v) -> k, v) |> Map.ofSeq)
 
+    // Chain only APPENDED rows into the next-generation table counts. The delta's
+    // physical tables also contain re-emitted rows for UPDATED definitions (method-body
+    // updates, accessor edits of existing properties/events), which must not advance the
+    // row cursors: a later generation would otherwise allocate its added rows past a gap
+    // and emit an EncMap that readers reject ("EnCMap not sorted or missing records") and
+    // whose members the runtime cannot link. Every appended row carries an EncMap entry
+    // past the baseline row count (Roslyn parity), so derive the counts from the EncMap.
+    let addedTableCounts =
+        let counts = Array.zeroCreate DeltaTokens.TableCount
+        let baselineCounts = request.Baseline.Metadata.TableRowCounts
+
+        for (table: TableName), rowId in metadataDelta.EncMap do
+            if rowId > baselineCounts.[table.Index] then
+                counts.[table.Index] <- counts.[table.Index] + 1
+
+        counts
+
     let updatedBaselineCore =
         HotReloadBaseline.applyDelta
             request.Baseline
-            metadataDelta.TableRowCounts
+            addedTableCounts
             metadataDelta.HeapSizes
             addedOrChangedMethods
             encId
