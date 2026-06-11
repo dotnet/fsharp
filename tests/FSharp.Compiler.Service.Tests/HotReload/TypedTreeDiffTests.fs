@@ -244,8 +244,10 @@ let evaluate () =
 
         let result = harness.Diff baseline updated
 
+        // The structural change is a removed+added occurrence pair; the BaselineOnly
+        // diff reports it as NotSupportedByRuntime (the addition needs NewTypeDefinition).
         Assert.NotEmpty(result.RudeEdits)
-        Assert.Equal(RudeEditKind.LambdaShapeChange, result.RudeEdits[0].Kind)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, result.RudeEdits[0].Kind)
 
     [<Fact>]
     let ``lambda lowering shape change with extra closure layer triggers rude edit`` () =
@@ -273,7 +275,7 @@ let evaluate () =
 
         let result = harness.Diff baseline updated
 
-        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.LambdaShapeChange)
+        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.NotSupportedByRuntime)
 
     [<Fact>]
     let ``state machine lowering shape change falls back to lambda rude edit in structural-only mode`` () =
@@ -300,8 +302,10 @@ let runAsync () =
 
         let result = harness.Diff baseline updated
 
+        // F# async lowers to closure chains: the let! rewrite adds/removes occurrences,
+        // which the BaselineOnly diff reports as NotSupportedByRuntime (NewTypeDefinition).
         Assert.NotEmpty(result.RudeEdits)
-        Assert.Equal(RudeEditKind.LambdaShapeChange, result.RudeEdits[0].Kind)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, result.RudeEdits[0].Kind)
 
     [<Fact>]
     let ``state machine lowering shape change with async resource scope falls back to lambda rude edit in structural-only mode`` () =
@@ -329,7 +333,7 @@ let runAsync () =
         let result = harness.Diff baseline updated
 
         Assert.NotEmpty(result.RudeEdits)
-        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.LambdaShapeChange)
+        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.NotSupportedByRuntime)
         Assert.DoesNotContain(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.DeclarationAdded)
         Assert.DoesNotContain(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.DeclarationRemoved)
 
@@ -1067,10 +1071,14 @@ let evaluate () =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
+        // BaselineOnly capabilities: the addition is a supported EDIT KIND but exceeds
+        // the runtime's capabilities (C# parity: RudeEditKind.NotSupportedByRuntime
+        // naming the missing capability — the new closure class needs NewTypeDefinition).
         let result = harness.Diff baseline updated
 
         let rudeEdit = Assert.Single(result.RudeEdits)
-        Assert.Equal(RudeEditKind.LambdaShapeChange, rudeEdit.Kind)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
+        Assert.Contains("NewTypeDefinition", rudeEdit.Message)
         Assert.Contains("1 lambda added at ordinal 1", rudeEdit.Message)
 
         // The structured payload names the added occurrence; the surviving occurrence is
@@ -1082,6 +1090,14 @@ let evaluate () =
             Assert.Equal(1, updatedOcc.Id.Ordinal)
             Assert.Empty(updatedOcc.Id.ParentChain)
         | other -> failwithf "Expected Added, got %A" other
+
+        // With the new-type and method capabilities the same edit is allowed: the member
+        // body update covers it (Phase C4 emits the new closure TypeDef in the delta).
+        let allowed = harness.DiffWith allCapabilities baseline updated
+
+        Assert.Empty(allowed.RudeEdits)
+        Assert.Single(allowed.SemanticEdits) |> ignore
+        Assert.Equal(SemanticEditKind.MethodBody, allowed.SemanticEdits[0].Kind)
 
     [<Fact>]
     let ``removing a lambda produces structured rude edit naming the removed ordinal`` () =
@@ -1106,9 +1122,12 @@ let evaluate () =
 
         let result = harness.Diff baseline updated
 
-        let rudeEdit = Assert.Single(result.RudeEdits)
-        Assert.Equal(RudeEditKind.LambdaShapeChange, rudeEdit.Kind)
-        Assert.Contains("1 lambda removed at ordinal 1", rudeEdit.Message)
+        // Removed-only lambda sets need no new metadata (C# parity: deleted lambda bodies
+        // just become unreachable; the baseline closure class stays in place, unused), so
+        // the member body update covers the edit even at Baseline capabilities.
+        Assert.Empty(result.RudeEdits)
+        Assert.Single(result.SemanticEdits) |> ignore
+        Assert.Equal(SemanticEditKind.MethodBody, result.SemanticEdits[0].Kind)
 
         let removedEdit = Assert.Single(allLambdaEdits result)
 
@@ -1189,7 +1208,7 @@ let evaluate () =
         let result = harness.Diff baseline updated
 
         let rudeEdit = Assert.Single(result.RudeEdits)
-        Assert.Equal(RudeEditKind.LambdaShapeChange, rudeEdit.Kind)
+        Assert.Equal(RudeEditKind.NotSupportedByRuntime, rudeEdit.Kind)
         Assert.Contains("1 lambda added at ordinal 1", rudeEdit.Message)
 
         let edits = allLambdaEdits result

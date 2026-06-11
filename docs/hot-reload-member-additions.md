@@ -211,6 +211,56 @@ next-generation baseline `TypeTokens` under its full name, so later body
 edits of the added lambda resolve in place. The machinery is general; only
 the detection is closure-scoped (widening it to user types is Phase F).
 
+Validated end-to-end at runtime
+(`ApplyUpdate succeeds for added lambda creating a new closure class`): a
+2-lambda member gains a third (capture-free) lambda → the generation-1 delta
+carries the new TypeDef + 3 AddMethod pairs (.ctor/Invoke/.cctor — F#'s
+capture-free closures add a static singleton initializer, one more method
+than C#'s display class), AddParameter pair for Invoke, NestedClass row →
+MetadataUpdater.ApplyUpdate accepts → the new lambda executes. Generation 2
+body-edits the ADDED lambda: method updates only, no new TypeDef/Field rows
+(the closure class chained into the baseline), exactly like the C# gen-2
+reference.
+
+### Content-validated MemberRef/TypeSpec token passthrough
+
+Landing the runtime test exposed a pre-existing positional fragility: the
+emitter passed fresh-compile MemberRef/TypeSpec tokens through verbatim when
+the row id fit inside the baseline table. An added lambda changes the ORDER
+OF FIRST USE of references (e.g. `ListModule.Map` now precedes `Filter`), so
+the fresh rows no longer line up positionally — the delta's MethodSpec rows
+silently bound `Filter<int32,int32>`/`Map<int32>` (swapped genericity) and
+the applied body threw BadImageFormatException.
+
+The fix mirrors the TypeReferenceTokens approach: the baseline now snapshots
+MemberRef row contents (name, decoded parent token, signature blob) and
+TypeSpec signature blobs from the assembly bytes
+(`FSharpEmitBaseline.MemberReferenceRows`/`TypeSpecSignatures`, read by the
+SRM-free ILBaselineReader, which also gained the previously missing
+InterfaceImpl row size — assemblies WITH interface implementations had every
+table offset past InterfaceImpl misread). The remapper then:
+
+1. trusts a positional row id only when the fresh row's content (with parent
+   and signature REMAPPED to baseline coordinates) matches the baseline row;
+2. otherwise searches the baseline table for a unique content match;
+3. otherwise appends a new MemberRef row (always legal) — or, for TypeSpecs,
+   fails closed (the writer cannot emit TypeSpec rows yet).
+
+Delta-appended MemberRef rows chain into the next generation's
+`MemberReferenceRows` so later compiles can validate/reuse them. Baselines
+without byte-derived snapshots (legacy construction paths) keep the historic
+positional behavior.
+
+### Session wiring (watch flow)
+
+`checker.StartHotReloadSession` rebuilds the baseline from the on-disk
+assembly, which cannot carry the C3 closure-name tables (the EnC CDI blob
+format has no name slots). The session-start path now carries
+`EncClosureNames` over from the in-process capture session it replaces when
+the module identity (MVID) matches — without this, every watch-flow delta
+compile fell back to sequence-replay naming and added lambdas were
+unmappable.
+
 Known divergences from the C# reference (deliberate this slice):
 
 - Custom attributes on the added TypeDef are not emitted (C# adds
@@ -218,13 +268,29 @@ Known divergences from the C# reference (deliberate this slice):
   emission for added types can reuse the existing CustomAttribute row path
   later.
 - `Extends` pointing at a generic instantiation (`FSharpFunc`2<A,B>` =
-  TypeSpec) relies on TypeSpec token passthrough: the fresh row id must
-  already exist in the baseline (true whenever the same instantiation occurs
-  anywhere in the baseline). A genuinely NEW instantiation needs TypeSpec
-  rows in the delta writer — not supported yet; the emitter fails closed
-  with a rebuild-required message.
+  TypeSpec) resolves through the content-validated TypeSpec remap: it must
+  match an instantiation already present in the baseline (true whenever the
+  same closure shape occurs anywhere in it). A genuinely NEW instantiation
+  needs TypeSpec rows in the delta writer — not supported yet; the emitter
+  fails closed with a rebuild-required message.
 - Added GENERIC closure classes (closures over generic methods) need
   GenericParam rows — not supported yet; the emitter fails closed.
+- The AsyncStateMachineAttribute synthesis heuristic (nested
+  `{method}@hotreload*` type) now additionally requires a `MoveNext` method,
+  so ordinary closure classes sharing the naming no longer pick up a spurious
+  attribute.
+
+### Classification (TypedTreeDiff)
+
+- `LambdaEdit.Added`-only sets (no capture-set changes) are allowed when the
+  runtime advertises `NewTypeDefinition` + `AddMethodToExistingType`;
+  otherwise `RudeEditKind.NotSupportedByRuntime` names the missing
+  capability (C# parity).
+- `LambdaEdit.Removed`-only sets are allowed at Baseline capabilities (C#
+  parity: deleted lambda bodies just become unreachable; the baseline
+  closure class stays in place, unused).
+- `CaptureSetChanged` stays rude this slice (capture-field mapping is a
+  later slice).
 
 ## Known gaps / later slices
 

@@ -127,6 +127,7 @@ type internal EntityTokenRemapKind =
     | MemberRef
     | MethodSpec
     | TypeRef
+    | TypeSpec
     | Event
     | Property
     | AssemblyRef
@@ -140,6 +141,7 @@ let internal classifyEntityTokenRemapKind (token: int) : EntityTokenRemapKind =
     | 0x0A000000 -> EntityTokenRemapKind.MemberRef
     | 0x2B000000 -> EntityTokenRemapKind.MethodSpec
     | 0x01000000 -> EntityTokenRemapKind.TypeRef
+    | 0x1B000000 -> EntityTokenRemapKind.TypeSpec
     | 0x14000000 -> EntityTokenRemapKind.Event
     | 0x17000000 -> EntityTokenRemapKind.Property
     | 0x23000000 -> EntityTokenRemapKind.AssemblyRef
@@ -147,8 +149,7 @@ let internal classifyEntityTokenRemapKind (token: int) : EntityTokenRemapKind =
     // in delta remapping. Keep these explicit so new table tags fail closed by default.
     | 0x00000000
     | 0x11000000
-    | 0x1A000000
-    | 0x1B000000 ->
+    | 0x1A000000 ->
         EntityTokenRemapKind.Passthrough
     | tableTag ->
         raise (
@@ -349,7 +350,11 @@ let private remapTypeDefOrRefCodedIndexWith (remapEntityToken: int -> int) (code
 /// "The generic type 'IntrinsicOperators' was used with the wrong number of generic arguments".
 /// Walks the signature grammar (II.23.2) and remaps every embedded coded index; fails closed on
 /// unknown element types.
-let internal remapSignatureBlobWith (remapTypeDefOrRefCodedIndex: int -> int) (signature: byte[]) : byte[] =
+let private remapSignatureBlobCore
+    (isTypeSpecBlob: bool)
+    (remapTypeDefOrRefCodedIndex: int -> int)
+    (signature: byte[])
+    : byte[] =
     if isNull (box signature) || signature.Length = 0 then
         signature
     else
@@ -496,7 +501,13 @@ let internal remapSignatureBlobWith (remapTypeDefOrRefCodedIndex: int -> int) (s
                     copyType ()
                     remaining <- remaining - 1
 
-        (match peek () with
+        (if isTypeSpecBlob then
+            // TypeSpec blob (ECMA-335 II.23.2.14): a bare Type with no calling-convention
+            // header.
+            copyType ()
+         else
+
+         match peek () with
          // FieldSig
          | 0x06 ->
              copyByte ()
@@ -525,6 +536,16 @@ let internal remapSignatureBlobWith (remapTypeDefOrRefCodedIndex: int -> int) (s
 
         builder.ToArray()
 
+/// Remaps the TypeDefOrRef coded indexes embedded in a method/field/local/property
+/// signature blob (ECMA-335 II.23.2) from fresh-compile rows to baseline rows.
+let internal remapSignatureBlobWith (remapTypeDefOrRefCodedIndex: int -> int) (signature: byte[]) : byte[] =
+    remapSignatureBlobCore false remapTypeDefOrRefCodedIndex signature
+
+/// Remaps the TypeDefOrRef coded indexes embedded in a TypeSpec signature blob
+/// (ECMA-335 II.23.2.14: a bare Type, no calling-convention header).
+let internal remapTypeSpecBlobWith (remapTypeDefOrRefCodedIndex: int -> int) (blob: byte[]) : byte[] =
+    remapSignatureBlobCore true remapTypeDefOrRefCodedIndex blob
+
 let private buildUpdatedTypeTokens
     (tryGetBaselineTypeName: string -> string)
     (baselineTypeTokens: Map<string, int>)
@@ -543,8 +564,19 @@ let private buildUpdatedTypeTokens
     |> List.distinct
     |> List.choose (fun typeName -> baselineTypeTokens |> Map.tryFind typeName)
 
+/// Converts a delta MemberRef row's parent to the metadata token stored in the chained
+/// baseline's MemberReferenceRows (used for content-validated passthrough next generation).
+let private memberRefParentToken (parent: MemberRefParent) =
+    match parent with
+    | MRP_TypeDef handle -> 0x02000000 ||| handle.RowId
+    | MRP_TypeRef handle -> 0x01000000 ||| handle.RowId
+    | MRP_ModuleRef handle -> 0x1A000000 ||| handle.RowId
+    | MRP_MethodDef handle -> 0x06000000 ||| handle.RowId
+    | MRP_TypeSpec handle -> 0x1B000000 ||| handle.RowId
+
 let private buildUpdatedBaseline
     (updatedBaselineCore: FSharpEmitBaseline)
+    (memberReferenceRowList: MemberReferenceRowInfo list)
     (propertyMapRowsSnapshot: PropertyMapRowInfo list)
     (eventMapRowsSnapshot: EventMapRowInfo list)
     (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
@@ -628,8 +660,23 @@ let private buildUpdatedBaseline
         addedTypeDeltaTokens
         |> Seq.fold (fun acc (KeyValue(fullName, token)) -> acc |> Map.add fullName token) updatedBaselineCore.TypeTokens
 
+    // Chain delta-appended MemberRef rows (already in baseline coordinates) so the next
+    // generation's content-validated passthrough can recognize and reuse them.
+    let updatedMemberReferenceRows =
+        memberReferenceRowList
+        |> List.fold
+            (fun acc (row: MemberReferenceRowInfo) ->
+                acc
+                |> Map.add
+                    row.RowId
+                    { HotReloadBaseline.BaselineMemberRefRow.Name = row.Name
+                      ParentToken = memberRefParentToken row.Parent
+                      Signature = row.Signature })
+            updatedBaselineCore.MemberReferenceRows
+
     { updatedBaselineCore with
         TypeTokens = updatedTypeTokenMap
+        MemberReferenceRows = updatedMemberReferenceRows
         MethodTokens = updatedMethodTokenMap
         FieldTokens = updatedFieldTokenMap
         PropertyTokens = updatedPropertyTokenMap
@@ -1454,12 +1501,21 @@ let private buildCustomAttributeRows
             let parentDef = metadataReader.GetTypeDefinition parentHandle
             let nestedTypes = parentDef.GetNestedTypes()
             let prefix = methodKey.Name + "@hotreload"
+
+            // Closure classes share the '{method}@hotreload' naming with async state
+            // machines; only genuine state machines carry a MoveNext method, so require
+            // one before synthesizing an AsyncStateMachineAttribute for the method.
+            let hasMoveNext (handle: TypeDefinitionHandle) =
+                metadataReader.GetTypeDefinition(handle).GetMethods()
+                |> Seq.exists (fun methodHandle ->
+                    metadataReader.GetString(metadataReader.GetMethodDefinition(methodHandle).Name) = "MoveNext")
+
             let matches =
                 nestedTypes
                 |> Seq.choose (fun nested ->
                     let nestedDef = metadataReader.GetTypeDefinition nested
                     let name = metadataReader.GetString nestedDef.Name
-                    if name.StartsWith(prefix, StringComparison.Ordinal) then
+                    if name.StartsWith(prefix, StringComparison.Ordinal) && hasMoveNext nested then
                         Some(name, nested)
                     else
                         None)
@@ -1981,6 +2037,7 @@ let private finalizeDeltaArtifacts
     (methodTokenMap: Dictionary<int, int>)
     (userStringEntries: (int * int * string) list)
     (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
+    (memberReferenceRowList: MemberReferenceRowInfo list)
     (propertyMapRowsSnapshot: PropertyMapRowInfo list)
     (eventMapRowsSnapshot: EventMapRowInfo list)
     (methodSemanticsRowsSnapshot: MethodSemanticsMetadataUpdate list)
@@ -2026,6 +2083,7 @@ let private finalizeDeltaArtifacts
     let updatedBaseline =
         buildUpdatedBaseline
             updatedBaselineCore
+            memberReferenceRowList
             propertyMapRowsSnapshot
             eventMapRowsSnapshot
             methodSemanticsRowsSnapshot
@@ -2102,6 +2160,13 @@ type private MetadataReferenceRemapContext =
     { MetadataReader: MetadataReader
       TraceMetadata: bool
       BaselineMemberRefRowCount: int
+      /// Baseline MemberRef row contents by row id (content-validated passthrough);
+      /// empty for legacy baselines without byte-derived row snapshots.
+      BaselineMemberRefRows: Map<int, HotReloadBaseline.BaselineMemberRefRow>
+      /// Baseline TypeSpec signature blobs by row id; empty for legacy baselines.
+      BaselineTypeSpecSignatures: Map<int, byte[]>
+      BaselineTypeSpecRowCount: int
+      TypeSpecTokenMap: Dictionary<int, int>
       TryReuseBaselineTypeRef: TypeReferenceKey -> int option
       RemapDefinitionToken: int -> int
       TypeReferenceRows: ResizeArray<TypeReferenceRowInfo>
@@ -2235,69 +2300,188 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
                 deltaToken
 
     and remapMemberRefToken token =
-        let rowId = token &&& 0x00FFFFFF
+        match context.MemberRefTokenMap.TryGetValue token with
+        | true, mapped -> mapped
+        | _ ->
+            let rowId = token &&& 0x00FFFFFF
+            let handle = MetadataTokens.MemberReferenceHandle token
+            let row = metadataReader.GetMemberReference handle
+            let name = if row.Name.IsNil then "" else metadataReader.GetString row.Name
 
-        if rowId > 0 && rowId <= context.BaselineMemberRefRowCount then
-            token
-        else
-            match context.MemberRefTokenMap.TryGetValue token with
-            | true, mapped -> mapped
-            | _ ->
-                let handle = MetadataTokens.MemberReferenceHandle token
-                let row = metadataReader.GetMemberReference handle
+            // Remap the parent and signature into baseline coordinates first: they are
+            // needed both for content validation of a positional passthrough and for an
+            // appended delta row.
+            let remappedParentToken =
+                if row.Parent.IsNil then
+                    0x01000001
+                else
+                    let parentToken = MetadataTokens.GetToken(row.Parent)
+                    match row.Parent.Kind with
+                    | HandleKind.TypeDefinition
+                    | HandleKind.MethodDefinition -> context.RemapDefinitionToken parentToken
+                    | HandleKind.TypeReference -> remapTypeRefToken parentToken
+                    | HandleKind.TypeSpecification -> remapTypeSpecToken parentToken
+                    | HandleKind.ModuleReference -> parentToken
+                    | _ -> 0x01000001
 
-                let parent =
-                    if row.Parent.IsNil then
-                        MRP_TypeRef(TypeRefHandle 1)
+            let signature =
+                if row.Signature.IsNil then
+                    Array.empty
+                else
+                    // Signature blobs embed TypeDefOrRef coded indexes of the fresh compile;
+                    // remap them to baseline rows before comparing or appending.
+                    metadataReader.GetBlobBytes row.Signature |> remapSignature
+
+            let signaturesEqual (a: byte[]) (b: byte[]) =
+                not (isNull (box a)) && not (isNull (box b)) && System.MemoryExtensions.SequenceEqual(System.Span.op_Implicit (a.AsSpan()), System.Span.op_Implicit (b.AsSpan()))
+
+            let matchesBaselineRow (baselineRow: HotReloadBaseline.BaselineMemberRefRow) =
+                String.Equals(baselineRow.Name, name, StringComparison.Ordinal)
+                && baselineRow.ParentToken = remappedParentToken
+                && signaturesEqual baselineRow.Signature signature
+
+            // 1. Positional passthrough, content-validated when the baseline row snapshot is
+            //    available: the fresh in-memory compile's MemberRef row order can shift
+            //    relative to the baseline (an added lambda changes the order of first use),
+            //    so a row id is only trusted when its content matches the baseline row.
+            //    Legacy baselines (no snapshot) keep the historical positional behavior.
+            let positionalReuse =
+                if rowId > 0 && rowId <= context.BaselineMemberRefRowCount then
+                    if Map.isEmpty context.BaselineMemberRefRows then
+                        Some token
                     else
-                        let parentToken = MetadataTokens.GetToken(row.Parent)
-                        match row.Parent.Kind with
-                        | HandleKind.TypeDefinition ->
-                            let mapped = context.RemapDefinitionToken parentToken
-                            MRP_TypeDef(TypeDefHandle(mapped &&& 0x00FFFFFF))
-                        | HandleKind.TypeReference ->
-                            let mapped = remapTypeRefToken parentToken
-                            MRP_TypeRef(TypeRefHandle(mapped &&& 0x00FFFFFF))
-                        | HandleKind.TypeSpecification ->
-                            let rowId = parentToken &&& 0x00FFFFFF
-                            MRP_TypeSpec(TypeSpecHandle rowId)
-                        | HandleKind.MethodDefinition ->
-                            let mapped = context.RemapDefinitionToken parentToken
-                            MRP_MethodDef(MethodDefHandle(mapped &&& 0x00FFFFFF))
-                        | HandleKind.ModuleReference ->
-                            let rowId = parentToken &&& 0x00FFFFFF
-                            MRP_ModuleRef(ModuleRefHandle rowId)
-                        | _ ->
-                            MRP_TypeRef(TypeRefHandle 1)
+                        match context.BaselineMemberRefRows.TryFind rowId with
+                        | Some baselineRow when matchesBaselineRow baselineRow -> Some token
+                        | _ -> None
+                else
+                    None
 
-                let nextRowId = context.GetNextMemberRefRowId () + 1
-                context.SetNextMemberRefRowId nextRowId
-                let mapped = 0x0A000000 ||| nextRowId
-                context.MemberRefTokenMap[token] <- mapped
+            // 2. Content search: the same member may exist in the baseline at a DIFFERENT
+            //    row id (shifted order); reuse it only when exactly one row matches.
+            let contentReuse () =
+                let matches =
+                    context.BaselineMemberRefRows
+                    |> Map.toSeq
+                    |> Seq.filter (fun (_, baselineRow) -> matchesBaselineRow baselineRow)
+                    |> Seq.truncate 2
+                    |> Seq.toList
 
-                let signature =
-                    if row.Signature.IsNil then
-                        Array.empty
-                    else
-                        // Added MemberRef rows carry their signature blob in the delta heap; remap the
-                        // embedded TypeDefOrRef coded indexes from the fresh compile to baseline rows.
-                        metadataReader.GetBlobBytes row.Signature |> remapSignature
+                match matches with
+                | [ (baselineRowId, _) ] -> Some(0x0A000000 ||| baselineRowId)
+                | _ -> None
 
-                context.MemberReferenceRows.Add(
-                    { RowId = nextRowId
-                      Parent = parent
-                      Name = if row.Name.IsNil then "" else metadataReader.GetString row.Name
-                      NameOffset = None
-                      Signature = signature
-                      SignatureOffset = None })
+            let mapped =
+                match positionalReuse with
+                | Some mapped -> mapped
+                | None ->
+                    match contentReuse () with
+                    | Some mapped -> mapped
+                    | None ->
+                        // 3. Append a new MemberRef row to the delta (duplicates of baseline
+                        //    rows are legal; correctness only needs the remapped parent/signature).
+                        let parent =
+                            let parentRowId = remappedParentToken &&& 0x00FFFFFF
 
-                if traceMetadata then
-                    printfn
-                        "[fsharp-hotreload][metadata] remap memberref token=0x%08X -> 0x%08X"
+                            match remappedParentToken &&& 0xFF000000 with
+                            | 0x02000000 -> MRP_TypeDef(TypeDefHandle parentRowId)
+                            | 0x01000000 -> MRP_TypeRef(TypeRefHandle parentRowId)
+                            | 0x1A000000 -> MRP_ModuleRef(ModuleRefHandle parentRowId)
+                            | 0x06000000 -> MRP_MethodDef(MethodDefHandle parentRowId)
+                            | 0x1B000000 -> MRP_TypeSpec(TypeSpecHandle parentRowId)
+                            | _ -> MRP_TypeRef(TypeRefHandle 1)
+
+                        let nextRowId = context.GetNextMemberRefRowId () + 1
+                        context.SetNextMemberRefRowId nextRowId
+
+                        context.MemberReferenceRows.Add(
+                            { RowId = nextRowId
+                              Parent = parent
+                              Name = name
+                              NameOffset = None
+                              Signature = signature
+                              SignatureOffset = None })
+
+                        0x0A000000 ||| nextRowId
+
+            context.MemberRefTokenMap[token] <- mapped
+
+            if traceMetadata then
+                printfn
+                    "[fsharp-hotreload][metadata] remap memberref token=0x%08X -> 0x%08X name=%s"
+                    token
+                    mapped
+                    name
+
+            mapped
+
+    and remapTypeSpecToken token =
+        match context.TypeSpecTokenMap.TryGetValue token with
+        | true, mapped -> mapped
+        | _ ->
+            let rowId = token &&& 0x00FFFFFF
+
+            // Legacy baselines without TypeSpec snapshots keep the historical positional
+            // passthrough; validated baselines compare the remapped fresh signature blob
+            // against the baseline row (and search for the instantiation elsewhere in the
+            // baseline when the row order shifted).
+            let mapped =
+                if Map.isEmpty context.BaselineTypeSpecSignatures then
+                    token
+                else
+                    let handle = MetadataTokens.TypeSpecificationHandle rowId
+                    let spec = metadataReader.GetTypeSpecification handle
+
+                    let signature =
+                        if spec.Signature.IsNil then
+                            Array.empty
+                        else
+                            metadataReader.GetBlobBytes spec.Signature |> remapTypeSpecBlob
+
+                    let blobsEqual (a: byte[]) (b: byte[]) =
+                        a.Length = b.Length && System.MemoryExtensions.SequenceEqual(System.Span.op_Implicit (a.AsSpan()), System.Span.op_Implicit (b.AsSpan()))
+
+                    let positionalMatch =
+                        rowId > 0
+                        && rowId <= context.BaselineTypeSpecRowCount
+                        && (match context.BaselineTypeSpecSignatures.TryFind rowId with
+                            | Some baselineBlob -> blobsEqual baselineBlob signature
+                            | None -> false)
+
+                    if positionalMatch then
                         token
-                        mapped
+                    else
+                        let matches =
+                            context.BaselineTypeSpecSignatures
+                            |> Map.toSeq
+                            |> Seq.filter (fun (_, blob) -> blobsEqual blob signature)
+                            |> Seq.truncate 2
+                            |> Seq.toList
 
-                mapped
+                        match matches with
+                        | [ (baselineRowId, _) ] -> 0x1B000000 ||| baselineRowId
+                        | _ ->
+                            if traceMetadata then
+                                let hex (bytes: byte[]) = bytes |> Array.map (sprintf "%02X") |> String.concat "-"
+                                printfn "[fsharp-hotreload][typespec-miss] token=0x%08X remapped=%s" token (hex signature)
+                                for KeyValue(rowIdB, blob) in context.BaselineTypeSpecSignatures do
+                                    printfn "[fsharp-hotreload][typespec-miss] baseline row=%d blob=%s" rowIdB (hex blob)
+
+                            // The delta writer cannot emit TypeSpec rows yet; a genuinely
+                            // new instantiation cannot be expressed (documented gap).
+                            raise (
+                                HotReloadUnsupportedEditException(
+                                    sprintf
+                                        "Edit references a generic instantiation (TypeSpec 0x%08X) with no matching baseline row; the delta writer cannot emit TypeSpec rows yet. Please rebuild."
+                                        token
+                                )
+                            )
+
+            context.TypeSpecTokenMap[token] <- mapped
+
+            if traceMetadata && mapped <> token then
+                printfn "[fsharp-hotreload][metadata] remap typespec token=0x%08X -> 0x%08X" token mapped
+
+            mapped
 
     and remapMethodSpecToken token =
         match context.MethodSpecTokenMap.TryGetValue token with
@@ -2366,11 +2550,15 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
         | EntityTokenRemapKind.MemberRef -> remapMemberRefToken token
         | EntityTokenRemapKind.MethodSpec -> remapMethodSpecToken token
         | EntityTokenRemapKind.TypeRef -> remapTypeRefToken token
+        | EntityTokenRemapKind.TypeSpec -> remapTypeSpecToken token
         | EntityTokenRemapKind.AssemblyRef -> remapAssemblyRefToken token
         | EntityTokenRemapKind.Passthrough -> token
 
     and remapSignature (signature: byte[]) : byte[] =
         remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken) signature
+
+    and remapTypeSpecBlob (blob: byte[]) : byte[] =
+        remapTypeSpecBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken) blob
 
     { RemapEntityToken = remapEntityToken
       RemapAssemblyRefToken = remapAssemblyRefToken }
@@ -2495,6 +2683,11 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
 
     let getAliasCandidates (typeName: string) =
         match synthesizedBuckets with
+        // Generation-suffixed closure names (C3 allocator: {base}@hotreload#g{N}_o{i})
+        // identify occurrences ADDED in a delta compile: they never alias a baseline
+        // closure class, so basic-name bucket expansion must not apply (it would make
+        // the new class ambiguously match the baseline closures sharing its base name).
+        | Some _ when FSharp.Compiler.ClosureNameAllocator.isGenerationSuffixedClosureName typeName -> [| typeName |]
         | Some buckets when IsCompilerGeneratedName typeName ->
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName typeName
             match buckets.TryGetValue basicName with
@@ -2940,6 +3133,10 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             { MetadataReader = metadataReader
               TraceMetadata = traceMetadata.Value
               BaselineMemberRefRowCount = baselineMemberRefRowCount
+              BaselineMemberRefRows = request.Baseline.MemberReferenceRows
+              BaselineTypeSpecSignatures = request.Baseline.TypeSpecSignatures
+              BaselineTypeSpecRowCount = baselineTableRowCounts.[TableNames.TypeSpec.Index]
+              TypeSpecTokenMap = Dictionary<int, int>()
               TryReuseBaselineTypeRef = tryReuseBaselineTypeRef
               RemapDefinitionToken = definitionTokenRemapper.RemapDefinitionToken
               TypeReferenceRows = typeReferenceRows
@@ -3412,7 +3609,6 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 [], []
             else
                 let baselineNestedClassRowCount = baselineTableRowCounts.[TableNames.Nested.Index]
-                let baselineTypeSpecRowCount = baselineTableRowCounts.[TableNames.TypeSpec.Index]
                 let typeRows = ResizeArray<TypeDefinitionRowInfo>()
                 let nestedRows = ResizeArray<NestedClassRowInfo>()
 
@@ -3462,22 +3658,11 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                                 let mapped = definitionTokenRemapper.RemapDefinitionToken baseToken
                                 Some(TDR_TypeDef(TypeDefHandle(mapped &&& 0x00FFFFFF)))
                             | HandleKind.TypeSpecification ->
-                                // TypeSpec tokens are passthrough (no TypeSpec table in the
-                                // delta writer yet): the fresh row id is only valid if the
-                                // same instantiation already exists in the baseline at the
-                                // same index. Fail closed when it points past the baseline
-                                // table — a genuinely new instantiation needs TypeSpec
-                                // emission support (documented gap).
-                                let specRowId = baseToken &&& 0x00FFFFFF
-
-                                if specRowId > baselineTypeSpecRowCount then
-                                    raise (
-                                        HotReloadUnsupportedEditException(
-                                            $"Added type '{fullName}' extends a generic instantiation with no baseline TypeSpec row; the delta writer cannot emit TypeSpec rows yet. Please rebuild."
-                                        )
-                                    )
-
-                                Some(TDR_TypeSpec(TypeSpecHandle specRowId))
+                                // Content-validated TypeSpec remap (no TypeSpec table in the
+                                // delta writer yet): resolves to the matching baseline row or
+                                // fails closed for genuinely new instantiations.
+                                let mapped = remapEntityToken baseToken
+                                Some(TDR_TypeSpec(TypeSpecHandle(mapped &&& 0x00FFFFFF)))
                             | kind ->
                                 raise (
                                     HotReloadUnsupportedEditException(
@@ -3599,6 +3784,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             methodTokenMap
             userStringEntries
             methodDefinitionRowsSnapshot
+            memberReferenceRowList
             propertyMapRowsSnapshot
             eventMapRowsSnapshot
             methodSemanticsRowsSnapshot

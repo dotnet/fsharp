@@ -321,13 +321,23 @@ delta-compile hook step). As implemented:
   this wiring.
 - **C3/C4 boundary**: C3 fixes the NAME of every occurrence — including added ones, which lower
   to `{base}@hotreload#g{N}_o{i}` classes in the delta compile's in-memory rewrite (pinned by
-  the `ClosureIdentityTests` added-lambda test). EMITTING those added members in a metadata
-  delta is Phase C4: classification still rejects lambda-set changes (`LambdaShapeChange`) at
-  delta emission, so today the generation-suffixed classes exist only in the recompiled
-  assembly, never in a delta. C4 can rely on: stable survivor names (in-place method updates),
-  deterministic generation-suffixed names for added occurrences, and the chained
-  `EncClosureNames`/`RefreshedClosureNameRows` tables identifying exactly which occurrence maps
-  to which closure class across generations.
+  the `ClosureIdentityTests` added-lambda test). Phase C4 (landed) EMITS those added members:
+  classification allows Added-only lambda sets when the runtime advertises
+  `NewTypeDefinition` + `AddMethodToExistingType` (and Removed-only sets unconditionally —
+  the baseline closure class just goes unused), and the delta emitter detects the
+  generation-suffix marker on fresh-compile types with no baseline TypeDef token, emitting a
+  NEW TypeDef row (+ AddField/AddMethod pairs, NestedClass row) per the Roslyn reference
+  template recorded in docs/hot-reload-member-additions.md. The added type token chains into
+  the next-generation baseline `TypeTokens`, so later generations body-edit the added
+  closure's methods in place (validated by the multi-generation runtime test
+  `ApplyUpdate succeeds for added lambda creating a new closure class`). Two C4 wiring
+  consequences: `checker.StartHotReloadSession` carries `EncClosureNames` over from the
+  in-process capture session it replaces (same MVID) because disk artifacts cannot encode
+  the tables, and MemberRef/TypeSpec token passthrough became content-validated (an added
+  lambda shifts the fresh compile's reference-row order; see the member-additions doc).
+  Still rude: capture-set changes of matched occurrences (capture-field mapping is a later
+  slice), genuinely new generic instantiations (TypeSpec emission), and generic closure
+  classes (GenericParam emission).
 
 The original design rationale, recorded before the wiring landed:
 

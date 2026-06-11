@@ -1773,10 +1773,39 @@ let private compareBindings
                             | LambdaEdit.CaptureSetChanged _ -> true
                             | _ -> false)
 
-                    if not added.IsEmpty || not removed.IsEmpty then
-                        Some(formatLambdaSetChangeMessage baselineBinding.Symbol added removed)
-                    elif not captureChanged.IsEmpty then
-                        Some(formatCaptureSetChangeMessage baselineBinding.Symbol captureChanged)
+                    if not captureChanged.IsEmpty then
+                        // Capture-set changes of MATCHED occurrences stay rude this slice
+                        // (the C#-parity allowance for compatible closure growth needs
+                        // capture-field mapping, a later slice).
+                        Some(RudeEditKind.LambdaShapeChange, formatCaptureSetChangeMessage baselineBinding.Symbol captureChanged)
+                    elif not added.IsEmpty then
+                        // ADDED lambdas lower to new closure classes (C3 assigns them
+                        // generation-suffixed names) plus their .ctor/Invoke methods, so the
+                        // edit needs the runtime to define new types and methods (C# parity:
+                        // AbstractEditAndContinueAnalyzer requires NewTypeDefinition for
+                        // lambdas with new closure scopes). When the capabilities are
+                        // present the member body update covers the edit — the delta
+                        // emitter discovers and emits the new closure TypeDef.
+                        let requiredCapabilities =
+                            [ EditAndContinueCapability.NewTypeDefinition
+                              EditAndContinueCapability.AddMethodToExistingType ]
+
+                        match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
+                        | None -> None
+                        | Some missing ->
+                            Some(
+                                RudeEditKind.NotSupportedByRuntime,
+                                FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
+                                    formatLambdaSetChangeMessage baselineBinding.Symbol added removed,
+                                    missing.Name
+                                )
+                            )
+                    elif not removed.IsEmpty then
+                        // REMOVED-only lambda sets need no new metadata at all (C# parity:
+                        // deleted lambda bodies just become unreachable): the baseline
+                        // closure class stays in place, unused, and survivors keep their
+                        // names (C3 allocator). The member body update suffices.
+                        None
                     else
                         // Only BodyEdited occurrences (or no lambda changes at all): the
                         // member body update covers the edit; fall through to body hashing.
@@ -1784,16 +1813,18 @@ let private compareBindings
                 | _ ->
                     // Legacy digest path: extraction was unsupported on at least one side.
                     if baselineBinding.LambdaShapeDigest <> updatedBinding.LambdaShapeDigest then
-                        Some
+                        Some(
+                            RudeEditKind.LambdaShapeChange,
                             $"Lambda lowering shape changed from '{baselineBinding.LambdaShapeDigest}' to '{updatedBinding.LambdaShapeDigest}'."
+                        )
                     else
                         None
 
             match lambdaRudeEdit with
-            | Some message ->
+            | Some(kind, message) ->
                 rude.Add(
                     { Symbol = Some baselineBinding.Symbol
-                      Kind = RudeEditKind.LambdaShapeChange
+                      Kind = kind
                       Message = message }
                 )
             | None ->

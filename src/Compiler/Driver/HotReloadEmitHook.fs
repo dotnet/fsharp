@@ -84,6 +84,14 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                          optimizedImpls
                          session.CurrentGeneration
 
+                 if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                     printfn
+                         "[fsharp-hotreload][closure-names] hook install: tables=%d gen=%d assigned=%d names=%A"
+                         (Map.count session.Baseline.EncClosureNames)
+                         session.CurrentGeneration
+                         (Map.count assignedNames)
+                         (assignedNames |> Map.toList)
+
                  ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) assignedNames
              | _ ->
                  // Explicitly drop any previously installed table in case the

@@ -384,6 +384,8 @@ module EdgeCaseTests =
                     }
                 TypeReferenceTokens = Map.empty
                 AssemblyReferenceTokens = Map.empty
+                MemberReferenceRows = Map.empty
+                TypeSpecSignatures = Map.empty
                 TableEntriesAdded = Array.zeroCreate 64
                 StringStreamLengthAdded = 0
                 UserStringStreamLengthAdded = 0

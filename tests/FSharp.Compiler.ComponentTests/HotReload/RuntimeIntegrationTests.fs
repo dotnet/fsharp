@@ -1808,3 +1808,245 @@ type Type =
             try checker.EndHotReloadSession() with _ -> ()
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
+
+    // -----------------------------------------------------------------------------
+    // Phase C4: added lambdas emit new closure classes in deltas
+    // -----------------------------------------------------------------------------
+
+    // Direct nested applications (no |> chains, no let-bound stages): pipeline
+    // desugaring introduces "Pipe #N stage #M" continuation closures and let-bound
+    // stages change the closure base names; both have separate identity concerns.
+    // This shape keeps every lambda a plain source occurrence of 'transform'.
+    let private closureAdditionBaselineSource =
+        """
+module Sample.Closures
+
+let transform (input: int list) =
+    List.map (fun x -> x * 2 + List.length input) (List.filter (fun x -> x > 0) input)
+
+let probe () = List.sum (transform [ 1; 2; 3 ])
+"""
+
+    // Generation 1: a capture-free lambda is ADDED as the innermost stage, in front of
+    // the surviving filter and map lambdas in occurrence order (the case pure sequence
+    // replay cannot handle; the C3 allocator names the new occurrence
+    // {base}@hotreload#g1_o{i}).
+    let private closureAdditionUpdatedSource =
+        """
+module Sample.Closures
+
+let transform (input: int list) =
+    List.map (fun x -> x * 2 + List.length input) (List.filter (fun x -> x > 0) (List.map (fun x -> x + 1) input))
+
+let probe () = List.sum (transform [ 1; 2; 3 ])
+"""
+
+    // Generation 2: body-edit of the lambda ADDED in generation 1 (its closure class
+    // is now part of the chained baseline, so this must be an in-place method update).
+    let private closureAdditionSecondUpdateSource =
+        """
+module Sample.Closures
+
+let transform (input: int list) =
+    List.map (fun x -> x * 2 + List.length input) (List.filter (fun x -> x > 0) (List.map (fun x -> x + 5) input))
+
+let probe () = List.sum (transform [ 1; 2; 3 ])
+"""
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added lambda creating a new closure class`` () =
+        // Phase C4 payoff: a member with two lambdas gains a third one. The delta must
+        // carry a NEW TypeDef row for the generation-suffixed closure class (plus its
+        // .ctor/Invoke methods and NestedClass row), the updated parent method body,
+        // and apply cleanly via MetadataUpdater. A further generation then body-edits
+        // the ADDED lambda, proving its closure class chained into the baseline.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-added-lambda", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "ClosureAddition.fs")
+            let dllPath = Path.Combine(projectDir, "ClosureAddition.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "ClosureAddition.runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, closureAdditionBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString closureAdditionBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                // Compile baseline
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                // Added lambdas need the new-type and method capabilities (the closure
+                // class plus its .ctor/Invoke methods).
+                let capabilities =
+                    [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
+
+                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let moduleType = assembly.GetType("Sample.Closures", throwOnError = true)
+                let probe = moduleType.GetMethod("probe", BindingFlags.Public ||| BindingFlags.Static)
+
+                // Baseline: filter [1;2;3] -> map (*2+3) = [5;7;9], sum 21.
+                Assert.Equal(21, probe.Invoke(null, [||]) :?> int)
+
+                let baselineClosureCount =
+                    moduleType.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
+                    |> Array.filter (fun t -> t.Name.Contains("@hotreload"))
+                    |> Array.length
+
+                let applyGeneration gen (source: string) expectedValue =
+                    File.WriteAllText(fsPath, source)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    let updatedOptions =
+                        { projectOptions with
+                            OtherOptions =
+                                projectOptions.OtherOptions
+                                |> Array.filter (fun opt ->
+                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                    let compileDiagnostics, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    | Ok delta ->
+                        let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                        printfn "[added-lambda] Gen %d: metadata=%d IL=%d PDB=%d" gen delta.Metadata.Length delta.IL.Length pdbBytes.Length
+
+                        match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DUMP_DIR") with
+                        | null | "" -> ()
+                        | dumpDir ->
+                            Directory.CreateDirectory(dumpDir) |> ignore
+                            File.Copy(runtimeDllPath, Path.Combine(dumpDir, "baseline.dll"), true)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dmeta"), delta.Metadata)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dil"), delta.IL)
+                            File.WriteAllBytes(Path.Combine(dumpDir, $"gen{gen}.dpdb"), pdbBytes)
+
+                        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+
+                        let value = probe.Invoke(null, [||]) :?> int
+                        printfn "[added-lambda] Gen %d result: %d (expected %d)" gen value expectedValue
+                        Assert.Equal(expectedValue, value)
+                        delta
+
+                // Generation 1: added lambda runs — map(+1) [1;2;3] = [2;3;4],
+                // filter (>0) keeps all, map (*2+3) = [7;9;11], sum 27.
+                let delta1 = applyGeneration 1 closureAdditionUpdatedSource 27
+
+                // The delta must carry a NEW TypeDef row for the generation-suffixed
+                // closure class.
+                let baselineTypeDefCount =
+                    use peReader = new PEReader(File.OpenRead runtimeDllPath)
+                    peReader.GetMetadataReader().GetTableRowCount(TableIndex.TypeDef)
+
+                // Read the delta metadata's EncLog with SRM: the new closure class appears
+                // as a TypeDef row PAST the baseline table with the plain Default (= 0)
+                // operation (row content applied via ApplyTableDelta).
+                let readEncLog (metadata: byte[]) =
+                    use provider =
+                        MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> metadata)
+
+                    provider.GetMetadataReader().GetEditAndContinueLogEntries()
+                    |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+                    |> Seq.toArray
+
+                let gen1EncLog = readEncLog delta1.Metadata
+
+                let newTypeDefEntries =
+                    gen1EncLog
+                    |> Array.filter (fun (token, op) ->
+                        token >>> 24 = 0x02
+                        && (token &&& 0x00FFFFFF) > baselineTypeDefCount
+                        && op = 0)
+
+                Assert.True(
+                    newTypeDefEntries.Length >= 1,
+                    sprintf "Expected a new TypeDef row in the generation-1 EncLog; got %A" gen1EncLog)
+
+                // NOTE: reflection does not reliably enumerate EnC-added nested types
+                // (GetNestedTypes on the live type still reports the baseline set), so the
+                // structural evidence is the EncLog above and the behavioral evidence is the
+                // probe result; the baseline closure count is only pinned for context.
+                let closuresAfterGen1 =
+                    moduleType.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
+                    |> Array.filter (fun t -> t.Name.Contains("@hotreload"))
+
+                Assert.True(
+                    closuresAfterGen1.Length >= baselineClosureCount,
+                    "Baseline closure classes must remain visible after the update.")
+
+                // Generation 2: body edit of the ADDED lambda — map(+5) [1;2;3] = [6;7;8],
+                // filter keeps all, map (*2+3) = [15;17;19], sum 51. Its closure class is
+                // now part of the chained baseline, so NO new TypeDef row may appear.
+                let delta2 = applyGeneration 2 closureAdditionSecondUpdateSource 51
+
+                let gen2EncLog = readEncLog delta2.Metadata
+
+                let gen2TypeDefAdds =
+                    gen2EncLog
+                    |> Array.filter (fun (token, _) ->
+                        token >>> 24 = 0x02 && (token &&& 0x00FFFFFF) > baselineTypeDefCount + 1)
+
+                Assert.True(
+                    Array.isEmpty gen2TypeDefAdds,
+                    sprintf "Generation 2 must update the added closure in place; got %A" gen2EncLog)
+
+                printfn "[added-lambda] SUCCESS: closure addition + in-place follow-up edit applied"
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()

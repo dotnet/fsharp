@@ -68,6 +68,8 @@ module ErrorPathTests =
                 }
             TypeReferenceTokens = Map.empty
             AssemblyReferenceTokens = Map.empty
+            MemberReferenceRows = Map.empty
+            TypeSpecSignatures = Map.empty
             TableEntriesAdded = Array.zeroCreate 64
             StringStreamLengthAdded = 0
             UserStringStreamLengthAdded = 0
@@ -264,8 +266,11 @@ module ErrorPathTests =
 
         [<Fact>]
         let ``classifyEntityTokenRemapKind keeps known passthrough tables explicit`` () =
+            // TypeSpec tokens are content-validated as of Phase C4 (the fresh compile's
+            // TypeSpec row order can shift when lambdas are added); StandAloneSig stays
+            // a plain passthrough (locals signatures are re-emitted, never referenced).
             let typeSpec = FSharp.Compiler.IlxDeltaEmitter.classifyEntityTokenRemapKind 0x1B000001
             let standaloneSig = FSharp.Compiler.IlxDeltaEmitter.classifyEntityTokenRemapKind 0x11000001
 
-            Assert.Equal(FSharp.Compiler.IlxDeltaEmitter.EntityTokenRemapKind.Passthrough, typeSpec)
+            Assert.Equal(FSharp.Compiler.IlxDeltaEmitter.EntityTokenRemapKind.TypeSpec, typeSpec)
             Assert.Equal(FSharp.Compiler.IlxDeltaEmitter.EntityTokenRemapKind.Passthrough, standaloneSig)

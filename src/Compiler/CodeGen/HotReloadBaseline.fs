@@ -118,6 +118,17 @@ type PropertyDefinitionMetadataHandles =
 
 type EventDefinitionMetadataHandles = { NameOffset: StringOffset option }
 
+/// Content snapshot of a baseline MemberRef row, used by the delta emitter to VALIDATE
+/// positional token passthrough (the fresh in-memory compile's MemberRef row order can
+/// shift relative to the baseline — e.g. when an added lambda changes the order of first
+/// use — so a row id is only trusted when its content matches the baseline row).
+type BaselineMemberRefRow =
+    { Name: string
+      /// Decoded MemberRefParent as a metadata token (0x02/0x01/0x1A/0x06/0x1B tables).
+      ParentToken: int
+      /// Signature blob bytes (baseline coordinates).
+      Signature: byte[] }
+
 type BaselineHandleCache =
     { MethodHandles: Map<MethodDefinitionKey, MethodDefinitionMetadataHandles>
       ParameterHandles: Map<ParameterDefinitionKey, ParameterDefinitionMetadataHandles>
@@ -176,6 +187,15 @@ type FSharpEmitBaseline =
         MetadataHandles: BaselineHandleCache
         TypeReferenceTokens: Map<TypeReferenceKey, int>
         AssemblyReferenceTokens: Map<string, int>
+        /// Baseline MemberRef row contents keyed by row id, for content-validated token
+        /// passthrough in delta emission (extended with delta-added rows on chaining).
+        /// Empty for baselines whose bytes were unavailable — passthrough then stays
+        /// positional (legacy behavior).
+        MemberReferenceRows: Map<int, BaselineMemberRefRow>
+        /// Baseline TypeSpec signature blobs keyed by row id, for content-validated
+        /// TypeSpec token passthrough (the delta writer cannot emit TypeSpec rows yet,
+        /// so an unmatched fresh TypeSpec fails closed).
+        TypeSpecSignatures: Map<int, byte[]>
         TableEntriesAdded: int[]
         StringStreamLengthAdded: int
         UserStringStreamLengthAdded: int
@@ -513,6 +533,8 @@ let private createCore
         MetadataHandles = BaselineHandleCache.Empty
         TypeReferenceTokens = Map.empty
         AssemblyReferenceTokens = Map.empty
+        MemberReferenceRows = Map.empty
+        TypeSpecSignatures = Map.empty
         TableEntriesAdded = Array.zeroCreate tableCount
         StringStreamLengthAdded = 0
         UserStringStreamLengthAdded = 0
@@ -1019,6 +1041,29 @@ let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline
         let eventHandles = buildEventHandlesFromBytes reader baseline.EventTokens
         let typeReferenceTokens = buildTypeReferenceTokensFromBytes reader
         let assemblyReferenceTokens = buildAssemblyReferenceTokensFromBytes reader
+
+        let memberReferenceRows =
+            seq {
+                for rowId in 1 .. reader.MemberRefCount do
+                    match reader.GetMemberRef rowId with
+                    | Some row ->
+                        yield
+                            rowId,
+                            { BaselineMemberRefRow.Name = reader.GetString row.NameOffset
+                              ParentToken = reader.DecodeMemberRefParentToken row.Parent
+                              Signature = reader.GetBlob row.SignatureOffset }
+                    | None -> ()
+            }
+            |> Map.ofSeq
+
+        let typeSpecSignatures =
+            seq {
+                for rowId in 1 .. reader.TypeSpecCount do
+                    match reader.GetTypeSpecSignatureOffset rowId with
+                    | Some sigOffset -> yield rowId, reader.GetBlob sigOffset
+                    | None -> ()
+            }
+            |> Map.ofSeq
         let cache =
             { MethodHandles = methodHandles
               ParameterHandles = parameterHandles
@@ -1032,7 +1077,9 @@ let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline
             MetadataHandles = cache
             ModuleNameOffset = moduleNameOffset
             TypeReferenceTokens = typeReferenceTokens
-            AssemblyReferenceTokens = assemblyReferenceTokens }
+            AssemblyReferenceTokens = assemblyReferenceTokens
+            MemberReferenceRows = memberReferenceRows
+            TypeSpecSignatures = typeSpecSignatures }
 
 /// <summary>
 /// Create a baseline directly from emitted assembly artifacts.

@@ -234,6 +234,23 @@ type internal FSharpHotReloadService
                     | Result.Error error -> return Result.Error error
                     | Ok(baseline, implementationFiles) ->
                         lock hotReloadGate (fun () ->
+                            // Closure mapping (C3/C4): the per-method occurrence-chain -> closure-name
+                            // tables cannot be re-derived from disk artifacts (the EnC CDI blob format
+                            // carries no name slots), so a baseline read back from the output assembly
+                            // would silently drop them and every later delta compile would fall back to
+                            // sequence-replay naming — making added-lambda edits unmappable. When the
+                            // session being replaced was captured in-process for the SAME output
+                            // assembly (matching MVID), carry its tables forward.
+                            let baseline =
+                                match editAndContinueService.TryGetSession() with
+                                | ValueSome existing when
+                                    existing.Baseline.ModuleId = baseline.ModuleId
+                                    && not (Map.isEmpty existing.Baseline.EncClosureNames)
+                                    ->
+                                    { baseline with
+                                        EncClosureNames = existing.Baseline.EncClosureNames }
+                                | _ -> baseline
+
                             let compilerState = tcGlobals.CompilerGlobalState.Value
                             let map =
                                 let targetMap =

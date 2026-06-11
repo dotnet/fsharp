@@ -393,6 +393,11 @@ let private calculateTableRowSizes (ctx: MetadataContext) : int[] =
     // Param: Flags(2) + Sequence(2) + Name(str)
     sizes.[8] <- 2 + 2 + strIdx
 
+    // InterfaceImpl: Class(TypeDef) + Interface(TypeDefOrRef)
+    // Missing this size silently shifted every later table's offset for assemblies with
+    // interface implementations (e.g. anonymous records implementing IEquatable).
+    sizes.[9] <- tableIndexSize rc 2 + typeDefOrRefSize rc
+
     // MemberRef: Class(MemberRefParent) + Name(str) + Signature(blob)
     sizes.[10] <- memberRefParentSize rc + strIdx + blobIdx
 
@@ -669,6 +674,63 @@ let private readTypeRefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffset
 
         Some { ResolutionScope = resScope; NameOffset = nameOffset; NamespaceOffset = nsOffset }
 
+/// MemberRef row data.
+type MemberRefRowData = {
+    /// Raw MemberRefParent coded index value (tag bits 0-2, row id above).
+    Parent: int
+    NameOffset: int
+    SignatureOffset: int
+}
+
+/// Read a MemberRef row by 1-based row ID.
+let private readMemberRefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : MemberRefRowData option =
+    if rowId < 1 || rowId > ctx.RowCounts.[TableIndices.MemberRef] then
+        None
+    else
+        let rowSize = rowSizes.[TableIndices.MemberRef]
+        let offset = tableOffsets.[TableIndices.MemberRef] + (rowId - 1) * rowSize
+        let bytes = ctx.Bytes
+        let parentSize = memberRefParentSize ctx.RowCounts
+
+        // MemberRef: Class(MemberRefParent) + Name(str) + Signature(blob)
+        let parent = readHeapIndex bytes offset parentSize
+        let nameOffset = readHeapIndex bytes (offset + parentSize) ctx.StringIndexSize
+        let sigOffset = readHeapIndex bytes (offset + parentSize + ctx.StringIndexSize) ctx.BlobIndexSize
+
+        Some { Parent = parent; NameOffset = nameOffset; SignatureOffset = sigOffset }
+
+/// Read a TypeSpec row by 1-based row ID; the row is a single #Blob signature column.
+let private readTypeSpecRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : int option =
+    if rowId < 1 || rowId > ctx.RowCounts.[TableIndices.TypeSpec] then
+        None
+    else
+        let rowSize = rowSizes.[TableIndices.TypeSpec]
+        let offset = tableOffsets.[TableIndices.TypeSpec] + (rowId - 1) * rowSize
+        Some(readHeapIndex ctx.Bytes offset ctx.BlobIndexSize)
+
+/// Read a length-prefixed blob (ECMA-335 II.24.2.4 compressed length) from the #Blob heap.
+let private readBlobFromHeap (ctx: MetadataContext) (offset: int) : byte[] =
+    if offset <= 0 then
+        Array.empty
+    else
+        let start = ctx.BlobStreamOffset + offset
+        let b0 = int ctx.Bytes.[start]
+
+        let length, headerSize =
+            if b0 &&& 0x80 = 0 then b0, 1
+            elif b0 &&& 0xC0 = 0x80 then (((b0 &&& 0x3F) <<< 8) ||| int ctx.Bytes.[start + 1]), 2
+            else
+                (((b0 &&& 0x1F) <<< 24)
+                 ||| (int ctx.Bytes.[start + 1] <<< 16)
+                 ||| (int ctx.Bytes.[start + 2] <<< 8)
+                 ||| int ctx.Bytes.[start + 3]),
+                4
+
+        if length = 0 then
+            Array.empty
+        else
+            ctx.Bytes.[start + headerSize .. start + headerSize + length - 1]
+
 /// AssemblyRef row data.
 type AssemblyRefRowData = {
     MajorVersion: int
@@ -805,6 +867,38 @@ type BaselineMetadataReader private (ctx: MetadataContext, rowSizes: int[], tabl
 
     /// Read a string from the #Strings heap.
     member _.GetString(offset: int) = readStringFromHeap ctx offset
+
+    /// Read a MemberRef row by 1-based row ID.
+    member _.GetMemberRef(rowId: int) = readMemberRefRow ctx rowSizes tableOffsets rowId
+
+    /// Get the MemberRef row count.
+    member _.MemberRefCount = ctx.RowCounts.[TableIndices.MemberRef]
+
+    /// Read a TypeSpec row's signature blob offset by 1-based row ID.
+    member _.GetTypeSpecSignatureOffset(rowId: int) = readTypeSpecRow ctx rowSizes tableOffsets rowId
+
+    /// Get the TypeSpec row count.
+    member _.TypeSpecCount = ctx.RowCounts.[TableIndices.TypeSpec]
+
+    /// Read a length-prefixed blob from the #Blob heap.
+    member _.GetBlob(offset: int) = readBlobFromHeap ctx offset
+
+    /// Decode a MemberRefParent coded index to a metadata token.
+    /// Tag bits (3): 0=TypeDef, 1=TypeRef, 2=ModuleRef, 3=MethodDef, 4=TypeSpec.
+    member _.DecodeMemberRefParentToken(codedIndex: int) : int =
+        let tag = codedIndex &&& 0x7
+        let rowId = codedIndex >>> 3
+
+        let tableIndex =
+            match tag with
+            | 0 -> TableIndices.TypeDef
+            | 1 -> TableIndices.TypeRef
+            | 2 -> TableIndices.ModuleRef
+            | 3 -> TableIndices.MethodDef
+            | 4 -> TableIndices.TypeSpec
+            | _ -> -1
+
+        if tableIndex < 0 then 0 else (tableIndex <<< 24) ||| rowId
 
     /// Decode ResolutionScope coded index to (table index, row id).
     /// Tag bits: 0=Module, 1=ModuleRef, 2=AssemblyRef, 3=TypeRef
