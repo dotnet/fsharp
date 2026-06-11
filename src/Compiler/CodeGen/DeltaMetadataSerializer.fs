@@ -139,6 +139,8 @@ let private writeTaggedIndex (writer: BinaryWriter) (nbits: int) (isBig: bool) (
 let private tableRowsByIndex (tables: TableRows) =
     let rows = Array.create DeltaTokens.TableCount Array.empty
     rows[TableNames.Module.Index] <- tables.Module
+    rows[TableNames.TypeDef.Index] <- tables.TypeDef
+    rows[TableNames.Nested.Index] <- tables.NestedClass
     rows[TableNames.Field.Index] <- tables.Field
     rows[TableNames.Method.Index] <- tables.MethodDef
     rows[TableNames.Param.Index] <- tables.Param

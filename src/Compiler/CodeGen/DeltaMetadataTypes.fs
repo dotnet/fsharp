@@ -54,6 +54,37 @@ type FieldDefinitionRowInfo =
       Signature: byte[]
       SignatureOffset: BlobOffset option }
 
+/// Row model for an ADDED TypeDef table entry emitted into a delta (ECMA-335
+/// II.22.37: Flags, TypeName, TypeNamespace, Extends, FieldList, MethodList).
+/// Roslyn parity (DeltaMetadataWriter.GetFirstFieldDefinitionHandle /
+/// GetFirstMethodDefinitionHandle return default in EnC deltas): the
+/// FieldList/MethodList columns are always written as 0 — members are linked
+/// to the new type through the AddField/AddMethod EncLog parent entries.
+type TypeDefinitionRowInfo =
+    { /// Full name of the added type (namespace-qualified, '+'-nested), used as the
+      /// baseline TypeTokens key when chaining the next-generation baseline.
+      FullName: string
+      RowId: int
+      Attributes: TypeAttributes
+      Name: string
+      NameOffset: StringOffset option
+      Namespace: string
+      NamespaceOffset: StringOffset option
+      /// Base type, remapped to baseline/delta rows. None encodes the nil
+      /// TypeDefOrRef (interfaces / <Module>).
+      Extends: TypeDefOrRef option
+      /// Row id of the enclosing TypeDef when the added type is nested; drives the
+      /// NestedClass row the writer emits alongside the TypeDef row.
+      EnclosingTypeDefRowId: int option }
+
+/// Row model for a NestedClass table entry (ECMA-335 II.22.32: NestedClass,
+/// EnclosingClass — both TypeDef row indices). Emitted for added nested types;
+/// logged as a plain Default EncLog entry (Roslyn parity).
+type NestedClassRowInfo =
+    { RowId: int
+      NestedTypeDefRowId: int
+      EnclosingTypeDefRowId: int }
+
 type TypeReferenceRowInfo =
     { RowId: int
       ResolutionScope: ResolutionScope
@@ -145,6 +176,8 @@ type MethodSemanticsMetadataUpdate =
 
 type TableRows =
     { Module: RowElementData[][]
+      TypeDef: RowElementData[][]
+      NestedClass: RowElementData[][]
       Field: RowElementData[][]
       MethodDef: RowElementData[][]
       Param: RowElementData[][]

@@ -790,6 +790,195 @@ module FSharpDeltaMetadataWriterTests =
         ignoreBadImageFormat (fun () -> assertEncMapMatches metadataDelta.Metadata metadataDelta.EncMap)
 
     [<Fact>]
+    let ``metadata writer emits added type definition rows with Roslyn EncLog shape`` () =
+        // Mirrors the C# reference delta produced by Roslyn EmitDifference for a method
+        // gaining its first capturing lambda (csharp_enc_reference harness): the NEW
+        // TypeDef row is a plain Default entry that precedes its AddField/AddMethod
+        // parent pairs, the member rows are parented to the NEW row, the NestedClass
+        // row trails the log, and EncMap carries the TypeDef/Field/Method/NestedClass
+        // rows but never the Add* parent entries.
+        let moduleDef = createPropertyModule None ()
+        let assemblyBytes, _, _, _ = createAssemblyBytes moduleDef
+        use peReader = new PEReader(new MemoryStream(assemblyBytes, false))
+        let metadataReader = peReader.GetMetadataReader()
+
+        let typeHandle =
+            metadataReader.TypeDefinitions
+            |> Seq.find (fun handle -> metadataReader.GetString(metadataReader.GetTypeDefinition(handle).Name) = "PropertyHost")
+
+        let getterHandle =
+            metadataReader.MethodDefinitions
+            |> Seq.find (fun handle -> metadataReader.GetString(metadataReader.GetMethodDefinition(handle).Name) = "get_Message")
+
+        let builder = IlDeltaStreamBuilder None
+
+        let stringType = ilGlobals.typ_String
+        let updatedMethodKey = methodKey "Sample.PropertyHost" "get_Message" stringType
+        let getterEntity: EntityHandle = getterHandle
+        let getterRowId = MetadataTokens.GetRowNumber getterEntity
+        let getterDef = metadataReader.GetMethodDefinition getterHandle
+
+        let typeEntity: EntityHandle = typeHandle
+        let enclosingTypeDefRowId = MetadataTokens.GetRowNumber typeEntity
+
+        let newTypeDefRowId = (metadataReader.GetTableRowCount TableIndex.TypeDef) + 1
+        let fieldRowId = (metadataReader.GetTableRowCount TableIndex.Field) + 1
+        let baselineMethodRowCount = metadataReader.GetTableRowCount TableIndex.MethodDef
+        let ctorRowId = baselineMethodRowCount + 1
+        let invokeRowId = baselineMethodRowCount + 2
+
+        let typeDefinitionRows: TypeDefinitionRowInfo list =
+            [ { FullName = "Sample.PropertyHost.go@hotreload#g1_o0"
+                RowId = newTypeDefRowId
+                Attributes =
+                    TypeAttributes.NestedAssembly
+                    ||| TypeAttributes.Class
+                    ||| TypeAttributes.Sealed
+                    ||| TypeAttributes.BeforeFieldInit
+                Name = "go@hotreload#g1_o0"
+                NameOffset = None
+                Namespace = ""
+                NamespaceOffset = None
+                // Baseline TypeRef row 1 stands in for the remapped base type.
+                Extends = Some(TDR_TypeRef(TypeRefHandle 1))
+                EnclosingTypeDefRowId = Some enclosingTypeDefRowId } ]
+
+        let nestedClassRows: NestedClassRowInfo list =
+            [ { RowId = 1
+                NestedTypeDefRowId = newTypeDefRowId
+                EnclosingTypeDefRowId = enclosingTypeDefRowId } ]
+
+        let fieldKey: FieldDefinitionKey =
+            { DeclaringType = "Sample.PropertyHost.go@hotreload#g1_o0"
+              Name = "x"
+              FieldType = ilGlobals.typ_Int32 }
+
+        let fieldRows: DeltaWriter.FieldDefinitionRowInfo list =
+            [ { Key = fieldKey
+                RowId = fieldRowId
+                IsAdded = true
+                ParentTypeDefRowId = newTypeDefRowId
+                Attributes = FieldAttributes.Public
+                Name = "x"
+                NameOffset = None
+                Signature = [| 0x06uy; 0x08uy |]
+                SignatureOffset = None } ]
+
+        let updatedMethodRow : DeltaWriter.MethodDefinitionRowInfo =
+            { Key = updatedMethodKey
+              RowId = getterRowId
+              IsAdded = false
+              ParentTypeDefRowId = None
+              Attributes = getterDef.Attributes
+              ImplAttributes = getterDef.ImplAttributes
+              Name = metadataReader.GetString getterDef.Name
+              NameOffset = None
+              Signature = metadataReader.GetBlobBytes getterDef.Signature
+              SignatureOffset = None
+              FirstParameterRowId = None
+              CodeRva = None }
+
+        let addedMethodRow rowId name =
+            let key = methodKey "Sample.PropertyHost.go@hotreload#g1_o0" name stringType
+
+            { updatedMethodRow with
+                Key = key
+                RowId = rowId
+                IsAdded = true
+                ParentTypeDefRowId = Some newTypeDefRowId
+                Name = name }
+
+        let ctorRow = addedMethodRow ctorRowId ".ctor"
+        let invokeRow = addedMethodRow invokeRowId "Invoke"
+
+        let methodDefinitionRows = [ updatedMethodRow; ctorRow; invokeRow ]
+
+        let makeUpdate (row: DeltaWriter.MethodDefinitionRowInfo) : DeltaWriter.MethodMetadataUpdate =
+            { MethodKey = row.Key
+              MethodToken = 0x06000000 ||| row.RowId
+              MethodHandle = MethodDefHandle row.RowId
+              Body =
+                { MethodToken = 0x06000000 ||| row.RowId
+                  LocalSignatureToken = 0
+                  CodeOffset = 0
+                  CodeLength = 1 } }
+
+        let updates = methodDefinitionRows |> List.map makeUpdate
+
+        let moduleName = metadataReader.GetString(metadataReader.GetModuleDefinition().Name)
+
+        let metadataDelta =
+            DeltaWriter.emitWithTypeDefinitions
+                moduleName
+                None
+                1
+                (System.Guid.NewGuid())
+                (System.Guid.NewGuid())
+                (System.Guid.NewGuid())
+                typeDefinitionRows
+                nestedClassRows
+                methodDefinitionRows
+                [] // parameter rows
+                fieldRows
+                [] // type reference rows
+                [] // member reference rows
+                [] // method spec rows
+                [] // assembly reference rows
+                [] // property rows
+                [] // event rows
+                [] // property map rows
+                [] // event map rows
+                [] // method semantics rows
+                builder.StandaloneSignatures
+                [] // custom attribute rows
+                [] // user string updates
+                updates
+                MetadataHeapOffsets.Zero
+                (getRowCounts metadataReader)
+
+        let tableCount (table: TableName) = metadataDelta.TableRowCounts.[table.Index]
+        Assert.Equal(1, tableCount TableNames.TypeDef)
+        Assert.Equal(1, tableCount TableNames.Nested)
+        Assert.Equal(1, tableCount TableNames.Field)
+        Assert.Equal(3, tableCount TableNames.Method)
+
+        // Exact EncLog sequence: the new TypeDef row's Default entry precedes its
+        // AddField/AddMethod parent pairs; each pair stays adjacent; NestedClass trails.
+        let expectedEncLog: (TableName * int * EditAndContinueOperation)[] =
+            [| (TableNames.Module, 1, EditAndContinueOperation.Default)
+               (TableNames.TypeDef, newTypeDefRowId, EditAndContinueOperation.Default)
+               (TableNames.TypeDef, newTypeDefRowId, EditAndContinueOperation.AddField)
+               (TableNames.Field, fieldRowId, EditAndContinueOperation.Default)
+               (TableNames.Method, getterRowId, EditAndContinueOperation.Default)
+               (TableNames.TypeDef, newTypeDefRowId, EditAndContinueOperation.AddMethod)
+               (TableNames.Method, ctorRowId, EditAndContinueOperation.Default)
+               (TableNames.TypeDef, newTypeDefRowId, EditAndContinueOperation.AddMethod)
+               (TableNames.Method, invokeRowId, EditAndContinueOperation.Default)
+               (TableNames.Nested, 1, EditAndContinueOperation.Default) |]
+
+        Assert.Equal<(TableName * int * EditAndContinueOperation)[]>(expectedEncLog, metadataDelta.EncLog)
+
+        // EncMap is token-sorted, contains the new TypeDef and NestedClass rows, and
+        // never the Add* parent entries.
+        let expectedEncMap: (TableName * int)[] =
+            [| (TableNames.Module, 1)
+               (TableNames.TypeDef, newTypeDefRowId)
+               (TableNames.Field, fieldRowId)
+               (TableNames.Method, getterRowId)
+               (TableNames.Method, ctorRowId)
+               (TableNames.Method, invokeRowId)
+               (TableNames.Nested, 1) |]
+
+        Assert.Equal<(TableName * int)[]>(expectedEncMap, metadataDelta.EncMap)
+
+        Assert.True(metadataDelta.Metadata.Length > 0)
+        ignoreBadImageFormat (fun () -> assertTableStreamMatches metadataDelta)
+        ignoreBadImageFormat (fun () -> assertTableCountsMatch metadataDelta.Metadata metadataDelta.TableRowCounts)
+        ignoreBadImageFormat (fun () -> assertBitMasksMatch metadataDelta.Metadata metadataDelta.TableBitMasks)
+        ignoreBadImageFormat (fun () -> assertEncLogMatches metadataDelta.Metadata metadataDelta.EncLog)
+        ignoreBadImageFormat (fun () -> assertEncMapMatches metadataDelta.Metadata metadataDelta.EncMap)
+
+    [<Fact>]
     let ``property delta uses ENC-sized indexes`` () =
         // Use closure delta: it updates an existing method body (with locals), exercising MethodDef update path.
         let artifacts = MetadataDeltaTestHelpers.emitClosureDeltaArtifacts ()
@@ -2613,6 +2802,8 @@ module FSharpDeltaMetadataWriterTests =
 
     let private emptyTableRows : TableRows =
         { Module = emptyRowArrays
+          TypeDef = emptyRowArrays
+          NestedClass = emptyRowArrays
           Field = emptyRowArrays
           MethodDef = emptyRowArrays
           Param = emptyRowArrays

@@ -109,6 +109,17 @@ let formatGenerationSuffixedClosureName (baseName: string) (generation: int) (oc
     CompilerGeneratedNameSuffix baseName $"hotreload#g{generation}_o{occurrenceOrdinal}"
 
 /// <summary>
+/// Recognizes the generation-suffixed fresh closure class names produced by
+/// <see cref="formatGenerationSuffixedClosureName"/> (<c>{base}@hotreload#g{N}_o{i}</c>).
+/// These names only ever exist for occurrences ADDED in a delta compile (the allocator
+/// reuses baseline names verbatim for survivors), so the delta emitter uses this marker
+/// to identify closure classes that must be emitted as NEW TypeDef rows.
+/// </summary>
+let isGenerationSuffixedClosureName (name: string) =
+    not (System.String.IsNullOrEmpty name)
+    && name.IndexOf("@hotreload#g", System.StringComparison.Ordinal) >= 0
+
+/// <summary>
 /// Allocates closure class names for the lambda occurrences of one member in a delta
 /// compile.
 /// </summary>

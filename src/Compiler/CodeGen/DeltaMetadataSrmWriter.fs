@@ -116,6 +116,8 @@ let serialize
     (encId: Guid)
     (encBaseId: Guid)
     (moduleId: Guid)
+    (typeDefinitionRows: TypeDefinitionRowInfo list)
+    (nestedClassRows: NestedClassRowInfo list)
     (methodDefinitionRows: MethodDefinitionRowInfo list)
     (parameterDefinitionRows: ParameterDefinitionRowInfo list)
     (fieldDefinitionRows: FieldDefinitionRowInfo list)
@@ -154,7 +156,7 @@ let serialize
 
     metadataBuilder.SetCapacity(TableIndex.Module, 1)
     metadataBuilder.SetCapacity(TableIndex.TypeRef, typeRefCount)
-    metadataBuilder.SetCapacity(TableIndex.TypeDef, 0)
+    metadataBuilder.SetCapacity(TableIndex.TypeDef, typeDefinitionRows.Length)
     metadataBuilder.SetCapacity(TableIndex.Field, fieldAddCount)
     metadataBuilder.SetCapacity(TableIndex.MethodDef, methodCount)
     metadataBuilder.SetCapacity(TableIndex.Param, parameterCount)
@@ -186,7 +188,7 @@ let serialize
     metadataBuilder.SetCapacity(TableIndex.File, 0)
     metadataBuilder.SetCapacity(TableIndex.ExportedType, 0)
     metadataBuilder.SetCapacity(TableIndex.ManifestResource, 0)
-    metadataBuilder.SetCapacity(TableIndex.NestedClass, 0)
+    metadataBuilder.SetCapacity(TableIndex.NestedClass, nestedClassRows.Length)
     metadataBuilder.SetCapacity(TableIndex.GenericParam, 0)
     metadataBuilder.SetCapacity(TableIndex.MethodSpec, methodSpecCount)
     metadataBuilder.SetCapacity(TableIndex.GenericParamConstraint, 0)
@@ -205,6 +207,32 @@ let serialize
 
     metadataBuilder.AddModule(generation, moduleNameHandle, mvidHandle, encIdHandle, encBaseHandle)
     |> ignore
+
+    for row in typeDefinitionRows do
+        let nameHandle = toStringHandle metadataBuilder row.Name row.NameOffset
+        let namespaceHandle = toStringHandle metadataBuilder row.Namespace row.NamespaceOffset
+
+        let baseTypeHandle =
+            match row.Extends with
+            | Some extends -> toTypeDefOrRefHandle extends
+            | None -> EntityHandle()
+
+        // Roslyn EnC parity: the FieldList/MethodList columns are nil — members are
+        // linked through the AddField/AddMethod EncLog entries.
+        metadataBuilder.AddTypeDefinition(
+            row.Attributes,
+            namespaceHandle,
+            nameHandle,
+            baseTypeHandle,
+            FieldDefinitionHandle(),
+            MethodDefinitionHandle())
+        |> ignore
+
+    for row in nestedClassRows do
+        metadataBuilder.AddNestedType(
+            MetadataTokens.TypeDefinitionHandle row.NestedTypeDefRowId,
+            MetadataTokens.TypeDefinitionHandle row.EnclosingTypeDefRowId)
+        |> ignore
 
     for row in methodDefinitionRows do
         match updatesByKey.TryGetValue row.Key with
@@ -340,6 +368,8 @@ let serialize
 let private trackedParityTables =
     [| TableIndex.Module
        TableIndex.TypeRef
+       TableIndex.TypeDef
+       TableIndex.NestedClass
        TableIndex.Field
        TableIndex.MethodDef
        TableIndex.Param

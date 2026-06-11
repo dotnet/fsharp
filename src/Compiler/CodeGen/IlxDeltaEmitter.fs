@@ -553,6 +553,7 @@ let private buildUpdatedBaseline
     (addedFieldDeltaTokens: Dictionary<FieldDefinitionKey, int>)
     (addedPropertyDeltaTokens: Dictionary<PropertyDefinitionKey, int>)
     (addedEventDeltaTokens: Dictionary<EventDefinitionKey, int>)
+    (addedTypeDeltaTokens: Dictionary<string, int>)
     =
     let addPropertyMapEntry (entries: Map<string, int>) (row: PropertyMapRowInfo) =
         if row.IsAdded then
@@ -620,7 +621,15 @@ let private buildUpdatedBaseline
         addedEventDeltaTokens
         |> Seq.fold (fun acc (KeyValue(key, token)) -> acc |> Map.add key token) updatedBaselineCore.EventTokens
 
+    // Chain added TypeDef tokens (new closure classes) so later generations resolve the
+    // type in place (e.g. a gen-3 body edit of a lambda added in gen 2) instead of
+    // re-adding it.
+    let updatedTypeTokenMap =
+        addedTypeDeltaTokens
+        |> Seq.fold (fun acc (KeyValue(fullName, token)) -> acc |> Map.add fullName token) updatedBaselineCore.TypeTokens
+
     { updatedBaselineCore with
+        TypeTokens = updatedTypeTokenMap
         MethodTokens = updatedMethodTokenMap
         FieldTokens = updatedFieldTokenMap
         PropertyTokens = updatedPropertyTokenMap
@@ -742,6 +751,8 @@ let private emitMetadataDelta
     (encId: Guid)
     (encBaseId: Guid)
     (moduleMvid: Guid)
+    (typeDefinitionRowsSnapshot: TypeDefinitionRowInfo list)
+    (nestedClassRowsSnapshot: NestedClassRowInfo list)
     (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
     (parameterDefinitionRowsSnapshot: ParameterDefinitionRowInfo list)
     (fieldDefinitionRowsSnapshot: FieldDefinitionRowInfo list)
@@ -762,13 +773,15 @@ let private emitMetadataDelta
     (baselineTableRowCounts: int[])
     =
     let metadataDelta =
-        MetadataWriter.emitWithReferences
+        MetadataWriter.emitWithTypeDefinitions
             moduleName
             baselineModuleNameOffset
             currentGeneration
             encId
             encBaseId
             moduleMvid
+            typeDefinitionRowsSnapshot
+            nestedClassRowsSnapshot
             methodDefinitionRowsSnapshot
             parameterDefinitionRowsSnapshot
             fieldDefinitionRowsSnapshot
@@ -1976,6 +1989,7 @@ let private finalizeDeltaArtifacts
     (addedFieldDeltaTokens: Dictionary<FieldDefinitionKey, int>)
     (addedPropertyDeltaTokens: Dictionary<PropertyDefinitionKey, int>)
     (addedEventDeltaTokens: Dictionary<EventDefinitionKey, int>)
+    (addedTypeDeltaTokens: Dictionary<string, int>)
     =
     let addedOrChangedMethods =
         buildAddedOrChangedMethods streams.MethodBodies
@@ -2020,6 +2034,7 @@ let private finalizeDeltaArtifacts
             addedFieldDeltaTokens
             addedPropertyDeltaTokens
             addedEventDeltaTokens
+            addedTypeDeltaTokens
 
     let delta =
         { emptyDelta with
@@ -2462,6 +2477,14 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     let eventTokenMap = Dictionary<int, int>()
     let addedMethodTokens = Dictionary<MethodDefinitionKey, int>(HashIdentity.Structural)
     let addedFieldTokens = Dictionary<FieldDefinitionKey, int>(HashIdentity.Structural)
+    // ADDED type definitions (Phase C4: closure classes synthesized for lambdas added in
+    // a delta compile). Keyed by the fresh compile's full type name — added types have no
+    // baseline alias, so the new name IS the chained baseline name. The machinery is
+    // general (rows, EncLog shape, chaining); only the *detection* below is closure-scoped.
+    let addedTypeNewTokens = Dictionary<string, int>(StringComparer.Ordinal)
+    let addedTypeDeltaTokens = Dictionary<string, int>(StringComparer.Ordinal)
+    let addedTypeDefs = ResizeArray<ILTypeDef list * ILTypeDef * string>()
+    let baselineTypeDefRowCount = request.Baseline.Metadata.TableRowCounts.[TableNames.TypeDef.Index]
     let addedPropertyTokens = Dictionary<PropertyDefinitionKey, int>(HashIdentity.Structural)
     let addedEventTokens = Dictionary<EventDefinitionKey, int>(HashIdentity.Structural)
     let addedPropertyTokenLookup = Dictionary<int, PropertyDefinitionKey>()
@@ -2637,6 +2660,30 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             | None ->
                 match tryGetBaselineTypeToken enclosing typeDef with
                 | Some token -> token
+                | None when FSharp.Compiler.ClosureNameAllocator.isGenerationSuffixedClosureName typeDef.Name ->
+                    // ADDED closure class (Phase C4): the C3 allocator assigned this
+                    // occurrence a `{base}@hotreload#g{N}_o{i}` name precisely because it
+                    // has no baseline counterpart. Allocate the next delta TypeDef row;
+                    // the type's fields/methods are registered as added members below,
+                    // parented to this new row via AddField/AddMethod EncLog entries.
+                    let fullName = (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
+
+                    if not typeDef.GenericParams.IsEmpty then
+                        raise (
+                            HotReloadUnsupportedEditException(
+                                $"Added closure class '{fullName}' is generic; the delta writer cannot emit GenericParam rows yet. Please rebuild."
+                            )
+                        )
+
+                    match addedTypeDeltaTokens.TryGetValue fullName with
+                    | true, token -> token
+                    | _ ->
+                        let rowId = baselineTypeDefRowCount + addedTypeDeltaTokens.Count + 1
+                        let deltaToken = 0x02000000 ||| rowId
+                        addedTypeDeltaTokens[fullName] <- deltaToken
+                        addedTypeNewTokens[fullName] <- newTypeToken
+                        addedTypeDefs.Add(enclosing, typeDef, fullName)
+                        deltaToken
                 | None -> request.Baseline.TokenMappings.TypeDefTokenMap(enclosing, typeDef)
         addMapping typeTokenMap newTypeToken baselineTypeToken
 
@@ -2668,6 +2715,14 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             | Some baselineFieldToken ->
                 let newFieldToken = emittedTokenMappings.FieldDefTokenMap(enclosing, typeDef) fieldDef
                 addMapping fieldTokenMap newFieldToken baselineFieldToken
+            | None when addedTypeDeltaTokens.ContainsKey declaringTypeRef.FullName ->
+                // Field of an ADDED type (closure capture field / cached-instance field):
+                // appended to the delta Field table, parented to the NEW TypeDef row. The
+                // instance-field restriction below only applies to EXISTING types (the
+                // runtime cannot re-layout them); a new type defines its own layout.
+                if not (addedFieldTokens.ContainsKey fieldKey) then
+                    let newFieldToken = emittedTokenMappings.FieldDefTokenMap(enclosing, typeDef) fieldDef
+                    addedFieldTokens[fieldKey] <- newFieldToken
             | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
             | None when fieldDef.IsStatic && request.Baseline.TypeTokens |> Map.containsKey baselineDeclaringType ->
                 // Added static field on a type that exists in the baseline (module-level
@@ -2701,6 +2756,11 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             match request.Baseline.MethodTokens |> Map.tryFind methodKey with
             | Some baselineMethodToken ->
                 addMapping methodTokenMap newMethodToken baselineMethodToken
+            | None when addedTypeDeltaTokens.ContainsKey declaringTypeRef.FullName ->
+                // Method of an ADDED type (closure .ctor / Invoke override): emitted as an
+                // added method parented to the NEW TypeDef row.
+                if not (addedMethodTokens.ContainsKey methodKey) then
+                    addedMethodTokens[methodKey] <- newMethodToken
             | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
             | None ->
                 if not (addedMethodTokens.ContainsKey methodKey) then
@@ -3216,12 +3276,18 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
         | None -> ()
 
     let updatedTypeTokens =
-        buildUpdatedTypeTokens
-            tryGetBaselineTypeName
-            request.Baseline.TypeTokens
-            request.UpdatedTypes
-            symbolChangeTypeNames
-            resolvedMethods
+        let baselineTokens =
+            buildUpdatedTypeTokens
+                tryGetBaselineTypeName
+                request.Baseline.TypeTokens
+                request.UpdatedTypes
+                symbolChangeTypeNames
+                resolvedMethods
+
+        // Added types (new closure classes) are "changed types" of this delta too
+        // (Roslyn parity: EmitDifferenceResult.ChangedTypes includes new TypeDefs).
+        baselineTokens @ (addedTypeDeltaTokens.Values |> Seq.sort |> Seq.toList)
+        |> List.distinct
 
     let updatedMethodTokenList =
         orderedMethodInputs
@@ -3254,9 +3320,13 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 baselineMethodSpecRowCount
                 methodSpecRowsByToken
                 (fun typeName ->
-                    request.Baseline.TypeTokens
-                    |> Map.tryFind typeName
-                    |> Option.map (fun token -> token &&& 0x00FFFFFF))
+                    match request.Baseline.TypeTokens |> Map.tryFind typeName with
+                    | Some token -> Some(token &&& 0x00FFFFFF)
+                    | None ->
+                        // Methods of an ADDED type are parented to its new delta TypeDef row.
+                        match addedTypeDeltaTokens.TryGetValue typeName with
+                        | true, token -> Some(token &&& 0x00FFFFFF)
+                        | _ -> None)
                 lastParamRowId
         let (propertyDefinitionRowsSnapshot,
              eventDefinitionRowsSnapshot,
@@ -3301,13 +3371,16 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                     match request.Baseline.TypeTokens |> Map.tryFind key.DeclaringType with
                     | Some typeToken -> typeToken &&& 0x00FFFFFF
                     | None ->
-                        // Registration already gated on the baseline type token, so this only
-                        // fires if the baseline maps changed under us; fail closed.
-                        raise (
-                            HotReloadUnsupportedEditException(
-                                $"Added field '{key.DeclaringType}::{key.Name}' has no baseline TypeDef token; please rebuild."
+                        match addedTypeDeltaTokens.TryGetValue key.DeclaringType with
+                        | true, deltaTypeToken -> deltaTypeToken &&& 0x00FFFFFF
+                        | _ ->
+                            // Registration already gated on the baseline type token, so this only
+                            // fires if the baseline maps changed under us; fail closed.
+                            raise (
+                                HotReloadUnsupportedEditException(
+                                    $"Added field '{key.DeclaringType}::{key.Name}' has no baseline TypeDef token; please rebuild."
+                                )
                             )
-                        )
 
                 { FieldDefinitionRowInfo.Key = key
                   RowId = deltaToken &&& 0x00FFFFFF
@@ -3328,6 +3401,122 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                     row.Key.Name
                     row.RowId
                     row.ParentTypeDefRowId
+
+        // Snapshot ADDED TypeDef rows (closure classes synthesized for added lambdas).
+        // Name/namespace/attributes come from the fresh compile's metadata; the Extends
+        // coded index is remapped from fresh rows to baseline/delta rows. Nested types
+        // (F# closure classes are nested in their module type) additionally produce a
+        // NestedClass row pointing at the enclosing TypeDef.
+        let typeDefinitionRowsSnapshot, nestedClassRowsSnapshot =
+            if addedTypeDefs.Count = 0 then
+                [], []
+            else
+                let baselineNestedClassRowCount = baselineTableRowCounts.[TableNames.Nested.Index]
+                let baselineTypeSpecRowCount = baselineTableRowCounts.[TableNames.TypeSpec.Index]
+                let typeRows = ResizeArray<TypeDefinitionRowInfo>()
+                let nestedRows = ResizeArray<NestedClassRowInfo>()
+
+                let resolveEnclosingTypeDefRowId (enclosing: ILTypeDef list) (fullName: string) =
+                    match enclosing with
+                    | [] -> None
+                    | _ ->
+                        let parentType = List.last enclosing
+                        let parentEnclosing = enclosing |> List.take (List.length enclosing - 1)
+                        let parentRef = mkRefForNestedILTypeDef ILScopeRef.Local (parentEnclosing, parentType)
+                        let parentBaselineName = tryGetBaselineTypeName parentRef.FullName
+
+                        match request.Baseline.TypeTokens |> Map.tryFind parentBaselineName with
+                        | Some token -> Some(token &&& 0x00FFFFFF)
+                        | None ->
+                            match addedTypeDeltaTokens.TryGetValue parentBaselineName with
+                            | true, token -> Some(token &&& 0x00FFFFFF)
+                            | _ ->
+                                raise (
+                                    HotReloadUnsupportedEditException(
+                                        $"Added type '{fullName}' is nested in '{parentBaselineName}', which has no baseline or delta TypeDef row; please rebuild."
+                                    )
+                                )
+
+                for (enclosing, _typeDef, fullName) in addedTypeDefs do
+                    let deltaToken = addedTypeDeltaTokens.[fullName]
+                    let rowId = deltaToken &&& 0x00FFFFFF
+                    let newToken = addedTypeNewTokens.[fullName]
+                    let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
+                    let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
+                    let name = metadataReader.GetString freshTypeDef.Name
+
+                    let namespaceName =
+                        if freshTypeDef.Namespace.IsNil then "" else metadataReader.GetString freshTypeDef.Namespace
+
+                    let extends =
+                        if freshTypeDef.BaseType.IsNil then
+                            None
+                        else
+                            let baseToken = MetadataTokens.GetToken freshTypeDef.BaseType
+
+                            match freshTypeDef.BaseType.Kind with
+                            | HandleKind.TypeReference ->
+                                let mapped = remapEntityToken baseToken
+                                Some(TDR_TypeRef(TypeRefHandle(mapped &&& 0x00FFFFFF)))
+                            | HandleKind.TypeDefinition ->
+                                let mapped = definitionTokenRemapper.RemapDefinitionToken baseToken
+                                Some(TDR_TypeDef(TypeDefHandle(mapped &&& 0x00FFFFFF)))
+                            | HandleKind.TypeSpecification ->
+                                // TypeSpec tokens are passthrough (no TypeSpec table in the
+                                // delta writer yet): the fresh row id is only valid if the
+                                // same instantiation already exists in the baseline at the
+                                // same index. Fail closed when it points past the baseline
+                                // table — a genuinely new instantiation needs TypeSpec
+                                // emission support (documented gap).
+                                let specRowId = baseToken &&& 0x00FFFFFF
+
+                                if specRowId > baselineTypeSpecRowCount then
+                                    raise (
+                                        HotReloadUnsupportedEditException(
+                                            $"Added type '{fullName}' extends a generic instantiation with no baseline TypeSpec row; the delta writer cannot emit TypeSpec rows yet. Please rebuild."
+                                        )
+                                    )
+
+                                Some(TDR_TypeSpec(TypeSpecHandle specRowId))
+                            | kind ->
+                                raise (
+                                    HotReloadUnsupportedEditException(
+                                        $"Added type '{fullName}' has unsupported base-type handle kind {kind}; please rebuild."
+                                    )
+                                )
+
+                    let enclosingRowId = resolveEnclosingTypeDefRowId enclosing fullName
+
+                    typeRows.Add
+                        { TypeDefinitionRowInfo.FullName = fullName
+                          RowId = rowId
+                          Attributes = freshTypeDef.Attributes
+                          Name = name
+                          NameOffset = None
+                          Namespace = namespaceName
+                          NamespaceOffset = None
+                          Extends = extends
+                          EnclosingTypeDefRowId = enclosingRowId }
+
+                    match enclosingRowId with
+                    | Some enclosingRow ->
+                        nestedRows.Add
+                            { NestedClassRowInfo.RowId = baselineNestedClassRowCount + nestedRows.Count + 1
+                              NestedTypeDefRowId = rowId
+                              EnclosingTypeDefRowId = enclosingRow }
+                    | None -> ()
+
+                typeRows |> Seq.sortBy (fun row -> row.RowId) |> Seq.toList,
+                nestedRows |> Seq.toList
+
+        if traceMethodUpdates.Value then
+            for row in typeDefinitionRowsSnapshot do
+                printfn
+                    "[fsharp-hotreload][type-add] %s rowId=%d nestedIn=%A extends=%A"
+                    row.FullName
+                    row.RowId
+                    row.EnclosingTypeDefRowId
+                    row.Extends
 
         let baselineHeapOffsets =
             request.Baseline.Metadata.HeapSizes
@@ -3377,6 +3566,8 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 encId
                 encBaseId
                 moduleMvid
+                typeDefinitionRowsSnapshot
+                nestedClassRowsSnapshot
                 methodDefinitionRowsSnapshot
                 parameterDefinitionRowsSnapshot
                 fieldDefinitionRowsSnapshot
@@ -3416,3 +3607,4 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             addedFieldDeltaTokens
             addedPropertyDeltaTokens
             addedEventDeltaTokens
+            addedTypeDeltaTokens

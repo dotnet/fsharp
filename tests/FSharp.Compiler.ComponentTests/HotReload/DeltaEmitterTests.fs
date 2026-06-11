@@ -2160,3 +2160,219 @@ module DeltaEmitterTests =
         match gen2Literal with
         | Some text -> Assert.Equal("Version 3", text)
         | None -> Assert.True(false, "Expected 'Version 3' user string in generation 2 delta.")
+
+    // -----------------------------------------------------------------------------
+    // Phase C4: ADDED type definitions (closure classes for lambdas added in a delta)
+    // -----------------------------------------------------------------------------
+
+    /// Sample.Multi with GetValue plus a nested generation-suffixed closure class
+    /// (the shape the C3 allocator produces for an ADDED lambda occurrence): one
+    /// capture field, a parameterless ctor, and an Invoke method.
+    let private createModuleWithAddedClosureType () =
+        let ilg = PrimaryAssemblyILGlobals
+        let parentMethod = createMethod ilg "GetValue" 1
+
+        let closureCtor = mkILNonGenericEmptyCtor (ilg.typ_Object, None, None)
+        let closureInvoke = createMethod ilg "Invoke" 7
+
+        let closureTypeDef =
+            mkILSimpleClass
+                ilg
+                (
+                    "GetValue@hotreload#g1_o0",
+                    ILTypeDefAccess.Nested ILMemberAccess.Assembly,
+                    mkILMethods [ closureCtor; closureInvoke ],
+                    mkILFields [ mkILInstanceField ("x", ilg.typ_Int32, None, ILMemberAccess.Public) ],
+                    emptyILTypeDefs,
+                    mkILProperties [],
+                    mkILEvents [],
+                    emptyILCustomAttrs,
+                    ILTypeInit.BeforeField
+                )
+
+        let typeDef =
+            mkILSimpleClass
+                ilg
+                (
+                    "Sample.Multi",
+                    ILTypeDefAccess.Public,
+                    mkILMethods [ parentMethod ],
+                    mkILFields [],
+                    mkILTypeDefs [ closureTypeDef ],
+                    mkILProperties [],
+                    mkILEvents [],
+                    emptyILCustomAttrs,
+                    ILTypeInit.BeforeField
+                )
+
+        mkILSimpleModule
+            "SampleAssembly"
+            "SampleModule"
+            true
+            (4, 0)
+            false
+            (mkILTypeDefs [ typeDef ])
+            None
+            None
+            0
+            (mkILExportedTypes [])
+            "v4.0.30319"
+
+    [<Fact>]
+    let ``emitDelta emits added closure type as new TypeDef with member pairs and NestedClass row`` () =
+        // Mirrors the C# reference delta (csharp_enc_reference: method gains its first
+        // capturing lambda -> Roslyn synthesizes a new display class): the new TypeDef row
+        // is logged as a plain Default entry BEFORE its AddField/AddMethod parent pairs,
+        // member rows are parented to the NEW row, and the NestedClass row trails the log.
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (createModuleWithMethods [ "GetValue", 1 ])
+        let baseline = baselineArtifacts.Baseline
+        let updatedModule = createModuleWithAddedClosureType () |> TestHelpers.withDebuggableAttribute
+
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baseline
+                UpdatedTypes = [ "Sample.Multi" ]
+                UpdatedMethods = []
+                UpdatedAccessors = []
+                Module = updatedModule
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+            }
+
+        let delta = emitDelta request
+
+        let newTypeRowId = baseline.Metadata.TableRowCounts.[TableNames.TypeDef.Index] + 1
+        let newTypeToken = 0x02000000 ||| newTypeRowId
+        let encLog = delta.EncLog
+
+        // 1. The new TypeDef row itself is a plain Default entry.
+        let typeDefRowIndex =
+            encLog
+            |> Array.tryFindIndex (fun (table, rowId, op) ->
+                table = TableNames.TypeDef && rowId = newTypeRowId && op = EditAndContinueOperation.Default)
+
+        let typeDefRowIndex =
+            match typeDefRowIndex with
+            | Some index -> index
+            | None -> failwithf "Expected (TypeDef, %d, Default) EncLog entry; got %A" newTypeRowId encLog
+
+        // 2. AddField pair: parent is the NEW TypeDef row, immediately followed by the Field row.
+        let expectedFieldRowId = baseline.Metadata.TableRowCounts.[TableNames.Field.Index] + 1
+
+        let addFieldIndex =
+            encLog
+            |> Array.tryFindIndex (fun (table, rowId, op) ->
+                table = TableNames.TypeDef && rowId = newTypeRowId && op = EditAndContinueOperation.AddField)
+
+        match addFieldIndex with
+        | None -> failwithf "Expected (TypeDef, %d, AddField) EncLog entry; got %A" newTypeRowId encLog
+        | Some index ->
+            Assert.True(typeDefRowIndex < index, "New TypeDef row must be logged before its AddField entry.")
+            let table, rowId, op = encLog.[index + 1]
+            Assert.Equal(TableNames.Field, table)
+            Assert.Equal(expectedFieldRowId, rowId)
+            Assert.Equal(EditAndContinueOperation.Default, op)
+
+        // 3. AddMethod pairs: one per closure member (.ctor + Invoke), each immediately
+        // followed by the new Method row, all parented to the NEW TypeDef row.
+        let addMethodIndices =
+            encLog
+            |> Array.indexed
+            |> Array.choose (fun (index, (table, rowId, op)) ->
+                if table = TableNames.TypeDef && rowId = newTypeRowId && op = EditAndContinueOperation.AddMethod then
+                    Some index
+                else
+                    None)
+
+        Assert.Equal(2, addMethodIndices.Length)
+
+        let baselineMethodRowCount = baseline.Metadata.TableRowCounts.[TableNames.Method.Index]
+
+        let addedMethodRows =
+            addMethodIndices
+            |> Array.map (fun index ->
+                Assert.True(typeDefRowIndex < index, "New TypeDef row must be logged before its AddMethod entries.")
+                let table, rowId, op = encLog.[index + 1]
+                Assert.Equal(TableNames.Method, table)
+                Assert.Equal(EditAndContinueOperation.Default, op)
+                rowId)
+            |> Array.sort
+
+        Assert.Equal<int[]>([| baselineMethodRowCount + 1; baselineMethodRowCount + 2 |], addedMethodRows)
+
+        // 4. NestedClass row (the closure class is nested in Sample.Multi): a plain
+        // Default entry, present in EncMap as well.
+        Assert.Contains((TableNames.Nested, 1, EditAndContinueOperation.Default), encLog)
+        Assert.Contains((TableNames.Nested, 1), delta.EncMap)
+        Assert.Contains((TableNames.TypeDef, newTypeRowId), delta.EncMap)
+
+        // 5. The added type is reported as a changed type and chained into the
+        // next-generation baseline under its full name.
+        Assert.Contains(newTypeToken, delta.UpdatedTypeTokens)
+
+        match delta.UpdatedBaseline with
+        | None -> failwith "Expected an updated baseline after closure type addition."
+        | Some updatedBaseline ->
+            // ILTypeRef.FullName joins nesting with '.', matching baseline TypeTokens keys.
+            match updatedBaseline.TypeTokens |> Map.tryFind "Sample.Multi.GetValue@hotreload#g1_o0" with
+            | Some token -> Assert.Equal(newTypeToken, token)
+            | None ->
+                failwithf
+                    "Updated baseline missing the added closure type token; type tokens: %A"
+                    (updatedBaseline.TypeTokens |> Map.toList |> List.map fst)
+
+        // 6. The next generation must see the grown TypeDef/NestedClass tables.
+        match delta.UpdatedBaseline with
+        | Some updatedBaseline ->
+            Assert.Equal(newTypeRowId, updatedBaseline.Metadata.TableRowCounts.[TableNames.TypeDef.Index])
+            Assert.Equal(1, updatedBaseline.Metadata.TableRowCounts.[TableNames.Nested.Index])
+        | None -> ()
+
+    [<Fact>]
+    let ``emitDelta added closure type delta validates with mdv`` () =
+        let baselineArtifacts =
+            TestHelpers.createBaselineFromModule (createModuleWithMethods [ "GetValue", 1 ])
+        let updatedModule = createModuleWithAddedClosureType () |> TestHelpers.withDebuggableAttribute
+
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baselineArtifacts.Baseline
+                UpdatedTypes = [ "Sample.Multi" ]
+                UpdatedMethods = []
+                UpdatedAccessors = []
+                Module = updatedModule
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+            }
+
+        let delta = emitDelta request
+
+        Assert.NotEmpty(delta.Metadata)
+        Assert.NotEmpty(delta.IL)
+
+        match tryRunMdv "--version" with
+        | ValueNone ->
+            printfn "metadata-tools (mdv) CLI not found; skipping validation test."
+        | ValueSome(exitCode, _, _) when exitCode <> 0 ->
+            printfn "metadata-tools (mdv) CLI reported exit code %d during version check; skipping validation test." exitCode
+        | _ ->
+            let tempMeta = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".meta")
+            let tempIl = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".il")
+            try
+                File.WriteAllBytes(tempMeta, delta.Metadata)
+                File.WriteAllBytes(tempIl, delta.IL)
+
+                let arg = $"/g:{tempMeta};{tempIl}"
+                match tryRunMdv arg with
+                | ValueSome(0, _, _) -> ()
+                | ValueSome(code, _, stderr) ->
+                    Assert.True(false, $"mdv validation failed with exit code {code}. stderr: {stderr}")
+                | ValueNone -> Assert.True(false, "mdv CLI became unavailable during validation")
+            finally
+                if File.Exists(tempMeta) then File.Delete(tempMeta)
+                if File.Exists(tempIl) then File.Delete(tempIl)

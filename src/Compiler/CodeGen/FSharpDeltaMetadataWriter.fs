@@ -94,13 +94,15 @@ type MetadataDelta =
     }
 
 
-let emitWithUserStrings
+let emitWithTypeDefinitions
     (moduleName: string)
     (moduleNameOffset: StringOffset option)
     (generation: int)
     (encId: Guid)
     (encBaseId: Guid)
     (moduleId: Guid)
+    (typeDefinitionRows: TypeDefinitionRowInfo list)
+    (nestedClassRows: NestedClassRowInfo list)
     (methodDefinitionRows: MethodDefinitionRowInfo list)
     (parameterDefinitionRows: ParameterDefinitionRowInfo list)
     (fieldDefinitionRows: FieldDefinitionRowInfo list)
@@ -206,6 +208,26 @@ let emitWithUserStrings
         // ---------------------------------------------------------------------------------
         let methodEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
         let methodRowsByKey = Dictionary<MethodDefinitionKey, MethodDefinitionRowInfo>(HashIdentity.Structural)
+
+        // Added TypeDef rows are logged as plain Default entries (the row content is
+        // applied via ApplyTableDelta, like PropertyMap/EventMap rows) and MUST precede
+        // every AddField/AddMethod entry that names them as the parent. C# reference
+        // (csharp_enc_reference, added capturing lambda -> new display class): the new
+        // TypeDef row's Default entry comes immediately before its AddField/AddMethod
+        // member pairs; the NestedClass row trails at the end of the log.
+        let typeDefEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        for row in typeDefinitionRows |> List.sortBy (fun row -> row.RowId) do
+            tableMirror.AddTypeDefinitionRow row
+            typeDefEncLogEntries.Add(struct (TableNames.TypeDef, row.RowId, EditAndContinueOperation.Default))
+            encMap.Add(struct (TableNames.TypeDef, row.RowId))
+
+        let nestedClassEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        for row in nestedClassRows |> List.sortBy (fun row -> row.RowId) do
+            tableMirror.AddNestedClassRow row
+            nestedClassEncLogEntries.Add(struct (TableNames.Nested, row.RowId, EditAndContinueOperation.Default))
+            encMap.Add(struct (TableNames.Nested, row.RowId))
 
         for row in methodDefinitionRows do
             match updatesByKey.TryGetValue row.Key with
@@ -412,6 +434,9 @@ let emitWithUserStrings
             appendEntries TableNames.Module
             // ECMA table order: TypeDef (0x02) / Field (0x04) precede Method (0x06); Roslyn
             // likewise logs added-field pairs ahead of the method rows that consume them.
+            // New TypeDef rows come first of all: their Default entries must be applied
+            // before any AddField/AddMethod pair that names them as the parent.
+            builder.AddRange typeDefEncLogEntries
             fieldEncLogPairs |> List.iter builder.Add
             builder.AddRange methodEncLogEntries
             builder.AddRange parameterEncLogEntries
@@ -421,6 +446,9 @@ let emitWithUserStrings
             builder.AddRange eventMapEncLogEntries
             builder.AddRange eventEncLogEntries
             builder.AddRange methodSemanticsEncLogEntries
+            // NestedClass rows trail the log (C# reference order); the CLR applies them
+            // via ApplyTableDelta after the nested TypeDef row already exists.
+            builder.AddRange nestedClassEncLogEntries
 
             // Any tables not handled above are appended sorted by token.
             snapshot
@@ -474,6 +502,8 @@ let emitWithUserStrings
                         encId
                         encBaseId
                         moduleId
+                        typeDefinitionRows
+                        nestedClassRows
                         methodDefinitionRows
                         parameterDefinitionRows
                         fieldDefinitionRows
@@ -564,6 +594,61 @@ let emitWithUserStrings
           TableStream = tableStream
           GenerationId = encId
           BaseGenerationId = encBaseId }
+
+/// Back-compat entry point without added TypeDef/NestedClass rows.
+let emitWithUserStrings
+    (moduleName: string)
+    (moduleNameOffset: StringOffset option)
+    (generation: int)
+    (encId: Guid)
+    (encBaseId: Guid)
+    (moduleId: Guid)
+    (methodDefinitionRows: MethodDefinitionRowInfo list)
+    (parameterDefinitionRows: ParameterDefinitionRowInfo list)
+    (fieldDefinitionRows: FieldDefinitionRowInfo list)
+    (typeReferenceRows: TypeReferenceRowInfo list)
+    (memberReferenceRows: MemberReferenceRowInfo list)
+    (methodSpecificationRows: MethodSpecificationRowInfo list)
+    (assemblyReferenceRows: AssemblyReferenceRowInfo list)
+    (propertyDefinitionRows: PropertyDefinitionRowInfo list)
+    (eventDefinitionRows: EventDefinitionRowInfo list)
+    (propertyMapRows: PropertyMapRowInfo list)
+    (eventMapRows: EventMapRowInfo list)
+    (methodSemanticsRows: MethodSemanticsMetadataUpdate list)
+    (standaloneSignatureRows: StandaloneSignatureUpdate list)
+    (customAttributeRows: CustomAttributeRowInfo list)
+    (userStringUpdates: (int * int * string) list)
+    (updates: MethodMetadataUpdate list)
+    (heapOffsets: MetadataHeapOffsets)
+    (externalRowCounts: int[])
+    : MetadataDelta =
+    emitWithTypeDefinitions
+        moduleName
+        moduleNameOffset
+        generation
+        encId
+        encBaseId
+        moduleId
+        ([] : TypeDefinitionRowInfo list)
+        ([] : NestedClassRowInfo list)
+        methodDefinitionRows
+        parameterDefinitionRows
+        fieldDefinitionRows
+        typeReferenceRows
+        memberReferenceRows
+        methodSpecificationRows
+        assemblyReferenceRows
+        propertyDefinitionRows
+        eventDefinitionRows
+        propertyMapRows
+        eventMapRows
+        methodSemanticsRows
+        standaloneSignatureRows
+        customAttributeRows
+        userStringUpdates
+        updates
+        heapOffsets
+        externalRowCounts
 
 let emitWithReferences
     (moduleName: string)

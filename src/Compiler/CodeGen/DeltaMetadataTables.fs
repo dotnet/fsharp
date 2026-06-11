@@ -298,6 +298,8 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let mutable userStringHeapBytesCache: byte[] option = None
 
     let moduleRows = RowTableBuilder()
+    let typeDefRows = RowTableBuilder()
+    let nestedClassRows = RowTableBuilder()
     let fieldRows = RowTableBuilder()
     let methodRows = RowTableBuilder()
     let paramRows = RowTableBuilder()
@@ -482,6 +484,40 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                     rowElementGuidAbsolute encIdIndex     // EncId - delta-local absolute index
                     rowElementGuidAbsolute encBaseIdIndex // EncBaseId - 0 or delta-local index
                 |]
+
+    /// Add a TypeDef table row per ECMA-335 II.22.37: Flags (4 bytes), TypeName,
+    /// TypeNamespace (string heap), Extends (TypeDefOrRef coded index), FieldList,
+    /// MethodList (simple indices). The member-list columns are written as 0 (Roslyn
+    /// EnC parity): members are linked via the AddField/AddMethod EncLog entries.
+    member _.AddTypeDefinitionRow(row: TypeDefinitionRowInfo) =
+        let nameToken = addExistingStringOffset row.NameOffset row.Name
+        let namespaceToken = addExistingStringOffset row.NamespaceOffset row.Namespace
+
+        let extendsTag, extendsRow =
+            match row.Extends with
+            | Some extends -> encodeTypeDefOrRef extends
+            | None -> tdor_TypeDef, 0
+
+        let rowElements =
+            [|
+                rowElementULong (int row.Attributes)
+                stringElement nameToken
+                stringElement namespaceToken
+                rowElementTypeDefOrRef extendsTag extendsRow
+                rowElementSimpleIndex TableNames.Field 0
+                rowElementSimpleIndex TableNames.Method 0
+            |]
+        typeDefRows.Add rowElements
+
+    /// Add a NestedClass table row per ECMA-335 II.22.32: NestedClass and
+    /// EnclosingClass are both TypeDef row indices.
+    member _.AddNestedClassRow(row: NestedClassRowInfo) =
+        let rowElements =
+            [|
+                rowElementSimpleIndex TableNames.TypeDef row.NestedTypeDefRowId
+                rowElementSimpleIndex TableNames.TypeDef row.EnclosingTypeDefRowId
+            |]
+        nestedClassRows.Add rowElements
 
     member _.AddMethodRow(row: MethodDefinitionRowInfo, body: MethodBodyUpdate) =
         let nameToken = addExistingStringOffset row.NameOffset row.Name
@@ -740,6 +776,8 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
 
     member _.TableRows : TableRows =
         { Module = moduleRows.Entries
+          TypeDef = typeDefRows.Entries
+          NestedClass = nestedClassRows.Entries
           Field = fieldRows.Entries
           MethodDef = methodRows.Entries
           Param = paramRows.Entries
@@ -764,6 +802,8 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     member _.TableRowCounts : int[] =
         let counts = Array.zeroCreate DeltaTokens.TableCount
         counts[TableNames.Module.Index] <- moduleRows.Count
+        counts[TableNames.TypeDef.Index] <- typeDefRows.Count
+        counts[TableNames.Nested.Index] <- nestedClassRows.Count
         counts[TableNames.Field.Index] <- fieldRows.Count
         counts[TableNames.Method.Index] <- methodRows.Count
         counts[TableNames.Param.Index] <- paramRows.Count
