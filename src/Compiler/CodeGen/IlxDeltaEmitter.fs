@@ -1272,28 +1272,22 @@ let private buildPropertyEventAndSemanticsRows
                 let propertyDef = metadataReader.GetPropertyDefinition handle
                 let name = metadataReader.GetString propertyDef.Name
                 let baselineHandles = baselinePropertyHandles |> Map.tryFind key
-                // Added properties write their name/signature into the delta heaps:
-                // fresh-compile heap offsets are not valid against baseline+delta heaps.
+                // Properties without baseline heap entries - added this generation OR added
+                // by an EARLIER delta and re-registered now (the handle cache only covers
+                // the on-disk baseline) - must carry their name/signature as delta heap
+                // content (offset None). Fresh-compile heap offsets are never valid against
+                // the baseline+delta heap layout (same rule as method rows).
                 let resolvedNameOffset =
-                    match baselineHandles |> Option.bind (fun info -> info.NameOffset) with
-                    | Some offset -> Some offset
-                    | None ->
-                        if isAdded || propertyDef.Name.IsNil then
-                            None
-                        else
-                            Some(StringOffset(MetadataTokens.GetHeapOffset propertyDef.Name))
+                    baselineHandles |> Option.bind (fun info -> info.NameOffset)
                 let resolvedSignatureOffset =
-                    match baselineHandles |> Option.bind (fun info -> info.SignatureOffset) with
-                    | Some offset -> Some offset
-                    | None ->
-                        if isAdded || propertyDef.Signature.IsNil then
-                            None
-                        else
-                            Some(BlobOffset(MetadataTokens.GetHeapOffset propertyDef.Signature))
+                    baselineHandles |> Option.bind (fun info -> info.SignatureOffset)
                 let signature =
                     let rawSignature = metadataReader.GetBlobBytes propertyDef.Signature
                     // PropertySig blobs entering the delta blob heap need their embedded
-                    // TypeDefOrRef coded indexes remapped to baseline rows.
+                    // TypeDefOrRef coded indexes remapped to baseline rows. Gated on isAdded
+                    // because the writers only EMIT added Property rows (an accessor body
+                    // edit re-registers the existing row but its snapshot row is dropped);
+                    // remapping a never-emitted row could side-effect TypeRef appends.
                     if isAdded && resolvedSignatureOffset.IsNone then
                         remapAddedSignature rawSignature
                     else
@@ -1321,16 +1315,10 @@ let private buildPropertyEventAndSemanticsRows
             | true, handle when not handle.IsNil ->
                 let eventDef = metadataReader.GetEventDefinition handle
                 let name = metadataReader.GetString eventDef.Name
+                // Events without a baseline heap entry write their name into the delta
+                // string heap (see the property snapshot above for rationale).
                 let resolvedNameOffset =
-                    match baselineEventHandles |> Map.tryFind key |> Option.bind (fun info -> info.NameOffset) with
-                    | Some offset -> Some offset
-                    | None ->
-                        // Added events write their name into the delta string heap (see the
-                        // property snapshot above for rationale).
-                        if isAdded || eventDef.Name.IsNil then
-                            None
-                        else
-                            Some(StringOffset(MetadataTokens.GetHeapOffset eventDef.Name))
+                    baselineEventHandles |> Map.tryFind key |> Option.bind (fun info -> info.NameOffset)
                 let eventType =
                     // Added events carry a fresh-compile TypeDefOrRef in their EventType
                     // column; remap it to baseline/delta rows (the content-validated
@@ -4113,8 +4101,12 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let baselineToken = definitionTokenRemapper.RemapPropertyAssociationToken associationToken
             match propertyTokenToKey.TryGetValue(baselineToken) with
             | true, key ->
-                let baselineHandle = MetadataTokens.PropertyDefinitionHandle baselineToken
-                registerPropertyDefinition key baselineHandle
+                // Register the FRESH reader's handle: snapshot rows read their contents
+                // through it (same fresh-vs-baseline coordinate rule as method rows). The
+                // chained baseline token only names the emission row - indexing the fresh
+                // reader with it reads a DISPLACED row once an earlier generation added
+                // Property rows ahead of this one in the fresh layout.
+                registerPropertyDefinition key propertyHandle
             | _ -> ()
         | _ ->
             if traceMethodUpdates.Value then
@@ -4125,8 +4117,8 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 let baselineToken = definitionTokenRemapper.RemapEventAssociationToken associationToken
                 match eventTokenToKey.TryGetValue(baselineToken) with
                 | true, key ->
-                    let baselineHandle = MetadataTokens.EventDefinitionHandle baselineToken
-                    registerEventDefinition key baselineHandle
+                    // Fresh handle for the same reason as the property branch above.
+                    registerEventDefinition key eventHandle
                 | _ -> ()
             | _ -> ()
 

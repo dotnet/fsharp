@@ -3959,6 +3959,232 @@ type Hub() =
                 printfn "[mixedadd] SUCCESS: method/field/property additions chained across three generations")
 
     // ------------------------------------------------------------------------------
+    // Fresh-vs-baseline Property/Event row coordinates (sibling of the MethodDef
+    // coordinate fix): a property ADDED by an earlier generation chains PAST the
+    // baseline Property table, while every later fresh compile lays its row out at
+    // the natural source position - BEFORE the rows of types declared later in the
+    // file. The generation-2 accessor edit re-registers the chained Property row, and
+    // its snapshot must read the FRESH compile's row, not index the fresh reader with
+    // the chained baseline row id (which lands on the displaced neighbour). The
+    // corrupt read was LATENT - both delta writers emit Property/Event rows only for
+    // added members, so an accessor body edit produces a MethodDef-only update
+    // (Roslyn parity) - this test pins both the coordinate rule and the row-drop.
+    [<Fact>]
+    let ``Added property survives an accessor edit when a later type displaces its fresh row`` () =
+        let baselineSource =
+            """
+module Sample.DisplacedProps
+
+type Widget() =
+    let mutable state = 1
+    member _.State() = state
+
+type Anchor() =
+    member _.Tag = "anchor"
+"""
+
+        // Generation 1 adds a getter-only property to Widget (declared FIRST): the
+        // fresh Property table reads [Widget.Doubled; Anchor.Tag] while the chained
+        // delta row for Doubled is row 2 (past the baseline's single Anchor.Tag row).
+        let gen1Source =
+            """
+module Sample.DisplacedProps
+
+type Widget() =
+    let mutable state = 1
+    member _.State() = state
+    member _.Doubled = state * 2
+
+type Anchor() =
+    member _.Tag = "anchor"
+"""
+
+        // Generation 2 edits the added property's getter body only.
+        let gen2Source =
+            """
+module Sample.DisplacedProps
+
+type Widget() =
+    let mutable state = 1
+    member _.State() = state
+    member _.Doubled = state * 3
+
+type Anchor() =
+    member _.Tag = "anchor"
+"""
+
+        runMemberAdditionScenario
+            "fsharp-hotreload-propdisplaced"
+            "PropertyDisplacedLibrary"
+            [ "Baseline"; "AddMethodToExistingType" ]
+            baselineSource
+            (fun assembly applyGeneration ->
+                let widgetType = assembly.GetType("Sample.DisplacedProps+Widget", throwOnError = true)
+                let anchorType = assembly.GetType("Sample.DisplacedProps+Anchor", throwOnError = true)
+                let instance = Activator.CreateInstance(widgetType)
+
+                // ---------------- Generation 1: property addition ----------------
+                let delta1 = applyGeneration 1 gen1Source
+                let encLog1 = readDeltaEncLog delta1.Metadata
+                assertAddPair encLog1 0x15 4 0x17 // (PropertyMap, AddProperty) + Property
+
+                let doubled = widgetType.GetProperty("Doubled", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull doubled), "Added property 'Doubled' not found after generation 1.")
+                Assert.Equal(2, doubled.GetValue(instance) :?> int)
+
+                // ---------------- Generation 2: accessor body edit ----------------
+                // The edit updates the chained getter's MethodDef row only: the
+                // re-registered Property row is non-added, and non-added Property rows
+                // are dropped by the writers (an accessor body edit does not change the
+                // Property row - Roslyn parity). In particular the displaced-row read
+                // must not surface: no Property/PropertyMap entries, no re-add.
+                let delta2 = applyGeneration 2 gen2Source
+                let encLog2 = readDeltaEncLog delta2.Metadata
+
+                Assert.Contains(encLog2, fun (token, op) -> token >>> 24 = 0x06 && op = 0)
+                Assert.DoesNotContain(encLog2, fun (token, _) -> token >>> 24 = 0x17)
+                Assert.DoesNotContain(encLog2, fun (token, _) -> token >>> 24 = 0x15)
+
+                Assert.Equal(3, doubled.GetValue(instance) :?> int)
+
+                // The property stays resolvable by name with its int signature...
+                let refreshed = widgetType.GetProperty("Doubled", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull refreshed), "Property 'Doubled' lost after the generation-2 accessor edit.")
+                Assert.Equal(typeof<int>, refreshed.PropertyType)
+                Assert.Equal(3, refreshed.GetValue(instance) :?> int)
+
+                // ...and the displaced neighbour row (Anchor.Tag) is untouched.
+                let anchorInstance = Activator.CreateInstance(anchorType)
+                let tag = anchorType.GetProperty("Tag", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull tag), "Baseline property 'Tag' lost after the generation-2 edit.")
+                Assert.Equal("anchor", tag.GetValue(anchorInstance) :?> string)
+                printfn "[propdisplaced] SUCCESS: gen-2 accessor edit kept the chained Property row intact")
+
+    [<Fact>]
+    let ``Added CLIEvent chains past a baseline event and a later body edit fails closed`` () =
+        // Event-table twin of the displaced-property pin. Generation 1 adds a
+        // [<CLIEvent>] whose chained Event row is row 2 while the fresh compile lays it
+        // out at row 1 (Front is declared before the baseline-evented Rear) - the added
+        // row must be emitted from FRESH coordinates with a NEW EventMap row for Front.
+        // Generation 2 then edits the event member's body: that fails closed at symbol
+        // mapping (the typed-tree get_<Name> PropertyGet symbol has no IL counterpart),
+        // so the event accessor re-registration path is unreachable for body edits and
+        // the displaced-row coordinates can never surface for events today.
+        let baselineSource =
+            """
+module Sample.DisplacedEvents
+
+open System
+
+type Front() =
+    let primary = Event<EventHandler, EventArgs>()
+    let secondary = Event<EventHandler, EventArgs>()
+    member _.TriggerPrimary() = primary.Trigger(null, EventArgs.Empty)
+    member _.TriggerSecondary() = secondary.Trigger(null, EventArgs.Empty)
+
+type Rear() =
+    let anchored = Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member _.Anchored = anchored.Publish
+"""
+
+        let gen1Source =
+            """
+module Sample.DisplacedEvents
+
+open System
+
+type Front() =
+    let primary = Event<EventHandler, EventArgs>()
+    let secondary = Event<EventHandler, EventArgs>()
+    member _.TriggerPrimary() = primary.Trigger(null, EventArgs.Empty)
+    member _.TriggerSecondary() = secondary.Trigger(null, EventArgs.Empty)
+    [<CLIEvent>]
+    member _.Added = primary.Publish
+
+type Rear() =
+    let anchored = Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member _.Anchored = anchored.Publish
+"""
+
+        // Generation 2 rebinds the added event member's body to the other baseline
+        // field - a CLIEvent body edit, which the symbol mapper rejects today.
+        let gen2Source =
+            """
+module Sample.DisplacedEvents
+
+open System
+
+type Front() =
+    let primary = Event<EventHandler, EventArgs>()
+    let secondary = Event<EventHandler, EventArgs>()
+    member _.TriggerPrimary() = primary.Trigger(null, EventArgs.Empty)
+    member _.TriggerSecondary() = secondary.Trigger(null, EventArgs.Empty)
+    [<CLIEvent>]
+    member _.Added = secondary.Publish
+
+type Rear() =
+    let anchored = Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    member _.Anchored = anchored.Publish
+"""
+
+        runMemberAdditionScenario
+            "fsharp-hotreload-eventdisplaced"
+            "EventDisplacedLibrary"
+            [ "Baseline"; "AddMethodToExistingType" ]
+            baselineSource
+            (fun assembly applyGeneration ->
+                let frontType = assembly.GetType("Sample.DisplacedEvents+Front", throwOnError = true)
+                let instance = Activator.CreateInstance(frontType)
+                let trigger name =
+                    frontType.GetMethod(name, BindingFlags.Public ||| BindingFlags.Instance).Invoke(instance, [||])
+                    |> ignore
+
+                // ---------------- Generation 1: event addition ----------------
+                let delta1 = applyGeneration 1 gen1Source
+                let encLog1 = readDeltaEncLog delta1.Metadata
+                assertAddPair encLog1 0x12 5 0x14 // (EventMap, AddEvent) + Event
+
+                let added = frontType.GetEvent("Added", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull added), "Added event 'Added' not found after generation 1.")
+
+                let mutable fired = 0
+                let handler = EventHandler(fun _ _ -> fired <- fired + 1)
+                added.AddEventHandler(instance, handler)
+                trigger "TriggerPrimary"
+                Assert.Equal(1, fired)
+                added.RemoveEventHandler(instance, handler)
+
+                // ---------------- Generation 2: event member body edit ----------------
+                // Fails closed (UnsupportedEdit) at accessor symbol mapping; the session
+                // and the generation-1 event must stay intact afterwards.
+                let mutable gen2Error = None
+
+                try
+                    applyGeneration 2 gen2Source |> ignore
+                with ex ->
+                    gen2Error <- Some ex.Message
+
+                match gen2Error with
+                | None -> failwith "Expected the CLIEvent body edit to fail closed (UnsupportedEdit)."
+                | Some message ->
+                    Assert.Contains("full rebuild required", message)
+                    Assert.Contains("get_Added", message)
+
+                let survivor = frontType.GetEvent("Added", BindingFlags.Public ||| BindingFlags.Instance)
+                Assert.True(not (isNull survivor), "Event 'Added' lost after the rejected generation-2 edit.")
+                Assert.Equal(typeof<EventHandler>, survivor.EventHandlerType)
+
+                let mutable stillFiring = 0
+                let stillFiringHandler = EventHandler(fun _ _ -> stillFiring <- stillFiring + 1)
+                survivor.AddEventHandler(instance, stillFiringHandler)
+                trigger "TriggerPrimary"
+                Assert.Equal(1, stillFiring)
+                printfn "[eventdisplaced] SUCCESS: displaced CLIEvent addition applied; body edit failed closed")
+
+    // ------------------------------------------------------------------------------
     // The dotnet-watch force-rebuild topology: the baseline contains NO lambdas, and
     // every generation's on-disk output is produced by a SEPARATE flag-on fsc build
     // (no session state in that process), so the closure added in generation 1 carries

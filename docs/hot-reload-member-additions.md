@@ -262,6 +262,41 @@ Runtime validation: added properties are readable/writable through ordinary
 accessors); auto-property state follows C# EnC semantics (existing instances
 read `default(T)`, new instances run the updated ctor and see initializers).
 
+### Accessor edits and Property/Event row coordinates (follow-up closed)
+
+The fresh-vs-baseline row coordinate rule established for MethodDef rows
+("read updated method rows from fresh-compile coordinates") also applies to
+the Property/Event handles registered by the accessor-edit path
+(`UpdatedAccessors` -> `tryResolveAccessor` -> `registerProperty/EventDefinition`
+in `IlxDeltaEmitter.fs`):
+
+- The accessor lookup yields the FRESH reader's Property/Event handle; the
+  association remap (fresh -> chained baseline token) only names the emission
+  row. Re-registration previously rebuilt the handle FROM the chained baseline
+  token and indexed the fresh reader with it — once an earlier generation
+  added Property/Event rows ahead of the member in the fresh layout (e.g. a
+  property added to a type declared before another type's baseline property),
+  that read landed on the DISPLACED neighbour row. The handles now stay in
+  fresh coordinates, and the snapshot offsets follow the method-row rule
+  (heap offsets only from the on-disk baseline cache; otherwise the
+  name/signature is delta-heap content).
+- The displaced read was LATENT, never reaching emitted bytes: both delta
+  writers emit Property/Event (and PropertyMap/EventMap) rows only for ADDED
+  members, so an accessor BODY edit produces a MethodDef-only update — Roslyn
+  parity: an accessor body edit does not change the Property/Event row.
+  Pinned by `Added property survives an accessor edit when a later type
+  displaces its fresh row` (RuntimeIntegrationTests): gen 1 adds a getter-only
+  property whose chained row is displaced in later fresh compiles, gen 2 edits
+  the getter body and must emit no Property-table entries while the property
+  stays fully reachable via reflection.
+- The Event branch of the same path is additionally unreachable for body
+  edits today: editing a `[<CLIEvent>]` member body fails closed at symbol
+  mapping (the typed-tree `get_<Name>` PropertyGet symbol has no IL
+  counterpart to resolve). Pinned by `Added CLIEvent chains past a baseline
+  event and a later body edit fails closed`, which also validates the
+  displaced ADDED Event row itself (chained row 2, fresh row 1, new EventMap
+  row for the declaring type) applies and fires.
+
 ### mdv parity notes (B2/B3 consolidation)
 
 - A three-generation chain mixing method, instance-field, and auto-property
