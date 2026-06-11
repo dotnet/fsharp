@@ -2770,13 +2770,16 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         // (m.StartLine, per-line counter) so it's stable across SEQ vs PAR codegen — both see
         // the same (m, bytes) tuples in source order and produce the same name.
         let bytesKey = System.Convert.ToBase64String(bytes)
-        let key = struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn, bytesKey)
+
+        let key =
+            struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn, bytesKey)
 
         fieldSpecByRange.GetOrAdd(
             key,
             (fun _ ->
                 let counterCell =
                     rawDataLineCounters.GetOrAdd(struct (m.FileIndex, m.StartLine), (fun _ -> ref 0))
+
                 let idx = System.Threading.Interlocked.Increment(counterCell)
                 let nameSuffix = sprintf "%d_%d" m.StartLine idx
                 makeFspec nameSuffix)
