@@ -1444,6 +1444,11 @@ type private BindingSnapshot =
       /// gated on the ChangeCustomAttributes runtime capability (Roslyn parity), emitted
       /// as a member update when the attribute rows are MethodDef-parented.
       AttributesDigest: string
+      /// Source names of the compiled IL parameters (curried/tupled groups flattened, the
+      /// implicit 'this' argument excluded). A name change on a matched binding is a
+      /// parameter RENAME: gated on the UpdateParameters runtime capability (Roslyn
+      /// parity), emitted as a member update whose Param rows carry the new names.
+      ParameterNames: string option list
       AdditionInfo: MethodAdditionInfo }
 
 /// Structured digest of a single entity field (Phase B2): staticness drives the runtime
@@ -1603,20 +1608,39 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
             Some(vref.CompiledName None)
         with _ ->
             None
+    let isInstanceMember =
+        match var.MemberInfo with
+        | Some memberInfo -> memberInfo.MemberFlags.IsInstance
+        | None -> false
+
     let totalArgCount =
         var.ValReprInfo
         |> Option.map (fun info ->
-            let isInstanceMember =
-                match var.MemberInfo with
-                | Some memberInfo -> memberInfo.MemberFlags.IsInstance
-                | None -> false
-
             // ValReprInfo.TotalArgCount includes the implicit 'this' argument for instance members.
             // MethodDefinitionKey.ParameterTypes only includes emitted IL parameters, so subtract it.
             if isInstanceMember then
                 max 0 (info.TotalArgCount - 1)
             else
                 info.TotalArgCount)
+
+    // Source names of the emitted IL parameters: curried/tupled argument groups flatten in
+    // order; the implicit 'this' group of instance members (the first curried group) is
+    // not a Param row and is excluded — renaming the self identifier is not a parameter
+    // rename.
+    let parameterNames =
+        match var.ValReprInfo with
+        | Some (ValReprInfo(_, curriedArgInfos, _)) ->
+            let argGroups =
+                if isInstanceMember then
+                    match curriedArgInfos with
+                    | _ :: rest -> rest
+                    | [] -> []
+                else
+                    curriedArgInfos
+
+            argGroups
+            |> List.collect (List.map (fun (argInfo: ArgReprInfo) -> argInfo.Name |> Option.map (fun ident -> ident.idText)))
+        | None -> []
 
     let methodTypeInfo = tryGetMethodTyparOrdinalsAndGenericArity g var
 
@@ -1706,6 +1730,7 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
       ContainingEntity = containingEntity
       InGenericContext = inGenericContext
       AttributesDigest = attribsDigest denv var.Attribs
+      ParameterNames = parameterNames
       AdditionInfo = additionInfo }: BindingSnapshot
 
 and private snapshotTycon denv path (tycon: Tycon) =
@@ -1947,6 +1972,23 @@ let private compareBindings
                     ) }
             )
         elif
+            baselineBinding.ParameterNames <> updatedBinding.ParameterNames
+            && not (capabilities.Supports EditAndContinueCapability.UpdateParameters)
+        then
+            // Roslyn parity (AbstractEditAndContinueAnalyzer: renaming a parameter
+            // requires EditAndContinueCapabilities.UpdateParameters, else
+            // RudeEditKind.RenamingNotSupportedByRuntime). Parameter TYPE changes are
+            // SignatureChange rude edits above; only names can differ here.
+            rude.Add(
+                { Symbol = Some baselineBinding.Symbol
+                  Kind = RudeEditKind.NotSupportedByRuntime
+                  Message =
+                    FSComp.SR.hotReloadParameterRenameNotSupportedByRuntime (
+                        baselineBinding.Symbol.QualifiedName,
+                        EditAndContinueCapability.UpdateParameters.Name
+                    ) }
+            )
+        elif
             baselineBinding.AttributesDigest <> updatedBinding.AttributesDigest
             && not (attributeRowsAreMethodParented updatedBinding)
         then
@@ -2095,11 +2137,21 @@ let private compareBindings
                 // An attribute-only change still re-emits the member (the CA rows pair
                 // against the baseline rows in emission), so it produces the same
                 // MethodBody edit as a body change — gated above on
-                // ChangeCustomAttributes and the MethodDef-parented restriction.
+                // ChangeCustomAttributes and the MethodDef-parented restriction. A
+                // parameter RENAME likewise re-emits the member so its Param rows carry
+                // the new names (gated above on UpdateParameters; the body of a method
+                // whose parameter is unused can be otherwise unchanged).
                 let attributesChanged =
                     baselineBinding.AttributesDigest <> updatedBinding.AttributesDigest
 
-                if baselineBinding.BodyHash <> updatedBinding.BodyHash || attributesChanged then
+                let parameterNamesChanged =
+                    baselineBinding.ParameterNames <> updatedBinding.ParameterNames
+
+                if
+                    baselineBinding.BodyHash <> updatedBinding.BodyHash
+                    || attributesChanged
+                    || parameterNamesChanged
+                then
                     if traceHotReloadMethodDiff then
                         printfn
                             "[fsharp-hotreload][typed-diff] body change symbol=%s synthesized=%b baselineHash=%d updatedHash=%d"

@@ -1020,9 +1020,19 @@ let private buildParameterDefinitionRowsSnapshot
                                 None
                             else
                                 metadataReader.GetString parameter.Name |> Some
+                        let baselineInfo = baselineParameterHandles |> Map.tryFind key
                         let resolvedOffset =
-                            match baselineParameterHandles |> Map.tryFind key |> Option.bind (fun info -> info.NameOffset) with
-                            | Some offset -> Some offset
+                            match baselineInfo |> Option.bind (fun info -> info.NameOffset) with
+                            | Some offset ->
+                                // Reuse the baseline name offset only when the fresh name
+                                // matches the baseline name. A differing name is a
+                                // parameter RENAME (classification gates it on the
+                                // UpdateParameters capability): the re-emitted Param row
+                                // writes the NEW name into the delta string heap — the C#
+                                // 'param_rename' template shape.
+                                match baselineInfo |> Option.bind (fun info -> info.Name) with
+                                | Some baselineName when name <> Some baselineName -> None
+                                | _ -> Some offset
                             | None ->
                                 // Added parameter rows must write their name into the delta
                                 // string heap; fresh-compile heap offsets are not valid

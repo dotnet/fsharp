@@ -691,10 +691,35 @@ tests pin the ChangeCustomAttributes gate and the Property-parented
 fail-closed path. Legacy baselines without byte-derived CA snapshots keep
 the historic append-only behavior.
 
+### Parameter metadata updates (sub-slice 3)
+
+C# reference template (`reference_mdv_param_rename.txt`): renaming a
+parameter re-emits the MethodDef and Param rows as UPDATES at their existing
+row ids (EncMap updates, no adds); the Param row's Name column carries the
+NEW name in the delta string heap.
+
+F#: `BindingSnapshot.ParameterNames` (see docs/hot-reload-capabilities.md for
+the gating) classifies renames; emission resolves the baseline parameter NAME
+alongside its heap offset (`ParameterDefinitionMetadataHandles.Name`, read
+from the baseline #Strings heap) and reuses the baseline name offset only
+when the fresh name matches — a differing name writes the fresh name into the
+delta string heap, producing exactly the template's row-update shape.
+
+Runtime evidence (`ParameterEditTests`): ApplyUpdate accepts the Param row
+update and `MethodInfo.GetParameters()` observes the new name on the live
+assembly — provided the parameter info was not reflected on BEFORE the
+update (the runtime caches ParameterInfo per MethodInfo; a primed cache keeps
+the old name — parameter names are debugger-facing metadata). Negative tests
+pin the UpdateParameters gate and that self-identifier renames do not gate.
+
 ## Known gaps / later slices
 
 - GenericParamConstraint rows are not emitted: added generic definitions
   with IL-constrained typars fail closed (see "Generic edits" above).
+- Attribute changes on PARAMETERS (e.g. adding `[<Optional>]`) are not
+  classified yet (the attribute digest covers member-level attributes only);
+  the Param row's flags/attributes re-emit from the fresh compile when the
+  member updates for other reasons.
 - mdv renders `<bad metadata>` after every non-empty member-list range in EnC
   generations by convention (member lists are associated via EncLog); this is
   a rendering artifact, not delta corruption — Roslyn deltas render the same.

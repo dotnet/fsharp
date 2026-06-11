@@ -134,7 +134,17 @@ the edit is an ordinary member update; members whose attribute rows are
 Property/Event-parented (accessors, module values) fail closed — see
 docs/hot-reload-member-additions.md.
 
-The same gating pattern applies later to `UpdateParameters`.
+Parameter renames are capability-gated as of Phase F: a matched binding whose
+compiled parameter NAMES differ (`BindingSnapshot.ParameterNames` — curried/
+tupled groups flattened, the implicit `this` argument excluded; renaming the
+self identifier is not a parameter rename) requires `UpdateParameters`;
+without it the diff reports `RudeEditKind.NotSupportedByRuntime` with the
+`hotReloadParameterRenameNotSupportedByRuntime` FSComp message (FSHRDL016)
+naming the capability (Roslyn: `RudeEditKind.RenamingNotSupportedByRuntime`).
+With the capability the member re-emits as an ordinary update whose Param
+rows carry the new names. Parameter TYPE changes remain `SignatureChange`
+rude edits.
+
 `NewTypeDefinition` gates added-lambda closure classes (Phase C4).
 
 ## Roslyn references

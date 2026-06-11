@@ -110,6 +110,11 @@ and TypeReferenceKey =
 
 type ParameterDefinitionMetadataHandles =
     { NameOffset: StringOffset option
+      /// Baseline parameter name (resolved from the #Strings heap). Param row re-emission
+      /// reuses the baseline name offset only when the fresh compile's name matches;
+      /// a differing name (parameter rename under UpdateParameters) writes the fresh name
+      /// into the delta string heap instead.
+      Name: string option
       RowId: int option }
 
 type PropertyDefinitionMetadataHandles =
@@ -1086,6 +1091,7 @@ let private buildParameterHandlesFromBytes
                               SequenceNumber = param.Sequence }
                         let result : ParameterDefinitionMetadataHandles =
                             { NameOffset = if param.NameOffset = 0 then None else Some (StringOffset param.NameOffset)
+                              Name = if param.NameOffset = 0 then None else Some (reader.GetString param.NameOffset)
                               RowId = Some paramRowId }
                         yield key, result
             }

@@ -807,6 +807,11 @@
         <target state="new">Updating '{0}' requires the runtime capability '{1}' because the member is generic or declared in a generic type, which the current runtime does not support.</target>
         <note />
       </trans-unit>
+      <trans-unit id="hotReloadParameterRenameNotSupportedByRuntime">
+        <source>Renaming a parameter of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</source>
+        <target state="new">Renaming a parameter of '{0}' requires the runtime capability '{1}', which the current runtime does not support.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ifExpressionTuple">
         <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Se a expressão 'if' precisa retornar uma tupla de comprimento {0} do tipo\n    {1}    \npara atender aos requisitos de tipo de contexto. Atualmente, ele retorna uma tupla de comprimento {2} do tipo\n    {3}    \n</target>
