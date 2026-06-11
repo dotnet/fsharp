@@ -762,9 +762,10 @@ type CodeActionHandler() =
                     )
 
                 let uri = request.TextDocument.Uri
+                let projectContext = tryGetProjectContext request.TextDocument
 
-                let! diagnosticReport = context.Workspace.Query.GetDiagnosticsForFile uri
-                let! parseResultsOpt, checkResultsOpt = context.Workspace.Query.GetParseAndCheckResultsForFile uri
+                let! diagnosticReport = context.Workspace.Query.GetDiagnosticsForFile(uri, ?context = projectContext)
+                let! parseResultsOpt, checkResultsOpt = context.Workspace.Query.GetParseAndCheckResultsForFile(uri, ?context = projectContext)
                 let! sourceTextOpt = context.Workspace.Query.GetSource uri
 
                 match parseResultsOpt, sourceTextOpt with

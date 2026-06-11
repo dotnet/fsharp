@@ -172,3 +172,37 @@ let openAndRequestCodeActions (client: TestRpcClient) (fileUri: Uri) (content: s
         let! _diags = pullDiagnostics client fileUri
         return! requestCodeActions client fileUri line
     }
+
+let pullDiagnosticsInContext (client: TestRpcClient) (fileUri: Uri) (projectContext: VSProjectContext) =
+    task {
+        let! response =
+            client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
+                Methods.TextDocumentDiagnosticName,
+                DocumentDiagnosticParams(TextDocument = VSTextDocumentIdentifier(Uri = fileUri, ProjectContext = projectContext)))
+        return response.First
+    }
+
+/// Adds two projects sharing the same source file but using different conditional compilation
+/// defines. The two projects also have distinct output paths so they look like two TFMs of the
+/// same project to the workspace. Returns the file URI and the two FSharpProjectIdentifiers.
+let setupMultiTargetLikeProject (client: TestRpcClient) (content: string) (sharedProjectFileName: string) (defineA: string) (defineB: string) =
+    let fileOnDisk = sourceFileOnDisk content
+    let dir = System.IO.Path.GetDirectoryName(fileOnDisk.LocalPath)
+    let projectFileName = System.IO.Path.Combine(dir, sharedProjectFileName)
+
+    let configA =
+        ProjectConfig(
+            projectFileName,
+            outputFileName = Some (System.IO.Path.Combine(dir, $"out.{defineA}.dll")),
+            referencesOnDisk = [],
+            otherOptions = [ $"--define:{defineA}" ])
+    let configB =
+        ProjectConfig(
+            projectFileName,
+            outputFileName = Some (System.IO.Path.Combine(dir, $"out.{defineB}.dll")),
+            referencesOnDisk = [],
+            otherOptions = [ $"--define:{defineB}" ])
+
+    let pidA = client.Workspace.Projects.AddOrUpdate(configA, [ fileOnDisk.LocalPath ])
+    let pidB = client.Workspace.Projects.AddOrUpdate(configB, [ fileOnDisk.LocalPath ])
+    fileOnDisk, pidA, pidB

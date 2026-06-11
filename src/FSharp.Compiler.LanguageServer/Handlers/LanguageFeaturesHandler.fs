@@ -25,16 +25,18 @@ type LanguageFeaturesHandler() =
             =
             cancellableTask {
                 let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
+                let uri = request.TextDocument.Uri
+                let projectContext = tryGetProjectContext request.TextDocument
 
                 use _scope =
                     telemetry.ReportEventWithDuration(
                         TelemetryEvents.GetDiagnostics,
-                        [| "uri_hash", hash request.TextDocument.Uri :> obj |]
+                        [| "uri_hash", hash uri :> obj |]
                     )
 
-                let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile request.TextDocument.Uri
+                let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile(uri, ?context = projectContext)
 
-                let snapshots = context.Workspace.Query.GetProjectSnapshotsForFile(request.TextDocument.Uri)
+                let snapshots = context.Workspace.Query.GetProjectSnapshotsForFile(uri)
                 let projects = snapshotsToProjectInfos snapshots
 
                 return

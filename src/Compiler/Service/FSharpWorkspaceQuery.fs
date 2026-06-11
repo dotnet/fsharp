@@ -46,16 +46,24 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
         with :? KeyNotFoundException ->
             None
 
-    member _.GetProjectSnapshotForFile(file: Uri) =
+    /// Returns the project snapshot for a file. If `context` is provided, returns the snapshot whose
+    /// identifier matches. Otherwise (or when no match is found among the projects containing the
+    /// file) falls back to the first snapshot, matching the prior behavior. This fallback keeps
+    /// behavior reasonable for clients that don't send a VS project context (e.g. non-VS clients
+    /// or before the project-context dropdown selection arrives).
+    member _.GetProjectSnapshotForFile(file: Uri, ?context: ProjectSnapshot.FSharpProjectIdentifier) =
         use _ =
             Activity.start "GetProjectSnapshotForFile" [ Activity.Tags.fileName, file.LocalPath ]
 
-        depGraph.GetProjectsContaining file.LocalPath
+        let candidates = depGraph.GetProjectsContaining file.LocalPath
 
-        // TODO: eventually we need to deal with choosing the appropriate project here
-        // Hopefully we will be able to do it through receiving project context from LSP
-        // Otherwise we have to keep track of which project/configuration is active
-        |> Seq.tryHead // For now just get the first one
+        match context with
+        | Some ctx ->
+            let matching = candidates |> Seq.tryFind (fun s -> s.Identifier = ctx)
+            match matching with
+            | Some _ -> matching
+            | None -> candidates |> Seq.tryHead
+        | None -> candidates |> Seq.tryHead
 
     member _.GetProjectSnapshotsForFile(file: Uri) =
         use _ =
@@ -64,14 +72,14 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
         depGraph.GetProjectsContaining file.LocalPath
         |> Seq.toArray
 
-    member this.GetParseAndCheckResultsForFile(file: Uri) =
+    member this.GetParseAndCheckResultsForFile(file: Uri, ?context: ProjectSnapshot.FSharpProjectIdentifier) =
         async {
 
             use _ =
                 Activity.start "GetParseAndCheckResultsForFile" [ Activity.Tags.fileName, file.LocalPath ]
 
             return!
-                this.GetProjectSnapshotForFile file
+                this.GetProjectSnapshotForFile(file, ?context = context)
                 |> Option.map (fun snapshot ->
                     async {
                         let! parseResult, checkFileAnswer = checker.ParseAndCheckFileInProject(file.LocalPath, snapshot)
@@ -85,15 +93,15 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
 
         }
 
-    member this.GetCheckResultsForFile(file) =
-        this.GetParseAndCheckResultsForFile file |> Async.map snd
+    member this.GetCheckResultsForFile(file, ?context: ProjectSnapshot.FSharpProjectIdentifier) =
+        this.GetParseAndCheckResultsForFile(file, ?context = context) |> Async.map snd
 
     // TODO: split to parse and check diagnostics
-    member this.GetDiagnosticsForFile(file: Uri) =
+    member this.GetDiagnosticsForFile(file: Uri, ?context: ProjectSnapshot.FSharpProjectIdentifier) =
         use _ =
             Activity.start "GetDiagnosticsForFile" [ Activity.Tags.fileName, file.LocalPath ]
 
-        this.GetParseAndCheckResultsForFile file
+        this.GetParseAndCheckResultsForFile(file, ?context = context)
         |> Async.map (fun results ->
             let diagnostics =
                 match results with
@@ -103,11 +111,11 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
 
             FSharpDiagnosticReport(diagnostics, getDiagnosticResultId ()))
 
-    member this.GetSemanticClassification(file: Uri) =
+    member this.GetSemanticClassification(file: Uri, ?context: ProjectSnapshot.FSharpProjectIdentifier) =
         use _ =
             Activity.start "GetSemanticClassification" [ Activity.Tags.fileName, file.LocalPath ]
 
-        this.GetProjectSnapshotForFile file
+        this.GetProjectSnapshotForFile(file, ?context = context)
         |> Option.map (fun snapshot ->
             checker.GetBackgroundSemanticClassificationForFile(file.LocalPath, snapshot, "LSP Get semantic classification"))
         |> Option.defaultValue (async.Return None)

@@ -19,23 +19,45 @@ module Utils =
 
     type LspRange = Microsoft.VisualStudio.LanguageServer.Protocol.Range
 
-    let makeProjectContextId (projectFileName: string, projectId: string option) =
-        let guid =
-            match projectId with
-            | Some id ->
-                match Guid.TryParse(id) with
-                | true, g -> g
-                | _ -> Guid(MD5.HashData(Encoding.UTF8.GetBytes(projectFileName)))
-            | None -> Guid(MD5.HashData(Encoding.UTF8.GetBytes(projectFileName)))
+    /// Encodes a stable, round-trippable identifier for a project context. The encoding includes the
+    /// output file name so that different target frameworks of a multi-targeting project produce
+    /// distinct ids (their project file name is the same but their output file name differs).
+    /// Format: "{guid}|{outputFileName}|{projectFileName}". The GUID is derived from the output file
+    /// name so that the same TFM of the same project always maps to the same context id.
+    let makeProjectContextId (identifier: FSharpProjectIdentifier) =
+        let (FSharpProjectIdentifier(projectFileName, outputFileName)) = identifier
+        let guid = Guid(MD5.HashData(Encoding.UTF8.GetBytes(outputFileName)))
+        $"{guid}|{outputFileName}|{projectFileName}"
 
-        $"{guid}|{projectFileName}"
+    /// Recovers an FSharpProjectIdentifier from a context id produced by makeProjectContextId.
+    /// Returns None for malformed ids.
+    let tryParseProjectContextId (contextId: string) : FSharpProjectIdentifier option =
+        if String.IsNullOrEmpty contextId then
+            None
+        else
+            let parts = contextId.Split('|', 3)
+            if parts.Length = 3 then
+                Some(FSharpProjectIdentifier(parts[2], parts[1]))
+            else
+                None
+
+    /// Extracts the FSharpProjectIdentifier from the VS project context attached to a text document
+    /// identifier, if any. Returns None when the client didn't send a context (e.g. non-VS clients
+    /// or when navbar isn't available) or when the id is malformed.
+    let tryGetProjectContext (textDocument: TextDocumentIdentifier) : FSharpProjectIdentifier option =
+        match textDocument with
+        | :? VSTextDocumentIdentifier as vsDoc ->
+            match vsDoc.ProjectContext with
+            | null -> None
+            | ctx -> tryParseProjectContextId ctx.Id
+        | _ -> None
 
     let snapshotsToProjectInfos (snapshots: FSharpProjectSnapshot array) =
         snapshots
         |> Array.map (fun s ->
             VSDiagnosticProjectInformation(
                 ProjectName = IO.Path.GetFileNameWithoutExtension(s.ProjectFileName),
-                ProjectIdentifier = makeProjectContextId(s.ProjectFileName, s.ProjectId)
+                ProjectIdentifier = makeProjectContextId s.Identifier
             ))
 
     let LspLogger (output: string -> unit) =

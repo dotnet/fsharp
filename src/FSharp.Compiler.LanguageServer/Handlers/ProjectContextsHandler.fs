@@ -37,7 +37,7 @@ type ProjectContextsHandler() =
                     |> Array.map (fun snapshot ->
                         VSProjectContext(
                             Label = Path.GetFileNameWithoutExtension(snapshot.ProjectFileName),
-                            Id = makeProjectContextId(snapshot.ProjectFileName, snapshot.ProjectId),
+                            Id = makeProjectContextId snapshot.Identifier,
                             Kind = VSProjectKind.FSharp
                         ))
 

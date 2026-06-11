@@ -96,7 +96,8 @@ internal class VsDiagnosticsHandler
     [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName, LanguageServerConstants.DefaultLanguageName)]
     public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDiagnosticParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
-        var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+        var projectContext = Utils.tryGetProjectContext(request!.TextDocument!);
+        var report = await context.Workspace.Query.GetDiagnosticsForFile(request.TextDocument!.Uri, projectContext).Please(cancellationToken);
 
         var snapshots = context.Workspace.Query.GetProjectSnapshotsForFile(request.TextDocument.Uri);
         var projects = Utils.snapshotsToProjectInfos(snapshots);
