@@ -148,3 +148,106 @@ let transform (input: int list) =
             // The flag-on compiles above replace the process-global hot reload
             // session; clear it so later tests in the collection start clean.
             global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+    let private sessionClosureNameTables () =
+        match global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
+        | ValueSome session -> session.Baseline.EncClosureNames
+        | ValueNone -> failwith "Expected an active hot reload session."
+
+    let private allTableNames tables =
+        tables
+        |> Map.toList
+        |> List.collect (fun (_, table: Map<int list, string>) -> table |> Map.toList |> List.map snd)
+        |> Set.ofList
+
+    [<Fact>]
+    let ``occurrence-keyed naming keeps closure names byte-identical across three body-edit generations`` () =
+        // C3 wiring: generations 2 and 3 compile with an active session whose baseline
+        // carries occurrence-chain -> name tables, so the IlxGen closure call site takes
+        // the allocator path (stamp-keyed Reused names), not bare sequence replay. For a
+        // pure body-edit chain the emitted names AND the chained tables must stay
+        // byte-identical in every generation.
+        try
+            let gen1Names =
+                genSource "x > 0" "x * 2 + List.length input"
+                |> compileHotReloadLibrary
+                |> getHotReloadTypeNames
+
+            let gen1Tables = sessionClosureNameTables ()
+            Assert.False(Map.isEmpty gen1Tables, "Generation 1 must capture closure-name tables.")
+
+            let gen2Names =
+                genSource "x > 1" "x * 3 + List.length input"
+                |> compileHotReloadLibrary
+                |> getHotReloadTypeNames
+
+            Assert.Equal<string list>(gen1Names, gen2Names)
+            // The recaptured tables carry the same names forward (Reused verbatim).
+            Assert.Equal<Set<string>>(allTableNames gen1Tables, allTableNames (sessionClosureNameTables ()))
+
+            let gen3Names =
+                genSource "x >= 2" "x * 5 + List.length input"
+                |> compileHotReloadLibrary
+                |> getHotReloadTypeNames
+
+            Assert.Equal<string list>(gen1Names, gen3Names)
+            Assert.Equal<Set<string>>(allTableNames gen1Tables, allTableNames (sessionClosureNameTables ()))
+        finally
+            global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+    [<Fact>]
+    let ``occurrence-keyed naming survives an added lambda: survivors keep baseline names, the added one is generation-suffixed`` () =
+        // The added lambda is inserted BEFORE the surviving ones, which is exactly the
+        // case pure sequence replay cannot handle (every later same-basename allocation
+        // would shift by one). With the allocator path the surviving closures keep their
+        // baseline class names verbatim and the added occurrence gets the
+        // {base}@hotreload#g{N}_o{i} generation-suffixed name. Emission of the added
+        // member in a DELTA is still rejected by classification (LambdaShapeChange) —
+        // emitting it is Phase C4; this pins the naming contract C4 builds on.
+        try
+            let gen1Names =
+                genSource "x > 0" "x * 2 + List.length input"
+                |> compileHotReloadLibrary
+                |> getHotReloadTypeNames
+
+            Assert.True(gen1Names.Length >= 2, $"Expected at least two baseline closures, got: %A{gen1Names}")
+
+            // Generation 2 source: a capture-free map lambda is ADDED in front of the
+            // surviving filter and map lambdas; the survivors' bodies are unchanged.
+            let gen2Names =
+                $"""
+module ClosureIdentitySample
+
+let transform (input: int list) =
+    input
+    |> List.map (fun x -> x + 1)
+    |> List.filter (fun x -> x > 0)
+    |> List.map (fun x -> x * 2 + List.length input)
+"""
+                |> compileHotReloadLibrary
+                |> getHotReloadTypeNames
+
+            // Every baseline closure class name survives byte-identically.
+            for name in gen1Names do
+                Assert.Contains(name, gen2Names)
+
+            // Exactly one new closure class, carrying the generation-suffixed name
+            // (session generation 1 — the first compile after the captured baseline).
+            let addedNames = gen2Names |> List.filter (fun name -> not (List.contains name gen1Names))
+
+            let addedName = Assert.Single addedNames
+            Assert.Contains("transform@hotreload#g1_o", addedName)
+
+            // The recaptured session tables chain all three names forward, so a further
+            // generation would reuse the added closure's name too.
+            let chainedNames = allTableNames (sessionClosureNameTables ())
+
+            for name in gen2Names do
+                let simpleName =
+                    match name.LastIndexOf('+') with
+                    | -1 -> name
+                    | i -> name.Substring(i + 1)
+
+                Assert.Contains(simpleName, chainedNames)
+        finally
+            global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.ResetSessionState()

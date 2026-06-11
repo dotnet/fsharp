@@ -319,6 +319,15 @@ delta-compile hook step). As implemented:
   basic name; such members are exactly the ones still classified rude for emission today, and
   the collision window (closure base names shared with non-closure synthesized names) predates
   this wiring.
+- **C3/C4 boundary**: C3 fixes the NAME of every occurrence — including added ones, which lower
+  to `{base}@hotreload#g{N}_o{i}` classes in the delta compile's in-memory rewrite (pinned by
+  the `ClosureIdentityTests` added-lambda test). EMITTING those added members in a metadata
+  delta is Phase C4: classification still rejects lambda-set changes (`LambdaShapeChange`) at
+  delta emission, so today the generation-suffixed classes exist only in the recompiled
+  assembly, never in a delta. C4 can rely on: stable survivor names (in-place method updates),
+  deterministic generation-suffixed names for added occurrences, and the chained
+  `EncClosureNames`/`RefreshedClosureNameRows` tables identifying exactly which occurrence maps
+  to which closure class across generations.
 
 The original design rationale, recorded before the wiring landed:
 
