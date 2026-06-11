@@ -90,6 +90,11 @@ public class DebuggingSequencePointTests : AbstractIntegrationTest
         var buildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);
         Assert.NotNull(buildSummary);
         Assert.Contains("Build: 1 succeeded, 0 failed", string.Join(Environment.NewLine, buildSummary));
+
+        // BuildSolutionAsync leaves the Build Output pane as the active text view; re-open Program.fs
+        // so the subsequent PlaceCaretAsync / ToggleBreakpointAtMarkerAsync operate on the F# source
+        // (rather than searching the build log for "BP_..." markers).
+        await SolutionExplorer.OpenFileAsync(ProjectName, "Program.fs", TestToken);
     }
 
     private static string GetFixturePath()

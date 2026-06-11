@@ -30,6 +30,9 @@ let increment = add 1
         await Editor.SetTextAsync(code, TestToken);
         
         await Editor.PlaceCaretAsync("add 1", TestToken);
+        // GoToDefn needs the F# language service to have typechecked the file; without an explicit
+        // wait the command is a no-op and Assert.Contains below fails with the caret line unchanged.
+        await Workspace.WaitForProjectSystemAsync(TestToken);
         await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
         var actualText = await Editor.GetCurrentLineTextAsync(TestToken);
         
@@ -73,6 +76,7 @@ let id (t: SomeType) = t
 
         await SolutionExplorer.OpenFileAsync("Library", "Module.fsi", TestToken);
         await Editor.PlaceCaretAsync("SomeType ->", TestToken);
+        await Workspace.WaitForProjectSystemAsync(TestToken);
         await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
         var expectedText = "type SomeType =";
         var expectedWindow = "Module.fsi";
@@ -83,6 +87,7 @@ let id (t: SomeType) = t
 
         await SolutionExplorer.OpenFileAsync("Library", "Module.fs", TestToken);
         await Editor.PlaceCaretAsync("SomeType)", TestToken);
+        await Workspace.WaitForProjectSystemAsync(TestToken);
         await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
         expectedText = "type SomeType =";
         expectedWindow = "Module.fs";
