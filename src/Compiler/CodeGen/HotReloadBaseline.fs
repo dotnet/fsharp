@@ -209,21 +209,25 @@ type FSharpEmitBaseline =
         /// for updated/added methods as each delta is applied (see chainEncMethodDebugInfos).
         /// A baseline compiled without --enable:hotreloaddeltas (or a pre-C2 PDB) yields the
         /// empty map. NOTE: delta PDBs do not yet re-emit EnC CDI rows, so within a session
-        /// this in-memory chain is the only generation-accurate source; persistence across
-        /// session restarts is the remaining gap.
+        /// this in-memory chain is the only generation-accurate source; baseline (gen-0)
+        /// state fully survives process restarts via the on-disk PDB (C6), while restoring
+        /// MID-SESSION state in a new process still needs delta-PDB CDI re-emission.
         /// </summary>
         EncMethodDebugInfos: Map<int, EncMethodDebugInformation>
         /// <summary>
         /// Per-method closure-class name tables (occurrence-chain -> emitted closure type
         /// name), keyed by MethodDef token (0x06xxxxxx) — the C3 companion of
-        /// EncMethodDebugInfos. The Roslyn CDI blob formats carry no name slots (C# names
-        /// are recomputed from DebugId alone, which F# cannot do for baseline names that
-        /// embed line numbers or replay ordinals), so the trustworthy chain -> name table
-        /// is captured during baseline IlxGen (stamp -> name recording at the closure call
-        /// site, joined with the same tree's occurrence extraction) and chained in memory
-        /// like EncMethodDebugInfos. Empty for baselines created without an in-process
-        /// flag-on emit (e.g. read back from disk): the occurrence-keyed naming then stays
-        /// inert and delta compiles keep sequence replay (fail closed).
+        /// EncMethodDebugInfos. The Roslyn CDI blob formats carry no name slots, and like
+        /// Roslyn (which recomputes C# names from DebugId alone) F# does not persist
+        /// names: under the C6 derivation baseline closure names are a pure function of
+        /// occurrence identity ({member}@hotreload#g0_o{chain}), so the tables are
+        /// reconstructed from the decoded EnC CDI occurrence keys — for in-process
+        /// captures and for baselines read back from disk in another process alike (see
+        /// deriveEncClosureNamesFromEncDebugInfos for the fail-closed rules) — and
+        /// chained in memory like EncMethodDebugInfos as deltas allocate
+        /// generation-suffixed names for added occurrences. Empty for flag-off, pre-C6
+        /// and mid-session-recapture baselines: occurrence-keyed naming then stays inert
+        /// and delta compiles keep sequence replay (fail closed).
         /// </summary>
         EncClosureNames: Map<int, Map<int list, string>>
     }

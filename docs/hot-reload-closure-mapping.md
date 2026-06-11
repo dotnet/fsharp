@@ -18,7 +18,15 @@ the emit hook's codegen step runs the allocator before lowering and installs the
 stamp→assigned-name table the closure call site consults first; refreshed tables chain into
 the next-generation baseline alongside the refreshed EnC debug infos. C3 is complete; C4
 (emitting the added members in deltas) is the next phase.
-C4–C5 pending. Implementation notes are folded into the relevant sections below.
+C4 landed (2026-06-11) — added lambdas emit new closure TypeDef rows in deltas (see the
+C3/C4 boundary notes below and docs/hot-reload-member-additions.md).
+C6 landed (2026-06-11) — occurrence-derived closure naming in EVERY generation, baseline
+included, closing the "EncClosureNames persistence across process restarts" gap: names are
+functions of identity and are never persisted (see "C6 occurrence-derived baseline naming
+and cross-process reconstruction" below). The watch topology (fsc builds the baseline in
+one process, the FCS session starts from disk in another) now supports lambda add/remove
+edits without restart.
+C5 pending. Implementation notes are folded into the relevant sections below.
 Source research: Roslyn main @ June 2026 (`ClosureConversion.cs`, `EncVariableSlotAllocator.cs`, `EditAndContinueMethodDebugInformation.cs`, `DefinitionMap.cs`, `AbstractEditAndContinueAnalyzer.ReportLambdaAndClosureRudeEdits`).
 
 ## Problem
@@ -217,9 +225,11 @@ lacks tokens). Details:
   methods keep their baseline entries, mirroring the `AddedOrChangedMethods` plumbing.
 - **Deferred**: the delta PDB does **not** yet re-emit EnC CDI rows (delta-PDB writing is a
   separate path). Within a session the in-memory chain is the generation-accurate source C3
-  consumes; persisting refreshed maps into delta PDBs (so a restarted session can rehydrate
-  generation-N state) is the remaining gap. Methods *added* by a delta also carry no entry yet
-  (no baseline token at refresh time) — added lambda members are a C4 concern.
+  consumes. Baseline (generation-0) state fully survives process restarts: the on-disk PDB
+  carries the occurrence keys and C6 makes the names derivable from them. Rehydrating
+  MID-SESSION (generation-N) state in a new process still needs delta-PDB CDI re-emission.
+  Methods *added* by a delta also carry no entry yet (no baseline token at refresh time) —
+  added lambda members are a C4 concern.
 
 ### C3 occurrence-keyed closure name allocation as implemented (allocator; lowering wiring pending)
 
@@ -246,12 +256,18 @@ TryGetPreviousClosure` analogue, expressed as a pure data transformation over th
   can never be reused (later allocations are always generation-suffixed, and the generation
   counter never repeats within a session).
 - **Generation-suffixed name format** (the Roslyn `DebugId(ordinal, generation)` analogue):
-  `{baseName}@hotreload#g{generation}_o{occurrenceOrdinal}`, e.g. `f@hotreload#g2_o3`. It extends
-  the baseline replay naming (`f@hotreload`, `f@hotreload-1`, ...) — same `@hotreload` marker, but
-  the `#g…_o…` suffix is disjoint from the `-{int}` replay-ordinal space (it never parses in
-  `tryGetHotReloadOrdinal`, so snapshot canonicalization leaves it alone). Occurrence ordinals are
-  unique within a member and generations strictly increase, so a (baseName, generation, ordinal)
-  triple is allocated at most once per session.
+  `{baseName}@hotreload#g{generation}_o{occurrenceChain}`, e.g. `f@hotreload#g2_o3` for a
+  top-level occurrence and `f@hotreload#g2_o0_3` for a nested one (C6 extended the original
+  root-ordinal rendering to the full root-first chain, underscore-separated, so nested added
+  occurrences can never collide; chains are bounded by the CDI key encoding — depth ≤ 2,
+  ordinals ≤ 0xFFFF, deeper chains fail closed before any name is derived — so the suffix is
+  bounded and names never truncate). Generation 0 is reserved for the baseline derivation
+  (C6). The format extends the replay naming (`f@hotreload`, `f@hotreload-1`, ...) — same
+  `@hotreload` marker, but the `#g…_o…` suffix is disjoint from the `-{int}` replay-ordinal
+  space (it never parses in `tryGetHotReloadOrdinal`; snapshot canonicalization drops these
+  names from replay buckets entirely, see the C6 section). Occurrence chains are unique
+  within a member and generations strictly increase within a session, so a (baseName,
+  generation, chain) triple is allocated at most once.
 - **Tests**: `ClosureNameAllocatorTests` covers the synthetic match/add/remove/nested/
   capture-incompatible/fail-closed cases and three-generation chaining, and additionally drives
   the allocator over REAL C1 extraction (checker compiles via the shared `DiffTestHarness`):
@@ -337,7 +353,68 @@ delta-compile hook step). As implemented:
   lambda shifts the fresh compile's reference-row order; see the member-additions doc).
   Still rude: capture-set changes of matched occurrences (capture-field mapping is a later
   slice), genuinely new generic instantiations (TypeSpec emission), and generic closure
-  classes (GenericParam emission).
+  classes (GenericParam emission). The C4-era MVID-matched `EncClosureNames` carry-over in
+  `checker.StartHotReloadSession` is superseded by the C6 reconstruction and demoted to a
+  consistency check.
+
+### C6 occurrence-derived baseline naming and cross-process reconstruction (landed)
+
+The C3 wiring left one in-memory dependency: the generation-1 chain→name tables were
+captured during baseline IlxGen (stamp→name recording) and could not be re-derived from
+disk artifacts, so a session started from the on-disk baseline — the dotnet-watch topology,
+where fsc builds in a separate process from the FCS session — had empty `EncClosureNames`
+and the allocator failed closed on every lambda set change. C6 closes this the Roslyn way:
+**names are functions of identity and are never persisted.**
+
+- **The derivation function**: under `--enable:hotreloaddeltas` the BASELINE compile names
+  every mapped closure class `{memberCompiledName}@hotreload#g0_o{chain}` — the C3 fresh-name
+  format at generation 0, with the occurrence's root-first ordinal chain rendered
+  underscore-separated (`ClosureNameAllocator.formatGenerationSuffixedClosureName`,
+  `formatOccurrenceChainKey`). The base name is the member's compiled name (after IlxGen's
+  type-name character cleanup) — the same base the delta allocator already used for fresh
+  names — NOT the IlxGen let-bound basename, so the name is recomputable from the MethodDef
+  row alone. Implementation: `HotReloadEmitHook.PrepareForCodeGeneration` derives the
+  stamp→name table from the same `optimizedImpls` extraction the C2 CDI emission consumes
+  (`HotReloadBaseline.computeBaselineOccurrenceKeyedClosureNames`) and arms the existing
+  assigned-name side channel before lowering; the closure call site's consume-then-override
+  semantics are untouched. Gating mirrors the CDI emission EXACTLY (unique compiled names,
+  every chain encodable), so a name is derived if and only if its occurrence key is
+  persisted; members failing the gates keep replay naming and stay fail-closed for
+  set-changes, byte-for-byte like before.
+- **Reconstruction** (`HotReloadBaseline.deriveEncClosureNamesFromEncDebugInfos`): baseline
+  creation — both the in-process capture and the checker's read-from-disk path — re-derives
+  `EncClosureNames` from the decoded `EncMethodDebugInfos` occurrence keys plus the member
+  name from the MethodDef token. Fail closed twice: (1) a baseline containing ANY
+  generation-suffixed TypeDef of generation ≥ 1 is a mid-session recapture artifact (its
+  added-closure names carry their first-allocation generation and are not derivable from
+  gen-0 identity) — no table is reconstructed at all; (2) per member, every derived name
+  must exist as a baseline TypeDef simple name — this drops pre-C6 baselines (replay-named
+  closures) and members with occurrences that never lowered to closure classes, so a table
+  can never claim a name the baseline does not contain.
+- **Recorder and carry-over demoted**: the stamp→name recording remains the table SOURCE
+  only for recapture compiles emitted under an active session (their names legitimately
+  carry later generations); for plain baseline captures it is a validation — derived ==
+  recorded wherever both produced a table (trace + debug assertion on mismatch). The
+  MVID-matched carry-over in `StartHotReloadSession` became a consistency check (a gen-0
+  in-process session disagreeing with a non-empty reconstruction asserts; an EMPTY
+  reconstruction against a recapture session is the designed fail-closed outcome).
+- **Replay-bucket canonicalization**: generation-suffixed names are allocator-managed and
+  never replayed, so `FSharpSynthesizedTypeMaps.LoadSnapshot` drops them from replay
+  buckets; the surviving replay-ordinal names are placed at their EXACT ordinal slots
+  (holes filled with the deterministic slot names), so non-closure synthesized names
+  sharing a basic name keep their baseline replay positions across disk restores — the
+  slots consumed (and overridden) by derived-named closures stay reserved.
+- **Determinism pin**: `RuntimeIntegrationTests` proves an in-process capture session and a
+  disk-started session for the same output assembly carry IDENTICAL tables (token, chain
+  and name), including depth-2 chains; the cross-process addition/removal tests build the
+  baseline through the command-line fsc path, reset all in-process session state, start
+  from disk only, and drive add → ApplyUpdate → invoke → follow-up body edit chains.
+- **Accepted residuals**: mid-session (generation-N) state still does not survive a process
+  restart — that needs delta-PDB CDI re-emission (unchanged deferral); recapture-produced
+  DLLs are not reconstructable by design (fail closed to replay); members whose chains
+  exceed the CDI encoding (depth > 2) now fail closed identically in-process and from disk
+  (previously the in-process recorder kept replay-name tables for them — an in-memory-only
+  capability inconsistent with the persistence model, removed).
 
 The original design rationale, recorded before the wiring landed:
 
@@ -412,13 +489,17 @@ lambda signature changes, mid-sequence resume-point insertion, struct-closure ca
   stamp→name capture (`EncClosureNames`). Commit 3 ✅ landed: the allocator threaded into IlxGen
   for delta compiles via the stamp-keyed seam, with chain-forward through
   `RefreshedClosureNameRows`. Flag-off behavior byte-identical (EmittedIL gate).
-- **C4** `feat(hot-reload): emit added lambda members in deltas` — new methods on existing closure
-  classes (`AddMethodToExistingType`), new display classes (`NewTypeDefinition`), new capture fields
-  (`AddInstanceFieldToExistingType`), throwing stubs for incompatible occurrences; capability-gated
-  via the Phase A model.
+- **C4** `feat(hot-reload): emit added lambda members in deltas` — ✅ landed: new display classes
+  (`NewTypeDefinition`) with AddField/AddMethod pairs and NestedClass rows for added occurrences;
+  capability-gated via the Phase A model (see docs/hot-reload-member-additions.md). Capture-field
+  additions and throwing stubs for incompatible occurrences remain later slices.
 - **C5** `test(hot-reload): closure edit end-to-end coverage` — component + runtime-apply tests
   (add `List.map (fun ...)` to a live method, nested closures, capture addition, incompatible capture
   change → stub), dotnet-watch e2e scenario added to the demo driver.
+- **C6** — ✅ landed (three commits): `feat(hot-reload): derive baseline closure names from
+  occurrence identity`, `feat(hot-reload): reconstruct closure names from CDI for disk-started
+  sessions`, `test(hot-reload): cross-process closure addition coverage` (see "C6
+  occurrence-derived baseline naming and cross-process reconstruction").
 
 ## Open questions (to resolve during C3)
 

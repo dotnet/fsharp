@@ -2394,6 +2394,291 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 try Directory.Delete(projectDir, true) with _ -> ()
 
     [<Fact>]
+    let ``Disk-started session applies a removed lambda and keeps editing survivors`` () =
+        // C6 removal counterpart of the cross-process addition test: the baseline (three
+        // lambdas, built by the command-line fsc path) is session-started from disk only;
+        // a generation removes the innermost lambda (no new metadata - the baseline
+        // closure class just goes unused) and a follow-up generation body-edits a
+        // SURVIVING lambda, proving the reconstructed tables re-keyed the shifted
+        // survivors correctly across the removal.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-disk-removal", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "ClosureDiskRemoval.fs")
+            let dllPath = Path.Combine(projectDir, "ClosureDiskRemoval.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "ClosureDiskRemoval.runtime.dll")
+
+            // Baseline: three lambda occurrences - probe = sum (map (*2+3) (filter (>0)
+            // (map (+1) [1;2;3]))) = sum [7;9;11] = 27.
+            let baselineSource = closureAdditionUpdatedSource
+
+            // Generation 1: the innermost map(+1) lambda is REMOVED -
+            // sum (map (*2+3) (filter (>0) [1;2;3])) = sum [5;7;9] = 21.
+            let removalSource = closureAdditionBaselineSource
+
+            // Generation 2: body edit of the surviving map lambda (*4 instead of *2) -
+            // sum (map (*4+3) [1;2;3]) = sum [7;11;15] = 33.
+            let survivorEditSource =
+                """
+module Sample.Closures
+
+let transform (input: int list) =
+    List.map (fun x -> x * 4 + List.length input) (List.filter (fun x -> x > 0) input)
+
+let probe () = List.sum (transform [ 1; 2; 3 ])
+"""
+
+            try
+                File.WriteAllText(fsPath, baselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString baselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                // Process boundary: disk artifacts only from here on.
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
+                | Ok () -> ()
+
+                // The disk-started session reconstructed tables for all THREE baseline
+                // occurrences.
+                let session =
+                    match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
+                    | ValueSome session -> session
+                    | ValueNone -> failwith "Expected the disk-started session to be active."
+
+                let reconstructedNames =
+                    session.Baseline.EncClosureNames
+                    |> Map.toList
+                    |> List.collect (fun (_, table) -> table |> Map.toList |> List.map snd)
+                    |> List.filter (fun name -> name.StartsWith("transform@", StringComparison.Ordinal))
+
+                Assert.Equal(3, reconstructedNames.Length)
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let moduleType = assembly.GetType("Sample.Closures", throwOnError = true)
+                let probe = moduleType.GetMethod("probe", BindingFlags.Public ||| BindingFlags.Static)
+
+                Assert.Equal(27, probe.Invoke(null, [||]) :?> int)
+
+                let applyGeneration gen (source: string) expectedValue =
+                    File.WriteAllText(fsPath, source)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    let updatedOptions =
+                        { projectOptions with
+                            OtherOptions =
+                                projectOptions.OtherOptions
+                                |> Array.filter (fun opt ->
+                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                    let compileDiagnostics, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    | Ok delta ->
+                        let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        Assert.Equal(expectedValue, probe.Invoke(null, [||]) :?> int)
+                        delta
+
+                // Generation 1: removal - no new TypeDef rows may appear (the removed
+                // lambda's baseline closure class simply goes unused).
+                let delta1 = applyGeneration 1 removalSource 21
+
+                let baselineTypeDefCount =
+                    use peReader = new PEReader(File.OpenRead runtimeDllPath)
+                    peReader.GetMetadataReader().GetTableRowCount(TableIndex.TypeDef)
+
+                let typeDefAdds (metadata: byte[]) =
+                    use provider =
+                        MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> metadata)
+
+                    provider.GetMetadataReader().GetEditAndContinueLogEntries()
+                    |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle)
+                    |> Seq.filter (fun token -> token >>> 24 = 0x02 && (token &&& 0x00FFFFFF) > baselineTypeDefCount)
+                    |> Seq.toArray
+
+                Assert.Empty(typeDefAdds delta1.Metadata)
+
+                // Generation 2: the surviving map lambda's body edit stays an in-place
+                // update across the removal-induced occurrence re-keying.
+                let delta2 = applyGeneration 2 survivorEditSource 33
+                Assert.Empty(typeDefAdds delta2.Metadata)
+
+                printfn "[disk-removal] SUCCESS: cross-process lambda removal + survivor edit applied"
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
+    [<Fact>]
+    let ``In-process and disk-started sessions reconstruct identical closure-name tables`` () =
+        // The C6 determinism property: closure names are a pure function of occurrence
+        // identity, so the tables an in-process capture session carries (derived during
+        // the emitting compile, validated against the stamp -> name recording) and the
+        // tables a DISK-started session reconstructs from the CDI occurrence keys must
+        // be identical, token for token and chain for chain - including nested
+        // occurrence chains (depth 2). No runtime apply is needed; the equality of the
+        // session tables IS the property.
+        let checker =
+            FSharpChecker.Create(
+                keepAssemblyContents = true,
+                keepAllBackgroundResolutions = false,
+                keepAllBackgroundSymbolUses = false,
+                enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                enablePartialTypeChecking = false,
+                captureIdentifiersWhenParsing = false
+            )
+
+        let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-name-determinism", System.Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(projectDir) |> ignore
+        let fsPath = Path.Combine(projectDir, "ClosureNameDeterminism.fs")
+        let dllPath = Path.Combine(projectDir, "ClosureNameDeterminism.dll")
+
+        // Two top-level occurrences plus a NESTED one (a closure formed inside the map
+        // lambda's body, capturing its parameter), so the pin covers the chain-rendered
+        // name format ({base}@hotreload#g0_o{c0}_{c1}).
+        let source =
+            """
+module Sample.Determinism
+
+let transform (input: int list) =
+    List.concat (List.map (fun x -> List.map (fun y -> y + x) input) (List.filter (fun x -> x > 0) input))
+
+let probe () = List.sum (transform [ 1; 2; 3 ])
+"""
+
+        try
+            File.WriteAllText(fsPath, source)
+
+            let projectOptions, _ =
+                checker.GetProjectOptionsFromScript(
+                    fsPath,
+                    SourceText.ofString source,
+                    assumeDotNetFramework = false,
+                    useSdkRefs = true,
+                    useFsiAuxLib = false
+                )
+                |> Async.RunImmediate
+
+            let projectOptions =
+                { projectOptions with
+                    SourceFiles = [| fsPath |]
+                    OtherOptions =
+                        projectOptions.OtherOptions
+                        |> Array.append
+                            [| "--target:library"
+                               "--langversion:preview"
+                               "--optimize-"
+                               "--debug:portable"
+                               "--deterministic"
+                               "--enable:hotreloaddeltas"
+                               $"--out:{dllPath}" |] }
+
+            checker.InvalidateAll()
+            let compileDiagnostics, _ =
+                checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                |> Async.RunImmediate
+
+            let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+            if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+            // Tables of the IN-PROCESS capture session created by the flag-on compile.
+            let inProcessTables =
+                match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
+                | ValueSome session -> session.Baseline.EncClosureNames
+                | ValueNone -> failwith "Expected the flag-on compile to start an in-process capture session."
+
+            Assert.False(Map.isEmpty inProcessTables, "In-process capture must carry closure-name tables.")
+
+            // Process boundary, then tables of the DISK-started session for the same
+            // output assembly.
+            FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+            match checker.StartHotReloadSession(projectOptions) |> Async.RunImmediate with
+            | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
+            | Ok () -> ()
+
+            let diskStartedTables =
+                match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
+                | ValueSome session -> session.Baseline.EncClosureNames
+                | ValueNone -> failwith "Expected the disk-started session to be active."
+
+            Assert.Equal<Map<int, Map<int list, string>>>(inProcessTables, diskStartedTables)
+
+            // The pin must actually cover nested chains: at least one table entry is
+            // keyed by a depth-2 occurrence chain and renders both ordinals.
+            let nestedEntries =
+                diskStartedTables
+                |> Map.toList
+                |> List.collect (fun (_, table) -> table |> Map.toList)
+                |> List.filter (fun (chain, _) -> List.length chain = 2)
+
+            Assert.False(List.isEmpty nestedEntries, "Expected a depth-2 occurrence chain in the reconstructed tables.")
+
+            for chain, name in nestedEntries do
+                Assert.Contains($"""@hotreload#g0_o{chain |> List.map string |> String.concat "_"}""", name)
+        finally
+            try checker.EndHotReloadSession() with _ -> ()
+            try checker.InvalidateAll() with _ -> ()
+            try Directory.Delete(projectDir, true) with _ -> ()
+
+    [<Fact>]
     let ``ApplyUpdate succeeds for removed lambda leaving baseline closure unused`` () =
         // Removed-only lambda sets need no new metadata (C# parity: the deleted lambda's
         // closure class just becomes unreachable). The delta is a plain set of method
