@@ -234,22 +234,44 @@ type internal FSharpHotReloadService
                     | Result.Error error -> return Result.Error error
                     | Ok(baseline, implementationFiles) ->
                         lock hotReloadGate (fun () ->
-                            // Closure mapping (C3/C4): the per-method occurrence-chain -> closure-name
-                            // tables cannot be re-derived from disk artifacts (the EnC CDI blob format
-                            // carries no name slots), so a baseline read back from the output assembly
-                            // would silently drop them and every later delta compile would fall back to
-                            // sequence-replay naming — making added-lambda edits unmappable. When the
-                            // session being replaced was captured in-process for the SAME output
-                            // assembly (matching MVID), carry its tables forward.
-                            let baseline =
-                                match editAndContinueService.TryGetSession() with
-                                | ValueSome existing when
-                                    existing.Baseline.ModuleId = baseline.ModuleId
-                                    && not (Map.isEmpty existing.Baseline.EncClosureNames)
-                                    ->
-                                    { baseline with
-                                        EncClosureNames = existing.Baseline.EncClosureNames }
-                                | _ -> baseline
+                            // Closure mapping (C6): the per-method occurrence-chain -> closure-name
+                            // tables were reconstructed from the on-disk CDI occurrence keys by
+                            // createBaseline (baseline closure names are occurrence-derived under the
+                            // flag), so no in-process carry-over is needed — this is exactly what a
+                            // session started in a fresh process computes. The previous MVID-matched
+                            // carry-over is demoted to a consistency check: when the session being
+                            // replaced was captured in-process for the SAME output assembly at
+                            // generation 0, its tables must match the reconstruction. (A mid-chain
+                            // session legitimately differs — its tables carry later-generation names
+                            // for closures added by deltas, while a restart from the gen-0 disk
+                            // baseline correctly resets to the generation-0 tables.)
+                            (match editAndContinueService.TryGetSession() with
+                             | ValueSome existing when
+                                 existing.Baseline.ModuleId = baseline.ModuleId
+                                 // CurrentGeneration is the generation the NEXT delta will
+                                 // produce; 1 means no delta has been applied yet, i.e. the
+                                 // session still holds the unmodified gen-0 capture.
+                                 && existing.CurrentGeneration = 1
+                                 && not (Map.isEmpty existing.Baseline.EncClosureNames)
+                                 // An EMPTY reconstruction is a designed fail-closed outcome
+                                 // (recapture DLLs carry mid-session generation-suffixed names
+                                 // that are not derivable from gen-0 identity); only a
+                                 // CONFLICTING non-empty reconstruction is an inconsistency.
+                                 && not (Map.isEmpty baseline.EncClosureNames)
+                                 && existing.Baseline.EncClosureNames <> baseline.EncClosureNames
+                                 ->
+                                 if traceSessionTransitions then
+                                     printfn
+                                         "[fsharp-hotreload][session] WARNING: CDI-reconstructed closure-name tables (%d methods) disagree with the in-process capture session's tables (%d methods) for %s"
+                                         (Map.count baseline.EncClosureNames)
+                                         (Map.count existing.Baseline.EncClosureNames)
+                                         outputPath
+
+                                 System.Diagnostics.Debug.Assert(
+                                     false,
+                                     "Hot reload closure-name reconstruction from disk disagrees with the in-process capture session being replaced."
+                                 )
+                             | _ -> ())
 
                             let compilerState = tcGlobals.CompilerGlobalState.Value
                             let map =
@@ -758,9 +780,19 @@ type FSharpChecker
         // sibling input when the rewrite yielded none (flag-off/pre-C2 PDBs still decode to the
         // empty map, and the session starts fine either way).
         if Map.isEmpty baseline.EncMethodDebugInfos && File.Exists(pdbPath) then
+            let baseline =
+                { baseline with
+                    EncMethodDebugInfos =
+                        EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath)) }
+
+            // Closure mapping (C6): the chain -> closure-name tables are a pure function
+            // of the occurrence keys just decoded (baseline names are occurrence-derived
+            // under the flag), so a session started from disk — typically in a different
+            // process than the fsc that built the baseline — reconstructs exactly the
+            // tables the emitting compile installed. Fail closed for pre-C6 and
+            // mid-session baselines (see deriveEncClosureNamesFromEncDebugInfos).
             { baseline with
-                EncMethodDebugInfos =
-                    EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath)) }
+                EncClosureNames = HotReloadBaseline.deriveEncClosureNames ilModule baseline }
         else
             baseline
 

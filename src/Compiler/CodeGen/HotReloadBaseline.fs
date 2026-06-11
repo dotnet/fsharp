@@ -493,6 +493,91 @@ let collectMethodSemanticsEntries
     |> Seq.map (fun kvp -> kvp.Key, kvp.Value |> Seq.toList)
     |> Map.ofSeq
 
+/// Same character cleanup IlxGen applies to closure base names before minting type
+/// names (IlxGen.CleanUpGeneratedTypeName, not exposed through IlxGen.fsi).
+let private cleanUpGeneratedTypeName (nm: string) =
+    if nm.IndexOfAny IllegalCharactersInTypeAndNamespaceNames = -1 then
+        nm
+    else
+        (nm, IllegalCharactersInTypeAndNamespaceNames)
+        ||> Array.fold (fun nm c -> nm.Replace(string c, "-"))
+
+/// Simple (unqualified) names of every TypeDef in the module, nested types included.
+let private collectTypeDefSimpleNames (ilModule: ILModuleDef) : Set<string> =
+    let names = HashSet<string>(StringComparer.Ordinal)
+
+    let rec visit (typeDef: ILTypeDef) =
+        names.Add typeDef.Name |> ignore
+        typeDef.NestedTypes.AsList() |> List.iter visit
+
+    ilModule.TypeDefs.AsList() |> List.iter visit
+    Set.ofSeq names
+
+/// <summary>
+/// Reconstructs the per-method occurrence-chain -> closure-class-name tables from the
+/// decoded EnC CDI occurrence keys alone (Phase C6). Under occurrence-derived baseline
+/// naming, a flag-on baseline compile names every mapped closure
+/// <c>{memberCompiledName}@hotreload#g0_o{chain}</c> — a pure function of the identity
+/// the CDI rows persist — so a session started from the on-disk baseline in another
+/// process re-derives exactly the tables the emitting compile installed, with no
+/// in-memory carry-over. Fail closed twice:
+///  - a baseline containing any generation-suffixed TypeDef of generation >= 1 is a
+///    mid-session artifact (a flag-on recapture emitted under an active session, whose
+///    added closures carry their first-allocation generation); its names are NOT
+///    derivable from generation-0 identity, so no table is reconstructed at all;
+///  - per member, every derived name must exist as a baseline TypeDef simple name.
+///    This drops pre-C6 baselines (replay-named closures) and members where an
+///    occurrence never lowered to a closure class, so a reconstructed table can never
+///    claim a name the baseline does not contain.
+/// </summary>
+let deriveEncClosureNamesFromEncDebugInfos
+    (encMethodDebugInfos: Map<int, EncMethodDebugInformation>)
+    (methodNamesByToken: Map<int, string>)
+    (typeDefSimpleNames: Set<string>)
+    : Map<int, Map<int list, string>> =
+
+    if Map.isEmpty encMethodDebugInfos then
+        Map.empty
+    else
+        let hasMidSessionClosureNames =
+            typeDefSimpleNames
+            |> Set.exists (fun name ->
+                match GeneratedNames.TryGetHotReloadNameGeneration name with
+                | Some generation -> generation >= 1
+                | None -> false)
+
+        if hasMidSessionClosureNames then
+            Map.empty
+        else
+            (Map.empty, encMethodDebugInfos)
+            ||> Map.fold (fun acc methodToken info ->
+                match info.Closures, Map.tryFind methodToken methodNamesByToken with
+                | [], _
+                | _, None -> acc
+                | closures, Some methName ->
+                    let nameBase = cleanUpGeneratedTypeName methName
+
+                    let table =
+                        closures
+                        |> List.map (fun closure ->
+                            let chain = decodeOccurrenceKey closure.SyntaxOffset
+                            chain, ClosureNameAllocator.formatGenerationSuffixedClosureName nameBase 0 chain)
+
+                    if table |> List.forall (fun (_, name) -> Set.contains name typeDefSimpleNames) then
+                        Map.add methodToken (Map.ofList table) acc
+                    else
+                        acc)
+
+/// Baseline MethodDef names keyed by token, for the CDI-derived closure-name
+/// reconstruction (the CDI write side only ever attaches a map to a method whose name
+/// identifies exactly one MethodDef row, so the name here is unambiguous for any token
+/// that carries EnC debug information).
+let private methodNamesByToken (methodTokens: Map<MethodDefinitionKey, int>) : Map<int, string> =
+    methodTokens
+    |> Map.toSeq
+    |> Seq.map (fun (key, token) -> token, key.Name)
+    |> Map.ofSeq
+
 let private createCore
     (moduleId: Guid)
     (ilModule: ILModuleDef)
@@ -511,6 +596,14 @@ let private createCore
         collectMethodSemanticsEntries ilModule maps.MethodTokens maps.PropertyTokens maps.EventTokens
 
     let synthesizedNames = collectSynthesizedNameSnapshot ilModule
+
+    // The baseline PDB is already in memory here (captured alongside the emitted
+    // assembly), so the EnC CDI rows are decoded eagerly; flag-off baselines and
+    // pre-C2 PDBs decode to the empty map.
+    let encMethodDebugInfos =
+        portablePdbSnapshot
+        |> Option.map (fun snapshot -> readEncMethodDebugInfoFromPortablePdb snapshot.Bytes)
+        |> Option.defaultValue Map.empty
 
     {
         ModuleId = moduleId
@@ -541,17 +634,18 @@ let private createCore
         BlobStreamLengthAdded = 0
         GuidStreamLengthAdded = 0
         AddedOrChangedMethods = []
-        // The baseline PDB is already in memory here (captured alongside the emitted
-        // assembly), so the EnC CDI rows are decoded eagerly; flag-off baselines and
-        // pre-C2 PDBs decode to the empty map.
-        EncMethodDebugInfos =
-            portablePdbSnapshot
-            |> Option.map (fun snapshot -> readEncMethodDebugInfoFromPortablePdb snapshot.Bytes)
-            |> Option.defaultValue Map.empty
-        // Closure-name tables are joined from the emit-time stamp recording, which is
-        // only available to the capture hook; it attaches them after creation (see
-        // resolveClosureNameRowsByToken).
-        EncClosureNames = Map.empty
+        EncMethodDebugInfos = encMethodDebugInfos
+        // Closure-name tables are reconstructed from the CDI occurrence keys (C6):
+        // under occurrence-derived baseline naming they are a pure function of the
+        // identity the PDB persists, so this works for baselines read back from disk
+        // in another process exactly as for in-process captures (where the capture
+        // hook additionally validates the reconstruction against the emit-time
+        // stamp -> name recording).
+        EncClosureNames =
+            deriveEncClosureNamesFromEncDebugInfos
+                encMethodDebugInfos
+                (methodNamesByToken maps.MethodTokens)
+                (collectTypeDefSimpleNames ilModule)
         ModuleNameOffset = None
     }
 
@@ -718,14 +812,17 @@ let resolveClosureNameRowsByToken
             | Some methodToken -> Map.add methodToken rows acc
             | None -> acc)
 
-/// Same character cleanup IlxGen applies to closure base names before minting type
-/// names (IlxGen.CleanUpGeneratedTypeName, not exposed through IlxGen.fsi).
-let private cleanUpGeneratedTypeName (nm: string) =
-    if nm.IndexOfAny IllegalCharactersInTypeAndNamespaceNames = -1 then
-        nm
-    else
-        (nm, IllegalCharactersInTypeAndNamespaceNames)
-        ||> Array.fold (fun nm c -> nm.Replace(string c, "-"))
+/// <summary>
+/// Re-derives the closure-name tables of a baseline whose EnC method debug information
+/// was attached AFTER creation (the checker's read-from-disk path decodes the sibling
+/// PDB as a separate input — see service.fs createBaseline). Pure re-application of the
+/// createCore derivation over the final EncMethodDebugInfos.
+/// </summary>
+let deriveEncClosureNames (ilModule: ILModuleDef) (baseline: FSharpEmitBaseline) : Map<int, Map<int list, string>> =
+    deriveEncClosureNamesFromEncDebugInfos
+        baseline.EncMethodDebugInfos
+        (methodNamesByToken baseline.MethodTokens)
+        (collectTypeDefSimpleNames ilModule)
 
 /// Per-member compiled-name -> occurrence-list view of an implementation, restricted to
 /// compiled names claimed by exactly one member binding (the shared fail-closed keying).

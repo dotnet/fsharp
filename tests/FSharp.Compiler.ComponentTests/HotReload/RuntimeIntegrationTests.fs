@@ -2184,6 +2184,216 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 try Directory.Delete(projectDir, true) with _ -> ()
 
     [<Fact>]
+    let ``Disk-started session reconstructs closure names and applies an added lambda`` () =
+        // Phase C6 payoff (the dotnet-watch topology): the baseline is built by the
+        // command-line fsc path and the session starts from the ON-DISK dll+pdb only -
+        // the in-process capture session is explicitly cleared first, so no in-memory
+        // stamp -> name state can leak across (this is exactly the cross-process case
+        // where the FCS session lives in a different process than the fsc build).
+        // The chain -> closure-name tables must be reconstructed from the persisted
+        // EnC CDI occurrence keys alone, an added lambda must emit its new closure
+        // TypeDef through the C4 machinery, ApplyUpdate must succeed, and a follow-up
+        // generation must body-edit the ADDED closure in place.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-disk-start", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "ClosureDiskStart.fs")
+            let dllPath = Path.Combine(projectDir, "ClosureDiskStart.dll")
+            let runtimeDllPath = Path.Combine(projectDir, "ClosureDiskStart.runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, closureAdditionBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString closureAdditionBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                // Build the baseline through the command-line fsc path (flag-on, on-disk
+                // dll + pdb).
+                checker.InvalidateAll()
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                Assert.True(File.Exists(Path.ChangeExtension(dllPath, ".pdb")), "Baseline PDB must exist on disk.")
+
+                // Simulate the process boundary: drop ALL in-process session state the
+                // capture compile created. From here on, the dll + pdb on disk are the
+                // only baseline inputs (no MVID-matched carry-over is possible).
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
+                | ValueSome _ -> failwith "Expected no in-process session after the reset."
+                | ValueNone -> ()
+
+                let capabilities =
+                    [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
+
+                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
+                | Ok () -> ()
+
+                // Direct reconstruction evidence: the disk-started session carries the
+                // chain -> name tables re-derived from the CDI occurrence keys, naming
+                // both baseline occurrences with the generation-0 derived names.
+                let session =
+                    match FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
+                    | ValueSome session -> session
+                    | ValueNone -> failwith "Expected the disk-started session to be active."
+
+                let reconstructedNames =
+                    session.Baseline.EncClosureNames
+                    |> Map.toList
+                    |> List.collect (fun (_, table) -> table |> Map.toList |> List.map snd)
+                    |> Set.ofList
+
+                Assert.False(
+                    Map.isEmpty session.Baseline.EncClosureNames,
+                    "Disk-started session must reconstruct closure-name tables from the baseline CDI."
+                )
+
+                Assert.Contains("transform@hotreload#g0_o0", reconstructedNames)
+                Assert.Contains("transform@hotreload#g0_o1", reconstructedNames)
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let moduleType = assembly.GetType("Sample.Closures", throwOnError = true)
+                let probe = moduleType.GetMethod("probe", BindingFlags.Public ||| BindingFlags.Static)
+
+                // Baseline: filter [1;2;3] -> map (*2+3) = [5;7;9], sum 21.
+                Assert.Equal(21, probe.Invoke(null, [||]) :?> int)
+
+                // The baseline closure classes carry the occurrence-derived names the
+                // reconstruction claimed.
+                let baselineClosureNames =
+                    moduleType.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
+                    |> Array.filter (fun t -> t.Name.Contains("@hotreload"))
+                    |> Array.map (fun t -> t.Name)
+                    |> Set.ofArray
+
+                Assert.Contains("transform@hotreload#g0_o0", baselineClosureNames)
+                Assert.Contains("transform@hotreload#g0_o1", baselineClosureNames)
+
+                let applyGeneration gen (source: string) expectedValue =
+                    File.WriteAllText(fsPath, source)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    let updatedOptions =
+                        { projectOptions with
+                            OtherOptions =
+                                projectOptions.OtherOptions
+                                |> Array.filter (fun opt ->
+                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+
+                    let compileDiagnostics, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors.Length > 0 then failwithf "Gen %d compilation failed: %A" gen (errors |> Array.map (fun d -> d.Message))
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    | Ok delta ->
+                        let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+                        Assert.Equal(expectedValue, probe.Invoke(null, [||]) :?> int)
+                        delta
+
+                // Generation 1 (the cross-process add): map(+1) [1;2;3] = [2;3;4],
+                // filter (>0) keeps all, map (*2+3) = [7;9;11], sum 27.
+                let delta1 = applyGeneration 1 closureAdditionUpdatedSource 27
+
+                let baselineTypeDefCount =
+                    use peReader = new PEReader(File.OpenRead runtimeDllPath)
+                    peReader.GetMetadataReader().GetTableRowCount(TableIndex.TypeDef)
+
+                let readEncLog (metadata: byte[]) =
+                    use provider =
+                        MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> metadata)
+
+                    provider.GetMetadataReader().GetEditAndContinueLogEntries()
+                    |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+                    |> Seq.toArray
+
+                // The delta must carry a NEW TypeDef row (the generation-suffixed
+                // closure class) past the baseline table, with AddField/AddMethod pairs.
+                let gen1EncLog = readEncLog delta1.Metadata
+
+                let newTypeDefEntries =
+                    gen1EncLog
+                    |> Array.filter (fun (token, op) ->
+                        token >>> 24 = 0x02
+                        && (token &&& 0x00FFFFFF) > baselineTypeDefCount
+                        && op = 0)
+
+                Assert.True(
+                    newTypeDefEntries.Length >= 1,
+                    sprintf "Expected a new TypeDef row in the cross-process generation-1 EncLog; got %A" gen1EncLog)
+
+                // Generation 2: body edit of the lambda ADDED via the disk-started chain
+                // - map(+5) [1;2;3] = [6;7;8], filter keeps all, map (*2+3) = [15;17;19],
+                // sum 51. Its closure class chained into the baseline, so the edit must
+                // be an in-place method update (no further TypeDef rows).
+                let delta2 = applyGeneration 2 closureAdditionSecondUpdateSource 51
+
+                let gen2TypeDefAdds =
+                    readEncLog delta2.Metadata
+                    |> Array.filter (fun (token, _) ->
+                        token >>> 24 = 0x02 && (token &&& 0x00FFFFFF) > baselineTypeDefCount + 1)
+
+                Assert.True(
+                    Array.isEmpty gen2TypeDefAdds,
+                    "Generation 2 of the disk-started chain must update the added closure in place.")
+
+                printfn "[disk-start] SUCCESS: CDI-reconstructed names + cross-process closure addition applied"
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()
+
+    [<Fact>]
     let ``ApplyUpdate succeeds for removed lambda leaving baseline closure unused`` () =
         // Removed-only lambda sets need no new metadata (C# parity: the deleted lambda's
         // closure class just becomes unreachable). The delta is a plain set of method

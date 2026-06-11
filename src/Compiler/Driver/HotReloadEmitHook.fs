@@ -42,12 +42,47 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                 portablePdbSnapshot
                 ilxGenEnvironment
 
-        // Closure mapping (C3): attach the per-method occurrence-chain -> closure-name
-        // tables joined in the emit path, re-keyed by MethodDef token (fail closed on
-        // non-unique names) so delta compiles can reuse baseline closure identity.
+        // Closure mapping (C3/C6): the per-method occurrence-chain -> closure-name
+        // tables. Baseline creation reconstructed them from the emitted CDI occurrence
+        // keys (names are a pure function of occurrence identity under the C6
+        // derivation), which is the same computation a disk-started session performs in
+        // another process. The emit-time stamp -> name recording (re-keyed by MethodDef
+        // token, fail closed on non-unique names) serves two purposes here:
+        //  - a RECAPTURE compile emitted under an active session names added closures
+        //    with their first-allocation generation (#g{N>=1}); those names are not
+        //    derivable from generation-0 identity, so the recording is the table source
+        //    (the CDI reconstruction failed closed on the mid-session marker);
+        //  - otherwise it validates the reconstruction: wherever both computed a table
+        //    for the same method, they must agree (derived == recorded).
+        let recordedRows =
+            HotReloadBaseline.resolveClosureNameRowsByToken baseline artifacts.ClosureNameRows
+
         let baseline =
-            { baseline with
-                EncClosureNames = HotReloadBaseline.resolveClosureNameRowsByToken baseline artifacts.ClosureNameRows }
+            match editAndContinueService.TryGetSession() with
+            | ValueSome session when not (Map.isEmpty session.Baseline.EncClosureNames) ->
+                { baseline with EncClosureNames = recordedRows }
+            | _ ->
+                let mismatches =
+                    baseline.EncClosureNames
+                    |> Map.toList
+                    |> List.choose (fun (methodToken, derivedTable) ->
+                        match Map.tryFind methodToken recordedRows with
+                        | Some recordedTable when recordedTable <> derivedTable ->
+                            Some(methodToken, derivedTable, recordedTable)
+                        | _ -> None)
+
+                if not mismatches.IsEmpty then
+                    if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                        printfn
+                            "[fsharp-hotreload][closure-names] capture validation FAILED: derived tables disagree with the emit-time recording: %A"
+                            mismatches
+
+                    System.Diagnostics.Debug.Assert(
+                        false,
+                        "Hot reload closure-name reconstruction disagrees with the emit-time stamp -> name recording."
+                    )
+
+                baseline
 
         editAndContinueService.StartSession(baseline, artifacts.OptimizedImpls) |> ignore
 
