@@ -302,6 +302,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let nestedClassRows = RowTableBuilder()
     let interfaceImplRows = RowTableBuilder()
     let methodImplRows = RowTableBuilder()
+    let constantRows = RowTableBuilder()
     let fieldRows = RowTableBuilder()
     let methodRows = RowTableBuilder()
     let paramRows = RowTableBuilder()
@@ -359,6 +360,17 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     /// Uses the HasCustomAttribute DU from ILDeltaHandles.
     let rowElementHasCustomAttribute (parent: HasCustomAttribute) =
         rowElement (Encoding.RowElementTags.HasCustomAttributeMin + parent.CodedTag) parent.RowId
+
+    /// HasConstant coded index per ECMA-335 II.24.2.6 (Field=0, Param=1, Property=2).
+    /// Uses the HasConstant DU from ILDeltaHandles.
+    let rowElementHasConstant (parent: HasConstant) =
+        let tag =
+            match parent with
+            | HC_Field _ -> 0
+            | HC_Param _ -> 1
+            | HC_Property _ -> 2
+
+        rowElement (Encoding.RowElementTags.HasConstantMin + tag) parent.RowId
 
     /// CustomAttributeType coded index per ECMA-335 II.24.2.6.
     /// Uses the CustomAttributeType DU from ILDeltaHandles.
@@ -539,6 +551,23 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
             |]
 
         interfaceImplRows.Add rowElements
+
+    /// Add a Constant table row per ECMA-335 II.22.9: Type (1-byte ELEMENT_TYPE code,
+    /// physically encoded as a little-endian u2 whose high byte is the zero padding),
+    /// Parent (HasConstant coded index) and Value (#Blob offset). The value blob always
+    /// enters the DELTA blob heap (fresh-compile heap offsets are meaningless against
+    /// the baseline+delta layout).
+    member _.AddConstantRow(row: ConstantRowInfo) =
+        let valueToken = addExistingBlobOffset None row.Value
+
+        let rowElements =
+            [|
+                rowElementUShort (uint16 row.TypeCode)
+                rowElementHasConstant row.Parent
+                blobElement valueToken
+            |]
+
+        constantRows.Add rowElements
 
     /// Add a MethodImpl table row per ECMA-335 II.22.27: Class (TypeDef row index),
     /// MethodBody and MethodDeclaration (MethodDefOrRef coded indexes).
@@ -852,6 +881,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
           TypeDef = typeDefRows.Entries
           NestedClass = nestedClassRows.Entries
           InterfaceImpl = interfaceImplRows.Entries
+          Constant = constantRows.Entries
           MethodImpl = methodImplRows.Entries
           Field = fieldRows.Entries
           MethodDef = methodRows.Entries
@@ -883,6 +913,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         counts[TableNames.TypeDef.Index] <- typeDefRows.Count
         counts[TableNames.Nested.Index] <- nestedClassRows.Count
         counts[TableNames.InterfaceImpl.Index] <- interfaceImplRows.Count
+        counts[TableNames.Constant.Index] <- constantRows.Count
         counts[TableNames.MethodImpl.Index] <- methodImplRows.Count
         counts[TableNames.Field.Index] <- fieldRows.Count
         counts[TableNames.Method.Index] <- methodRows.Count

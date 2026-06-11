@@ -107,6 +107,21 @@ type MethodImplRowInfo =
       MethodBody: MethodDefOrRef
       MethodDeclaration: MethodDefOrRef }
 
+/// Row model for a Constant table entry (ECMA-335 II.22.9: Type — a 1-byte
+/// ELEMENT_TYPE code followed by a zero padding byte — Parent — a HasConstant coded
+/// index — and Value — a #Blob offset). Emitted for the literal (HasDefault) fields
+/// of ADDED types and members: enum members, union Tags holder constants, [<Literal>]
+/// module values. Logged as plain Default EncLog entries trailing the log and listed
+/// in EncMap as adds (C# 'new_enum' reference template: the three Constant rows of an
+/// added enum trail the generation-1 log, parents are the new Field rows, value blobs
+/// live in the delta #Blob heap).
+type ConstantRowInfo =
+    { RowId: int
+      /// ELEMENT_TYPE constant type code (ECMA-335 II.23.1.16, e.g. 0x08 = I4).
+      TypeCode: byte
+      Parent: HasConstant
+      Value: byte[] }
+
 type TypeReferenceRowInfo =
     { RowId: int
       ResolutionScope: ResolutionScope
@@ -239,6 +254,7 @@ type TableRows =
       TypeDef: RowElementData[][]
       NestedClass: RowElementData[][]
       InterfaceImpl: RowElementData[][]
+      Constant: RowElementData[][]
       MethodImpl: RowElementData[][]
       Field: RowElementData[][]
       MethodDef: RowElementData[][]

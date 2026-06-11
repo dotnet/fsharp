@@ -142,6 +142,7 @@ let private tableRowsByIndex (tables: TableRows) =
     rows[TableNames.TypeDef.Index] <- tables.TypeDef
     rows[TableNames.Nested.Index] <- tables.NestedClass
     rows[TableNames.InterfaceImpl.Index] <- tables.InterfaceImpl
+    rows[TableNames.Constant.Index] <- tables.Constant
     rows[TableNames.MethodImpl.Index] <- tables.MethodImpl
     rows[TableNames.Field.Index] <- tables.Field
     rows[TableNames.Method.Index] <- tables.MethodDef

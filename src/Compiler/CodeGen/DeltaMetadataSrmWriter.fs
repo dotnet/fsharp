@@ -120,6 +120,7 @@ let serialize
     (nestedClassRows: NestedClassRowInfo list)
     (interfaceImplRows: InterfaceImplRowInfo list)
     (methodImplRows: MethodImplRowInfo list)
+    (constantRows: ConstantRowInfo list)
     (methodDefinitionRows: MethodDefinitionRowInfo list)
     (parameterDefinitionRows: ParameterDefinitionRowInfo list)
     (fieldDefinitionRows: FieldDefinitionRowInfo list)
@@ -168,7 +169,7 @@ let serialize
     metadataBuilder.SetCapacity(TableIndex.Param, parameterCount)
     metadataBuilder.SetCapacity(TableIndex.InterfaceImpl, interfaceImplRows.Length)
     metadataBuilder.SetCapacity(TableIndex.MemberRef, memberRefCount)
-    metadataBuilder.SetCapacity(TableIndex.Constant, 0)
+    metadataBuilder.SetCapacity(TableIndex.Constant, constantRows.Length)
     metadataBuilder.SetCapacity(TableIndex.CustomAttribute, customAttributeCount)
     metadataBuilder.SetCapacity(TableIndex.FieldMarshal, 0)
     metadataBuilder.SetCapacity(TableIndex.DeclSecurity, 0)
@@ -251,6 +252,37 @@ let serialize
             MetadataTokens.TypeDefinitionHandle row.ClassTypeDefRowId,
             toMethodDefOrRefHandle row.MethodBody,
             toMethodDefOrRefHandle row.MethodDeclaration)
+        |> ignore
+
+    // SRM's AddConstant infers the ELEMENT_TYPE code from the boxed value's runtime
+    // type, so the row's raw value blob is decoded per its recorded type code
+    // (ECMA-335 II.23.1.16).
+    let decodeConstantValue (typeCode: byte) (value: byte[]) : obj =
+        match typeCode with
+        | 0x02uy -> box (value.[0] <> 0uy) // ELEMENT_TYPE_BOOLEAN
+        | 0x03uy -> box (BitConverter.ToChar(value, 0)) // ELEMENT_TYPE_CHAR
+        | 0x04uy -> box (sbyte value.[0]) // ELEMENT_TYPE_I1
+        | 0x05uy -> box value.[0] // ELEMENT_TYPE_U1
+        | 0x06uy -> box (BitConverter.ToInt16(value, 0)) // ELEMENT_TYPE_I2
+        | 0x07uy -> box (BitConverter.ToUInt16(value, 0)) // ELEMENT_TYPE_U2
+        | 0x08uy -> box (BitConverter.ToInt32(value, 0)) // ELEMENT_TYPE_I4
+        | 0x09uy -> box (BitConverter.ToUInt32(value, 0)) // ELEMENT_TYPE_U4
+        | 0x0auy -> box (BitConverter.ToInt64(value, 0)) // ELEMENT_TYPE_I8
+        | 0x0buy -> box (BitConverter.ToUInt64(value, 0)) // ELEMENT_TYPE_U8
+        | 0x0cuy -> box (BitConverter.ToSingle(value, 0)) // ELEMENT_TYPE_R4
+        | 0x0duy -> box (BitConverter.ToDouble(value, 0)) // ELEMENT_TYPE_R8
+        | 0x0euy -> box (System.Text.Encoding.Unicode.GetString value) // ELEMENT_TYPE_STRING
+        | 0x12uy -> null // ELEMENT_TYPE_CLASS (null reference)
+        | _ -> invalidOp $"Unsupported constant type code 0x%02X{typeCode} in delta Constant row."
+
+    let toHasConstantHandle (parent: HasConstant) : EntityHandle =
+        match parent with
+        | HC_Field handle -> toEntityHandle TableNames.Field handle.RowId
+        | HC_Param handle -> toEntityHandle TableNames.Param handle.RowId
+        | HC_Property handle -> toEntityHandle TableNames.Property handle.RowId
+
+    for row in constantRows |> List.sortBy (fun row -> row.RowId) do
+        metadataBuilder.AddConstant(toHasConstantHandle row.Parent, decodeConstantValue row.TypeCode row.Value)
         |> ignore
 
     for row in methodDefinitionRows do

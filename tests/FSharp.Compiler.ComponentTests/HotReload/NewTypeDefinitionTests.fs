@@ -344,6 +344,19 @@ module Library =
     let compute (x: int) = Tools.peek x + 1
 """
 
+    let private enumAdded =
+        """
+namespace Sample
+
+type Color =
+    | Red = 1
+    | Green = 2
+    | Blue = 4
+
+module Library =
+    let compute (x: int) = x + int Color.Green
+"""
+
     let private moduleAddedGen2 =
         """
 namespace Sample
@@ -471,7 +484,166 @@ module Library =
                   let newCircle = shapeType.GetMethod("NewCircle", BindingFlags.Public ||| BindingFlags.Static)
                   let circle = newCircle.Invoke(null, [| box 7 |])
                   Assert.Equal(0, shapeType.GetProperty("Tag").GetValue(circle) :?> int)
-                  Assert.True(shapeType.GetProperty("IsCircle").GetValue(circle) :?> bool)) ]
+                  Assert.True(shapeType.GetProperty("IsCircle").GetValue(circle) :?> bool)
+
+                  // The Tags holder's literal fields carry Constant rows (the latent
+                  // pre-Constant-table gap): their values decode through reflection.
+                  let tagsType = shapeType.GetNestedType("Tags", BindingFlags.Public ||| BindingFlags.NonPublic)
+                  Assert.True(not (isNull tagsType), "Shape.Tags holder type not found after ApplyUpdate.")
+                  Assert.Equal(0, tagsType.GetField("Circle").GetRawConstantValue() :?> int)
+                  Assert.Equal(1, tagsType.GetField("Square").GetRawConstantValue() :?> int)) ]
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added enum used from an edited function`` () =
+        // An added enum is a new TypeDef whose member fields are literals: each carries
+        // its value in a Constant row (C# 'new_enum' reference template — the writer's
+        // Constant table support). The edited method consumes the enum value.
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-enum"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ enumAdded,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+
+                  // compute consumes the enum: 41 + int Color.Green.
+                  Assert.Equal(43, compute.Invoke(null, [| box 41 |]) :?> int)
+
+                  let colorType = assembly.GetType("Sample.Color", throwOnError = true)
+                  Assert.True colorType.IsEnum
+
+                  // The Constant rows decode on the live type: literal values and names
+                  // round-trip through reflection and Enum.Parse.
+                  Assert.Equal(2, colorType.GetField("Green").GetRawConstantValue() :?> int)
+                  Assert.Equal(4, colorType.GetField("Blue").GetRawConstantValue() :?> int)
+                  let parsed = Enum.Parse(colorType, "Blue")
+                  Assert.Equal(4, Convert.ToInt32 parsed)
+                  Assert.Equal("Red", Enum.GetName(colorType, box 1))) ]
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added literal module value`` () =
+        // [<Literal>] values lower to static literal fields (HasDefault) on the module
+        // type: the addition needs a Constant row parented to the new Field row on an
+        // EXISTING TypeDef — the non-enum Constant case.
+        let updated =
+            """
+namespace Sample
+
+module Library =
+    [<Literal>]
+    let Version = 7
+
+    let compute (x: int) = x + Version
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-literal-value"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+
+                  // The literal is inlined into the edited body (41 + 7), and the field's
+                  // Constant row decodes through reflection.
+                  Assert.Equal(48, compute.Invoke(null, [| box 41 |]) :?> int)
+
+                  // CoreCLR reflection enumerates an EnC-ADDED literal field twice
+                  // (RuntimeType PopulateFields runs both PopulateRtFields — the EnC
+                  // AddField path creates a FieldDesc the VM enumerates as RtFieldInfo —
+                  // and PopulateLiteralFields' metadata walk producing MdFieldInfo; a
+                  // baseline literal has no FieldDesc so the paths never overlap). Same
+                  // token, same row — a runtime quirk, not delta corruption — so
+                  // GetField's AmbiguousMatchException is expected here; only the
+                  // metadata-backed MdFieldInfo implements GetRawConstantValue.
+                  let versionFields =
+                      libType.GetFields(BindingFlags.Public ||| BindingFlags.Static)
+                      |> Array.filter (fun field -> field.Name = "Version")
+
+                  Assert.True(versionFields.Length > 0, "Version literal field not found after ApplyUpdate.")
+                  Assert.Equal(1, versionFields |> Array.distinctBy (fun field -> field.MetadataToken) |> Array.length)
+                  Assert.True(versionFields |> Array.forall (fun field -> field.IsLiteral))
+
+                  // The Constant row decodes through the metadata-backed FieldInfo.
+                  let rawValues =
+                      versionFields
+                      |> Array.choose (fun field ->
+                          try
+                              Some(field.GetRawConstantValue() :?> int)
+                          with :? InvalidOperationException ->
+                              None)
+
+                  Assert.Contains(7, rawValues)) ]
+
+    [<Fact>]
+    let ``Added enum delta matches the C# new_enum template shape`` () =
+        emitDeltaAndInspect
+            fullCapabilities
+            "added-enum-template"
+            baseline
+            enumAdded
+            (fun delta ->
+                use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.ToImmutableArray(delta.Metadata: byte[]))
+                let reader = provider.GetMetadataReader()
+
+                let encLog =
+                    reader.GetEditAndContinueLogEntries()
+                    |> Seq.map (fun entry ->
+                        MetadataTokens.GetToken entry.Handle >>> 24, MetadataTokens.GetRowNumber entry.Handle, entry.Operation)
+                    |> Seq.toList
+
+                printfn "[added-enum-template] EncLog: %A" encLog
+
+                // The new TypeDef row is a plain Default entry preceding the AddField
+                // pairs (value__ + Red/Green/Blue -> four pairs, C# template parity).
+                let typeDefDefaultIndex =
+                    encLog |> List.findIndex (fun (table, _, op) -> table = 0x02 && op = EditAndContinueOperation.Default)
+
+                let firstAddFieldIndex =
+                    encLog |> List.findIndex (fun (table, _, op) -> table = 0x02 && op = EditAndContinueOperation.AddField)
+
+                Assert.True(typeDefDefaultIndex < firstAddFieldIndex)
+
+                let addFieldCount =
+                    encLog
+                    |> List.filter (fun (table, _, op) -> table = 0x02 && op = EditAndContinueOperation.AddField)
+                    |> List.length
+
+                Assert.Equal(4, addFieldCount)
+
+                // Three Constant rows (one per literal member, NOT value__) trail the log
+                // as plain Default entries; EncMap lists them as adds.
+                let constantEntries =
+                    encLog
+                    |> List.filter (fun (table, _, op) -> table = 0x0B && op = EditAndContinueOperation.Default)
+
+                Assert.Equal(3, List.length constantEntries)
+                Assert.Equal(3, reader.GetTableRowCount(TableIndex.Constant))
+
+                let lastConstantIndex =
+                    encLog |> List.findIndexBack (fun (table, _, _) -> table = 0x0B)
+
+                let lastFieldIndex =
+                    encLog |> List.findIndexBack (fun (table, _, _) -> table = 0x04)
+
+                Assert.True(lastFieldIndex < lastConstantIndex)
+
+                let encMapTables =
+                    reader.GetEditAndContinueMapEntries()
+                    |> Seq.map (fun handle -> MetadataTokens.GetToken handle >>> 24)
+                    |> Set.ofSeq
+
+                Assert.Contains(0x0B, encMapTables))
 
     [<Fact>]
     let ``ApplyUpdate succeeds for added module with function and mutable value`` () =
@@ -805,4 +977,4 @@ module Library =
             "added-interface"
             baseline
             updated
-            [ "only classes, records, unions, structs, and modules" ]
+            [ "only classes, records, unions, structs, enums, and modules" ]

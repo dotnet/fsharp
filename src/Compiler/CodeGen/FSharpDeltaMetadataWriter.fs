@@ -111,6 +111,7 @@ let emitWithTypeDefinitions
     (nestedClassRows: NestedClassRowInfo list)
     (interfaceImplRows: InterfaceImplRowInfo list)
     (methodImplRows: MethodImplRowInfo list)
+    (constantRows: ConstantRowInfo list)
     (methodDefinitionRows: MethodDefinitionRowInfo list)
     (parameterDefinitionRows: ParameterDefinitionRowInfo list)
     (fieldDefinitionRows: FieldDefinitionRowInfo list)
@@ -161,6 +162,7 @@ let emitWithTypeDefinitions
         || not (List.isEmpty genericParamConstraintRows)
         || not (List.isEmpty interfaceImplRows)
         || not (List.isEmpty methodImplRows)
+        || not (List.isEmpty constantRows)
         || fieldDefinitionRows |> List.exists (fun row -> row.IsAdded)
         || propertyDefinitionRows |> List.exists (fun row -> row.IsAdded)
         || eventDefinitionRows |> List.exists (fun row -> row.IsAdded)
@@ -271,6 +273,16 @@ let emitWithTypeDefinitions
             tableMirror.AddMethodImplRow row
             methodImplEncLogEntries.Add(struct (TableNames.MethodImpl, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.MethodImpl, row.RowId))
+
+        // Constant rows (literal values of ADDED fields) are plain Default adds trailing
+        // the log: the C# 'new_enum' reference template logs the three Constant rows of
+        // an added enum LAST, after the member pairs and the updated-method rows.
+        let constantEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        for row in constantRows |> List.sortBy (fun row -> row.RowId) do
+            tableMirror.AddConstantRow row
+            constantEncLogEntries.Add(struct (TableNames.Constant, row.RowId, EditAndContinueOperation.Default))
+            encMap.Add(struct (TableNames.Constant, row.RowId))
 
         for row in methodDefinitionRows do
             match updatesByKey.TryGetValue row.Key with
@@ -531,6 +543,9 @@ let emitWithTypeDefinitions
             builder.AddRange interfaceImplEncLogEntries
             builder.AddRange methodImplEncLogEntries
             builder.AddRange nestedClassEncLogEntries
+            // Constant rows trail the whole log (C# 'new_enum' reference order); the CLR
+            // only needs their parent Field rows applied first.
+            builder.AddRange constantEncLogEntries
 
             // Any tables not handled above are appended sorted by token.
             snapshot
@@ -588,6 +603,7 @@ let emitWithTypeDefinitions
                         nestedClassRows
                         interfaceImplRows
                         methodImplRows
+                        constantRows
                         methodDefinitionRows
                         parameterDefinitionRows
                         fieldDefinitionRows
@@ -720,6 +736,7 @@ let emitWithUserStrings
         ([] : NestedClassRowInfo list)
         ([] : InterfaceImplRowInfo list)
         ([] : MethodImplRowInfo list)
+        ([] : ConstantRowInfo list)
         methodDefinitionRows
         parameterDefinitionRows
         fieldDefinitionRows

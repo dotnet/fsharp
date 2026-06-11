@@ -901,6 +901,7 @@ let private emitMetadataDelta
     (nestedClassRowsSnapshot: NestedClassRowInfo list)
     (interfaceImplRowsSnapshot: InterfaceImplRowInfo list)
     (methodImplRowsSnapshot: MethodImplRowInfo list)
+    (constantRowsSnapshot: ConstantRowInfo list)
     (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
     (parameterDefinitionRowsSnapshot: ParameterDefinitionRowInfo list)
     (fieldDefinitionRowsSnapshot: FieldDefinitionRowInfo list)
@@ -935,6 +936,7 @@ let private emitMetadataDelta
             nestedClassRowsSnapshot
             interfaceImplRowsSnapshot
             methodImplRowsSnapshot
+            constantRowsSnapshot
             methodDefinitionRowsSnapshot
             parameterDefinitionRowsSnapshot
             fieldDefinitionRowsSnapshot
@@ -4284,6 +4286,48 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     row.RowId
                     row.ParentTypeDefRowId
 
+        // Constant rows for ADDED literal fields (enum members, union Tags holder
+        // constants, [<Literal>] values): ECMA-335 II.22.9 — Type is the fresh compile's
+        // ELEMENT_TYPE code, Parent the new delta Field row (HasConstant, tag Field),
+        // Value the raw constant blob copied into the DELTA blob heap (primitive bytes,
+        // nothing to remap). Rows are ordered by the parent Field row id (the table's
+        // HasConstant sort key — all parents here are Fields) and numbered past the
+        // chained baseline Constant row count. C# reference template: 'new_enum'
+        // (reference_mdv_new_enum.txt) — three Constant rows trail the generation-1 log
+        // as plain Default entries, EncMap adds.
+        let constantRowsSnapshot : ConstantRowInfo list =
+            let baselineConstantRowCount = baselineTableRowCounts.[TableNames.Constant.Index]
+
+            addedFieldDeltaTokens
+            |> Seq.sortBy (fun kvp -> kvp.Value)
+            |> Seq.choose (fun (KeyValue(key, deltaToken)) ->
+                let newToken = addedFieldTokens.[key]
+                let fieldHandle = MetadataTokens.FieldDefinitionHandle(newToken &&& 0x00FFFFFF)
+                let fieldDef = metadataReader.GetFieldDefinition fieldHandle
+                let constantHandle = fieldDef.GetDefaultValue()
+
+                if constantHandle.IsNil then
+                    None
+                else
+                    let constant = metadataReader.GetConstant constantHandle
+
+                    Some
+                        { ConstantRowInfo.RowId = 0
+                          TypeCode = byte constant.TypeCode
+                          Parent = HC_Field(FieldHandle(deltaToken &&& 0x00FFFFFF))
+                          Value = metadataReader.GetBlobBytes constant.Value })
+            |> Seq.mapi (fun index row -> { row with RowId = baselineConstantRowCount + index + 1 })
+            |> Seq.toList
+
+        if traceMethodUpdates.Value then
+            for row in constantRowsSnapshot do
+                printfn
+                    "[fsharp-hotreload][constant-add] rowId=%d parentFieldRow=%d typeCode=0x%02X valueBytes=%d"
+                    row.RowId
+                    row.Parent.RowId
+                    (int row.TypeCode)
+                    row.Value.Length
+
         // Snapshot ADDED TypeDef rows (closure classes synthesized for added lambdas).
         // Name/namespace/attributes come from the fresh compile's metadata; the Extends
         // coded index is remapped from fresh rows to baseline/delta rows. Nested types
@@ -4672,6 +4716,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 nestedClassRowsSnapshot
                 interfaceImplRowsSnapshot
                 methodImplRowsSnapshot
+                constantRowsSnapshot
                 methodDefinitionRowsSnapshot
                 parameterDefinitionRowsSnapshot
                 fieldDefinitionRowsSnapshot

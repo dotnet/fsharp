@@ -919,6 +919,7 @@ module FSharpDeltaMetadataWriterTests =
                 nestedClassRows
                 [] // interface impl rows
                 [] // method impl rows
+                [] // constant rows
                 methodDefinitionRows
                 [] // parameter rows
                 fieldRows
@@ -2810,6 +2811,7 @@ module FSharpDeltaMetadataWriterTests =
           TypeDef = emptyRowArrays
           NestedClass = emptyRowArrays
           InterfaceImpl = emptyRowArrays
+          Constant = emptyRowArrays
           MethodImpl = emptyRowArrays
           Field = emptyRowArrays
           MethodDef = emptyRowArrays
