@@ -85,6 +85,28 @@ type NestedClassRowInfo =
       NestedTypeDefRowId: int
       EnclosingTypeDefRowId: int }
 
+/// Row model for an InterfaceImpl table entry (ECMA-335 II.22.23: Class — a TypeDef row
+/// index — and Interface — a TypeDefOrRef coded index). Emitted for the interfaces
+/// implemented by ADDED types (records/unions implement IComparable/IEquatable and
+/// friends); logged as a plain Default EncLog entry trailing the log and listed in
+/// EncMap as an add (C# 'new_class' reference template: InterfaceImpl 0x09000001 trails
+/// the generation-1 log of a new class implementing IDisposable).
+type InterfaceImplRowInfo =
+    { RowId: int
+      ClassTypeDefRowId: int
+      Interface: TypeDefOrRef }
+
+/// Row model for a MethodImpl table entry (ECMA-335 II.22.27: Class — a TypeDef row
+/// index — MethodBody and MethodDeclaration — MethodDefOrRef coded indexes). Emitted
+/// for the explicit interface implementations of ADDED types (F# classes implement
+/// interfaces explicitly, so unlike C#'s implicit public mapping every implemented
+/// interface slot carries a MethodImpl row).
+type MethodImplRowInfo =
+    { RowId: int
+      ClassTypeDefRowId: int
+      MethodBody: MethodDefOrRef
+      MethodDeclaration: MethodDefOrRef }
+
 type TypeReferenceRowInfo =
     { RowId: int
       ResolutionScope: ResolutionScope
@@ -205,6 +227,8 @@ type TableRows =
     { Module: RowElementData[][]
       TypeDef: RowElementData[][]
       NestedClass: RowElementData[][]
+      InterfaceImpl: RowElementData[][]
+      MethodImpl: RowElementData[][]
       Field: RowElementData[][]
       MethodDef: RowElementData[][]
       Param: RowElementData[][]

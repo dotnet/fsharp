@@ -712,6 +712,86 @@ update (the runtime caches ParameterInfo per MethodInfo; a primed cache keeps
 the old name — parameter names are debugger-facing metadata). Negative tests
 pin the UpdateParameters gate and that self-identifier renames do not gate.
 
+## User-defined new type definitions (Phase F sub-slice 4)
+
+### C# reference EncLog (csharp_enc_reference 'new_class', reference_mdv_new_class.txt)
+
+A new top-level class (field + ctor + method, implementing IDisposable) used
+from an edited method emits in generation 1: the new TypeDef row as a plain
+Default entry (top-level: EnclosingType nil, no NestedClass row), an AddField
+pair, three AddMethod pairs with their AddParameter pairs, the updated using
+method as MethodDef/Param row updates, and an **InterfaceImpl row as a plain
+Default entry trailing the log** (EncMap add — the table needed new writer
+support). Generation 2 body-edits a method of the added class: a plain
+MethodDef update of the generation-1 row, no type/field/interface rows.
+
+### Classification
+
+`compareEntities` (TypedTreeDiff): an ADDED entity gates on
+`NewTypeDefinition` (Roslyn parity; previously always `DeclarationAdded`
+rude). Allowed representations: **class, record, union, struct**
+(`EntitySnapshot.SupportsAddition`); interfaces (abstract slots have no IL
+bodies), enums (values need Constant rows the writer cannot emit), delegates
+and exotic representations stay `DeclarationAdded` rude with a precise
+message (surfaced through FSHRDL004, whose diagnostic now appends the diff
+detail). The allowed addition becomes a `SemanticEditKind.Insert` edit whose
+symbol path mirrors the IL name; the new type's member bindings (including
+ctors, explicit interface implementations and the SYNTHESIZED record/union
+members that would otherwise hit the member-addition or lowered-shape gates)
+are SKIPPED by the binding diff — they ride along with the single entity
+Insert edit.
+
+### Emission
+
+- `DeltaBuilder` excludes added entities from baseline type-token resolution
+  (no baseline row exists); the emitter receives their names via
+  `FSharpSymbolChanges.addedEntitySymbols` and matches fresh-compile TypeDefs
+  dot-normalized ('+' vs '.' nesting).
+- `collectTypeMappings` allocates delta TypeDef rows for matched fresh types
+  through the C4 added-TypeDef machinery (rows, AddField/AddMethod pairs,
+  GenericParam rows from E, CustomAttribute rows from sub-slice 1, NestedClass
+  rows for types declared inside modules). Types NESTED inside an added type
+  (union case classes, Tags holders, DebugTypeProxy companions) are detected
+  via their enclosing type's delta row (parents visit first).
+- **InterfaceImpl rows** (new writer table): one per interface of an added
+  type, Interface remapped through the TypeRef/TypeDef/TypeSpec remappers,
+  rows sorted by (Class, Interface coded index), plain Default EncLog entries
+  trailing the log, EncMap adds.
+- **MethodImpl rows** (new writer table): F# classes implement interfaces
+  explicitly (`interface X with`), so every implemented slot carries a
+  MethodImpl row — C# never shows them for implicit impls. Body/Declaration
+  remap through the MethodDef/MemberRef remappers; sorted by Class.
+- PropertyMap/EventMap rows of added types parent the NEW delta TypeDef row
+  (previously baseline-only lookup).
+- Added methods without IL bodies (abstract/extern) fail closed precisely.
+
+### Runtime evidence (`NewTypeDefinitionTests`)
+
+- Added class implementing IDisposable, used from the edited function:
+  ApplyUpdate succeeds, the new type is instantiable through reflection, the
+  interface is assignable and callable; generation 2 body-edits the added
+  class's member in place (C# gen-2 parity).
+- Added record: synthesized accessors/comparers/equality work on the live
+  type (structural Equals validated), IComparable assignable, the using
+  function reads fields.
+- Added union: case constructors, Tag/IsCircle accessors work; nested case
+  classes flow as nested-in-added types.
+- Template test pins: TypeDef Default entry precedes the AddMethod pairs,
+  three AddMethod pairs, InterfaceImpl + MethodImpl Default entries and
+  EncMap adds. Negative tests pin the NewTypeDefinition gate and the
+  interface-addition fail-closed message.
+
+### Honest scoping (stays rude / fail-closed)
+
+- New MODULES (and types/values inside them) are not classified as type
+  additions (module entities are not snapshotted); their member additions
+  fail closed at emission against the missing module TypeDef.
+- Added interfaces/enums/delegates: rude with precise messages (above).
+- Attributes ON InterfaceImpl rows (F# allows them) are not emitted.
+- DeclSecurity, ClassLayout (explicit struct layout), Constant rows
+  (literals), FieldMarshal/ImplMap (interop) have no writer support; types
+  needing them surface through the emitter's fail-closed gates.
+
 ## Known gaps / later slices
 
 - GenericParamConstraint rows are not emitted: added generic definitions

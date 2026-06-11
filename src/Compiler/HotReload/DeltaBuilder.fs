@@ -349,9 +349,19 @@ let mapSymbolChangesToDelta
 
         typeTokens, matchedMethods
 
+    // ADDED entity symbols (new type definitions, Phase F) have no baseline type token
+    // by definition: the emitter discovers them by walking the fresh module against the
+    // added-entity symbol names. Only updated/deleted/synthesized entities resolve here.
+    let addedEntityStamps =
+        changes
+        |> FSharpSymbolChanges.addedEntitySymbols
+        |> List.map (fun symbol -> symbol.Stamp)
+        |> Set.ofList
+
     let updatedTypes, typeResolutionErrors =
         changes
         |> FSharpSymbolChanges.entitySymbolsWithChanges
+        |> List.filter (fun symbol -> not (Set.contains symbol.Stamp addedEntityStamps))
         |> List.fold (fun (resolvedTypes, errors) symbol ->
             let candidates = symbol |> candidateEntityNames
 

@@ -1477,6 +1477,11 @@ type private EntitySnapshot =
       /// IL-compiled full name, used to address the entity against baseline TypeDef tokens
       /// when a field addition is emitted as a TypeDefinition edit.
       CompiledFullName: string option
+      /// True for representations the delta writer can emit as a NEW TypeDef (classes,
+      /// records, unions, structs). Interfaces (abstract slots have no bodies), enums
+      /// (their values need Constant rows), delegates, and exotic representations stay
+      /// rude when added.
+      SupportsAddition: bool
       IsSynthesized: bool }
 
 let private hasLoweredShapeDigestSegmentValues (segmentName: string) (digest: string) =
@@ -1818,6 +1823,17 @@ and private snapshotTycon denv path (tycon: Tycon) =
         with _ ->
             None
 
+    let supportsAddition =
+        match tycon.TypeReprInfo with
+        | TFSharpTyconRepr data ->
+            match data.fsobjmodel_kind with
+            | FSharpTyconKind.TFSharpClass
+            | FSharpTyconKind.TFSharpRecord
+            | FSharpTyconKind.TFSharpUnion
+            | FSharpTyconKind.TFSharpStruct -> true
+            | _ -> false
+        | _ -> false
+
     { Symbol = symbolId path tycon.LogicalName tycon.Stamp SymbolKind.Entity None false None None None None None
       RepresentationHash = stableHash reprText
       RepresentationText = reprText
@@ -1826,6 +1842,7 @@ and private snapshotTycon denv path (tycon: Tycon) =
       IsFSharpClass = isFSharpClass
       IsGeneric = tycon.TyparsNoRange |> List.exists (fun typar -> not typar.IsErased)
       CompiledFullName = compiledFullName
+      SupportsAddition = supportsAddition
       IsSynthesized = false }: EntitySnapshot
 
 let private collectSnapshots g denv (CheckedImplFile (qualifiedNameOfFile = qual; contents = contents)) =
@@ -1895,6 +1912,7 @@ let private attributeRowsAreMethodParented (snapshot: BindingSnapshot) =
 
 let private compareBindings
     (capabilities: EditAndContinueCapabilities)
+    (addedEntityCompiledNames: Set<string>)
     (baseline: Map<string, BindingSnapshot>)
     (updated: Map<string, BindingSnapshot>)
     =
@@ -2208,6 +2226,18 @@ let private compareBindings
             )
 
     let addAddedDeclarationOrInsertEdit (updatedBinding: BindingSnapshot) =
+        // Members of a type ADDED by this edit ride along with the entity-level Insert
+        // edit (compareEntities gates it on NewTypeDefinition): the emitter discovers
+        // every method/field/property of the new TypeDef by walking the fresh module, so
+        // no member-level edit (and none of the existing-type member-addition gates —
+        // virtual/constructor/operator restrictions exist to protect EXISTING types)
+        // applies. This also covers the SYNTHESIZED members a record/union brings
+        // (comparers, equality, accessors), which would otherwise fail the
+        // lowered-shape classifier.
+        match updatedBinding.ContainingEntity with
+        | Some containingEntity when Set.contains containingEntity addedEntityCompiledNames -> ()
+        | _ ->
+
         match tryClassifySynthesizedLoweredShapeChurn updatedBinding with
         | Some loweredKind ->
             let message =
@@ -2494,11 +2524,64 @@ let private compareEntities
 
     for KeyValue(key, updatedEntity) in updated do
         if not (Map.containsKey key baseline) then
-            rude.Add(
-                { Symbol = Some updatedEntity.Symbol
-                  Kind = RudeEditKind.DeclarationAdded
-                  Message = "Type declaration added." }
-            )
+            // Adding a new TYPE definition gates on the NewTypeDefinition runtime
+            // capability (Roslyn parity: inserting a type requires
+            // EditAndContinueCapabilities.NewTypeDefinition). The emitter reuses the C4
+            // added-TypeDef machinery: TypeDef row + members + GenericParam rows +
+            // InterfaceImpl/MethodImpl rows + CustomAttribute rows (+ NestedClass when
+            // declared inside a module). The new type's member bindings ride along with
+            // this single Insert edit (compareBindings skips them).
+            if not updatedEntity.SupportsAddition then
+                rude.Add(
+                    { Symbol = Some updatedEntity.Symbol
+                      Kind = RudeEditKind.DeclarationAdded
+                      Message =
+                        $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: only classes, records, unions, and structs can be added (interfaces, enums, delegates, and other representations require a rebuild)." }
+                )
+            elif not (capabilities.Supports EditAndContinueCapability.NewTypeDefinition) then
+                rude.Add(
+                    { Symbol = Some updatedEntity.Symbol
+                      Kind = RudeEditKind.NotSupportedByRuntime
+                      Message =
+                        FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
+                            updatedEntity.Symbol.QualifiedName,
+                            EditAndContinueCapability.NewTypeDefinition.Name
+                        ) }
+                )
+            else
+                match updatedEntity.CompiledFullName with
+                | None ->
+                    // Fail closed: without a compiled type name the emitter cannot match
+                    // the fresh-compile TypeDef.
+                    rude.Add(
+                        { Symbol = Some updatedEntity.Symbol
+                          Kind = RudeEditKind.DeclarationAdded
+                          Message =
+                            $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: the compiled type name could not be computed." }
+                    )
+                | Some compiledFullName ->
+                    // The symbol path mirrors the IL name (like the TypeDefinition edit
+                    // path above) so the emitter can match the fresh-compile TypeDef.
+                    let segments =
+                        compiledFullName.Split([| '.'; '+' |], StringSplitOptions.RemoveEmptyEntries)
+                        |> Array.toList
+
+                    let symbol =
+                        match List.rev segments with
+                        | [] -> updatedEntity.Symbol
+                        | last :: revPrefix ->
+                            { updatedEntity.Symbol with
+                                Path = List.rev revPrefix
+                                LogicalName = last }
+
+                    edits.Add(
+                        { Symbol = symbol
+                          Kind = SemanticEditKind.Insert
+                          BaselineHash = None
+                          UpdatedHash = Some updatedEntity.RepresentationHash
+                          IsSynthesized = false
+                          ContainingEntity = None }
+                    )
 
     edits |> Seq.toList, rude |> Seq.toList
 
@@ -2528,8 +2611,22 @@ let diffImplementationFile (g: TcGlobals) (capabilities: EditAndContinueCapabili
     let baselineBindings, baselineEntities = collectSnapshots g denv baseline
     let updatedBindings, updatedEntities = collectSnapshots g denv updated
 
+    // Compiled names of entities ADDED by this edit: their member bindings are skipped by
+    // the binding diff (they ride along with the entity-level Insert edit) regardless of
+    // whether the entity-level gating allows the addition — the entity edit reports the
+    // outcome exactly once.
+    let addedEntityCompiledNames =
+        updatedEntities
+        |> Map.toSeq
+        |> Seq.choose (fun (key, entity) ->
+            if Map.containsKey key baselineEntities then
+                None
+            else
+                entity.CompiledFullName)
+        |> Set.ofSeq
+
     let semanticEdits, bindingRudeEdits, lambdaEdits =
-        compareBindings capabilities baselineBindings updatedBindings
+        compareBindings capabilities addedEntityCompiledNames baselineBindings updatedBindings
 
     let entityEdits, entityRudeEdits = compareEntities capabilities baselineEntities updatedEntities
 

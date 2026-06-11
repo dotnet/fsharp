@@ -107,6 +107,8 @@ let emitWithTypeDefinitions
     (moduleId: Guid)
     (typeDefinitionRows: TypeDefinitionRowInfo list)
     (nestedClassRows: NestedClassRowInfo list)
+    (interfaceImplRows: InterfaceImplRowInfo list)
+    (methodImplRows: MethodImplRowInfo list)
     (methodDefinitionRows: MethodDefinitionRowInfo list)
     (parameterDefinitionRows: ParameterDefinitionRowInfo list)
     (fieldDefinitionRows: FieldDefinitionRowInfo list)
@@ -153,6 +155,8 @@ let emitWithTypeDefinitions
         not (List.isEmpty updates)
         || not (List.isEmpty typeDefinitionRows)
         || not (List.isEmpty genericParamRows)
+        || not (List.isEmpty interfaceImplRows)
+        || not (List.isEmpty methodImplRows)
         || fieldDefinitionRows |> List.exists (fun row -> row.IsAdded)
         || propertyDefinitionRows |> List.exists (fun row -> row.IsAdded)
         || eventDefinitionRows |> List.exists (fun row -> row.IsAdded)
@@ -245,6 +249,24 @@ let emitWithTypeDefinitions
             tableMirror.AddNestedClassRow row
             nestedClassEncLogEntries.Add(struct (TableNames.Nested, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.Nested, row.RowId))
+
+        // InterfaceImpl/MethodImpl rows of ADDED types are plain Default adds applied via
+        // ApplyTableDelta. The C# 'new_class' reference template logs the InterfaceImpl
+        // row trailing the generation-1 log; MethodImpl rows (F#'s explicit interface
+        // implementations) follow the same shape.
+        let interfaceImplEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        for row in interfaceImplRows |> List.sortBy (fun row -> row.RowId) do
+            tableMirror.AddInterfaceImplRow row
+            interfaceImplEncLogEntries.Add(struct (TableNames.InterfaceImpl, row.RowId, EditAndContinueOperation.Default))
+            encMap.Add(struct (TableNames.InterfaceImpl, row.RowId))
+
+        let methodImplEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        for row in methodImplRows |> List.sortBy (fun row -> row.RowId) do
+            tableMirror.AddMethodImplRow row
+            methodImplEncLogEntries.Add(struct (TableNames.MethodImpl, row.RowId, EditAndContinueOperation.Default))
+            encMap.Add(struct (TableNames.MethodImpl, row.RowId))
 
         for row in methodDefinitionRows do
             match updatesByKey.TryGetValue row.Key with
@@ -489,8 +511,12 @@ let emitWithTypeDefinitions
             builder.AddRange eventMapEncLogEntries
             builder.AddRange eventEncLogEntries
             builder.AddRange methodSemanticsEncLogEntries
-            // NestedClass rows trail the log (C# reference order); the CLR applies them
-            // via ApplyTableDelta after the nested TypeDef row already exists.
+            // InterfaceImpl/MethodImpl rows trail the log (C# reference order: the
+            // 'new_class' template's InterfaceImpl entry is the last log entry), followed
+            // by NestedClass rows; the CLR applies all three via ApplyTableDelta after
+            // the new TypeDef row already exists.
+            builder.AddRange interfaceImplEncLogEntries
+            builder.AddRange methodImplEncLogEntries
             builder.AddRange nestedClassEncLogEntries
 
             // Any tables not handled above are appended sorted by token.
@@ -547,6 +573,8 @@ let emitWithTypeDefinitions
                         moduleId
                         typeDefinitionRows
                         nestedClassRows
+                        interfaceImplRows
+                        methodImplRows
                         methodDefinitionRows
                         parameterDefinitionRows
                         fieldDefinitionRows
@@ -676,6 +704,8 @@ let emitWithUserStrings
         moduleId
         ([] : TypeDefinitionRowInfo list)
         ([] : NestedClassRowInfo list)
+        ([] : InterfaceImplRowInfo list)
+        ([] : MethodImplRowInfo list)
         methodDefinitionRows
         parameterDefinitionRows
         fieldDefinitionRows

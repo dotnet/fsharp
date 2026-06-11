@@ -118,6 +118,8 @@ let serialize
     (moduleId: Guid)
     (typeDefinitionRows: TypeDefinitionRowInfo list)
     (nestedClassRows: NestedClassRowInfo list)
+    (interfaceImplRows: InterfaceImplRowInfo list)
+    (methodImplRows: MethodImplRowInfo list)
     (methodDefinitionRows: MethodDefinitionRowInfo list)
     (parameterDefinitionRows: ParameterDefinitionRowInfo list)
     (fieldDefinitionRows: FieldDefinitionRowInfo list)
@@ -163,7 +165,7 @@ let serialize
     metadataBuilder.SetCapacity(TableIndex.Field, fieldAddCount)
     metadataBuilder.SetCapacity(TableIndex.MethodDef, methodCount)
     metadataBuilder.SetCapacity(TableIndex.Param, parameterCount)
-    metadataBuilder.SetCapacity(TableIndex.InterfaceImpl, 0)
+    metadataBuilder.SetCapacity(TableIndex.InterfaceImpl, interfaceImplRows.Length)
     metadataBuilder.SetCapacity(TableIndex.MemberRef, memberRefCount)
     metadataBuilder.SetCapacity(TableIndex.Constant, 0)
     metadataBuilder.SetCapacity(TableIndex.CustomAttribute, customAttributeCount)
@@ -177,7 +179,7 @@ let serialize
     metadataBuilder.SetCapacity(TableIndex.PropertyMap, propertyMapAddCount)
     metadataBuilder.SetCapacity(TableIndex.Property, propertyAddCount)
     metadataBuilder.SetCapacity(TableIndex.MethodSemantics, methodSemanticsAddCount)
-    metadataBuilder.SetCapacity(TableIndex.MethodImpl, 0)
+    metadataBuilder.SetCapacity(TableIndex.MethodImpl, methodImplRows.Length)
     metadataBuilder.SetCapacity(TableIndex.ModuleRef, 0)
     metadataBuilder.SetCapacity(TableIndex.TypeSpec, typeSpecCount)
     metadataBuilder.SetCapacity(TableIndex.ImplMap, 0)
@@ -235,6 +237,19 @@ let serialize
         metadataBuilder.AddNestedType(
             MetadataTokens.TypeDefinitionHandle row.NestedTypeDefRowId,
             MetadataTokens.TypeDefinitionHandle row.EnclosingTypeDefRowId)
+        |> ignore
+
+    for row in interfaceImplRows |> List.sortBy (fun row -> row.RowId) do
+        metadataBuilder.AddInterfaceImplementation(
+            MetadataTokens.TypeDefinitionHandle row.ClassTypeDefRowId,
+            toTypeDefOrRefHandle row.Interface)
+        |> ignore
+
+    for row in methodImplRows |> List.sortBy (fun row -> row.RowId) do
+        metadataBuilder.AddMethodImplementation(
+            MetadataTokens.TypeDefinitionHandle row.ClassTypeDefRowId,
+            toMethodDefOrRefHandle row.MethodBody,
+            toMethodDefOrRefHandle row.MethodDeclaration)
         |> ignore
 
     for row in methodDefinitionRows do

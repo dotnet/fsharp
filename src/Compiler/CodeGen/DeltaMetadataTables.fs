@@ -300,6 +300,8 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let moduleRows = RowTableBuilder()
     let typeDefRows = RowTableBuilder()
     let nestedClassRows = RowTableBuilder()
+    let interfaceImplRows = RowTableBuilder()
+    let methodImplRows = RowTableBuilder()
     let fieldRows = RowTableBuilder()
     let methodRows = RowTableBuilder()
     let paramRows = RowTableBuilder()
@@ -523,6 +525,31 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 rowElementSimpleIndex TableNames.TypeDef row.EnclosingTypeDefRowId
             |]
         nestedClassRows.Add rowElements
+
+    /// Add an InterfaceImpl table row per ECMA-335 II.22.23: Class (TypeDef row index)
+    /// and Interface (TypeDefOrRef coded index).
+    member _.AddInterfaceImplRow(row: InterfaceImplRowInfo) =
+        let interfaceTag, interfaceRow = encodeTypeDefOrRef row.Interface
+
+        let rowElements =
+            [|
+                rowElementSimpleIndex TableNames.TypeDef row.ClassTypeDefRowId
+                rowElementTypeDefOrRef interfaceTag interfaceRow
+            |]
+
+        interfaceImplRows.Add rowElements
+
+    /// Add a MethodImpl table row per ECMA-335 II.22.27: Class (TypeDef row index),
+    /// MethodBody and MethodDeclaration (MethodDefOrRef coded indexes).
+    member _.AddMethodImplRow(row: MethodImplRowInfo) =
+        let rowElements =
+            [|
+                rowElementSimpleIndex TableNames.TypeDef row.ClassTypeDefRowId
+                rowElementMethodDefOrRef row.MethodBody
+                rowElementMethodDefOrRef row.MethodDeclaration
+            |]
+
+        methodImplRows.Add rowElements
 
     member _.AddMethodRow(row: MethodDefinitionRowInfo, body: MethodBodyUpdate) =
         let nameToken = addExistingStringOffset row.NameOffset row.Name
@@ -810,6 +837,8 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         { Module = moduleRows.Entries
           TypeDef = typeDefRows.Entries
           NestedClass = nestedClassRows.Entries
+          InterfaceImpl = interfaceImplRows.Entries
+          MethodImpl = methodImplRows.Entries
           Field = fieldRows.Entries
           MethodDef = methodRows.Entries
           Param = paramRows.Entries
@@ -838,6 +867,8 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         counts[TableNames.Module.Index] <- moduleRows.Count
         counts[TableNames.TypeDef.Index] <- typeDefRows.Count
         counts[TableNames.Nested.Index] <- nestedClassRows.Count
+        counts[TableNames.InterfaceImpl.Index] <- interfaceImplRows.Count
+        counts[TableNames.MethodImpl.Index] <- methodImplRows.Count
         counts[TableNames.Field.Index] <- fieldRows.Count
         counts[TableNames.Method.Index] <- methodRows.Count
         counts[TableNames.Param.Index] <- paramRows.Count

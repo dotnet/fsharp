@@ -917,6 +917,8 @@ module FSharpDeltaMetadataWriterTests =
                 (System.Guid.NewGuid())
                 typeDefinitionRows
                 nestedClassRows
+                [] // interface impl rows
+                [] // method impl rows
                 methodDefinitionRows
                 [] // parameter rows
                 fieldRows
@@ -2806,6 +2808,8 @@ module FSharpDeltaMetadataWriterTests =
         { Module = emptyRowArrays
           TypeDef = emptyRowArrays
           NestedClass = emptyRowArrays
+          InterfaceImpl = emptyRowArrays
+          MethodImpl = emptyRowArrays
           Field = emptyRowArrays
           MethodDef = emptyRowArrays
           Param = emptyRowArrays

@@ -85,6 +85,7 @@
     <Compile Include="HotReload\GenericEditTests.fs" />
     <Compile Include="HotReload\AttributeEditTests.fs" />
     <Compile Include="HotReload\ParameterEditTests.fs" />
+    <Compile Include="HotReload\NewTypeDefinitionTests.fs" />
     <Compile Include="HotReload\DefinitionMapTests.fs" />
     <Compile Include="HotReload\SymbolChangesTests.fs" />
     <Compile Include="HotReload\MdvValidationTests.fs" />

@@ -747,6 +747,17 @@ let private tryBuildMethodUpdateInput
             None
         else
             let methodDef = metadataReader.GetMethodDefinition methodHandle
+
+            if isAddedMethod && methodDef.RelativeVirtualAddress = 0 then
+                // Abstract/extern members of an added type have no IL body; the writer
+                // cannot express bodiless MethodDef rows yet (Add* pairs assume a body in
+                // the IL delta). Fail closed precisely rather than crash reading RVA 0.
+                raise (
+                    HotReloadUnsupportedEditException(
+                        $"Added method '{key.DeclaringType}::{key.Name}' has no IL body (abstract or extern); hot reload deltas cannot express bodiless added methods yet. Please rebuild."
+                    )
+                )
+
             let body = peReader.GetMethodBody(methodDef.RelativeVirtualAddress)
 
             if traceMethodUpdates then
@@ -871,6 +882,8 @@ let private emitMetadataDelta
     (moduleMvid: Guid)
     (typeDefinitionRowsSnapshot: TypeDefinitionRowInfo list)
     (nestedClassRowsSnapshot: NestedClassRowInfo list)
+    (interfaceImplRowsSnapshot: InterfaceImplRowInfo list)
+    (methodImplRowsSnapshot: MethodImplRowInfo list)
     (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
     (parameterDefinitionRowsSnapshot: ParameterDefinitionRowInfo list)
     (fieldDefinitionRowsSnapshot: FieldDefinitionRowInfo list)
@@ -902,6 +915,8 @@ let private emitMetadataDelta
             moduleMvid
             typeDefinitionRowsSnapshot
             nestedClassRowsSnapshot
+            interfaceImplRowsSnapshot
+            methodImplRowsSnapshot
             methodDefinitionRowsSnapshot
             parameterDefinitionRowsSnapshot
             fieldDefinitionRowsSnapshot
@@ -1217,6 +1232,7 @@ let private buildMethodSpecificationRowsSnapshot
 let private buildPropertyEventAndSemanticsRows
     (traceMethodUpdates: bool)
     (request: IlxDeltaRequest)
+    (tryGetTypeDefToken: string -> int option)
     (metadataReader: MetadataReader)
     (propertyDefinitionIndex: DefinitionIndex<PropertyDefinitionKey>)
     (eventDefinitionIndex: DefinitionIndex<EventDefinitionKey>)
@@ -1358,7 +1374,9 @@ let private buildPropertyEventAndSemanticsRows
 
         propertyMapDefinitionIndex.Rows
         |> List.choose (fun struct (rowId, typeName, isAdded) ->
-            let typeTokenOpt = request.Baseline.TypeTokens |> Map.tryFind typeName
+            // ADDED types (Phase F / C4) have no baseline TypeDef token; their map rows
+            // parent the new delta TypeDef row.
+            let typeTokenOpt = tryGetTypeDefToken typeName
             let firstPropertyRowIdOpt =
                 match propertyRowsByType.TryGetValue typeName with
                 | true, rows ->
@@ -1394,7 +1412,7 @@ let private buildPropertyEventAndSemanticsRows
 
         eventMapDefinitionIndex.Rows
         |> List.choose (fun struct (rowId, typeName, isAdded) ->
-            let typeTokenOpt = request.Baseline.TypeTokens |> Map.tryFind typeName
+            let typeTokenOpt = tryGetTypeDefToken typeName
             let firstEventRowIdOpt =
                 match eventRowsByType.TryGetValue typeName with
                 | true, rows ->
@@ -2898,6 +2916,21 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
         |> Option.defaultValue []
         |> List.map (fun symbol -> symbol.QualifiedName)
 
+    // User-defined types ADDED by this edit (Phase F): classification gates them on
+    // NewTypeDefinition and projects their IL names into the added-entity symbols. The
+    // symbol path is dot-joined while IL nests with '+', so matching normalizes both
+    // sides to dot-separated segments.
+    let normalizeTypePathName (name: string) =
+        name.Split([| '.'; '+' |], StringSplitOptions.RemoveEmptyEntries)
+        |> String.concat "."
+
+    let addedUserTypeNames =
+        request.SymbolChanges
+        |> Option.map FSharpSymbolChanges.addedEntitySymbols
+        |> Option.defaultValue []
+        |> List.map (fun symbol -> normalizeTypePathName symbol.QualifiedName)
+        |> Set.ofList
+
     let builder = IlDeltaStreamBuilder(Some request.Baseline.Metadata)
 
     if traceHeapOffsets.Value then
@@ -3190,6 +3223,37 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                     // Generic closure classes (closures inside generic members) are
                     // supported as of Phase E: the writer emits GenericParam rows for the
                     // added TypeDef (constrained typars still fail closed at row build).
+                    let fullName = (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
+
+                    match addedTypeDeltaTokens.TryGetValue fullName with
+                    | true, token -> token
+                    | _ ->
+                        let rowId = baselineTypeDefRowCount + addedTypeDeltaTokens.Count + 1
+                        let deltaToken = 0x02000000 ||| rowId
+                        addedTypeDeltaTokens[fullName] <- deltaToken
+                        addedTypeNewTokens[fullName] <- newTypeToken
+                        addedTypeDefs.Add(enclosing, typeDef, fullName)
+                        deltaToken
+                | None when
+                    (let fullName = (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
+
+                     addedUserTypeNames.Contains(normalizeTypePathName fullName)
+                     || (match enclosing with
+                         | [] -> false
+                         | _ ->
+                             // Types declared inside an ADDED type (union case classes,
+                             // Tags holders, DebugTypeProxy companions) are part of the
+                             // same addition; the enclosing type allocates first because
+                             // collectTypeMappings visits parents before nested types.
+                             let parentType = List.last enclosing
+                             let parentEnclosing = enclosing |> List.take (List.length enclosing - 1)
+                             let parentRef = mkRefForNestedILTypeDef ILScopeRef.Local (parentEnclosing, parentType)
+                             addedTypeDeltaTokens.ContainsKey parentRef.FullName))
+                    ->
+                    // ADDED user-defined type (Phase F): classification gated the entity
+                    // addition on NewTypeDefinition and projected its IL name into the
+                    // added-entity symbols. The C4 added-TypeDef machinery applies
+                    // unchanged; the only difference is the detection.
                     let fullName = (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
 
                     match addedTypeDeltaTokens.TryGetValue fullName with
@@ -3934,6 +3998,13 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             buildPropertyEventAndSemanticsRows
                 traceMethodUpdates.Value
                 request
+                (fun typeName ->
+                    match request.Baseline.TypeTokens |> Map.tryFind typeName with
+                    | Some token -> Some token
+                    | None ->
+                        match addedTypeDeltaTokens.TryGetValue typeName with
+                        | true, token -> Some token
+                        | _ -> None)
                 metadataReader
                 propertyDefinitionIndex
                 eventDefinitionIndex
@@ -4174,6 +4245,117 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                     row.Owner
                     row.Name
 
+        // InterfaceImpl rows for ADDED types (C# 'new_class' reference template: the new
+        // class's InterfaceImpl row is a plain Default EncLog entry trailing the log,
+        // EncMap add) and MethodImpl rows for their explicit interface implementations
+        // (F# classes implement interfaces explicitly — `interface X with` — so unlike
+        // C#'s implicit public mapping every implemented slot carries a MethodImpl row;
+        // records/unions map their synthesized comparers publicly and need none).
+        let interfaceImplRowsSnapshot, methodImplRowsSnapshot =
+            if addedTypeDefs.Count = 0 then
+                [], []
+            else
+                let interfaceRows = ResizeArray<int * TypeDefOrRef>()
+                let methodImplRows = ResizeArray<int * MethodDefOrRef * MethodDefOrRef>()
+
+                let remapMethodDefOrRef (context: string) (handle: EntityHandle) =
+                    let token = MetadataTokens.GetToken handle
+
+                    match handle.Kind with
+                    | HandleKind.MethodDefinition ->
+                        MDOR_MethodDef(MethodDefHandle(definitionTokenRemapper.RemapDefinitionToken token &&& 0x00FFFFFF))
+                    | HandleKind.MemberReference ->
+                        MDOR_MemberRef(MemberRefHandle(remapEntityToken token &&& 0x00FFFFFF))
+                    | kind ->
+                        raise (
+                            HotReloadUnsupportedEditException(
+                                $"Added type member implementation '{context}' has unsupported method handle kind {kind}; please rebuild."
+                            )
+                        )
+
+                for (_, _, fullName) in addedTypeDefs do
+                    let deltaToken = addedTypeDeltaTokens.[fullName]
+                    let classRowId = deltaToken &&& 0x00FFFFFF
+                    let newToken = addedTypeNewTokens.[fullName]
+                    let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
+                    let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
+
+                    for implHandle in freshTypeDef.GetInterfaceImplementations() do
+                        let impl = metadataReader.GetInterfaceImplementation implHandle
+                        let interfaceToken = MetadataTokens.GetToken impl.Interface
+
+                        let interfaceRef =
+                            match impl.Interface.Kind with
+                            | HandleKind.TypeReference ->
+                                TDR_TypeRef(TypeRefHandle(remapEntityToken interfaceToken &&& 0x00FFFFFF))
+                            | HandleKind.TypeDefinition ->
+                                TDR_TypeDef(
+                                    TypeDefHandle(definitionTokenRemapper.RemapDefinitionToken interfaceToken &&& 0x00FFFFFF)
+                                )
+                            | HandleKind.TypeSpecification ->
+                                TDR_TypeSpec(TypeSpecHandle(remapEntityToken interfaceToken &&& 0x00FFFFFF))
+                            | kind ->
+                                raise (
+                                    HotReloadUnsupportedEditException(
+                                        $"Added type '{fullName}' implements an interface with unsupported handle kind {kind}; please rebuild."
+                                    )
+                                )
+
+                        interfaceRows.Add(classRowId, interfaceRef)
+
+                    for implHandle in freshTypeDef.GetMethodImplementations() do
+                        let impl = metadataReader.GetMethodImplementation implHandle
+
+                        methodImplRows.Add(
+                            classRowId,
+                            remapMethodDefOrRef fullName impl.MethodBody,
+                            remapMethodDefOrRef fullName impl.MethodDeclaration
+                        )
+
+                let baselineInterfaceImplRowCount = baselineTableRowCounts.[TableNames.InterfaceImpl.Index]
+                let baselineMethodImplRowCount = baselineTableRowCounts.[TableNames.MethodImpl.Index]
+
+                // Both tables sort on the Class column (ECMA-335 II.22.23 / II.22.27;
+                // InterfaceImpl additionally on the Interface coded index); keep the
+                // appended delta rows in the same relative order.
+                let interfaceImplList =
+                    interfaceRows
+                    |> Seq.sortBy (fun (classRowId, interfaceRef) ->
+                        (classRowId, (interfaceRef.RowId <<< 2) ||| interfaceRef.CodedTag))
+                    |> Seq.mapi (fun index (classRowId, interfaceRef) ->
+                        { InterfaceImplRowInfo.RowId = baselineInterfaceImplRowCount + index + 1
+                          ClassTypeDefRowId = classRowId
+                          Interface = interfaceRef })
+                    |> Seq.toList
+
+                let methodImplList =
+                    methodImplRows
+                    |> Seq.sortBy (fun (classRowId, _, _) -> classRowId)
+                    |> Seq.mapi (fun index (classRowId, body, declaration) ->
+                        { MethodImplRowInfo.RowId = baselineMethodImplRowCount + index + 1
+                          ClassTypeDefRowId = classRowId
+                          MethodBody = body
+                          MethodDeclaration = declaration })
+                    |> Seq.toList
+
+                interfaceImplList, methodImplList
+
+        if traceMethodUpdates.Value then
+            for row in interfaceImplRowsSnapshot do
+                printfn
+                    "[fsharp-hotreload][interface-impl] rowId=%d class=%d interface=%A"
+                    row.RowId
+                    row.ClassTypeDefRowId
+                    row.Interface
+
+            for row in methodImplRowsSnapshot do
+                printfn
+                    "[fsharp-hotreload][method-impl] rowId=%d class=%d body=%A declaration=%A"
+                    row.RowId
+                    row.ClassTypeDefRowId
+                    row.MethodBody
+                    row.MethodDeclaration
+
         let baselineHeapOffsets =
             request.Baseline.Metadata.HeapSizes
             |> MetadataHeapOffsets.OfHeapSizes
@@ -4234,6 +4416,8 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 moduleMvid
                 typeDefinitionRowsSnapshot
                 nestedClassRowsSnapshot
+                interfaceImplRowsSnapshot
+                methodImplRowsSnapshot
                 methodDefinitionRowsSnapshot
                 parameterDefinitionRowsSnapshot
                 fieldDefinitionRowsSnapshot

@@ -24,7 +24,9 @@ module internal RudeEditDiagnostics =
         | RudeEditKind.TypeLayoutChange ->
             $"Changing the representation of '{name}' requires a rebuild."
         | RudeEditKind.DeclarationAdded ->
-            $"Adding a new declaration '{name}' requires a rebuild."
+            // The diff message carries the precise reason (e.g. which type
+            // representations can be added under NewTypeDefinition).
+            $"Adding a new declaration '{name}' requires a rebuild. {fallback}"
         | RudeEditKind.DeclarationRemoved ->
             $"Removing the declaration '{name}' requires a rebuild."
         | RudeEditKind.LambdaShapeChange ->

@@ -145,7 +145,13 @@ With the capability the member re-emits as an ordinary update whose Param
 rows carry the new names. Parameter TYPE changes remain `SignatureChange`
 rude edits.
 
-`NewTypeDefinition` gates added-lambda closure classes (Phase C4).
+`NewTypeDefinition` gates added-lambda closure classes (Phase C4) and, as of
+Phase F, USER-DEFINED type additions: adding a class/record/union/struct
+classifies as a `SemanticEditKind.Insert` entity edit when the capability is
+granted (`RudeEditKind.NotSupportedByRuntime` naming it otherwise); other
+representations (interfaces, enums, delegates) stay `DeclarationAdded` rude
+with precise messages. The new type's member bindings ride along with the
+entity edit and are exempt from the existing-type member-addition gates.
 
 ## Roslyn references
 

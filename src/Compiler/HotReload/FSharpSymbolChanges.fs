@@ -77,6 +77,13 @@ module FSharpSymbolChanges =
         }
         |> Seq.distinctBy (fun symbol -> struct (symbol.Path, symbol.LogicalName, symbol.Stamp))
         |> Seq.toList
+    /// Entity symbols classified as ADDED (new type definitions). Their symbol paths
+    /// mirror the IL type name (the diff projects CompiledFullName segments), so the
+    /// delta emitter can match them against fresh-compile TypeDefs; they must NOT be
+    /// resolved against baseline type tokens (no baseline row exists).
+    let addedEntitySymbols (changes: FSharpSymbolChanges) : SymbolId list =
+        changes.Added |> List.filter (fun symbol -> symbol.Kind = SymbolKind.Entity)
+
     /// Extracts synthesized members classified as added.
     let synthesizedAdded (changes: FSharpSymbolChanges) : SymbolId list =
         changes.Synthesized
