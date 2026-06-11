@@ -276,12 +276,11 @@ read `default(T)`, new instances run the updated ctor and see initializers).
   and members the runtime could not link. Exposed by the mixed-additions
   chain (gen 1 update+add in the same table), latent before B2/B3.
 - Divergences from the recorded C# templates, all deliberate this slice:
-  custom-attribute rows on added members are not emitted (C# adds
-  `[CompilerGenerated]`/`[DebuggerBrowsable]` on backing fields and
-  accessors); EncLog group ordering is the established F# one (see the C4
-  notes) rather than Roslyn's strict by-table interleaving; F# auto-property
-  backing fields keep their F# names (`NewProp@`) instead of C#'s
-  `<NewProp>k__BackingField`.
+  EncLog group ordering is the established F# one (see the C4 notes) rather
+  than Roslyn's strict by-table interleaving; F# auto-property backing fields
+  keep their F# names (`NewProp@`) instead of C#'s `<NewProp>k__BackingField`.
+  (Custom-attribute rows on added members were deferred here and are emitted
+  as of Phase F — see "Custom attribute rows" below.)
 
 ## New type definitions (Phase C4: added closure classes)
 
@@ -588,11 +587,55 @@ field capability + `GenericAddFieldToExistingType`. See
   surface through the existing lowered-shape classifiers (state machine /
   lambda shape) or the emitter's fail-closed gates with precise messages.
 
+## Custom attribute rows (Phase F)
+
+### Added members (sub-slice 1)
+
+The recurring B1b/C4 gap is closed: members ADDED by a delta now carry their
+fresh-compile CustomAttribute rows. The C# reference templates show the
+pattern (`prop_add`: 4 CA rows — `[CompilerGenerated]`/`[DebuggerBrowsable]`
+on the backing field and accessors; `added lambda`: `[CompilerGenerated]` on
+the new TypeDef), recorded as plain Default EncLog entries / EncMap adds
+appended past the baseline CustomAttribute row count.
+
+F# emission (`IlxDeltaEmitter.buildCustomAttributeRows`):
+
+- Added METHODS were already walked by the method-row loop; their CA value
+  blobs now enter the DELTA blob heap (previously the fresh compile's heap
+  offset was reused, which is garbage against the baseline+delta layout —
+  reflection could not decode the attribute value).
+- Added FIELDS / PROPERTIES / EVENTS / TYPES are walked from the added-token
+  maps: each fresh-compile attribute row becomes a CustomAttribute row add
+  whose parent is the new delta row (`HCA_Field`/`HCA_Property`/`HCA_Event`/
+  `HCA_TypeDef`), with the constructor remapped through the content-validated
+  MemberRef reuse/append path and the value blob written to the delta heap.
+- All appended CA rows are ordered by the HasCustomAttribute parent coded
+  index (ECMA-335 II.22.10 sort key; Roslyn DeltaMetadataWriter parity) and
+  renumbered contiguously past the chained baseline row count.
+
+What F#'s lowering actually decorates (validated against a fresh fsc
+compile): module-value properties carry `[CompilationMapping(Value)]` and
+their startup-class backing fields `[DebuggerBrowsable(Never)]` (+
+`[CompilerGenerated]`/`[DebuggerNonUserCode]` on `init@`); auto-property
+accessors carry `[CompilerGenerated]`/`[DebuggerNonUserCode]` (the property
+row and the `Name@` backing field carry nothing — unlike C#'s
+`k__BackingField`); user attributes (e.g. `[<Obsolete>]`) ride on the added
+member like any other row.
+
+Runtime evidence (component `AttributeEditTests`): an added module function
+with `[<Obsolete("warn")>]` exposes the attribute (and its message — the
+delta-heap value blob decodes) through reflection after ApplyUpdate; an added
+module value's property reports `CompilationMapping(Value)`; added accessors
+report `[CompilerGenerated]`; the template test pins Default-op CA EncLog
+entries, parent-sorted physical rows, and Field-/Property-parented rows.
+
+Known scoping: CA rows on added PARAM rows are not emitted (F#'s lowering
+does not decorate parameters in the supported scenarios); re-emitted CA rows
+of UPDATED methods keep the historic append behavior (Roslyn updates the
+prior generation's rows in place — see sub-slice 2).
+
 ## Known gaps / later slices
 
-- Custom attributes on added fields/properties (e.g. `DebuggerBrowsable` on
-  backing fields, `CompilationMapping` on the module-value property) are not
-  emitted into the delta yet; the members function without them.
 - GenericParamConstraint rows are not emitted: added generic definitions
   with IL-constrained typars fail closed (see "Generic edits" above).
 - mdv renders `<bad metadata>` after every non-empty member-list range in EnC
