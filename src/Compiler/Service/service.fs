@@ -563,6 +563,179 @@ type internal FSharpHotReloadService
         let capabilities = HotReloadCapability.current
         FSharpHotReloadCapabilities.FromInternalFlags(capabilities.Flags)
 
+/// <summary>
+/// A hot reload (Edit and Continue) session — the F# analogue of Roslyn's
+/// <c>DebuggingSession</c>. One instance per host session (a <c>dotnet watch</c> run, a debug
+/// session), created via <c>FSharpChecker.CreateHotReloadSession</c>. The session owns
+/// per-project committed state (snapshot view, emit baseline, generation chain) keyed by
+/// <c>FSharpProjectIdentifier</c>, plus session-wide runtime capabilities and active
+/// statements. Sessions are fully independent instances: creating a second session does not
+/// disturb the first, and disposing one ends only that session.
+/// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
+[<Sealed; AutoSerializable(false)>]
+type FSharpHotReloadSession
+    internal
+    (
+        hotReloadService: FSharpHotReloadService,
+        parseAndCheckSnapshot: FSharpProjectSnapshot -> string -> Async<FSharpCheckProjectResults>,
+        tryGetOutputPath: FSharpProjectSnapshot -> string option
+    ) =
+
+    let mutable disposed = 0
+
+    // Output paths explicitly supplied to AddProject, consulted before deriving the path from
+    // the snapshot's command-line options (hosts whose snapshots carry no -o option).
+    let outputPathOverrides =
+        Dictionary<FSharp.Compiler.HotReloadState.HotReloadProjectKey, string>()
+
+    let outputPathGate = obj ()
+
+    let projectKeyOfSnapshot (projectSnapshot: FSharpProjectSnapshot) =
+        let identifier = projectSnapshot.Identifier
+        FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(identifier.ProjectFileName, identifier.OutputFileName)
+
+    let resolveOutputPath (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey) (projectSnapshot: FSharpProjectSnapshot) =
+        let overridePath =
+            lock outputPathGate (fun () ->
+                match outputPathOverrides.TryGetValue projectKey with
+                | true, path -> Some path
+                | false, _ -> None)
+
+        match overridePath with
+        | Some path -> Some path
+        | None -> tryGetOutputPath projectSnapshot
+
+    let ensureNotDisposed () =
+        if disposed = 1 then
+            raise (ObjectDisposedException(nameof FSharpHotReloadSession))
+
+    /// <summary>
+    /// Captures the baseline of one more project into the session (Roslyn analog: capturing the
+    /// per-module <c>EmitBaseline</c> when a module of the debugged process loads). The project's
+    /// built output must exist on disk; build it before adding. Adding a project the session
+    /// already tracks recaptures its baseline; other projects and the session-wide
+    /// capability/active-statement state are untouched.
+    /// </summary>
+    /// <param name="projectSnapshot">The snapshot describing the project to track.</param>
+    /// <param name="outputPath">Overrides the output-assembly path derived from the snapshot's
+    /// command-line options; required when the snapshot carries no output option.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member _.AddProject(projectSnapshot: FSharpProjectSnapshot, ?outputPath: string, ?userOpName: string) =
+        async {
+            ensureNotDisposed ()
+            let opName = defaultArg userOpName "Unknown"
+
+            use _ =
+                Activity.start "FSharpHotReloadSession.AddProject" [|
+                    Activity.Tags.userOpName, opName
+                    Activity.Tags.project, projectSnapshot.ProjectFileName
+                |]
+
+            let projectKey = projectKeyOfSnapshot projectSnapshot
+
+            match outputPath with
+            | Some path -> lock outputPathGate (fun () -> outputPathOverrides[projectKey] <- path)
+            | None -> ()
+
+            return!
+                hotReloadService.AddHotReloadProject
+                    projectKey
+                    (fun () -> parseAndCheckSnapshot projectSnapshot opName)
+                    (resolveOutputPath projectKey projectSnapshot)
+        }
+
+    /// <summary>
+    /// Emits a metadata/IL/PDB delta for the given project by diffing the snapshot's typed trees
+    /// and rebuilt output against the project's COMMITTED baseline. The emitted update is staged
+    /// as pending: after the host applies it (<c>MetadataUpdater.ApplyUpdate</c>), call
+    /// <see cref="M:FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession.Commit"/> to advance the
+    /// committed view, or <see cref="M:FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession.Discard"/>
+    /// to drop it (Roslyn's EmitSolutionUpdate/CommitSolutionUpdate/DiscardSolutionUpdate split).
+    /// Returns <c>NoActiveSession</c> for projects the session does not track.
+    /// </summary>
+    /// <param name="projectSnapshot">The snapshot describing the edited project.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member _.EmitDelta(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
+        async {
+            ensureNotDisposed ()
+            let opName = defaultArg userOpName "Unknown"
+
+            use _ =
+                Activity.start "FSharpHotReloadSession.EmitDelta" [|
+                    Activity.Tags.userOpName, opName
+                    Activity.Tags.project, projectSnapshot.ProjectFileName
+                |]
+
+            let projectKey = projectKeyOfSnapshot projectSnapshot
+
+            return!
+                hotReloadService.EmitHotReloadDelta
+                    projectKey
+                    (fun () -> parseAndCheckSnapshot projectSnapshot opName)
+                    (resolveOutputPath projectKey projectSnapshot)
+                    true
+        }
+
+    /// <summary>
+    /// Commits ALL pending project updates atomically — the runtime applied them, so the
+    /// committed per-project baselines, diff inputs and generation counters advance together
+    /// (Roslyn's <c>CommitSolutionUpdate</c>). No-op when nothing is pending.
+    /// </summary>
+    member _.Commit() =
+        ensureNotDisposed ()
+        hotReloadService.CommitSession()
+
+    /// <summary>
+    /// Discards ALL pending project updates — the host did not apply them, so the next emit
+    /// diffs against the unchanged committed view (Roslyn's <c>DiscardSolutionUpdate</c>).
+    /// </summary>
+    member _.Discard() =
+        ensureNotDisposed ()
+        hotReloadService.DiscardSession()
+
+    /// <summary>
+    /// Replaces the session-wide runtime capability set consulted by edit classification (for
+    /// example after the target process reported its Edit and Continue capabilities). Applies to
+    /// every project in the session; already-emitted deltas are unaffected.
+    /// </summary>
+    /// <param name="capabilities">Runtime capability names (for example <c>AddMethodToExistingType</c>); unknown names are ignored.</param>
+    member _.UpdateCapabilities(capabilities: string seq) =
+        ensureNotDisposed ()
+        hotReloadService.SetSessionCapabilities(EditAndContinueCapabilities.Parse capabilities)
+
+    /// <summary>
+    /// Replaces the session-wide debugger-supplied active statements consulted by the next emit
+    /// (the break state describes the host process, not one project). Pass an empty sequence to
+    /// clear the set. Mirrors Roslyn's per-edit-session active-statement fetch, inverted to a
+    /// push: the host reports the break state before emitting.
+    /// </summary>
+    member _.SetActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo seq) =
+        ensureNotDisposed ()
+        hotReloadService.SetSessionActiveStatements(activeStatements)
+
+    /// <summary>Identifiers of the projects the session currently tracks.</summary>
+    member _.ProjectIdentifiers =
+        ensureNotDisposed ()
+
+        hotReloadService.ProjectKeys
+        |> List.choose (function
+            | FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(projectFileName, outputFileName) ->
+                Some(ProjectSnapshot.FSharpProjectIdentifier(projectFileName, outputFileName))
+            | FSharp.Compiler.HotReloadState.HotReloadProjectKey.Ambient -> None)
+
+    /// Test seam: the per-project session view (committed baseline joined with the
+    /// session-wide capability/active-statement state).
+    member internal _.TryGetProjectView(projectSnapshot: FSharpProjectSnapshot) =
+        hotReloadService.TryGetProjectSession(projectKeyOfSnapshot projectSnapshot)
+
+    /// <summary>Ends the session: all per-project state is dropped. Subsequent member calls
+    /// raise <see cref="T:System.ObjectDisposedException"/>. Other sessions are unaffected.</summary>
+    interface IDisposable with
+        member _.Dispose() =
+            if Interlocked.Exchange(&disposed, 1) = 0 then
+                hotReloadService.EndSession()
+
 [<Sealed; AutoSerializable(false)>]
 // There is typically only one instance of this type in an IDE process.
 type FSharpChecker
@@ -1168,6 +1341,23 @@ type FSharpChecker
                     (fun () -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName))
                     (tryGetOutputPathFromProjectSnapshot projectSnapshot)
         }
+
+    member this.CreateHotReloadSession(?capabilities: string seq) =
+        ensureKeepAssemblyContents ()
+        use _ = Activity.startNoTags "FSharpChecker.CreateHotReloadSession"
+
+        // The session owns a private store instance that is NEVER registered as the
+        // process-wide store: it is fully independent of the checker's default session
+        // and of any other session created from this (or another) checker.
+        let sessionStore = FSharp.Compiler.HotReloadState.createSessionStore ()
+        let sessionService = createHotReloadService sessionStore
+        sessionService.SetSessionCapabilities(FSharpChecker.ParseHotReloadCapabilities capabilities)
+
+        new FSharpHotReloadSession(
+            sessionService,
+            (fun projectSnapshot opName -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName)),
+            tryGetOutputPathFromProjectSnapshot
+        )
 
     member _.EndHotReloadSession() =
         hotReloadService.EndSession()

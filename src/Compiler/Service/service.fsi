@@ -80,6 +80,88 @@ type FSharpHotReloadCapabilities =
     member SupportsMultipleGenerations: bool
     member SupportsRuntimeApply: bool
 
+/// <summary>
+/// A hot reload (Edit and Continue) session — the F# analogue of Roslyn's
+/// <c>DebuggingSession</c>. One instance per host session (a <c>dotnet watch</c> run, a debug
+/// session), created via <c>FSharpChecker.CreateHotReloadSession</c>. The session owns
+/// per-project committed state (snapshot view, emit baseline, generation chain) keyed by
+/// <c>FSharpProjectIdentifier</c>, plus session-wide runtime capabilities and active
+/// statements. Sessions are fully independent instances: creating a second session does not
+/// disturb the first, and disposing one (which ends it) leaves the others untouched.
+/// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
+[<Sealed; AutoSerializable(false)>]
+type FSharpHotReloadSession =
+
+    interface IDisposable
+
+    /// <summary>
+    /// Captures the baseline of one more project into the session (Roslyn analog: capturing the
+    /// per-module <c>EmitBaseline</c> when a module of the debugged process loads). The project's
+    /// built output must exist on disk; build it before adding. Adding a project the session
+    /// already tracks recaptures its baseline; other projects and the session-wide
+    /// capability/active-statement state are untouched.
+    /// </summary>
+    /// <param name="projectSnapshot">The snapshot describing the project to track.</param>
+    /// <param name="outputPath">Overrides the output-assembly path derived from the snapshot's
+    /// command-line options; required when the snapshot carries no output option.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member AddProject:
+        projectSnapshot: FSharpProjectSnapshot * ?outputPath: string * ?userOpName: string ->
+            Async<Result<unit, FSharpHotReloadError>>
+
+    /// <summary>
+    /// Emits a metadata/IL/PDB delta for the given project by diffing the snapshot's typed trees
+    /// and rebuilt output against the project's COMMITTED baseline. The emitted update is staged
+    /// as pending: after the host applies it (<c>MetadataUpdater.ApplyUpdate</c>), call
+    /// <see cref="M:FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession.Commit"/> to advance the
+    /// committed view, or <see cref="M:FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession.Discard"/>
+    /// to drop it (Roslyn's EmitSolutionUpdate/CommitSolutionUpdate/DiscardSolutionUpdate split).
+    /// Returns <c>NoActiveSession</c> for projects the session does not track.
+    /// </summary>
+    /// <param name="projectSnapshot">The snapshot describing the edited project.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member EmitDelta:
+        projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+            Async<Result<FSharpHotReloadDelta, FSharpHotReloadError>>
+
+    /// <summary>
+    /// Commits ALL pending project updates atomically — the runtime applied them, so the
+    /// committed per-project baselines, diff inputs and generation counters advance together
+    /// (Roslyn's <c>CommitSolutionUpdate</c>). No-op when nothing is pending.
+    /// </summary>
+    member Commit: unit -> unit
+
+    /// <summary>
+    /// Discards ALL pending project updates — the host did not apply them, so the next emit
+    /// diffs against the unchanged committed view (Roslyn's <c>DiscardSolutionUpdate</c>).
+    /// </summary>
+    member Discard: unit -> unit
+
+    /// <summary>
+    /// Replaces the session-wide runtime capability set consulted by edit classification (for
+    /// example after the target process reported its Edit and Continue capabilities). Applies to
+    /// every project in the session; already-emitted deltas are unaffected.
+    /// </summary>
+    /// <param name="capabilities">Runtime capability names (for example <c>AddMethodToExistingType</c>); unknown names are ignored.</param>
+    member UpdateCapabilities: capabilities: string seq -> unit
+
+    /// <summary>
+    /// Replaces the session-wide debugger-supplied active statements consulted by the next emit
+    /// (the break state describes the host process, not one project). Pass an empty sequence to
+    /// clear the set. Mirrors Roslyn's per-edit-session active-statement fetch, inverted to a
+    /// push: the host reports the break state before emitting.
+    /// </summary>
+    member SetActiveStatements: activeStatements: FSharpManagedActiveStatementDebugInfo seq -> unit
+
+    /// <summary>Identifiers of the projects the session currently tracks.</summary>
+    member ProjectIdentifiers: ProjectSnapshot.FSharpProjectIdentifier list
+
+    /// Test seam: the per-project session view (committed baseline joined with the
+    /// session-wide capability/active-statement state).
+    member internal TryGetProjectView:
+        projectSnapshot: FSharpProjectSnapshot -> FSharp.Compiler.HotReloadState.HotReloadSession voption
+
 /// Used to parse and check F# source code.
 [<Sealed; AutoSerializable(false)>]
 type public FSharpChecker =
@@ -175,6 +257,21 @@ type public FSharpChecker =
     member EmitHotReloadDelta:
         projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
             Async<Result<FSharpHotReloadDelta, FSharpHotReloadError>>
+
+    /// <summary>
+    /// Creates an independent hot reload session (the F# analogue of Roslyn's
+    /// <c>DebuggingSession</c>): per-project committed baselines and generation chains keyed by
+    /// project identity, with session-wide capabilities and active statements. The session is
+    /// fully independent of the checker's default (process-wide) session and of other sessions;
+    /// dispose it to end it. Requires the checker to be created with
+    /// <c>keepAssemblyContents = true</c>.
+    /// </summary>
+    /// <param name="capabilities">Optional runtime edit-and-continue capability names (for example
+    /// <c>AddMethodToExistingType</c>), as reported by the target runtime. Unknown names are
+    /// ignored. When omitted, only baseline edits (method-body updates) are assumed supported;
+    /// use <c>FSharpHotReloadSession.UpdateCapabilities</c> when the process reports them later.</param>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member CreateHotReloadSession: ?capabilities: string seq -> FSharpHotReloadSession
 
     /// <summary>Ends the active process-wide hot reload session, if any.</summary>
     member EndHotReloadSession: unit -> unit

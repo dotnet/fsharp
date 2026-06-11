@@ -2246,6 +2246,7 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpC
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Instance()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities HotReloadCapabilities
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpHotReloadCapabilities get_HotReloadCapabilities()
+FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession CreateHotReloadSession(Microsoft.FSharp.Core.FSharpOption`1[System.Collections.Generic.IEnumerable`1[System.String]])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions GetProjectOptionsFromCommandLineArgs(System.String, System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.Tokenization.FSharpTokenInfo[][] TokenizeFile(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 ActualCheckFileCount
@@ -2418,6 +2419,14 @@ FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 GetHashCode(System.Coll
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 Tag
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier] ProjectIdentifiers
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier] get_ProjectIdentifiers()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpResult`2[FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta,FSharp.Compiler.CodeAnalysis.FSharpHotReloadError]] EmitDelta(FSharpProjectSnapshot, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpResult`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.CodeAnalysis.FSharpHotReloadError]] AddProject(FSharpProjectSnapshot, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Void Commit()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Void Discard()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Void SetActiveStatements(System.Collections.Generic.IEnumerable`1[FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo])
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Void UpdateCapabilities(System.Collections.Generic.IEnumerable`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo)
 FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo: Boolean Equals(System.Object)
