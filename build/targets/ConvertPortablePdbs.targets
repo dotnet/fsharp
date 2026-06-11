@@ -10,7 +10,10 @@
     <PropertyGroup>
       <ConvertedPdbsDirectory>$(FinalOutputPath)\ConvertedPdbs</ConvertedPdbsDirectory>
       <PdbConverterExe>$(NuGetPackageRoot)Microsoft.DiaSymReader.Pdb2Pdb\$(MicrosoftDiaSymReaderPdb2PdbPackageVersion)\tools\Pdb2Pdb.exe</PdbConverterExe>
-      <PdbConverterArgs>"$(TargetPath)" /out "$(ConvertedPdbsDirectory)\$(TargetName).pdb" /verbose /srcsvrvar SRC_INDEX=public</PdbConverterArgs>
+      <!-- Block 5.7 Patch D: Pdb2Pdb 1.1.0-beta2-20527-01 (S5.5 remediation pin) does not accept
+           legacy /verbose flag, and rejects /srcsvrvar when /sourcelink is not specified.
+           Strip both to keep this PDB conversion step working on the modern Pdb2Pdb. -->
+      <PdbConverterArgs>"$(TargetPath)" /out "$(ConvertedPdbsDirectory)\$(TargetName).pdb"</PdbConverterArgs>
     </PropertyGroup>
 
     <MakeDir Directories="$(ConvertedPdbsDirectory)" />

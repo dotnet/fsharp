@@ -1,6 +1,10 @@
 <Project>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(DisableLocalization)' != 'true'">
+    <!-- Block 5.7 Patch F: gate XliffTasks PackageReference on $(DisableLocalization).
+         Without this, NuGet's automatic .props/.targets injection imports XliffTasks unconditionally
+         even when DisableLocalization=true, causing duplicate-source-file errors on projects with
+         <Link>FSCore.resx</Link> metadata. Honors the S7 deferral plan for XliffTasks. -->
     <PackageReference Include="XliffTasks" Version="$(XliffTasksPackageVersion)" />
   </ItemGroup>
 

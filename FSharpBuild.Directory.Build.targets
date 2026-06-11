@@ -4,7 +4,12 @@
     <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
     <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp'))">coreclr</TargetDotnetProfile>
     <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('net4'))">net40</TargetDotnetProfile>
-    <ActualOutputPath Condition="'$(Language)' != 'VB'">$(MSBuildProjectDirectory)\$(OutputPath)</ActualOutputPath>
+    <!-- Block 5.7 Patch C: SDK-style projects emit absolute OutputPath under artifacts\bin\<proj>\Release.
+         Legacy projects emit relative path. Prepending $(MSBuildProjectDirectory) to an already-absolute
+         path produces malformed "<projDir>\Q:\..." paths that fail the Copy with MSB3021. Guard the
+         prepend on IsPathRooted=false. -->
+    <ActualOutputPath Condition="'$(Language)' != 'VB' AND !$([System.IO.Path]::IsPathRooted('$(OutputPath)'))">$(MSBuildProjectDirectory)\$(OutputPath)</ActualOutputPath>
+    <ActualOutputPath Condition="'$(Language)' != 'VB' AND $([System.IO.Path]::IsPathRooted('$(OutputPath)'))">$(OutputPath)</ActualOutputPath>
     <ActualOutputPath Condition="'$(Language)' == 'VB'">$(OutputPath)</ActualOutputPath>
     <FinalOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\bin</FinalOutputPath>
     <FinalIntermediateOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\obj</FinalIntermediateOutputPath>
