@@ -4,9 +4,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.OperationProgress;
@@ -50,17 +52,42 @@ internal partial class SolutionExplorerInProcess
         await AddProjectAsync(name, template, cancellationToken);
     }
 
-    // Repo root from compile-time source path — no runtime resolution needed.
+    // Repo root from compile-time source path -- no runtime resolution needed.
     private static readonly string RepoRoot = Path.GetFullPath(Path.Combine(
         Path.GetDirectoryName(GetSourceFilePath())!, "..", "..", "..", ".."));
+
+    // Configuration the test assembly itself was built with (Release on CI, typically Debug locally).
+    // Layout: <RepoRoot>/artifacts/bin/FSharp.Editor.IntegrationTests/<Configuration>/<tfm>/FSharp.Editor.IntegrationTests.dll
+    // The synthesized standalone project (CreateStandaloneProjectFile) must reference the matching
+    // fsc.dll, otherwise the VS build fails with "Could not find file ...artifacts/bin/fsc/<wrong>/<tfm>/fsc.dll".
+    private static readonly string LocalCompilerConfiguration = new DirectoryInfo(
+        Path.GetDirectoryName(typeof(SolutionExplorerInProcess).Assembly.Location)!).Parent!.Name;
+
+    // Repo-pinned dotnet host installed by Arcade. Falls back to PATH lookup if not present
+    // (developer scenarios that build the integration project outside the repo's eng infra).
+    private static readonly string DotnetExe =
+        File.Exists(Path.Combine(RepoRoot, ".dotnet", "dotnet.exe"))
+            ? Path.Combine(RepoRoot, ".dotnet", "dotnet.exe")
+            : "dotnet";
 
     private static string CreateStandaloneProjectFile()
     {
         var propsPath = Path.Combine(RepoRoot, "UseLocalCompiler.Directory.Build.props");
 
+        // Sanity-check the inferred configuration: matching fsc must exist before VS tries to build.
+        // Validated here (not in the static initializer) so tests that don't use the standalone path
+        // can still load this type when fsc hasn't been built locally.
+        var fscRoot = Path.Combine(RepoRoot, "artifacts", "bin", "fsc", LocalCompilerConfiguration);
+        if (!Directory.Exists(fscRoot))
+        {
+            throw new InvalidOperationException(
+                $"Inferred LocalCompilerConfiguration='{LocalCompilerConfiguration}' but no built fsc found at '{fscRoot}'. " +
+                $"The synthesized standalone fsproj would fail to load fsc.dll -- build the F# compiler in this configuration first.");
+        }
+
         return $@"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <LocalFSharpCompilerConfiguration>Debug</LocalFSharpCompilerConfiguration>
+    <LocalFSharpCompilerConfiguration>{LocalCompilerConfiguration}</LocalFSharpCompilerConfiguration>
     <LocalFSharpCompilerPath>{RepoRoot}</LocalFSharpCompilerPath>
   </PropertyGroup>
   <Import Project=""{propsPath}"" />
@@ -115,22 +142,108 @@ internal partial class SolutionExplorerInProcess
 
     public async Task AddProjectAsync(string projectName, string projectTemplate, CancellationToken cancellationToken)
     {
+        // dotnet new must run off the UI thread (it's a synchronous shell-out).
+        var solutionDir = await GetDirectoryNameAsync(cancellationToken);
+        var projectDir = Path.Combine(solutionDir, projectName);
+
+        await TaskScheduler.Default;
+        await RunDotnetNewAsync(projectTemplate, projectName, projectDir, cancellationToken);
+
+        var projectFilePath = Path.Combine(projectDir, $"{projectName}.fsproj");
+        if (!File.Exists(projectFilePath))
+        {
+            throw new InvalidOperationException(
+                $"'dotnet new {projectTemplate}' completed but did not produce '{projectFilePath}'.");
+        }
+
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-
-        var projectPath = Path.Combine(await GetDirectoryNameAsync(cancellationToken), projectName);
-        var projectTemplatePath = await GetProjectTemplatePathAsync(projectTemplate, cancellationToken);
-        var solution = await GetRequiredGlobalServiceAsync<SVsSolution, IVsSolution6>(cancellationToken);
-        ErrorHandler.ThrowOnFailure(solution.AddNewProjectFromTemplate(projectTemplatePath, null, null, projectPath, projectName, null, out _));
-    }
-
-    private async Task<string> GetProjectTemplatePathAsync(string projectTemplate, CancellationToken cancellationToken)
-    {
-        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-
         var dte = await GetRequiredGlobalServiceAsync<SDTE, EnvDTE.DTE>(cancellationToken);
         var solution = (EnvDTE80.Solution2)dte.Solution;
+        _ = solution.AddFromFile(projectFilePath, false);
 
-        return solution.GetProjectTemplate(projectTemplate, "FSharp");
+        // Auto-open the project's main .fs file. The previous AddNewProjectFromTemplate path opened
+        // the file marked OpenInEditor="true" in the .vstemplate; tests rely on this implicit open
+        // (e.g. CodeActionTests calls Editor.SetTextAsync immediately afterwards).
+        // SDK templates currently produce exactly one .fs file per project (Library.fs / Program.fs / Tests.fs).
+        // If that ever changes (e.g. xunit template growing a Program.fs), fail loudly rather than
+        // silently opening the wrong file and producing confusing content-diff failures downstream.
+        var fsFiles = Directory.EnumerateFiles(projectDir, "*.fs", SearchOption.TopDirectoryOnly)
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (fsFiles.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"Expected exactly one *.fs file in '{projectDir}' produced by 'dotnet new {projectTemplate}', " +
+                $"found {fsFiles.Count}: [{string.Join(", ", fsFiles.Select(Path.GetFileName))}]. " +
+                $"Update AddProjectAsync's auto-open logic to pick the correct main file for this template.");
+        }
+        await OpenFileAsync(projectName, Path.GetFileName(fsFiles[0]), cancellationToken);
+    }
+
+    // Shells out to `dotnet new <template> -lang F# -o <dir> --name <name>` for project creation.
+    // Replaces solution.GetProjectTemplate(...) + AddNewProjectFromTemplate which required VS-side
+    // .vstemplate registration; the SDK templates are the source of truth in modern .NET F# workflows
+    // and avoid coupling tests to VS template-cache state in the experimental hive.
+    //
+    // Hermeticity:
+    //   * WorkingDirectory=RepoRoot ensures global.json is found and the repo-pinned SDK is used
+    //     (otherwise dotnet new walks up from VS's cwd and may pick up a different machine SDK,
+    //     which can produce subtly different template output and break content-equality assertions).
+    //   * DotnetExe prefers the Arcade-installed dotnet at $RepoRoot/.dotnet/dotnet.exe.
+    //   * --no-restore: dotnet new for xunit triggers an implicit restore by default; tests that
+    //     need restore call SolutionExplorer.RestoreNuGetPackagesAsync via VS's restore service afterwards.
+    private static async Task RunDotnetNewAsync(string template, string name, string outputDir, CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(outputDir);
+
+        var psi = new ProcessStartInfo(DotnetExe, $"new {template} -lang F# -o \"{outputDir}\" --name \"{name}\" --no-restore")
+        {
+            WorkingDirectory = RepoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        using var process = Process.Start(psi)
+            ?? throw new InvalidOperationException($"Failed to start '{DotnetExe} new {template}'.");
+
+        // Hook cancellation to actually terminate the child process. On net472 we don't have
+        // Process.WaitForExitAsync(CancellationToken); a Task.Run+WaitForExit-only approach would
+        // leak the process and let a hung 'dotnet new' burn the 120-min job timeout.
+        using var registration = cancellationToken.Register(() =>
+        {
+            try
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill();
+                }
+            }
+            catch
+            {
+                // Process already exited or kill races; nothing actionable.
+            }
+        });
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+        await Task.Run(() => process.WaitForExit(), CancellationToken.None);
+
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
+
+        if (process.ExitCode != 0)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var message = new StringBuilder()
+                .AppendLine($"'{DotnetExe} new {template} -lang F# -o \"{outputDir}\" --name \"{name}\" --no-restore' failed with exit code {process.ExitCode}.")
+                .AppendLine("Standard Output:").AppendLine(stdout)
+                .AppendLine("Standard Error:").AppendLine(stderr)
+                .ToString();
+            throw new InvalidOperationException(message);
+        }
     }
 
     public async Task RestoreNuGetPackagesAsync(CancellationToken cancellationToken)
