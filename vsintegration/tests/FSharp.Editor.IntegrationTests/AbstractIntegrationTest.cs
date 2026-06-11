@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Microsoft.CodeAnalysis.Testing
 {
-    [IdeSettings(MinVersion = VisualStudioVersion.VS2022)]
+    [IdeSettings(MinVersion = VisualStudioVersion.VS18, MaxVersion = VisualStudioVersion.VS18)]
     public abstract class AbstractIntegrationTest : AbstractIdeIntegrationTest
     {
         protected CancellationToken TestToken => HangMitigatingCancellationToken;
