@@ -3941,3 +3941,264 @@ type Hub() =
                 slot.SetValue(gen3Instance, 11)
                 Assert.Equal(11, slot.GetValue(gen3Instance) :?> int)
                 printfn "[mixedadd] SUCCESS: method/field/property additions chained across three generations")
+
+    // ------------------------------------------------------------------------------
+    // The dotnet-watch force-rebuild topology: the baseline contains NO lambdas, and
+    // every generation's on-disk output is produced by a SEPARATE flag-on fsc build
+    // (no session state in that process), so the closure added in generation 1 carries
+    // the gen-0 occurrence-derived name {member}@hotreload#g0_o{chain} - NOT an
+    // allocator #g1 name. The module-level value places startup-init methods AFTER the
+    // closure's rows in the fresh compile's MethodDef table, so the closure rows added
+    // by the generation-1 delta (which chain PAST the baseline tables) do NOT coincide
+    // with the closure's rows in later fresh compiles.
+    let private forceRebuildBaselineSource =
+        """
+module Program
+
+type Greeter =
+    static member Message() =
+        "hello message"
+
+let greetingPrefix = System.String.Concat("fs", "harp")
+
+let probe () = greetingPrefix + "|" + Greeter.Message()
+"""
+
+    // Generation 1: a lambda is ADDED to the lambda-free Message (its closure class is
+    // new metadata; the separate flag-on rebuild names it Message@hotreload#g0_o0).
+    let private forceRebuildGen1Source =
+        """
+module Program
+
+type Greeter =
+    static member Message() =
+        let parts = [ "lambda"; "message" ] |> List.map (fun s -> s.ToUpper())
+        String.concat " " parts
+
+let greetingPrefix = System.String.Concat("fs", "harp")
+
+let probe () = greetingPrefix + "|" + Greeter.Message()
+"""
+
+    // Generation 2: body edit of the generation-1-added lambda (ToUpper -> ToLower).
+    // The closure class chained into the session baseline, so this is an in-place
+    // update of its methods - including the re-emitted .cctor/.ctor rows, whose bodies
+    // must be read from the FRESH compile's row coordinates, not the chained baseline
+    // row ids (the fresh compile lays the closure out at its natural position, before
+    // the startup-init methods).
+    let private forceRebuildGen2Source =
+        """
+module Program
+
+type Greeter =
+    static member Message() =
+        let parts = [ "lambda"; "message" ] |> List.map (fun s -> s.ToLower())
+        String.concat " " parts
+
+let greetingPrefix = System.String.Concat("fs", "harp")
+
+let probe () = greetingPrefix + "|" + Greeter.Message()
+"""
+
+    [<Fact>]
+    let ``Added closure survives a second edit when the on-disk output is force-rebuilt between generations`` () =
+        // Repro of the dotnet-watch gen-2 crash: baseline without lambdas is built and
+        // session-started from disk; between edits the host force-rebuilds the on-disk
+        // dll with a separate flag-on fsc (simulated here by pre-building each
+        // generation's output through the command-line fsc path with ALL in-process
+        // session state reset, then restoring those exact bytes at edit time).
+        // Generation 1 adds a List.map lambda (new closure TypeDef, named #g0_o0 by the
+        // session-less rebuild's baseline derivation); generation 2 edits the lambda
+        // body. Before the fresh-vs-baseline row coordinate fix, generation 2 re-emitted
+        // the added closure's .cctor/.ctor/Invoke rows with bodies read from the WRONG
+        // fresh rows (the chained baseline row ids), and invoking the method after
+        // ApplyUpdate crashed with InvalidProgramException in the closure's .cctor.
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let projectDir = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-force-rebuild", System.Guid.NewGuid().ToString("N"))
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "ForceRebuild.fs")
+            let dllPath = Path.Combine(projectDir, "ForceRebuild.dll")
+            let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
+            let runtimeDllPath = Path.Combine(projectDir, "ForceRebuild.runtime.dll")
+
+            try
+                File.WriteAllText(fsPath, forceRebuildBaselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString forceRebuildBaselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   "--enable:hotreloaddeltas"
+                                   $"--out:{dllPath}" |] }
+
+                // Pre-build each generation's on-disk output exactly the way the watch
+                // host's force rebuild does: a flag-on fsc compile with NO session state
+                // (process boundary simulated by resetting all in-process state after
+                // each build). --deterministic makes these byte-identical to what a
+                // separate fsc process would produce at edit time.
+                let buildOnDisk (source: string) =
+                    File.WriteAllText(fsPath, source)
+                    checker.InvalidateAll()
+
+                    let compileDiagnostics, _ =
+                        checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                        |> Async.RunImmediate
+
+                    let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                    if errors.Length > 0 then failwithf "On-disk build failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                    FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+                    File.ReadAllBytes(dllPath), File.ReadAllBytes(pdbPath)
+
+                let gen1DllBytes, gen1PdbBytes = buildOnDisk forceRebuildGen1Source
+                let gen2DllBytes, gen2PdbBytes = buildOnDisk forceRebuildGen2Source
+
+                // The session-less rebuild names the added closure with the BASELINE
+                // (generation-0) occurrence derivation - the watch topology's defining
+                // property (an allocator-driven delta compile would say #g1).
+                let closureTypeNames (dllBytes: byte[]) =
+                    use peReader = new PEReader(ImmutableArray.CreateRange<byte> dllBytes)
+                    let reader = peReader.GetMetadataReader()
+                    reader.TypeDefinitions
+                    |> Seq.map (fun handle -> reader.GetString((reader.GetTypeDefinition handle).Name))
+                    |> Seq.filter (fun name -> name.Contains("@hotreload"))
+                    |> Seq.toList
+
+                Assert.Contains("Message@hotreload#g0_o0", closureTypeNames gen1DllBytes)
+                Assert.Contains("Message@hotreload#g0_o0", closureTypeNames gen2DllBytes)
+
+                // Restore the lambda-free baseline on disk and start the session from it
+                // (the dotnet-watch topology: fsc built it in another process).
+                File.WriteAllText(fsPath, forceRebuildBaselineSource)
+                checker.InvalidateAll()
+
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors = compileDiagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+                if errors.Length > 0 then failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                let capabilities =
+                    [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
+
+                match checker.StartHotReloadSession(projectOptions, capabilities = capabilities) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
+                | Ok () -> ()
+
+                File.Copy(dllPath, runtimeDllPath, true)
+                if File.Exists(pdbPath) then
+                    File.Copy(pdbPath, Path.ChangeExtension(runtimeDllPath, ".pdb"), true)
+
+                let assembly = Assembly.LoadFrom(runtimeDllPath)
+                let moduleType = assembly.GetType("Program", throwOnError = true)
+                let probe = moduleType.GetMethod("probe", BindingFlags.Public ||| BindingFlags.Static)
+
+                Assert.Equal("fsharp|hello message", probe.Invoke(null, [||]) :?> string)
+
+                let applyGeneration gen (source: string) (rebuiltDll: byte[]) (rebuiltPdb: byte[]) (expected: string) =
+                    File.WriteAllText(fsPath, source)
+                    checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                    // The watch host's force rebuild: a separate fsc process rewrites the
+                    // project output between the edit and the delta emission.
+                    File.WriteAllBytes(dllPath, rebuiltDll)
+                    File.WriteAllBytes(pdbPath, rebuiltPdb)
+
+                    match checker.EmitHotReloadDelta(projectOptions) |> Async.RunImmediate with
+                    | Error error -> failwithf "Gen %d EmitHotReloadDelta failed: %A" gen error
+                    | Ok delta ->
+                        let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
+
+                        // The crash mode under repro is InvalidProgramException thrown
+                        // from the added closure's .cctor when the patched method first
+                        // runs; surface it with the generation context.
+                        let value =
+                            try
+                                probe.Invoke(null, [||]) :?> string
+                            with :? TargetInvocationException as ex ->
+                                failwithf "Gen %d invoke crashed after ApplyUpdate: %O" gen ex.InnerException
+
+                        Assert.Equal(expected, value)
+                        delta
+
+                // Generation 1: the added lambda emits a NEW TypeDef row and applies.
+                let baselineTypeDefCount =
+                    use peReader = new PEReader(File.OpenRead runtimeDllPath)
+                    peReader.GetMetadataReader().GetTableRowCount(TableIndex.TypeDef)
+
+                let delta1 =
+                    applyGeneration 1 forceRebuildGen1Source gen1DllBytes gen1PdbBytes "fsharp|LAMBDA MESSAGE"
+
+                let readEncLog (metadata: byte[]) =
+                    use provider =
+                        MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> metadata)
+
+                    provider.GetMetadataReader().GetEditAndContinueLogEntries()
+                    |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+                    |> Seq.toArray
+
+                let gen1TypeDefAdds =
+                    readEncLog delta1.Metadata
+                    |> Array.filter (fun (token, op) ->
+                        token >>> 24 = 0x02 && (token &&& 0x00FFFFFF) > baselineTypeDefCount && op = 0)
+
+                Assert.True(
+                    gen1TypeDefAdds.Length >= 1,
+                    "Expected the generation-1 delta to add the closure's TypeDef row.")
+
+                // Generation 2: body edit of the generation-1-added lambda. The closure's
+                // re-emitted rows must carry bodies read from the FRESH compile's rows;
+                // pre-fix this invoke threw InvalidProgramException in the closure's
+                // .cctor. No new TypeDef rows may appear.
+                let delta2 =
+                    applyGeneration 2 forceRebuildGen2Source gen2DllBytes gen2PdbBytes "fsharp|lambda message"
+
+                let gen2TypeDefAdds =
+                    readEncLog delta2.Metadata
+                    |> Array.filter (fun (token, _) ->
+                        token >>> 24 = 0x02 && (token &&& 0x00FFFFFF) > baselineTypeDefCount + 1)
+
+                Assert.True(
+                    Array.isEmpty gen2TypeDefAdds,
+                    "Generation 2 must update the added closure in place.")
+
+                printfn "[force-rebuild] SUCCESS: gen-2 edit of a closure added over a force-rebuilt baseline applied and ran"
+
+            finally
+                try checker.EndHotReloadSession() with _ -> ()
+                try checker.InvalidateAll() with _ -> ()
+                try Directory.Delete(projectDir, true) with _ -> ()

@@ -454,6 +454,51 @@ The original design rationale, recorded before the wiring landed:
    occurrence table directly (name-kind discrimination by construction: only that call site
    looks); every other synthesized name keeps the existing `GetOrAddName` replay behavior.
 
+### Force-rebuilt on-disk outputs (the dotnet-watch topology), as clarified post-C6
+
+The dotnet-watch host force-rebuilds the project output (`dotnet build`, a separate fsc
+process) between edits, and the FCS session consumes that on-disk dll as each
+generation's FRESH module (`EmitHotReloadDelta` reads the output path; the typed trees
+come from the session's own check). Two semantics were pinned down while fixing the
+generation-2 crash this topology exposed (`InvalidProgramException` in a
+generation-1-added closure's `.cctor`):
+
+- **Name authority is the compile that produced the fresh module.** An in-process delta
+  compile (the fsc emit-hook flow) names added occurrences with the allocator's
+  `#g{N}_o{chain}` because `PrepareForCodeGeneration` installed the assigned-name table;
+  a SESSION-LESS rebuild has no session state, so it names every mapped closure with the
+  gen-0 baseline derivation `#g0_o{chain}` — including occurrences the session considers
+  "added in generation N". Both are correct: the session is name-agnostic. The delta
+  emitter detects added closures by the generation-suffix marker plus the absence of a
+  baseline TypeDef token, emits the new TypeDef under the fresh module's ACTUAL name and
+  chains that name into `TypeTokens`/`MethodTokens`/`FieldTokens`; the next session-less
+  rebuild re-derives the identical `#g0` name (the derivation is a pure function of
+  occurrence identity), so later generations resolve the added closure in place. The
+  allocator's `#g{N}` fresh names materialize only in modules the allocator actually
+  lowered. (With a lambda-free baseline — the crash scenario — `EncClosureNames` is empty
+  and chains nothing, so the session tables stay vacuously consistent.)
+- **The C6 recapture guard does not (and must not) fire for force-rebuilt baselines.** A
+  rebuilt on-disk dll whose sources now contain the edits carries only `#g0` names — it
+  is indistinguishable from an original baseline because it IS one: a valid generation-0
+  artifact for any session (re)started from it. The `#g{N>=1}` fail-closed guard targets
+  mid-session RECAPTURE artifacts only. The LIVE session is unaffected by on-disk
+  rebuilds because its baseline (assembly bytes, metadata snapshot, handle caches,
+  token maps) is captured once at `StartHotReloadSession` and never re-read; the rebuilt
+  dll enters delta emission only as the fresh compile.
+
+The generation-2 crash itself was a fresh-vs-baseline ROW COORDINATE bug in the delta
+emitter, not a naming bug: re-emitting rows of methods ADDED by an earlier generation
+(the closure's `.cctor`/`.ctor`/`Invoke` become method updates of generation 2 via the
+chained baseline tokens, which sit PAST the original tables) read their
+attributes/signature/body/parameters from the fresh reader AT the chained baseline row —
+but the fresh compile lays the closure out at its natural source position, displacing
+every later row (here: the startup-init methods), so the wrong method's body was emitted
+and the JIT rejected the `.cctor`. `tryBuildMethodUpdateInput` now reads the fresh module
+through the fresh token recorded by `collectTypeMappings` (the baseline token remains the
+emission row), pinned by the component test
+`Added closure survives a second edit when the on-disk output is force-rebuilt between
+generations`.
+
 ### State machines (Phase D, builds on the same map)
 
 - F# `async` lowers to closure chains → covered by the lambda/closure map directly (a major

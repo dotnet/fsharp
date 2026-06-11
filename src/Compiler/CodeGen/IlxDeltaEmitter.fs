@@ -703,13 +703,16 @@ let private tryBuildMethodUpdateInput
     (metadataReader: MetadataReader)
     (peReader: PEReader)
     (baselineMethodTokens: Map<MethodDefinitionKey, int>)
+    (freshMethodTokenByBaseline: Dictionary<int, int>)
     (addedMethodTokens: Dictionary<MethodDefinitionKey, int>)
     (addedMethodDeltaTokens: Dictionary<MethodDefinitionKey, int>)
     (key: MethodDefinitionKey)
     : struct (MethodDefinitionKey * int * MethodDefinitionHandle * MethodDefinition * MethodBodyBlock) option =
 
-    let tryCreateInput (methodToken: int) (deltaToken: int) (isAddedMethod: bool) =
-        let methodHandle = MetadataTokens.MethodDefinitionHandle methodToken
+    // readerToken addresses the FRESH compile's metadata reader; deltaToken is the
+    // baseline-coordinate row the update is emitted at.
+    let tryCreateInput (readerToken: int) (deltaToken: int) (isAddedMethod: bool) =
+        let methodHandle = MetadataTokens.MethodDefinitionHandle readerToken
 
         if methodHandle.IsNil then
             None
@@ -726,16 +729,33 @@ let private tryBuildMethodUpdateInput
                         deltaToken
                 else
                     printfn
-                        "[fsharp-hotreload][method-update] %s::%s token=0x%08X"
+                        "[fsharp-hotreload][method-update] %s::%s readerToken=0x%08X token=0x%08X"
                         key.DeclaringType
                         key.Name
-                        methodToken
+                        readerToken
+                        deltaToken
 
             Some(struct (key, deltaToken, methodHandle, methodDef, body))
 
     match baselineMethodTokens |> Map.tryFind key with
     | Some methodToken ->
-        tryCreateInput methodToken methodToken false
+        // The baseline token addresses the LOADED module's row space, which is not
+        // generally valid in the fresh compile's reader: methods ADDED by an earlier
+        // delta chain with tokens PAST the original baseline tables, while the fresh
+        // compile lays them out at their natural source positions, displacing every
+        // later fresh row. Read the fresh compile through its own token (recorded by
+        // collectTypeMappings whenever it differs from the baseline token) and emit at
+        // the baseline token. Reading at the baseline row produced another method's
+        // attributes/signature/body for the re-emitted rows - observed as
+        // InvalidProgramException in a generation-1-added closure's .cctor after a
+        // generation-2 body edit when the on-disk output was force-rebuilt between
+        // generations (the dotnet-watch topology).
+        let readerToken =
+            match freshMethodTokenByBaseline.TryGetValue methodToken with
+            | true, freshToken -> freshToken
+            | _ -> methodToken
+
+        tryCreateInput readerToken methodToken false
     | None ->
         match addedMethodTokens.TryGetValue key, addedMethodDeltaTokens.TryGetValue key with
         | (true, methodToken), (true, deltaToken) ->
@@ -3229,6 +3249,16 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
     let remapEntityToken = metadataReferenceRemapper.RemapEntityToken
     let remapAssemblyRefToken = metadataReferenceRemapper.RemapAssemblyRefToken
 
+    // Fresh-compile MethodDef tokens keyed by the baseline-coordinate token they map to.
+    // addMapping records fresh -> baseline pairs only when the row ids DIFFER, so a
+    // missing entry means the fresh row coincides with the baseline row. Method bodies,
+    // attributes, signatures and parameters of updated methods must be read from the
+    // fresh reader through THIS map; the baseline token is only the emission row.
+    let freshMethodTokenByBaseline = Dictionary<int, int>()
+
+    for KeyValue(freshToken, baselineToken) in methodTokenMap do
+        freshMethodTokenByBaseline[baselineToken] <- freshToken
+
     let methodUpdateInputs =
         resolvedMethods
         |> List.choose (fun (_, _, _, key) ->
@@ -3237,6 +3267,7 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
                 metadataReader
                 peReader
                 request.Baseline.MethodTokens
+                freshMethodTokenByBaseline
                 addedMethodTokens
                 addedMethodDeltaTokens
                 key)
@@ -3496,7 +3527,15 @@ let emitDelta (request: IlxDeltaRequest) : IlxDelta =
             | _ -> None
 
     let tryResolveAccessor methodToken =
-        let methodHandle = MetadataTokens.MethodDefinitionHandle methodToken
+        // The accessor lookups below are keyed by FRESH reader handles; translate the
+        // baseline-coordinate token first (same fresh-vs-baseline row rule as
+        // tryBuildMethodUpdateInput).
+        let readerToken =
+            match freshMethodTokenByBaseline.TryGetValue methodToken with
+            | true, freshToken -> freshToken
+            | _ -> methodToken
+
+        let methodHandle = MetadataTokens.MethodDefinitionHandle readerToken
         match propertyAccessorLookup.TryGetValue methodHandle with
         | true, propertyHandle ->
             if traceMethodUpdates.Value then
