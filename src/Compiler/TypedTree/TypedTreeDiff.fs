@@ -1478,9 +1478,9 @@ type private EntitySnapshot =
       /// when a field addition is emitted as a TypeDefinition edit.
       CompiledFullName: string option
       /// True for representations the delta writer can emit as a NEW TypeDef (classes,
-      /// records, unions, structs, enums, modules). Interfaces (abstract slots have no
-      /// bodies), delegates (runtime-implemented bodiless members), and exotic
-      /// representations stay rude when added.
+      /// records, unions, structs, enums, interfaces, delegates, modules). Type
+      /// abbreviations, units of measure, and exotic representations stay rude when
+      /// added.
       SupportsAddition: bool
       /// True when the entity is an F# module (lowered to a sealed abstract static
       /// class). Modules share their logical name space with types (`module X` +
@@ -1884,8 +1884,13 @@ and private snapshotTycon denv path (tycon: Tycon) =
             | FSharpTyconKind.TFSharpStruct
             // Enums are supported as of the Constant-table writer support: the literal
             // member fields carry their values in Constant rows (C# 'new_enum' template).
-            | FSharpTyconKind.TFSharpEnum -> true
-            | _ -> false
+            | FSharpTyconKind.TFSharpEnum
+            // Interfaces and delegates are supported as of the bodiless added-method
+            // support: abstract slots and runtime-implemented delegate members emit
+            // MethodDef rows with RVA 0, exactly as Roslyn does (C# 'new_interface' /
+            // 'new_delegate' templates).
+            | FSharpTyconKind.TFSharpInterface
+            | FSharpTyconKind.TFSharpDelegate _ -> true
         | _ -> false
 
     { Symbol = symbolId path tycon.LogicalName tycon.Stamp SymbolKind.Entity None false None None None None None
@@ -2591,7 +2596,7 @@ let private compareEntities
                     { Symbol = Some updatedEntity.Symbol
                       Kind = RudeEditKind.DeclarationAdded
                       Message =
-                        $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: only classes, records, unions, structs, enums, and modules can be added (interfaces, delegates, and other representations require a rebuild)." }
+                        $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: only classes, records, unions, structs, enums, interfaces, delegates, and modules can be added (type abbreviations, units of measure, and other representations require a rebuild)." }
                 )
             elif not (capabilities.Supports EditAndContinueCapability.NewTypeDefinition) then
                 rude.Add(

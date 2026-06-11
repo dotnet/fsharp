@@ -766,14 +766,35 @@ let private tryBuildMethodUpdateInput
             let methodDef = metadataReader.GetMethodDefinition methodHandle
 
             if isAddedMethod && methodDef.RelativeVirtualAddress = 0 then
-                // Abstract/extern members of an added type have no IL body; the writer
-                // cannot express bodiless MethodDef rows yet (Add* pairs assume a body in
-                // the IL delta). Fail closed precisely rather than crash reading RVA 0.
-                raise (
-                    HotReloadUnsupportedEditException(
-                        $"Added method '{key.DeclaringType}::{key.Name}' has no IL body (abstract or extern); hot reload deltas cannot express bodiless added methods yet. Please rebuild."
+                // Bodiless added method. Abstract slots (added interfaces, abstract
+                // members of added classes) and runtime-implemented members (a delegate's
+                // .ctor/Invoke, ImplFlags CodeTypeMask = Runtime) legitimately have no IL
+                // body: Roslyn emits their MethodDef rows with RVA 0 (C# 'new_interface'
+                // and 'new_delegate' reference templates) and so do we — the input carries
+                // a null MethodBodyBlock and the row's RVA column stays 0. Anything else
+                // bodiless (extern/pinvoke would also need ImplMap rows) keeps failing
+                // closed precisely.
+                let isAbstract = methodDef.Attributes.HasFlag MethodAttributes.Abstract
+
+                let isRuntimeImplemented =
+                    methodDef.ImplAttributes &&& MethodImplAttributes.CodeTypeMask = MethodImplAttributes.Runtime
+
+                if isAbstract || isRuntimeImplemented then
+                    if traceMethodUpdates then
+                        printfn
+                            "[fsharp-hotreload][method-add] %s::%s token=0x%08X (bodiless, RVA 0)"
+                            key.DeclaringType
+                            key.Name
+                            deltaToken
+
+                    Some(struct (key, deltaToken, methodHandle, methodDef, Unchecked.defaultof<MethodBodyBlock>))
+                else
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added method '{key.DeclaringType}::{key.Name}' has no IL body (extern); hot reload deltas cannot express extern added methods yet. Please rebuild."
+                        )
                     )
-                )
+            else
 
             let body = peReader.GetMethodBody(methodDef.RelativeVirtualAddress)
 
@@ -986,30 +1007,44 @@ let private buildMethodUpdatesWithMetadata
     let methodUpdatesWithDefs =
         orderedMethodInputs
         |> List.map (fun struct (key, methodToken, methodHandle, methodDef, body) ->
-            let ilBytes, referencedMethodSpecs = rewriteMethodBody remapUserString remapEntityToken body
-            let localSigToken =
-                if body.LocalSignature.IsNil then
-                    0
+            let bodyUpdate, referencedMethodSpecs =
+                if isNull (box body) then
+                    // Bodiless added method (abstract slot of an added interface/class or
+                    // runtime-implemented delegate member): no IL chunk enters the delta;
+                    // the MethodDef row's RVA column stays 0 (Roslyn template parity —
+                    // AddMethodRow writes CodeOffset only when CodeLength > 0 and added
+                    // rows have no baseline RVA to fall back to).
+                    { MethodToken = methodToken
+                      LocalSignatureToken = 0
+                      CodeOffset = 0
+                      CodeLength = 0 },
+                    []
                 else
-                    let standalone = metadataReader.GetStandaloneSignature body.LocalSignature
-                    // Local signatures are emitted into the delta blob heap; remap the embedded
-                    // TypeDefOrRef coded indexes from the fresh compile to baseline rows.
-                    let signatureBytes =
-                        metadataReader.GetBlobBytes standalone.Signature
-                        |> remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken)
+                    let ilBytes, referencedMethodSpecs = rewriteMethodBody remapUserString remapEntityToken body
 
-                    builder.AddStandaloneSignature(signatureBytes)
+                    let localSigToken =
+                        if body.LocalSignature.IsNil then
+                            0
+                        else
+                            let standalone = metadataReader.GetStandaloneSignature body.LocalSignature
+                            // Local signatures are emitted into the delta blob heap; remap the embedded
+                            // TypeDefOrRef coded indexes from the fresh compile to baseline rows.
+                            let signatureBytes =
+                                metadataReader.GetBlobBytes standalone.Signature
+                                |> remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken)
 
-            let bodyUpdate =
-                builder.AddMethodBody(
-                    methodToken,
-                    localSigToken,
-                    ilBytes,
-                    body.MaxStack,
-                    body.LocalVariablesInitialized,
-                    convertExceptionRegions body.ExceptionRegions,
-                    remapEntityToken
-                )
+                            builder.AddStandaloneSignature(signatureBytes)
+
+                    builder.AddMethodBody(
+                        methodToken,
+                        localSigToken,
+                        ilBytes,
+                        body.MaxStack,
+                        body.LocalVariablesInitialized,
+                        convertExceptionRegions body.ExceptionRegions,
+                        remapEntityToken
+                    ),
+                    referencedMethodSpecs
 
             // Convert SRM MethodDefinitionHandle to F# MethodDefHandle
             let methodHandleEntity: EntityHandle = methodHandle

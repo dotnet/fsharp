@@ -646,6 +646,111 @@ module Library =
                 Assert.Contains(0x0B, encMapTables))
 
     [<Fact>]
+    let ``ApplyUpdate succeeds for added interface implemented by an added class`` () =
+        // The added interface's abstract slot has NO IL body: its MethodDef row ships
+        // with RVA 0, exactly as Roslyn does (C# 'new_interface' reference template —
+        // 'Area' at RVA 0x00000000, Abstract|Virtual). The added class implements it
+        // explicitly (InterfaceImpl row Interface = the NEW delta TypeDef; MethodImpl
+        // row Declaration = the NEW bodiless MethodDef), and the edited function
+        // consumes it through the interface.
+        let updated =
+            """
+namespace Sample
+
+type IShape =
+    abstract member Area: unit -> int
+
+type Square(side: int) =
+    member _.Side = side
+    interface IShape with
+        member _.Area() = side * side
+
+module Library =
+    let compute (x: int) =
+        let shape = Square(x) :> IShape
+        shape.Area() + 1
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-interface"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+
+                  // compute routes through the interface dispatch: 6*6 + 1.
+                  Assert.Equal(37, compute.Invoke(null, [| box 6 |]) :?> int)
+
+                  let shapeInterface = assembly.GetType("Sample.IShape", throwOnError = true)
+                  Assert.True shapeInterface.IsInterface
+
+                  let squareType = assembly.GetType("Sample.Square", throwOnError = true)
+                  Assert.True(shapeInterface.IsAssignableFrom squareType)
+
+                  // Interface dispatch through the bodiless slot works on a live
+                  // instance created via reflection.
+                  let square = Activator.CreateInstance(squareType, box 5)
+                  let area = shapeInterface.GetMethod("Area")
+                  Assert.Equal(25, area.Invoke(square, [||]) :?> int)) ]
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for added delegate constructed and invoked`` () =
+        // The added delegate is a sealed class whose .ctor/Invoke/BeginInvoke/EndInvoke
+        // are runtime-implemented (ImplFlags CodeTypeMask = Runtime) with RVA 0 (C#
+        // 'new_delegate' reference template). The construction lives in an ADDED module
+        // (delegate construction synthesizes a closure class; nested in the added module
+        // TypeDef it flows through the nested-in-added path) and the edited function
+        // calls through it.
+        let updated =
+            """
+namespace Sample
+
+type Combiner = delegate of int * int -> int
+
+module Ops =
+    let add (a: int) (b: int) = a + b
+
+    let combine (x: int) =
+        let c = Combiner(add)
+        c.Invoke(x, 1)
+
+module Library =
+    let compute (x: int) = Ops.combine x
+"""
+
+        applyGenerationsAndVerify
+            fullCapabilities
+            "added-delegate"
+            baseline
+            (fun assembly ->
+                let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+                Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int))
+            [ updated,
+              (fun assembly ->
+                  let libType = assembly.GetType("Sample.Library", throwOnError = true)
+                  let compute = libType.GetMethod("compute", BindingFlags.Public ||| BindingFlags.Static)
+
+                  // compute routes through the delegate invocation: 41 + 1.
+                  Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int)
+
+                  let combinerType = assembly.GetType("Sample.Combiner", throwOnError = true)
+                  Assert.True(combinerType.IsSubclassOf typeof<MulticastDelegate>)
+
+                  // The runtime-implemented members drive a delegate created over the
+                  // live added method.
+                  let opsType = assembly.GetType("Sample.Ops", throwOnError = true)
+                  let addMethod = opsType.GetMethod("add", BindingFlags.Public ||| BindingFlags.Static)
+                  let combiner = Delegate.CreateDelegate(combinerType, addMethod)
+                  Assert.Equal(9, combiner.DynamicInvoke(box 4, box 5) :?> int)) ]
+
+    [<Fact>]
     let ``ApplyUpdate succeeds for added module with function and mutable value`` () =
         // The idiomatic F# new-type case (C# parity: adding a static class, which Roslyn
         // supports): an added module lowers to a sealed abstract static class TypeDef.
@@ -958,15 +1063,15 @@ module Library =
             [ "NewTypeDefinition" ]
 
     [<Fact>]
-    let ``EmitHotReloadDelta rejects added interface declaration`` () =
-        // Interfaces have abstract slots without bodies; the writer cannot express
-        // bodiless added methods, so interface additions fail closed at classification.
+    let ``EmitHotReloadDelta rejects added type abbreviation`` () =
+        // Type abbreviations are fully erased (no TypeDef); the entity diff cannot
+        // classify them as type additions and fails closed with the precise list of
+        // supported representations.
         let updated =
             """
 namespace Sample
 
-type IShape =
-    abstract member Area: unit -> int
+type Count = int
 
 module Library =
     let compute (x: int) = x + 1
@@ -974,7 +1079,7 @@ module Library =
 
         emitDeltaAndExpectUnsupported
             fullCapabilities
-            "added-interface"
+            "added-abbreviation"
             baseline
             updated
-            [ "only classes, records, unions, structs, enums, and modules" ]
+            [ "only classes, records, unions, structs, enums, interfaces, delegates, and modules" ]
