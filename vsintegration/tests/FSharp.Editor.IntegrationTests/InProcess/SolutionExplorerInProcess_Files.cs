@@ -51,6 +51,26 @@ internal partial class SolutionExplorerInProcess
         _ = project.ProjectItems.AddFromFile(filePath);
     }
 
+    // Overwrites the on-disk content of a file that is already a member of the project.
+    // Use this for tests where the build output / PDB must reflect the file content exactly
+    // (e.g., debugger breakpoint binding requires the PDB's source-file hash to match the
+    // hash of the file on disk -- the SetTextAsync + "File.SaveAll" command pattern can race
+    // with the build and leave the disk content stale, so the PDB ends up pointing at a
+    // different source hash and breakpoints never bind).
+    public async Task WriteFileAsync(string projectName, string fileName, string contents, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var project = await GetProjectAsync(projectName, cancellationToken);
+        var projectDirectory = Path.GetDirectoryName(project.FullName);
+        var filePath = Path.Combine(projectDirectory, fileName);
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"WriteFileAsync expects '{fileName}' to already exist in project '{projectName}' (use AddFileAsync to create new files).", filePath);
+        }
+        File.WriteAllText(filePath, contents);
+    }
+
     public async Task RenameFileAsync(string projectName, string oldFileName, string newFileName, CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);

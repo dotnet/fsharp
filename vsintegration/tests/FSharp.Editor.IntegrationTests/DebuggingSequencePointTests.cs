@@ -83,9 +83,14 @@ public class DebuggingSequencePointTests : AbstractIntegrationTest
         await SolutionExplorer.CreateSingleProjectSolutionAsync(ProjectName, SolutionExplorerInProcess.ExistingProjectTemplate, TestToken);
         await SolutionExplorer.SetStartupProjectAsync(ProjectName, TestToken);
 
+        // Write the fixture directly to disk *before* opening it in VS, instead of using
+        // SetTextAsync + "File.SaveAll" command. Reason: the debugger binds breakpoints by
+        // matching the PDB's recorded source-file hash against the hash of Program.fs on disk.
+        // If the edit-buffer is built first and SaveAll lands a moment later, the PDB hash
+        // points at one snapshot while disk holds another -- breakpoints stay unbound
+        // (children=0) and never fire. Writing to disk first keeps the two in lockstep.
+        await SolutionExplorer.WriteFileAsync(ProjectName, "Program.fs", File.ReadAllText(GetFixturePath()), TestToken);
         await SolutionExplorer.OpenFileAsync(ProjectName, "Program.fs", TestToken);
-        await Editor.SetTextAsync(File.ReadAllText(GetFixturePath()), TestToken);
-        await Shell.ExecuteCommandAsync("File.SaveAll", TestToken);
 
         var buildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);
         Assert.NotNull(buildSummary);
