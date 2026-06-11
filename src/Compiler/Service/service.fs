@@ -4,6 +4,7 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections
+open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Reflection
@@ -160,6 +161,11 @@ module CompileHelpers =
 [<Sealed>]
 type internal FSharpHotReloadService
     (
+        // Session store owned by the entity holding this service: the checker's default
+        // compatibility session, or one FSharpHotReloadSession instance. The owner decides
+        // whether the store is also registered as the process-wide store the module-level
+        // helpers and the fsc emit hook route to.
+        sessionStore: FSharp.Compiler.HotReloadState.HotReloadSessionStore,
         readIlModule: string -> ILModuleDef,
         createBaseline: TcGlobals -> ILModuleDef -> string -> FSharpEmitBaseline,
         getHotReloadDiffInputs: FSharpCheckProjectResults -> TcGlobals * CheckedAssemblyAfterOptimization,
@@ -174,19 +180,20 @@ type internal FSharpHotReloadService
 
     let hotReloadGate = obj()
 
-    let mutable currentSynthesizedTypeMaps: FSharpSynthesizedTypeMaps option = None
-
-    // Session store is owned by this service instance. We still route module-level helper
-    // APIs to this store for compatibility while keeping state ownership explicit.
-    let sessionStore = FSharp.Compiler.HotReloadState.createSessionStore ()
-
-    do FSharp.Compiler.HotReloadState.setSessionStore sessionStore
+    // Per-project synthesized-name replay maps (keyed like the session store slots).
+    let synthesizedTypeMaps =
+        Dictionary<FSharp.Compiler.HotReloadState.HotReloadProjectKey, FSharpSynthesizedTypeMaps>()
 
     let editAndContinueService = FSharpEditAndContinueLanguageService(sessionStore)
 
-    // Snapshot of the last committed output assembly. If semantic edits are detected while this
-    // fingerprint remains unchanged, we refuse to emit deltas from stale binaries.
-    let mutable currentOutputFingerprint: (DateTime * byte[] option) option = None
+    // Per-project snapshot of the last committed output assembly. If semantic edits are detected
+    // while this fingerprint remains unchanged, we refuse to emit deltas from stale binaries.
+    let committedOutputFingerprints =
+        Dictionary<FSharp.Compiler.HotReloadState.HotReloadProjectKey, (DateTime * byte[] option) option>()
+
+    // Fingerprints staged by deferred-commit emits; promoted to committed on session commit.
+    let pendingOutputFingerprints =
+        Dictionary<FSharp.Compiler.HotReloadState.HotReloadProjectKey, (DateTime * byte[] option) option>()
 
     let traceSessionTransitions = isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_SESSIONS"
 
@@ -195,10 +202,21 @@ type internal FSharpHotReloadService
         | FSharp.Compiler.HotReloadState.HotReloadSessionStart.StartedFresh -> "started-fresh"
         | FSharp.Compiler.HotReloadState.HotReloadSessionStart.ReplacedExisting -> "replaced-existing"
 
-    member _.StartHotReloadSession
+    // Must be called under hotReloadGate.
+    let getOrCreateSynthesizedTypeMap (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey) =
+        match synthesizedTypeMaps.TryGetValue projectKey with
+        | true, existing -> existing
+        | false, _ ->
+            let created = FSharpSynthesizedTypeMaps()
+            synthesizedTypeMaps[projectKey] <- created
+            created
+
+    member private _.StartOrAddProjectCore
+        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
         (outputPath: string option)
-        (capabilities: EditAndContinueCapabilities)
+        (capabilities: EditAndContinueCapabilities option)
+        (replaceExistingSession: bool)
         =
         async {
             match outputPath with
@@ -275,15 +293,16 @@ type internal FSharpHotReloadService
                                  )
                              | _ -> ())
 
+                            if replaceExistingSession then
+                                // Legacy single-session semantics: drop every project slot
+                                // (and its replay/fingerprint side state) before installing.
+                                synthesizedTypeMaps.Clear()
+                                committedOutputFingerprints.Clear()
+                                pendingOutputFingerprints.Clear()
+
                             let compilerState = tcGlobals.CompilerGlobalState.Value
                             let map =
-                                let targetMap =
-                                    match currentSynthesizedTypeMaps with
-                                    | Some existing -> existing
-                                    | None ->
-                                        let created = FSharpSynthesizedTypeMaps()
-                                        currentSynthesizedTypeMaps <- Some created
-                                        created
+                                let targetMap = getOrCreateSynthesizedTypeMap projectKey
 
                                 baseline.SynthesizedNameSnapshot
                                 |> Map.toSeq
@@ -294,11 +313,20 @@ type internal FSharpHotReloadService
 
                             setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
 
-                            editAndContinueService.EndSession()
-
                             let startTransition =
-                                editAndContinueService.StartSession(baseline, implementationFiles, capabilities)
+                                if replaceExistingSession then
+                                    editAndContinueService.EndSession()
 
+                                    editAndContinueService.StartSession(
+                                        baseline,
+                                        implementationFiles,
+                                        ?capabilities = capabilities,
+                                        projectKey = projectKey
+                                    )
+                                else
+                                    // Session-entity AddProject: other projects and the
+                                    // session-wide capability set stay untouched.
+                                    editAndContinueService.AddProject(projectKey, baseline, implementationFiles)
 
                             if traceSessionTransitions then
                                 printfn
@@ -307,14 +335,34 @@ type internal FSharpHotReloadService
                                     baseline.ModuleId
                                     outputPath
 
-                            currentOutputFingerprint <- tryGetOutputFingerprint outputPath)
+                            committedOutputFingerprints[projectKey] <- tryGetOutputFingerprint outputPath
+                            pendingOutputFingerprints.Remove projectKey |> ignore)
 
                         return Result.Ok ()
         }
 
-    member _.EmitHotReloadDelta
+    /// Legacy/default-session entry point: starting a session REPLACES the previous one.
+    member this.StartHotReloadSession
+        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
         (outputPath: string option)
+        (capabilities: EditAndContinueCapabilities)
+        =
+        this.StartOrAddProjectCore projectKey parseAndCheckProject outputPath (Some capabilities) true
+
+    /// Session-entity entry point: captures one more project baseline inside the same session.
+    member this.AddHotReloadProject
+        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
+        (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
+        (outputPath: string option)
+        =
+        this.StartOrAddProjectCore projectKey parseAndCheckProject outputPath None false
+
+    member _.EmitHotReloadDelta
+        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
+        (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
+        (outputPath: string option)
+        (deferCommit: bool)
         =
         async {
             match outputPath with
@@ -338,34 +386,33 @@ type internal FSharpHotReloadService
                     waitForStableFile outputPath
                     let outputFingerprint = tryGetOutputFingerprint outputPath
 
-                    lock hotReloadGate (fun () ->
-                        if not editAndContinueService.IsSessionActive then
-                            match editAndContinueService.TryRestoreSession() with
-                            | ValueSome restoredSession ->
-                                let compilerState = tcGlobals.CompilerGlobalState.Value
+                    let sessionActive =
+                        lock hotReloadGate (fun () ->
+                            match editAndContinueService.TryGetSession(projectKey) with
+                            | ValueSome _ -> true
+                            | ValueNone ->
+                                // Restore from the last committed snapshot if an overlapping
+                                // compile cleared the currently active session.
+                                match editAndContinueService.TryRestoreSession(projectKey) with
+                                | ValueSome restoredSession ->
+                                    let compilerState = tcGlobals.CompilerGlobalState.Value
+                                    let map = getOrCreateSynthesizedTypeMap projectKey
 
-                                let map =
-                                    match currentSynthesizedTypeMaps with
-                                    | Some existing -> existing
-                                    | None ->
-                                        let created = FSharpSynthesizedTypeMaps()
-                                        currentSynthesizedTypeMaps <- Some created
-                                        created
+                                    restoredSession.Baseline.SynthesizedNameSnapshot
+                                    |> Map.toSeq
+                                    |> Seq.map (fun (k, v) -> struct (k, v))
+                                    |> map.LoadSnapshot
+                                    map.BeginSession()
+                                    setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
+                                    true
+                                | ValueNone -> false)
 
-                                restoredSession.Baseline.SynthesizedNameSnapshot
-                                |> Map.toSeq
-                                |> Seq.map (fun (k, v) -> struct (k, v))
-                                |> map.LoadSnapshot
-                                map.BeginSession()
-                                setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
-                            | ValueNone -> ())
-
-                    if not editAndContinueService.IsSessionActive then
+                    if not sessionActive then
                         return Result.Error FSharpHotReloadError.NoActiveSession
                     else
                         let staleOutputErrorOpt =
                             lock hotReloadGate (fun () ->
-                                match editAndContinueService.TryGetSession() with
+                                match editAndContinueService.TryGetSession(projectKey) with
                                 | ValueNone -> None
                                 | ValueSome session ->
                                     let symbolChanges =
@@ -385,7 +432,12 @@ type internal FSharpHotReloadService
                                             || not (List.isEmpty accessorUpdates)
                                             || not (List.isEmpty symbolChanges.Added)
 
-                                        if hasUpdates && not (hasOutputFingerprintChanged outputPath currentOutputFingerprint outputFingerprint) then
+                                        let committedFingerprint =
+                                            match committedOutputFingerprints.TryGetValue projectKey with
+                                            | true, fingerprint -> fingerprint
+                                            | false, _ -> None
+
+                                        if hasUpdates && not (hasOutputFingerprintChanged outputPath committedFingerprint outputFingerprint) then
                                             Some(
                                                 FSharpHotReloadError.DeltaEmissionFailed(
                                                     $"Output assembly '{outputPath}' did not change after compilation; refusing to emit a delta from stale build output."
@@ -411,11 +463,11 @@ type internal FSharpHotReloadService
                             | Result.Error error -> return Result.Error error
                             | Ok ilModule ->
                                 lock hotReloadGate (fun () ->
-                                    match currentSynthesizedTypeMaps with
-                                    | Some map ->
+                                    match synthesizedTypeMaps.TryGetValue projectKey with
+                                    | true, map ->
                                         map.BeginSession()
                                         setCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) (map :> ICompilerGeneratedNameMap)
-                                    | None -> ())
+                                    | false, _ -> ())
 
                                 // Phase G: the fresh compile's on-disk PDB carries the sequence
                                 // points the IL module read loses (readIlModule attaches no debug
@@ -441,32 +493,71 @@ type internal FSharpHotReloadService
                                         tcGlobals,
                                         implementationFiles,
                                         ilModule,
-                                        ?freshDebugPdb = freshDebugPdb
+                                        ?freshDebugPdb = freshDebugPdb,
+                                        projectKey = projectKey,
+                                        deferCommit = deferCommit
                                     )
                                 with
                                 | Ok result ->
                                     match result.Delta.UpdatedBaseline with
                                     | Some _ ->
                                         lock hotReloadGate (fun () ->
-                                            currentOutputFingerprint <- outputFingerprint)
+                                            if deferCommit then
+                                                pendingOutputFingerprints[projectKey] <- outputFingerprint
+                                            else
+                                                committedOutputFingerprints[projectKey] <- outputFingerprint)
                                     | None -> ()
                                     return Result.Ok(toPublicDelta result.Delta)
                                 | Error error -> return Result.Error(mapHotReloadError error)
         }
 
+    /// <summary>
+    /// Commits ALL pending project updates atomically (Roslyn's <c>CommitSolutionUpdate</c>):
+    /// pending baselines, staged implementation files and staged output fingerprints advance
+    /// together across every project in the session.
+    /// </summary>
+    member _.CommitSession() =
+        lock hotReloadGate (fun () ->
+            editAndContinueService.CommitAllPendingUpdates() |> ignore
+
+            for entry in List.ofSeq pendingOutputFingerprints do
+                committedOutputFingerprints[entry.Key] <- entry.Value
+
+            pendingOutputFingerprints.Clear())
+
+    /// <summary>Discards ALL pending project updates (Roslyn's <c>DiscardSolutionUpdate</c>).</summary>
+    member _.DiscardSession() =
+        lock hotReloadGate (fun () ->
+            editAndContinueService.DiscardPendingUpdate()
+            pendingOutputFingerprints.Clear())
+
     member _.EndSession() =
         lock hotReloadGate (fun () ->
-            currentSynthesizedTypeMaps <- None
-            currentOutputFingerprint <- None
+            synthesizedTypeMaps.Clear()
+            committedOutputFingerprints.Clear()
+            pendingOutputFingerprints.Clear()
             editAndContinueService.ResetSessionState())
 
     member _.UpdateCapabilities(capabilities: EditAndContinueCapabilities) =
         editAndContinueService.UpdateCapabilities(capabilities)
 
+    /// Unconditional session-wide capability set (session-entity creation path).
+    member _.SetSessionCapabilities(capabilities: EditAndContinueCapabilities) =
+        editAndContinueService.SetCapabilities(capabilities)
+
     member _.SetActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo seq) =
         editAndContinueService.UpdateActiveStatements(List.ofSeq activeStatements)
 
-    member _.SessionActive = editAndContinueService.IsSessionActive
+    /// Unconditional session-wide active statements (session-entity path).
+    member _.SetSessionActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo seq) =
+        editAndContinueService.SetActiveStatements(List.ofSeq activeStatements)
+
+    member _.SessionActive = not (List.isEmpty editAndContinueService.ProjectKeys)
+
+    member _.ProjectKeys = editAndContinueService.ProjectKeys
+
+    member _.TryGetProjectSession(projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey) =
+        editAndContinueService.TryGetSession(projectKey)
 
     member _.Capabilities =
         let capabilities = HotReloadCapability.current
@@ -870,8 +961,33 @@ type FSharpChecker
         let tcGlobals, typedImplFiles = getTypedImplementationFilesViaReflection projectResults
         tcGlobals, toHotReloadImplementationSnapshot typedImplFiles
 
-    let hotReloadService =
+    // Hot reload sessions key per-project state by the same identity project snapshots use
+    // (FSharpProjectIdentifier = projectFileName * the raw "-o:" output option; see
+    // ProjectConfig.Identifier and Helpers.findOutputFileName in FSharpProjectSnapshot.fs).
+    let hotReloadProjectKeyOfSnapshot (projectSnapshot: FSharpProjectSnapshot) =
+        let identifier = projectSnapshot.Identifier
+        FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(identifier.ProjectFileName, identifier.OutputFileName)
+
+    let hotReloadProjectKeyOfOptions (options: FSharpProjectOptions) =
+        let outputFileName =
+            options.OtherOptions
+            |> Array.tryPick (fun opt -> if opt.StartsWith("-o:") then Some(opt.Substring(3)) else None)
+            |> Option.defaultValue ""
+
+        FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(options.ProjectFileName, outputFileName)
+
+    // The checker's DEFAULT hot reload session (the compatibility surface: the static-shaped
+    // FSharpChecker members below). It is registered as the process-wide store so module-level
+    // helpers and the fsc emit hook (which has no project identity) route to it.
+    // FSharpHotReloadSession instances created via CreateHotReloadSession own separate,
+    // unregistered stores and are fully independent of this one.
+    let hotReloadSessionStore = FSharp.Compiler.HotReloadState.createSessionStore ()
+
+    do FSharp.Compiler.HotReloadState.setSessionStore hotReloadSessionStore
+
+    let createHotReloadService sessionStore =
         FSharpHotReloadService(
+            sessionStore,
             readIlModule,
             createBaseline,
             getHotReloadDiffInputs,
@@ -882,6 +998,8 @@ type FSharpChecker
             toPublicDelta,
             mapHotReloadError
         )
+
+    let hotReloadService = createHotReloadService hotReloadSessionStore
 
     static member getParallelReferenceResolutionFromEnvironment() =
         getParallelReferenceResolutionFromEnvironment ()
@@ -956,17 +1074,19 @@ type FSharpChecker
         )
 
     member private _.StartHotReloadSessionCore
+        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
         (outputPath: string option)
         (capabilities: EditAndContinueCapabilities)
         =
-        hotReloadService.StartHotReloadSession parseAndCheckProject outputPath capabilities
+        hotReloadService.StartHotReloadSession projectKey parseAndCheckProject outputPath capabilities
 
     member private _.EmitHotReloadDeltaCore
+        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
         (outputPath: string option)
         =
-        hotReloadService.EmitHotReloadDelta parseAndCheckProject outputPath
+        hotReloadService.EmitHotReloadDelta projectKey parseAndCheckProject outputPath false
 
     // Runtime capability strings cross the public boundary once and are parsed into the typed
     // model here; everything downstream consults EditAndContinueCapabilities only.
@@ -988,6 +1108,7 @@ type FSharpChecker
 
             return!
                 this.StartHotReloadSessionCore
+                    (hotReloadProjectKeyOfOptions projectOptions)
                     (fun () -> this.ParseAndCheckProject(projectOptions, userOpName = opName))
                     (tryGetOutputPathFromProjectOptions projectOptions)
                     (FSharpChecker.ParseHotReloadCapabilities capabilities)
@@ -1006,6 +1127,7 @@ type FSharpChecker
 
             return!
                 this.StartHotReloadSessionCore
+                    (hotReloadProjectKeyOfSnapshot projectSnapshot)
                     (fun () -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName))
                     (tryGetOutputPathFromProjectSnapshot projectSnapshot)
                     (FSharpChecker.ParseHotReloadCapabilities capabilities)
@@ -1024,6 +1146,7 @@ type FSharpChecker
 
             return!
                 this.EmitHotReloadDeltaCore
+                    (hotReloadProjectKeyOfOptions projectOptions)
                     (fun () -> this.ParseAndCheckProject(projectOptions, userOpName = opName))
                     (tryGetOutputPathFromProjectOptions projectOptions)
         }
@@ -1041,6 +1164,7 @@ type FSharpChecker
 
             return!
                 this.EmitHotReloadDeltaCore
+                    (hotReloadProjectKeyOfSnapshot projectSnapshot)
                     (fun () -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName))
                     (tryGetOutputPathFromProjectSnapshot projectSnapshot)
         }

@@ -6,6 +6,48 @@ open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.TypedTree
 
+/// <summary>
+/// Identity of the project a per-project hot reload slot belongs to. The
+/// <c>Project</c> case structurally mirrors <c>FSharpProjectIdentifier</c>
+/// (projectFileName * outputFileName), which is defined later in the compilation order
+/// (FSharpProjectSnapshot.fs), so the service layer converts between the two.
+/// </summary>
+[<RequireQualifiedAccess>]
+type HotReloadProjectKey =
+    | Project of projectFileName: string * outputFileName: string
+    /// Identity-less hosts: the fsc emit-hook capture path and the legacy module-level
+    /// helpers do not know which project they serve; their state lives in this slot.
+    | Ambient
+
+/// <summary>
+/// Per-project committed hot reload state — the F# analogue of one entry in Roslyn's
+/// <c>DebuggingSession</c> project baselines (<c>ProjectId -&gt; ProjectBaseline</c>).
+/// The chained CDI/closure-name/sequence-point state rides on
+/// <see cref="FSharpEmitBaseline"/>, so keying the baseline per project keys all of it.
+/// </summary>
+type HotReloadProjectState =
+    {
+        Baseline: FSharpEmitBaseline
+        ImplementationFiles: CheckedAssemblyAfterOptimization
+        CurrentGeneration: int
+        PreviousGenerationId: Guid option
+        PendingUpdate: PendingHotReloadUpdate option
+    }
+
+and PendingHotReloadUpdate =
+    {
+        GenerationId: Guid
+        Baseline: FSharpEmitBaseline
+        /// Implementation files staged by a deferred-commit emit (the session-entity flow,
+        /// mirroring Roslyn's EmitSolutionUpdate/CommitSolutionUpdate split). None in the
+        /// legacy auto-commit flow, where the language service updates them directly.
+        ImplementationFiles: CheckedAssemblyAfterOptimization option
+    }
+
+/// <summary>
+/// Combined per-project + session-wide view handed to existing callers: the per-project
+/// slot joined with the session-wide capability set and active statements.
+/// </summary>
 type HotReloadSession =
     {
         Baseline: FSharpEmitBaseline
@@ -13,156 +55,227 @@ type HotReloadSession =
         CurrentGeneration: int
         PreviousGenerationId: Guid option
         PendingUpdate: PendingHotReloadUpdate option
-        /// Runtime capabilities negotiated when the session started; consulted by edit classification.
+        /// Runtime capabilities negotiated for the session; consulted by edit classification.
+        /// Session-wide (Roslyn parity: capabilities are a debugging-session property).
         Capabilities: EditAndContinueCapabilities
         /// <summary>
         /// Active statements supplied by the debugger host before emitting (Phase G). The next
         /// emitted delta remaps each statement (or fails rude when an edit destroys one). Empty
         /// when no debugger is attached or the host has not reported a break state; the setter
         /// REPLACES the whole set, mirroring Roslyn's per-edit-session active statement fetch.
+        /// Session-wide (the break state describes the host process, not one project).
         /// </summary>
         ActiveStatements: FSharpManagedActiveStatementDebugInfo list
     }
 
-and PendingHotReloadUpdate =
-    {
-        GenerationId: Guid
-        Baseline: FSharpEmitBaseline
-    }
-
-/// Records whether starting a baseline session replaced an already-active process-wide session.
+/// Records whether starting a baseline for a project replaced an already-active slot.
 type HotReloadSessionStart =
     | StartedFresh
     | ReplacedExisting
 
-let private toCommittedSnapshot (value: HotReloadSession) =
-    { value with
-        PendingUpdate = None }
+let private toCommittedSnapshot (value: HotReloadProjectState) = { value with PendingUpdate = None }
 
-/// Session store used by hot reload emit services. This keeps mutable session lifecycle
-/// state instance-scoped so ownership can live with the hosting service.
+let private mkProjectState (value: FSharpEmitBaseline) (implementationFiles: CheckedAssemblyAfterOptimization) =
+    let previousGenerationId =
+        if value.EncId = Guid.Empty then None else Some value.EncId
+
+    {
+        Baseline = value
+        ImplementationFiles = implementationFiles
+        CurrentGeneration = max 1 value.NextGeneration
+        PreviousGenerationId = previousGenerationId
+        PendingUpdate = None
+    }
+
+/// <summary>
+/// Per-session storage used by hot reload emit services: per-project committed state keyed
+/// by <see cref="HotReloadProjectKey"/> plus session-wide capabilities and active statements.
+/// One instance backs one logical session (a checker's default compatibility session, or one
+/// <c>FSharpHotReloadSession</c>); instances are fully independent of each other.
+/// Commit/discard operate across all pending project updates atomically (Roslyn's
+/// solution-wide commit semantics).
+/// </summary>
 type internal HotReloadSessionStore() =
 
     let sessionLock = obj ()
-    let mutable session: HotReloadSession voption = ValueNone
-    let mutable lastCommittedSession: HotReloadSession voption = ValueNone
+    let mutable projects: Map<HotReloadProjectKey, HotReloadProjectState> = Map.empty
+    let mutable committedProjects: Map<HotReloadProjectKey, HotReloadProjectState> = Map.empty
 
+    // The slot identity-less callers (legacy module helpers, the fsc emit hook) operate on:
+    // the most recently started project. Single-project compatibility flows therefore behave
+    // exactly like the previous one-session store.
+    let mutable currentKey = HotReloadProjectKey.Ambient
+
+    // Session-wide state (Roslyn parity: DebuggingSession-level, not per-project).
+    let mutable sessionCapabilities = EditAndContinueCapabilities.BaselineOnly
+    let mutable sessionActiveStatements: FSharpManagedActiveStatementDebugInfo list = []
+
+    let resolveKey (key: HotReloadProjectKey option) =
+        match key with
+        | Some key -> key
+        | None -> currentKey
+
+    let toSessionView (state: HotReloadProjectState) =
+        {
+            Baseline = state.Baseline
+            ImplementationFiles = state.ImplementationFiles
+            CurrentGeneration = state.CurrentGeneration
+            PreviousGenerationId = state.PreviousGenerationId
+            PendingUpdate = state.PendingUpdate
+            Capabilities = sessionCapabilities
+            ActiveStatements = sessionActiveStatements
+        }
+
+    let updateProject key (update: HotReloadProjectState -> HotReloadProjectState) (commit: bool) =
+        match Map.tryFind key projects with
+        | Some state ->
+            let updated = update state
+            projects <- Map.add key updated projects
+
+            if commit then
+                committedProjects <- Map.add key (toCommittedSnapshot updated) committedProjects
+        | None -> ()
+
+    /// <summary>
+    /// Starts (or restarts) the session with a single project, REPLACING all existing
+    /// per-project state and resetting the session-wide capability/active-statement state.
+    /// This is the legacy single-session semantic: hosts on the compatibility surface get
+    /// "starting a session replaces the previous one".
+    /// </summary>
     member _.SetBaseline
         (
             value: FSharpEmitBaseline,
             implementationFiles: CheckedAssemblyAfterOptimization,
-            ?capabilities: EditAndContinueCapabilities
+            ?capabilities: EditAndContinueCapabilities,
+            ?key: HotReloadProjectKey
         ) : HotReloadSessionStart =
         lock sessionLock (fun () ->
-            let hadExistingSession = session.IsSome
+            let hadExistingSession = not (Map.isEmpty projects)
+            let key = defaultArg key HotReloadProjectKey.Ambient
+            let newState = mkProjectState value implementationFiles
 
-            let previousGenerationId =
-                if value.EncId = Guid.Empty then
-                    None
-                else
-                    Some value.EncId
+            projects <- Map.ofList [ key, newState ]
+            committedProjects <- Map.ofList [ key, toCommittedSnapshot newState ]
+            currentKey <- key
+            // Hosts that do not negotiate capabilities get the Roslyn-conservative default.
+            sessionCapabilities <- defaultArg capabilities EditAndContinueCapabilities.BaselineOnly
+            sessionActiveStatements <- []
 
-            let newSession =
-                {
-                    Baseline = value
-                    ImplementationFiles = implementationFiles
-                    CurrentGeneration = max 1 value.NextGeneration
-                    PreviousGenerationId = previousGenerationId
-                    PendingUpdate = None
-                    // Hosts that do not negotiate capabilities get the Roslyn-conservative default.
-                    Capabilities = defaultArg capabilities EditAndContinueCapabilities.BaselineOnly
-                    ActiveStatements = []
-                }
+            if hadExistingSession then ReplacedExisting else StartedFresh)
 
-            session <- ValueSome newSession
-            lastCommittedSession <- ValueSome(toCommittedSnapshot newSession)
+    /// <summary>
+    /// Adds (or recaptures) ONE project without touching other projects or the session-wide
+    /// capability/active-statement state — the session-entity semantic (Roslyn analog:
+    /// capturing an <c>EmitBaseline</c> for one more module inside the same DebuggingSession).
+    /// </summary>
+    member _.AddProject
+        (
+            key: HotReloadProjectKey,
+            value: FSharpEmitBaseline,
+            implementationFiles: CheckedAssemblyAfterOptimization
+        ) : HotReloadSessionStart =
+        lock sessionLock (fun () ->
+            let hadExistingSlot = Map.containsKey key projects
+            let newState = mkProjectState value implementationFiles
 
-            if hadExistingSession then
-                ReplacedExisting
-            else
-                StartedFresh)
+            projects <- Map.add key newState projects
+            committedProjects <- Map.add key (toCommittedSnapshot newState) committedProjects
+            currentKey <- key
 
+            if hadExistingSlot then ReplacedExisting else StartedFresh)
+
+    /// Clears all active per-project state, keeping the committed snapshots restorable.
     member _.ClearBaseline() =
-        lock sessionLock (fun () -> session <- ValueNone)
+        lock sessionLock (fun () -> projects <- Map.empty)
 
+    /// Clears both active and restorable session state.
     member _.ClearSessionState() =
         lock sessionLock (fun () ->
-            session <- ValueNone
-            lastCommittedSession <- ValueNone)
+            projects <- Map.empty
+            committedProjects <- Map.empty
+            currentKey <- HotReloadProjectKey.Ambient
+            sessionCapabilities <- EditAndContinueCapabilities.BaselineOnly
+            sessionActiveStatements <- [])
 
-    member _.TryGetBaseline() =
+    /// Keys of the projects currently active in the session.
+    member _.ProjectKeys =
+        lock sessionLock (fun () -> projects |> Map.toList |> List.map fst)
+
+    member _.TryGetBaseline(?key: HotReloadProjectKey) =
         lock sessionLock (fun () ->
-            match session with
-            | ValueSome s -> ValueSome s.Baseline
-            | ValueNone -> ValueNone)
+            match Map.tryFind (resolveKey key) projects with
+            | Some state -> ValueSome state.Baseline
+            | None -> ValueNone)
 
-    member _.TryGetSession() =
-        lock sessionLock (fun () -> session)
-
-    member _.TryRestoreSession() =
+    member _.TryGetSession(?key: HotReloadProjectKey) =
         lock sessionLock (fun () ->
-            match session with
-            | ValueSome current -> ValueSome current
-            | ValueNone ->
-                match lastCommittedSession with
-                | ValueSome committed ->
+            match Map.tryFind (resolveKey key) projects with
+            | Some state -> ValueSome(toSessionView state)
+            | None -> ValueNone)
+
+    member _.TryRestoreSession(?key: HotReloadProjectKey) =
+        lock sessionLock (fun () ->
+            let key = resolveKey key
+
+            match Map.tryFind key projects with
+            | Some current -> ValueSome(toSessionView current)
+            | None ->
+                match Map.tryFind key committedProjects with
+                | Some committed ->
                     let restored = toCommittedSnapshot committed
-                    session <- ValueSome restored
-                    ValueSome restored
-                | ValueNone -> ValueNone)
+                    projects <- Map.add key restored projects
+                    ValueSome(toSessionView restored)
+                | None -> ValueNone)
 
+    /// <summary>
     /// Replaces the runtime capability set consulted by edit classification. Safe at any point
     /// in the session: capabilities are read per-emit and never affect already-emitted deltas.
     /// Hosts use this when the running process reports its capabilities after the session was
     /// started (the dotnet-watch session is prestarted before the application launches).
-    member _.UpdateCapabilities(capabilities: EditAndContinueCapabilities) =
+    /// Session-wide. Returns false when no project is active.
+    /// </summary>
+    member _.UpdateCapabilities(value: EditAndContinueCapabilities) =
         lock sessionLock (fun () ->
-            match session with
-            | ValueSome state ->
-                session <- ValueSome { state with Capabilities = capabilities }
+            if Map.isEmpty projects then
+                false
+            else
+                sessionCapabilities <- value
+                true)
 
-                match lastCommittedSession with
-                | ValueSome committed ->
-                    lastCommittedSession <- ValueSome { committed with Capabilities = capabilities }
-                | ValueNone -> ()
-
-                true
-            | ValueNone -> false)
+    /// Unconditionally sets the session-wide capability set; used by the session entity,
+    /// whose capabilities are fixed at creation time, before any project is added.
+    member _.SetCapabilities(value: EditAndContinueCapabilities) =
+        lock sessionLock (fun () -> sessionCapabilities <- value)
 
     /// <summary>
     /// Replaces the debugger-supplied active statements consulted by the next emit (Phase G).
     /// Hosts call this whenever the debugger reports a break state (Roslyn analog: the
     /// DebuggingSession fetching <c>ManagedActiveStatementDebugInfo</c> from the debugger per
     /// edit session). Passing an empty list clears the set (no statements are active, e.g.
-    /// updates applied while the process runs free). Returns false when no session is active.
+    /// updates applied while the process runs free). Session-wide. Returns false when no
+    /// project is active.
     /// </summary>
-    member _.UpdateActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo list) =
+    member _.UpdateActiveStatements(value: FSharpManagedActiveStatementDebugInfo list) =
         lock sessionLock (fun () ->
-            match session with
-            | ValueSome state ->
-                session <- ValueSome { state with ActiveStatements = activeStatements }
+            if Map.isEmpty projects then
+                false
+            else
+                sessionActiveStatements <- value
+                true)
 
-                match lastCommittedSession with
-                | ValueSome committed ->
-                    lastCommittedSession <- ValueSome { committed with ActiveStatements = activeStatements }
-                | ValueNone -> ()
+    /// Unconditionally sets the session-wide active statements; used by the session entity.
+    member _.SetActiveStatements(value: FSharpManagedActiveStatementDebugInfo list) =
+        lock sessionLock (fun () -> sessionActiveStatements <- value)
 
-                true
-            | ValueNone -> false)
-
-    member _.UpdateImplementationFiles(implementationFiles: CheckedAssemblyAfterOptimization) =
+    member _.UpdateImplementationFiles(implementationFiles: CheckedAssemblyAfterOptimization, ?key: HotReloadProjectKey) =
         lock sessionLock (fun () ->
-            match session with
-            | ValueSome state ->
-                let updated =
-                    {
-                        state with
-                            ImplementationFiles = implementationFiles
-                    }
-
-                session <- ValueSome updated
-                lastCommittedSession <- ValueSome(toCommittedSnapshot updated)
-            | ValueNone -> ())
+            updateProject
+                (resolveKey key)
+                (fun state ->
+                    { state with
+                        ImplementationFiles = implementationFiles
+                    })
+                true)
 
     /// <summary>
     /// Replaces the committed per-method sequence-point view after a line-shift-only update
@@ -172,89 +285,141 @@ type internal HotReloadSessionStore() =
     /// the last committed solution.
     /// </summary>
     member _.UpdateCommittedSequencePoints
-        (snapshots: Map<int, FSharp.Compiler.HotReload.ActiveStatementAnalysis.MethodSequencePoints>)
-        =
+        (
+            snapshots: Map<int, FSharp.Compiler.HotReload.ActiveStatementAnalysis.MethodSequencePoints>,
+            ?key: HotReloadProjectKey
+        ) =
         lock sessionLock (fun () ->
-            match session with
-            | ValueSome state ->
-                let updated =
+            updateProject
+                (resolveKey key)
+                (fun state ->
                     { state with
                         Baseline =
                             { state.Baseline with
                                 SequencePointSnapshots = snapshots }
-                    }
+                    })
+                true)
 
-                session <- ValueSome updated
-                lastCommittedSession <- ValueSome(toCommittedSnapshot updated)
-            | ValueNone -> ())
-
-    member _.UpdateBaseline(baseline: FSharpEmitBaseline) =
+    /// Stages the next-generation baseline as the project's pending update.
+    member _.UpdateBaseline(baseline: FSharpEmitBaseline, ?key: HotReloadProjectKey) =
         if baseline.EncId = Guid.Empty then
             invalidArg (nameof baseline) "Pending baseline must carry a non-empty EncId."
 
         lock sessionLock (fun () ->
-            match session with
-            | ValueSome state ->
-                session <-
-                    ValueSome
-                        {
-                            state with
-                                PendingUpdate =
-                                    Some
-                                        {
-                                            GenerationId = baseline.EncId
-                                            Baseline = baseline
-                                        }
-                        }
-            | ValueNone -> ())
+            updateProject
+                (resolveKey key)
+                (fun state ->
+                    { state with
+                        PendingUpdate =
+                            Some
+                                {
+                                    GenerationId = baseline.EncId
+                                    Baseline = baseline
+                                    ImplementationFiles = None
+                                }
+                    })
+                false)
 
-    member _.RecordDeltaApplied(generationId: Guid) =
+    /// <summary>
+    /// Attaches the fresh typed implementation files to the project's pending update so a
+    /// deferred commit (the session-entity flow) can advance the committed diff inputs together
+    /// with the baseline. No-op when the project has no pending update.
+    /// </summary>
+    member _.StagePendingImplementationFiles
+        (
+            implementationFiles: CheckedAssemblyAfterOptimization,
+            ?key: HotReloadProjectKey
+        ) =
+        lock sessionLock (fun () ->
+            updateProject
+                (resolveKey key)
+                (fun state ->
+                    match state.PendingUpdate with
+                    | Some pending ->
+                        { state with
+                            PendingUpdate =
+                                Some
+                                    { pending with
+                                        ImplementationFiles = Some implementationFiles }
+                        }
+                    | None -> state)
+                false)
+
+    member private _.CommitPendingLocked(pendings: (HotReloadProjectKey * HotReloadProjectState * PendingHotReloadUpdate) list) =
+        for key, state, pending in pendings do
+            let updated =
+                {
+                    state with
+                        Baseline = pending.Baseline
+                        ImplementationFiles = defaultArg pending.ImplementationFiles state.ImplementationFiles
+                        CurrentGeneration = state.CurrentGeneration + 1
+                        PreviousGenerationId = Some pending.GenerationId
+                        PendingUpdate = None
+                }
+
+            projects <- Map.add key updated projects
+            committedProjects <- Map.add key (toCommittedSnapshot updated) committedProjects
+
+    /// <summary>
+    /// Commits the applied update identified by <paramref name="generationId"/> together with
+    /// every other pending project update — solution-wide commit semantics (Roslyn's
+    /// <c>CommitSolutionUpdate</c>): partial cross-project commits are unrepresentable.
+    /// </summary>
+    member this.RecordDeltaApplied(generationId: Guid) =
         if generationId = Guid.Empty then
             invalidArg (nameof generationId) "Generation ID cannot be empty GUID."
 
         lock sessionLock (fun () ->
-            match session with
-            | ValueSome state ->
-                let pending =
-                    match state.PendingUpdate with
-                    | Some pending when pending.GenerationId = generationId -> pending
-                    | Some _ ->
-                        invalidArg
-                            (nameof generationId)
-                            "Generation ID does not match the currently pending hot reload update."
-                    | None -> invalidOp "Cannot commit delta: no pending hot reload update."
+            if Map.isEmpty projects then
+                invalidOp "Cannot record delta applied: no active hot reload session."
 
-                let updated =
-                    {
-                        state with
-                            Baseline = pending.Baseline
-                            CurrentGeneration = state.CurrentGeneration + 1
-                            PreviousGenerationId = Some generationId
-                            PendingUpdate = None
-                    }
+            let pendings =
+                projects
+                |> Map.toList
+                |> List.choose (fun (key, state) ->
+                    state.PendingUpdate
+                    |> Option.map (fun pending -> key, state, pending))
 
-                session <- ValueSome updated
-                lastCommittedSession <- ValueSome(toCommittedSnapshot updated)
-            | ValueNone ->
-                invalidOp "Cannot record delta applied: no active hot reload session.")
+            if List.isEmpty pendings then
+                invalidOp "Cannot commit delta: no pending hot reload update."
 
+            let matchesPending =
+                pendings
+                |> List.exists (fun (_, _, pending) -> pending.GenerationId = generationId)
+
+            if not matchesPending then
+                invalidArg (nameof generationId) "Generation ID does not match the currently pending hot reload update."
+
+            this.CommitPendingLocked pendings)
+
+    /// <summary>
+    /// Commits ALL pending project updates atomically without generation-id validation —
+    /// the session entity's <c>Commit</c> (Roslyn's <c>CommitSolutionUpdate</c>). Returns the
+    /// generation ids committed (empty when nothing was pending).
+    /// </summary>
+    member this.CommitAllPending() : Guid list =
+        lock sessionLock (fun () ->
+            let pendings =
+                projects
+                |> Map.toList
+                |> List.choose (fun (key, state) ->
+                    state.PendingUpdate
+                    |> Option.map (fun pending -> key, state, pending))
+
+            this.CommitPendingLocked pendings
+            pendings |> List.map (fun (_, _, pending) -> pending.GenerationId))
+
+    /// Discards ALL pending project updates (Roslyn's <c>DiscardSolutionUpdate</c>).
     member _.DiscardPendingUpdate() =
         lock sessionLock (fun () ->
-            match session with
-            | ValueSome state ->
-                session <-
-                    ValueSome
-                        {
-                            state with
-                                PendingUpdate = None
-                        }
-            | ValueNone -> ())
+            projects <- projects |> Map.map (fun _ state -> { state with PendingUpdate = None }))
 
 let private activeStoreLock = obj ()
 let mutable private activeSessionStore = HotReloadSessionStore()
 
 /// The active store remains process-scoped today; callers set this when installing a
-/// service-owned session store so global helper calls route to that owner.
+/// service-owned session store so global helper calls (and the fsc emit hook, which has no
+/// project identity) route to that owner. Session-entity stores are NEVER registered here.
 let setSessionStore (store: HotReloadSessionStore) =
     if obj.ReferenceEquals(store, null) then
         invalidArg (nameof store) "Hot reload session store cannot be null."
@@ -264,27 +429,22 @@ let setSessionStore (store: HotReloadSessionStore) =
 let getSessionStore () =
     lock activeStoreLock (fun () -> activeSessionStore)
 
-let createSessionStore () =
-    HotReloadSessionStore()
+let createSessionStore () = HotReloadSessionStore()
 
-// Backward-compatible module functions delegate to the currently active store.
+// Backward-compatible module functions delegate to the currently active store and operate on
+// its current (most recently started) project slot.
 let setBaseline (value: FSharpEmitBaseline) (implementationFiles: CheckedAssemblyAfterOptimization) =
     getSessionStore().SetBaseline(value, implementationFiles)
 
-let clearBaseline () =
-    getSessionStore().ClearBaseline()
+let clearBaseline () = getSessionStore().ClearBaseline()
 
-let clearSessionState () =
-    getSessionStore().ClearSessionState()
+let clearSessionState () = getSessionStore().ClearSessionState()
 
-let tryGetBaseline () =
-    getSessionStore().TryGetBaseline()
+let tryGetBaseline () = getSessionStore().TryGetBaseline()
 
-let tryGetSession () =
-    getSessionStore().TryGetSession()
+let tryGetSession () = getSessionStore().TryGetSession()
 
-let tryRestoreSession () =
-    getSessionStore().TryRestoreSession()
+let tryRestoreSession () = getSessionStore().TryRestoreSession()
 
 let updateImplementationFiles (implementationFiles: CheckedAssemblyAfterOptimization) =
     getSessionStore().UpdateImplementationFiles(implementationFiles)

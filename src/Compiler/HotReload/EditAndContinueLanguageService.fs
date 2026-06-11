@@ -143,12 +143,15 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     /// <summary>
     /// Initialise or replace the current baseline and reset the generation counters. When the host
     /// negotiated runtime capabilities, pass them via <paramref name="capabilities"/>; otherwise the
-    /// session defaults to <see cref="EditAndContinueCapabilities.BaselineOnly"/>.
+    /// session defaults to <see cref="EditAndContinueCapabilities.BaselineOnly"/>. Replaces the
+    /// WHOLE session (legacy single-session semantics); pass <paramref name="projectKey"/> to
+    /// record the project identity the new session is keyed by.
     /// </summary>
     member _.StartSession
         (
             baseline: FSharpEmitBaseline,
-            ?capabilities: EditAndContinueCapabilities
+            ?capabilities: EditAndContinueCapabilities,
+            ?projectKey: HotReloadState.HotReloadProjectKey
         ) : HotReloadState.HotReloadSessionStart =
         use _ =
             Activity.start "HotReload.StartSession" [|
@@ -156,14 +159,15 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                 activityTagHotReloadAction, "baseline"
             |]
 
-        sessionStore().SetBaseline(baseline, CheckedAssemblyAfterOptimization [], ?capabilities = capabilities)
+        sessionStore().SetBaseline(baseline, CheckedAssemblyAfterOptimization [], ?capabilities = capabilities, ?key = projectKey)
 
     /// <summary>Initialise or replace the current baseline together with its typed implementation files.</summary>
     member _.StartSession
         (
             baseline: FSharpEmitBaseline,
             implementationFiles: CheckedAssemblyAfterOptimization,
-            ?capabilities: EditAndContinueCapabilities
+            ?capabilities: EditAndContinueCapabilities,
+            ?projectKey: HotReloadState.HotReloadProjectKey
         ) : HotReloadState.HotReloadSessionStart =
         use _ =
             Activity.start "HotReload.StartSession" [|
@@ -171,19 +175,38 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                 activityTagHotReloadAction, "baseline+impl"
             |]
 
-        sessionStore().SetBaseline(baseline, implementationFiles, ?capabilities = capabilities)
+        sessionStore().SetBaseline(baseline, implementationFiles, ?capabilities = capabilities, ?key = projectKey)
+
+    /// <summary>
+    /// Adds (or recaptures) the baseline of ONE project without replacing the other projects in
+    /// the session or its session-wide capability/active-statement state (the session-entity
+    /// semantic; Roslyn analog: one more per-module <c>EmitBaseline</c> in a DebuggingSession).
+    /// </summary>
+    member _.AddProject
+        (
+            projectKey: HotReloadState.HotReloadProjectKey,
+            baseline: FSharpEmitBaseline,
+            implementationFiles: CheckedAssemblyAfterOptimization
+        ) : HotReloadState.HotReloadSessionStart =
+        use _ =
+            Activity.start "HotReload.AddProject" [|
+                Activity.Tags.project, baseline.ModuleId.ToString()
+                activityTagHotReloadAction, "baseline+impl"
+            |]
+
+        sessionStore().AddProject(projectKey, baseline, implementationFiles)
 
     /// <summary>Attempts to fetch the current baseline.</summary>
     member _.TryGetBaseline() =
         sessionStore().TryGetBaseline()
 
     /// <summary>Attempts to fetch the current session (baseline + generation metadata).</summary>
-    member _.TryGetSession() =
-        sessionStore().TryGetSession()
+    member _.TryGetSession(?projectKey: HotReloadState.HotReloadProjectKey) =
+        sessionStore().TryGetSession(?key = projectKey)
 
     /// <summary>Attempts to restore the active session from the last committed snapshot.</summary>
-    member _.TryRestoreSession() =
-        sessionStore().TryRestoreSession()
+    member _.TryRestoreSession(?projectKey: HotReloadState.HotReloadProjectKey) =
+        sessionStore().TryRestoreSession(?key = projectKey)
 
     /// <summary>Updates the stored EncId after a successful delta application.</summary>
     member _.OnDeltaApplied(generationId: Guid) =
@@ -222,7 +245,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     /// source of the fresh sequence points for line-shift detection, active-statement remapping and
     /// the emitted PDB delta.
     /// </summary>
-    member _.EmitDelta(request: DeltaEmissionRequest, ?freshDebugPdb: byte[]) =
+    member _.EmitDelta(request: DeltaEmissionRequest, ?freshDebugPdb: byte[], ?projectKey: HotReloadState.HotReloadProjectKey) =
         let trace = shouldTraceMetadata ()
         if trace then
             let asm = typeof<FSharpEditAndContinueLanguageService>.Assembly
@@ -233,7 +256,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                 File.AppendAllText(path, message)
             with :? IOException as ex ->
                 eprintfn "[fsharp-hotreload][service] Failed to write trace log: %s" ex.Message
-        match sessionStore().TryGetSession() with
+        match sessionStore().TryGetSession(?key = projectKey) with
         | ValueNone -> Error HotReloadError.NoActiveSession
         | ValueSome session ->
             use _ =
@@ -329,7 +352,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                                 delta.GenerationId
                                 delta.BaseGenerationId
                                 chainedBaseline.EncId
-                        sessionStore().UpdateBaseline(chainedBaseline)
+                        sessionStore().UpdateBaseline(chainedBaseline, ?key = projectKey)
 
                         { delta with
                             UpdatedBaseline = Some chainedBaseline }
@@ -358,11 +381,18 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         tcGlobals: TcGlobals,
         updatedImplementation: CheckedAssemblyAfterOptimization,
         ilModule: ILModuleDef,
-        ?freshDebugPdb: byte[]
+        ?freshDebugPdb: byte[],
+        ?projectKey: HotReloadState.HotReloadProjectKey,
+        ?deferCommit: bool
     ) : Result<DeltaEmissionResult, HotReloadError> =
+        // Deferred commit (the session-entity flow): stage everything as the project's pending
+        // update and let the host commit/discard all projects together (Roslyn's
+        // EmitSolutionUpdate/CommitSolutionUpdate split). The legacy flow commits immediately.
+        let deferCommit = defaultArg deferCommit false
+
         // Restore from the last committed snapshot before emitting if an overlapping
         // compile cleared the currently active session.
-        let sessionOpt = sessionStore().TryRestoreSession()
+        let sessionOpt = sessionStore().TryRestoreSession(?key = projectKey)
 
         match sessionOpt with
         | ValueNone -> Error HotReloadError.NoActiveSession
@@ -436,27 +466,36 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                                 session.CurrentGeneration
                             |> snd }
 
-                    match this.EmitDelta(request, ?freshDebugPdb = freshDebugPdb) with
+                    match this.EmitDelta(request, ?freshDebugPdb = freshDebugPdb, ?projectKey = projectKey) with
                     | Ok result ->
                         let delta = result.Delta
 
                         if delta.UpdatedBaseline.IsSome then
-                            this.CommitPendingUpdate(delta.GenerationId)
-                            sessionStore().UpdateImplementationFiles(updatedImplementation)
+                            if deferCommit then
+                                // Stage the fresh diff inputs with the pending baseline; the
+                                // host's session-wide Commit advances both together.
+                                sessionStore().StagePendingImplementationFiles(updatedImplementation, ?key = projectKey)
+                            else
+                                this.CommitPendingUpdate(delta.GenerationId)
+                                sessionStore().UpdateImplementationFiles(updatedImplementation, ?key = projectKey)
+
                             Ok result
                         elif not (List.isEmpty delta.SequencePointUpdates) then
                             // Line-shift-only update: no metadata/IL, no generation consumed.
                             // Commit the rebound sequence-point view so the next emit diffs
                             // against the lines the host just applied to the debugger.
+                            // (Committed immediately in both modes: there is no generation to
+                            // stage and nothing to pass to MetadataUpdater.ApplyUpdate.)
                             delta.ChainedSequencePoints
-                            |> Option.iter (sessionStore().UpdateCommittedSequencePoints)
+                            |> Option.iter (fun snapshots ->
+                                sessionStore().UpdateCommittedSequencePoints(snapshots, ?key = projectKey))
 
-                            sessionStore().UpdateImplementationFiles(updatedImplementation)
+                            sessionStore().UpdateImplementationFiles(updatedImplementation, ?key = projectKey)
                             Ok result
                         elif hasUpdates then
                             // Semantic edits that materialized into no emitted rows keep the
                             // legacy behavior: surface the (empty) delta to the caller.
-                            sessionStore().UpdateImplementationFiles(updatedImplementation)
+                            sessionStore().UpdateImplementationFiles(updatedImplementation, ?key = projectKey)
                             Ok result
                         else
                             Error HotReloadError.NoChanges
@@ -466,6 +505,26 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     member this.CommitPendingUpdate(generationId: Guid) =
         this.OnDeltaApplied(generationId)
 
-    /// <summary>Explicit discard hook mirroring Roslyn's pending-update semantics.</summary>
+    /// <summary>
+    /// Commits ALL pending project updates atomically without generation-id validation —
+    /// the session entity's solution-wide commit (Roslyn's <c>CommitSolutionUpdate</c>).
+    /// Returns the committed generation ids (empty when nothing was pending).
+    /// </summary>
+    member _.CommitAllPendingUpdates() =
+        sessionStore().CommitAllPending()
+
+    /// <summary>Explicit discard hook mirroring Roslyn's pending-update semantics (solution-wide).</summary>
     member _.DiscardPendingUpdate() =
         sessionStore().DiscardPendingUpdate()
+
+    /// <summary>Keys of the projects currently active in the session.</summary>
+    member _.ProjectKeys =
+        sessionStore().ProjectKeys
+
+    /// <summary>Unconditionally sets the session-wide capability set (session-entity creation path).</summary>
+    member _.SetCapabilities(capabilities: EditAndContinueCapabilities) =
+        sessionStore().SetCapabilities(capabilities)
+
+    /// <summary>Unconditionally replaces the session-wide active statements (session-entity path).</summary>
+    member _.SetActiveStatements(activeStatements: FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo list) =
+        sessionStore().SetActiveStatements(activeStatements)
