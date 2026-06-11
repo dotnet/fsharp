@@ -5,6 +5,19 @@
     <!-- S5 PD: XliffTasks 0.2.0-beta-000081 (15.9 pin) absent from modern feeds; defer localization to S7 transplant. -->
     <DisableLocalization>true</DisableLocalization>
   </PropertyGroup>
+  <!--
+    Block 5.6 — Patch B (net45 ref-pack shim).
+    For projects that DON'T import FSharpSource.targets (i.e. test/mock projects with
+    explicit <TargetFrameworkVersion>v4.5</TargetFrameworkVersion> or <TargetFramework>net45</...>),
+    redirect FrameworkPathOverride to v4.6 (binary-forward-compatible BCL). The complementary
+    in-place override in src/FSharpSource.targets handles product projects defaulting to v4.5.
+    See FSharpSource.targets for the full rationale.
+  -->
+  <PropertyGroup Condition=" ('$(TargetFrameworkVersion)' == 'v4.5' OR '$(TargetFramework)' == 'net45') AND '$(FrameworkPathOverride)' == '' ">
+    <_Net45RefPackFallback>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6</_Net45RefPackFallback>
+    <FrameworkPathOverride Condition=" Exists('$(_Net45RefPackFallback)\mscorlib.dll') ">$(_Net45RefPackFallback)</FrameworkPathOverride>
+  </PropertyGroup>
+
 <!-- F# 15.9 servicing ship vehicle: donor (16.11) conditional imports preserved verbatim per RestorePlan section 3.6 [B.4a] -->
   <Import Project="FSharpBuild.Directory.Build.props" Condition="'$(FSharpTestCompilerVersion)' == ''" />
   <Import Project="FSharpTests.Directory.Build.props" Condition="'$(FSharpTestCompilerVersion)' != ''" />

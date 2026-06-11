@@ -1,7 +1,20 @@
 <Project>
+  <!--
+    Block 5.6 — Patch B (net45 ref-pack shim), second instance.
+    Mirror of the .props block: legacy XML projects (xmlns="http://schemas.microsoft.com/developer/msbuild/2003")
+    set <TargetFrameworkVersion>v4.5</TargetFrameworkVersion> in the project body AFTER
+    Directory.Build.props has fired. We re-evaluate in Directory.Build.targets (which auto-imports
+    AFTER project body, BEFORE _CheckForUnsupportedTargetFramework) to catch them too.
+    Guard on '$(FrameworkPathOverride)' == '' makes this idempotent w.r.t. the .props instance.
+  -->
+  <PropertyGroup Condition=" ('$(TargetFrameworkVersion)' == 'v4.5' OR '$(TargetFramework)' == 'net45') AND '$(FrameworkPathOverride)' == '' ">
+    <_Net45RefPackFallback>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6</_Net45RefPackFallback>
+    <FrameworkPathOverride Condition=" Exists('$(_Net45RefPackFallback)\mscorlib.dll') ">$(_Net45RefPackFallback)</FrameworkPathOverride>
+  </PropertyGroup>
+
   <Import Project="FSharpBuild.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
-  <Import Project="CoordinateXlif.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' "/>
+  <Import Project="CoordinateXlif.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' and Exists('CoordinateXlif.targets') "/>
 
   <ItemGroup Condition="'$(UnitTestType)' == 'nunit'">
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
