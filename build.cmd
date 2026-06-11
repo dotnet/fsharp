@@ -211,11 +211,7 @@ if /i "%ARG%" == "microbuild" (
     set BUILD_CORECLR=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
-    REM B10 (15.9 servicing): NUPKG production explicitly disabled. Per Constraint 4 in plan.md,
-    REM F# 15.9 servicing produces VSIX-only insertion payload. FSharp.Core 4.5.2 already shipped
-    REM to nuget.org in Oct 2018; no republish. To re-enable nupkg production for any reason,
-    REM remove the comment marker below AND remove the `REM ` prefix from the line.
-    REM set BUILD_NUGET=1
+    set BUILD_NUGET=1
     set BUILD_MICROBUILD=1
 
     set TEST_NET40_COMPILERUNIT_SUITE=1
@@ -535,15 +531,12 @@ SET VSCMD_START_DIR=%cd%
 
 :: Try find installation path of VS2017 with vswhere.exe
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\" (
-    for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -version 15 -latest -property installationPath`) do set VS_INSTALLATION_PATH=%%i
+    for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -property installationPath`) do set VS_INSTALLATION_PATH=%%i
 )
 
 if "%VS_INSTALLATION_PATH%" NEQ "" (
     call "%VS_INSTALLATION_PATH%\Common7\Tools\VsDevCmd.bat"
 )
-
-REM Modern VsDevCmd no longer sets VS150COMNTOOLS for VS 2017; set it explicitly so legacy logic below works.
-if "%VS150COMNTOOLS%" EQU "" if "%VS_INSTALLATION_PATH%" NEQ "" set "VS150COMNTOOLS=%VS_INSTALLATION_PATH%\Common7\Tools\"
 
 :: If there's no installation of VS2017 or VS2017 Preview, use the build tools
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
@@ -736,12 +729,7 @@ if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
 %_ngenexe% install %_nugetexe% /nologo
 
 echo ---------------- Done with package restore, verify buildfrom source ---------------
-REM F# 15.9 servicing: skip buildfromsource.cmd in CI -- it tries to dotnet pack
-REM FSharp.Compiler.nuget.fsproj which doesn't have pack target wired up cleanly.
-REM Per Constraint 4 (no nupkg production for 15.9 servicing), the netstandard
-REM FSharp.Compiler nupkg is not part of the VS insertion payload.
-REM To re-enable for local testing: set FSC_BUILDFROMSOURCE_VERIFY=1.
-if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" if "%FSC_BUILDFROMSOURCE_VERIFY%" == "1" (
+if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
   pushd src
   call buildfromsource.cmd
   @if ERRORLEVEL 1 echo Error: buildfromsource.cmd failed  && goto :failure

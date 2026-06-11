@@ -1,12 +1,19 @@
 {
-  "//": "F# 15.9 servicing branch.",
-  "//": "DO NOT remove init-tools.cmd, BuildToolsVersion.txt, DotnetCLIVersion.txt, DotnetCLIToolsVersion.txt -- those install the legacy CLIs needed for project.json restore.",
   "sdk": {
-    "version": "2.1.300",
+    "version": "6.0.135",
     "rollForward": "minor"
   },
-  "//-msbuild-sdks": "Required by VS 2017 NuGetSdkResolver to find Microsoft.NET.Sdk for vsintegration .csproj files (Vsix, ItemTemplates, PEVerify).",
+  "tools": {
+    "dotnet": "6.0.135",
+    "vs": {
+      "version": "16.8",
+      "components": [
+        "Microsoft.VisualStudio.Component.FSharp"
+      ]
+    }
+  },
   "msbuild-sdks": {
-    "Microsoft.NET.Sdk": "2.1.300"
+    "Microsoft.DotNet.Arcade.Sdk": "6.0.0-beta.25468.4",
+    "Microsoft.DotNet.Helix.Sdk": "2.0.0-beta.19069.2"
   }
 }

@@ -59,6 +59,17 @@
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
+    <!--
+      Block 5.6 — Patch B (net45 ref-pack shim).
+      Modern Windows SDK / VS installs only ship Reference Assemblies\v4.6+ as complete packs.
+      v4.5 / v4.5.1 / v4.5.2 folders contain only IntelliSense .xml (no mscorlib.dll, no
+      FrameworkList.xml), so MSB3644 fails for every project defaulting to v4.5. v4.6 BCL is
+      binary-forward-compatible with v4.5 (every v4.5 type/signature exists in v4.6); using
+      it for compile-time symbol resolution is safe. TargetFrameworkVersion is unchanged, so
+      emitted IL still declares "needs v4.5".
+    -->
+    <_Net45RefPackFallback>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6</_Net45RefPackFallback>
+    <FrameworkPathOverride Condition=" '$(TargetFrameworkVersion)' == 'v4.5' AND '$(FrameworkPathOverride)' == '' AND Exists('$(_Net45RefPackFallback)\mscorlib.dll') ">$(_Net45RefPackFallback)</FrameworkPathOverride>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">

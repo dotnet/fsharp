@@ -1,9 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <OutputType>Library</OutputType>
     <ExtensionInstallationFolder>Microsoft\FSharp</ExtensionInstallationFolder>
     <PackageTargetFallback>netcoreapp1.0</PackageTargetFallback>
@@ -28,6 +28,8 @@
       <Link>FSharp.Data.TypeProviders.dll</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="$(FSharpSourcesRoot)\..\Tools\FSharp.SqliteVendored\runtimes\win-x86\native\e_sqlite3.dll"><Link>runtimes\win-x86\native\e_sqlite3.dll</Link><IncludeInVSIX>true</IncludeInVSIX><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="$(FSharpSourcesRoot)\..\Tools\FSharp.SqliteVendored\runtimes\win-x64\native\e_sqlite3.dll"><Link>runtimes\win-x64\native\e_sqlite3.dll</Link><IncludeInVSIX>true</IncludeInVSIX><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
   </ItemGroup>
 
   <ItemGroup>

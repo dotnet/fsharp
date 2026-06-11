@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Sample_VS2012_FSharp_ConsoleApp_net45</RootNamespace>
     <AssemblyName>Sample_VS2012_FSharp_ConsoleApp_net45</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <Name>Sample_VS2012_FSharp_ConsoleApp_net45</Name>
     <ProductVersion>10.0.0</ProductVersion>
     <UsePartialTypes>False</UsePartialTypes>

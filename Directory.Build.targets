@@ -1,64 +1,29 @@
-<!-- Copyright (c) Microsoft. Apache License, Version 2.0. See License.txt. -->
-<!--
-  F# 15.9 servicing branch — root Directory.Build.targets (engineering-only).
-
-  This file does NOT exist in the F# 15.9 RTM tag. It is added on
-  release/dev15.9.x to provide modern build-environment compatibility
-  WITHOUT touching any product source under src/fsharp/** or
-  vsintegration/src/**/. Per Constraint 3 (no product code changes).
-
-  Sole purpose: import Microsoft.NETFramework.ReferenceAssemblies.net45
-  targets file so that net4.5-targeting projects find ref assemblies via
-  the NuGet package, instead of relying on the .NET 4.5 Targeting Pack
-  being installed on the build machine. VS 2017 install no longer
-  necessarily includes the v4.5 ref assemblies (only v4.7.2 etc).
-
-  Placed in Directory.Build.targets (NOT .props) because the import sets
-  conditional properties based on $(TargetFrameworkVersion) which is set
-  by the project file PropertyGroup — which evaluates AFTER .props but
-  BEFORE .targets.
-
-  See packages.config for the package reference.
--->
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)packages\Microsoft.NETFramework.ReferenceAssemblies.net45.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net45.targets"
-          Condition="Exists('$(MSBuildThisFileDirectory)packages\Microsoft.NETFramework.ReferenceAssemblies.net45.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net45.targets')" />
+  <!--
+    Block 5.6 — Patch B (net45 ref-pack shim), second instance.
+    Mirror of the .props block: legacy XML projects (xmlns="http://schemas.microsoft.com/developer/msbuild/2003")
+    set <TargetFrameworkVersion>v4.5</TargetFrameworkVersion> in the project body AFTER
+    Directory.Build.props has fired. We re-evaluate in Directory.Build.targets (which auto-imports
+    AFTER project body, BEFORE _CheckForUnsupportedTargetFramework) to catch them too.
+    Guard on '$(FrameworkPathOverride)' == '' makes this idempotent w.r.t. the .props instance.
+  -->
+  <PropertyGroup Condition=" ('$(TargetFrameworkVersion)' == 'v4.5' OR '$(TargetFramework)' == 'net45') AND '$(FrameworkPathOverride)' == '' ">
+    <_Net45RefPackFallback>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6</_Net45RefPackFallback>
+    <FrameworkPathOverride Condition=" Exists('$(_Net45RefPackFallback)\mscorlib.dll') ">$(_Net45RefPackFallback)</FrameworkPathOverride>
+  </PropertyGroup>
 
-  <!-- F# 15.9 ProjectReferences are all single-TFM (net40 / netstandard1.6 / Proto). Microsoft.Common.CurrentVersion.targets
-       declares a UsingTask for GetReferenceNearestTargetFrameworkTask via $(NuGetRestoreTargets) which is empty in
-       VS 2017 standalone MSBuild (NuGet.targets ships with NuGet.exe / dotnet SDK, not VS 2017 install). MSBuild's
-       _GetProjectReferenceTargetFrameworkProperties target then unconditionally calls the task → MSB4036.
+  <Import Project="FSharpBuild.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
+  <Import Project="FSharpTests.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
+  <Import Project="CoordinateXlif.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' and Exists('CoordinateXlif.targets') "/>
 
-       Workaround: provide an inline-task implementation that just echoes back the ProjectReferenceTargetFramework
-       (no cross-targeting math needed because all our projects are single-TFM). -->
-  <UsingTask TaskName="GetReferenceNearestTargetFrameworkTask"
-             TaskFactory="CodeTaskFactory"
-             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-    <ParameterGroup>
-      <CurrentProjectTargetFramework ParameterType="System.String" Required="false" />
-      <CurrentProjectTargetPlatform ParameterType="System.String" Required="false" />
-      <CurrentProjectName ParameterType="System.String" Required="false" />
-      <FallbackTargetFrameworks ParameterType="System.String" Required="false" />
-      <PossibleReferencedProjectsFrameworks ParameterType="System.String" Required="false" />
-      <PossibleReferencedProjectsPlatforms ParameterType="System.String" Required="false" />
-      <AnnotatedProjectReferences ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="false" />
-      <AssignedProjects ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
-      <NearestTargetFramework ParameterType="System.String" Output="true" />
-      <NearestTargetPlatform ParameterType="System.String" Output="true" />
-    </ParameterGroup>
-    <Task>
-      <Code Type="Fragment" Language="cs"><![CDATA[
-        // F# 15.9 servicing branch shim: all projects are single-TFM. Pass through unchanged.
-        AssignedProjects = AnnotatedProjectReferences;
-        if (!string.IsNullOrEmpty(PossibleReferencedProjectsFrameworks))
-        {
-            NearestTargetFramework = PossibleReferencedProjectsFrameworks.Split(';')[0];
-        }
-        if (!string.IsNullOrEmpty(PossibleReferencedProjectsPlatforms))
-        {
-            NearestTargetPlatform = PossibleReferencedProjectsPlatforms.Split(';')[0];
-        }
-      ]]></Code>
-    </Task>
-  </UsingTask>
+  <ItemGroup Condition="'$(UnitTestType)' == 'nunit'">
+    <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
+    <PackageReference Include="NUnit3TestAdapter" Version="$(NUnit3TestAdapterVersion)" />
+    <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
+    <PackageReference Include="xunit" Version="$(XUnitVersion)" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitVersion)" />
+    <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
+  </ItemGroup>
 </Project>

@@ -1,0 +1,43 @@
+<Project>
+
+  
+  <PropertyGroup>
+    <!-- S5 PD: XliffTasks 0.2.0-beta-000081 (15.9 pin) absent from modern feeds; defer localization to S7 transplant. -->
+    <DisableLocalization>true</DisableLocalization>
+  </PropertyGroup>
+  <!--
+    Block 5.6 — Patch B (net45 ref-pack shim).
+    For projects that DON'T import FSharpSource.targets (i.e. test/mock projects with
+    explicit <TargetFrameworkVersion>v4.5</TargetFrameworkVersion> or <TargetFramework>net45</...>),
+    redirect FrameworkPathOverride to v4.6 (binary-forward-compatible BCL). The complementary
+    in-place override in src/FSharpSource.targets handles product projects defaulting to v4.5.
+    See FSharpSource.targets for the full rationale.
+  -->
+  <PropertyGroup Condition=" ('$(TargetFrameworkVersion)' == 'v4.5' OR '$(TargetFramework)' == 'net45') AND '$(FrameworkPathOverride)' == '' ">
+    <_Net45RefPackFallback>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6</_Net45RefPackFallback>
+    <FrameworkPathOverride Condition=" Exists('$(_Net45RefPackFallback)\mscorlib.dll') ">$(_Net45RefPackFallback)</FrameworkPathOverride>
+  </PropertyGroup>
+
+<!-- F# 15.9 servicing ship vehicle: donor (16.11) conditional imports preserved verbatim per RestorePlan section 3.6 [B.4a] -->
+  <Import Project="FSharpBuild.Directory.Build.props" Condition="'$(FSharpTestCompilerVersion)' == ''" />
+  <Import Project="FSharpTests.Directory.Build.props" Condition="'$(FSharpTestCompilerVersion)' != ''" />
+
+  <!-- S5.5 PD iter1: Legacy 15.9 package version remediation (overrides PackageVersions.props after FSharpBuild import). -->
+  <!-- Each override is justified per S5.5/strategy.md. DO NOT remove without re-probing feeds. -->
+  <PropertyGroup Label="S5.5-PackageVersionOverrides">
+    <!-- Pdb2Pdb 1.1.0-roslyn-62714-01 is a Roslyn-internal pre-release that was never pushed to public feeds.
+         Closest published is 1.1.0-beta2-20527-01 on dnceng/dotnet-tools (Nov 2020, 233 versions). -->
+    <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-beta2-20527-01</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
+  </PropertyGroup>
+
+  
+  <!-- S5.5 iter2: suppress restore-warning escalation for 15.9-era legacy CVE/downgrade noise (NU1603/1604/1605/1903).
+       NU1102 (missing pkg) is a hard error, fixed via build/targets/PackageVersions.props line 65 override above. -->
+  <PropertyGroup Label="S5.5-RestoreWarningSuppression">
+    <NoWarn>$(NoWarn);NU1603;NU1604;NU1605;NU1903</NoWarn>
+  </PropertyGroup>
+  <!-- Arcade common roots block: pulls in Arcade SDK common props (eng\common, etc.) -->
+  <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" />
+
+</Project>
+

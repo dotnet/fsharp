@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup>
+ <TargetFramework>net472</TargetFramework>
+ <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+ <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+ <SignAssembly>false</SignAssembly>
+ <RunCodeAnalysis>false</RunCodeAnalysis>
+ </PropertyGroup>
+ <ItemGroup>
+ <FilesToSign Include="$(VendoredSqliteRoot)\runtimes\win-x86\native\e_sqlite3.dll">
+ <Authenticode>3PartySHA2</Authenticode>
+ <StrongName>None</StrongName>
+ </FilesToSign>
+ <FilesToSign Include="$(VendoredSqliteRoot)\runtimes\win-x64\native\e_sqlite3.dll">
+ <Authenticode>3PartySHA2</Authenticode>
+ <StrongName>None</StrongName>
+ </FilesToSign>
+ </ItemGroup>
+</Project>

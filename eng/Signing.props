@@ -1,0 +1,5 @@
+<Project>
+ <ItemGroup>
+ <FileSignInfo Include="e_sqlite3.dll" CertificateName="MicrosoftWin8WinBlue" />
+ </ItemGroup>
+</Project>

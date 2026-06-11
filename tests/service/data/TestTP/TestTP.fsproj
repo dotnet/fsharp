@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\..\src</FSharpSourcesRoot>
@@ -12,7 +12,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>TestTP</RootNamespace>
     <AssemblyName>TestTP</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Name>TestTP</Name>
     <OutputPath>..\..\..\..\$(Configuration)\net40\bin</OutputPath>

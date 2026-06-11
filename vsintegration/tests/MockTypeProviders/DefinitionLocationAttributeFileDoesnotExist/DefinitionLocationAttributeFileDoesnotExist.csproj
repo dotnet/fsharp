@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.-->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -13,7 +13,7 @@
     <ProjectGuid>{8C2439BD-0E49-4929-A8B1-29CEE228191E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>DefinitionLocationAttributeFileDoesnotExist</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169;0067</NoWarn>

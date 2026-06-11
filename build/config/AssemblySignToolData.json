@@ -1,8 +1,8 @@
 {
   "sign": [
     {
-      "certificate": "Microsoft101240624",
-      "strongName": "MsSharedLib72",
+      "certificate": "Microsoft",
+      "strongName": "StrongName",
       "values": [
         "net40\\bin\\FSharp.Core.dll",
         "net40\\bin\\*\\FSharp.Core.resources.dll",
