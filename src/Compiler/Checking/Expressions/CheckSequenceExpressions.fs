@@ -387,7 +387,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             Some(resultExpr, tpenv)
 
-        | SynExpr.YieldOrReturn(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnKeyword = m }) ->
+        | SynExpr.YieldOrReturn(flags = (isYield, _); expr = synYieldExpr; range = m) ->
             let env = { env with eIsControlFlow = false }
             let genResultTy = NewInferenceType g
 
@@ -404,7 +404,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                 if IsControlFlowExpression synYieldExpr then
                     resultExpr
                 else
-                    mkDebugPoint synYieldExpr.Range resultExpr
+                    mkDebugPoint m resultExpr
 
             Some(resultExpr, tpenv)
 
