@@ -15,13 +15,11 @@ open FSharp.Compiler.Symbols
 
 open CancellableTasks
 
-/// Code-fix for FS3888: inserts the missing attribute into the .fsi above the
-/// matching declaration. Cross-document fix (diagnostic in .fs, edit in .fsi).
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingAttributeToSignature); Shared>]
 type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    // Path normalized to handle slash/case/relative differences between FCS and Roslyn.
+    // Normalize for slash/case/relative differences between FCS and Roslyn.
     let tryFindSigDocument (document: Document) (sigFilePath: string) =
         let solution = document.Project.Solution
 
@@ -42,7 +40,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             |> solution.GetDocument
             |> Option.ofObj
 
-    // `Conditional("DEBUG")` -> `("Conditional", "(\"DEBUG\")")`.
+    // `Conditional("DEBUG")` -> `"Conditional"`, `"(\"DEBUG\")"`.
     let splitAttribHead (text: string) : struct (string * string) =
         let mutable i = 0
 
@@ -51,14 +49,13 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
         struct (text.Substring(0, i), text.Substring(i))
 
-    // Negative-lookbehind guards against re-qualifying already-qualified or substring-of-longer-identifier tokens.
+    // Lookbehind avoids re-qualifying `X.Foo.` or matching a substring of a longer identifier.
     let qualifyEnumToken (simple: string) (qualified: string) (text: string) : string =
         let pattern = $@"(?<![\w\.]){System.Text.RegularExpressions.Regex.Escape(simple)}\."
         let replacement = qualified + "."
         System.Text.RegularExpressions.Regex.Replace(text, pattern, replacement)
 
-    // Auto-qualify well-known attribute names and enum args so the inserted .fsi
-    // text compiles without requiring extra opens.
+    // Inserted text must compile inside the .fsi without requiring extra `open`s.
     let canonicalizeAttribName (attribText: string) : string =
         let struct (head, rest) = splitAttribHead attribText
 
@@ -97,8 +94,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
         line.Substring(0, i)
 
-    // Reuse the .fsi's existing newline convention; if the target line has no
-    // terminator, walk backward to find one before falling back to Environment.NewLine.
+    // Match the .fsi's existing newline; fall back to Environment.NewLine.
     let lineBreakAt (sigSourceText: SourceText) (lineStart: int) =
         let inline lineBreakOf (line: TextLine) =
             let lbLen = line.EndIncludingLineBreak - line.End
@@ -119,7 +115,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
         result |> Option.defaultValue Environment.NewLine
 
-    // Bails out if the .fsi was truncated between registration and apply.
+    // Returns None if the .fsi was truncated between registration and apply.
     let tryFSharpRangeToTextSpan (text: SourceText) (range: FSharp.Compiler.Text.range) =
         try
             Some(RoslynHelpers.FSharpRangeToTextSpan(text, range))
@@ -134,7 +130,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
-            // SynAttribute.Range covers one attribute body without `[<` `>]` or sibling separators.
+            // SynAttribute.Range covers one attribute body, no `[<` `>]` or sibling separators.
             let attribSpan = context.Span
             let rawAttribText = sourceText.GetSubText(attribSpan).ToString()
 
@@ -145,10 +141,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                 let attribText = canonicalizeAttribName rawAttribText
                 let bracketed = $"[<{attribText}>]"
 
-                // Position-based lookup is unreliable in `[<A; B>]` / `[<A>]\n[<B>]`
-                // (lands on sibling attribute or on `let`/`type`/`module`). Enumerate
-                // symbol uses and pick the first definition starting after the diagnostic
-                // whose SignatureLocation points into a different file (the .fsi).
+                // Position lookup is unreliable inside `[<A; B>]` and `[<A>]\n[<B>]`; enumerate symbol uses instead.
                 let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync "AddMissingAttributeToSignature"
 
                 let diagFsRange =
@@ -159,14 +152,11 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                     |> Seq.filter (fun (u: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse) ->
                         u.IsFromDefinition
                         && u.Symbol.SignatureLocation.IsSome
-                        // SignatureLocation must point into the .fsi, not back at the .fs.
-                        // The wildcard self-identifier `_` in `member _.F = ...` is reported
-                        // as a definition whose SignatureLocation is its own .fs position.
+                        // The wildcard `_` in `member _.F = ...` is reported as a definition with SignatureLocation in the .fs.
                         && (match u.Symbol.SignatureLocation with
                             | Some sigLoc -> not (String.Equals(sigLoc.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase))
                             | None -> false)
-                        // Skip the implicit constructor of `type T() = ...`: its
-                        // SignatureLocation points at `new: ...`, not at the member.
+                        // `type T() = ...` reports an implicit ctor whose SignatureLocation is `new: ...`.
                         && (match u.Symbol with
                             | :? FSharpMemberOrFunctionOrValue as mfv -> not mfv.IsConstructor
                             | _ -> true)
@@ -179,7 +169,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                     if candidates.Length = 0 then
                         None
                     else
-                        // Tie-break by symbol name for determinism across overloads / type+ctor pairs.
+                        // Tie-break by name for deterministic overload/ctor selection.
                         candidates
                         |> Array.minBy (fun u ->
                             u.Range.StartLine, u.Range.StartColumn, u.Range.EndLine, u.Range.EndColumn, u.Symbol.FullName)
@@ -189,8 +179,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                 | Some sigRange when not (String.Equals(sigRange.FileName, document.FilePath, StringComparison.OrdinalIgnoreCase)) ->
                     match tryFindSigDocument document sigRange.FileName with
                     | Some sigDoc ->
-                        // Keep the DocumentId, not the Document: re-resolve at apply
-                        // time so intervening .fsi edits are observed.
+                        // Re-resolve at apply time so intervening .fsi edits are observed.
                         let sigDocId = sigDoc.Id
 
                         let normalizedSigPath =

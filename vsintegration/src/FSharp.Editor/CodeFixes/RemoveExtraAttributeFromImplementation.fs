@@ -13,16 +13,11 @@ open Microsoft.CodeAnalysis.Text
 
 open CancellableTasks
 
-/// Reverse code-fix for FS3888: removes the offending attribute from the .fs.
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveExtraAttributeFromImplementation); Shared>]
 type internal RemoveExtraAttributeFromImplementationCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    // Expand the SynAttribute.Range body span to the smallest enclosing chunk we can delete:
-    //   [<A>]\n            -> bracket + trailing newline + indent
-    //   [<A; B>]  drop A   -> "A; "
-    //   [<A; B>]  drop B   -> "; B"
-    // Returns None on unrecognized layouts (e.g. multi-line `[<\nA\n>]`).
+    // Expand `attribSpan` (one attribute body, no brackets) to the smallest deletable chunk; None on layouts we won't touch.
     let computeDeletionSpan (text: SourceText) (attribSpan: TextSpan) : TextSpan option =
         let s = text.ToString()
 
@@ -73,7 +68,7 @@ type internal RemoveExtraAttributeFromImplementationCodeFixProvider [<ImportingC
             if deletionEnd < s.Length && s.[deletionEnd] = '\n' then
                 deletionEnd <- deletionEnd + 1
 
-            // Only absorb indentation if the bracket is on its own line, otherwise it could be inline with other code.
+            // Only absorb leading indent if the bracket sits on its own line.
             let mutable indentStart = deletionStart
 
             while indentStart > 0 && (s.[indentStart - 1] = ' ' || s.[indentStart - 1] = '\t') do

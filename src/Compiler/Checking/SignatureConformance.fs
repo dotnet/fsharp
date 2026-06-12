@@ -47,9 +47,7 @@ type private E = WellKnownEntityAttributes
 
 module private AttributeConformance =
 
-    // Each row: a well-known attribute that is read off the .fsi by the
-    // typechecker / IDE. Runtime-only attributes (DllImport, ReflectedDefinition,
-    // SkipLocalsInit, ...) deliberately not listed.
+    // Runtime-only attributes (DllImport, ReflectedDefinition, SkipLocalsInit, ...) deliberately not listed.
     let private enforcedVals : V list = [
         V.NoDynamicInvocationAttribute_True ||| V.NoDynamicInvocationAttribute_False
         V.RequiresExplicitTypeArgumentsAttribute
@@ -68,8 +66,7 @@ module private AttributeConformance =
         // AutoOpen on .fs alone is a no-op for F# consumers (.fsi wins).
         E.NoComparisonAttribute
         E.NoEqualityAttribute
-        // StructuralEquality / StructuralComparison are documentary for consumers
-        // (F# default already generates them); load-bearing only as impl-side FS1176/FS1177.
+        // StructuralEquality / StructuralComparison are documentary on .fsi; F# default already generates them.
         E.CustomEqualityAttribute
         E.CustomComparisonAttribute
         E.ReferenceEqualityAttribute
@@ -96,7 +93,6 @@ module private AttributeConformance =
     let private enforcedValsMask     : V = List.reduce Flags.union enforcedVals
     let private enforcedEntitiesMask : E = List.reduce Flags.union enforcedEntities
 
-    // `AutoOpenAttribute` -> `"AutoOpen"`, `SealedAttribute_True ||| _False` -> `"Sealed"`.
     let inline private displayName< ^T when ^T : enum<uint64> > (flag: ^T) : string =
         let v = LanguagePrimitives.EnumToValue flag
         let lsb : ^T = LanguagePrimitives.EnumOfValue (v &&& (0uL - v))
@@ -106,7 +102,7 @@ module private AttributeConformance =
                 else s
         if s.EndsWith "Attribute" then s.Substring(0, s.Length - 9) else s
 
-    // Point the squiggle at the offending impl attribute, not the value/type identifier.
+    // Squiggle the impl attribute, not the value/type identifier.
     let inline private rangeOfMissing
         (classify: Attrib -> 'F)
         (attribs: Attrib list)
@@ -153,10 +149,7 @@ module private AttributeConformance =
             implVal sigVal fallback
 
     let checkEntity (g: TcGlobals) (implEntity: Entity) (sigEntity: Entity) (fallback: range) =
-        // Skip when the sig declares a non-module entity with hidden representation
-        // (e.g. `type internal T` opaque in .fsi vs DU in .fs): structural-equality
-        // / NoEquality attributes can't be applied to opaque type declarations.
-        // Modules report IsHiddenReprTycon=true but accept RequireQualifiedAccess.
+        // Opaque type in .fsi can't carry structural-equality / NoEquality. Modules pass: IsHiddenReprTycon=true but accept RQA.
         if sigEntity.IsModuleOrNamespace || not sigEntity.IsHiddenReprTycon then
             let enforcedFlagsOnEntity (e: Entity) =
                 EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
@@ -252,8 +245,6 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             fixup (sigAttribs @ keptImplAttribs)
             true
 
-        // Pull the enforcement-relevant subset of an Entity's / Val's flags,
-        // forcing the cached `Flags` to be populated as a side-effect.
         let checkEnforcedEntityAttribs implEntity sigEntity m =
             AttributeConformance.checkEntity g implEntity sigEntity m
 
@@ -320,10 +311,6 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             sigTycon.SetOtherRange (implTycon.Range, true)
             implTycon.SetOtherRange (sigTycon.Range, false)
 
-            // Enforce that compiler-semantic entity attributes present on the
-            // implementation are also present on the signature. See
-            // `signatureEnforcedEntityAttribs` for the list and rationale.
-            // Emitted as a warning (will become an error in a future F# version).
             checkEnforcedEntityAttribs implTycon sigTycon m
             
             if implTycon.LogicalName <> sigTycon.LogicalName then 
@@ -895,9 +882,6 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // Propagate defn location information from implementation to signature . 
             sigModRef.SetOtherRange (implModRef.Range, true)
             implModRef.Deref.SetOtherRange (sigModRef.Range, false)
-            // Enforce consumer-visible compiler-semantic attributes on the module
-            // itself (e.g. [<AutoOpen>] on a nested module). Same rationale as
-            // checkTypeDef. Emitted as a warning (will become an error later).
             checkEnforcedEntityAttribs implModRef.Deref sigModRef implModRef.Range
             checkModuleOrNamespaceContents implModRef.Range aenv infoReader implModRef sigModRef.ModuleOrNamespaceType &&
             checkAttribs aenv implModRef.Attribs sigModRef.Attribs implModRef.Deref.SetAttribs

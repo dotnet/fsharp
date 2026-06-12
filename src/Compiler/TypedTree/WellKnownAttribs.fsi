@@ -121,16 +121,12 @@ module internal Flags =
 
     val inline union<'F when 'F: enum<uint64>> : a: 'F -> b: 'F -> 'F
 
-    /// Pipe-friendly: `flags |> Flags.intersect scope`.
     val inline intersect<'F when 'F: enum<uint64>> : other: 'F -> flags: 'F -> 'F
 
-    /// Pipe-friendly: `a |> Flags.except b`.
     val inline except<'F when 'F: enum<uint64>> : b: 'F -> a: 'F -> 'F
 
-    /// Pipe-friendly: `flags |> Flags.intersects mask`.
     val inline intersects<'F when 'F: enum<uint64>> : other: 'F -> flags: 'F -> bool
 
-    /// Pipe-friendly: `subset |> Flags.isSubsetOf superset`.
     val inline isSubsetOf<'F when 'F: enum<uint64>> : superset: 'F -> subset: 'F -> bool
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.
