@@ -330,6 +330,9 @@ module EdgeCaseTests =
             let snapshot = map.Snapshot |> Seq.toArray
             Assert.True(snapshot.Length >= 100, $"Expected at least 100 entries, got {snapshot.Length}")
 
+    // Uses the process-global default-session store, which FSharpChecker.Create clears;
+    // serialize with the other store-touching suites so parallel collections can't race it.
+    [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
     module GenerationTrackingTests =
         open FSharp.Compiler.HotReloadState
         open FSharp.Compiler.HotReloadBaseline
