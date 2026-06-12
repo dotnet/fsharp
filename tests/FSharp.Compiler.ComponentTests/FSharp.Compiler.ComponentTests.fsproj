@@ -113,6 +113,7 @@
     <Compile Include="Conformance\Expressions\EvaluationOfElaboratedForms\EvaluationOfElaboratedForms.fs" />
     <Compile Include="Conformance\Expressions\ExpressionQuotations\Baselines.fs" />
     <Compile Include="Conformance\Expressions\ExpressionQuotations\Regressions.fs" />
+    <Compile Include="Conformance\Expressions\ExpressionQuotations\QuotationRendering\QuotationRenderingTests.fs" />
     <Compile Include="Conformance\Expressions\SyntacticSugar\SyntacticSugar.fs" />
     <Compile Include="Conformance\Expressions\SyntacticSugarAndAmbiguities\SyntacticSugarAndAmbiguities.fs" />
     <Compile Include="Conformance\InferenceProcedures\ByrefSafetyAnalysis\ByrefSafetyAnalysis.fs" />
