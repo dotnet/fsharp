@@ -560,6 +560,8 @@ stateDiagram-v2
 
 All labels in one place — who adds, removes, or reads each. **Cross-workflow flows** (e.g., `AI-Issue-Regression-PR` from `repo-assist` → consumed by `regression-pr-shepherd`) are visible here.
 
+**Workflow aliases used in this table** (matching the mermaid composite-state names): `ASM` = `agentic-state-machine`, `AWU` = `aw-auto-update`, `LFF` = `labelops-flake-fix`, `LPM` = `labelops-pr-maintenance`, `LPSS` = `labelops-pr-security-scan`, `RPS` = `regression-pr-shepherd`, `RA` = `repo-assist`, `ATP` = `add_to_project`.
+
 | Label | Type | Added by | Removed by | Read by | Notes |
 |---|---|---|---|---|---|
 | `automation` | always-applied | ASM, LFF (PR), RA (issue) | — | — | via safe-output `labels:` |
