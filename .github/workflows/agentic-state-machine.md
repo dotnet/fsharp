@@ -41,7 +41,7 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
 <rules>
 
 ## Extraction rules
-1. Read every file listed in `/tmp/workflow-manifest.txt` (built by the pre-step). Read each in FULL. **Both `.yml` AND `.md` files are workflows.** Agentic `.md` files (gh-aw) have YAML frontmatter between `---` markers defining triggers (`on:`, `schedule:`, `workflow_dispatch:`), `safe-outputs:`, `tools:`, and `labels:`. They ARE workflows and MUST be documented. **`copilot-setup-steps.yml` is a valid workflow file** — never exclude it unless it's in `EXCLUDE_FROM_DOCS`.
+1. Read every file listed in `/tmp/gh-aw/agent/workflow-manifest.txt` (built by the pre-step). Read each in FULL. **Both `.yml` AND `.md` files are workflows.** Agentic `.md` files (gh-aw) have YAML frontmatter between `---` markers defining triggers (`on:`, `schedule:`, `workflow_dispatch:`), `safe-outputs:`, `tools:`, and `labels:`. They ARE workflows and MUST be documented. **`copilot-setup-steps.yml` is a valid workflow file** — never exclude it unless it's in `EXCLUDE_FROM_DOCS`.
 2. **NEVER INFER. NEVER HALLUCINATE.** Only document what is explicitly in source. Cite the YAML field or line.
    **Workflow filenames are NOT evidence of behavior.** Only YAML content (jobs, steps, `run:`, `uses:`, `safe-outputs:`) defines what happens. Before writing any behavior into a workflow's row, point to the exact job/step/line. If you cannot cite it → remove it.
    **Shell commands: describe what the code DOES, not what you think it means.** A `gh` CLI search filter like `updated:>=` is a date filter, not a fork check. A `grep -q` is a string match, not a validation gate. Read the actual command arguments before characterizing behavior.
@@ -168,7 +168,7 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
     **Guard completeness.** Every `if:` guard = binary (true/false). A guard with only ONE outgoing edge (the true-path) is ALWAYS missing its false-path (→ next step or → `[*]`). Self-test after drawing: count outgoing edges from every guarded transition. count=1 → add the else path. This includes `needs:` job dependencies with conditional guards.
 17. **Internal consistency.** Cross-references verifiable across overview, diagrams, dictionary, handover map.
     **Count audit (MANDATORY — use bash).** Before emitting, run these verification commands:
-    (a) `grep -c '^=== FILE:' /tmp/workflow-manifest.txt` — must equal your stated workflow total.
+    (a) `grep -c '^=== FILE:' /tmp/gh-aw/agent/workflow-manifest.txt` — must equal your stated workflow total.
     (b) For EACH workflow with N stated steps: `grep -c '^\s*- name:' <file>` (.yml) or count step-level headings (.md). Must equal diagram states. The `STEP-COUNT` field in the manifest is ground truth.
     (c) For label lists: enumerate source entries ONE BY ONE, then count. Must equal stated "N labels".
     (d) If ANY mismatch → fix. Do NOT estimate — compute.
@@ -211,8 +211,8 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
 23. **Correctness over completeness.** It is ALWAYS better to exclude a workflow (with an explicit `⚠️ Excluded — too complex for accurate automated documentation`) than to document it incorrectly. If you cannot verify every step, action, and safeguard for a workflow from source → exclude it. An omitted workflow is a zero-error workflow. A partially-documented workflow with missing safeguards = HIGH errors.
 
 24. **Complex workflow deep-dive (STEP-COUNT > 30 or > 5 jobs).** For any workflow exceeding this threshold:
-    (a) Run bash: `grep -n '^\s*- name:' <file>` to get the COMPLETE ordered step list with line numbers. Store in `/tmp/<basename>-steps.txt`.
-    (b) Run bash: `grep -n 'if:' <file>` to get ALL guards. Store in `/tmp/<basename>-guards.txt`.
+    (a) Run bash: `grep -n '^\s*- name:' <file>` to get the COMPLETE ordered step list with line numbers. Store in `/tmp/gh-aw/agent/<basename>-steps.txt`.
+    (b) Run bash: `grep -n 'if:' <file>` to get ALL guards. Store in `/tmp/gh-aw/agent/<basename>-guards.txt`.
     (c) Build a **per-job checklist** from these extractions: `JOB → [step1 (Lnn), step2 (Lnn), ...]` with guards annotated.
     (d) Model the workflow from this checklist — NOT from memory of reading the file. Every checklist entry MUST appear as a diagram state.
     (e) After drafting, diff the checklist against diagram states. Missing step → add it or exclude the entire workflow per Rule 23.
@@ -272,7 +272,7 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
     ```
     Group all workflows for a Group (A1, A2, A3) into ONE shared table. Paragraph form is acceptable ONLY for trivial workflows (≤2 actions, each with ≤1 constraint). Missing action verb = HIGH. Missing override field (non-default value) = MED. Exhaustive enumeration of defaults = readability MAJOR (Rule 42).
 
-40. **NEVER reference internal rules or extraction artifacts in output.** The generated doc must be self-contained. Do NOT write "per Rule 23", "excluded per Rule N", or reference `/tmp/*.txt` extraction files. If excluding a workflow, write `⚠️ Excluded — too complex for accurate automated documentation` without referencing rule numbers.
+40. **NEVER reference internal rules or extraction artifacts in output.** The generated doc must be self-contained. Do NOT write "per Rule 23", "excluded per Rule N", or reference `/tmp/gh-aw/agent/*.txt` extraction files. If excluding a workflow, write `⚠️ Excluded — too complex for accurate automated documentation` without referencing rule numbers.
 
 41. **Mermaid edge-label sanitization — RENDER OR DIE.** Every Mermaid block in the output MUST parse cleanly under `mermaid.parse()`. The `stateDiagram-v2` lexer inside `state X { ... }` composite blocks has known fragilities that silently break rendering. NEVER emit the following characters or patterns inside an edge label (the text after ` : ` on any `A --> B : ...` line):
     - **Semicolon `;`** — the lexer treats `;` as a statement separator inside composite blocks. If ANY character after `;` resembles a new identifier (especially a hyphenated identifier like `allowed-files`, `fetch-depth`, `AI-thinks-issue-fixed`), the lexer aborts with `Lexical error … Unrecognized text`. **Replace `;` with `,` always.** When listing config entries, comma-separate: `(labels: a, b, c, allowed-files: docs/**)` — never `(labels: a, b, c; allowed-files: docs/**)`.
@@ -329,9 +329,10 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
 <pre-step lang="bash">
 # Phase 0: Deterministic extraction + evolution mode detection.
 EXCLUDE_LIST="${EXCLUDE_FROM_DOCS:-}"
-MANIFEST="/tmp/workflow-manifest.txt"
+MANIFEST="/tmp/gh-aw/agent/workflow-manifest.txt"
 SELF_FILE=".github/workflows/agentic-state-machine.md"
 DOC_FILE=".github/docs/state-machine.md"
+mkdir -p "$(dirname "$MANIFEST")"
 : > "$MANIFEST"
 
 # --- Evolution mode detection ---
@@ -414,15 +415,15 @@ fi
    - If `=== MODE: INCREMENTAL ===` → read the existing `state-machine.md`. Only regenerate sections for workflows whose SHA changed. Preserve unchanged sections verbatim.
 
 ## Phase 1: Build structured model
-1. Read `/tmp/workflow-manifest.txt`. For gh-aw `.md` files, the manifest is authoritative. For `.yml` files, the manifest is an INDEX — cross-check with full source.
+1. Read `/tmp/gh-aw/agent/workflow-manifest.txt`. For gh-aw `.md` files, the manifest is authoritative. For `.yml` files, the manifest is an INDEX — cross-check with full source.
 2. Read full source of each file for semantics.
 3. Build per-workflow model: triggers, guards, inputs, writes+token, labels, downstream.
 4. Cross-check: verify each trigger type exists in the manifest before documenting it.
 
 ## Phase 1.5: Complex workflow extraction (Rule 24)
 For every workflow where the manifest says `COMPLEX=true`:
-5. Run: `grep -n '^\s*- name:' <file> > /tmp/<basename>-steps.txt`
-6. Run: `grep -n 'if:' <file> > /tmp/<basename>-guards.txt`
+5. Run: `grep -n '^\s*- name:' <file> > /tmp/gh-aw/agent/<basename>-steps.txt`
+6. Run: `grep -n 'if:' <file> > /tmp/gh-aw/agent/<basename>-guards.txt`
 7. Build per-job checklist: read the extraction files, group steps under their job, annotate each with its guards.
 8. This checklist is the SOLE modeling input for complex workflows. If a step/guard appears in the checklist but you cannot accurately model it → exclude the ENTIRE workflow per Rule 23.
 
@@ -464,9 +465,9 @@ For every workflow where the manifest says `COMPLEX=true`:
 ## Phase 3.5: Subagent self-verification (MANDATORY)
 11. **Write draft** to `.github/docs/state-machine.md`.
 12. **Launch a verification subagent** (task tool, agent_type: `general-purpose`) with this prompt:
-    > You are a strict technical verifier. Read `.github/docs/state-machine.md` (the draft documentation) and ALL workflow files listed in `/tmp/workflow-manifest.txt`.
+    > You are a strict technical verifier. Read `.github/docs/state-machine.md` (the draft documentation) and ALL workflow files listed in `/tmp/gh-aw/agent/workflow-manifest.txt`.
     > Verify these checks — report ONLY failures:
-    > (a) **File count**: `grep -c '^=== FILE:' /tmp/workflow-manifest.txt` vs stated total in doc.
+    > (a) **File count**: `grep -c '^=== FILE:' /tmp/gh-aw/agent/workflow-manifest.txt` vs stated total in doc.
     > (b) **Per-workflow step count**: for each .yml, `grep -c '^\s*- name:'` vs diagram states for that workflow. For .md, count step-level content blocks.
     > (c) **Label count**: for each label list claiming "N labels", enumerate actual source entries and compare.
     > (d) **Safeguard completeness**: for each workflow with ≥3 guards, list ALL source `if:` conditions, thresholds, timers, caps, age filters, re-occurrence windows, budget limits, exclusion lists, fail-closed defaults. Verify EACH appears in the diagram or safeguard bullets.
@@ -474,7 +475,7 @@ For every workflow where the manifest says `COMPLEX=true`:
     > (f) **copilot-setup-steps.yml**: if it exists in the repo, verify it has a section in the doc.
     > (g) **Diagram wiring**: for each mermaid block, verify: (1) every `<<choice>>` has ≥2 outgoing edges; (2) boolean choices have EXACTLY 2; (3) no orphan states (every non-[*] state has ≥1 incoming edge); (4) no dangling states (every state has ≥1 outgoing edge or → [*]); (5) if a `<<choice>>` has 3+ edges, verify the conditions are truly categorical/mutually exclusive — independent sequential `if:` steps are NOT `<<choice>>`; (6) **fork/choice audit**: for every `<<choice>>`, verify guards are mutually exclusive. If branches can BOTH fire in one run (overlapping guards, parallel safe-outputs, dispatch type=Both) → must be `<<fork>>`/`<<join>>`, not `<<choice>>`.
     > (h) **Count audit**: for every stated number in the doc ("N nodes", "N labels", "N workflows"), count the actual items. Mismatch = finding.
-    > (i) **Complex workflow checklist**: for any workflow with COMPLEX=true in manifest, read `/tmp/<basename>-steps.txt` and verify every step appears as a diagram state. Missing step = HIGH.
+    > (i) **Complex workflow checklist**: for any workflow with COMPLEX=true in manifest, read `/tmp/gh-aw/agent/<basename>-steps.txt` and verify every step appears as a diagram state. Missing step = HIGH.
     > (j) **Trigger entry audit**: for each workflow, count distinct trigger types in the `on:` block (pull_request_target, schedule, workflow_dispatch, issues, push, etc.), then count `[*] -->` entry arrows in the diagram for that workflow. If trigger count > entry arrow count → MAJOR (missing trigger path).
     > (k) **Guard else-path audit**: for every `<<choice>>` or guarded transition with exactly 1 outgoing edge, verify the else/false path exists. Missing else = HIGH.
     > (l) **Job-level guard audit**: for every `jobs.<id>.if:` in source, verify the guard appears in the diagram (as <<choice>> or edge label). Missing job-level guard = HIGH.
@@ -485,7 +486,7 @@ For every workflow where the manifest says `COMPLEX=true`:
     > ```bash
     > # Phase 3.5 (p): Mermaid syntactic renderability check
     > if ! command -v node >/dev/null; then echo "ERROR: node required for check (p)"; exit 1; fi
-    > mkdir -p /tmp/mermaid-check && cd /tmp/mermaid-check
+    > mkdir -p /tmp/gh-aw/agent/mermaid-check && cd /tmp/gh-aw/agent/mermaid-check
     > test -d node_modules || { npm init -y >/dev/null 2>&1; npm install --silent mermaid jsdom 2>&1 | tail -3; }
     > cat > check.mjs <<'JS'
     > import { JSDOM } from 'jsdom';
