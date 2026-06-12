@@ -83,7 +83,7 @@ do printfn "test"
         ]
 
 [<Fact>]
-let ``Namespace-type collision says type not module (FS3888)`` () =
+let ``Namespace-type collision says type not module (FS3889)`` () =
     let source1 = """namespace Ns
 type T = { Field: int }
 """
@@ -92,7 +92,7 @@ type T = { Field: int }
     |> withAdditionalSourceFile (FsSourceWithFileName "second.fs" source2)
     |> compile
     |> shouldFail
-    |> withErrorCode 3888
+    |> withErrorCode 3889
     |> withDiagnosticMessageMatches "type"
     |> ignore
 
