@@ -271,6 +271,7 @@ type CalledMeth<'T> =
 
     member IsIndexParamArraySetter: bool
 
+    /// True when this method call is for a property indexer setter (set_Item or named indexer set).
     member IsIndexerSetter: bool
 
     /// The method we're attempting to call

@@ -10578,6 +10578,9 @@ and TcMethodApplication
 
     TcAdhocChecksOnLibraryMethods cenv env isInstance finalCalledMeth finalCalledMethInfo objArgs mMethExpr mItem
 
+    // Indexer setters: when index args are named, the remaining unnamed args'
+    // position values won't form a prefix (the 'value' arg has a non-zero j).
+    // Without named args the check passes naturally, so blanket skip is safe.
     if not finalCalledMeth.IsIndexParamArraySetter &&
        not finalCalledMeth.IsIndexerSetter &&
        (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
