@@ -437,12 +437,10 @@ let ApplyAllOptimizations
     if tcConfig.extraOptimizationIterations > 0 then
         addPhase "ExtraLoop" extraLoop
 
-    // A per-file naming scope is created at this per-file optimization boundary so that
-    // compiler-generated names from the Detuple and TLR passes are bucketed by the consumer
-    // file currently being optimized, rather than by the (possibly inlined) source range of
-    // each value. This keeps those names deterministic under parallel optimization.
-    // See https://github.com/dotnet/fsharp/issues/19732.
-    let mkFileNamingScope (file: CheckedImplFile) =
+    // Each optimizer pass owns a per-file naming scope so its compiler-generated names
+    // are bucketed by the consumer file (not by the inlined source range), making them
+    // deterministic under parallel optimization. See #19732.
+    let scopeOf (file: CheckedImplFile) =
         tcGlobals.CompilerGlobalState.Value.NewFileScope(file.QualifiedNameOfFile.Range)
 
     let detuple
@@ -452,8 +450,7 @@ let ApplyAllOptimizations
              PrevFile = _prevFile
          }: PhaseInputs)
         : PhaseRes =
-        let scope = mkFileNamingScope file
-        let file = file |> Detuple.DetupleImplFile scope ccu tcGlobals
+        let file = file |> Detuple.DetupleImplFile (scopeOf file) ccu tcGlobals
         file, prevPhase
 
     if tcConfig.doDetuple then
@@ -466,11 +463,9 @@ let ApplyAllOptimizations
              PrevFile = _prevFile
          }: PhaseInputs)
         : PhaseRes =
-        let scope = mkFileNamingScope file
-
         let file =
             file
-            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions scope ccu tcGlobals
+            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions (scopeOf file) ccu tcGlobals
 
         file, prevPhase
 

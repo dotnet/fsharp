@@ -41,12 +41,8 @@ type NiceNameGenerator() =
 
     member _.IncrementOnly(name: string, m: range) = increment name m
 
-    /// Allocate a fresh compiler-generated name whose uniqueness counter is bucketed by an
-    /// explicit per-file scope (see PerFileNamingScope) rather than by the file index of 'm'.
-    /// 'm' is used only for the human-readable start-line marker baked into the generated name,
-    /// so passing a range that points at inlined source code can no longer make compiler-generated
-    /// names non-deterministic under parallel optimization. See
-    /// https://github.com/dotnet/fsharp/issues/19732.
+    /// Allocate a fresh name bucketed by `scopeFileIndex` (not by `m.FileIndex`),
+    /// so inlined ranges can't make names non-deterministic. See #19732.
     member _.FreshCompilerGeneratedNameInScope (scopeFileIndex: int, name: string, m: range) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let count = incrementBucket basicName scopeFileIndex
@@ -58,13 +54,10 @@ type NiceNameGenerator() =
 ///
 /// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
-type StableNiceNameGenerator() = 
+type StableNiceNameGenerator() =
 
-    // The value is wrapped in Lazy<_> so the inner counter-incrementing factory runs exactly once
-    // per cache key, even when ConcurrentDictionary.GetOrAdd's value-factory is invoked on multiple
-    // threads under contention. Without the Lazy wrapper, spurious factory invocations would
-    // increment the counter and produce non-deterministic suffixes. See
-    // https://github.com/dotnet/fsharp/issues/19732.
+    // Lazy<_> ensures the inner counter-incrementing factory runs exactly once per key
+    // even when GetOrAdd's value-factory is invoked concurrently. See #19732.
     let niceNames = ConcurrentDictionary<string * int64, Lazy<string>>(max Environment.ProcessorCount 1, 127)
     let innerGenerator = NiceNameGenerator()
 
@@ -76,27 +69,22 @@ type StableNiceNameGenerator() =
                 lazy innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
         lazyName.Value
 
-/// A compiler-generated-name allocation scope bound to a single ImplFile being optimized. The
-/// constructor is not part of the public signature: a scope can only be obtained from
-/// CompilerGlobalState.NewFileScope so a call site can't accidentally bucket names by the wrong
-/// (e.g. inlined-source) file and reintroduce the non-determinism fixed by
-/// https://github.com/dotnet/fsharp/issues/19732.
+/// Per-file scope for optimizer name allocation. The internal constructor forces
+/// callers to obtain a scope via `CompilerGlobalState.NewFileScope`, so they can't
+/// accidentally bucket names by an inlined-source file. See #19732.
 [<Sealed>]
 type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
 
-    /// Allocate a fresh compiler-generated name within this file's scope. 'm' contributes only the
-    /// source-location marker in the generated name; the determinism-critical uniqueness bucket is
-    /// fixed by this scope's file and never by 'm'.
+    /// Allocate a fresh name within this file's bucket. `m` contributes only the
+    /// human-readable source-location marker.
     member _.Fresh (name: string, m: range) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
-/// Per-consumer-file closure type-name allocation scope used by IlxGen for cross-file
-/// inlined closures only. In-file closures are handled directly through
-/// StableNiceNameGenerator (with priming) to keep their names identical to the legacy
-/// format. See https://github.com/dotnet/fsharp/issues/19928.
-///
-/// Cross-file inlined closures get an `F<consumerFileIndex>` marker to disambiguate
-/// parallel consumer files inlining the same source range.
+/// Per-consumer-file scope for IlxGen closure type names, used only for cross-file
+/// inlined closures. In-file closures stay on StableNiceNameGenerator to keep the
+/// legacy `basicName@<line>[-N]` format; cross-file ones get an `F<consumerFileIndex>`
+/// marker so parallel consumer files inlining the same source range don't collide.
+/// See #19928.
 [<Sealed>]
 type PerFileClosureNameScope(consumerFileIndex: int) =
 
@@ -108,33 +96,21 @@ type PerFileClosureNameScope(consumerFileIndex: int) =
 
     member _.EmitClosureName(basicName: string, m: range, uniq: int64) =
         match byUniq.TryGetValue uniq with
-        | true, cached ->
-            cached
+        | true, cached -> cached
         | false, _ ->
-            // Bucket key omits StartColumn so two Lambdas sharing a line (different columns)
-            // share one bucket and produce different `-N` suffixes.
-            let bucketKey =
-                struct (basicName, m.FileIndex, m.StartLine)
+            // Bucket key omits StartColumn so two Lambdas sharing a line share one bucket.
+            let bucketKey = struct (basicName, m.FileIndex, m.StartLine)
 
             let occ =
                 match buckets.TryGetValue bucketKey with
-                | true, n ->
-                    buckets[bucketKey] <- n + 1
-                    n
-                | false, _ ->
-                    buckets[bucketKey] <- 1
-                    0
+                | true, n -> n
+                | false, _ -> 0
 
-            let lineMarker =
-                string m.StartLine + "F" + string consumerFileIndex
+            buckets[bucketKey] <- occ + 1
 
-            let suffix =
-                if occ = 0 then ""
-                else "-" + string occ
-
-            let name =
-                CompilerGeneratedNameSuffix basicName (lineMarker + suffix)
-
+            let lineMarker = string m.StartLine + "F" + string consumerFileIndex
+            let suffix = if occ = 0 then "" else "-" + string occ
+            let name = CompilerGeneratedNameSuffix basicName (lineMarker + suffix)
             byUniq[uniq] <- name
             name
 
