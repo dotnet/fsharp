@@ -29,7 +29,7 @@ open FSharp.Compiler.TypedTreeDiff
 open FSharp.Compiler.ComponentTests.HotReload.TestHelpers
 
 // Use our custom EditAndContinueOperation, not System.Reflection.Metadata.Ecma335's
-type EditAndContinueOperation = FSharp.Compiler.AbstractIL.ILDeltaHandles.EditAndContinueOperation
+type internal EditAndContinueOperation = FSharp.Compiler.AbstractIL.ILDeltaHandles.EditAndContinueOperation
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module DeltaEmitterTests =
