@@ -212,6 +212,7 @@
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\optional\Optional.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\TypeKindInference\TypeKindInference.fs" />
     <Compile Include="Conformance\Signatures\Signatures.fs" />
+    <Compile Include="Conformance\Signatures\SignatureEnforcedAttributes.fs" />
     <Compile Include="Conformance\SpecialAttributesAndTypes\CallerInfo.fs" />
     <Compile Include="Conformance\SpecialAttributesAndTypes\ThreadStatic.fs" />
     <Compile Include="Conformance\Stress\StressTests.fs" />

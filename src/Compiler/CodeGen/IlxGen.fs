@@ -3083,7 +3083,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
             let others =
                 [
                     for k in cenv.namedDebugPointsForInlinedCode.Keys do
-                        if equals m k.Range then
+                        if Range.equals m k.Range then
                             yield k.Name
                 ]
                 |> String.concat ","
@@ -3175,7 +3175,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
         | Expr.Match _ -> GenLinearExpr cenv cgbuf eenv expr sequel false id |> ignore<FakeUnit>
 
         | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-            if equals m range0 then
+            if Range.equals m range0 then
                 cgbuf.EmitStartOfHiddenCode()
             else
                 CG.EmitDebugPoint cgbuf m
@@ -3740,7 +3740,7 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
                          Fake))
 
     | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-        if equals m range0 then
+        if Range.equals m range0 then
             cgbuf.EmitStartOfHiddenCode()
         else
             CG.EmitDebugPoint cgbuf m
