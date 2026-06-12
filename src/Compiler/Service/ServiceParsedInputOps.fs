@@ -2619,6 +2619,9 @@ module ParsedInput =
                 }
 
         // In .fsx/.fsscript scripts, `#r` / `#load` must precede any `open`.
+        // When hash directives are present, ensure opens go after them.
+        // When no hash directives exist, ensure opens go to the top (line 1)
+        // rather than being grouped near usage further down in the script.
         match parsedInput with
         | ParsedInput.ImplFile impl when impl.IsScript ->
             let topDecls =
@@ -2637,6 +2640,11 @@ module ParsedInput =
                 {
                     ScopeKind = ScopeKind.HashDirective
                     Pos = mkPos (lastHashLine + 1) 0
+                }
+            elif lastHashLine = 0 && ctx.Pos.Line > 1 then
+                {
+                    ScopeKind = ScopeKind.TopModule
+                    Pos = mkPos 1 0
                 }
             else
                 ctx

@@ -64,6 +64,15 @@ let ``No r directives in fsx inserts at top`` () =
     Assert.Equal(1, insertionPoint.Line)
 
 [<Fact>]
+let ``No r directives in multiline fsx inserts at top`` () =
+    let source = """let y = 1
+
+let x = System.IO.File.ReadAllText "a"
+"""
+    let insertionPoint = findOpenInsertionPoint "test.fsx" source "System.IO"
+    Assert.Equal(1, insertionPoint.Line)
+
+[<Fact>]
 let ``Open after r with existing opens`` () =
     let source = """#r "nuget: FSharp.Data"
 open System
