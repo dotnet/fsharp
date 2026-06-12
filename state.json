@@ -86,13 +86,6 @@
       "sha": "30e771f8471bc1f75c0904dbc76f207fc6f06159",
       "cats": []
     },
-    "19897": {
-      "sha": "26444e540de444a4f0bf08ea5c681c107c204cc3",
-      "cats": [
-        "Affects-Bootstrap",
-        "Affects-Compiler-Output"
-      ]
-    },
     "19896": {
       "sha": "3d242646d52b659fbb33aff7b26ebee2dd5ae4e5",
       "cats": []
