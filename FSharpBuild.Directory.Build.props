@@ -88,13 +88,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!-- MSBuild 18.9+ transitively pulls System.Formats.Nrbf/System.Text.Json which reference
-       System.ValueTuple 4.0.5.0, conflicting with the net472 facade (4.0.2.0). Binding redirects
-       resolve this at runtime; suppress the build-time warning promoted to error by /warnaserror. -->
-  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
-    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(OS)' == 'Unix'">
     <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
   </PropertyGroup>
