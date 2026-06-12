@@ -275,12 +275,12 @@ for _ in [] do
         FSharp """
 for _ in 1 .. 3 do
     let x = 1
-    seq { yield x }
+    async { return x }
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 20, Line 4, Col 5, Line 4, Col 20,
-                                 "The result of this expression has type 'int seq' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+        |> withSingleDiagnostic (Warning 20, Line 4, Col 5, Line 4, Col 23,
+                                 "The result of this expression has type 'Async<int>' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
 
     [<Fact>]
     let ``Warn If Possible Property Setter``() =
