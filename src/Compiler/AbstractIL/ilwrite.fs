@@ -3315,7 +3315,10 @@ let writeILMetadataAndCode (
     allGivenSources,
     modul,
     cilStartAddress,
-    normalizeAssemblyRefs
+    normalizeAssemblyRefs,
+    // Hot reload baseline side channel: when false (the default compilation path) no
+    // MetadataSnapshot is materialized, so flag-off compiles pay no extra allocations.
+    collectMetadataSnapshot: bool
 ) =
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table.
@@ -3386,12 +3389,6 @@ let writeILMetadataAndCode (
 
     let blobsStreamUnpaddedSize = count (fun (blob: byte[]) -> let n = blob.Length in n + ByteBuffer.Z32Size n) blobs + 1
     let blobsStreamPaddedSize = align 4 blobsStreamUnpaddedSize
-
-    let heapSizes =
-        { StringHeapSize = stringsStreamUnpaddedSize
-          UserStringHeapSize = userStringsStreamUnpaddedSize
-          BlobHeapSize = blobsStreamUnpaddedSize
-          GuidHeapSize = guidsStreamUnpaddedSize }
 
     let guidsBig = guidsStreamPaddedSize >= 0x10000
     let stringsBig = stringsStreamPaddedSize >= 0x10000
@@ -3725,15 +3722,22 @@ let writeILMetadataAndCode (
               applyFixup32 code locInCode token
     reportTime "Fixup Metadata"
 
-    let tableRowCounts =
-        tables |> Seq.map (fun t -> t.Count) |> Seq.toArray
+    // Hot reload baseline side channel: only materialize the snapshot when a consumer asked
+    // for one (--enable:hotreloaddeltas in-memory emission); ordinary compiles skip it entirely.
+    let metadataSnapshotOpt =
+        if collectMetadataSnapshot then
+            Some
+                { HeapSizes =
+                    { StringHeapSize = stringsStreamUnpaddedSize
+                      UserStringHeapSize = userStringsStreamUnpaddedSize
+                      BlobHeapSize = blobsStreamUnpaddedSize
+                      GuidHeapSize = guidsStreamUnpaddedSize }
+                  TableRowCounts = tables |> Seq.map (fun t -> t.Count) |> Seq.toArray
+                  GuidHeapStart = guidStart }
+        else
+            None
 
-    let metadataSnapshot =
-        { HeapSizes = heapSizes
-          TableRowCounts = tableRowCounts
-          GuidHeapStart = guidStart }
-
-    entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups.Value, pdbData, mappings, metadataSnapshot
+    entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups.Value, pdbData, mappings, guidStart, metadataSnapshotOpt
 
 //---------------------------------------------------------------------
 // PHYSICAL METADATA+BLOBS --> PHYSICAL PE FORMAT
@@ -3923,10 +3927,11 @@ type options =
      methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
 
 /// <summary>
-/// Core IL writer that emits the PE image and invokes <paramref name="metadataSnapshotSink" />
-/// with the captured metadata snapshot once the metadata streams have been finalized.
+/// Core IL writer that emits the PE image and, when <paramref name="metadataSnapshotSink" /> is
+/// present, invokes it with the captured metadata snapshot once the metadata streams have been
+/// finalized. When the sink is None (ordinary compilation) no snapshot is constructed.
 /// </summary>
-let writeBinaryAuxWithSnapshotSink (stream: Stream, options: options, modul, normalizeAssemblyRefs) (metadataSnapshotSink: MetadataSnapshot -> unit) =
+let writeBinaryAuxWithSnapshotSink (stream: Stream, options: options, modul, normalizeAssemblyRefs) (metadataSnapshotSink: (MetadataSnapshot -> unit) option) =
 
     // Store the public key from the signer into the manifest. This means it will be written
     // to the binary and also acts as an indicator to leave space for delay sign
@@ -4039,23 +4044,27 @@ let writeBinaryAuxWithSnapshotSink (stream: Stream, options: options, modul, nor
                     | Some v -> v
                     | None -> failwith "Expected mscorlib to have a version number"
 
-          let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, metadataSnapshot =
+          let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, guidStart, metadataSnapshotOpt =
               writeILMetadataAndCode (
                   options.pdbfile.IsSome,
                   desiredMetadataVersion,
                   ilg,
                   options.emitTailcalls,
-                  options.deterministic,                 
+                  options.deterministic,
                   options.referenceAssemblyOnly,
                   options.referenceAssemblyAttribOpt,
                   options.allGivenSources,
                   modul,
                   next,
-                  normalizeAssemblyRefs
+                  normalizeAssemblyRefs,
+                  metadataSnapshotSink.IsSome
               )
 
           reportTime "Generated IL and metadata"
-          metadataSnapshotSink metadataSnapshot
+
+          match metadataSnapshotSink, metadataSnapshotOpt with
+          | Some sink, Some metadataSnapshot -> sink metadataSnapshot
+          | _ -> ()
 
           let _codeChunk, next = chunk code.Length next
           let _codePaddingChunk, next = chunk codePadding.Length next
@@ -4268,7 +4277,6 @@ let writeBinaryAuxWithSnapshotSink (stream: Stream, options: options, modul, nor
           let pdbData =
             // Hash code, data and metadata
             if options.deterministic then
-              let guidStart = metadataSnapshot.GuidHeapStart
               // Confirm we have found the correct data and aren't corrupting the metadata
               if metadata[ guidStart..guidStart+3] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
               if metadata[ guidStart+12..guidStart+15] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
@@ -4633,7 +4641,7 @@ let writeBinaryAuxWithSnapshotSink (stream: Stream, options: options, modul, nor
     pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
 let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
-    writeBinaryAuxWithSnapshotSink (stream, options, modul, normalizeAssemblyRefs) (fun _ -> ())
+    writeBinaryAuxWithSnapshotSink (stream, options, modul, normalizeAssemblyRefs) None
 
 let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
 
@@ -4688,7 +4696,7 @@ let writeBinaryInMemoryWithArtifacts (options: options, modul, normalizeAssembly
     let metadataSnapshotRef = ref None
     let capture snapshot = metadataSnapshotRef := Some snapshot
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
-        writeBinaryAuxWithSnapshotSink (stream, options, modul, normalizeAssemblyRefs) capture
+        writeBinaryAuxWithSnapshotSink (stream, options, modul, normalizeAssemblyRefs) (Some capture)
 
     let metadataSnapshot =
         match !metadataSnapshotRef with
