@@ -271,16 +271,18 @@ for _ in [] do
                                  "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
 
     [<Fact>]
-    let ``Warn On Last Expression In For Loop - non-unit computation expression after let binding``() =
+    let ``Warn On Last Expression In While Loop - non-unit after let binding``() =
         FSharp """
-for _ in 1 .. 3 do
-    let x = 1
-    async { return x }
+let mutable x = 0
+while x < 3 do
+    let y = x + 1
+    x <- y
+    y
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 20, Line 4, Col 5, Line 4, Col 23,
-                                 "The result of this expression has type 'Async<int>' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+        |> withSingleDiagnostic (Warning 20, Line 6, Col 5, Line 6, Col 6,
+                                 "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
 
     [<Fact>]
     let ``Warn If Possible Property Setter``() =
