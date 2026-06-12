@@ -107,6 +107,30 @@ printfn "%d" (test())
         |> withStdOutContains "2"
 
     [<Fact>]
+    let ``use rebinding with upcast of use-bound value disposes once`` () =
+        FSharp """
+module M
+type Counter() =
+    let mutable count = 0
+    member _.DisposeCount = count
+    interface System.IDisposable with
+        member this.Dispose() = count <- count + 1
+let test() =
+    let c = new Counter()
+    (
+        use a = c
+        use b = (a :> System.IDisposable)
+        ()
+    )
+    c.DisposeCount
+printfn "%d" (test())
+"""
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "1"
+
+    [<Fact>]
     let ``Triple alias via as-pattern disposes once`` () =
         FSharp """
 module M

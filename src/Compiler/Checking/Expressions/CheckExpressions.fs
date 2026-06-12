@@ -11966,12 +11966,13 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
                 // Issue #12300, scenario B: `use b = a` where `a` is itself use-bound
                 // would dispose the same backing object twice. Skip cleanup here; the
                 // enclosing `use` will dispose.
-                let rec stripTyLambdas e =
+                let rec stripCoerceAndTyLambdas e =
                     match e with
-                    | Expr.TyLambda(_, _, body, _, _) -> stripTyLambdas body
+                    | Expr.TyLambda(_, _, body, _, _) -> stripCoerceAndTyLambdas body
+                    | Expr.Op(TOp.Coerce, _, [inner], _) -> stripCoerceAndTyLambdas inner
                     | _ -> e
                 let isAliasOfUseBoundVal =
-                    match stripTyLambdas rhsExpr with
+                    match stripCoerceAndTyLambdas rhsExpr with
                     | Expr.Val(vref, _, _) -> env.eUseBoundValStamps.Contains vref.Deref.Stamp
                     | _ -> false
                 if isAliasOfUseBoundVal then
