@@ -97,7 +97,12 @@ internal partial class SolutionExplorerInProcess
   <Import Project=""{propsPath}"" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Must match a runtime available in the dotnet host VS launches the debug target with.
+         Arcade pins DOTNET_ROOT to the repo-local .dotnet with DOTNET_MULTILEVEL_LOOKUP=0; that
+         install only ships the SDK's bundled runtime (10.x). Targeting net8.0 here makes
+         DebuggingScenarios.exe fail to start under VS (no 8.0 runtime found), and every line
+         breakpoint stays unbound (children=0,hits=0). -->
+    <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include=""Program.fs"" />
