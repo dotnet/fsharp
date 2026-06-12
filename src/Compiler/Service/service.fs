@@ -211,12 +211,14 @@ type internal FSharpHotReloadService
             synthesizedTypeMaps[projectKey] <- created
             created
 
-    member private _.StartOrAddProjectCore
+    /// Captures one more project baseline inside the session (Roslyn analog: capturing an
+    /// <c>EmitBaseline</c> for one more module of the debugged process). Re-adding a project
+    /// the session already tracks recaptures its baseline; other projects and the
+    /// session-wide capability/active-statement state stay untouched.
+    member _.AddHotReloadProject
         (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
         (outputPath: string option)
-        (capabilities: EditAndContinueCapabilities option)
-        (replaceExistingSession: bool)
         =
         async {
             match outputPath with
@@ -293,13 +295,6 @@ type internal FSharpHotReloadService
                                  )
                              | _ -> ())
 
-                            if replaceExistingSession then
-                                // Legacy single-session semantics: drop every project slot
-                                // (and its replay/fingerprint side state) before installing.
-                                synthesizedTypeMaps.Clear()
-                                committedOutputFingerprints.Clear()
-                                pendingOutputFingerprints.Clear()
-
                             let compilerState = tcGlobals.CompilerGlobalState.Value
                             let map =
                                 let targetMap = getOrCreateSynthesizedTypeMap projectKey
@@ -314,19 +309,9 @@ type internal FSharpHotReloadService
                             setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
 
                             let startTransition =
-                                if replaceExistingSession then
-                                    editAndContinueService.EndSession()
-
-                                    editAndContinueService.StartSession(
-                                        baseline,
-                                        implementationFiles,
-                                        ?capabilities = capabilities,
-                                        projectKey = projectKey
-                                    )
-                                else
-                                    // Session-entity AddProject: other projects and the
-                                    // session-wide capability set stay untouched.
-                                    editAndContinueService.AddProject(projectKey, baseline, implementationFiles)
+                                // Session-entity AddProject: other projects and the
+                                // session-wide capability set stay untouched.
+                                editAndContinueService.AddProject(projectKey, baseline, implementationFiles)
 
                             if traceSessionTransitions then
                                 printfn
@@ -341,28 +326,16 @@ type internal FSharpHotReloadService
                         return Result.Ok ()
         }
 
-    /// Legacy/default-session entry point: starting a session REPLACES the previous one.
-    member this.StartHotReloadSession
-        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
-        (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
-        (outputPath: string option)
-        (capabilities: EditAndContinueCapabilities)
-        =
-        this.StartOrAddProjectCore projectKey parseAndCheckProject outputPath (Some capabilities) true
-
-    /// Session-entity entry point: captures one more project baseline inside the same session.
-    member this.AddHotReloadProject
-        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
-        (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
-        (outputPath: string option)
-        =
-        this.StartOrAddProjectCore projectKey parseAndCheckProject outputPath None false
-
+    /// <summary>
+    /// Emits a delta for the project by diffing the fresh snapshot against the COMMITTED
+    /// baseline. The emitted update is always STAGED as pending (Roslyn's
+    /// EmitSolutionUpdate/CommitSolutionUpdate split); the session advances it via
+    /// <c>CommitSession</c> after the runtime applied it, or drops it via <c>DiscardSession</c>.
+    /// </summary>
     member _.EmitHotReloadDelta
         (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
         (outputPath: string option)
-        (deferCommit: bool)
         =
         async {
             match outputPath with
@@ -495,17 +468,14 @@ type internal FSharpHotReloadService
                                         ilModule,
                                         ?freshDebugPdb = freshDebugPdb,
                                         projectKey = projectKey,
-                                        deferCommit = deferCommit
+                                        deferCommit = true
                                     )
                                 with
                                 | Ok result ->
                                     match result.Delta.UpdatedBaseline with
                                     | Some _ ->
                                         lock hotReloadGate (fun () ->
-                                            if deferCommit then
-                                                pendingOutputFingerprints[projectKey] <- outputFingerprint
-                                            else
-                                                committedOutputFingerprints[projectKey] <- outputFingerprint)
+                                            pendingOutputFingerprints[projectKey] <- outputFingerprint)
                                     | None -> ()
                                     return Result.Ok(toPublicDelta result.Delta)
                                 | Error error -> return Result.Error(mapHotReloadError error)
@@ -538,30 +508,18 @@ type internal FSharpHotReloadService
             pendingOutputFingerprints.Clear()
             editAndContinueService.ResetSessionState())
 
-    member _.UpdateCapabilities(capabilities: EditAndContinueCapabilities) =
-        editAndContinueService.UpdateCapabilities(capabilities)
-
-    /// Unconditional session-wide capability set (session-entity creation path).
+    /// Session-wide capability set (Roslyn parity: a DebuggingSession-level property).
     member _.SetSessionCapabilities(capabilities: EditAndContinueCapabilities) =
         editAndContinueService.SetCapabilities(capabilities)
 
-    member _.SetActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo seq) =
-        editAndContinueService.UpdateActiveStatements(List.ofSeq activeStatements)
-
-    /// Unconditional session-wide active statements (session-entity path).
+    /// Session-wide active statements (the break state describes the host process).
     member _.SetSessionActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo seq) =
         editAndContinueService.SetActiveStatements(List.ofSeq activeStatements)
-
-    member _.SessionActive = not (List.isEmpty editAndContinueService.ProjectKeys)
 
     member _.ProjectKeys = editAndContinueService.ProjectKeys
 
     member _.TryGetProjectSession(projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey) =
         editAndContinueService.TryGetSession(projectKey)
-
-    member _.Capabilities =
-        let capabilities = HotReloadCapability.current
-        FSharpHotReloadCapabilities.FromInternalFlags(capabilities.Flags)
 
 /// <summary>
 /// A hot reload (Edit and Continue) session — the F# analogue of Roslyn's
@@ -688,7 +646,6 @@ type FSharpHotReloadSession
                     projectKey
                     (fun () -> parseAndCheckSnapshot projectSnapshot opName)
                     (resolveOutputPath projectKey projectSnapshot)
-                    true
         }
 
     /// <summary>
@@ -1149,30 +1106,6 @@ type FSharpChecker
         let tcGlobals, typedImplFiles = getTypedImplementationFilesViaReflection projectResults
         tcGlobals, toHotReloadImplementationSnapshot typedImplFiles
 
-    // Hot reload sessions key per-project state by the same identity project snapshots use
-    // (FSharpProjectIdentifier = projectFileName * the raw "-o:" output option; see
-    // ProjectConfig.Identifier and Helpers.findOutputFileName in FSharpProjectSnapshot.fs).
-    let hotReloadProjectKeyOfSnapshot (projectSnapshot: FSharpProjectSnapshot) =
-        let identifier = projectSnapshot.Identifier
-        FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(identifier.ProjectFileName, identifier.OutputFileName)
-
-    let hotReloadProjectKeyOfOptions (options: FSharpProjectOptions) =
-        let outputFileName =
-            options.OtherOptions
-            |> Array.tryPick (fun opt -> if opt.StartsWith("-o:") then Some(opt.Substring(3)) else None)
-            |> Option.defaultValue ""
-
-        FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(options.ProjectFileName, outputFileName)
-
-    // The checker's DEFAULT hot reload session (the compatibility surface: the static-shaped
-    // FSharpChecker members below). It is registered as the process-wide store so module-level
-    // helpers and the fsc emit hook (which has no project identity) route to it.
-    // FSharpHotReloadSession instances created via CreateHotReloadSession own separate,
-    // unregistered stores and are fully independent of this one.
-    let hotReloadSessionStore = FSharp.Compiler.HotReloadState.createSessionStore ()
-
-    do FSharp.Compiler.HotReloadState.setSessionStore hotReloadSessionStore
-
     let createHotReloadService sessionStore =
         FSharpHotReloadService(
             sessionStore,
@@ -1187,7 +1120,13 @@ type FSharpChecker
             mapHotReloadError
         )
 
-    let hotReloadService = createHotReloadService hotReloadSessionStore
+    // Creating a checker resets the process-local capture slot (the module store the fsc emit
+    // hook publishes flag-on baseline captures into). This preserves the retired default-store
+    // registration's freshness property: a freshly created checker never observes (or chains
+    // capture naming against) another owner's stale captures, while consecutive captures with
+    // NO checker creation in between (one logical host) still chain. Session entities are
+    // unaffected: they own private stores and reconstruct baselines from disk artifacts.
+    do FSharp.Compiler.HotReloadState.clearSessionState ()
 
     // Projects tracked by LIVE session entities created via CreateHotReloadSession, keyed by
     // the resolved output path each AddProject baselined (most recent first). Compile consults
@@ -1322,101 +1261,12 @@ type FSharpChecker
             ?transparentCompilerCacheSizes = transparentCompilerCacheSizes
         )
 
-    member private _.StartHotReloadSessionCore
-        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
-        (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
-        (outputPath: string option)
-        (capabilities: EditAndContinueCapabilities)
-        =
-        hotReloadService.StartHotReloadSession projectKey parseAndCheckProject outputPath capabilities
-
-    member private _.EmitHotReloadDeltaCore
-        (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
-        (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
-        (outputPath: string option)
-        =
-        hotReloadService.EmitHotReloadDelta projectKey parseAndCheckProject outputPath false
-
     // Runtime capability strings cross the public boundary once and are parsed into the typed
     // model here; everything downstream consults EditAndContinueCapabilities only.
     static member private ParseHotReloadCapabilities(capabilities: string seq option) =
         capabilities
         |> Option.map EditAndContinueCapabilities.Parse
         |> Option.defaultValue EditAndContinueCapabilities.BaselineOnly
-
-    member this.StartHotReloadSession(projectOptions: FSharpProjectOptions, ?userOpName: string, ?capabilities: string seq) =
-        async {
-            ensureKeepAssemblyContents ()
-
-            let opName = defaultArg userOpName "Unknown"
-
-            use _ = Activity.start "FSharpChecker.StartHotReloadSession" [|
-                Activity.Tags.userOpName, opName
-                Activity.Tags.project, projectOptions.ProjectFileName
-            |]
-
-            return!
-                this.StartHotReloadSessionCore
-                    (hotReloadProjectKeyOfOptions projectOptions)
-                    (fun () -> this.ParseAndCheckProject(projectOptions, userOpName = opName))
-                    (tryGetOutputPathFromProjectOptions projectOptions)
-                    (FSharpChecker.ParseHotReloadCapabilities capabilities)
-        }
-
-    member this.StartHotReloadSession(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string, ?capabilities: string seq) =
-        async {
-            ensureKeepAssemblyContents ()
-
-            let opName = defaultArg userOpName "Unknown"
-
-            use _ = Activity.start "FSharpChecker.StartHotReloadSession" [|
-                Activity.Tags.userOpName, opName
-                Activity.Tags.project, projectSnapshot.ProjectFileName
-            |]
-
-            return!
-                this.StartHotReloadSessionCore
-                    (hotReloadProjectKeyOfSnapshot projectSnapshot)
-                    (fun () -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName))
-                    (tryGetOutputPathFromProjectSnapshot projectSnapshot)
-                    (FSharpChecker.ParseHotReloadCapabilities capabilities)
-        }
-
-    member this.EmitHotReloadDelta(projectOptions: FSharpProjectOptions, ?userOpName: string) =
-        async {
-            ensureKeepAssemblyContents ()
-
-            let opName = defaultArg userOpName "Unknown"
-
-            use _ = Activity.start "FSharpChecker.EmitHotReloadDelta" [|
-                Activity.Tags.userOpName, opName
-                Activity.Tags.project, projectOptions.ProjectFileName
-            |]
-
-            return!
-                this.EmitHotReloadDeltaCore
-                    (hotReloadProjectKeyOfOptions projectOptions)
-                    (fun () -> this.ParseAndCheckProject(projectOptions, userOpName = opName))
-                    (tryGetOutputPathFromProjectOptions projectOptions)
-        }
-
-    member this.EmitHotReloadDelta(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
-        async {
-            ensureKeepAssemblyContents ()
-
-            let opName = defaultArg userOpName "Unknown"
-
-            use _ = Activity.start "FSharpChecker.EmitHotReloadDelta" [|
-                Activity.Tags.userOpName, opName
-                Activity.Tags.project, projectSnapshot.ProjectFileName
-            |]
-
-            return!
-                this.EmitHotReloadDeltaCore
-                    (hotReloadProjectKeyOfSnapshot projectSnapshot)
-                    (fun () -> this.ParseAndCheckProject(projectSnapshot, userOpName = opName))
-                    (tryGetOutputPathFromProjectSnapshot projectSnapshot)
-        }
 
     member this.CreateHotReloadSession(?capabilities: string seq) =
         ensureKeepAssemblyContents ()
@@ -1437,18 +1287,9 @@ type FSharpChecker
             (fun () -> unregisterHotReloadEmissionTargets sessionStore)
         )
 
-    member _.EndHotReloadSession() =
-        hotReloadService.EndSession()
-
-    member _.UpdateHotReloadCapabilities(capabilities: string seq) =
-        hotReloadService.UpdateCapabilities(EditAndContinueCapabilities.Parse capabilities)
-
-    member _.SetHotReloadActiveStatements(activeStatements: FSharpManagedActiveStatementDebugInfo seq) =
-        hotReloadService.SetActiveStatements(activeStatements)
-
-    member _.HotReloadSessionActive = hotReloadService.SessionActive
-
-    member _.HotReloadCapabilities = hotReloadService.Capabilities
+    member _.HotReloadCapabilities =
+        let capabilities = HotReloadCapability.current
+        FSharpHotReloadCapabilities.FromInternalFlags(capabilities.Flags)
 
     member _.UsesTransparentCompiler = useTransparentCompiler = Some true
 
@@ -1547,7 +1388,8 @@ type FSharpChecker
 
         // A non-capture compile of a project tracked by a live session entity is scoped to
         // that session: the emit hook then replays the session's chained closure-name and
-        // synthesized-name state into this compile (capture compiles stay session-independent).
+        // synthesized-name state into this compile. Capture compiles stay session-independent
+        // (they publish to the process-local capture slot, never to a session's store).
         let emissionContext =
             if hasEnableArgument "hotreloaddeltas" argv then
                 None
@@ -1558,7 +1400,7 @@ type FSharpChecker
             // Keep synthesized-name replay active for checker-owned hot reload sessions even when
             // callers intentionally compile updates without --enable:hotreloaddeltas.
             if
-                (hotReloadService.SessionActive || emissionContext.IsSome)
+                emissionContext.IsSome
                 && not (hasEnableArgument "hotreloaddeltas" argv)
                 && not (hasEnableArgument "hotreloadhook" argv)
             then

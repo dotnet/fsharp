@@ -204,61 +204,6 @@ type public FSharpChecker =
             FSharpChecker
 
     /// <summary>
-    /// Starts a hot reload session using project options.
-    /// </summary>
-    /// <remarks>
-    /// Hot reload session state is process-wide: only one session can be active per compiler process.
-    /// Starting a new session replaces the previously active session.
-    /// This API is opt-in and requires compilation with <c>--enable:hotreloaddeltas</c>.
-    /// </remarks>
-    /// <param name="projectOptions">The project options describing the project to hot reload.</param>
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    /// <param name="capabilities">Optional runtime edit-and-continue capability names (for example <c>AddMethodToExistingType</c>),
-    /// as reported by the target runtime. Unknown names are ignored. When omitted, only baseline edits
-    /// (method-body updates) are assumed to be supported.</param>
-    member StartHotReloadSession:
-        projectOptions: FSharpProjectOptions * ?userOpName: string * ?capabilities: string seq ->
-            Async<Result<unit, FSharpHotReloadError>>
-
-    /// <summary>
-    /// Starts a hot reload session using a workspace project snapshot.
-    /// </summary>
-    /// <remarks>
-    /// Session scope is process-wide and single-active-session only.
-    /// Starting from a snapshot also replaces any existing active session.
-    /// </remarks>
-    /// <param name="projectSnapshot">The workspace snapshot describing the project to hot reload.</param>
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    /// <param name="capabilities">Optional runtime edit-and-continue capability names (for example <c>AddMethodToExistingType</c>),
-    /// as reported by the target runtime. Unknown names are ignored. When omitted, only baseline edits
-    /// (method-body updates) are assumed to be supported.</param>
-    [<Experimental("This FCS API is experimental and subject to change.")>]
-    member StartHotReloadSession:
-        projectSnapshot: FSharpProjectSnapshot * ?userOpName: string * ?capabilities: string seq ->
-            Async<Result<unit, FSharpHotReloadError>>
-
-    /// <summary>
-    /// Emits a hot reload delta using project options against the active session baseline.
-    /// </summary>
-    /// <remarks>
-    /// Returns <c>NoActiveSession</c> when no process-wide session is currently active.
-    /// </remarks>
-    member EmitHotReloadDelta:
-        projectOptions: FSharpProjectOptions * ?userOpName: string ->
-            Async<Result<FSharpHotReloadDelta, FSharpHotReloadError>>
-
-    /// <summary>
-    /// Emits a hot reload delta using a workspace project snapshot.
-    /// </summary>
-    /// <remarks>
-    /// Uses the same single process-wide active session as other hot reload APIs.
-    /// </remarks>
-    [<Experimental("This FCS API is experimental and subject to change.")>]
-    member EmitHotReloadDelta:
-        projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
-            Async<Result<FSharpHotReloadDelta, FSharpHotReloadError>>
-
-    /// <summary>
     /// Creates an independent hot reload session (the F# analogue of Roslyn's
     /// <c>DebuggingSession</c>): per-project committed baselines and generation chains keyed by
     /// project identity, with session-wide capabilities and active statements. The session is
@@ -272,38 +217,6 @@ type public FSharpChecker =
     /// use <c>FSharpHotReloadSession.UpdateCapabilities</c> when the process reports them later.</param>
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member CreateHotReloadSession: ?capabilities: string seq -> FSharpHotReloadSession
-
-    /// <summary>Ends the active process-wide hot reload session, if any.</summary>
-    member EndHotReloadSession: unit -> unit
-
-    /// <summary>
-    /// Replaces the runtime capability set consulted by hot reload edit classification for the
-    /// active session, without restarting it. Hosts call this when the running process reports
-    /// its edit-and-continue capabilities after the session was started (for example, a session
-    /// prestarted before the application launched). Returns false when no session is active.
-    /// </summary>
-    [<Experimental("This FCS API is experimental and subject to change.")>]
-    member UpdateHotReloadCapabilities: capabilities: string seq -> bool
-
-    /// <summary>
-    /// Replaces the debugger-supplied active statements consulted by the next
-    /// <c>EmitHotReloadDelta</c> for the active session (Phase G of the debugger EnC machinery).
-    /// Debugger hosts call this whenever the process reports a break state, passing the active
-    /// instructions (method token + IL offset, with the executing method version), their PDB
-    /// source spans and frame flags; the next emitted delta carries per-statement remap results on
-    /// <see cref="P:FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta.ActiveStatementUpdates"/> and
-    /// fails with <c>UnsupportedEdit</c> when an edit destroys an active statement. The setter
-    /// REPLACES the whole set — pass an empty sequence to clear it (e.g. when the process runs
-    /// free). This is the F#-shaped analog of Roslyn's per-edit-session active-statement fetch
-    /// (<c>IManagedHotReloadService.GetActiveStatementsAsync</c> consumed by
-    /// <c>EmitSolutionUpdate</c>): FCS has no callback seam into the host, so the host pushes the
-    /// break state instead. Returns false when no session is active.
-    /// </summary>
-    [<Experimental("This FCS API is experimental and subject to change.")>]
-    member SetHotReloadActiveStatements: activeStatements: FSharpManagedActiveStatementDebugInfo seq -> bool
-
-    /// <summary>Indicates whether a process-wide hot reload session is currently active.</summary>
-    member HotReloadSessionActive: bool
 
     member HotReloadCapabilities: FSharpHotReloadCapabilities
 

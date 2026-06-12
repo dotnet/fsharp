@@ -159,12 +159,6 @@ let appValue () = "app generation {generation}"
             compileProject checker optionsA true
             compileProject checker optionsB true
 
-            // The capture compiles above started sessions in the checker's DEFAULT store via
-            // the fsc emit hook; end the default session so the assertions below prove the
-            // session entities do not depend on (or disturb) it.
-            checker.EndHotReloadSession()
-            Assert.False(checker.HotReloadSessionActive)
-
             use sessionA = checker.CreateHotReloadSession()
             use sessionB = checker.CreateHotReloadSession()
 
@@ -196,10 +190,7 @@ let appValue () = "app generation {generation}"
             writeAndCompile checker fsPathA optionsA (libSource 2) false
             let deltaA2 = emitOrFail sessionA (createProjectSnapshot optionsA)
             Assert.Equal(deltaA1.GenerationId, deltaA2.BaseGenerationId)
-            sessionA.Commit()
-
-            // The default checker session stayed inactive throughout.
-            Assert.False(checker.HotReloadSessionActive))
+            sessionA.Commit())
 
     [<Fact>]
     let ``Disposing a session ends it without affecting other sessions`` () =
@@ -219,7 +210,6 @@ let appValue () = "app generation {generation}"
             checker.InvalidateAll()
             compileProject checker optionsA true
             compileProject checker optionsB true
-            checker.EndHotReloadSession()
 
             let sessionA = checker.CreateHotReloadSession()
             use sessionB = checker.CreateHotReloadSession()
@@ -253,7 +243,6 @@ let appValue () = "app generation {generation}"
 
             checker.InvalidateAll()
             compileProject checker options true
-            checker.EndHotReloadSession()
 
             use session = checker.CreateHotReloadSession()
 
@@ -291,7 +280,6 @@ let appValue () = "app generation {generation}: " + SessionLib.libValue ()
             checker.InvalidateAll()
             compileProject checker libOptions true
             compileProject checker appOptions true
-            checker.EndHotReloadSession()
 
             use session = checker.CreateHotReloadSession()
 
@@ -341,7 +329,6 @@ let appValue () = "app generation {generation}: " + SessionLib.libValue ()
 
             checker.InvalidateAll()
             compileProject checker options true
-            checker.EndHotReloadSession()
 
             use session = checker.CreateHotReloadSession()
             addProjectOrFail session (createProjectSnapshot options)
@@ -391,7 +378,6 @@ type Calculator<'T>() =
             checker.InvalidateAll()
             compileProject checker genericOptions true
             compileProject checker plainOptions true
-            checker.EndHotReloadSession()
 
             // Created without capabilities: Roslyn-conservative BaselineOnly default.
             use session = checker.CreateHotReloadSession()

@@ -164,7 +164,7 @@ let private runNonInteractive description applyRuntimeUpdate multiDelta (session
                             File.WriteAllText(session.SourcePath, patchedSource)
 
                             printfn
-                                "[%s] Patched source written for generation %d -> %d; invoking EmitHotReloadDelta..."
+                                "[%s] Patched source written for generation %d -> %d; invoking EmitDelta..."
                                 description
                                 previousGeneration
                                 targetGeneration

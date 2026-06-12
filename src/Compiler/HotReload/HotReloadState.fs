@@ -438,20 +438,14 @@ let setCurrentEmissionContext (context: HotReloadEmissionContext option) =
 let tryGetCurrentEmissionContext () =
     lock emissionContextLock (fun () -> currentEmissionContext)
 
-let private activeStoreLock = obj ()
-let mutable private activeSessionStore = HotReloadSessionStore()
+let private activeSessionStore = HotReloadSessionStore()
 
-/// The active store remains process-scoped today; callers set this when installing a
-/// service-owned session store so global helper calls (and the fsc emit hook, which has no
-/// project identity) route to that owner. Session-entity stores are NEVER registered here.
-let setSessionStore (store: HotReloadSessionStore) =
-    if obj.ReferenceEquals(store, null) then
-        invalidArg (nameof store) "Hot reload session store cannot be null."
-
-    lock activeStoreLock (fun () -> activeSessionStore <- store)
-
-let getSessionStore () =
-    lock activeStoreLock (fun () -> activeSessionStore)
+/// The process-local store identity-less callers operate on: the fsc emit hook when no scoped
+/// emission context is set (standalone fsc capture compiles publish their captured baseline
+/// here as a side-channel), and the module-level helpers below (unit-level tooling and tests).
+/// It is NEVER a session's store: session entities own private store instances and reconstruct
+/// baselines from disk artifacts, and no registration can replace this store.
+let getSessionStore () = activeSessionStore
 
 let createSessionStore () = HotReloadSessionStore()
 

@@ -19,6 +19,7 @@ type ApplyDeltaOutcome =
 
 type DemoSession =
     { Checker: FSharpChecker
+      HotReloadSession: FSharpHotReloadSession
       ProjectOptions: FSharpProjectOptions
       SourcePath: string
       BaselineDllPath: string
@@ -61,6 +62,11 @@ module HotReloadSession =
 
     let private ensureDirectory (path: string) =
         Directory.CreateDirectory(path) |> ignore
+
+    /// Snapshot of the project's CURRENT on-disk state (snapshots are immutable and
+    /// content-versioned, so each edit needs a fresh one).
+    let private snapshotOf (projectOptions: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
 
     let private copySampleSource destination =
         let sourcePath = Path.Combine(sampleSourceDirectory, sampleFileName)
@@ -176,10 +182,14 @@ module HotReloadSession =
             match baselineResult with
             | Error diagnostics -> return Error(BaselineCompilationFailed diagnostics)
             | Ok () ->
-                let! sessionResult = checker.StartHotReloadSession(projectOptions)
+                let hotReloadSession = checker.CreateHotReloadSession()
+                let! baselineSnapshot = snapshotOf projectOptions
+                let! sessionResult = hotReloadSession.AddProject(baselineSnapshot)
 
                 match sessionResult with
-                | Error error -> return Error(HotReloadSessionFailed error)
+                | Error error ->
+                    (hotReloadSession :> IDisposable).Dispose()
+                    return Error(HotReloadSessionFailed error)
                 | Ok () ->
                     try
                         File.Copy(baselineDllPath, runtimeDllPath, true)
@@ -206,6 +216,7 @@ module HotReloadSession =
                         return
                             Ok
                                 { Checker = checker
+                                  HotReloadSession = hotReloadSession
                                   ProjectOptions = projectOptions
                                   SourcePath = sourcePath
                                   BaselineDllPath = baselineDllPath
@@ -230,7 +241,8 @@ module HotReloadSession =
             match compileResult with
             | Error diagnostics -> return CompilationFailed diagnostics
             | Ok () ->
-                let! deltaResult = session.Checker.EmitHotReloadDelta(session.ProjectOptions)
+                let! updatedSnapshot = snapshotOf session.ProjectOptions
+                let! deltaResult = session.HotReloadSession.EmitDelta(updatedSnapshot)
 
                 match deltaResult with
                 | Error FSharpHotReloadError.NoChanges -> return NoChanges
@@ -245,6 +257,11 @@ module HotReloadSession =
                 | Error FSharpHotReloadError.MissingOutputPath ->
                     return HotReloadError "Project options are missing an output path."
                 | Ok delta ->
+                    // The retired checker surface auto-committed each successful emit; the
+                    // session entity defers to an explicit commit, so commit here to keep
+                    // the demo's generation chaining behaviour identical.
+                    session.HotReloadSession.Commit()
+
                     let dumpDirRequired = shouldDumpDeltas () || shouldRunMdv ()
 
                     if dumpDirRequired then
@@ -381,7 +398,7 @@ module HotReloadSession =
 
     let dispose (session: DemoSession) =
         try
-            session.Checker.EndHotReloadSession()
+            (session.HotReloadSession :> IDisposable).Dispose()
         with _ ->
             ()
 

@@ -80,42 +80,42 @@ that.
 | `CommitSolutionUpdate` / `DiscardSolutionUpdate` | `Commit()` / `Discard()` | Solution-wide across all pending project updates |
 | `ISolutionSnapshotProvider` | the `FSharpProjectSnapshot` parameter | Hosts provide snapshots; the session consumes them |
 
-## The default-session compatibility shim
+## The default-session compatibility shim — RETIRED
 
 The pre-entity `FSharpChecker` surface (`StartHotReloadSession`, `EmitHotReloadDelta`,
 `EndHotReloadSession`, `UpdateHotReloadCapabilities`, `SetHotReloadActiveStatements`,
-`HotReloadSessionActive`) keeps working unchanged by delegating to a DEFAULT session store
-held by the checker:
+`HotReloadSessionActive`) and the checker-held default session store behind it are gone:
+`CreateHotReloadSession` is the only way to obtain hot reload behaviour from a checker, and
+the process-wide store registration (`HotReloadState.setSessionStore`) was deleted with the
+shim. All FCS test suites and the demo app drive the session-object API. (The sdk reflection
+bridge still needs its move to the session-object shape; that lives outside this repo.)
 
-- the default store is registered as the process-wide store
-  (`HotReloadState.setSessionStore`), so the module-level helpers and the fsc emit hook —
-  which has no project identity and writes baseline captures into an `Ambient` slot — route
-  to it;
-- `StartHotReloadSession` keeps its replace-existing semantics (starting a session resets the
-  default session to a single project, now keyed by the derived project identity);
-- identity-less operations resolve against the most recently started project slot, which for
-  single-project flows is exactly the previous one-session behaviour;
-- `EmitHotReloadDelta` on the compatibility surface still auto-commits each successful emit
-  (the session entity defers to `Commit()`/`Discard()` instead).
+### Emit-hook ownership after retirement
 
-Two pieces of state remain genuinely process-global and route to the default session only:
+With no ambient registration, the fsc emit hook resolves its owner per compile:
 
-1. the process-wide active store the fsc emit hook (`FSharpEditAndContinueLanguageService
-   .Instance`) and `HotReloadState` module helpers consult — the hook's synthesized-name
-   replay and closure-name allocator installation during in-process compiles therefore serve
-   the DEFAULT session, not entity sessions (method-body edits do not need them; closure-name
-   chaining for entity sessions through the in-process compile hook is a follow-up);
-2. `ClosureNameAllocationState` / compiler-generated-name-map side channels keyed by
-   `CompilerGlobalState` via `ConditionalWeakTable` — these are per-compile by construction
-   and need no per-session keying.
-
-**Retirement**: the shim exists so the ~600 pre-entity tests and the sdk reflection bridge
-keep working during the restructure. Before upstream PR-2 (the session-entity PR), the
-static-shaped checker members are retired in favour of `CreateHotReloadSession` (they are
-`[<Experimental>]`, so there is no compatibility obligation), the sdk bridge moves to the
-session-object shape, and the process-wide store registration goes away with them — at which
-point the emit hook needs an explicit owner (the session whose compile is running) rather
-than the ambient store.
+- **In-process DELTA compiles** (the host rebuilding a session-tracked project through
+  `FSharpChecker.Compile`): each session registers the resolved output path of every project
+  it baselines (`AddProject`) with its owning checker; `Compile` matches a non-capture
+  compile's output path against that registry, arms `--enable:hotreloadhook`, and sets a
+  SCOPED EMISSION CONTEXT (`HotReloadState.setCurrentEmissionContext`: the session's store +
+  the project key) around the compile. The hook prefers the scoped context, so the
+  closure-name allocator and synthesized-name replay run against the EMITTING session's
+  chained tables — and the hook never ends a scoped session's state (sessions own their
+  lifecycle; the legacy clear-on-build stays for context-less compiles). The most recently
+  baselined project wins when several live sessions track the same output.
+- **Flag-on BASELINE capture compiles** are session-independent: they read config + typed
+  tree and write artifacts (the deterministic dll/pdb) plus side-channels. Capture compiles
+  never run under a scoped context; the captured baseline is published to the process-local
+  module store in `HotReloadState` (a capture slot serving capture-to-capture name chaining
+  within one host, standalone-fsc validation and unit-level tests), which is never any
+  session's store. Creating a checker resets the slot — the freshness property the retired
+  per-checker store registration used to provide — so one owner's captures never chain
+  against another's. Sessions reconstruct baselines from the on-disk dll + pdb and never
+  read the capture slot.
+- `ClosureNameAllocationState` / compiler-generated-name-map side channels stay keyed by
+  `CompilerGlobalState` via `ConditionalWeakTable` — per-compile by construction, no
+  per-session keying needed.
 
 ## Determinism pins for baseline capture
 

@@ -32,8 +32,14 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
     let hasScopedEmissionContext () =
         (HotReloadState.tryGetCurrentEmissionContext ()).IsSome
 
-    // Build and register a baseline snapshot from the exact emitted artifacts, then
-    // activate synthesized-name replay for subsequent deltas in the same process.
+    // Build a baseline snapshot from the exact emitted artifacts and publish it to the
+    // process-local capture slot (HotReloadState's module store, via the service this hook
+    // was constructed with), then activate synthesized-name replay for subsequent deltas in
+    // the same process. The capture is SESSION-INDEPENDENT: capture compiles never run under
+    // a scoped emission context, the capture slot is not any session's store, and sessions
+    // never read it — they reconstruct baselines from the on-disk dll + pdb. The slot serves
+    // capture-to-capture name chaining within one host, standalone fsc validation and
+    // unit-level tooling/tests; checker creation resets it (the host boundary).
     let captureArtifacts
         (compilerGlobalState: CompilerGlobalState)
         (artifacts: CompilerEmitArtifacts)
@@ -144,7 +150,24 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                          (Map.count assignedNames)
                          (assignedNames |> Map.toList)
 
-                 ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) assignedNames
+                 if emitCaptureArtifacts && Map.isEmpty assignedNames then
+                     // A CAPTURE compile the active session does not cover (its occurrence
+                     // keys match nothing being lowered — e.g. a stale capture session for
+                     // an unrelated project in the process-local store): this is a fresh
+                     // baseline capture, so install the C6 occurrence-derived names below
+                     // instead of an empty table that would strip the baseline of its
+                     // reconstructible closure names.
+                     let derivedNames =
+                         HotReloadBaseline.computeBaselineOccurrenceKeyedClosureNames tcGlobals optimizedImpls
+
+                     if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                         printfn
+                             "[fsharp-hotreload][closure-names] capture not covered by active session; baseline install: derived=%d"
+                             (Map.count derivedNames)
+
+                     ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) derivedNames
+                 else
+                     ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) assignedNames
              | _ when emitCaptureArtifacts ->
                  // Closure mapping (C6): a BASELINE capture compile (no session tables to
                  // chain from) derives every closure class name from occurrence identity:
