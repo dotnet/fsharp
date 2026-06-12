@@ -46,7 +46,6 @@ module internal Bytes =
     let stringAsUnicodeNullTerminated (s: string) =
         Array.append (Encoding.Unicode.GetBytes s) (ofInt32Array [| 0x0; 0x0 |])
 
-[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 [<AbstractClass>]
 type ByteMemory() =
     abstract Item: int -> byte with get, set
@@ -446,14 +445,12 @@ module internal FileSystemUtils =
 
     let isDll fileName = checkSuffix fileName ".dll"
 
-[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IAssemblyLoader =
 
     abstract AssemblyLoadFrom: fileName: string -> Assembly
 
     abstract AssemblyLoad: assemblyName: AssemblyName -> Assembly
 
-[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type DefaultAssemblyLoader() =
 
     interface IAssemblyLoader with
@@ -462,7 +459,6 @@ type DefaultAssemblyLoader() =
 
         member _.AssemblyLoad(assemblyName: AssemblyName) = Assembly.Load assemblyName
 
-[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IFileSystem =
     // note: do not add members if you can put generic implementation under StreamExtensions below.
 
@@ -512,7 +508,6 @@ type IFileSystem =
 
 // note: do not add members if you can put generic implementation under StreamExtensions below.
 
-[<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type DefaultFileSystem() as this =
     abstract AssemblyLoader: IAssemblyLoader
     default _.AssemblyLoader = DefaultAssemblyLoader() :> IAssemblyLoader
