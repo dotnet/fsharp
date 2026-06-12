@@ -1009,226 +1009,6 @@ let requireBuilderMethod methodName ceenv m1 m2 =
     if not (hasBuilderMethod ceenv m1 methodName) then
         error (Error(FSComp.SR.tcRequireBuilderMethod methodName, m2))
 
-/// Check if an expression is or contains a CE-only construct at any position.
-/// Used for checking e1 of Sequential where the expression stays in place after lifting.
-let rec private containsCEConstructAtAnyPosition expr =
-    match expr with
-    | LetOrUse(_, true, _) -> true
-    | SynExpr.DoBang _
-    | SynExpr.MatchBang _
-    | SynExpr.WhileBang _
-    | SynExpr.YieldOrReturnFrom _
-    | SynExpr.YieldOrReturn _ -> true
-    | LetOrUse({ Body = body; IsRecursive = false }, false, false) -> containsCEConstructAtAnyPosition body
-    | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> containsCEConstructAtAnyPosition e1 || containsCEConstructAtAnyPosition e2
-    | _ -> false
-
-/// Detect whether an expression syntactically contains computation-expression-only constructs
-/// in positions that liftCEFromBindingRhs can successfully handle. This prevents infinite
-/// recursion: liftCEFromBindingRhs threads through LetOrUse and Sequential(e2), applying
-/// its continuation k at the tail. If the tail IS a CE construct (e.g. match!, do!), wrapping
-/// it with k reproduces the original expression, causing unbounded recursion. Therefore we
-/// only detect CE constructs that are:
-/// 1. LetOrUse with bang (let!/use!) - liftCEFromBindingRhs threads through these
-/// 2. In e1 of Sequential - liftCEFromBindingRhs keeps e1 in place, so CE constructs there are safe
-/// Branches that open a new scope (lambdas, match clauses, if branches, nested CEs) are
-/// intentionally not traversed.
-let rec private exprContainsCEOnlyConstruct expr =
-    match expr with
-    // let!/use! bang bindings: liftCEFromBindingRhs handles SynExpr.LetOrUse by recursing into Body,
-    // so these are always in a liftable position.
-    | LetOrUse(_, true, _) -> true
-    // Sequential: e1 stays in place (any CE construct there is safe since liftCEFromBindingRhs
-    // only recurses into e2). For e2, apply the same tail-position rules recursively.
-    | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> containsCEConstructAtAnyPosition e1 || exprContainsCEOnlyConstruct e2
-    // Plain let: recurse into body (same tail-position rules apply to the body)
-    | LetOrUse({ Body = body; IsRecursive = false }, false, false) -> exprContainsCEOnlyConstruct body
-    | _ -> false
-
-/// Walk the binding RHS of a plain 'let p = rhs in body' that appears inside a computation expression,
-/// threading the binding 'let p = <hole> in body' to the value-position of 'rhs' so that any
-/// CE-only constructs (let!, do!, etc.) appearing as a prefix of 'rhs' end up lifted into the
-/// enclosing CE, where the CE translator can desugar them properly. See issue dotnet/fsharp#19457.
-let rec private liftCEFromBindingRhs (rhs: SynExpr) (k: SynExpr -> SynExpr) : SynExpr =
-    match rhs with
-    | SynExpr.LetOrUse data when not data.IsRecursive ->
-        SynExpr.LetOrUse
-            { data with
-                Body = liftCEFromBindingRhs data.Body k
-            }
-    | SynExpr.Sequential(sp, isTrueSeq, e1, e2, m, trivia) -> SynExpr.Sequential(sp, isTrueSeq, e1, liftCEFromBindingRhs e2 k, m, trivia)
-    | _ -> k rhs
-
-/// Collect all identifier names introduced by bindings in the RHS expression that would
-/// become visible to the continuation (innerComp) after lifting. Follows the same traversal
-/// path as liftCEFromBindingRhs: LetOrUse bindings introduce their pattern variables into
-/// the scope of innerComp.
-let rec private collectLiftedBoundNames (rhs: SynExpr) (acc: Set<string>) : Set<string> =
-    match rhs with
-    | SynExpr.LetOrUse data when not data.IsRecursive ->
-        let namesFromBindings =
-            data.Bindings
-            |> List.fold (fun s (SynBinding(headPat = pat)) -> collectPatternNames pat s) acc
-
-        collectLiftedBoundNames data.Body namesFromBindings
-    | SynExpr.Sequential(expr2 = e2) -> collectLiftedBoundNames e2 acc
-    | _ -> acc
-
-and private collectPatternNames (pat: SynPat) (acc: Set<string>) : Set<string> =
-    match pat with
-    | SynPat.Named(ident = SynIdent(id, _)) -> acc.Add(id.idText)
-    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ]); argPats = SynArgPats.Pats []) -> acc.Add(id.idText)
-    | SynPat.Typed(pat = innerPat)
-    | SynPat.Attrib(pat = innerPat)
-    | SynPat.Paren(pat = innerPat)
-    | SynPat.FromParseError(pat = innerPat) -> collectPatternNames innerPat acc
-    | SynPat.As(lhsPat = p1; rhsPat = p2)
-    | SynPat.Or(lhsPat = p1; rhsPat = p2)
-    | SynPat.ListCons(lhsPat = p1; rhsPat = p2) -> collectPatternNames p2 (collectPatternNames p1 acc)
-    | SynPat.Tuple(elementPats = pats)
-    | SynPat.ArrayOrList(elementPats = pats)
-    | SynPat.Ands(pats = pats) -> pats |> List.fold (fun s p -> collectPatternNames p s) acc
-    | SynPat.Record(fieldPats = fields) ->
-        fields
-        |> List.fold (fun s (NamePatPairField(pat = pat)) -> collectPatternNames pat s) acc
-    | SynPat.OptionalVal(ident = id) -> acc.Add(id.idText)
-    | _ -> acc
-
-/// Check if an expression mentions any of the given identifier names. Used to detect
-/// potential shadowing conflicts when lifting CE constructs from a binding RHS.
-/// Conservative: returns true if any matching Ident text is found anywhere in the expression.
-let private exprMentionsAnyOf (names: Set<string>) (expr: SynExpr) : bool =
-    if names.IsEmpty then
-        false
-    else
-
-        let rec walkBind (SynBinding(expr = synExpr)) = walkExpr synExpr
-
-        and walkExprs es = es |> List.exists walkExpr
-
-        and walkBinds es = es |> List.exists walkBind
-
-        and walkMatchClauses cl =
-            cl
-            |> List.exists (fun (SynMatchClause(whenExpr = whenExpr; resultExpr = e)) -> walkExprOpt whenExpr || walkExpr e)
-
-        and walkExprOpt eOpt = eOpt |> Option.exists walkExpr
-
-        and walkExpr e =
-            match e with
-            | SynExpr.Ident id -> names.Contains(id.idText)
-            | SynExpr.LongIdent(longDotId = SynLongIdent(id = ids)) -> ids |> List.exists (fun id -> names.Contains(id.idText))
-
-            | SynExpr.TypeTest(e, _, _)
-            | SynExpr.Upcast(e, _, _)
-            | SynExpr.AddressOf(_, e, _, _)
-            | SynExpr.ComputationExpr(_, e, _)
-            | SynExpr.ArrayOrListComputed(_, e, _)
-            | SynExpr.Typed(e, _, _)
-            | SynExpr.Do(e, _)
-            | SynExpr.Assert(e, _)
-            | SynExpr.DotGet(e, _, _, _)
-            | SynExpr.LongIdentSet(_, e, _)
-            | SynExpr.New(_, _, e, _)
-            | SynExpr.TypeApp(e, _, _, _, _, _, _)
-            | SynExpr.LibraryOnlyUnionCaseFieldGet(e, _, _, _)
-            | SynExpr.Downcast(e, _, _)
-            | SynExpr.InferredUpcast(e, _)
-            | SynExpr.InferredDowncast(e, _)
-            | SynExpr.Lazy(e, _)
-            | SynExpr.TraitCall(_, _, e, _)
-            | SynExpr.YieldOrReturn(_, e, _, _)
-            | SynExpr.YieldOrReturnFrom(_, e, _, _)
-            | SynExpr.DoBang(e, _, _)
-            | SynExpr.Fixed(e, _)
-            | SynExpr.DebugPoint(_, _, e)
-            | SynExpr.Paren(e, _, _, _) -> walkExpr e
-
-            | SynExpr.NamedIndexedPropertySet(_, e1, e2, _)
-            | SynExpr.DotSet(e1, _, e2, _)
-            | SynExpr.Set(e1, e2, _)
-            | SynExpr.LibraryOnlyUnionCaseFieldSet(e1, _, _, e2, _)
-            | SynExpr.JoinIn(e1, _, e2, _)
-            | SynExpr.App(_, _, e1, e2, _) -> walkExpr e1 || walkExpr e2
-
-            | SynExpr.ArrayOrList(_, es, _)
-            | SynExpr.Tuple(_, es, _, _) -> walkExprs es
-
-            | SynExpr.AnonRecd(copyInfo = origExpr; recordFields = flds) ->
-                (match origExpr with
-                 | Some(e, _) -> walkExpr e
-                 | None -> false)
-                || walkExprs (List.map (fun (_, _, e) -> e) flds)
-
-            | SynExpr.Record(_, origExpr, fs, _) ->
-                (match origExpr with
-                 | Some(e, _) -> walkExpr e
-                 | None -> false)
-                || (let flds = fs |> List.choose (fun (SynExprRecordField(expr = v)) -> v)
-                    walkExprs flds)
-
-            | SynExpr.ObjExpr(bindings = bs; members = ms; extraImpls = is) ->
-                let bs = unionBindingAndMembers bs ms
-
-                let binds =
-                    [
-                        for SynInterfaceImpl(bindings = bs) in is do
-                            yield! bs
-                    ]
-
-                walkBinds bs || walkBinds binds
-
-            | SynExpr.ForEach(_, _, _, _, _, e1, e2, _)
-            | SynExpr.While(_, e1, e2, _)
-            | SynExpr.WhileBang(_, e1, e2, _) -> walkExpr e1 || walkExpr e2
-
-            | SynExpr.For(identBody = e1; toBody = e2; doBody = e3) -> walkExpr e1 || walkExpr e2 || walkExpr e3
-
-            | SynExpr.MatchLambda(_, _, cl, _, _) -> walkMatchClauses cl
-
-            | SynExpr.Lambda(body = e) -> walkExpr e
-
-            | SynExpr.Match(expr = e; clauses = cl)
-            | SynExpr.MatchBang(expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
-
-            | SynExpr.LetOrUse({ Bindings = bs; Body = e }) -> walkBinds bs || walkExpr e
-
-            | SynExpr.TryWith(tryExpr = e; withCases = cl) -> walkExpr e || walkMatchClauses cl
-
-            | SynExpr.TryFinally(tryExpr = e1; finallyExpr = e2) -> walkExpr e1 || walkExpr e2
-
-            | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> walkExpr e1 || walkExpr e2
-
-            | SynExpr.SequentialOrImplicitYield(_, e1, e2, _, _) -> walkExpr e1 || walkExpr e2
-
-            | SynExpr.IfThenElse(ifExpr = e1; thenExpr = e2; elseExpr = e3opt) -> walkExpr e1 || walkExpr e2 || walkExprOpt e3opt
-
-            | SynExpr.IndexRange(expr1, _, expr2, _, _, _) ->
-                (match expr1 with
-                 | Some e -> walkExpr e
-                 | None -> false)
-                || (match expr2 with
-                    | Some e -> walkExpr e
-                    | None -> false)
-
-            | SynExpr.IndexFromEnd(e, _) -> walkExpr e
-
-            | SynExpr.DotIndexedGet(e1, indexArgs, _, _) -> walkExpr e1 || walkExpr indexArgs
-
-            | SynExpr.DotIndexedSet(e1, indexArgs, e2, _, _, _) -> walkExpr e1 || walkExpr indexArgs || walkExpr e2
-
-            | SynExpr.DotNamedIndexedPropertySet(e1, _, e2, e3, _) -> walkExpr e1 || walkExpr e2 || walkExpr e3
-
-            | SynExpr.InterpolatedString(parts, _, _) ->
-                parts
-                |> List.exists (function
-                    | SynInterpolatedStringPart.String _ -> false
-                    | SynInterpolatedStringPart.FillExpr(x, _) -> walkExpr x)
-
-            | _ -> false
-
-        walkExpr expr
-
 /// <summary>
 /// Try translate the syntax sugar
 /// </summary>
@@ -2062,67 +1842,45 @@ let rec TryTranslateComputationExpression
                    false) ->
 
             // https://github.com/dotnet/fsharp/issues/19457
-            // If the (single) plain 'let p = rhs in body' binding's RHS is itself a chain of CE-only
-            // constructs (e.g. 'let! x = ...; x' or 'do! ...; rest'), rewrite the expression so that
-            // those constructs are lifted into the enclosing CE, where they desugar correctly.
-            // We only apply this when not in a query, when the binding is non-recursive and non-bang,
-            // and when there is exactly one binding (the case the issue is about). Otherwise we fall
-            // through to the standard plain-let handling.
+            // Lift CE-only constructs (let!, use!, do!) that prefix the RHS of a plain
+            // 'let p = rhs in innerComp' so the CE translator sees them in CE position.
             let liftedRewrite =
                 if ceenv.isQuery || isRec then
                     None
                 else
                     match binds with
-                    | [ SynBinding(
-                            accessibility = a
-                            kind = bk
-                            isInline = isInline
-                            isMutable = isMutable
-                            attributes = attrs
-                            xmlDoc = xmlDoc
-                            valData = valData
-                            headPat = headPat
-                            returnInfo = returnInfo
-                            expr = rhsExpr
-                            range = bindRange
-                            debugPoint = debugPoint
-                            trivia = bindTrivia) ] when
-                        exprContainsCEOnlyConstruct rhsExpr
-                        && not (
-                            let liftedNames = collectLiftedBoundNames rhsExpr Set.empty
-                            exprMentionsAnyOf liftedNames innerComp
-                        )
-                        ->
-                        let rewritten =
-                            liftCEFromBindingRhs rhsExpr (fun finalValue ->
-                                let newBinding =
-                                    SynBinding(
-                                        a,
-                                        bk,
-                                        isInline,
-                                        isMutable,
-                                        attrs,
-                                        xmlDoc,
-                                        valData,
-                                        headPat,
-                                        returnInfo,
-                                        finalValue,
-                                        bindRange,
-                                        debugPoint,
-                                        bindTrivia
-                                    )
+                    | [ SynBinding(a, bk, isI, isM, attrs, xml, vd, hp, ri, rhsExpr, br, dp, bt) ] ->
+                        let rebind rhs =
+                            SynBinding(a, bk, isI, isM, attrs, xml, vd, hp, ri, rhs, br, dp, bt)
 
-                                SynExpr.LetOrUse
-                                    {
-                                        IsRecursive = isRec
-                                        IsFromSource = isFromSource
-                                        Bindings = [ newBinding ]
-                                        Body = innerComp
-                                        Range = m
-                                        Trivia = trivia
-                                    })
+                        let mkOuterLet rhs =
+                            SynExpr.LetOrUse
+                                {
+                                    IsRecursive = false
+                                    IsFromSource = isFromSource
+                                    Bindings = [ rebind rhs ]
+                                    Body = innerComp
+                                    Range = m
+                                    Trivia = trivia
+                                }
 
-                        Some rewritten
+                        let rec liftHead rhs =
+                            match rhs with
+                            | (ExprAsLetBang _ | ExprAsUseBang _) & SynExpr.LetOrUse data ->
+                                Some(SynExpr.LetOrUse { data with Body = lift data.Body })
+                            | SynExpr.Sequential(sp, isTrueSeq, (SynExpr.DoBang _ as doBang), body, mSeq, trivSeq) ->
+                                Some(SynExpr.Sequential(sp, isTrueSeq, doBang, lift body, mSeq, trivSeq))
+                            | LetOrUse({ Body = body; IsRecursive = false } as data, false, false) ->
+                                liftHead body
+                                |> Option.map (fun body -> SynExpr.LetOrUse { data with Body = body })
+                            | _ -> None
+
+                        and lift rhs =
+                            match liftHead rhs with
+                            | Some r -> r
+                            | None -> mkOuterLet rhs
+
+                        liftHead rhsExpr
                     | _ -> None
 
             match liftedRewrite with

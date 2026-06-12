@@ -2576,11 +2576,10 @@ let test() =
         |> shouldFail
         |> withErrorCode 750
 
-    // https://github.com/dotnet/fsharp/issues/19457 - regression guard:
-    // When lifted bindings would shadow an outer variable used in innerComp,
-    // the lift must not be applied (produces FS0750 instead of incorrect behavior).
+    // https://github.com/dotnet/fsharp/issues/19457
+    // After lift, `let! b` follows F# standard shadowing (same as direct `let b = …; let! b = …`).
     [<Fact>]
-    let ``Issue 19457 - lifted let bang must not shadow outer binding in continuation`` () =
+    let ``Issue 19457 - lifted let bang shadows outer binding per standard F# scoping`` () =
         FSharp """
 module Test
 open System.Threading.Tasks
@@ -2592,11 +2591,14 @@ let test() =
             b
         return (a, b)
     }
+[<EntryPoint>]
+let main _ =
+    let (a, b) = test().Result
+    if a <> 42 || b <> 42 then failwithf "expected (42, 42), got (%d, %d)" a b
+    0
         """
-        |> asLibrary
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 750
+        |> compileExeAndRun
+        |> shouldSucceed
 
     // https://github.com/dotnet/fsharp/issues/19457 - verify that lift still works
     // when there is no shadowing conflict (the lifted name is not used in innerComp).
