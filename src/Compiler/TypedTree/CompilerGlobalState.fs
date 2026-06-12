@@ -63,10 +63,13 @@ type StableNiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGener
     new () = StableNiceNameGenerator(fun () -> None)
 
 type internal CompilerGlobalState () as this =
-    /// A global generator of compiler generated names
-    let getCompilerGeneratedNameMap () =
-        tryGetCompilerGeneratedNameMap (this :> obj)
+    /// Reader for the optional hot reload synthesized-name map attached to this
+    /// instance. The accessor resolves the side-channel slot once, so each generated
+    /// name costs a single None check (not a weak-table probe and lock) when no map
+    /// is installed, i.e. on every compile without the hot reload emit hook.
+    let getCompilerGeneratedNameMap = getCompilerGeneratedNameMapAccessor (this :> obj)
 
+    /// A global generator of compiler generated names
     let globalNng = NiceNameGenerator(getCompilerGeneratedNameMap)
 
     /// A global generator of stable compiler generated names
