@@ -947,6 +947,22 @@ let main3
         refAssemblySignatureHash
     )
 
+/// Inputs the hot reload emit hook consumes at binary-emit time, threaded from
+/// codegen (main4) to emit (main6) only when baseline capture is active
+/// (--enable:hotreloaddeltas). Ordinary compiles thread None so the optimized typed
+/// tree and the IlxGen environment are released after codegen, exactly as upstream.
+[<NoEquality; NoComparison>]
+type HotReloadCaptureInputs =
+    {
+        /// The optimized typed tree the emit path joins with the IlxGen recordings
+        /// (EnC CustomDebugInformation rows, closure-name tables) and stores on the
+        /// captured baseline.
+        OptimizedImpls: CheckedAssemblyAfterOptimization
+
+        /// The final IlxGen environment snapshot stored on the captured baseline.
+        IlxGenEnvSnapshot: IlxGenEnvSnapshot option
+    }
+
 /// Fourth phase of compilation.
 ///   -  Static linking
 ///   -  IL code generation
@@ -1049,6 +1065,19 @@ let main4
 
     AbortOnError(diagnosticsLogger, exiter)
 
+    // Hot reload baseline capture consumes the optimized typed tree and the final
+    // IlxGen environment at binary-emit time. Thread them onward only when capture
+    // is active so ordinary compiles drop both references here, exactly as upstream.
+    let hotReloadCaptureInputs =
+        if tcConfig.emitCaptureArtifacts then
+            Some
+                {
+                    OptimizedImpls = optimizedImpls
+                    IlxGenEnvSnapshot = codegenResults.ilxGenEnvSnapshot
+                }
+        else
+            None
+
     // Pass on only the minimum information required for the next phase
     Args(
         ctok,
@@ -1057,11 +1086,10 @@ let main4
         tcGlobals,
         diagnosticsLogger,
         staticLinker,
-        optimizedImpls,
         outfile,
         pdbfile,
         ilxMainModule,
-        codegenResults.ilxGenEnvSnapshot,
+        hotReloadCaptureInputs,
         signingInfo,
         exiter,
         ilSourceDocs,
@@ -1077,11 +1105,10 @@ let main5
           tcGlobals,
           diagnosticsLogger: DiagnosticsLogger,
           staticLinker,
-          optimizedImpls,
           outfile,
           pdbfile,
           ilxMainModule,
-          ilxGenEnvSnapshot,
+          hotReloadCaptureInputs,
           signingInfo,
           exiter: Exiter,
           ilSourceDocs,
@@ -1107,9 +1134,8 @@ let main5
         tcImports,
         tcGlobals,
         diagnosticsLogger,
-        optimizedImpls,
         ilxMainModule,
-        ilxGenEnvSnapshot,
+        hotReloadCaptureInputs,
         outfile,
         pdbfile,
         signingInfo,
@@ -1127,9 +1153,8 @@ let main6
           tcImports: TcImports,
           tcGlobals: TcGlobals,
           diagnosticsLogger: DiagnosticsLogger,
-          optimizedImpls,
           ilxMainModule,
-          ilxGenEnvSnapshot,
+          hotReloadCaptureInputs: HotReloadCaptureInputs option,
           outfile,
           pdbfile,
           signingInfo,
@@ -1214,11 +1239,12 @@ let main6
                     // Hot reload baseline (--enable:hotreloaddeltas): compute the per-method
                     // EnC lambda/closure CustomDebugInformation rows from the same optimized
                     // typed tree the baseline capture snapshots, so a later generation can map
-                    // lambda occurrences back to this baseline. Flag-off builds pass the empty
-                    // map and the emitted binaries stay byte-identical.
+                    // lambda occurrences back to this baseline. Flag-off builds threaded no
+                    // capture inputs, pass the empty map and emit byte-identical binaries.
                     let methodCustomDebugInfoRows =
-                        if tcConfig.emitCaptureArtifacts then
-                            let (CheckedAssemblyAfterOptimization implFiles) = optimizedImpls
+                        match hotReloadCaptureInputs with
+                        | Some captureInputs ->
+                            let (CheckedAssemblyAfterOptimization implFiles) = captureInputs.OptimizedImpls
 
                             // State machine resume points recorded by the IlxGen
                             // lowering: codegen has already run by this point,
@@ -1234,8 +1260,7 @@ let main6
                                 tcGlobals
                                 implFiles
                                 stateMachineResumePoints
-                        else
-                            Map.empty
+                        | None -> Map.empty
 
                     // Hot reload closure mapping: join the stamp -> closure-name pairs
                     // recorded at the IlxGen closure call site with the lambda occurrence
@@ -1244,7 +1269,8 @@ let main6
                     // blobs above carry occurrence keys but no name slots). Flag-off builds
                     // recorded nothing and pass the empty map.
                     let methodClosureNameRows =
-                        if tcConfig.emitCaptureArtifacts then
+                        match hotReloadCaptureInputs with
+                        | Some captureInputs ->
                             let recordedClosureNames =
                                 ClosureNameAllocationState.getRecordedClosureStampNames
                                     (tcGlobals.CompilerGlobalState.Value :> obj)
@@ -1252,14 +1278,13 @@ let main6
                             if Map.isEmpty recordedClosureNames then
                                 Map.empty
                             else
-                                let (CheckedAssemblyAfterOptimization implFiles) = optimizedImpls
+                                let (CheckedAssemblyAfterOptimization implFiles) = captureInputs.OptimizedImpls
 
                                 let implFiles =
                                     implFiles |> List.map (fun implFile -> implFile.ImplFile)
 
                                 ClosureNameAllocator.computeBaselineClosureNameRows tcGlobals implFiles recordedClosureNames
-                        else
-                            Map.empty
+                        | None -> Map.empty
 
                     let ilWriteOptions: ILBinaryWriter.options =
                         {
@@ -1285,20 +1310,25 @@ let main6
                         }
 
                     // Give the emit hook first chance to perform a single-pass emit+capture flow.
-                    // If it declines, preserve the upstream file-emission path unchanged.
+                    // If it declines, preserve the upstream file-emission path unchanged. Without
+                    // capture inputs (flag-off compiles) the hook would decline anyway, so the
+                    // call is skipped outright.
                     let emittedByHook =
-                        compilerEmitHook.TryEmitWithArtifacts(
-                            tcConfig.emitCaptureArtifacts,
-                            tcGlobals.CompilerGlobalState.Value,
-                            ilWriteOptions,
-                            ilxMainModule,
-                            normalizeAssemblyRefs,
-                            optimizedImpls,
-                            ilxGenEnvSnapshot,
-                            methodClosureNameRows,
-                            outfile,
-                            pdbfile
-                        )
+                        match hotReloadCaptureInputs with
+                        | Some captureInputs ->
+                            compilerEmitHook.TryEmitWithArtifacts(
+                                tcConfig.emitCaptureArtifacts,
+                                tcGlobals.CompilerGlobalState.Value,
+                                ilWriteOptions,
+                                ilxMainModule,
+                                normalizeAssemblyRefs,
+                                captureInputs.OptimizedImpls,
+                                captureInputs.IlxGenEnvSnapshot,
+                                methodClosureNameRows,
+                                outfile,
+                                pdbfile
+                            )
+                        | None -> false
 
                     if not emittedByHook then
                         ILBinaryWriter.WriteILBinaryFile(ilWriteOptions, ilxMainModule, normalizeAssemblyRefs)
