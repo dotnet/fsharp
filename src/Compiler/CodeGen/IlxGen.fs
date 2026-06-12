@@ -1207,6 +1207,9 @@ and IlxGenEnv =
         /// Indicates the default "place" for stuff we're currently generating
         cloc: CompileLocation
 
+        /// Non-generic enclosing module (never narrowed by AddEnclosingToEnv). Routing target for TLR lifts.
+        moduleCloc: CompileLocation
+
         /// Indicates the default "place" for initialization stuff we're currently generating
         initClassCompLoc: CompileLocation option
 
@@ -3080,7 +3083,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
             let others =
                 [
                     for k in cenv.namedDebugPointsForInlinedCode.Keys do
-                        if equals m k.Range then
+                        if Range.equals m k.Range then
                             yield k.Name
                 ]
                 |> String.concat ","
@@ -10336,7 +10339,22 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
         else
             NoShadowLocal, eenv
 
-    ComputeAndAddStorageForLocalValWithValReprInfo (cenv, eenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal) cloc v eenv
+    // TLR lifts avoid generic enclosing scopes (#17607); namespace-root lifts use the per-file
+    // init class to avoid generated-name collisions in the shared <PrivateImplementationDetails$Asm>.
+    let effectiveCloc =
+        if v.IsCompiledAsTopLevel && not v.IsMemberOrModuleBinding then
+            if eenv.moduleCloc.Enclosing.IsEmpty then
+                CompLocForInitClass eenv.moduleCloc
+            else
+                eenv.moduleCloc
+        else
+            cloc
+
+    ComputeAndAddStorageForLocalValWithValReprInfo
+        (cenv, eenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal)
+        effectiveCloc
+        v
+        eenv
 
 //--------------------------------------------------------------------------
 // Generate stack save/restore and assertions - pulled into letrec by alloc*
@@ -10770,9 +10788,12 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
         // Evaluate bindings for module
         let hidden = IsHiddenTycon eenv.sigToImplRemapInfo mspec
 
+        let moduleLoc = CompLocForFixedModule cenv.options.fragName qname.Text mspec
+
         let eenvinner =
             { eenv with
-                cloc = CompLocForFixedModule cenv.options.fragName qname.Text mspec
+                cloc = moduleLoc
+                moduleCloc = moduleLoc
                 initLocals =
                     eenv.initLocals
                     && not (EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.SkipLocalsInitAttribute mspec)
@@ -10838,13 +10859,16 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
     for anonInfo in anonRecdTypes.Values do
         mgbuf.GenerateAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
 
+    let withQName (loc: CompileLocation) =
+        { loc with
+            TopImplQualifiedName = qname.Text
+            Range = m
+        }
+
     let eenv =
         { eenv with
-            cloc =
-                { eenv.cloc with
-                    TopImplQualifiedName = qname.Text
-                    Range = m
-                }
+            cloc = withQName eenv.cloc
+            moduleCloc = withQName eenv.moduleCloc
         }
 
     cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
@@ -12580,9 +12604,12 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
 //-------------------------------------------------------------------------
 
 let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
+    let ccuLoc = CompLocForCcu ccu
+
     {
         tyenv = TypeReprEnv.Empty
-        cloc = CompLocForCcu ccu
+        cloc = ccuLoc
+        moduleCloc = ccuLoc
         initClassCompLoc = None
         initFieldName = CompilerGeneratedName "init"
         staticInitializationName = CompilerGeneratedName "staticInitialization"
@@ -12665,8 +12692,11 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let mgbuf = AssemblyBuilder(cenv, anonTypeTable)
 
     let eenv =
+        let fragLoc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+
         { eenv with
-            cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+            cloc = fragLoc
+            moduleCloc = fragLoc
             delayCodeGen = cenv.options.parallelIlxGenEnabled
         }
 

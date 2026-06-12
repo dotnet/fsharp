@@ -11964,16 +11964,47 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         // Add the dispose of any "use x = ..." to bodyExpr
         let mkCleanup (bodyExpr, bodyExprTy) =
             if isUse && not isFixed then
-                let isDiscarded = match checkedPat2 with TPat_wild _ -> true | _ -> false
-                let allValsDefinedByPattern = if isDiscarded then [patternInputTmp] else allValsDefinedByPattern
-                (allValsDefinedByPattern, (bodyExpr, bodyExprTy)) ||> List.foldBack (fun v (bodyExpr, bodyExprTy) ->
+                // Issue #12300, scenario B: `use b = a` where `a` is itself use-bound
+                // would dispose the same backing object twice. Skip cleanup here; the
+                // enclosing `use` will dispose.
+                let rec stripCoerceAndTyLambdas e =
+                    match e with
+                    | Expr.TyLambda(_, _, body, _, _) -> stripCoerceAndTyLambdas body
+                    | Expr.Op(TOp.Coerce, _, [inner], _) -> stripCoerceAndTyLambdas inner
+                    | _ -> e
+                let isAliasOfUseBoundVal =
+                    match stripCoerceAndTyLambdas rhsExpr with
+                    | Expr.Val(vref, _, _) -> env.eUseBoundValStamps.Contains vref.Deref.Stamp
+                    | _ -> false
+                if isAliasOfUseBoundVal then
+                    bodyExpr, bodyExprTy
+                else
+                    // Issue #12300, scenario A: one Dispose per `use` binding,
+                    // regardless of how many names the pattern introduces.
+                    // `patternInputTmp` is the canonical value holding the bound expression:
+                    //   - for `use v = expr` it is `v` itself (see the TPat_as arm above);
+                    //   - for `use _ = expr` it is a fresh compiler-generated temp;
+                    //   - for `use a as b = expr` it is the outermost named val (e.g. `b`),
+                    //     and every other name in the pattern aliases the same object.
+                    let v = patternInputTmp
                     AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace g.system_IDisposableNull_ty v.Type
                     let cleanupE = BuildDisposableCleanup cenv env m v
-                    mkTryFinally g (bodyExpr, cleanupE, m, bodyExprTy, DebugPointAtTry.No, DebugPointAtFinally.No), bodyExprTy)
+                    mkTryFinally g (bodyExpr, cleanupE, m, bodyExprTy, DebugPointAtTry.No, DebugPointAtFinally.No), bodyExprTy
             else
                 (bodyExpr, bodyExprTy)
 
         let envInner = AddLocalValMap g cenv.tcSink scopem prelimRecValues env
+
+        let envInner =
+            if isUse && not isFixed then
+                // Issue #12300: remember stamps of vals introduced by this `use` so a
+                // subsequent `use y = x` does not emit a duplicate Dispose for the same object.
+                let newStamps =
+                    (env.eUseBoundValStamps, prelimRecValues)
+                    ||> Map.fold (fun acc _ (v: Val) -> Set.add v.Stamp acc)
+                { envInner with eUseBoundValStamps = newStamps }
+            else
+                envInner
 
         ((buildExpr >> mkCleanup >> mkPatBind >> mkRhsBind), envInner, tpenv))
 

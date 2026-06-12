@@ -327,7 +327,7 @@ type IncrClassReprInfo =
             nm, takenFieldNames.Add nm
                  
         let reportIfUnused() = 
-            if not v.HasBeenReferenced && not v.IsCompiledAsTopLevel && not (v.DisplayName.StartsWithOrdinal("_")) && not v.IsCompilerGenerated then 
+            if not v.HasBeenReferenced && not (v.DisplayName.StartsWithOrdinal("_")) && not v.IsCompilerGenerated then 
                 warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
 
         let repr = 
