@@ -1142,7 +1142,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             else
                 // If the file doesn't exist, let reference resolution logic report the error later...
                 defaultCoreLibraryReference,
-                if equals assemRef.Range rangeStartup then
+                if Range.equals assemRef.Range rangeStartup then
                     Some fileName
                 else
                     None
