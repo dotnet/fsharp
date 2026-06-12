@@ -42,42 +42,26 @@ module FSharp.Test.SurfaceArea
             |]
         assembly, actual
 
-    let private appendNewLine str = str + System.Environment.NewLine
-
     // verify public surface area matches expected, handles baseline update when TEST_UPDATE_BSL is set
-    let verify assembly baselinePath outFilePath : unit =
-        let expected =
-            File.ReadAllLines(baselinePath)
-            |> String.concat System.Environment.NewLine
-            |> appendNewLine
-
+    let verify assembly baselinePath : unit =
         let normalize (s:string) = Regex.Replace(s, "(\\r\\n|\\n|\\r)+", Environment.NewLine).Trim()
         let asm, actualNotNormalized = getSurfaceAreaForAssembly (assembly)
-        let actual = 
-            actualNotNormalized 
-            |> Seq.map normalize 
+        let actual =
+            actualNotNormalized
+            |> Seq.map normalize
             |> Seq.filter (String.IsNullOrWhiteSpace >> not)
             |> Seq.sort
             |> String.concat Environment.NewLine
 
-        let expected = normalize expected
-
-        match Assert.shouldBeSameMultilineStringSets expected actual with
-        | None ->
-            File.Delete(outFilePath)
-
-        | Some diff ->
-            if shouldUpdateBaselines then
-                File.Delete(outFilePath)
-                File.WriteAllText(baselinePath, actual)
-            else
-                File.WriteAllText(outFilePath, actual)
-
-                let msg = $"""Assembly: %A{asm}
+        let compare fileContent produced =
+            match Assert.shouldBeSameMultilineStringSets (normalize fileContent) produced with
+            | None -> None
+            | Some diff ->
+                Some $"""Assembly: %A{asm}
 
                   Expected and actual surface area don't match. To see the delta, run:
-                      windiff {baselinePath} {outFilePath}
+                      windiff {baselinePath} {Path.ChangeExtension(baselinePath, ".out")}
 
                   {diff}"""
 
-                failwith msg
+        checkBaselineWith compare actual baselinePath
