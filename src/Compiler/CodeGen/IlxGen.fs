@@ -2588,6 +2588,10 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
 
     let mutable hasStackAllocatedLocals = false
 
+    // An uninitialized reference-type 'this', pending for a chained base/self '.ctor', must not be
+    // spilled for a debug point: that produces unverifiable IL.
+    let mutable uninitializedThisOnStackCount = 0
+
     let codeLabelToPC: Dictionary<ILCodeLabel, int> = Dictionary<_, _>(10)
 
     let codeLabelToCodeLabel: Dictionary<ILCodeLabel, ILCodeLabel> =
@@ -2628,6 +2632,12 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
                 nstack <- nstack - 1
 
     member _.GetCurrentStack() = stack
+
+    member _.StartUninitializedThisOnStack() =
+        uninitializedThisOnStackCount <- uninitializedThisOnStackCount + 1
+
+    member _.EndUninitializedThisOnStack() =
+        uninitializedThisOnStackCount <- uninitializedThisOnStackCount - 1
 
     member _.AssertEmptyStack() =
         if not (isNil stack) then
@@ -2676,6 +2686,21 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     member cgbuf.EmitDebugPoint(m: range) =
         if mgbuf.cenv.options.generateDebugSymbols then
 
+            // A debug point must be at an empty stack position for the debugger to bind a breakpoint there,
+            // so spill anything still pending (e.g. a call argument) to temporaries and reload it afterwards.
+            // An uninitialized reference-type 'this' (pending for a chained '.ctor') can't be spilled, so
+            // leave the stack as-is in that case.
+            let spilled =
+                if uninitializedThisOnStackCount > 0 then
+                    []
+                else
+                    [
+                        for ty in stack ->
+                            let idx = cgbuf.AllocLocal([], ty, false, true)
+                            cgbuf.EmitInstr(pop 1, Push0, mkStloc (uint16 idx))
+                            idx, ty
+                    ]
+
             let attr = GenILSourceMarker g m
             let i = I_seqpoint attr
             hasDebugPoints <- true
@@ -2695,6 +2720,9 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
                 codebuf.Add i
 
             anyDocument <- Some attr.Document
+
+            for idx, ty in List.rev spilled do
+                cgbuf.EmitInstr(pop 0, Push [ ty ], mkLdloc (uint16 idx))
 
     // Emit FeeFee breakpoints for hidden code, see https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/
     member cgbuf.EmitStartOfHiddenCode() =
@@ -3144,7 +3172,11 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
         | Expr.Match _ -> GenLinearExpr cenv cgbuf eenv expr sequel false id |> ignore<FakeUnit>
 
         | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-            CG.EmitDebugPoint cgbuf m
+            if equals m range0 then
+                cgbuf.EmitStartOfHiddenCode()
+            else
+                CG.EmitDebugPoint cgbuf m
+
             GenExpr cenv cgbuf eenv innerExpr sequel
 
         | Expr.Const(c, m, ty) -> GenConstant cenv cgbuf eenv (c, m, ty) sequel
@@ -3705,7 +3737,11 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
                          Fake))
 
     | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-        CG.EmitDebugPoint cgbuf m
+        if equals m range0 then
+            cgbuf.EmitStartOfHiddenCode()
+        else
+            CG.EmitDebugPoint cgbuf m
+
         GenLinearExpr cenv cgbuf eenv innerExpr sequel true contf
 
     | LinearOpExpr(TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
@@ -4505,6 +4541,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 List.splitAt numEnclILTypeArgs ilTyArgs
 
             let boxity = mspec.DeclaringType.Boxity
+            let valu = boxity = AsValue
             let mspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
 
             // "Unit" return types on static methods become "void"
@@ -4560,8 +4597,20 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                         I_call(isTailCall, mspec, None)
 
             // ok, now we're ready to generate
+            // For a value type the constructor 'this' is a managed pointer, so track it as a byref.
+            let thisTy =
+                if valu then
+                    ILType.Byref mspec.DeclaringType
+                else
+                    mspec.DeclaringType
+
             if isSuperInit || isSelfInit then
-                CG.EmitInstr cgbuf (pop 0) (Push [ mspec.DeclaringType ]) mkLdarg0
+                CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
+
+            let pendingUninitializedThis = (isSuperInit || isSelfInit) && not valu
+
+            if pendingUninitializedThis then
+                cgbuf.StartUninitializedThisOnStack()
 
             if not cenv.g.generateWitnesses || witnessInfos.IsEmpty then
                 () // no witness args
@@ -4602,9 +4651,12 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
                 CG.EmitInstr cgbuf (pop (nargs + (if mspec.CallingConv.IsStatic || newobj then 0 else 1))) pushes callInstr
 
+                if pendingUninitializedThis then
+                    cgbuf.EndUninitializedThisOnStack()
+
                 // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation. It will be popped again in most cases
                 if isSuperInit then
-                    CG.EmitInstr cgbuf (pop 0) (Push [ mspec.DeclaringType ]) mkLdarg0
+                    CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
 
                 // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
                 // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
@@ -5236,6 +5288,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
     GenExpr cenv cgbuf eenvinner loopBody discard
 
     //    v++ or v--
+    cgbuf.EmitStartOfHiddenCode()
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
     CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 1)
@@ -5629,10 +5682,21 @@ and GenILCall
         (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
         && ilMethRef.CallingConv.IsInstance
 
+    let thisTy =
+        if valu then
+            ILType.Byref ilMethSpec.DeclaringType
+        else
+            ilMethSpec.DeclaringType
+
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
     if isSuperInit then
-        CG.EmitInstr cgbuf (pop 0) (Push [ ilMethSpec.DeclaringType ]) mkLdarg0
+        CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
+
+    let pendingUninitializedThis = isSuperInit && not valu
+
+    if pendingUninitializedThis then
+        cgbuf.StartUninitializedThisOnStack()
 
     GenExprs cenv cgbuf eenv argExprs
 
@@ -5652,10 +5716,13 @@ and GenILCall
 
     CG.EmitInstr cgbuf (pop (argExprs.Length + (if isSuperInit then 1 else 0))) (if isSuperInit then Push0 else Push ilReturnTys) il
 
+    if pendingUninitializedThis then
+        cgbuf.EndUninitializedThisOnStack()
+
     // Load the 'this' pointer as the pretend 'result' of the isSuperInit operation.
     // It will be immediately popped in most cases, but may also be used as the target of some "property set" operations.
     if isSuperInit then
-        CG.EmitInstr cgbuf (pop 0) (Push [ ilMethSpec.DeclaringType ]) mkLdarg0
+        CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
 
     CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel
 
