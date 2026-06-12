@@ -3103,7 +3103,7 @@ let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo
     if shouldEraseCall then
         // Methods marked with 'Conditional' must return 'unit'
         UnifyTypes cenv env m g.unit_ty (minfo.GetFSharpReturnType(cenv.amap, m, minst))
-        mkUnit g m, g.unit_ty
+        Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden = true, range = m), mkUnit g m), g.unit_ty
     else
 #if !NO_TYPEPROVIDERS
         match minfo with
@@ -5903,6 +5903,7 @@ and TcNonControlFlowExpr (env: TcEnv) f =
             let res2 =
                 match res with
                 | IfThenElseExpr _ -> res
+                | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden = true), _) -> res
                 | _ -> mkDebugPoint res.Range res
             res2, tpenv
     else
