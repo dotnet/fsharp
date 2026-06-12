@@ -2133,21 +2133,11 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             AddPropertyDefToHash m gproperties pdef
 
     member private this.UpdateOrAddCctor(cond, instrs, tag, imports, transform) =
-        let idx =
-            let mutable found = -1
-
-            for i = 0 to gmethods.Count - 1 do
-                let _, md = gmethods[i]
-
-                if found < 0 && cond md then
-                    found <- i
-
-            found
-
-        if idx >= 0 then
+        match ResizeArray.tryFindIndexi (fun _ (_, md) -> cond md) gmethods with
+        | Some idx ->
             let k, md = gmethods[idx]
             gmethods[idx] <- (k, transform instrs md)
-        else
+        | None ->
             let body =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
@@ -7413,23 +7403,18 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            // Route in-file closures through StableNameGenerator (legacy `basicName@<line>[-N]`)
-            // for baseline stability. PrimeStableNamesForCodegen pins those names in source
-            // order so the suffix assignments are deterministic under parallel codegen.
-            // Cross-file inlined closures (`expr.Range.FileIndex != consumer file index`) are
-            // disambiguated through PerFileClosureNameScope with an `F<consumerFileIndex>` marker
-            // — these would otherwise race on the shared StableNameGenerator bucket counter when
-            // multiple parallel consumer files inline the same source range.
-            let consumerFileIndex =
-                eenv.closureNameScope
-                |> Option.map (fun s -> s.ConsumerFileIndex)
-                |> Option.defaultValue 0
-
-            if expr.Range.FileIndex = consumerFileIndex || eenv.closureNameScope.IsNone then
-                let stableGen = g.CompilerGlobalState.Value.StableNameGenerator
-                stableGen.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
-            else
-                eenv.closureNameScope.Value.EmitClosureName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            // In-file closures use the legacy StableNameGenerator (`basicName@<line>[-N]`)
+            // pinned in source order by PrimeStableNamesForCodegen. Cross-file inlined
+            // closures (different consumer file) get an extra `F<consumerFileIndex>`
+            // marker to avoid racing on the shared bucket counter.
+            match eenv.closureNameScope with
+            | Some s when expr.Range.FileIndex <> s.ConsumerFileIndex -> s.EmitClosureName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            | _ ->
+                g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(
+                    basenameSafeForUseAsTypename,
+                    expr.Range,
+                    uniq
+                )
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
