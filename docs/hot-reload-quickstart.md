@@ -127,4 +127,5 @@ and why — generally the same set as C#.
   missing runtime capability) for every emit.
 - **First edit is slow**: the first delta includes compiler-service warm-up; subsequent edits
   are ~2–3 s. (Reducing this is roadmapped — the bulk is an FCS recheck that composes with
-  in-flight compiler caching work.)
+  the in-flight compiler caching work in
+  [dotnet/fsharp#19267](https://github.com/dotnet/fsharp/pull/19267).)
