@@ -5582,9 +5582,6 @@ and TcStmt (cenv: cenv) env tpenv synExpr =
     let g = cenv.g
     let expr, ty, tpenv = TcExprOfUnknownType cenv env tpenv synExpr
 
-    // Use the range of the last expression in a sequential chain (also walking through
-    // 'let'/'use' bindings) for warnings, so that "expression is ignored" diagnostics point
-    // at the offending expression rather than the entire sequential body.
     let rec lastExprRange (e: SynExpr) =
         match e with
         | SynExpr.Sequential(expr2 = expr2) -> lastExprRange expr2
