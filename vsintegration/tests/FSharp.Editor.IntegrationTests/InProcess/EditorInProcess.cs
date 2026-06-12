@@ -73,6 +73,19 @@ internal partial class EditorInProcess
         view.Selection.Clear();
     }
 
+    // dte.Find.Execute (used by PlaceCaretAsync) leaves VS's active selection on the Find feature rather
+    // than the editor, so shell commands dispatched afterwards through SUIHostCommandDispatcher (e.g.
+    // VSStd97CmdID.GotoDefn) are routed to the wrong command target and come back disabled (E_FAIL).
+    // Re-activate the document window so the editor is the active command context again. This uses VS's
+    // internal active-frame selection (IVsMonitorSelection) and does not depend on the OS foreground window.
+    public async Task ActivateAsync(CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var dte = await GetRequiredGlobalServiceAsync<SDTE, EnvDTE.DTE>(cancellationToken);
+        dte.ActiveDocument?.Activate();
+    }
+
     public async Task<IEnumerable<SuggestedActionSet>> InvokeCodeActionListAsync(CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
