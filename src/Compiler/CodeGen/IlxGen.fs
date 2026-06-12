@@ -2167,8 +2167,6 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     member _.NestedTypeDefs = gnested
 
-    member _.GetCurrentFields() = gfields |> Seq.map snd |> Seq.readonly
-
     /// Merge Get and Set property nodes, which we generate independently for F# code
     /// when we come across their corresponding methods.
     member _.AddOrMergePropertyDef(pdef, m) =
@@ -2648,28 +2646,11 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
     // counter 1 and file B's counter 1 would alias to the same cached spec from whichever file's
     // codegen ran first, silently dropping the second file's field def).
     // See https://github.com/dotnet/fsharp/issues/19732.
-    let primedFieldCounterByRange =
-        ConcurrentDictionary<struct (int * int * int * int * int), int>(HashIdentity.Structural)
-
-    // Counter per (FileIndex, StartLine) for raw-data field names. Each unique (m, bytes)
-    // pair at a given (file, line) gets a sequential index assigned in source-order encounter.
-    // Stable across SEQ/PAR because:
-    //   - per-file insertion order is preserved (within-file walks are sequential)
-    //   - the cache below dedupes by (m, bytes), so identical inlines share one slot
     let rawDataLineCounters =
         ConcurrentDictionary<struct (int * int), int ref>(HashIdentity.Structural)
 
     let fieldSpecByRange =
         ConcurrentDictionary<struct (int * int * int * int * int * string), ILFieldSpec>(HashIdentity.Structural)
-
-    // Set of ILTypeRefs that PrimeStableNamesForCodegen has determined will host a static
-    // raw-data field once GenConstArray runs (whether inline during top-walk or via the
-    // deferred queue at IlxGen.fs:12516). Consulted by GenModuleBinding's GetCurrentFields
-    // check at IlxGen.fs:~10940 so that the InitClass-cctor-force is emitted for the same
-    // set of modules under --parallelcompilation- and --parallelcompilation+.
-    // See https://github.com/dotnet/fsharp/issues/19732.
-    let primedRawDataFieldHosts =
-        ConcurrentDictionary<ILTypeRef, unit>(HashIdentity.Structural)
 
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
@@ -2737,15 +2718,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         )
         |> ignore
 
-    /// Returns the stable '@field' counter for an array-literal expression at source range 'm'.
-    /// Source-order pre-population by PrimeStableNamesForCodegen guarantees that this returns
-    /// the same counter regardless of whether the surrounding method body is emitted inline
-    /// (sequential codegen) or via the deferred queue (parallel codegen). Falls back to a
-    /// direct IncrementOnly if priming did not cover the site (defensive only).
-    member _.GetOrAssignFieldCounter(m: range) =
-        let key = struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn)
-        primedFieldCounterByRange.GetOrAdd(key, (fun _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@field", m)))
-
     /// Returns the static-field spec for an array-literal site at 'm' with the given byte data.
     /// Two emissions of the SAME byte data at the SAME source range (e.g. two inlined copies of
     /// the same TOp.Bytes literal) share a single static data field. Different byte data at the
@@ -2775,15 +2747,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                 makeFspec nameSuffix)
         )
 
-    /// Records that an ILTypeRef will host a static raw-data field once codegen runs.
-    /// Called from PrimeStableNamesForCodegen for every TOp.Bytes / TOp.UInt16s site in source order.
-    member _.MarkRawDataFieldHost(tref: ILTypeRef) =
-        primedRawDataFieldHosts.TryAdd(tref, ()) |> ignore
-
-    /// True if PrimeStableNamesForCodegen recorded this ILTypeRef as a future raw-data field host.
-    member _.WillHaveRawDataFields(tref: ILTypeRef) =
-        primedRawDataFieldHosts.ContainsKey(tref)
-
     member _.GenerateAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         anonTypeTable.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo)
 
@@ -2797,9 +2760,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards, m)
 
     member _.FindNestedTypeDefBuilder(tref: ILTypeRef) = gtdefs.FindNestedTypeDefBuilder(tref)
-
-    member _.GetCurrentFields(tref: ILTypeRef) =
-        gtdefs.FindNestedTypeDefBuilder(tref).GetCurrentFields()
 
     member _.AddReflectedDefinition(vspec: Val, expr) =
         reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, expr))
@@ -12923,9 +12883,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
 
     match g.CompilerGlobalState with
     | None -> ()
-    | Some cgs ->
-
-        let stableNameGen = cgs.StableNameGenerator
+    | Some _ ->
 
         let primeVal (v: Val) =
             // Mirrors the predicate in Val.CompiledName that routes through StableNiceNameGenerator.
@@ -12935,24 +12893,6 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 && (v.IsCompilerGenerated || not v.IsMemberOrModuleBinding)
             then
                 v.CompiledName g.CompilerGlobalState |> ignore
-
-        let _primeClosureName (letBoundVars: ValRef list) (uniq: int64) (m: range) =
-            // Replicates the basename-selection in GetIlxClosureFreeVars (IlxGen.fs:~7132).
-            // Currently UNUSED — see Expr.Lambda/TyLambda/Obj cases below for the rationale.
-            // Kept here as a reference for the basename-selection logic if priming is
-            // reintroduced after state-machine lowering moves earlier.
-            let boundvar =
-                letBoundVars |> List.tryFind (fun v -> not v.Deref.IsCompilerGenerated)
-
-            let basename =
-                match boundvar with
-                | Some v -> v.Deref.CompiledName g.CompilerGlobalState
-                | None -> "clo"
-
-            let basenameSafeForUseAsTypename = CleanUpGeneratedTypeName basename
-
-            stableNameGen.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, m, uniq)
-            |> ignore
 
         // GenConstArray re-routes cloc through CompLocForPrivateImplementationDetails when
         // running under FSI; PrimeRawDataValueTypeCounter performs the same rewrite internally,
@@ -13028,16 +12968,12 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
 
                     walkExpr lbvs cloc body
 
-                | Expr.Op(op, _, args, m) ->
+                | Expr.Op(op, _, args, _) ->
                     match op with
                     | TOp.Bytes bytes when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
                         mgbuf.PrimeRawDataValueTypeCounter(cloc, bytes.Length)
-                        mgbuf.GetOrAssignFieldCounter(m) |> ignore
-                        mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
                     | TOp.UInt16s arr when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
                         mgbuf.PrimeRawDataValueTypeCounter(cloc, arr.Length * 2)
-                        mgbuf.GetOrAssignFieldCounter(m) |> ignore
-                        mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
                     | _ -> ()
 
                     for a in args do
@@ -13065,16 +13001,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
 
                 | Expr.TyChoose(_, body, _) -> walkExpr letBoundVars cloc body
 
-                | Expr.Quote(e, _, _, _, _) ->
-                    // Quotations are lowered by GenQuotation (IlxGen.fs:~5754) to a TOp.Bytes
-                    // expression whose pickled AST is materialized only at codegen time, so the
-                    // TOp.Bytes site is not visible to this AST walker. Mark the enclosing cloc as
-                    // a raw-data field host to make the line-10940 check consistent across
-                    // --parallelcompilation- and --parallelcompilation+ builds.
-                    if cenv.options.emitConstantArraysUsingStaticDataBlobs then
-                        mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
-
-                    walkExpr letBoundVars cloc e
+                | Expr.Quote(e, _, _, _, _) -> walkExpr letBoundVars cloc e
 
                 | Expr.Link r -> walkExpr letBoundVars cloc r.Value
 
