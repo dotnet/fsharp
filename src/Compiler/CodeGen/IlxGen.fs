@@ -13139,12 +13139,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
         { eenv with
             cloc = fragLoc
             moduleCloc = fragLoc
-            // Always defer body codegen so that AddMethodDef call-order is identical
-            // between SEQ (--parallelcompilation-) and PAR (--parallelcompilation+).
-            // Without this, hoisted local-function methods (e.g. 'run@<line>-N') were
-            // added inline in SEQ but during the deferred-iter in PAR, producing a
-            // different methodIdx assignment per type. The iter pass below honours the
-            // parallel flag: PAR runs files in parallel, SEQ runs them sequentially.
+            // Always defer bodies so SEQ and PAR see the same AddMethodDef call order.
             delayCodeGen = true
         }
 

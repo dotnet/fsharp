@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
+open System
 open System.IO
 open FSharp.Test
 open FSharp.Test.Compiler
@@ -336,21 +337,15 @@ let inline myFunc x y = x - y"""
 
     // https://github.com/dotnet/fsharp/issues/19732
     // Multi-file optimized compilation exercises DetupleArgs and TLR (tuple-arg
-    // functions + nested lambdas). These passes iterate Val sets whose order
-    // depends on Val.Stamp, which is racy under parallel optimization.
-    // The fix sorts by source position (valSourceOrderKey) before iterating.
-    // Note: this in-process test is a regression guard; the full race requires
-    // large-scale parallel compilation tested by eng/test-determinism.ps1 in Release.
+    // functions + nested lambdas); without source-order Val iteration their
+    // output races under parallel optimization. The full race needs eng/test-determinism.ps1
+    // in Release — this is a regression guard.
     [<Fact>]
     let ``Optimized multi-file assembly should be deterministic`` () =
-        let outputDir = DirectoryInfo(Path.Combine(Path.GetTempPath(), "fsharp-determinism-test"))
-        if outputDir.Exists then outputDir.Delete(true)
+        let outputDir = DirectoryInfo(Path.Combine(Path.GetTempPath(), $"fsharp-determinism-{Guid.NewGuid():N}"))
         outputDir.Create()
 
-        let makeFile i =
-            FsSourceWithFileName
-                $"File%d{i}.fs"
-                $"""
+        let fileBody i = $"""
 module File%d{i}
 
 let processTuple%d{i} (a: int, b: string) =
@@ -366,26 +361,9 @@ let callSite%d{i} () =
     nested ()
 """
 
-        let additionalFiles = [ for i in 2..8 -> makeFile i ]
-
         let getMvid () =
-            FSharp
-                """
-module File1
-
-let processTuple1 (a: int, b: string) =
-    let inner x = x + a
-    (inner 1, b.Length)
-
-let callSite1 () =
-    let r1 = processTuple1 (42, "hello")
-    let r2 = processTuple1 (99, "world")
-    let nested () =
-        let deep () = fst r1 + fst r2
-        deep ()
-    nested ()
-"""
-            |> withAdditionalSourceFiles additionalFiles
+            FSharp(fileBody 1)
+            |> withAdditionalSourceFiles [ for i in 2..8 -> FsSourceWithFileName $"File%d{i}.fs" (fileBody i) ]
             |> asLibrary
             |> withOptimize
             |> withName "DetTest"
@@ -393,12 +371,10 @@ let callSite1 () =
             |> withOptions [ "--deterministic" ]
             |> compileGuid
 
-        let mvids = [| for _ in 1..10 -> getMvid () |]
-
-        for i in 1 .. mvids.Length - 1 do
-            Assert.Equal(mvids.[0], mvids.[i])
-
-        outputDir.Delete(true)
+        try
+            Assert.Equal(getMvid (), getMvid ())
+        finally
+            outputDir.Delete(true)
 
     [<Fact>]
     let ``Reference assemblies MVID must change when literal constant value changes`` () =

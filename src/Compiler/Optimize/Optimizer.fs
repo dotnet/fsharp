@@ -4473,33 +4473,32 @@ and p_ValInfo (v: ValInfo) st =
     p_ExprValueInfo v.ValExprInfo st
     p_bool v.ValMakesNoCriticalTailcalls st
 
-and p_ModuleInfo x st = 
-    // Sort entries by stable identity (logical-name + full linkage key) so the pickled bytes
-    // do not depend on the hash-table iteration order of ValInfos. The unpickled side reads
-    // them as a flat array so order does not affect correctness. See
-    // https://github.com/dotnet/fsharp/issues/19732.
+and p_ModuleInfo x st =
+    // Two fixes for parallel-optimization races on the pickled ValInfos:
+    //  1. Sort by stable identity so the pickled byte order is independent of
+    //     hash-table iteration order.
+    //  2. Re-read v.MakesNoCriticalTailcalls (an idempotent OR) at pickle time,
+    //     since SetMakesNoCriticalTailcalls may have been called on the Val
+    //     concurrently after mkValInfo captured the original value.
+    // See https://github.com/dotnet/fsharp/issues/19732.
+    let stableValKey (vref: ValRef) =
+        let k = vref.Deref.GetLinkageFullKey()
+        struct (vref.LogicalName, k.PartialKey.MemberParentMangledName, k.PartialKey.LogicalName)
+
+    let mergeRacedFlags (vref: ValRef, vinfo: ValInfo) =
+        let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
+
+        if merged = vinfo.ValMakesNoCriticalTailcalls then
+            vref, vinfo
+        else
+            vref, { vinfo with ValMakesNoCriticalTailcalls = merged }
+
     let entries =
         x.ValInfos.Entries
         |> Seq.toArray
-        |> Array.sortBy (fun (vref: ValRef, _) ->
-            let k = vref.Deref.GetLinkageFullKey()
-            struct (vref.LogicalName, k.PartialKey.MemberParentMangledName, k.PartialKey.LogicalName))
-        // Canonicalize ValMakesNoCriticalTailcalls against the final, fully-merged Val flag
-        // before pickling. Under parallel optimization (ParallelOptimization.optimizeFilesInParallel)
-        // a ValInfo is constructed via mkValInfo (line 554) capturing v.MakesNoCriticalTailcalls
-        // at one moment, while another parallel OptimizeImplFile task may later call
-        // v.SetMakesNoCriticalTailcalls() (line 3849) or, via RemapOptimizationInfo (line 1513),
-        // raise the bit on the shared mutable Val. The Val flag is an idempotent OR, so the
-        // post-optimization Val state is the canonical merged truth. Reading it here removes
-        // a race that produces one-byte differences in FSharpOptimizationCompressedData under
-        // high CPU concurrency, without serializing the optimizer pipeline.
-        // See https://github.com/dotnet/fsharp/issues/19732.
-        |> Array.map (fun (vref, vinfo) ->
-            let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
-            if merged = vinfo.ValMakesNoCriticalTailcalls then
-                vref, vinfo
-            else
-                vref, { vinfo with ValMakesNoCriticalTailcalls = merged })
+        |> Array.sortBy (fst >> stableValKey)
+        |> Array.map mergeRacedFlags
+
     p_array (p_tup2 (p_vref "opttab") p_ValInfo) entries st
     p_namemap p_LazyModuleInfo x.ModuleOrNamespaceInfos st
 
