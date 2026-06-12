@@ -66,6 +66,7 @@ param (
     [switch]$testpack,
     [switch]$testAOT,
     [switch]$testEditor,
+    [switch]$testHotReload,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch][Alias('pb')]$productBuild,
@@ -131,6 +132,7 @@ function Print-Usage() {
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -testEditor                   Run VS Editor tests"
+    Write-Host "  -testHotReload                Run the hot reload demo smoke test"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -650,7 +652,6 @@ try {
 
     if ($testCoreClr) {
         TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:coreclrTargetFramework
-        Invoke-HotReloadDemoSmokeTest $dotnetExe
     }
 
     if ($testDesktop) {
@@ -674,6 +675,9 @@ try {
         } else {
             TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:desktopTargetFramework
         }
+    }
+
+    if ($testHotReload) {
         Invoke-HotReloadDemoSmokeTest $dotnetExe
     }
 
