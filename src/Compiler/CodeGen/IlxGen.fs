@@ -2026,7 +2026,7 @@ type CodegenFileScope private () =
         localCounter <- k + 1
         (CodegenFileScope.currentFileIdx <<< fileIndexShift) ||| (k &&& 0xFF_FFFF)
 
-    static member With(fileIdx: int, action: unit -> unit) =
+    static member With(fileIdx: int, action: unit -> 'T) : 'T =
         let prev = CodegenFileScope.currentFileIdx
 
         try
@@ -2053,35 +2053,20 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
     let mutable fieldIdx = 0
     let mutable eventIdx = 0
 
-    let gmethods =
-        let initial = tdef.Methods.AsList()
-        let xs = ResizeArray<int * ILMethodDef>(initial.Length)
+    let keyed (initial: 'T list) (counter: byref<int>) =
+        let xs = ResizeArray<int * 'T>(initial.Length)
 
-        for m in initial do
-            xs.Add(CodegenFileScope.OrderKey(&methodIdx), m)
-
-        xs
-
-    let gfields =
-        let initial = tdef.Fields.AsList()
-        let xs = ResizeArray<int * ILFieldDef>(initial.Length)
-
-        for f in initial do
-            xs.Add(CodegenFileScope.OrderKey(&fieldIdx), f)
+        for x in initial do
+            xs.Add(CodegenFileScope.OrderKey(&counter), x)
 
         xs
+
+    let gmethods = keyed (tdef.Methods.AsList()) &methodIdx
+    let gfields = keyed (tdef.Fields.AsList()) &fieldIdx
+    let gevents = keyed (tdef.Events.AsList()) &eventIdx
 
     let gproperties: Dictionary<PropKey, int * ILPropertyDef> =
         Dictionary<_, _>(3, HashIdentity.Structural)
-
-    let gevents =
-        let initial = tdef.Events.AsList()
-        let xs = ResizeArray<int * ILEventDef>(initial.Length)
-
-        for e in initial do
-            xs.Add(CodegenFileScope.OrderKey(&eventIdx), e)
-
-        xs
 
     let gnested = TypeDefsBuilder()
 
@@ -12781,49 +12766,17 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
         mgbuf.AddTypeDef(tref, tdef, false, false, None, m)
         Some tref
 
-/// Source-order priming pass that runs once at the entry to CodegenAssembly, before
-/// any IlxGen file walk or deferred-method emission. It pre-populates the compiler's
-/// shared name caches so that names allocated later during the (parallel or sequential)
-/// codegen phase are stable in source order regardless of force/emission order:
+/// Source-order priming pass that runs once at the entry to CodegenAssembly,
+/// before any IlxGen file walk or deferred-method emission. Pre-populates two
+/// caches so the suffixes assigned later (under parallel or sequential codegen)
+/// are stable in source order:
+///   1. Top-level Val.CompiledName (routes through StableNiceNameGenerator).
+///   2. Raw-data value-type counter ('@T' for TOp.Bytes / TOp.UInt16s sites).
 ///
-/// 1. Top-level Val.CompiledName  — Val.CompiledName routes through
-///    StableNiceNameGenerator for every Val matching the predicate below. Pinning the
-///    suffix in source order makes ComputeStorageForValWithValReprInfo (called from
-///    AllocValForBind during parallel method-body emit) deterministic.
-///
-/// 2. Closure type names (Expr.Lambda / Expr.TyLambda / Expr.Obj) — GetIlxClosureFreeVars
-///    (IlxGen.fs:~7140) calls StableNameGenerator.GetUniqueCompilerGeneratedName with a
-///    basename derived from the nearest non-compiler-generated Val on eenv.letBoundVars.
-///    The numeric '-N' suffix is allocated by NiceNameGenerator.FreshCompilerGeneratedNameOfBasicName
-///    which uses Interlocked.Increment on a per-(basicName, FileIndex) bucket. The bucket
-///    is shared across files for any basicName that recurs (e.g. '_fsyacc_reductions',
-///    'abstractLazyModulInfo'). Pinning the suffix here in source order, with a
-///    letBoundVars stack mirroring IlxGen's GenBindingAfterDebugPoint/GenLetRecBindings
-///    push semantics, gives every closure site a deterministic name regardless of whether
-///    the surrounding method body is emitted inline (sequential codegen) or via the
-///    deferred queue at IlxGen.fs:12516 (parallel codegen).
-///
-/// 3. Raw-data value types (T{N}_{size}Bytes) — GenConstArray (IlxGen.fs:~2850) calls
-///    mgbuf.GenerateRawDataValueType(cloc, size) which goes through a memoization keyed
-///    by (cloc, size). The factory calls IncrementOnly("@T", cloc.Range) so first-seen
-///    (cloc, size) wins the lower counters. Priming the memoization in source order
-///    populates the cache deterministically.
-///
-/// 4. '@field' counter (field{N} static-data fields) — GenConstArray uses
-///    mgbuf.GetOrAssignFieldCounter(m) which memoizes per source range. Walking every
-///    array-literal site in source order assigns counters in a deterministic order.
-///
-/// Anonymous record types are *not* primed here because they are emitted at the start of
-/// each GenImplFile (IlxGen.fs:~10761) in deterministic Stamp order, ahead of any deferred
-/// method body — that ordering is already independent of --parallelcompilation.
-///
-/// Over-priming (touching a Lambda/Obj that IlxGen eventually does not lower to a closure
-/// type) is harmless: the StableNameGenerator's Lazy<string> is forced once on insertion
-/// and any later GetUniqueCompilerGeneratedName call with the same (basename, uniq) returns
-/// the cached value. Under-priming would leave the race in place, so the walker is biased
-/// towards visiting every site IlxGen might consume.
-///
-/// See https://github.com/dotnet/fsharp/issues/19732 and PR #19810.
+/// Closures are NOT primed here: state-machine and other late lowerings change
+/// which Expr.Lambda nodes survive into IlxGen, so any priming we did would
+/// either over- or under-cover the eventual closure set.
+/// See https://github.com/dotnet/fsharp/issues/19732.
 let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles: CheckedImplFileAfterOptimization list) =
     let g = cenv.g
 
@@ -12840,12 +12793,9 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             then
                 v.CompiledName g.CompilerGlobalState |> ignore
 
-        // GenConstArray re-routes cloc through CompLocForPrivateImplementationDetails when
-        // running under FSI; PrimeRawDataValueTypeCounter performs the same rewrite internally,
-        // so the walker only needs to track the un-rewritten cloc.
         let stackGuard = StackGuard("PrimeStableNamesForCodegen")
 
-        let rec walkExpr (letBoundVars: ValRef list) (cloc: CompileLocation) (expr: Expr) =
+        let rec walkExpr (cloc: CompileLocation) (expr: Expr) =
             stackGuard.Guard
             <| fun () ->
                 match stripDebugPoints expr with
@@ -12853,66 +12803,36 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | Expr.Val _
                 | Expr.WitnessArg _ -> ()
 
-                | Expr.Lambda(_, _, _, _, body, _, _) ->
-                    // Don't prime closure names — state-machine lowering and other late
-                    // transforms create/remove Lambdas after this pass, so priming would
-                    // register phantom (basename, uniq) cache entries that push real codegen
-                    // closures to suffix '-N'. Just recurse to keep walking the AST for raw
-                    // data sites (TOp.Bytes/UInt16s) which still need priming.
-                    walkExpr letBoundVars cloc body
-
-                | Expr.TyLambda(_, _, body, _, _) -> walkExpr letBoundVars cloc body
+                | Expr.Lambda(_, _, _, _, body, _, _) -> walkExpr cloc body
+                | Expr.TyLambda(_, _, body, _, _) -> walkExpr cloc body
 
                 | Expr.Obj(_, _, _, basecall, overrides, iimpls, _) ->
-                    walkExpr letBoundVars cloc basecall
+                    walkExpr cloc basecall
 
                     for TObjExprMethod(_, _, _, _, e, _) in overrides do
-                        walkExpr letBoundVars cloc e
+                        walkExpr cloc e
 
                     for _, ims in iimpls do
                         for TObjExprMethod(_, _, _, _, e, _) in ims do
-                            walkExpr letBoundVars cloc e
+                            walkExpr cloc e
 
                 | Expr.Let(TBind(v, rhs, _), body, _, _) ->
-                    // Mirror GenBindingAfterDebugPoint (IlxGen.fs:~8643-8654): both the RHS AND
-                    // the body see the let-bound var on letBoundVars — the binding mutates eenv
-                    // and all subsequent generation (including the body) uses the updated eenv.
-                    //
-                    // Also prime the Val's CompiledName in source order. Let-bound Vals that
-                    // were lifted to top-level methods by TLR/Detuple (IsCompiledAsTopLevel
-                    // && not IsMemberOrModuleBinding) route through StableNiceNameGenerator
-                    // and race for the per-(basicName, FileIndex) bucket counter under
-                    // parallel codegen. Priming them here in source order pins the suffix
-                    // before any deferred method-body codegen can race.
-                    // See https://github.com/dotnet/fsharp/issues/19928.
-                    //
-                    // Restrict priming to Vals that are clearly TLR fHat names (already carry
-                    // the compiler-generated '@' marker). This avoids registering names for
-                    // user-written compiler-generated locals that the codegen path doesn't
-                    // actually route through StableNiceNameGenerator, which would otherwise
-                    // shift cache occupancy for the bucket counter.
+                    // Pre-pin TLR-lifted top Val.CompiledName suffixes in source order.
                     if IsCompilerGeneratedName v.LogicalName then
                         primeVal v
 
-                    walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
-                    walkExpr (mkLocalValRef v :: letBoundVars) cloc body
+                    walkExpr cloc rhs
+                    walkExpr cloc body
 
                 | Expr.LetRec(binds, body, _, _) ->
-                    // Mirror GenLetRecBindings: all rec siblings' Vars are added to letBoundVars
-                    // for BOTH the RHSs and the body. The original "RHS sees only its own bound
-                    // var" comment was incorrect — IlxGen's GenLetRecBindings adds every rec
-                    // sibling's val before generating any of their bodies.
                     for TBind(v, _, _) in binds do
                         if IsCompilerGeneratedName v.LogicalName then
                             primeVal v
 
-                    let lbvs =
-                        (binds |> List.map (fun (TBind(v, _, _)) -> mkLocalValRef v)) @ letBoundVars
-
                     for TBind(_, rhs, _) in binds do
-                        walkExpr lbvs cloc rhs
+                        walkExpr cloc rhs
 
-                    walkExpr lbvs cloc body
+                    walkExpr cloc body
 
                 | Expr.Op(op, _, args, _) ->
                     match op with
@@ -12923,52 +12843,49 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                     | _ -> ()
 
                     for a in args do
-                        walkExpr letBoundVars cloc a
+                        walkExpr cloc a
 
                 | Expr.App(f, _, _, args, _) ->
-                    walkExpr letBoundVars cloc f
+                    walkExpr cloc f
 
                     for a in args do
-                        walkExpr letBoundVars cloc a
+                        walkExpr cloc a
 
                 | Expr.Sequential(e1, e2, _, _) ->
-                    walkExpr letBoundVars cloc e1
-                    walkExpr letBoundVars cloc e2
+                    walkExpr cloc e1
+                    walkExpr cloc e2
 
                 | Expr.Match(_, _, dt, targets, _, _) ->
-                    walkDtree letBoundVars cloc dt
+                    walkDtree cloc dt
 
                     for TTarget(_, body, _) in targets do
-                        walkExpr letBoundVars cloc body
+                        walkExpr cloc body
 
                 | Expr.StaticOptimization(_, e2, e3, _) ->
-                    walkExpr letBoundVars cloc e2
-                    walkExpr letBoundVars cloc e3
+                    walkExpr cloc e2
+                    walkExpr cloc e3
 
-                | Expr.TyChoose(_, body, _) -> walkExpr letBoundVars cloc body
+                | Expr.TyChoose(_, body, _) -> walkExpr cloc body
+                | Expr.Quote(e, _, _, _, _) -> walkExpr cloc e
+                | Expr.Link r -> walkExpr cloc r.Value
+                | Expr.DebugPoint(_, inner) -> walkExpr cloc inner
 
-                | Expr.Quote(e, _, _, _, _) -> walkExpr letBoundVars cloc e
-
-                | Expr.Link r -> walkExpr letBoundVars cloc r.Value
-
-                | Expr.DebugPoint(_, inner) -> walkExpr letBoundVars cloc inner
-
-        and walkDtree (letBoundVars: ValRef list) cloc dt =
+        and walkDtree cloc dt =
             match dt with
-            | TDBind(TBind(v, rhs, _), rest) ->
-                walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
-                walkDtree letBoundVars cloc rest
+            | TDBind(TBind(_, rhs, _), rest) ->
+                walkExpr cloc rhs
+                walkDtree cloc rest
             | TDSuccess(args, _) ->
                 for a in args do
-                    walkExpr letBoundVars cloc a
+                    walkExpr cloc a
             | TDSwitch(test, cases, dflt, _) ->
-                walkExpr letBoundVars cloc test
+                walkExpr cloc test
 
                 for TCase(_, sub) in cases do
-                    walkDtree letBoundVars cloc sub
+                    walkDtree cloc sub
 
                 match dflt with
-                | Some d -> walkDtree letBoundVars cloc d
+                | Some d -> walkDtree cloc d
                 | None -> ()
 
         let walkTopBindRhs (v: Val) (rhs: Expr) (cloc: CompileLocation) =
@@ -12989,9 +12906,9 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | _ -> e
 
             if v.IsCompiledAsTopLevel then
-                walkExpr [ mkLocalValRef v ] cloc (stripOuterTopLambdas rhs)
+                walkExpr cloc (stripOuterTopLambdas rhs)
             else
-                walkExpr [ mkLocalValRef v ] cloc rhs
+                walkExpr cloc rhs
 
         let rec walkModuleContents (cloc: CompileLocation) (x: ModuleOrNamespaceContents) =
             match x with
@@ -13001,7 +12918,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             | TMDefLet(TBind(v, rhs, _), _) ->
                 primeVal v
                 walkTopBindRhs v rhs cloc
-            | TMDefDo(e, _) -> walkExpr [] cloc e
+            | TMDefDo(e, _) -> walkExpr cloc e
             | TMDefOpens _ -> ()
             | TMDefs defs ->
                 for d in defs do
@@ -13038,80 +12955,57 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             let initCloc = CompLocForInitClass fileCloc
             walkModuleContents initCloc contents
 
-/// Post-IlxGen pass that re-orders the members of every emitted ILTypeDef into a deterministic
-/// alphabetical order. IlxGen adds method/field/event/property/nested-type defs to the assembly
-/// builder in non-deterministic order under parallel codegen — the builder's internal lists
-/// reflect whichever thread emitted first. Sorting them after IlxGen finishes (but before
-/// ILBinaryWriter consumes the module) makes the #String/#Blob/#TypeDef/#MethodDef metadata
-/// streams byte-identical across runs without changing IL semantics, since tokens are assigned
-/// by the writer based on input order and references inside the same assembly are re-resolved
-/// against that order. See https://github.com/dotnet/fsharp/issues/19732.
+/// Entry point for assembly codegen: primes deterministic names
+/// (PrimeStableNamesForCodegen) then runs the per-file walk under
+/// `CodegenFileScope` tags so SEQ and PAR emit order agree.
+/// See https://github.com/dotnet/fsharp/issues/19732 and #19928.
 let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some(firstImplFiles, lastImplFile) ->
 
-        // Prime the StableNiceNameGenerator's niceNames cache by visiting every top-level Val
-        // in source-deterministic order (files in source order from ParseAndCheckInputs, then
-        // module-binding-list order which is single-threaded per file in typecheck and TLR
-        // pass4_rewrite). This pins the suffix assignment for every Val whose CompiledName routes
-        // through StableNiceNameGenerator, so the later parallel codegen calls hit the cache
-        // and return deterministic names regardless of thread scheduling.
+        // Prime deterministic names in source order so later parallel codegen
+        // calls hit the StableNiceNameGenerator cache instead of racing.
         // See https://github.com/dotnet/fsharp/issues/19732.
         PrimeStableNamesForCodegen cenv mgbuf implFiles
 
-        // Tag every spine-walk AddMethodDef/AddFieldDef call with a per-file
-        // CodegenFileScope so cross-file aggregation into shared types
-        // (<StartupCode$...>, <PrivateImplementationDetails>, ...) is
-        // deterministic regardless of whether bodies are inlined (SEQ) or
-        // queued for the deferred parallel iter (PAR). The 1-based fileIdx
-        // matches the index later assigned during the parallel iter below;
-        // any sync-walk add for a given file ends up under the same fileIdx
-        // bucket as that file's deferred contributions.
+        // Tag every spine-walk Add* call with a per-file CodegenFileScope so
+        // cross-file aggregation into shared types (<StartupCode$...>,
+        // <PrivateImplementationDetails>) is deterministic. The 1-based fileIdx
+        // matches the index assigned to the parallel iter below, so a file's
+        // sync-walk adds and its deferred-codegen adds land in one bucket.
         let eenv, _ =
             firstImplFiles
             |> List.fold
                 (fun (eenv, fileIdx) implFile ->
-                    let mutable result = eenv
+                    let eenv' =
+                        CodegenFileScope.With(fileIdx, fun () -> GenImplFile cenv mgbuf None eenv implFile)
 
-                    CodegenFileScope.With(fileIdx, (fun () -> result <- GenImplFile cenv mgbuf None eenv implFile))
-
-                    result, fileIdx + 1)
+                    eenv', fileIdx + 1)
                 (eenv, 1)
 
         let eenv =
-            let mutable result = eenv
-
             CodegenFileScope.With(
                 List.length firstImplFiles + 1,
-                (fun () -> result <- GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile)
+                fun () -> GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
             )
 
-            result
+        // Run deferred per-file batches under matching CodegenFileScope tags.
+        // PAR runs them in parallel, SEQ sequentially; both produce the same
+        // (fileIdx, localCounter) keys and therefore the same IL emission order.
+        let runBatch (fileIdx, genMeths) =
+            CodegenFileScope.With(fileIdx + 1, fun () -> genMeths |> Array.iter (fun gen -> gen ()))
 
-        // Restore parallel body emission across files. Each per-file batch runs under a
-        // CodegenFileScope tag (fileIdx = source position in delayedFileGenReverse). The
-        // (fileIdx, localCounter) composite key threaded through AddMethodDef / AddFieldDef
-        // ensures that cross-file adds to shared types (e.g. <StartupCode$...>,
-        // <PrivateImplementationDetails>) emit in deterministic order independent of thread
-        // scheduling. Within a file, the inner Array.iter stays sequential so
-        // AllocVal / TypeDefsBuilder mutation inside a single file remains single-threaded.
-        // See https://github.com/dotnet/fsharp/issues/19732 and #19928.
         let batches =
             eenv.delayedFileGenReverse
             |> Array.ofList
             |> Array.rev
             |> Array.mapi (fun fileIdx genMeths -> fileIdx, genMeths)
 
-        let runOneBatch (fileIdx, genMeths) =
-            // fileIdx is 1-based so the default scope (0, used during the synchronous
-            // spine walk) sorts strictly before any deferred-codegen contribution.
-            CodegenFileScope.With(fileIdx + 1, (fun () -> genMeths |> Array.iter (fun gen -> gen ())))
-
         if cenv.options.parallelIlxGenEnabled then
-            batches |> ArrayParallel.iter runOneBatch
+            batches |> ArrayParallel.iter runBatch
         else
-            batches |> Array.iter runOneBatch
+            batches |> Array.iter runBatch
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
