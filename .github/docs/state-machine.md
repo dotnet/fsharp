@@ -134,17 +134,24 @@ stateDiagram-v2
     [*] --> ScanQueue: ⏰ labelops-pr-security-scan (1h)
 
     state "Per-PR Classification" as ScanLoop {
-        ScanQueue --> ReadRules: 🤖 security-scan reads repo rules
-        ReadRules --> CheckDraft: 🤖 security-scan checks isDraft
+        ScanQueue --> ReadRules: 🤖 security-scan reads repo rules + memory
+        ReadRules --> CheckDate: 🤖 security-scan paginates PRs (newest first)
+
+        state datecheck <<choice>>
+        CheckDate --> datecheck
+        datecheck --> SkipOld: PR before date cutoff
+        datecheck --> CheckDraft: PR within scan window
+
+        SkipOld --> [*]: skip
 
         state draftcheck <<choice>>
-        CheckDraft --> draftcheck
+        CheckDraft --> draftcheck: 🤖 security-scan checks isDraft
         draftcheck --> SkipDraft: draft PR
         draftcheck --> CheckMemory: non-draft PR
 
         SkipDraft --> [*]: skip
 
-        CheckMemory --> CheckMemory2: 🤖 security-scan reads state.json
+        CheckMemory --> CheckMemory2: 🤖 security-scan checks state.json sha
 
         state memcheck <<choice>>
         CheckMemory2 --> memcheck
@@ -255,7 +262,7 @@ stateDiagram-v2
 aw-auto-update.md: da8c5e340a43d73616e3a0203c7e56de9ca4b82ee78b1902afe466a49a08bc17
 labelops-flake-fix.md: 7dca5b8faa60f947204f8925c6238fbecf42aa8cbf3144a166120501b0eef1e4
 labelops-pr-maintenance.md: 59ba52fc625e0b9112c31864e92154cdf09acf0bc0f2b167aa30a0d76baa898f
-labelops-pr-security-scan.md: 675430850eaf8edaa86b4d26c9d381ac48e13536469f17748e7104f6e75937c2
+labelops-pr-security-scan.md: 7dd4063d35d2bac6b0edf238e72a1ffe2570d0102340dab8064bf1de9ec73ac7
 regression-pr-shepherd.md: 18a65fe1cdf8aa219158f1d610db14078e5ff2f1ac912df2566bf796792395b5
 repo-assist.md: 3775b51d142d22c98e87e48e8ac9d46cdf69e9c8306d5787758a35578dcb1119
 -->

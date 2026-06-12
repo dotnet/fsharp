@@ -10,6 +10,7 @@ type FSharpDiagnosticKind =
     | RemoveIndexerDot
 
 /// Exposes compiler diagnostic error messages.
+[<RequireQualifiedAccess>]
 module CompilerDiagnostics =
 
     /// Given a DiagnosticKind, returns the string representing the error message for that diagnostic.
