@@ -430,11 +430,7 @@ function TestUsingXUnitConsole([string] $testProject, [string] $targetFramework)
     $resultsXml = Join-Path $testResultsDir "$projectName.$targetFramework.$jobName.xml"
 
     # -parallel none / -noshadow mirror the project's xunit.runner.json (parallelizeTestCollections=false, shadowCopy=false).
-    # TEMPORARY: filter to only DebuggingSequencePointTests to isolate them from any cross-test
-    # hive contamination on the CI agent (the 2 tests pass locally; hypothesis is something in
-    # the earlier tests on the leg leaves RoslynDev in a state that breaks debugger breakpoint
-    # binding). Revert this `-class` filter once we've confirmed/refuted that hypothesis.
-    $xunit_args = """$assemblyPath"" -xml ""$resultsXml"" -parallel none -noshadow -nologo -class ""FSharp.Editor.IntegrationTests.DebuggingSequencePointTests"""
+    $xunit_args = """$assemblyPath"" -xml ""$resultsXml"" -parallel none -noshadow -nologo"
 
     Write-Host("$xunitConsole $xunit_args")
 
