@@ -7966,9 +7966,10 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                 let spreadSrcExpr, _tpenv = TcExprFlex cenv flex false (NewInferenceType g) env tpenv expr
                 let tyOfSpreadSrcExpr = tyOfExpr g spreadSrcExpr
 
-                let isValidSpreadSrcTy =
-                    (not g.checkNullness || (nullnessOfTy g tyOfSpreadSrcExpr).Evaluate() <> NullnessInfo.WithNull)
-                    && (isRecdTy g tyOfSpreadSrcExpr || isAnonRecdTy g tyOfSpreadSrcExpr)
+                let spreadSrcTyIsNullable = g.checkNullness && (nullnessOfTy g tyOfSpreadSrcExpr).Evaluate() = NullnessInfo.WithNull
+                let spreadSrcTyIsRecd = isRecdTy g tyOfSpreadSrcExpr || isAnonRecdTy g tyOfSpreadSrcExpr
+
+                let isValidSpreadSrcTy = not spreadSrcTyIsNullable && spreadSrcTyIsRecd
 
                 if isValidSpreadSrcTy then
                     let spreadSrcAddrExpr, spreadSrc =
@@ -8020,7 +8021,10 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                     spreadSrc, fields
                 else
                     if not expr.IsArbExprAndThusAlreadyReportedError then
-                        errorR (Error (FSComp.SR.tcRecordExprSpreadSourceMustBeRecord (), m))
+                        if not spreadSrcTyIsRecd then
+                            errorR (Error (FSComp.SR.tcRecordExprSpreadSourceMustBeRecord (), m))
+                        elif spreadSrcTyIsNullable then
+                            errorR (Error (FSComp.SR.tcRecordExprSpreadSourceCannotBeNullable (), m))
                     None, []
 
             let checkSpreadsLanguageFeature m = checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
@@ -8177,9 +8181,10 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
                 let spreadSrcExpr, _ = TcExprFlex cenv flex false (NewInferenceType g) env tpenv expr
                 let tyOfSpreadSrcExpr = tyOfExpr g spreadSrcExpr
 
-                let isValidSpreadSrcTy =
-                    (not g.checkNullness || (nullnessOfTy g tyOfSpreadSrcExpr).Evaluate() <> NullnessInfo.WithNull)
-                    && (isRecdTy g tyOfSpreadSrcExpr || isAnonRecdTy g tyOfSpreadSrcExpr)
+                let spreadSrcTyIsNullable = g.checkNullness && (nullnessOfTy g tyOfSpreadSrcExpr).Evaluate() = NullnessInfo.WithNull
+                let spreadSrcTyIsRecd = isRecdTy g tyOfSpreadSrcExpr || isAnonRecdTy g tyOfSpreadSrcExpr
+
+                let isValidSpreadSrcTy = not spreadSrcTyIsNullable && spreadSrcTyIsRecd
 
                 if isValidSpreadSrcTy then
                     let spreadSrcAddrExpr, spreadSrcExpr =
@@ -8245,7 +8250,10 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
                     Some spreadSrcExpr, fields
                 else
                     if not expr.IsArbExprAndThusAlreadyReportedError then
-                        errorR (Error (FSComp.SR.tcAnonRecordExprSpreadSourceMustBeRecord (), expr.Range))
+                        if not spreadSrcTyIsRecd then
+                            errorR (Error (FSComp.SR.tcAnonRecordExprSpreadSourceMustBeRecord (), expr.Range))
+                        elif spreadSrcTyIsNullable then
+                            errorR (Error (FSComp.SR.tcAnonRecordExprSpreadSourceCannotBeNullable (), m))
                     None, []
 
             let targetAnonRecordTy, targetAnonRecordTyContainsField =
@@ -8366,9 +8374,10 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
             let spreadSrcExpr, _ = TcExprFlex cenv flex false (NewInferenceType g) env tpenv expr
             let tyOfSpreadSrcExpr = tyOfExpr g spreadSrcExpr
 
-            let isValidSpreadSrcTy =
-                (not g.checkNullness || (nullnessOfTy g tyOfSpreadSrcExpr).Evaluate() <> NullnessInfo.WithNull)
-                && (isRecdTy g tyOfSpreadSrcExpr || isAnonRecdTy g tyOfSpreadSrcExpr)
+            let spreadSrcTyIsNullable = g.checkNullness && (nullnessOfTy g tyOfSpreadSrcExpr).Evaluate() = NullnessInfo.WithNull
+            let spreadSrcTyIsRecd = isRecdTy g tyOfSpreadSrcExpr || isAnonRecdTy g tyOfSpreadSrcExpr
+
+            let isValidSpreadSrcTy = not spreadSrcTyIsNullable && spreadSrcTyIsRecd
 
             if isValidSpreadSrcTy then
                 let spreadSrcAddrExpr, spreadSrcExpr =
@@ -8434,7 +8443,10 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
                 Some spreadSrcExpr, fields
             else
                 if not expr.IsArbExprAndThusAlreadyReportedError then
-                    errorR (Error (FSComp.SR.tcAnonRecordExprSpreadSourceMustBeRecord (), expr.Range))
+                    if not spreadSrcTyIsRecd then
+                        errorR (Error (FSComp.SR.tcAnonRecordExprSpreadSourceMustBeRecord (), expr.Range))
+                    elif spreadSrcTyIsNullable then
+                        errorR (Error (FSComp.SR.tcAnonRecordExprSpreadSourceCannotBeNullable (), expr.Range))
                 None, []
 
         let targetAnonRecordTy, targetAnonRecordTyContainsField =
@@ -9115,6 +9127,13 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
         | [] when g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions -> Some (EmptyFieldListAsUnit (SynExpr.Const (SynConst.Unit, range0)))
         | _ -> None
 
+    let (|SpreadsOnly|_|) recordFields =
+        if g.langVersion.SupportsFeature LanguageFeature.RecordSpreads && not (List.isEmpty recordFields) && recordFields |> List.forall (function SynExprRecordFieldOrSpread.Spread _ -> true | _ -> false) then
+            let spreadRanges = recordFields |> List.choose (function SynExprRecordFieldOrSpread.Spread (SynExprSpread (_, _, m), _) -> Some m | _ -> None)
+            Some (SpreadsOnly spreadRanges)
+        else
+            None
+
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression or indexer or delegate invoke
     match UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprTy with
@@ -9135,15 +9154,21 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             // Note that 'seq' predated computation expressions and is not actually a computation expression builder
             // though users don't realise that.
             let synArg =
-                match synArg with
+                match leftExpr with
                 // seq { comp }
                 // seq { }
-                | SynExpr.ComputationExpr (false, comp, m)
-                | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, m) when
-                        (match leftExpr with
-                         | ApplicableExpr(expr=Expr.Op(TOp.Coerce, _, [SeqExpr g], _)) -> true
-                         | _ -> false) ->
-                    SynExpr.ComputationExpr (true, comp, m)
+                | ApplicableExpr(expr=Expr.Op(TOp.Coerce, _, [SeqExpr g], _)) ->
+                    match synArg with
+                    | SynExpr.ComputationExpr (false, comp, m)
+                    | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, m) ->
+                        SynExpr.ComputationExpr (true, comp, m)
+
+                    | SynExpr.Record (None, None, SpreadsOnly spreadRanges, m) ->
+                        for m in spreadRanges do
+                            errorR (Error (FSComp.SR.parsSpreadNotSupported (), m))
+                        SynExpr.ComputationExpr (true, arbExpr ("spreadsInSeqExpr", m), m)
+
+                    | _ -> synArg
 
                 | _ -> synArg
 

@@ -61,11 +61,120 @@ module NominalAndAnonymousRecords =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                Error 3894, Line 3, Col 29, Line 3, Col 32, "Missing spread source type after '...'."
-                Error 3893, Line 4, Col 33, Line 4, Col 36, "Missing spread source expression after '...'."
-                Error 3893, Line 5, Col 29, Line 5, Col 32, "Missing spread source expression after '...'."
-                Error 3893, Line 6, Col 42, Line 6, Col 45, "Missing spread source expression after '...'."
-                Error 3893, Line 7, Col 38, Line 7, Col 41, "Missing spread source expression after '...'."
+                Error 3898, Line 3, Col 29, Line 3, Col 32, "Missing spread source type after '...'."
+                Error 3897, Line 4, Col 33, Line 4, Col 36, "Missing spread source expression after '...'."
+                Error 3897, Line 5, Col 29, Line 5, Col 32, "Missing spread source expression after '...'."
+                Error 3897, Line 6, Col 42, Line 6, Col 45, "Missing spread source expression after '...'."
+                Error 3897, Line 7, Col 38, Line 7, Col 41, "Missing spread source expression after '...'."
+            ]
+
+        [<Fact>]
+        let ``seq {...} → error`` () =
+            let src =
+                """
+                let xs = [1..10]
+                let _ = seq { ... }
+                let _ = seq { ...xs }
+                let _ = seq { ...xs; ...xs }
+                let _ = seq { ...xs; 1 }
+                let _ = seq { 1; ...xs }
+                """
+
+            FSharp src
+            |> withLangVersion SupportedLangVersion
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                Error 3897, Line 3, Col 31, Line 3, Col 34, "Missing spread source expression after '...'."
+                // This is because the sequence expression body is being parsed as a record.
+                // If we add support for spreads in sequence expressions, we will need to update record parsing.
+                Error 10, Line 6, Col 38, Line 6, Col 39, "Unexpected integer literal in expression. Expected '}' or other token."
+                Error 604, Line 6, Col 29, Line 6, Col 30, "Unmatched '{'"
+                Error 3900, Line 7, Col 34, Line 7, Col 37, "The spread operator '...' is not supported in this construct."
+            ]
+
+        [<Fact>]
+        let ``custom {...} → error`` () =
+            let src =
+                """
+                type Custom () =
+                    member _.Zero () = []
+                    member _.Yield x = [x]
+                    member _.YieldFrom xs = xs
+                    member _.Combine (xs, ys) = xs @ ys
+                    member _.Delay f = f ()
+
+                let custom = Custom ()
+
+                let xs = [1..10]
+                let _ = custom { ... }
+                let _ = custom { ...xs }
+                let _ = custom { ...xs; ...xs }
+                let _ = custom { ...xs; 1 }
+                let _ = custom { 1; ...xs }
+                """
+
+            FSharp src
+            |> withLangVersion SupportedLangVersion
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                Error 3897, Line 12, Col 34, Line 12, Col 37, "Missing spread source expression after '...'."
+                // This is because the computation body is being parsed as a record.
+                // If we add support for spreads in custom computation expressions, we will need to update record parsing.
+                Error 10, Line 15, Col 41, Line 15, Col 42, "Unexpected integer literal in expression. Expected '}' or other token."
+                Error 604, Line 15, Col 32, Line 15, Col 33, "Unmatched '{'"
+                Error 3900, Line 16, Col 37, Line 16, Col 40, "The spread operator '...' is not supported in this construct."
+            ]
+
+        [<Fact>]
+        let ``[ ... ] → error`` () =
+            let src =
+                """
+                let xs = [1..10]
+                let _ = [ ... ]
+                let _ = [ ...xs ]
+                let _ = [ ...xs; ...xs ]
+                let _ = [ ...xs; 1 ]
+                let _ = [ 1; ...xs ]
+                """
+
+            FSharp src
+            |> withLangVersion SupportedLangVersion
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                Error 3900, Line 3, Col 27, Line 3, Col 30, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 4, Col 27, Line 4, Col 30, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 5, Col 27, Line 5, Col 30, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 5, Col 34, Line 5, Col 37, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 6, Col 27, Line 6, Col 30, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 7, Col 30, Line 7, Col 33, "The spread operator '...' is not supported in this construct."
+            ]
+
+        [<Fact>]
+        let ``[| ... |] → error`` () =
+            let src =
+                """
+                let xs = [1..10]
+                let _ = [| ... |]
+                let _ = [| ...xs |]
+                let _ = [| ...xs; ...xs |]
+                let _ = [| ...xs; 1 |]
+                let _ = [| 1; ...xs |]
+                """
+
+            FSharp src
+            |> withLangVersion SupportedLangVersion
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                Error 3900, Line 3, Col 28, Line 3, Col 31, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 4, Col 28, Line 4, Col 31, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 5, Col 28, Line 5, Col 31, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 5, Col 35, Line 5, Col 38, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 6, Col 28, Line 6, Col 31, "The spread operator '...' is not supported in this construct."
+                Error 3900, Line 7, Col 31, Line 7, Col 34, "The spread operator '...' is not supported in this construct."
             ]
 
     module RecordTypeSpreads =
@@ -184,7 +293,7 @@ module NominalAndAnonymousRecords =
                 |> withLangVersion SupportedLangVersion
                 |> typecheck
                 |> shouldFail
-                |> withSingleDiagnostic (Warning 3891, Line 3, Col 45, Line 3, Col 50, "Spread field 'A: int' from type 'R1' shadows an explicitly declared field with the same name.")
+                |> withSingleDiagnostic (Warning 3895, Line 3, Col 45, Line 3, Col 50, "Spread field 'A: int' from type 'R1' shadows an explicitly declared field with the same name.")
 
             /// Explicit duplicate fields remain disallowed.
             [<Fact>]
@@ -202,7 +311,7 @@ module NominalAndAnonymousRecords =
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Warning 3891, Line 3, Col 45, Line 3, Col 50, "Spread field 'A: int' from type 'R1' shadows an explicitly declared field with the same name."
+                    Warning 3895, Line 3, Col 45, Line 3, Col 50, "Spread field 'A: int' from type 'R1' shadows an explicitly declared field with the same name."
                     Error 37, Line 3, Col 52, Line 3, Col 53, "Duplicate definition of field 'A'"
                 ]
 
@@ -220,7 +329,7 @@ module NominalAndAnonymousRecords =
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Warning 3891, Line 4, Col 52, Line 4, Col 57, "Spread field 'A: int' from type 'R1' shadows an explicitly declared field with the same name."
+                    Warning 3895, Line 4, Col 52, Line 4, Col 57, "Spread field 'A: int' from type 'R1' shadows an explicitly declared field with the same name."
                     Error 37, Line 4, Col 59, Line 4, Col 60, "Duplicate definition of field 'A'"
                 ]
 
@@ -472,7 +581,7 @@ but here has type
                 |> withLangVersion SupportedLangVersion
                 |> typecheck
                 |> shouldFail
-                |> withSingleDiagnostic (Error 3888, Line 6, Col 32, Line 6, Col 36, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
+                |> withSingleDiagnostic (Error 3889, Line 6, Col 32, Line 6, Col 36, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
 
             [<Fact>]
             let ``{...abstract_class} → error`` () =
@@ -492,7 +601,7 @@ but here has type
                 |> withLangVersion SupportedLangVersion
                 |> typecheck
                 |> shouldFail
-                |> withSingleDiagnostic (Error 3888, Line 9, Col 32, Line 9, Col 36, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
+                |> withSingleDiagnostic (Error 3889, Line 9, Col 32, Line 9, Col 36, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
 
             [<Fact>]
             let ``{...struct} → error`` () =
@@ -510,7 +619,7 @@ but here has type
                 |> withLangVersion SupportedLangVersion
                 |> typecheck
                 |> shouldFail
-                |> withSingleDiagnostic (Error 3888, Line 7, Col 32, Line 7, Col 36, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
+                |> withSingleDiagnostic (Error 3889, Line 7, Col 32, Line 7, Col 36, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
 
             [<Fact>]
             let ``{...interface} → error`` () =
@@ -527,7 +636,7 @@ but here has type
                 |> withLangVersion SupportedLangVersion
                 |> typecheck
                 |> shouldFail
-                |> withSingleDiagnostic (Error 3888, Line 6, Col 32, Line 6, Col 40, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
+                |> withSingleDiagnostic (Error 3889, Line 6, Col 32, Line 6, Col 40, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
 
             [<Fact>]
             let ``{...int} → error`` () =
@@ -540,7 +649,7 @@ but here has type
                 |> withLangVersion SupportedLangVersion
                 |> typecheck
                 |> shouldFail
-                |> withSingleDiagnostic (Error 3888, Line 2, Col 32, Line 2, Col 38, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
+                |> withSingleDiagnostic (Error 3889, Line 2, Col 32, Line 2, Col 38, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
 
             [<Fact>]
             let ``{...(int -> int)} → error`` () =
@@ -553,7 +662,7 @@ but here has type
                 |> withLangVersion SupportedLangVersion
                 |> typecheck
                 |> shouldFail
-                |> withSingleDiagnostic (Error 3888, Line 2, Col 32, Line 2, Col 47, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
+                |> withSingleDiagnostic (Error 3889, Line 2, Col 32, Line 2, Col 47, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
 
         module MembersOtherThanRecordFields =
             [<Fact>]
@@ -605,8 +714,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3895, Line 2, Col 26, Line 2, Col 27, "This type definition involves a cyclic reference through a spread."
-                    Error 3895, Line 3, Col 26, Line 3, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 2, Col 26, Line 2, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 3, Col 26, Line 3, Col 27, "This type definition involves a cyclic reference through a spread."
                 ]
 
             [<Fact>]
@@ -624,10 +733,10 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3895, Line 2, Col 26, Line 2, Col 27, "This type definition involves a cyclic reference through a spread."
-                    Error 3895, Line 3, Col 26, Line 3, Col 27, "This type definition involves a cyclic reference through a spread."
-                    Error 3895, Line 4, Col 26, Line 4, Col 27, "This type definition involves a cyclic reference through a spread."
-                    Error 3895, Line 5, Col 26, Line 5, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 2, Col 26, Line 2, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 3, Col 26, Line 3, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 4, Col 26, Line 4, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 5, Col 26, Line 5, Col 27, "This type definition involves a cyclic reference through a spread."
                 ]
 
             [<Fact>]
@@ -645,8 +754,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3895, Line 4, Col 26, Line 4, Col 27, "This type definition involves a cyclic reference through a spread."
-                    Error 3895, Line 5, Col 26, Line 5, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 4, Col 26, Line 4, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 5, Col 26, Line 5, Col 27, "This type definition involves a cyclic reference through a spread."
                 ]
 
             [<Fact>]
@@ -676,10 +785,10 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3895, Line 6, Col 30, Line 6, Col 31, "This type definition involves a cyclic reference through a spread."
-                    Error 3895, Line 9, Col 34, Line 9, Col 35, "This type definition involves a cyclic reference through a spread."
-                    Error 3895, Line 11, Col 26, Line 11, Col 27, "This type definition involves a cyclic reference through a spread."
-                    Error 3895, Line 17, Col 34, Line 17, Col 35, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 6, Col 30, Line 6, Col 31, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 9, Col 34, Line 9, Col 35, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 11, Col 26, Line 11, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 17, Col 34, Line 17, Col 35, "This type definition involves a cyclic reference through a spread."
                 ]
 
             [<Fact>]
@@ -718,7 +827,7 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3888, Line 3, Col 33, Line 3, Col 47, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type."
+                    Error 3890, Line 3, Col 33, Line 3, Col 47, "The source type of a spread into a record type definition cannot be nullable."
                 ]
 
         module Signatures =
@@ -865,8 +974,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Warning 3892, Line 4, Col 67, Line 4, Col 72, "Spread field 'A: int' shadows an explicitly declared field with the same name."
-                    Warning 3892, Line 5, Col 78, Line 5, Col 83, "Spread field 'A: int' shadows an explicitly declared field with the same name."
+                    Warning 3896, Line 4, Col 67, Line 4, Col 72, "Spread field 'A: int' shadows an explicitly declared field with the same name."
+                    Warning 3896, Line 5, Col 78, Line 5, Col 83, "Spread field 'A: int' shadows an explicitly declared field with the same name."
                 ]
 
             /// Explicit duplicate fields remain disallowed.
@@ -885,7 +994,7 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Warning 3892, Line 4, Col 42, Line 4, Col 47, "Spread field 'A: int' shadows an explicitly declared field with the same name."
+                    Warning 3896, Line 4, Col 42, Line 4, Col 47, "Spread field 'A: int' shadows an explicitly declared field with the same name."
                     Error 3522, Line 4, Col 49, Line 4, Col 57, "The field 'A' appears multiple times in this record expression."
                     Error 3522, Line 5, Col 31, Line 5, Col 71, "The field 'A' appears multiple times in this record expression."
                 ]
@@ -906,7 +1015,7 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Warning 3892, Line 5, Col 49, Line 5, Col 54, "Spread field 'A: int' shadows an explicitly declared field with the same name."
+                    Warning 3896, Line 5, Col 49, Line 5, Col 54, "Spread field 'A: int' shadows an explicitly declared field with the same name."
                     Error 3522, Line 5, Col 56, Line 5, Col 64, "The field 'A' appears multiple times in this record expression."
                     Error 3522, Line 6, Col 31, Line 6, Col 78, "The field 'A' appears multiple times in this record expression."
                 ]
@@ -1067,8 +1176,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3890, Line 6, Col 35, Line 6, Col 39, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
-                    Error 3890, Line 7, Col 46, Line 7, Col 50, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 6, Col 35, Line 6, Col 39, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 7, Col 46, Line 7, Col 50, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
                 ]
 
             [<Fact>]
@@ -1103,8 +1212,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3890, Line 10, Col 33, Line 12, Col 53, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
-                    Error 3890, Line 19, Col 37, Line 21, Col 57, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 10, Col 33, Line 12, Col 53, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 19, Col 37, Line 21, Col 57, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
                 ]
 
             [<Fact>]
@@ -1125,8 +1234,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3890, Line 7, Col 35, Line 7, Col 39, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
-                    Error 3890, Line 8, Col 46, Line 8, Col 50, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 7, Col 35, Line 7, Col 39, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 8, Col 46, Line 8, Col 50, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
                 ]
 
             [<Fact>]
@@ -1160,8 +1269,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3890, Line 9, Col 33, Line 11, Col 53, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
-                    Error 3890, Line 18, Col 37, Line 20, Col 57, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 9, Col 33, Line 11, Col 53, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 18, Col 37, Line 20, Col 57, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
                 ]
 
             [<Fact>]
@@ -1177,8 +1286,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3890, Line 2, Col 35, Line 2, Col 36, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
-                    Error 3890, Line 3, Col 46, Line 3, Col 47, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 2, Col 35, Line 2, Col 36, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 3, Col 46, Line 3, Col 47, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
                 ]
 
             [<Fact>]
@@ -1194,8 +1303,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3890, Line 2, Col 35, Line 2, Col 51, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
-                    Error 3890, Line 3, Col 46, Line 3, Col 62, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 2, Col 35, Line 2, Col 51, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 3, Col 46, Line 3, Col 62, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
                 ]
 
             [<Fact>]
@@ -1211,8 +1320,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3890, Line 2, Col 35, Line 2, Col 42, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
-                    Error 3890, Line 3, Col 46, Line 3, Col 53, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 2, Col 35, Line 2, Col 42, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3893, Line 3, Col 46, Line 3, Col 53, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
                 ]
 
         module MembersOtherThanRecordFields =
@@ -1313,7 +1422,7 @@ but here has type
                     do f {| a = 1 - 1 |} {| a = Unchecked.defaultof<_> |}
                     do f {| a = 1 - 1 |} {| {||} with a = Unchecked.defaultof<_> |}
 
-                    #nowarn FS3892 // Spread shadowing explicit.
+                    #nowarn FS3896 // Spread shadowing explicit.
 
                     let r = {| a = Unchecked.defaultof<_> |}
                     do f {| a = 1 - 1 |} {| a = "a"; ...r |}
@@ -1612,7 +1721,7 @@ but here has type
                 |> withLangVersion SupportedLangVersion
                 |> typecheck
                 |> shouldFail
-                |> withSingleDiagnostic (Warning 3892, Line 5, Col 40, Line 5, Col 45, "Spread field 'A: int' shadows an explicitly declared field with the same name.")
+                |> withSingleDiagnostic (Warning 3896, Line 5, Col 40, Line 5, Col 45, "Spread field 'A: int' shadows an explicitly declared field with the same name.")
 
             /// Explicit duplicate fields remain disallowed.
             [<Fact>]
@@ -1630,7 +1739,7 @@ but here has type
                 |> shouldFail
                 |> withDiagnostics [
                     Error 668, Line 4, Col 46, Line 4, Col 51, "The field 'A' appears multiple times in this record expression or pattern"
-                    Warning 3892, Line 4, Col 53, Line 4, Col 67, "Spread field 'A: int' shadows an explicitly declared field with the same name."
+                    Warning 3896, Line 4, Col 53, Line 4, Col 67, "Spread field 'A: int' shadows an explicitly declared field with the same name."
                     Error 668, Line 4, Col 69, Line 4, Col 74, "The field 'A' appears multiple times in this record expression or pattern"
                 ]
 
@@ -1690,7 +1799,7 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3889, Line 8, Col 35, Line 8, Col 42, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
+                    Error 3891, Line 8, Col 35, Line 8, Col 42, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
                     Error 764, Line 8, Col 33, Line 8, Col 44, "No assignment given for field 'A' of type 'Test.R'"
                 ]
 
@@ -1719,7 +1828,7 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3889, Line 11, Col 29, Line 14, Col 53, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
+                    Error 3891, Line 11, Col 29, Line 14, Col 53, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
                     Error 764, Line 10, Col 25, Line 15, Col 26, "No assignment given for field 'A' of type 'Test.R'"
                 ]
 
@@ -1742,7 +1851,7 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3889, Line 9, Col 35, Line 9, Col 42, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
+                    Error 3891, Line 9, Col 35, Line 9, Col 42, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
                     Error 764, Line 9, Col 33, Line 9, Col 44, "No assignment given for field 'A' of type 'Test.R'"
                 ]
 
@@ -1770,7 +1879,7 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3889, Line 10, Col 29, Line 13, Col 53, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
+                    Error 3891, Line 10, Col 29, Line 13, Col 53, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
                     Error 764, Line 9, Col 25, Line 14, Col 26, "No assignment given for field 'A' of type 'Test.R'"
                 ]
 
@@ -1788,7 +1897,7 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3889, Line 4, Col 35, Line 4, Col 41, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
+                    Error 3891, Line 4, Col 35, Line 4, Col 41, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
                     Error 764, Line 4, Col 33, Line 4, Col 43, "No assignment given for field 'A' of type 'Test.R'"
                 ]
 
@@ -1805,7 +1914,7 @@ but here has type
                 |> withLangVersion SupportedLangVersion
                 |> typecheck
                 |> shouldFail
-                |> withSingleDiagnostic (Error 3889, Line 4, Col 31, Line 4, Col 50, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.")
+                |> withSingleDiagnostic (Error 3891, Line 4, Col 31, Line 4, Col 50, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type.")
 
         module MembersOtherThanRecordFields =
             [<Fact>]
@@ -1951,9 +2060,9 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 3889, Line 4, Col 36, Line 4, Col 41, "The source expression of a spread into a nominal record expression must have a nominal or anonymous record type."
+                    Error 3892, Line 4, Col 36, Line 4, Col 41, "The source expression of a spread into a nominal record expression cannot be nullable."
                     Error 764, Line 4, Col 34, Line 4, Col 43, "No assignment given for field 'A' of type 'Test.R'"
-                    Error 3890, Line 5, Col 53, Line 5, Col 55, "The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type."
+                    Error 3894, Line 5, Col 50, Line 5, Col 55, "The source expression of a spread into an anonymous record expression cannot be nullable."
                     Error 1, Line 5, Col 47, Line 5, Col 58, "This anonymous record is missing field 'A'."
                 ]
 

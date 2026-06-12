@@ -4943,6 +4943,16 @@ declExpr:
       { let m = rhs parseState 1
         SynExpr.IndexRange(None, m, None, m, m, m) }
 
+  | DOT_DOT_DOT declExpr
+      { let m = rhs parseState 1
+        reportParseErrorAt m (FSComp.SR.parsSpreadNotSupported ())
+        arbExpr ("dotDotDotDeclExpr", m) }
+
+  | DOT_DOT_DOT
+      { let m = rhs parseState 1
+        reportParseErrorAt m (FSComp.SR.parsSpreadNotSupported ())
+        arbExpr ("dotDotDot", m) }
+
   | minusExpr %prec expr_prefix_plus_minus { $1 }
 
 whileExprCore:
@@ -5665,6 +5675,11 @@ braceExpr:
      { let m, r = $2
        r (rhs2 parseState 1 3) }
 
+  | LBRACE DOT_DOT_DOT rbrace
+     { let m = rhs parseState 2
+       reportParseErrorAt m (FSComp.SR.parsMissingSpreadSrcExpr ())
+       SynExpr.Record (None, None, rebindRanges (RecordBinding.Spread (SynExprSpread (m, arbExpr ("spreadSrcExpr", m), m))) [] None, m) }
+
   | LBRACE braceExprBody recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBrace())
        let m, r = $2
@@ -5801,6 +5816,25 @@ recdExpr:
       None, a, b }
 
 recdExprCore:
+  | DOT_DOT_DOT declExprBlock recdExprBindings opt_seps_block
+     { let mSpread = rhs parseState 1
+       let m = rhs2 parseState 1 2
+       let l = List.rev $3
+       let l = rebindRanges (RecordBinding.Spread (SynExprSpread (mSpread, $2, m))) l $4
+       None, l }
+
+  | DOT_DOT_DOT appExpr WITH
+     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsSpreadNotSupportedBeforeWith ())
+       let mSpread = rhs parseState 1
+       let m = mSpread
+       None, rebindRanges (RecordBinding.Spread (SynExprSpread (mSpread, arbExpr ("spreadSrcExpr", m), m))) [] None }
+
+  | DOT_DOT_DOT
+     { let mSpread = rhs parseState 1
+       let m = mSpread
+       reportParseErrorAt m (FSComp.SR.parsMissingSpreadSrcExpr ())
+       None, rebindRanges (RecordBinding.Spread (SynExprSpread (mSpread, arbExpr ("spreadSrcExpr", m), m))) [] None }
+
   | appExpr EQUALS declExprBlock recdExprBindings opt_seps_block
      { match $1 with
        | LongOrSingleIdent(false, (SynLongIdent _ as f), None, m) ->
@@ -5824,19 +5858,6 @@ recdExprCore:
     { let mExpr = rhs parseState 1
       reportParseErrorAt mExpr (FSComp.SR.parsFieldBinding ())
       Some($1, (mExpr.EndRange, None)), [] }
-
-  | DOT_DOT_DOT declExprBlock recdExprBindings opt_seps_block
-     { let mSpread = rhs parseState 1
-       let m = rhs2 parseState 1 2
-       let l = List.rev $3
-       let l = rebindRanges (RecordBinding.Spread (SynExprSpread (mSpread, $2, m))) l $4
-       None, l }
-
-  | DOT_DOT_DOT
-     { let mSpread = rhs parseState 1
-       let m = mSpread
-       reportParseErrorAt m (FSComp.SR.parsMissingSpreadSrcExpr ())
-       None, rebindRanges (RecordBinding.Spread (SynExprSpread (mSpread, arbExpr ("spreadSrcExpr", m), m))) [] None }
 
 /*
     handles cases when identifier can start from the underscore

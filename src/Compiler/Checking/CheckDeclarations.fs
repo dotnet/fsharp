@@ -3647,9 +3647,10 @@ module EstablishTypeDefinitionCores =
                                     errorRecovery e ty.Range
                                     (g.obj_ty_ambivalent, tpenv), true
 
-                            let isValidSpreadSrcTy =
-                                (not g.checkNullness || (nullnessOfTy g spreadSrcTy).Evaluate() <> NullnessInfo.WithNull)
-                                && (error || isRecdTy g spreadSrcTy || isAnonRecdTy g spreadSrcTy)
+                            let spreadSrcTyIsNullable = g.checkNullness && (nullnessOfTy g spreadSrcTy).Evaluate() = NullnessInfo.WithNull
+                            let spreadSrcTyIsRecd = error || isRecdTy g spreadSrcTy || isAnonRecdTy g spreadSrcTy
+
+                            let isValidSpreadSrcTy = not spreadSrcTyIsNullable && spreadSrcTyIsRecd
 
                             if isValidSpreadSrcTy then
                                 let spreadSrcTy =
@@ -3719,7 +3720,10 @@ module EstablishTypeDefinitionCores =
                                     | _ -> None)
                             else
                                 if not ty.IsFromParseError then
-                                    errorR (Error (FSComp.SR.tcRecordTypeDefinitionSpreadSourceMustBeRecord (), m))
+                                    if not spreadSrcTyIsRecd then
+                                        errorR (Error (FSComp.SR.tcRecordTypeDefinitionSpreadSourceMustBeRecord (), m))
+                                    elif spreadSrcTyIsNullable then
+                                        errorR (Error (FSComp.SR.tcRecordTypeDefinitionSpreadSourceCannotBeNullable (), m))
                                 []
 
                         let checkSpreadsLanguageFeature m = checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
