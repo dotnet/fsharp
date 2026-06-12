@@ -1998,6 +1998,40 @@ let MergePropertyDefs m ilPropertyDefs =
     ilPropertyDefs |> List.iter (AddPropertyDefToHash m ht)
     HashRangeSorted ht
 
+/// Thread-local file-index scope used by the parallel deferred-codegen pass to
+/// stabilize the order in which methods/fields are added to
+/// cross-file-aggregating types (e.g. <StartupCode$...>,
+/// <PrivateImplementationDetails>). Each `genMeths` batch in
+/// `delayedFileGenReverse` is executed under a distinct fileIdx so that the
+/// per-builder `methodIdx`/`fieldIdx` keys carry a (fileIdx, localCount)
+/// composite. On `TypeDefBuilder.Close()` we sort by k, which gives:
+///   - cross-file: stable order by source file index;
+///   - within-file: AST walk order.
+///
+/// When the scope is not set (synchronous spine walk, default = 0), keys are
+/// just the local counter, which gives plain insertion order — matching main's
+/// behaviour for the common single-file case.
+[<AbstractClass; Sealed>]
+type CodegenFileScope private () =
+    [<DefaultValue; System.ThreadStatic>]
+    static val mutable private currentFileIdx: int
+
+    static let fileIndexShift = 24
+
+    static member OrderKey(localCounter: byref<int>) : int =
+        let k = localCounter
+        localCounter <- k + 1
+        (CodegenFileScope.currentFileIdx <<< fileIndexShift) ||| (k &&& 0xFF_FFFF)
+
+    static member With(fileIdx: int, action: unit -> unit) =
+        let prev = CodegenFileScope.currentFileIdx
+
+        try
+            CodegenFileScope.currentFileIdx <- fileIdx
+            action ()
+        finally
+            CodegenFileScope.currentFileIdx <- prev
+
 //--------------------------------------------------------------------------
 // Buffers for compiling modules. The entire assembly gets compiled via an AssemblyBuilder
 //--------------------------------------------------------------------------
@@ -2024,8 +2058,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         let xs = ResizeArray<struct (string * int) * ILMethodDef>(initial.Length)
 
         for m in initial do
-            let k = methodIdx
-            methodIdx <- methodIdx + 1
+            let k = CodegenFileScope.OrderKey(&methodIdx)
             xs.Add(struct (m.Name, k), m)
 
         xs
@@ -2035,8 +2068,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         let xs = ResizeArray<struct (string * int) * ILFieldDef>(initial.Length)
 
         for f in initial do
-            let k = fieldIdx
-            fieldIdx <- fieldIdx + 1
+            let k = CodegenFileScope.OrderKey(&fieldIdx)
             xs.Add(struct (f.Name, k), f)
 
         xs
@@ -2049,8 +2081,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         let xs = ResizeArray<struct (string * int) * ILEventDef>(initial.Length)
 
         for e in initial do
-            let k = eventIdx
-            eventIdx <- eventIdx + 1
+            let k = CodegenFileScope.OrderKey(&eventIdx)
             xs.Add(struct (e.Name, k), e)
 
         xs
@@ -2074,85 +2105,32 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             else
                 tdef.CustomAttrs
 
-        // Methods come from two sources with different ordering semantics:
-        //   1. User method definitions added during the SEQUENTIAL spine walk (e.g. ctors,
-        //      properties, F# `member` bindings). Their insertion order is deterministic
-        //      across SEQ and PAR codegen — preserve to match main's behavior and the
-        //      inline IL baselines.
+        // Methods/fields preserve insertion order from the AST walk.
         //
-        //   2. Method bodies emitted by the DEFERRED codegen pass — primarily closure
-        //      invokers (`Invoke@<line>`, `MoveNext`) and other compiler-generated methods.
-        //      Under `--parallelcompilation+` these race; sort by name for stability.
+        // For single-file types (the common case), the AST walk is sequential
+        // within a file even under `--parallelcompilation+`, so the insertion
+        // order matches main's natural emission order — including the AST-causal
+        // interleaving of user methods (e.g. `.cctor`) with compiler-generated
+        // `@`-methods (e.g. `staticInitialization@`, `get_arg@1`).
         //
-        // Splitting by `@` in the method name keeps user-method order stable while making
-        // the deferred closure-method order deterministic. See
-        // https://github.com/dotnet/fsharp/issues/19928.
+        // Cross-file aggregating types (e.g. `<StartupCode$...>`,
+        // `<PrivateImplementationDetails>`) race when threads from different
+        // files call AddMethodDef/AddFieldDef concurrently. SEQ=PAR
+        // determinism for those is achieved separately:
+        //   - The `methodIdx`/`fieldIdx` counters are bumped under a fileIdx-
+        //     aware key in AddMethodDef/AddFieldDef (see `currentFileIdx`).
+        //   - At Close time we sort by k so file-order dominates and within
+        //     a file we keep walk order.
+        //
+        // See https://github.com/dotnet/fsharp/issues/19928.
         let sortedMethods =
-            let userMethods = ResizeArray<struct (string * int) * ILMethodDef>()
-            let deferredMethods = ResizeArray<struct (string * int) * ILMethodDef>()
+            gmethods
+            |> Seq.sortBy (fun (struct (_, k), _) -> k)
+            |> Seq.map snd
+            |> List.ofSeq
 
-            for entry in gmethods do
-                let struct (name, _) = fst entry
-
-                if name.Contains("@") then
-                    deferredMethods.Add(entry)
-                else
-                    userMethods.Add(entry)
-
-            let sortedUser =
-                userMethods
-                |> Seq.sortBy (fun (struct (_, k), _) -> k)
-                |> Seq.map snd
-                |> List.ofSeq
-
-            let sortedDeferred = deferredMethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
-
-            sortedUser @ sortedDeferred
-
-        // Fields ordering:
-        //   - User-defined fields and most compiler-generated fields preserve insertion order
-        //     (struct [<Struct>] DU/Record types depend on IL field order for physical memory
-        //     layout — visible via Marshal.SizeOf, P/Invoke ABI, blittable interop).
-        //   - Compiler-generated raw-data static fields generated by GenConstArray have the
-        //     specific shape 'field<line>_<idx>@' (line and idx are digits, joined by '_',
-        //     suffix '@'). These are added by deferred parallel codegen in scheduler order;
-        //     sort them by name to make SEQ=PAR deterministic. Append after user fields to
-        //     keep user-field positions unchanged. See https://github.com/dotnet/fsharp/issues/19928.
         let preservedFields =
-            let isGenConstArrayField (name: string) =
-                // Match the specific 'field<line>_<idx>@' shape (digits, '_', digits, '@')
-                // produced by GetOrCreateRawDataFieldSpec. Avoids false positives like
-                // 'init@', 'X@', or other compiler-generated fields whose IL order must
-                // be preserved for struct memory layout.
-                name.Length > 7
-                && name.StartsWith("field", StringComparison.Ordinal)
-                && name.EndsWith("@", StringComparison.Ordinal)
-                && (let mid = name.Substring(5, name.Length - 6)
-                    let hasUnderscore = mid.Contains("_")
-
-                    hasUnderscore
-                    && (mid |> Seq.forall (fun (c: char) -> Char.IsDigit c || c = '_')))
-
-            let userFields = ResizeArray<struct (string * int) * ILFieldDef>()
-            let rawFields = ResizeArray<struct (string * int) * ILFieldDef>()
-
-            for entry in gfields do
-                let struct (name, _) = fst entry
-
-                if isGenConstArrayField name then
-                    rawFields.Add(entry)
-                else
-                    userFields.Add(entry)
-
-            let sortedUser =
-                userFields
-                |> Seq.sortBy (fun (struct (_, k), _) -> k)
-                |> Seq.map snd
-                |> List.ofSeq
-
-            let sortedRaw = rawFields |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
-
-            sortedUser @ sortedRaw
+            gfields |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
 
         let preservedEvents =
             gevents |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
@@ -2167,13 +2145,11 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         )
 
     member _.AddEventDef(edef: ILEventDef) =
-        let k = eventIdx
-        eventIdx <- eventIdx + 1
+        let k = CodegenFileScope.OrderKey(&eventIdx)
         gevents.Add(struct (edef.Name, k), edef)
 
     member _.AddFieldDef(ilFieldDef: ILFieldDef) =
-        let k = fieldIdx
-        fieldIdx <- fieldIdx + 1
+        let k = CodegenFileScope.OrderKey(&fieldIdx)
         gfields.Add(struct (ilFieldDef.Name, k), ilFieldDef)
 
     member _.AddMethodDef(ilMethodDef: ILMethodDef) =
@@ -2183,8 +2159,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            let k = methodIdx
-            methodIdx <- methodIdx + 1
+            let k = CodegenFileScope.OrderKey(&methodIdx)
             gmethods.Add(struct (ilMethodDef.Name, k), ilMethodDef)
 
     member _.NestedTypeDefs = gnested
@@ -2202,7 +2177,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         if not discard then
             AddPropertyDefToHash m gproperties pdef
 
-    member _.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
+    member this.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
         let findIdx =
             let mutable found = -1
             let mutable i = 0
@@ -2224,8 +2199,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
             let cctor = mkILClassCtor body
-            let k = methodIdx
-            methodIdx <- methodIdx + 1
+            let k = CodegenFileScope.OrderKey(&methodIdx)
             gmethods.Add(struct (cctor.Name, k), cctor)
 
     member this.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
@@ -2250,8 +2224,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
             let cctor = mkILClassCtor body
-            let k = methodIdx
-            methodIdx <- methodIdx + 1
+            let k = CodegenFileScope.OrderKey(&methodIdx)
             gmethods.Add(struct (cctor.Name, k), cctor)
 
         this
@@ -13190,19 +13163,58 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         // See https://github.com/dotnet/fsharp/issues/19732.
         PrimeStableNamesForCodegen cenv mgbuf implFiles
 
-        let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
-        let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
+        // Tag every spine-walk AddMethodDef/AddFieldDef call with a per-file
+        // CodegenFileScope so cross-file aggregation into shared types
+        // (<StartupCode$...>, <PrivateImplementationDetails>, ...) is
+        // deterministic regardless of whether bodies are inlined (SEQ) or
+        // queued for the deferred parallel iter (PAR). The 1-based fileIdx
+        // matches the index later assigned during the parallel iter below;
+        // any sync-walk add for a given file ends up under the same fileIdx
+        // bucket as that file's deferred contributions.
+        let eenv, _ =
+            firstImplFiles
+            |> List.fold
+                (fun (eenv, fileIdx) implFile ->
+                    let mutable result = eenv
 
-        // Restore parallel body emission across files. PrimeStableNamesForCodegen has populated
-        // every (basename, uniq) cache entry deterministically and the deterministic ordering
-        // keys threaded through AddTypeDef / AddMethodDef ensure within-type and cross-type
-        // emit order is independent of thread scheduling. Within a file, the inner Array.iter
-        // stays sequential so AllocVal / TypeDefsBuilder mutation inside a single file remains
-        // single-threaded. See https://github.com/dotnet/fsharp/issues/19732.
-        eenv.delayedFileGenReverse
-        |> Array.ofList
-        |> Array.rev
-        |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen ()))
+                    CodegenFileScope.With(fileIdx, (fun () -> result <- GenImplFile cenv mgbuf None eenv implFile))
+
+                    result, fileIdx + 1)
+                (eenv, 1)
+
+        let eenv =
+            let mutable result = eenv
+
+            CodegenFileScope.With(
+                List.length firstImplFiles + 1,
+                (fun () -> result <- GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile)
+            )
+
+            result
+
+        // Restore parallel body emission across files. Each per-file batch runs under a
+        // CodegenFileScope tag (fileIdx = source position in delayedFileGenReverse). The
+        // (fileIdx, localCounter) composite key threaded through AddMethodDef / AddFieldDef
+        // ensures that cross-file adds to shared types (e.g. <StartupCode$...>,
+        // <PrivateImplementationDetails>) emit in deterministic order independent of thread
+        // scheduling. Within a file, the inner Array.iter stays sequential so
+        // AllocVal / TypeDefsBuilder mutation inside a single file remains single-threaded.
+        // See https://github.com/dotnet/fsharp/issues/19732 and #19928.
+        let batches =
+            eenv.delayedFileGenReverse
+            |> Array.ofList
+            |> Array.rev
+            |> Array.mapi (fun fileIdx genMeths -> fileIdx, genMeths)
+
+        let runOneBatch (fileIdx, genMeths) =
+            // fileIdx is 1-based so the default scope (0, used during the synchronous
+            // spine walk) sorts strictly before any deferred-codegen contribution.
+            CodegenFileScope.With(fileIdx + 1, (fun () -> genMeths |> Array.iter (fun gen -> gen ())))
+
+        if cenv.options.parallelIlxGenEnabled then
+            batches |> ArrayParallel.iter runOneBatch
+        else
+            batches |> Array.iter runOneBatch
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
@@ -13330,7 +13342,13 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let eenv =
         { eenv with
             cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
-            delayCodeGen = cenv.options.parallelIlxGenEnabled
+            // Always defer body codegen so that AddMethodDef call-order is identical
+            // between SEQ (--parallelcompilation-) and PAR (--parallelcompilation+).
+            // Without this, hoisted local-function methods (e.g. 'run@<line>-N') were
+            // added inline in SEQ but during the deferred-iter in PAR, producing a
+            // different methodIdx assignment per type. The iter pass below honours the
+            // parallel flag: PAR runs files in parallel, SEQ runs them sequentially.
+            delayCodeGen = true
         }
 
     // Generate the PrivateImplementationDetails type

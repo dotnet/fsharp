@@ -127,17 +127,6 @@
     IL_0005:  ret
   } 
 
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
   .method assembly specialname static class assembly/Foo get_f@10() cil managed
   {
     
@@ -152,6 +141,17 @@
     .maxstack  8
     IL_0000:  ldsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::'f@10-2'
     IL_0005:  ret
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly$fsx::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
   .property class assembly/Foo
