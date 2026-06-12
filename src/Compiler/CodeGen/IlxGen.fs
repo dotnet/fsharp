@@ -2041,38 +2041,33 @@ type CodegenFileScope private () =
 
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
-    // Methods, fields and events are stored with a monotonically increasing insertion
-    // index. On Close() they are sorted by (Name, insertion index) so that within each
-    // type the IL emission order is independent of whether the surrounding method body
-    // was emitted inline (sequential codegen) or via the deferred queue at IlxGen.fs:12516
-    // (parallel codegen). The insertion-index tiebreaker preserves source-order grouping
-    // for methods that legitimately share a name (e.g. overloaded constructors and
-    // generic re-instantiations). Method ordering has no IL semantics — metadata tokens
-    // are assigned by the writer based on input order and any references inside the same
-    // assembly are re-resolved against that order.
-    // See https://github.com/dotnet/fsharp/issues/19732.
+    // Methods, fields and events are stored with an order key produced by
+    // CodegenFileScope.OrderKey: `(fileIdx <<< 24) ||| localCounter`. On Close()
+    // they are sorted by that key, which gives stable per-file source order for
+    // cross-file aggregating types (<StartupCode$...>, <PrivateImplementationDetails>)
+    // independent of thread scheduling under parallel codegen. Member order has no
+    // IL semantics — metadata tokens are assigned by the writer based on input order
+    // and references inside the same assembly are re-resolved against it.
+    // See https://github.com/dotnet/fsharp/issues/19732 and #19928.
     let mutable methodIdx = 0
     let mutable fieldIdx = 0
     let mutable eventIdx = 0
 
     let gmethods =
         let initial = tdef.Methods.AsList()
-
-        let xs = ResizeArray<struct (string * int) * ILMethodDef>(initial.Length)
+        let xs = ResizeArray<int * ILMethodDef>(initial.Length)
 
         for m in initial do
-            let k = CodegenFileScope.OrderKey(&methodIdx)
-            xs.Add(struct (m.Name, k), m)
+            xs.Add(CodegenFileScope.OrderKey(&methodIdx), m)
 
         xs
 
     let gfields =
         let initial = tdef.Fields.AsList()
-        let xs = ResizeArray<struct (string * int) * ILFieldDef>(initial.Length)
+        let xs = ResizeArray<int * ILFieldDef>(initial.Length)
 
         for f in initial do
-            let k = CodegenFileScope.OrderKey(&fieldIdx)
-            xs.Add(struct (f.Name, k), f)
+            xs.Add(CodegenFileScope.OrderKey(&fieldIdx), f)
 
         xs
 
@@ -2081,11 +2076,10 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     let gevents =
         let initial = tdef.Events.AsList()
-        let xs = ResizeArray<struct (string * int) * ILEventDef>(initial.Length)
+        let xs = ResizeArray<int * ILEventDef>(initial.Length)
 
         for e in initial do
-            let k = CodegenFileScope.OrderKey(&eventIdx)
-            xs.Add(struct (e.Name, k), e)
+            xs.Add(CodegenFileScope.OrderKey(&eventIdx), e)
 
         xs
 
@@ -2108,52 +2102,28 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             else
                 tdef.CustomAttrs
 
-        // Methods/fields preserve insertion order from the AST walk.
-        //
-        // For single-file types (the common case), the AST walk is sequential
-        // within a file even under `--parallelcompilation+`, so the insertion
-        // order matches main's natural emission order — including the AST-causal
-        // interleaving of user methods (e.g. `.cctor`) with compiler-generated
-        // `@`-methods (e.g. `staticInitialization@`, `get_arg@1`).
-        //
-        // Cross-file aggregating types (e.g. `<StartupCode$...>`,
-        // `<PrivateImplementationDetails>`) race when threads from different
-        // files call AddMethodDef/AddFieldDef concurrently. SEQ=PAR
-        // determinism for those is achieved separately:
-        //   - The `methodIdx`/`fieldIdx` counters are bumped under a fileIdx-
-        //     aware key in AddMethodDef/AddFieldDef (see `currentFileIdx`).
-        //   - At Close time we sort by k so file-order dominates and within
-        //     a file we keep walk order.
-        //
+        // Members preserve per-file source order: keys are produced by
+        // CodegenFileScope.OrderKey ((fileIdx <<< 24) ||| localCounter), so sorting
+        // by k gives stable cross-file ordering regardless of thread scheduling
+        // and keeps within-file walk order intact.
         // See https://github.com/dotnet/fsharp/issues/19928.
-        let sortedMethods =
-            gmethods
-            |> Seq.sortBy (fun (struct (_, k), _) -> k)
-            |> Seq.map snd
-            |> List.ofSeq
-
-        let preservedFields =
-            gfields |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
-
-        let preservedEvents =
-            gevents |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
+        let sortByKey (xs: ResizeArray<int * _>) =
+            xs |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
 
         tdef.With(
-            methods = mkILMethods sortedMethods,
-            fields = mkILFields preservedFields,
+            methods = mkILMethods (sortByKey gmethods),
+            fields = mkILFields (sortByKey gfields),
             properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
-            events = mkILEvents preservedEvents,
+            events = mkILEvents (sortByKey gevents),
             nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close(g)),
             customAttrs = storeILCustomAttrs attrs
         )
 
     member _.AddEventDef(edef: ILEventDef) =
-        let k = CodegenFileScope.OrderKey(&eventIdx)
-        gevents.Add(struct (edef.Name, k), edef)
+        gevents.Add(CodegenFileScope.OrderKey(&eventIdx), edef)
 
     member _.AddFieldDef(ilFieldDef: ILFieldDef) =
-        let k = CodegenFileScope.OrderKey(&fieldIdx)
-        gfields.Add(struct (ilFieldDef.Name, k), ilFieldDef)
+        gfields.Add(CodegenFileScope.OrderKey(&fieldIdx), ilFieldDef)
 
     member _.AddMethodDef(ilMethodDef: ILMethodDef) =
         let discard =
@@ -2162,8 +2132,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            let k = CodegenFileScope.OrderKey(&methodIdx)
-            gmethods.Add(struct (ilMethodDef.Name, k), ilMethodDef)
+            gmethods.Add(CodegenFileScope.OrderKey(&methodIdx), ilMethodDef)
 
     member _.NestedTypeDefs = gnested
 
@@ -2178,56 +2147,33 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         if not discard then
             AddPropertyDefToHash m gproperties pdef
 
-    member this.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        let findIdx =
+    member private this.UpdateOrAddCctor(cond, instrs, tag, imports, transform) =
+        let idx =
             let mutable found = -1
-            let mutable i = 0
 
-            for _, md in gmethods do
+            for i = 0 to gmethods.Count - 1 do
+                let _, md = gmethods[i]
+
                 if found < 0 && cond md then
                     found <- i
 
-                i <- i + 1
+            found
 
-            if found >= 0 then Some found else None
-
-        match findIdx with
-        | Some idx ->
+        if idx >= 0 then
             let k, md = gmethods[idx]
-            gmethods[idx] <- (k, appendInstrsToMethod instrs md)
-        | None ->
+            gmethods[idx] <- (k, transform instrs md)
+        else
             let body =
                 mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
 
             let cctor = mkILClassCtor body
-            let k = CodegenFileScope.OrderKey(&methodIdx)
-            gmethods.Add(struct (cctor.Name, k), cctor)
+            gmethods.Add(CodegenFileScope.OrderKey(&methodIdx), cctor)
+
+    member this.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
+        this.UpdateOrAddCctor(cond, instrs, tag, imports, appendInstrsToMethod)
 
     member this.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        let findIdx =
-            let mutable found = -1
-            let mutable i = 0
-
-            for _, md in gmethods do
-                if found < 0 && cond md then
-                    found <- i
-
-                i <- i + 1
-
-            if found >= 0 then Some found else None
-
-        match findIdx with
-        | Some idx ->
-            let k, md = gmethods[idx]
-            gmethods[idx] <- (k, prependInstrsToMethod instrs md)
-        | None ->
-            let body =
-                mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
-
-            let cctor = mkILClassCtor body
-            let k = CodegenFileScope.OrderKey(&methodIdx)
-            gmethods.Add(struct (cctor.Name, k), cctor)
-
+        this.UpdateOrAddCctor(cond, instrs, tag, imports, prependInstrsToMethod)
         this
 
     member _.ILTypeDef = tdef
