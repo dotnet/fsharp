@@ -731,13 +731,54 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
                 | _ -> ()
     ]
 
+let IsExtensionMethCompatibleWithTy (infoReader: InfoReader) m (ty: TType) (minfo: MethInfo) =
+    let g = infoReader.g
+    let amap = infoReader.amap
+
+    not minfo.IsExtensionMember ||
+    let objArgTys =
+        try
+            Some (minfo.GetObjArgTypes(amap, m, minfo.FormalMethodInst))
+        with
+        | :? System.OperationCanceledException -> reraise ()
+        | _ -> None
+
+    match objArgTys with
+    | Some (thisTy :: _) ->
+        let ty1 = thisTy |> stripTyEqns g
+        let ty2 = ty |> stripTyEqns g
+
+        match ty1, ty2 with
+        | TType_var (tp1, _), _ ->
+            let coercesToConstraints =
+                tp1.Constraints |> List.choose (function
+                    | TyparConstraint.CoercesTo(targetCTy, _) -> Some targetCTy
+                    | _ -> None)
+            match coercesToConstraints with
+            | [] -> true
+            | constraints ->
+                constraints |> List.exists (fun targetCTy ->
+                    let cTy = targetCTy |> stripTyEqns g
+                    TypeRelations.TypeFeasiblySubsumesType 0 g amap m cTy TypeRelations.CanCoerce ty2)
+        | _, TType_var _ -> true
+        | _ ->
+            TypeRelations.TypeFeasiblySubsumesType 0 g amap m ty1 TypeRelations.CanCoerce ty2
+    | Some [] ->
+        true
+    | None ->
+        false
+
 /// Query the available extension methods of a type (including extension methods for inherited types)
 let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) ad optFilter isInstanceFilter m ty =
     let amap = infoReader.amap
 
     let extMemsDangling = SelectMethInfosFromExtMembers infoReader optFilter ty m nenv.eUnindexedExtensionMembers
 
-    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
+    let shortCircuit =
+        collectionSettings = ResultCollectionSettings.AtMostOneResult
+        && extMemsDangling |> List.exists (fun minfo -> IsExtensionMethCompatibleWithTy infoReader m ty minfo)
+
+    if shortCircuit then
         extMemsDangling
     else
         let extMemsFromHierarchy =
@@ -766,34 +807,6 @@ let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad fi
         intrinsic
     else
         intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv ad optFilter LookupIsInstance.Ambivalent m ty
-
-let IsExtensionMethCompatibleWithTy (infoReader: InfoReader) m (ty: TType) (minfo: MethInfo) =
-    let g = infoReader.g
-    let amap = infoReader.amap
-
-    not minfo.IsExtensionMember ||
-    match minfo.GetObjArgTypes(amap, m, []) with
-    | thisTy :: _ ->
-        let ty1 = thisTy |> stripTyEqns g
-        let ty2 = ty |> stripTyEqns g
-
-        match ty1, ty2 with
-        | TType_var (tp1, _), _ ->
-            let coercesToConstraints =
-                tp1.Constraints |> List.choose (function
-                    | TyparConstraint.CoercesTo(targetCTy, _) -> Some targetCTy
-                    | _ -> None)
-            match coercesToConstraints with
-            | [] -> true  // No CoercesTo constraint means it could match anything
-            | constraints ->
-                constraints |> List.exists (fun targetCTy ->
-                    let cTy = targetCTy |> stripTyEqns g
-                    TypeRelations.TypeFeasiblySubsumesType 0 g amap m cTy TypeRelations.CanCoerce ty2)
-        | _, TType_var _ -> true
-        | _ ->
-            TypeRelations.TypeFeasiblySubsumesType 0 g amap m ty1 TypeRelations.CanCoerce ty2
-    | _ -> 
-        true
 
 //-------------------------------------------------------------------------
 // Helpers to do with building environments
