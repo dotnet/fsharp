@@ -37,5 +37,12 @@ type LoweredStateMachineResult =
 
 /// Analyze a TAST expression to detect the elaborated form of a state machine expression, a special kind
 /// of object expression that uses special code generation constructs.
+/// 'collectResumptionPoints' requests collection of the resume points for the hot reload
+/// EnC State Machine State Map; when false (ordinary compiles) the resumptionPoints
+/// field of the result is always empty.
 val LowerStateMachineExpr:
-    g: TcGlobals -> outerResumableCodeDefns: ValMap<Expr> -> overallExpr: Expr -> LoweredStateMachineResult
+    g: TcGlobals ->
+    outerResumableCodeDefns: ValMap<Expr> ->
+    collectResumptionPoints: bool ->
+    overallExpr: Expr ->
+        LoweredStateMachineResult

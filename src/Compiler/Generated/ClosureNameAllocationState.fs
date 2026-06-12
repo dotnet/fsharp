@@ -58,6 +58,9 @@ type private ClosureNameStateHolder() =
                 recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
             | None -> Map.empty)
 
+    member _.IsResumePointRecordingActive =
+        lock syncRoot (fun () -> recordedResumePointsByTypeName.IsSome)
+
     member _.RecordResumePoints(typeName: string, resumePoints: int list) =
         lock syncRoot (fun () ->
             match recordedResumePointsByTypeName with
@@ -113,6 +116,14 @@ let getRecordedClosureStampNames (owner: obj) : Map<int64, string> =
     match tryGetHolder owner with
     | Some holder -> holder.RecordedNames()
     | None -> Map.empty
+
+/// True when resume-point recording was begun for the owner (hot reload
+/// baseline-capture compiles only). Lets the state machine lowering skip collecting
+/// resume points entirely on ordinary compiles.
+let isStateMachineResumePointRecordingActive (owner: obj) : bool =
+    match tryGetHolder owner with
+    | Some holder -> holder.IsResumePointRecordingActive
+    | None -> false
 
 /// Records the resume-point state numbers of a lowered state machine against its
 /// emitted struct type's full name. No-op unless recording was begun for

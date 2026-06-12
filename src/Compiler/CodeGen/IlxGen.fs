@@ -3131,7 +3131,16 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 true
             | None ->
 
-                let smResult = LowerStateMachineExpr cenv.g eenv.resumableCodeDefinitions expr
+                // Resume points are only needed by hot reload baseline-capture compiles
+                // (the EnC State Machine State Map); skip collecting them otherwise.
+                let collectResumptionPoints =
+                    match cenv.g.CompilerGlobalState with
+                    | Some compilerGlobalState ->
+                        ClosureNameAllocationState.isStateMachineResumePointRecordingActive (compilerGlobalState :> obj)
+                    | None -> false
+
+                let smResult =
+                    LowerStateMachineExpr cenv.g eenv.resumableCodeDefinitions collectResumptionPoints expr
 
                 match smResult with
                 | LoweredStateMachineResult.Lowered res ->
