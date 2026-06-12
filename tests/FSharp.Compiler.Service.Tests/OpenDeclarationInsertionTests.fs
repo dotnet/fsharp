@@ -36,7 +36,7 @@ let x : Newtonsoft.Json.JsonConvert = failwith ""
 """
     let insertionPoint = findOpenInsertionPoint "test.fsx" source "Newtonsoft.Json"
     // Must be after line 2 (#r directives), not before
-    Assert.True(insertionPoint.Line >= 3)
+    Assert.Equal(3, insertionPoint.Line)
 
 [<Fact>]  // NEGATIVE: .fs files unaffected
 let ``Open in fs file placed at top`` () =
@@ -54,7 +54,7 @@ let ``Open after r and load directives`` () =
 let x = 1
 """
     let insertionPoint = findOpenInsertionPoint "test.fsx" source "SomeNs"
-    Assert.True(insertionPoint.Line >= 3)
+    Assert.Equal(3, insertionPoint.Line)
 
 [<Fact>]
 let ``No r directives in fsx inserts at top`` () =
@@ -72,4 +72,14 @@ let x : System.IO.File = failwith ""
 """
     let insertionPoint = findOpenInsertionPoint "test.fsx" source "System.IO"
     // Should be near existing opens (after #r, near open System)
-    Assert.True(insertionPoint.Line >= 2)
+    Assert.Equal(2, insertionPoint.Line)
+
+[<Fact>]
+let ``Open placed after r directives in fsscript`` () =
+    let source = """#r "nuget: Newtonsoft.Json"
+#r "nuget: FSharp.Data"
+
+let x : Newtonsoft.Json.JsonConvert = failwith ""
+"""
+    let insertionPoint = findOpenInsertionPoint "test.fsscript" source "Newtonsoft.Json"
+    Assert.Equal(3, insertionPoint.Line)

@@ -2618,12 +2618,13 @@ module ParsedInput =
                     Pos = mkPos 1 0
                 }
 
-        // In .fsx scripts, `#r` / `#load` must precede any `open`.
-        if parsedInput.FileName.EndsWith(".fsx", StringComparison.OrdinalIgnoreCase) then
-            let topModuleKind, topDecls =
+        // In .fsx/.fsscript scripts, `#r` / `#load` must precede any `open`.
+        match parsedInput with
+        | ParsedInput.ImplFile impl when impl.IsScript ->
+            let topDecls =
                 match parsedInput with
-                | ParsedInput.ImplFile(ParsedImplFileInput(contents = SynModuleOrNamespace(kind = k; decls = decls) :: _)) -> Some k, decls
-                | _ -> None, []
+                | ParsedInput.ImplFile(ParsedImplFileInput(contents = SynModuleOrNamespace(decls = decls) :: _)) -> decls
+                | _ -> []
 
             let rec lastLeadingHashEndLine acc decls =
                 match decls with
@@ -2631,19 +2632,12 @@ module ParsedInput =
                 | _ -> acc
 
             let lastHashLine = lastLeadingHashEndLine 0 topDecls
-            let isAnonModule = topModuleKind = Some SynModuleOrNamespaceKind.AnonModule
 
             if lastHashLine > 0 && lastHashLine >= ctx.Pos.Line then
                 {
                     ScopeKind = ScopeKind.HashDirective
                     Pos = mkPos (lastHashLine + 1) 0
                 }
-            elif lastHashLine = 0 && isAnonModule && ctx.Pos.Line > 1 then
-                {
-                    ScopeKind = ScopeKind.TopModule
-                    Pos = mkPos 1 0
-                }
             else
                 ctx
-        else
-            ctx
+        | _ -> ctx
