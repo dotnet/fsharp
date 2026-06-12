@@ -475,6 +475,7 @@
     <Compile Include="HotReload\SymbolMatcher.fs" />
     <Compile Include="HotReload\HotReloadAccessorTypes.fs" />
     <Compile Include="CodeGen\IlxDeltaEmitter.fs" />
+    <Compile Include="HotReload\TrackedInputs.fs" />
     <Compile Include="HotReload\HotReloadState.fs" />
     <Compile Include="HotReload\DeltaBuilder.fs" />
     <Compile Include="HotReload\HotReloadCapabilities.fs" />

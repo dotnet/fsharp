@@ -15,6 +15,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.CodeAnalysis.Workspace
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.HotReload
 open FSharp.Compiler.Text
 open FSharp.Test
 open FSharp.Test.Utilities
@@ -118,17 +119,6 @@ type Type =
                          String.Equals(opt, "-o", StringComparison.OrdinalIgnoreCase)))
                 |> Array.append [| $"-o:{dllPath}" |] }
 
-
-    let private withSplitOutputOption (projectOptions: FSharpProjectOptions) (outputSwitch: string) (dllPath: string) =
-        { projectOptions with
-            OtherOptions =
-                projectOptions.OtherOptions
-                |> Array.filter (fun opt ->
-                    not (opt.StartsWith("--out:", StringComparison.OrdinalIgnoreCase) ||
-                         opt.StartsWith("-o:", StringComparison.OrdinalIgnoreCase) ||
-                         String.Equals(opt, "-o", StringComparison.OrdinalIgnoreCase) ||
-                         String.Equals(opt, "--out", StringComparison.OrdinalIgnoreCase)))
-                |> Array.append [| outputSwitch; dllPath |] }
 
     let private withExecutableTarget (projectOptions: FSharpProjectOptions) =
         { projectOptions with
@@ -779,129 +769,111 @@ type Type =
         with _ -> ()
 
     [<Fact>]
-    let ``Workspace snapshot config version changes when tracked dependency input changes`` () =
-        let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-workspace-tracked-inputs", Guid.NewGuid().ToString("N"))
+    let ``Session refuses delta when tracked dependency input changes without rebuild`` () =
+        let projectDir = Path.Combine(Path.GetTempPath(), "fcs-hotreload-tracked-input-stale", Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory(projectDir) |> ignore
 
         let fsPath = Path.Combine(projectDir, "Library.fs")
         let dllPath = Path.Combine(projectDir, "Library.dll")
-        let projectPath = Path.Combine(projectDir, "Library.fsproj")
         let resourcePath = Path.Combine(projectDir, "payload.xaml")
 
-        File.WriteAllText(projectPath, "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>")
         File.WriteAllText(fsPath, baselineSource)
         File.WriteAllText(resourcePath, "<Page><TextBlock Text=\"v1\" /></Page>")
 
-        let checker = createChecker ()
-        let projectOptions = prepareProjectOptions checker fsPath dllPath baselineSource |> withTrackedResourceInput <| resourcePath
-        let workspace = FSharpWorkspace(checker)
-
-        let projectIdentifier =
-            workspace.Projects.AddOrUpdate(projectPath, dllPath, toWorkspaceCompilerArgs projectOptions)
-
-        let baselineSnapshot =
-            workspace.Query.GetProjectSnapshot(projectIdentifier)
-            |> Option.defaultWith (fun () -> failwith "Expected workspace baseline snapshot.")
-
-        let baselineVersion = Convert.ToHexString(baselineSnapshot.ProjectConfig.Version)
-        let baselineTrackedInput =
-            baselineSnapshot.ProjectConfig.TrackedInputsOnDisk
-            |> List.tryFind (fun reference ->
-                String.Equals(Path.GetFullPath(reference.Path), Path.GetFullPath(resourcePath), StringComparison.Ordinal))
-            |> Option.defaultWith (fun () -> failwith "Expected tracked dependency input to be present in workspace config.")
-
-        File.WriteAllText(resourcePath, "<Page><TextBlock Text=\"v2\" /></Page>")
-        File.SetLastWriteTime(resourcePath, baselineTrackedInput.LastModified.AddSeconds(2.0))
-        workspace.Files.Close(Uri(resourcePath))
-        workspace.Projects.AddOrUpdate(projectPath, dllPath, toWorkspaceCompilerArgs projectOptions) |> ignore
-
-        let updatedSnapshot =
-            workspace.Query.GetProjectSnapshot(projectIdentifier)
-            |> Option.defaultWith (fun () -> failwith "Expected workspace updated snapshot.")
-
-        let updatedVersion = Convert.ToHexString(updatedSnapshot.ProjectConfig.Version)
-        let updatedTrackedInput =
-            updatedSnapshot.ProjectConfig.TrackedInputsOnDisk
-            |> List.tryFind (fun reference ->
-                String.Equals(Path.GetFullPath(reference.Path), Path.GetFullPath(resourcePath), StringComparison.Ordinal))
-            |> Option.defaultWith (fun () -> failwith "Expected tracked dependency input to remain in workspace config.")
-
-        Assert.True(
-            not (String.Equals(baselineVersion, updatedVersion, StringComparison.Ordinal)),
-            "Expected workspace project config version to change after tracked dependency input update.")
-        Assert.True(
-            updatedTrackedInput.LastModified > baselineTrackedInput.LastModified,
-            $"Expected tracked input timestamp to advance. Before={baselineTrackedInput.LastModified:o}, After={updatedTrackedInput.LastModified:o}")
-
         try
-            Directory.Delete(projectDir, true)
-        with _ -> ()
+            let checker = createChecker ()
 
+            let projectOptions =
+                prepareProjectOptions checker fsPath dllPath baselineSource |> withTrackedResourceInput <| resourcePath
+
+            checker.InvalidateAll()
+            compileProject checker projectOptions true
+
+            use session = checker.CreateHotReloadSession()
+
+            match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+            | Error error -> failwithf "Failed to start session: %A" error
+            | Ok () -> ()
+
+            // Edit the tracked resource WITHOUT rebuilding: the session must detect that the
+            // output assembly is stale relative to the tracked input instead of silently
+            // emitting a delta that misses the change.
+            File.WriteAllText(resourcePath, "<Page><TextBlock Text=\"v2\" /></Page>")
+            File.SetLastWriteTimeUtc(resourcePath, DateTime.UtcNow.AddSeconds(3.0))
+
+            match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+            | Error(FSharpHotReloadError.DeltaEmissionFailed message) ->
+                Assert.Contains("stale build output", message, StringComparison.OrdinalIgnoreCase)
+            | Error other -> failwithf "Expected DeltaEmissionFailed for changed tracked input, got %A" other
+            | Ok _ -> failwith "Expected tracked input change without rebuild to reject delta emission."
+
+            // Once the project is rebuilt (here together with a source edit), emission succeeds.
+            File.WriteAllText(fsPath, updatedSource)
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+            compileProject checker projectOptions false
+
+            match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
+            | Error error -> failwithf "EmitDelta failed after rebuild: %A" error
+            | Ok delta ->
+                Assert.NotEmpty(delta.Metadata)
+                Assert.NotEmpty(delta.IL)
+        finally
+            try
+                Directory.Delete(projectDir, true)
+            with _ -> ()
 
     [<Theory>]
     [<InlineData("-o")>]
     [<InlineData("--out")>]
-    let ``Workspace snapshot ignores split output option paths when hashing tracked inputs`` (outputSwitch: string) =
+    let ``Session tracked inputs ignore split output option paths`` (outputSwitch: string) =
         let projectDir =
             Path.Combine(Path.GetTempPath(), "fcs-hotreload-split-output-tracking", Guid.NewGuid().ToString("N"))
 
         Directory.CreateDirectory(projectDir) |> ignore
 
-        let fsPath = Path.Combine(projectDir, "Library.fs")
         let dllPath = Path.Combine(projectDir, "Library.dll")
         let projectPath = Path.Combine(projectDir, "Library.fsproj")
         let resourcePath = Path.Combine(projectDir, "payload.xaml")
 
-        File.WriteAllText(projectPath, "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>")
-        File.WriteAllText(fsPath, baselineSource)
         File.WriteAllText(resourcePath, "<Page><TextBlock Text=\"v1\" /></Page>")
         File.WriteAllBytes(dllPath, [| 0uy |])
 
         try
-            let checker = createChecker ()
-
-            let baselineOptions =
-                prepareProjectOptions checker fsPath dllPath baselineSource
-                |> withTrackedResourceInput <| resourcePath
-
-            let projectOptions = withSplitOutputOption baselineOptions outputSwitch dllPath
-
-            let baselineSnapshot = createProjectSnapshot projectOptions
-            let baselineVersion = Convert.ToHexString(baselineSnapshot.ProjectConfig.Version)
+            let options =
+                [|
+                    "--target:library"
+                    outputSwitch
+                    dllPath
+                    $"--resource:{resourcePath},HotReloadPayload"
+                |]
 
             let pathEquals left right =
                 String.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.Ordinal)
 
-            let baselineTrackedInputs = baselineSnapshot.ProjectConfig.TrackedInputsOnDisk
+            let baselineTrackedInputs = TrackedInputs.compute projectPath options
 
             let trackedResource =
                 baselineTrackedInputs
-                |> List.tryFind (fun reference -> pathEquals reference.Path resourcePath)
+                |> List.tryFind (fun input -> pathEquals input.Path resourcePath)
                 |> Option.defaultWith (fun () -> failwith "Expected tracked resource input to be present.")
 
             Assert.True(
                 baselineTrackedInputs
-                |> List.forall (fun reference -> not (pathEquals reference.Path dllPath)),
+                |> List.forall (fun input -> not (pathEquals input.Path dllPath)),
                 $"Output path '{dllPath}' should not be tracked for split option '{outputSwitch}'.")
 
+            // Touching the output assembly must not change the tracked-input state...
             File.SetLastWriteTime(dllPath, trackedResource.LastModified.AddSeconds(1.0))
+            Assert.Equal<TrackedInputs.TrackedInput list>(baselineTrackedInputs, TrackedInputs.compute projectPath options)
 
-            let outputTouchedSnapshot = createProjectSnapshot projectOptions
-            let outputTouchedVersion = Convert.ToHexString(outputTouchedSnapshot.ProjectConfig.Version)
-
-            Assert.Equal(
-                baselineVersion,
-                outputTouchedVersion)
-
+            // ...while touching the tracked resource must.
             File.WriteAllText(resourcePath, "<Page><TextBlock Text=\"v2\" /></Page>")
             File.SetLastWriteTime(resourcePath, trackedResource.LastModified.AddSeconds(2.0))
 
-            let resourceTouchedSnapshot = createProjectSnapshot projectOptions
-            let resourceTouchedVersion = Convert.ToHexString(resourceTouchedSnapshot.ProjectConfig.Version)
-
             Assert.True(
-                not (String.Equals(outputTouchedVersion, resourceTouchedVersion, StringComparison.Ordinal)),
-                "Expected tracked resource changes to update project config version.")
+                TrackedInputs.compute projectPath options <> baselineTrackedInputs,
+                "Expected tracked resource changes to update the tracked-input state."
+            )
         finally
             try
                 Directory.Delete(projectDir, true)

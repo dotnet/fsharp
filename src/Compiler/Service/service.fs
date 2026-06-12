@@ -334,6 +334,11 @@ type internal FSharpHotReloadService
         (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey)
         (parseAndCheckProject: unit -> Async<FSharpCheckProjectResults>)
         (outputPath: string option)
+        // True when the session observed a change to a tracked non-source on-disk input
+        // (embedded resource, key file, ...) since the committed baseline. Such a change does
+        // not surface as a symbol edit, but it still requires a rebuilt output assembly before
+        // a delta can be emitted.
+        (trackedInputsChanged: bool)
         =
         async {
             match outputPath with
@@ -408,7 +413,10 @@ type internal FSharpHotReloadService
                                             | true, fingerprint -> fingerprint
                                             | false, _ -> None
 
-                                        if hasUpdates && not (hasOutputFingerprintChanged outputPath committedFingerprint outputFingerprint) then
+                                        if
+                                            (hasUpdates || trackedInputsChanged)
+                                            && not (hasOutputFingerprintChanged outputPath committedFingerprint outputFingerprint)
+                                        then
                                             Some(
                                                 FSharpHotReloadError.DeltaEmissionFailed(
                                                     $"Output assembly '{outputPath}' did not change after compilation; refusing to emit a delta from stale build output."
@@ -553,6 +561,22 @@ type FSharpHotReloadSession
 
     let outputPathGate = obj ()
 
+    // Tracked non-source on-disk inputs (embedded resources, key files, ...) observed when each
+    // project's baseline was committed. EmitDelta compares the current on-disk state against
+    // this snapshot: a tracked input change is not visible as a symbol edit, so it must force
+    // the stale-build-output check even when the typed trees are unchanged. Staged/committed in
+    // lockstep with the emit pipeline's pending/committed split (Commit promotes, Discard drops).
+    let committedTrackedInputs =
+        Dictionary<FSharp.Compiler.HotReloadState.HotReloadProjectKey, FSharp.Compiler.HotReload.TrackedInputs.TrackedInput list>()
+
+    let pendingTrackedInputs =
+        Dictionary<FSharp.Compiler.HotReloadState.HotReloadProjectKey, FSharp.Compiler.HotReload.TrackedInputs.TrackedInput list>()
+
+    let trackedInputsGate = obj ()
+
+    let computeTrackedInputs (projectSnapshot: FSharpProjectSnapshot) =
+        FSharp.Compiler.HotReload.TrackedInputs.compute projectSnapshot.ProjectFileName projectSnapshot.ProjectConfig.OtherOptions
+
     let projectKeyOfSnapshot (projectSnapshot: FSharpProjectSnapshot) =
         let identifier = projectSnapshot.Identifier
         FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(identifier.ProjectFileName, identifier.OutputFileName)
@@ -602,6 +626,10 @@ type FSharpHotReloadSession
 
             let resolvedOutputPath = resolveOutputPath projectKey projectSnapshot
 
+            // Observe tracked inputs before the baseline capture so an input edited while the
+            // capture runs is seen as changed by the next emit rather than silently absorbed.
+            let trackedInputs = computeTrackedInputs projectSnapshot
+
             let! result =
                 hotReloadService.AddHotReloadProject
                     projectKey
@@ -609,7 +637,12 @@ type FSharpHotReloadSession
                     resolvedOutputPath
 
             match result, resolvedOutputPath with
-            | Ok(), Some path -> onProjectBaselined path projectKey
+            | Ok(), Some path ->
+                lock trackedInputsGate (fun () ->
+                    committedTrackedInputs[projectKey] <- trackedInputs
+                    pendingTrackedInputs.Remove projectKey |> ignore)
+
+                onProjectBaselined path projectKey
             | _ -> ()
 
             return result
@@ -639,11 +672,30 @@ type FSharpHotReloadSession
 
             let projectKey = projectKeyOfSnapshot projectSnapshot
 
-            return!
+            let currentTrackedInputs = computeTrackedInputs projectSnapshot
+
+            let trackedInputsChanged =
+                lock trackedInputsGate (fun () ->
+                    match committedTrackedInputs.TryGetValue projectKey with
+                    | true, committed -> committed <> currentTrackedInputs
+                    | false, _ -> false)
+
+            let! result =
                 hotReloadService.EmitHotReloadDelta
                     projectKey
                     (fun () -> parseAndCheckSnapshot projectSnapshot opName)
                     (resolveOutputPath projectKey projectSnapshot)
+                    trackedInputsChanged
+
+            match result with
+            | Ok _ ->
+                // Stage the observed tracked-input state with the emitted update; Commit
+                // promotes it alongside the pending baseline, Discard drops it so the next
+                // emit re-compares against the unchanged committed view.
+                lock trackedInputsGate (fun () -> pendingTrackedInputs[projectKey] <- currentTrackedInputs)
+            | Error _ -> ()
+
+            return result
         }
 
     /// <summary>
@@ -653,6 +705,13 @@ type FSharpHotReloadSession
     /// </summary>
     member _.Commit() =
         ensureNotDisposed ()
+
+        lock trackedInputsGate (fun () ->
+            for entry in List.ofSeq pendingTrackedInputs do
+                committedTrackedInputs[entry.Key] <- entry.Value
+
+            pendingTrackedInputs.Clear())
+
         hotReloadService.CommitSession()
 
     /// <summary>
@@ -661,6 +720,7 @@ type FSharpHotReloadSession
     /// </summary>
     member _.Discard() =
         ensureNotDisposed ()
+        lock trackedInputsGate (fun () -> pendingTrackedInputs.Clear())
         hotReloadService.DiscardSession()
 
     /// <summary>
