@@ -100,6 +100,7 @@ type LanguageFeature =
     | ImplicitDIMCoverage
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
+    | ErrorOnMissingSignatureAttribute
 
 /// LanguageVersion management
 type LanguageVersion =

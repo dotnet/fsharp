@@ -1342,14 +1342,15 @@ $ code --diff {outFile} {expectedFile}
             | Some p ->
                 match ILChecker.verifyILAndReturnActual [] p expected with
                 | true, _, _ -> result
-                | false, errorMsg, _actualIL ->
-                    CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = ""})} )
+                | false, errorMsg, _actualIL -> failwith $"IL verification failed:\n{errorMsg}"
         | CompilationResult.Failure f ->
             printfn "Failure:"
             printfn $"{f}"
             failwith $"Result should be \"Success\" in order to get IL."
 
     let verifyIL = doILCheck ILChecker.checkIL
+
+    let verifyILPresent = doILCheck ILChecker.checkILPresent
 
     let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
