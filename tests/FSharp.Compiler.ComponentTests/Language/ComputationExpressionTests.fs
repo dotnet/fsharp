@@ -2577,17 +2577,46 @@ let test() =
         |> withErrorCode 750
 
     // https://github.com/dotnet/fsharp/issues/19457 - regression guard:
-    // let! outside any CE must still raise FS0750.
+    // When lifted bindings would shadow an outer variable used in innerComp,
+    // the lift must not be applied (produces FS0750 instead of incorrect behavior).
     [<Fact>]
-    let ``Issue 19457 - let bang outside any CE still raises FS0750`` () =
+    let ``Issue 19457 - lifted let bang must not shadow outer binding in continuation`` () =
         FSharp """
 module Test
 open System.Threading.Tasks
-let bad() =
-    let! x = Task.FromResult(1)
-    x
+let test() =
+    task {
+        let b = 999
+        let a =
+            let! b = Task.FromResult 42
+            b
+        return (a, b)
+    }
         """
         |> asLibrary
         |> typecheck
         |> shouldFail
         |> withErrorCode 750
+
+    // https://github.com/dotnet/fsharp/issues/19457 - verify that lift still works
+    // when there is no shadowing conflict (the lifted name is not used in innerComp).
+    [<Fact>]
+    let ``Issue 19457 - lift works when no shadowing conflict exists`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            let! b = Task.FromResult 42
+            b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 42 then failwithf "expected 42, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
