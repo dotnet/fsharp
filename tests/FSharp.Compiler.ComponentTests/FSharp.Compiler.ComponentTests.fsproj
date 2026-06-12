@@ -113,6 +113,7 @@
     <Compile Include="Conformance\Expressions\EvaluationOfElaboratedForms\EvaluationOfElaboratedForms.fs" />
     <Compile Include="Conformance\Expressions\ExpressionQuotations\Baselines.fs" />
     <Compile Include="Conformance\Expressions\ExpressionQuotations\Regressions.fs" />
+    <Compile Include="Conformance\Expressions\ExpressionQuotations\QuotationRendering\QuotationRenderingTests.fs" />
     <Compile Include="Conformance\Expressions\SyntacticSugar\SyntacticSugar.fs" />
     <Compile Include="Conformance\Expressions\SyntacticSugarAndAmbiguities\SyntacticSugarAndAmbiguities.fs" />
     <Compile Include="Conformance\InferenceProcedures\ByrefSafetyAnalysis\ByrefSafetyAnalysis.fs" />
@@ -226,9 +227,11 @@
     <Compile Include="Conformance\TypeForwarding\NestedTests.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\TypesAndTypeConstraints.fs" />
     <Compile Include="Conformance\MultiTargeting.fs" />
+    <Compile Include="EmittedIL\SequencePoints\SequencePointsTests.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\VeryLargeClasses.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
+    <Compile Include="EmittedIL\DebugPointsOnStack\DebugPointsOnStack.fs" />
     <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />

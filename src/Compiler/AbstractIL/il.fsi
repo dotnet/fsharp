@@ -2471,6 +2471,17 @@ val internal ecmaPublicKey: PublicKey
 /// Strips ILType.Modified from the ILType.
 val internal stripILModifiedFromTy: ILType -> ILType
 
+// Built-in type names exposed for `mref.DeclaringTypeRef.Name = tname_X` matchers outside il.fs.
+
+[<Literal>]
+val internal tname_String: string = "System.String"
+
+[<Literal>]
+val internal tname_Type: string = "System.Type"
+
+[<Literal>]
+val internal tname_Bool: string = "System.Boolean"
+
 /// Discriminating different important built-in types.
 val internal isILObjectTy: ILGlobals -> ILType -> bool
 val internal isILStringTy: ILGlobals -> ILType -> bool
