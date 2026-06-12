@@ -13,7 +13,7 @@ Reviewers read code, not prose. Add bytes only when they pay for themselves.
 
 ## Comments
 
-Good names beat comments **24/7**. Before writing a comment, ask: *can I rename a value, extract a function, or use an active pattern so the comment becomes unnecessary?* If yes, do that instead.
+Good names **always** beat comments. Before writing a comment, ask: *can I rename a value, extract a function, or use an active pattern so the comment becomes unnecessary?* If yes, do that instead.
 
 - **Do not** restate what the code says (variable name, type name, attribute name, function signature).
 - **Do not** narrate the algorithm step-by-step. The diff is the algorithm.
