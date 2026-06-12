@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.ComponentTests.HotReload
 
-// Phase E: generic method and generic-type-member edits.
+// Generic method and generic-type-member edits.
 //
 // C# reference templates (csharp_enc_reference `generics` scenarios, Roslyn
 // EmitDifference; mdv recordings in hot_reload_poc/src/csharp_enc_reference):
@@ -384,7 +384,7 @@ type Container<'T>(value: 'T) =
         // Generation 1 body-edits the prefix; generation 2 additionally calls a generic
         // instantiation (List.replicate<'T>, a MethodSpec with an MVAR instantiation blob)
         // that the baseline body never referenced, exercising generic-context signature
-        // remapping in the delta (MethodSpec/TypeSpec machinery from C4).
+        // remapping in the delta (the content-validated MethodSpec/TypeSpec machinery).
         let generation1 = genericFunctionBaseline.Replace("Hello ", "Welcome ")
 
         let generation2 =
@@ -483,8 +483,8 @@ type Container<'T>(value: 'T) =
     let ``ApplyUpdate succeeds for added lambda creating a generic closure class`` () =
         // The added lambda lives inside a generic member and mentions 'T, so its closure
         // class is generic over 'T: the delta's new TypeDef row carries a GenericParam
-        // row (TypeOrMethodDef owner, TypeDef tag) — the C4 gap closed by Phase E.
-        // The baseline member already contains one lambda (C4 occurrence mapping needs a
+        // row (TypeOrMethodDef owner, TypeDef tag).
+        // The baseline member already contains one lambda (the occurrence mapping needs a
         // baseline chain table for the member; first-lambda members stay fail-closed).
         let baseline =
             """
@@ -617,7 +617,7 @@ module Lib =
 
     [<Fact>]
     let ``ApplyUpdate succeeds for added generic function with constrained typar`` () =
-        // Phase F: the writer emits GenericParamConstraint rows (C# reference template
+        // The writer emits GenericParamConstraint rows (C# reference template
         // 'generic_constraint_add': a plain Default entry trailing the GenericParam
         // entry, EncMap add, Owner = the new GenericParam row, Constraint = the
         // interface TypeRef). Previously this failed closed.

@@ -113,7 +113,7 @@ let result = makeAdder 3 4
         let compilation = compileHotReloadLibrary source
         let names : string list = getTypeNames compilation
 
-        // Occurrence-derived baseline naming (Phase C6) keys closure classes by the
+        // Occurrence-derived baseline naming keys closure classes by the
         // ENCLOSING MEMBER's compiled name + occurrence chain
         // (makeAdder@hotreload#g0_o0), matching the allocator's fresh-name base used
         // for delta compiles; members the derivation fails closed on keep the replay

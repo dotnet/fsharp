@@ -1221,7 +1221,7 @@ let main6
                             let (CheckedAssemblyAfterOptimization implFiles) = optimizedImpls
 
                             // State machine resume points recorded by the IlxGen
-                            // lowering (Phase D): codegen has already run by this point,
+                            // lowering: codegen has already run by this point,
                             // so the recording is complete; flag-off compiles never
                             // begin recording and read the empty map.
                             let stateMachineResumePoints =
@@ -1237,7 +1237,7 @@ let main6
                         else
                             Map.empty
 
-                    // Hot reload closure mapping (C3): join the stamp -> closure-name pairs
+                    // Hot reload closure mapping: join the stamp -> closure-name pairs
                     // recorded at the IlxGen closure call site with the lambda occurrence
                     // extraction of the same optimized tree, producing the per-method
                     // occurrence-chain -> name tables the baseline capture stores (the CDI

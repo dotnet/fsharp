@@ -349,7 +349,7 @@ let mapSymbolChangesToDelta
 
         typeTokens, matchedMethods
 
-    // ADDED entity symbols (new type definitions, Phase F) have no baseline type token
+    // ADDED entity symbols (new type definitions) have no baseline type token
     // by definition: the emitter discovers them by walking the fresh module against the
     // added-entity symbol names. Only updated/deleted/synthesized entities resolve here.
     let addedEntityStamps =

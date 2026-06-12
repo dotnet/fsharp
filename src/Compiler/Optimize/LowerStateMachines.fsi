@@ -18,7 +18,7 @@ type LoweredStateMachine =
         afterCode: (Val * Expr) *
         /// The state machine's resume points in state-number order: (state number
         /// assigned by the conversion, source range of the resumable entry). Hot reload
-        /// compiles persist these as the EnC State Machine State Map (Phase D); empty
+        /// compiles persist these as the EnC State Machine State Map; empty
         /// for state machines without suspension points.
         resumptionPoints: (int * range) list
 

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// <summary>
-/// Active-statement and sequence-point-update model for F# hot reload (Phase G).
+/// Active-statement and sequence-point-update model for F# hot reload.
 ///
 /// The public types in this file mirror the debugger-facing Edit-and-Continue contract types in
 /// <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue</c> (Roslyn: src/Features/Core/Portable/Contracts/EditAndContinue):
@@ -200,7 +200,7 @@ type FSharpActiveStatementRemapResult =
 namespace FSharp.Compiler.HotReload
 
 /// <summary>
-/// Sequence-point analysis backing the Phase G active-statement machinery: decoding per-method
+/// Sequence-point analysis backing the active-statement machinery: decoding per-method
 /// sequence points from Portable PDBs, classifying how a method's sequence points changed between
 /// the committed state and a fresh compile, and merging per-method line shifts into the
 /// debugger-facing <see cref="T:FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates"/> shape
@@ -265,7 +265,7 @@ module internal ActiveStatementAnalysis =
     /// Decodes the MethodDebugInformation table of a Portable PDB image into per-method sequence
     /// points, keyed by MethodDef token (0x06xxxxxx; MethodDebugInformation rows map 1:1 to MethodDef
     /// rows). Methods without a sequence-point blob have no entry. Unreadable images decode to the
-    /// empty map (fail closed: the Phase G machinery then stays inert rather than guessing).
+    /// empty map (fail closed: the active-statement machinery then stays inert rather than guessing).
     /// </summary>
     let decodeMethodSequencePoints (pdbBytes: byte[]) : Map<int, MethodSequencePoints> =
         try

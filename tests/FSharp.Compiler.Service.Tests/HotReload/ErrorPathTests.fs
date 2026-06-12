@@ -268,7 +268,7 @@ module ErrorPathTests =
 
         [<Fact>]
         let ``classifyEntityTokenRemapKind keeps known passthrough tables explicit`` () =
-            // TypeSpec tokens are content-validated as of Phase C4 (the fresh compile's
+            // TypeSpec tokens are content-validated (the fresh compile's
             // TypeSpec row order can shift when lambdas are added); StandAloneSig stays
             // a plain passthrough (locals signatures are re-emitted, never referenced).
             let typeSpec = FSharp.Compiler.IlxDeltaEmitter.classifyEntityTokenRemapKind 0x1B000001

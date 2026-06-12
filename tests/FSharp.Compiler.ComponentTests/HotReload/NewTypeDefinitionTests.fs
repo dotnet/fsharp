@@ -2,9 +2,9 @@
 
 namespace FSharp.Compiler.ComponentTests.HotReload
 
-// Phase F: user-defined new type definitions (NewTypeDefinition).
+// User-defined new type definitions (NewTypeDefinition).
 //
-// C# reference template (csharp_enc_reference `phasef` scenario 'new_class', Roslyn
+// C# reference template (csharp_enc_reference scenario 'new_class', Roslyn
 // EmitDifference; mdv recording reference_mdv_new_class.txt): adding a top-level class
 // implementing an interface and using it from an edited method emits, in generation 1:
 //   - the new TypeDef row as a plain Default EncLog entry (EnclosingType nil for a

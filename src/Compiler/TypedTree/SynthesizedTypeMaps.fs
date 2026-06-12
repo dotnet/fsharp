@@ -45,7 +45,7 @@ type FSharpSynthesizedTypeMaps() =
             None
 
     let canonicalizeSnapshotNames basicName (names: string[]) =
-        // Occurrence-keyed closure names ({base}@hotreload#g{N}_o{chain}, Phase C3/C6)
+        // Occurrence-keyed closure names ({base}@hotreload#g{N}_o{chain})
         // are managed by the closure name allocator's assigned-name table, never by
         // sequence replay, so they are dropped from the replay bucket. The replay SLOT
         // each one consumed at allocation time (consume-then-override at the IlxGen

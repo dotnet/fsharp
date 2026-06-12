@@ -6296,7 +6296,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
     let ilCloTy = mkILValueTy ilCloTypeRef ilCloGenericActuals
 
-    // Hot reload (Phase D): record the state machine's resume points against the
+    // Hot reload: record the state machine's resume points against the
     // emitted struct type name so the fsc emit path can persist them as the EnC State
     // Machine State Map CDI rows. No recorder installed (flag-off and non-session
     // compiles) -> strict no-op, byte-identical output.
@@ -7214,7 +7214,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             let replayName =
                 compilerGlobalState.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
-            // Hot reload closure mapping (Phase C3): in a session's delta compile the emit
+            // Hot reload closure mapping: in a session's delta compile the emit
             // hook runs the occurrence-keyed allocator before lowering and installs a
             // stamp -> assigned-name table; consult it FIRST so surviving closures reuse
             // their baseline class names verbatim and added closures get generation-suffixed

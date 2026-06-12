@@ -2,9 +2,9 @@
 
 namespace FSharp.Compiler.ComponentTests.HotReload
 
-// Phase F: custom attribute rows in deltas.
+// Custom attribute rows in deltas.
 //
-// C# reference templates (csharp_enc_reference `phasef` scenarios, Roslyn
+// C# reference templates (csharp_enc_reference attribute scenarios, Roslyn
 // EmitDifference; mdv recordings in hot_reload_poc/src/csharp_enc_reference):
 //   - attr_add:    [Description] added to an EXISTING method -> MethodDef/Param row
 //     updates plus ONE appended CustomAttribute row (parent = existing MethodDef

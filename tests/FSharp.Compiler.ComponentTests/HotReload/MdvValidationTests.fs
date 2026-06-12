@@ -1370,7 +1370,7 @@ module Demo =
 
     [<Fact>]
     let ``mdv validates added module value static field delta`` () =
-        // Phase B1b: adding `let mutable newCounter = 41` to a module appends static backing
+        // Adding `let mutable newCounter = 41` to a module appends static backing
         // fields (`newCounter@<line>` and `init@`) to the startup-code class plus accessor
         // methods on the module type. mdv must render the Field rows, the AddField EncLog
         // entries, and no `<bad metadata>` anywhere in the generation.

@@ -99,17 +99,17 @@ type IlxDelta =
         UserStringUpdates: (int * int * string) list
         MethodDefinitionRows: MethodDefinitionRowInfo list
         UpdatedBaseline: FSharpEmitBaseline option
-        /// Per-document line updates for methods whose code MOVED without changing (Phase G;
-        /// Roslyn SequencePointUpdates). The debugger rebinds these methods' sequence points
+        /// Per-document line updates for methods whose code MOVED without changing (Roslyn
+        /// SequencePointUpdates). The debugger rebinds these methods' sequence points
         /// without any metadata/IL being applied for them.
         SequencePointUpdates: FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates list
         /// The next committed sequence-point view, keyed by baseline/delta MethodDef token —
-        /// the fresh compile's sequence points for every matched method (Phase G). None when the
+        /// the fresh compile's sequence points for every matched method. None when the
         /// analysis was unavailable (no baseline PDB or no fresh PDB). Hosts/sessions replace
         /// FSharpEmitBaseline.SequencePointSnapshots with this map when the update is committed;
         /// for deltas that chain a baseline this is already folded into UpdatedBaseline.
         ChainedSequencePoints: Map<int, ActiveStatementAnalysis.MethodSequencePoints> option
-        /// Per-statement remap results for the host-supplied active statements (Phase G; Roslyn
+        /// Per-statement remap results for the host-supplied active statements (Roslyn
         /// ManagedHotReloadUpdate.ActiveStatements). Populated by the language service after a
         /// successful emit; the raw emitter leaves it empty.
         ActiveStatementUpdates: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult list
@@ -1418,7 +1418,7 @@ let private buildPropertyEventAndSemanticsRows
 
         propertyMapDefinitionIndex.Rows
         |> List.choose (fun struct (rowId, typeName, isAdded) ->
-            // ADDED types (Phase F / C4) have no baseline TypeDef token; their map rows
+            // ADDED types (closure classes and user-defined) have no baseline TypeDef token; their map rows
             // parent the new delta TypeDef row.
             let typeTokenOpt = tryGetTypeDefToken typeName
             let firstPropertyRowIdOpt =
@@ -2463,7 +2463,7 @@ let private finalizeDeltaArtifacts
             addedEventDeltaTokens
             addedTypeDeltaTokens
 
-    // Phase G: replace the committed sequence-point view wholesale with the fresh compile's
+    // Sequence-point tracking: replace the committed sequence-point view wholesale with the fresh compile's
     // points, re-keyed from fresh tokens to baseline/delta tokens. Updated methods get their
     // delta-PDB points; unchanged methods get their (possibly line-shift-adjusted) points,
     // matching the line updates the host applies to the debugger alongside this delta.
@@ -2974,7 +2974,7 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
 /// <paramref name="freshDebugPdb"/> carries the FRESH compile's on-disk portable PDB when the
 /// caller has one (the FSharpChecker flow reads the IL module from disk WITHOUT debug points, so
 /// the in-memory rewrite's PDB has nil sequence-point blobs; the on-disk PDB is the real source).
-/// When provided it feeds both the Phase G sequence-point analysis and the emitted PDB delta;
+/// When provided it feeds both the sequence-point analysis and the emitted PDB delta;
 /// None falls back to the in-memory rewrite's PDB (callers that construct modules with debug
 /// points, e.g. the component tests, need no sibling file).
 let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequest) : IlxDelta =
@@ -2996,7 +2996,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         |> Option.defaultValue []
         |> List.map (fun symbol -> symbol.QualifiedName)
 
-    // User-defined types ADDED by this edit (Phase F): classification gates them on
+    // User-defined types ADDED by this edit: classification gates them on
     // NewTypeDefinition and projects their IL names into the added-entity symbols. The
     // symbol path is dot-joined while IL nests with '+', so matching normalizes both
     // sides to dot-separated segments.
@@ -3053,7 +3053,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
     // The fresh compile's debug data: the caller-supplied on-disk PDB when available (the
     // in-memory rewrite has no debug points when the module was read back from disk), else the
-    // in-memory write's PDB. Feeds the Phase G sequence-point analysis and the PDB delta.
+    // in-memory write's PDB. Feeds the sequence-point analysis and the PDB delta.
     let effectiveDebugPdb =
         match freshDebugPdb with
         | Some _ -> freshDebugPdb
@@ -3097,14 +3097,14 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let methodTokenMap = Dictionary<int, int>()
     // Every fresh-compile method paired with its baseline (or delta-added) token, INCLUDING
     // identity pairs: methodTokenMap deliberately records only tokens that DIFFER (its consumers
-    // remap IL), but the Phase G sequence-point analysis must see every matched method —
+    // remap IL), but the sequence-point analysis must see every matched method —
     // unchanged compiles keep identical tokens.
     let matchedMethodTokenPairs = Dictionary<int, int>()
     let propertyTokenMap = Dictionary<int, int>()
     let eventTokenMap = Dictionary<int, int>()
     let addedMethodTokens = Dictionary<MethodDefinitionKey, int>(HashIdentity.Structural)
     let addedFieldTokens = Dictionary<FieldDefinitionKey, int>(HashIdentity.Structural)
-    // ADDED type definitions (Phase C4: closure classes synthesized for lambdas added in
+    // ADDED type definitions (closure classes synthesized for lambdas added in
     // a delta compile). Keyed by the fresh compile's full type name — added types have no
     // baseline alias, so the new name IS the chained baseline name. The machinery is
     // general (rows, EncLog shape, chaining); only the *detection* below is closure-scoped.
@@ -3128,7 +3128,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
     let getAliasCandidates (typeName: string) =
         match synthesizedBuckets with
-        // Generation-suffixed closure names (C3 allocator: {base}@hotreload#g{N}_o{i})
+        // Generation-suffixed closure names (allocator format: {base}@hotreload#g{N}_o{i})
         // identify occurrences ADDED in a delta compile: they never alias a baseline
         // closure class, so basic-name bucket expansion must not apply (it would make
         // the new class ambiguously match the baseline closures sharing its base name).
@@ -3308,13 +3308,13 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 match tryGetBaselineTypeToken enclosing typeDef with
                 | Some token -> token
                 | None when FSharp.Compiler.ClosureNameAllocator.isGenerationSuffixedClosureName typeDef.Name ->
-                    // ADDED closure class (Phase C4): the C3 allocator assigned this
+                    // ADDED closure class: the closure name allocator assigned this
                     // occurrence a `{base}@hotreload#g{N}_o{i}` name precisely because it
                     // has no baseline counterpart. Allocate the next delta TypeDef row;
                     // the type's fields/methods are registered as added members below,
                     // parented to this new row via AddField/AddMethod EncLog entries.
                     // Generic closure classes (closures inside generic members) are
-                    // supported as of Phase E: the writer emits GenericParam rows for the
+                    // supported: the writer emits GenericParam rows for the
                     // added TypeDef (constrained typars still fail closed at row build).
                     let fullName = (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
 
@@ -3343,9 +3343,9 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                              let parentRef = mkRefForNestedILTypeDef ILScopeRef.Local (parentEnclosing, parentType)
                              addedTypeDeltaTokens.ContainsKey parentRef.FullName))
                     ->
-                    // ADDED user-defined type (Phase F): classification gated the entity
+                    // ADDED user-defined type: classification gated the entity
                     // addition on NewTypeDefinition and projected its IL name into the
-                    // added-entity symbols. The C4 added-TypeDef machinery applies
+                    // added-entity symbols. The added-TypeDef machinery applies
                     // unchanged; the only difference is the detection.
                     let fullName = (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
 
@@ -3417,7 +3417,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 // A fresh instance field on an EXISTING struct: struct layouts are
                 // immutable under hot reload. This must run BEFORE the synthesized-name
                 // skip below - for compiler-generated structs the field is a state
-                // machine's new awaiter or hoisted local (Phase D backstop: before this
+                // machine's new awaiter or hoisted local (state-machine emission backstop: before this
                 // gate, the skip silently dropped the field and the patched MoveNext
                 // crashed at runtime with garbage field tokens).
                 let fieldDisplay = $"{declaringTypeRef.FullName}::{fieldDef.Name}"
@@ -3434,8 +3434,8 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 (fieldDef.IsStatic || not typeDef.IsStructOrEnum)
                 && request.Baseline.TypeTokens |> Map.containsKey baselineDeclaringType ->
                 // Added field on a type that exists in the baseline: static backing fields
-                // for module-level values (Phase B1b) and instance fields on classes
-                // (Phase B2 — the CLR appends them; existing instances read default(T)).
+                // for module-level values and instance fields on classes
+                // (the CLR appends them; existing instances read default(T)).
                 // The field is appended to the delta Field table; the parent TypeDef row is
                 // logged with the AddField operation by the metadata writer. Struct layouts
                 // cannot grow, so instance fields on structs fail closed below.
@@ -3560,8 +3560,8 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     // An edit that declares nothing (no updated/added symbols, no accessor edits) cannot ADD
     // definitions: fresh definitions without a baseline counterpart are then regeneration noise
     // (e.g. a generative type provider re-emitting its members under a changed static argument
-    // while the consumed IL is unchanged), not additions. Such emits exist since Phase G runs
-    // the emitter even for semantically empty diffs to detect sequence-point line shifts; drop
+    // while the consumed IL is unchanged), not additions. Such emits exist because sequence-point
+    // tracking runs the emitter even for semantically empty diffs to detect sequence-point line shifts; drop
     // the spurious registrations so they cannot materialize into delta rows.
     let editDeclaresDefinitions =
         not (List.isEmpty request.UpdatedMethods)
@@ -3595,7 +3595,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         |> Seq.toList
 
     // ------------------------------------------------------------------------------------------
-    // Phase G: sequence-point analysis. Diff every baseline-matched method's fresh sequence
+    // Sequence-point analysis. Diff every baseline-matched method's fresh sequence
     // points against the committed snapshot (the debugger's current view of its lines):
     //   - UniformLineShift -> a line-edit segment (the debugger rebinds without recompilation;
     //     Roslyn: AbstractEditAndContinueAnalyzer.GetLineEdits)

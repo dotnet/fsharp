@@ -60,10 +60,10 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                 portablePdbSnapshot
                 ilxGenEnvironment
 
-        // Closure mapping (C3/C6): the per-method occurrence-chain -> closure-name
+        // Closure mapping: the per-method occurrence-chain -> closure-name
         // tables. Baseline creation reconstructed them from the emitted CDI occurrence
-        // keys (names are a pure function of occurrence identity under the C6
-        // derivation), which is the same computation a disk-started session performs in
+        // keys (names are a pure function of occurrence identity under the
+        // occurrence-derived naming), which is the same computation a disk-started session performs in
         // another process. The emit-time stamp -> name recording (re-keyed by MethodDef
         // token, fail closed on non-unique names) serves two purposes here:
         //  - a RECAPTURE compile emitted under an active session names added closures
@@ -125,7 +125,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
             let sessionService, scopedProjectKey = resolveSessionAccess ()
             let tryGetActiveSession () = sessionService.TryGetSession(?projectKey = scopedProjectKey)
 
-            // Closure mapping (C3), the codegen-time hook step: when a session with
+            // Closure mapping, the codegen-time hook step: when a session with
             // baseline closure-name tables is active, run the occurrence-keyed allocator
             // over (previous-generation impl files, the impl files about to be lowered)
             // and install the stamp -> assigned-name table for the IlxGen closure call
@@ -154,7 +154,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                      // A CAPTURE compile the active session does not cover (its occurrence
                      // keys match nothing being lowered — e.g. a stale capture session for
                      // an unrelated project in the process-local store): this is a fresh
-                     // baseline capture, so install the C6 occurrence-derived names below
+                     // baseline capture, so install the occurrence-derived names below
                      // instead of an empty table that would strip the baseline of its
                      // reconstructible closure names.
                      let derivedNames =
@@ -169,11 +169,11 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                  else
                      ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) assignedNames
              | _ when emitCaptureArtifacts ->
-                 // Closure mapping (C6): a BASELINE capture compile (no session tables to
+                 // Closure mapping: a BASELINE capture compile (no session tables to
                  // chain from) derives every closure class name from occurrence identity:
                  // {memberName}@hotreload#g0_o{chain}, installed stamp-keyed exactly like
                  // the delta-compile allocator output. Names are then a pure function of
-                 // the occurrence keys the C2 CDI emission persists in the portable PDB,
+                 // the occurrence keys the baseline CDI emission persists in the portable PDB,
                  // so a session started from the on-disk baseline in ANOTHER process can
                  // reconstruct the chain -> name tables without any in-memory carry-over.
                  // Members the derivation fails closed on (no unique compiled name,
@@ -194,7 +194,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                  ClosureNameAllocationState.setAssignedClosureNames (compilerGlobalState :> obj) Map.empty)
 
             if emitCaptureArtifacts then
-                // Closure mapping (C3): capture stamp -> emitted-closure-name pairs during
+                // Closure mapping: capture stamp -> emitted-closure-name pairs during
                 // IlxGen so the emit path can join them with the same tree's lambda
                 // occurrence extraction (only capture compiles record; everything else
                 // sees a strict no-op at the closure call site).

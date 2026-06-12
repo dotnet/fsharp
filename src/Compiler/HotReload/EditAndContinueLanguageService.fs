@@ -221,7 +221,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         sessionStore().UpdateCapabilities(capabilities)
 
     /// <summary>
-    /// Replaces the debugger-supplied active statements consulted by the next emit (Phase G).
+    /// Replaces the debugger-supplied active statements consulted by the next emit.
     /// Mirrors Roslyn's per-edit-session active-statement fetch from the debugger
     /// (<c>IManagedHotReloadService.GetActiveStatementsAsync</c>), inverted to a push: FCS has no
     /// callback seam into the host, so the host reports the break state before emitting.
@@ -240,8 +240,8 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
     /// <summary>
     /// Emits a delta for the supplied request; callers may commit the delta by invoking <see cref="OnDeltaApplied"/>.
-    /// <paramref name="freshDebugPdb"/> optionally carries the fresh compile's on-disk portable PDB
-    /// (Phase G): modules read back from disk have no debug points, so the sibling PDB is the real
+    /// <paramref name="freshDebugPdb"/> optionally carries the fresh compile's on-disk portable PDB:
+    /// modules read back from disk have no debug points, so the sibling PDB is the real
     /// source of the fresh sequence points for line-shift detection, active-statement remapping and
     /// the emitted PDB delta.
     /// </summary>
@@ -294,7 +294,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     with :? IOException as ex ->
                         eprintfn "[fsharp-hotreload][service] Failed to write trace log: %s" ex.Message
 
-                // Phase G: remap the debugger-supplied active statements against the emitted
+                // Active statements: remap the debugger-supplied active statements against the emitted
                 // delta BEFORE any session state is staged — a rude remap (an edit that destroys
                 // an active statement or changes the statement a non-leaf frame is suspended in)
                 // blocks the whole update, leaving the session at the previous generation.
@@ -328,10 +328,10 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                 let delta =
                     match delta.UpdatedBaseline with
                     | Some updatedBaseline ->
-                        // Generation chaining (C2): replace the updated methods' EnC debug
+                        // Generation chaining: replace the updated methods' EnC debug
                         // information with the data recomputed from the fresh typed tree. The
                         // delta PDB does not yet re-emit EnC CDI rows, so this in-memory chain
-                        // is what the closure mapping (C3) consumes; PDB persistence across
+                        // is what the closure mapping consumes; PDB persistence across
                         // session restarts is the remaining gap.
                         let updatedMethodTokens =
                             delta.AddedOrChangedMethods |> List.map (fun info -> info.MethodToken)
@@ -339,7 +339,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         let chainedBaseline =
                             chainEncMethodDebugInfos updatedBaseline request.RefreshedEncDebugInfos updatedMethodTokens
 
-                        // Closure mapping (C3): chain the refreshed occurrence-chain ->
+                        // Closure mapping: chain the refreshed occurrence-chain ->
                         // closure-name tables forward with the same replace-or-drop
                         // semantics, so the NEXT delta compile's allocator sees this
                         // generation's names for the updated methods.
@@ -437,7 +437,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         || not (List.isEmpty accessorUpdates)
                         || not (List.isEmpty symbolChanges.Added)
 
-                    // Phase G: even when the typed-tree diff found no semantic edits (its hashes are
+                    // Sequence-point tracking: even when the typed-tree diff found no semantic edits (its hashes are
                     // deliberately range-independent), the fresh compile's sequence points may have
                     // moved — a line-shift edit (blank line/comment above a method). The emitter
                     // detects those by diffing sequence points against the committed snapshot, so
@@ -453,7 +453,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                           // chains it into the next-generation baseline for the updated methods.
                           RefreshedEncDebugInfos =
                             computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation
-                          // Closure mapping (C3): the same allocator run the emit hook used
+                          // Closure mapping: the same allocator run the emit hook used
                           // when the delta compile was lowered (deterministic over identical
                           // session state + fresh tree), keeping the chained tables in sync
                           // with the closure names the compile actually emitted.

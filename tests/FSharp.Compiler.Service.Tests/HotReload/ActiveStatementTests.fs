@@ -17,7 +17,7 @@ open FSharp.Test.Utilities
 
 open FSharp.Compiler.Service.Tests.Common
 
-/// Phase G coverage: sequence-point line updates for line-shift edits, and active statement
+/// Coverage for sequence-point line updates for line-shift edits, and active statement
 /// remapping (remap to new span / MethodUpToDate / rude edits) for emitted deltas.
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module ActiveStatementTests =

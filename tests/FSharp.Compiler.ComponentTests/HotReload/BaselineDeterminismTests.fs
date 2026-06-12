@@ -7,13 +7,13 @@ namespace FSharp.Compiler.ComponentTests.HotReload
 //   (a) byte-for-byte DLL and PDB reproducibility across two identical flag-on compiles
 //       (without passing --deterministic explicitly — the pin must supply it);
 //   (b) occurrence-chain/encoded-key stability across graph vs sequential type checking
-//       (--parallelcompilation+/-): the C1/C2 extraction depends on the compilation's
+//       (--parallelcompilation+/-): the occurrence/CDI extraction depends on the compilation's
 //       file order, not the checking order, so the captured EnC method debug infos and
 //       closure-name tables — and the emitted bytes — must be identical in both modes;
 //   (c) closure-name derivation purity: reconstructing the chain -> name tables from
 //       the ON-DISK artifacts (PDB CDI rows + DLL metadata) with
 //       deriveEncClosureNamesFromEncDebugInfos yields exactly the tables the capture
-//       compile recorded on the session baseline (the C6 disk-started-session contract).
+//       compile recorded on the session baseline (the disk-started-session contract).
 
 open System
 open System.IO
@@ -269,7 +269,7 @@ let pipeline (inputs: int list) =
 
             let derived = derive ()
 
-            // Names are a pure function of occurrence identity (C6): the disk
+            // Names are a pure function of occurrence identity: the disk
             // reconstruction reproduces the captured tables exactly...
             Assert.Equal<Map<int, Map<int list, string>>>(capturedTables, derived)
             // ...and recomputing from the same CDI keys is stable (purity pin).

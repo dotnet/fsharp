@@ -256,7 +256,7 @@ type internal FSharpHotReloadService
                     | Result.Error error -> return Result.Error error
                     | Ok(baseline, implementationFiles) ->
                         lock hotReloadGate (fun () ->
-                            // Closure mapping (C6): the per-method occurrence-chain -> closure-name
+                            // Closure mapping: the per-method occurrence-chain -> closure-name
                             // tables were reconstructed from the on-disk CDI occurrence keys by
                             // createBaseline (baseline closure names are occurrence-derived under the
                             // flag), so no in-process carry-over is needed — this is exactly what a
@@ -442,7 +442,7 @@ type internal FSharpHotReloadService
                                         setCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) (map :> ICompilerGeneratedNameMap)
                                     | false, _ -> ())
 
-                                // Phase G: the fresh compile's on-disk PDB carries the sequence
+                                // Sequence-point tracking: the fresh compile's on-disk PDB carries the sequence
                                 // points the IL module read loses (readIlModule attaches no debug
                                 // points). It feeds line-shift detection, active-statement
                                 // remapping and the emitted PDB delta. Missing/unreadable PDBs
@@ -1043,7 +1043,7 @@ type FSharpChecker
         // The in-memory rewrite above passes no EnC CDI side channel (methodCustomDebugInfoRows =
         // Map.empty), so its PDB never carries EnC rows. The on-disk PDB produced by the flag-on
         // build is the durable source of the baseline EnC method debug information: read it as a
-        // sibling input when the rewrite yielded none (flag-off/pre-C2 PDBs still decode to the
+        // sibling input when the rewrite yielded none (flag-off PDBs and PDBs without EnC rows still decode to the
         // empty map, and the session starts fine either way).
         let baseline =
             if Map.isEmpty baseline.EncMethodDebugInfos && File.Exists(pdbPath) then
@@ -1052,18 +1052,18 @@ type FSharpChecker
                         EncMethodDebugInfos =
                             EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath)) }
 
-                // Closure mapping (C6): the chain -> closure-name tables are a pure function
+                // Closure mapping: the chain -> closure-name tables are a pure function
                 // of the occurrence keys just decoded (baseline names are occurrence-derived
                 // under the flag), so a session started from disk — typically in a different
                 // process than the fsc that built the baseline — reconstructs exactly the
-                // tables the emitting compile installed. Fail closed for pre-C6 and
+                // tables the emitting compile installed. Fail closed for replay-named and
                 // mid-session baselines (see deriveEncClosureNamesFromEncDebugInfos).
                 { baseline with
                     EncClosureNames = HotReloadBaseline.deriveEncClosureNames ilModule baseline }
             else
                 baseline
 
-        // Phase G sibling-read: the IL module is read back from disk WITHOUT debug points, so
+        // Sequence-point sibling-read: the IL module is read back from disk WITHOUT debug points, so
         // the in-memory rewrite's PDB decodes to an empty sequence-point view. The on-disk PDB
         // written by the build is the real source of the committed lines that line-shift
         // detection and active-statement remapping diff against.

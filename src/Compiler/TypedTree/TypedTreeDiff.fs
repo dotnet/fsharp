@@ -102,8 +102,8 @@ type AdditionKind =
     | StaticField
 
 /// Single seam consulted by edit classification: the runtime capability required to apply an
-/// addition of the given kind. Phase B flips further addition kinds (fields, new types) from
-/// always-rude to capability-gated by implementing their emission and routing them through here.
+/// addition of the given kind. Addition kinds (fields, new types) flip from always-rude to
+/// capability-gated by implementing their emission and routing them through here.
 let capabilityForAddition (kind: AdditionKind) : EditAndContinueCapability =
     match kind with
     | AdditionKind.Method -> EditAndContinueCapability.AddMethodToExistingType
@@ -124,7 +124,7 @@ type RudeEdit =
       Message: string }
 
 // ---------------------------------------------------------------------------
-// Lambda occurrence model (Phase C1)
+// Lambda occurrence model
 //
 // Each member body is summarized as an ordered sequence of lambda OCCURRENCES.
 // Identity is structural and positional (traversal ordinal + enclosing-lambda
@@ -187,8 +187,8 @@ type LambdaOccurrence =
 /// A change to the captured-value set of a matched lambda occurrence pair, classified
 /// with C#-parity kinds (RenamingCapturedVariable / ChangingCapturedVariableType /
 /// ChangingCapturedVariableScope). All of these are permanently rude edits; capture
-/// additions are also rude today but may become applicable in Phase C4 via the
-/// AddInstanceFieldToExistingType runtime capability.
+/// additions are also rude today but may become applicable via the
+/// AddInstanceFieldToExistingType runtime capability once capture-field additions are supported.
 [<RequireQualifiedAccess>]
 type CaptureSetChange =
     /// A captured value kept its type but changed its logical name
@@ -208,7 +208,7 @@ type CaptureSetChange =
 
 /// A classified edit for a single lambda occurrence, produced by aligning the baseline
 /// and updated occurrence sequences of a matched member. Matched pairs always carry both
-/// occurrences so downstream consumers (the Phase C4 emitter and its verifier) never have
+/// occurrences so downstream consumers (the added-lambda emitter and its verifier) never have
 /// to re-derive the pairing.
 [<RequireQualifiedAccess>]
 type LambdaEdit =
@@ -224,7 +224,7 @@ type LambdaEdit =
     | CaptureSetChanged of baseline: LambdaOccurrence * updated: LambdaOccurrence * changes: CaptureSetChange list
 
 /// Lambda edits for a single member, keyed by the member symbol. Carried alongside the
-/// semantic/rude edits so Phase C4 emission can consume the structured data without
+/// semantic/rude edits so added-lambda emission can consume the structured data without
 /// re-running occurrence extraction.
 type MemberLambdaEdits =
     { /// The member whose body produced these lambda edits (baseline-side symbol).
@@ -498,7 +498,7 @@ let private tryGetParameterTypeIdentities (g: TcGlobals) (typarOrdinals: Map<Sta
 let private tryGetReturnTypeIdentity (g: TcGlobals) (typarOrdinals: Map<Stamp, int>) (var: Val) =
     // Constructors are typed as returning the constructed type in the typed tree, but the
     // emitted .ctor/.cctor MethodDef returns void — use the IL truth so constructor body
-    // updates resolve against baseline method tokens (Phase B2 ctor pairing).
+    // updates resolve against baseline method tokens (instance-field ctor pairing).
     if var.IsConstructor || var.IsClassConstructor then
         Some RuntimeTypeIdentity.VoidType
     else
@@ -1309,8 +1309,8 @@ let private classifyCaptureScopeMoves (edits: LambdaEdit list) =
             | other -> other)
 
 /// Two-pass LCS index alignment of a baseline and an updated lambda occurrence
-/// sequence, shared by the C1 lambda-edit classification (alignLambdaOccurrences)
-/// and the C3 occurrence-keyed closure name allocator (ClosureNameAllocator).
+/// sequence, shared by the lambda-edit classification (alignLambdaOccurrences)
+/// and the occurrence-keyed closure name allocator (ClosureNameAllocator).
 ///
 /// Pass 1 runs an LCS over the full structural digests (position, shape, captures);
 /// pass 2 re-aligns the leftovers on the shape-only digest (sans captures), pairing
@@ -1451,7 +1451,7 @@ type private BindingSnapshot =
       ParameterNames: string option list
       AdditionInfo: MethodAdditionInfo }
 
-/// Structured digest of a single entity field (Phase B2): staticness drives the runtime
+/// Structured digest of a single entity field: staticness drives the runtime
 /// capability required to add it; the digest captures mutability and formal type.
 type private EntityFieldDigest =
     { IsStatic: bool
@@ -1463,7 +1463,7 @@ type private EntitySnapshot =
       RepresentationText: string
       /// Representation digest with the field segment removed. When this matches between
       /// baseline and update and the baseline fields are preserved verbatim, the only
-      /// representation change is added fields (the Phase B2 capability-gated edit).
+      /// representation change is added fields (the capability-gated field-addition edit).
       NonFieldRepresentationText: string
       /// Field digests keyed by logical name (class-like representations only).
       Fields: Map<string, EntityFieldDigest>
@@ -1609,7 +1609,7 @@ let rec private snapshotModuleBinding g denv (path: string list) (map, entities)
     | ModuleOrNamespaceBinding.Module (moduleEntity, contents) ->
         // Snapshot MODULE entities (not namespaces — namespaces have no TypeDef): a
         // module lowers to a sealed abstract static class, so an ADDED module is a new
-        // type definition the emitter can express through the C4 added-TypeDef
+        // type definition the emitter can express through the added-TypeDef
         // machinery (gated on NewTypeDefinition like any other type addition). The
         // module's bindings are snapshotted as ordinary module bindings below; when the
         // module is added they classify through the long-standing module-function/
@@ -1732,7 +1732,7 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
             parameterTypeIdentities
             returnTypeIdentity
 
-    // Structured lambda occurrence sequence for the member body (Phase C1). Members with
+    // Structured lambda occurrence sequence for the member body. Members with
     // constructs the model does not cover stay on the legacy whole-body digest path.
     let lambdaOccurrenceData =
         extractLambdaOccurrences g denv typarOrdinals symbol var.ValReprInfo expr
@@ -2102,13 +2102,13 @@ let private compareBindings
                     $"Resumable state-machine structure changed for '{baselineBinding.Symbol.QualifiedName}': the sequence of computation-expression steps (let!/do!/return!/control flow) changed from '{baselineBinding.StateMachineShapeDigest}' to '{updatedBinding.StateMachineShapeDigest}'. Adding, removing, or reordering steps in a task or resumable computation requires a rebuild." }
             )
         else
-            // Lambda classification (Phase C1): when occurrence extraction succeeded on both
+            // Lambda classification: when occurrence extraction succeeded on both
             // sides, align the occurrence sequences and classify per occurrence; otherwise
             // fall back to the legacy whole-body lambda digest comparison.
             // A member whose body contains resumable code lowers to a struct state
             // machine: its lambdas are the CE step continuations, hoisted into MoveNext,
             // and its captures become struct fields. Structural lambda changes there are
-            // state machine shape changes, not closure-class edits — the C4 added-closure
+            // state machine shape changes, not closure-class edits — the added-closure
             // emission path does not apply (there is no new closure class; the lowering
             // would re-lay-out the immutable struct instead).
             let isResumableMember =
@@ -2164,7 +2164,7 @@ let private compareBindings
                         // capture-field mapping, a later slice).
                         Some(RudeEditKind.LambdaShapeChange, formatCaptureSetChangeMessage baselineBinding.Symbol captureChanged)
                     elif not added.IsEmpty then
-                        // ADDED lambdas lower to new closure classes (C3 assigns them
+                        // ADDED lambdas lower to new closure classes (the name allocator assigns them
                         // generation-suffixed names) plus their .ctor/Invoke methods, so the
                         // edit needs the runtime to define new types and methods (C# parity:
                         // AbstractEditAndContinueAnalyzer requires NewTypeDefinition for
@@ -2189,7 +2189,7 @@ let private compareBindings
                         // REMOVED-only lambda sets need no new metadata at all (C# parity:
                         // deleted lambda bodies just become unreachable): the baseline
                         // closure class stays in place, unused, and survivors keep their
-                        // names (C3 allocator). The member body update suffices.
+                        // names (closure name allocator). The member body update suffices.
                         None
                     else
                         // Only BodyEdited occurrences (or no lambda changes at all): the
@@ -2369,7 +2369,7 @@ let private compareBindings
                     // Mutable module-level value: static field + get_/set_ accessors.
                     addModuleValueInsertOrRude ()
                 else
-                    // Instance fields on classes are capability-gated (Phase B2). Class
+                    // Instance fields on classes are capability-gated. Class
                     // let-bounds normally surface through the entity-level field diff (the
                     // binding folds into the constructor body); any field binding reaching
                     // here is gated on the same runtime capability. Struct field additions
@@ -2587,7 +2587,7 @@ let private compareEntities
         if not (Map.containsKey key baseline) then
             // Adding a new TYPE definition gates on the NewTypeDefinition runtime
             // capability (Roslyn parity: inserting a type requires
-            // EditAndContinueCapabilities.NewTypeDefinition). The emitter reuses the C4
+            // EditAndContinueCapabilities.NewTypeDefinition). The emitter reuses the
             // added-TypeDef machinery: TypeDef row + members + GenericParam rows +
             // InterfaceImpl/MethodImpl rows + CustomAttribute rows (+ NestedClass when
             // declared inside a module). The new type's member bindings ride along with
@@ -2647,7 +2647,7 @@ let private compareEntities
     edits |> Seq.toList, rude |> Seq.toList
 
 /// Per-member lambda occurrence sequences for an implementation file, extracted with the
-/// same Phase-C1 occurrence model the typed-tree diff uses (Phase C2: baseline-time EnC
+/// same occurrence model the typed-tree diff uses (consumed by baseline-time EnC
 /// CustomDebugInformation emission). Every member binding of the file is returned so
 /// callers can detect compiled-name collisions across ALL members; members whose bodies
 /// the occurrence model cannot represent (quotations, object expressions, local type

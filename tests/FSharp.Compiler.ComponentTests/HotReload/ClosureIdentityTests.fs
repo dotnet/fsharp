@@ -9,14 +9,14 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-/// Phase C3: closure identity must be preserved across delta generations. These tests
-/// pin the metadata-level invariant the delta path relies on today (and that the C4
-/// added-lambda emitter will extend): for pure body edits, every flag-on recompile of
+/// Closure identity must be preserved across delta generations. These tests
+/// pin the metadata-level invariant the delta path relies on today (and that the
+/// added-lambda emitter extends): for pure body edits, every flag-on recompile of
 /// the same lambda set produces closure classes with EXACTLY the same names, so a
 /// delta can update the existing closure method bodies in place. Added/removed
 /// lambdas are handled by the occurrence-keyed allocator (ClosureNameAllocatorTests
-/// drives it over real C1 extraction); wiring the allocator into IlxGen lowering is
-/// the pending C3 step documented in docs/hot-reload-closure-mapping.md.
+/// drives it over real occurrence extraction); the allocator is wired into IlxGen
+/// lowering as documented in docs/hot-reload-closure-mapping.md.
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module ClosureIdentityTests =
 
@@ -74,7 +74,7 @@ let transform (input: int list) =
     let ``baseline capture records occurrence-chain to closure-name tables on the session`` () =
         try
             // Two top-level lambdas in one member: the baseline capture must join the
-            // IlxGen stamp -> name recording with the C1 occurrence extraction and store
+            // IlxGen stamp -> name recording with the occurrence extraction and store
             // chain -> name tables, keyed by MethodDef token, on the session baseline.
             let compilation =
                 genSource "x > 0" "x * 2 + List.length input"
@@ -162,7 +162,7 @@ let transform (input: int list) =
 
     [<Fact>]
     let ``occurrence-keyed naming keeps closure names byte-identical across three body-edit generations`` () =
-        // C3 wiring: generations 2 and 3 compile with an active session whose baseline
+        // Allocator wiring: generations 2 and 3 compile with an active session whose baseline
         // carries occurrence-chain -> name tables, so the IlxGen closure call site takes
         // the allocator path (stamp-keyed Reused names), not bare sequence replay. For a
         // pure body-edit chain the emitted names AND the chained tables must stay
@@ -203,7 +203,7 @@ let transform (input: int list) =
         // baseline class names verbatim and the added occurrence gets the
         // {base}@hotreload#g{N}_o{i} generation-suffixed name. Emission of the added
         // member in a DELTA is still rejected by classification (LambdaShapeChange) —
-        // emitting it is Phase C4; this pins the naming contract C4 builds on.
+        // emission is the delta emitter's job; this pins the naming contract it builds on.
         try
             let gen1Names =
                 genSource "x > 0" "x * 2 + List.length input"

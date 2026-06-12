@@ -17,11 +17,11 @@
 ///
 /// F# semantics of the "syntax offset" slots: Roslyn stores the syntax offset of the
 /// lambda/closure/state-machine-suspension syntax node. The F# typed-tree diff has no
-/// syntax map; instead these integer slots carry C1 OCCURRENCE KEYS — a deterministic
-/// int packed from the occurrence ordinal chain of the Phase-C1 lambda occurrence model
+/// syntax map; instead these integer slots carry OCCURRENCE KEYS — a deterministic
+/// int packed from the occurrence ordinal chain of the lambda occurrence model
 /// (TypedTreeDiff.LambdaOccurrenceId). See tryEncodeOccurrenceKey/decodeOccurrenceKey.
 /// The blob format is identical either way, so mdv/Roslyn tooling can still decode our
-/// maps; only the *meaning* of the integers is F#-specific (Phase-G debugger-interop
+/// maps; only the *meaning* of the integers is F#-specific (debugger-interop
 /// caveat documented in docs/hot-reload-closure-mapping.md).
 module internal FSharp.Compiler.EncMethodDebugInformation
 
@@ -96,14 +96,14 @@ type EncLocalSlotInfo =
     /// A long-lived synthesized local.
     /// kind: synthesized-local kind (Roslyn SynthesizedLocalKind value, 0..MaxSerializableLocalKind;
     /// 0 = user-defined local).
-    /// syntaxOffset: in F#, the C1 occurrence key of the declaring occurrence
+    /// syntaxOffset: in F#, the occurrence key of the declaring occurrence
     /// (Roslyn: syntax offset of the local's declarator).
     /// ordinal: zero-based disambiguator among slots sharing the same kind and offset (>= 0).
     | Slot of kind: int * syntaxOffset: int * ordinal: int
 
 /// One closure scope in the EnC Lambda and Closure Map. The closure's ordinal is its
 /// index in EncMethodDebugInformation.Closures; lambdas reference closures by that index.
-/// SyntaxOffset: in F#, the C1 occurrence key of the closure's occurrence.
+/// SyntaxOffset: in F#, the occurrence key of the closure's occurrence.
 type EncClosureInfo =
     { /// Occurrence key (Roslyn: syntax offset of the scope owning the closure).
       SyntaxOffset: int }
@@ -161,7 +161,7 @@ let private MaxOccurrenceSegment = 0xFFFF
 [<Literal>]
 let private MaxOccurrenceKey = 0x1FFFFFFD
 
-/// Packs a C1 occurrence ordinal chain (root-first enclosing-occurrence ordinals,
+/// Packs an occurrence ordinal chain (root-first enclosing-occurrence ordinals,
 /// ending with the occurrence's own ordinal) into the deterministic int carried in the
 /// "syntax offset" blob slots. Packing: 16-bit segments, least-significant segment =
 /// the occurrence's own ordinal; an enclosing ordinal p is stored as (p + 1) shifted
@@ -480,27 +480,27 @@ let deserialize (slotMapBlob: byte[]) (lambdaMapBlob: byte[]) (stateMachineState
       StateMachineStates = deserializeStateMachineStates stateMachineStateMapBlob }
 
 // ---------------------------------------------------------------------------
-// Baseline emission bridge (Phase C2): C1 lambda occurrences -> CDI rows for the
+// Baseline emission bridge: lambda occurrences -> CDI rows for the
 // portable PDB writer. Computed in the fsc emit path when --enable:hotreloaddeltas
 // is on; the rows ride the IL writer options into ilwritepdb keyed by IL method name.
 // ---------------------------------------------------------------------------
 
-/// Root-first ordinal chain of a C1 occurrence: the occurrence id stores enclosing
+/// Root-first ordinal chain of an occurrence: the occurrence id stores enclosing
 /// ordinals nearest-enclosing-first, while the key packing wants root-first with the
 /// occurrence's own ordinal last.
 let private occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
     List.rev occurrence.Id.ParentChain @ [ occurrence.Id.Ordinal ]
 
-/// Builds the EnC method debug information for one member from its C1 lambda
+/// Builds the EnC method debug information for one member from its lambda
 /// occurrence sequence. Modeling decisions (documented in
-/// docs/hot-reload-closure-mapping.md, "C2 baseline CDI emission"):
+/// docs/hot-reload-closure-mapping.md, "Baseline CDI emission as implemented"):
 ///   - MethodOrdinal stays UndefinedMethodOrdinal: F# needs no Roslyn-style
 ///     partial-method/ordinal disambiguation at baseline.
 ///   - One closure scope per occurrence, and lambda i references closure i: IlxGen
 ///     lowers every lambda occurrence (curried group) to its own closure class, so
 ///     unlike C# there is no shared display-class scope to model and no static/this-only
 ///     lambdas at the typed-tree level (refinement to Static/ThisOnly ordinals is a
-///     Phase-C3 lowering concern).
+///     lowering-side concern).
 ///   - LocalSlots stays empty: the EnC Local Slot Map describes the lowered local slot
 ///     layout, an IlxGen emission artifact that is not trivially derivable from the
 ///     typed tree; it is omitted rather than guessed.
@@ -595,7 +595,7 @@ let computeMethodCustomDebugInfoRows
             match group with
             | [ (_, resumePoints) ] when not resumePoints.IsEmpty ->
                 // SyntaxOffset carries the resume point's ORDINAL (state numbers are
-                // positional in the F# lowering), keeping the C2 occurrence-key
+                // positional in the F# lowering), keeping the occurrence-key
                 // philosophy: deterministic ints, not source offsets.
                 let states =
                     resumePoints
@@ -644,9 +644,9 @@ let computeMethodCustomDebugInfoRows
             | None -> Map.add methName [ stateRow ] acc)
 
 // ---------------------------------------------------------------------------
-// Baseline read bridge (Phase C2): portable-PDB EnC CDI rows -> the per-method map the
+// Baseline read bridge: portable-PDB EnC CDI rows -> the per-method map the
 // hot reload session baseline (FSharpEmitBaseline.EncMethodDebugInfos) exposes to the
-// generation-aware closure lowering (Phase C3).
+// generation-aware closure lowering.
 // ---------------------------------------------------------------------------
 
 /// Decodes every method-level EnC CustomDebugInformation row of a portable PDB image into
@@ -654,7 +654,7 @@ let computeMethodCustomDebugInfoRows
 /// of the EnC rows is always a MethodDef handle, so token keying is unambiguous here — the
 /// name keying on the write side exists only because the PDB writer lacks tokens.
 /// Fail safe: a null/empty or non-PDB image yields the empty map (back-compat with
-/// baselines compiled without --enable:hotreloaddeltas and with pre-C2 PDBs), and a method
+/// baselines compiled without --enable:hotreloaddeltas or whose PDBs carry no EnC rows), and a method
 /// whose blobs do not decode is omitted rather than guessed.
 let readEncMethodDebugInfoFromPortablePdb (pdbBytes: byte[]) : Map<int, EncMethodDebugInformation> =
     if isEmpty pdbBytes then

@@ -12,7 +12,7 @@ type ICompilerGeneratedNameMap =
     abstract LoadSnapshot: snapshot: seq<struct (string * string[])> -> unit
 
 /// Marker of occurrence-keyed closure class names produced by the hot reload closure
-/// name allocation (Phase C3/C6, docs/hot-reload-closure-mapping.md):
+/// name allocation (docs/hot-reload-closure-mapping.md):
 /// `{base}@hotreload#g{generation}_o{occurrenceChain}`. Generation 0 names are minted
 /// by flag-on BASELINE compiles (a pure function of lambda occurrence identity);
 /// generation N >= 1 names are minted for occurrences first allocated by a delta

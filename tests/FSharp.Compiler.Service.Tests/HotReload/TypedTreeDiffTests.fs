@@ -17,7 +17,7 @@ open FSharp.Compiler.TypedTreeDiff
 
 open FSharp.Compiler.Service.Tests.Common
 
-// Internal (not private) so the C3 closure-name-allocator tests can reuse the same
+// Internal (not private) so the closure-name-allocator tests can reuse the same
 // compile-and-extract harness against real typed trees.
 type internal DiffTestHarness() =
     let projectDir =
@@ -1241,7 +1241,7 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        // Phase B2: instance fields on classes are capability-gated. A [<DefaultValue>]
+        // Instance fields on classes are capability-gated. A [<DefaultValue>]
         // val mutable produces no binding/constructor change, so the addition surfaces as
         // a single TypeDefinition edit (the emitter discovers the new Field row from the
         // fresh compile); the symbol path mirrors the IL type name.
@@ -1344,7 +1344,7 @@ type MyStruct =
         Assert.Contains(result.RudeEdits, fun e -> e.Kind = RudeEditKind.TypeLayoutChange)
 
     // =========================================================================
-    // Lambda occurrence model tests (Phase C1)
+    // Lambda occurrence model tests
     // Structured occurrence extraction, old/new alignment, and capture
     // compatibility classification in the typed-tree diff.
     // =========================================================================
@@ -1432,7 +1432,7 @@ let evaluate () =
         | other -> failwithf "Expected Added, got %A" other
 
         // With the new-type and method capabilities the same edit is allowed: the member
-        // body update covers it (Phase C4 emits the new closure TypeDef in the delta).
+        // body update covers it (the delta emitter emits the new closure TypeDef).
         let allowed = harness.DiffWith allCapabilities baseline updated
 
         Assert.Empty(allowed.RudeEdits)
@@ -1659,8 +1659,8 @@ let evaluate () =
 
     [<Fact>]
     let ``capturing an additional value produces capture-set rude edit`` () =
-        // Additive captures are rude today; the message records that Phase C4 may allow
-        // them via the AddInstanceFieldToExistingType capability (Roslyn emits a new
+        // Additive captures are rude today; the message records that they may become
+        // applicable via the AddInstanceFieldToExistingType capability (Roslyn emits a new
         // closure field for them).
         use harness = new DiffTestHarness()
         let baseline_source = """
@@ -1728,7 +1728,7 @@ let added (values: int list) = values |> List.map (fun v -> v + 1)
         Assert.Empty(allLambdaEdits result)
 
     // =========================================================================
-    // Member addition coverage consolidation (Phase B2/B3 negative gating)
+    // Member addition coverage consolidation (field/property/event negative gating)
     // =========================================================================
 
     [<Fact>]
@@ -1854,7 +1854,7 @@ type MyClass() =
             fun e -> e.Kind = SemanticEditKind.TypeDefinition && e.Symbol.LogicalName = "MyClass")
 
     // =========================================================================
-    // Generic edit gating (Phase E)
+    // Generic edit gating
     // Roslyn parity (AbstractEditAndContinueAnalyzer): updating a member that is
     // generic or declared in a generic type requires GenericUpdateMethod
     // (RudeEditKind.UpdatingGenericNotSupportedByRuntime); additions in a generic

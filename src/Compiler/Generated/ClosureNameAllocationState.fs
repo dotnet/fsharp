@@ -2,7 +2,7 @@
 
 /// <summary>
 /// Side-channel state for occurrence-keyed closure naming in hot reload compiles
-/// (Phase C3 lowering wiring, docs/hot-reload-closure-mapping.md).
+/// (the lowering wiring described in docs/hot-reload-closure-mapping.md).
 ///
 /// IlxGen names every closure class at a single call site
 /// (<c>GetIlxClosureFreeVars</c>), where the only identity shared with the typed-tree
@@ -35,7 +35,7 @@ type private ClosureNameStateHolder() =
     let syncRoot = obj ()
     let mutable recordedNamesByStamp: Dictionary<int64, string> option = None
     let mutable assignedNamesByStamp: Map<int64, string> = Map.empty
-    // State machine resume points recorded by IlxGen lowering (Phase D), keyed by the
+    // State machine resume points recorded by IlxGen lowering, keyed by the
     // emitted state machine struct's full type name. Shares the recording lifecycle of
     // recordedNamesByStamp: both begin/clear together, so flag-off compiles never pay.
     let mutable recordedResumePointsByTypeName: Dictionary<string, int list> option = None
@@ -115,7 +115,7 @@ let getRecordedClosureStampNames (owner: obj) : Map<int64, string> =
     | None -> Map.empty
 
 /// Records the resume-point state numbers of a lowered state machine against its
-/// emitted struct type's full name (Phase D). No-op unless recording was begun for
+/// emitted struct type's full name. No-op unless recording was begun for
 /// the owner.
 let recordStateMachineResumePoints (owner: obj) (structTypeFullName: string) (resumePoints: int list) =
     match tryGetHolder owner with

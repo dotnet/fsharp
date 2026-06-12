@@ -366,7 +366,7 @@ type Type =
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
-    // Two lambda occurrences in 'transform' (matching the C1 extraction pinned by
+    // Two lambda occurrences in 'transform' (matching the occurrence extraction pinned by
     // PdbCdiEmissionTests): the outer List.map argument (occurrence key [0]) and the
     // lambda nested inside it (occurrence key [0; 1]).
     let private lambdaBaselineSource =
@@ -407,7 +407,7 @@ let transform (values: int list) =
             let baseline = createBaseline tcGlobals dllPath
 
             // Back-compat: this baseline's in-memory PDB rewrite carries no EnC CDI side
-            // channel (and pre-C2 PDBs carry no EnC rows at all), so the session must start
+            // channel (and older PDBs carry no EnC rows at all), so the session must start
             // fine with an empty per-method map.
             Assert.True(
                 Map.isEmpty baseline.EncMethodDebugInfos,
@@ -764,7 +764,7 @@ let extra () = 99
 
     [<Fact>]
     let ``ApplyUpdate succeeds for added module value`` () =
-        // Phase B1b: `let mutable newCounter = 41` lowers to static backing fields on the
+        // `let mutable newCounter = 41` lowers to static backing fields on the
         // startup-code class plus get_/set_ accessors on the module type. After ApplyUpdate
         // the accessors must be invocable; the observed initialization semantics are
         // asserted below and documented in docs/hot-reload-member-additions.md.
@@ -1859,7 +1859,7 @@ type Type =
             try Directory.Delete(projectDir, true) with _ -> ()
 
     // -----------------------------------------------------------------------------
-    // Phase C4: added lambdas emit new closure classes in deltas
+    // Added lambdas emit new closure classes in deltas
     // -----------------------------------------------------------------------------
 
     // Direct nested applications (no |> chains, no let-bound stages): pipeline
@@ -1878,7 +1878,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
     // Generation 1: a capture-free lambda is ADDED as the innermost stage, in front of
     // the surviving filter and map lambdas in occurrence order (the case pure sequence
-    // replay cannot handle; the C3 allocator names the new occurrence
+    // replay cannot handle; the closure name allocator names the new occurrence
     // {base}@hotreload#g1_o{i}).
     let private closureAdditionUpdatedSource =
         """
@@ -1904,7 +1904,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
     [<Fact>]
     let ``ApplyUpdate succeeds for added lambda creating a new closure class`` () =
-        // Phase C4 payoff: a member with two lambdas gains a third one. The delta must
+        // Added-lambda payoff: a member with two lambdas gains a third one. The delta must
         // carry a NEW TypeDef row for the generation-suffixed closure class (plus its
         // .ctor/Invoke methods and NestedClass row), the updated parent method body,
         // and apply cleanly via MetadataUpdater. A further generation then body-edits
@@ -2145,7 +2145,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
     [<Fact>]
     let ``EmitDelta rejects added lambda without NewTypeDefinition capability`` () =
-        // Negative gate for Phase C4: a capability-less session (BaselineOnly) must report
+        // Negative gate for added lambdas: a capability-less session (BaselineOnly) must report
         // the addition as NotSupportedByRuntime naming the missing capability, never emit.
         let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
         if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
@@ -2271,7 +2271,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
     // (FSharpFunc<int32, FSharpList<int32>> for List.collect); its TypeSpec row id
     // must continue past the row appended in generation 1 (baseline chaining). The
     // new stage is added INNERMOST so the surviving lambdas keep their source
-    // occurrence order (the C3 closure-identity constraint, same shape as the C4
+    // occurrence order (the closure-identity constraint, same shape as the
     // added-lambda test).
     let private newInstantiationGen2Source =
         """
@@ -2481,14 +2481,14 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
     [<Fact>]
     let ``Disk-started session reconstructs closure names and applies an added lambda`` () =
-        // Phase C6 payoff (the dotnet-watch topology): the baseline is built by the
+        // Cross-process payoff (the dotnet-watch topology): the baseline is built by the
         // command-line fsc path and the session starts from the ON-DISK dll+pdb only -
         // the in-process capture session is explicitly cleared first, so no in-memory
         // stamp -> name state can leak across (this is exactly the cross-process case
         // where the FCS session lives in a different process than the fsc build).
         // The chain -> closure-name tables must be reconstructed from the persisted
         // EnC CDI occurrence keys alone, an added lambda must emit its new closure
-        // TypeDef through the C4 machinery, ApplyUpdate must succeed, and a follow-up
+        // TypeDef through the added-TypeDef machinery, ApplyUpdate must succeed, and a follow-up
         // generation must body-edit the ADDED closure in place.
         let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
         if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
@@ -2695,7 +2695,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
     [<Fact>]
     let ``Disk-started session applies a removed lambda and keeps editing survivors`` () =
-        // C6 removal counterpart of the cross-process addition test: the baseline (three
+        // Removal counterpart of the cross-process addition test: the baseline (three
         // lambdas, built by the command-line fsc path) is session-started from disk only;
         // a generation removes the innermost lambda (no new metadata - the baseline
         // closure class just goes unused) and a follow-up generation body-edits a
@@ -2872,7 +2872,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
     [<Fact>]
     let ``In-process and disk-started sessions reconstruct identical closure-name tables`` () =
-        // The C6 determinism property: closure names are a pure function of occurrence
+        // The determinism property: closure names are a pure function of occurrence
         // identity, so the tables an in-process capture session carries (derived during
         // the emitting compile, validated against the stamp -> name recording) and the
         // tables a DISK-started session reconstructs from the CDI occurrence keys must
@@ -3113,7 +3113,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                 try Directory.Delete(projectDir, true) with _ -> ()
 
     // -----------------------------------------------------------------------------
-    // Phase B2: added instance fields on existing classes
+    // Added instance fields on existing classes
     // -----------------------------------------------------------------------------
 
     let private instanceFieldBaselineSource =
@@ -3149,7 +3149,7 @@ type Counter() =
 
     [<Fact>]
     let ``ApplyUpdate succeeds for added instance field`` () =
-        // Phase B2: adding `let mutable total = 41` to a class appends an instance Field
+        // Adding `let mutable total = 41` to a class appends an instance Field
         // row ((TypeDef, AddField) + (Field, Default), the recorded C# field_add template)
         // paired with the primary-constructor body update that runs the initializer.
         // Runtime semantics match C# EnC: EXISTING instances read default(T) for the new
@@ -3366,7 +3366,7 @@ type Holder() =
 
     [<Fact>]
     let ``ApplyUpdate succeeds for added DefaultValue field without method updates`` () =
-        // Phase B2: a [<DefaultValue>] val mutable field needs no initializer pairing —
+        // A [<DefaultValue>] val mutable field needs no initializer pairing —
         // the generation-1 delta carries ONLY the appended Field row (no method updates),
         // exercising the TypeDefinition-edit-only path through the delta builder.
         let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
@@ -3522,7 +3522,7 @@ type Holder() =
                 try Directory.Delete(projectDir, true) with _ -> ()
 
     // -----------------------------------------------------------------------------
-    // Phase B3: added properties and events on existing classes
+    // Added properties and events on existing classes
     // -----------------------------------------------------------------------------
 
     /// Shared scaffold for the member-addition runtime tests: compiles the baseline with
@@ -3676,7 +3676,7 @@ type Holder() =
 
     [<Fact>]
     let ``ApplyUpdate succeeds for added properties`` () =
-        // Phase B3: generation 1 adds a getter-only property; generation 2 adds a
+        // Generation 1 adds a getter-only property; generation 2 adds a
         // getter+setter property over the same state. Mirrors the recorded C# prop_add
         // EncLog template: (TypeDef, AddMethod)+(MethodDef, Default) per accessor,
         // (PropertyMap, AddProperty)+(Property, Default), MethodSemantics rows binding
@@ -3771,7 +3771,7 @@ type Widget() =
 
     [<Fact>]
     let ``ApplyUpdate succeeds for added auto-property`` () =
-        // Phase B3 composing with the B2 field machinery: `member val` lowers to a
+        // Property additions composing with the field machinery: `member val` lowers to a
         // backing instance field (initialized in the primary ctor) plus get_/set_
         // accessors plus the Property row - the full recorded C# prop_add template
         // (AddField pair + two AddMethod pairs + AddProperty pair + MethodSemantics).
@@ -3836,7 +3836,7 @@ type Gadget() =
 
     [<Fact>]
     let ``ApplyUpdate succeeds for added CLIEvent`` () =
-        // Phase B3: a [<CLIEvent>] member lowers to a backing Event<_,_> instance field
+        // A [<CLIEvent>] member lowers to a backing Event<_,_> instance field
         // (initialized in the primary ctor) plus add_/remove_ accessors plus the Event
         // row; MethodSemantics rows bind the adder/remover and the EventMap row parents
         // the AddEvent entry.
@@ -4517,9 +4517,9 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                 try Directory.Delete(projectDir, true) with _ -> ()
 
     // -----------------------------------------------------------------------------
-    // Phase D: state machine (task/async/seq CE) edit support.
+    // State machine (task/async/seq CE) edit support.
     // Ground truth (see docs/hot-reload-closure-mapping.md, "State machines"):
-    //   - `async` lowers to closure chains (FSharpFunc subclasses) - Phase C territory.
+    //   - `async` lowers to closure chains (FSharpFunc subclasses) - closure-mapping territory.
     //   - `task` lowers to ONE nested struct state machine (Data/ResumptionPoint/
     //     hoisted locals/awaiterN fields + MoveNext/SetStateMachine/accessors) whose
     //     resume-point state numbers are assigned positionally by the lowering.
@@ -4658,7 +4658,7 @@ type Type =
     let ``EmitDelta rejects task await addition as a state machine shape change`` () =
         // A new `let!` is a new resume point AND a new awaiter struct field; struct
         // layouts are immutable under hot reload (C# parity: ChangingStateMachineShape).
-        // Before Phase D classification, this delta was emitted and the patched method
+        // Before the resumable-code classification, this delta was emitted and the patched method
         // crashed at runtime (the silent compiler-generated-field skip in the emitter).
         let updated =
             taskStableResumeBaselineSource.Replace(
@@ -4691,7 +4691,7 @@ type Type =
 
     [<Fact>]
     let ``ApplyUpdate succeeds for plain method gaining a while loop`` () =
-        // while/for/try lower to ordinary IL inside the method body; before Phase D the
+        // while/for/try lower to ordinary IL inside the method body; previously the
         // blanket lowered-shape digest misclassified their introduction as a
         // state-machine shape change (FSHRDL013).
         let baseline =
@@ -4754,7 +4754,7 @@ type Type =
 
     [<Fact>]
     let ``EmitDelta rejects async added bind with a precise closure-chain message`` () =
-        // async lowers to closure CHAINS whose classes outnumber the C1 lambda
+        // async lowers to closure CHAINS whose classes outnumber the lambda
         // occurrences (inlined AsyncPrimitives internals) and carry legacy `-N` names:
         // a structural CE change shifts the numbering, so the synthesized-type mapping
         // cannot align the chain and must fail closed with a precise message (never
@@ -4787,7 +4787,7 @@ type Type =
 
     [<Fact>]
     let ``Disk-started session applies a task body edit with stable resume points`` () =
-        // The dotnet-watch topology for state machines (Phase D): the baseline is built
+        // The dotnet-watch topology for state machines: the baseline is built
         // by the command-line fsc path (persisting the EnC State Machine State Map CDI
         // rows in the portable PDB), ALL in-process session state is dropped, and the
         // session starts from the on-disk dll + pdb alone. A resume-point-stable body
@@ -4924,7 +4924,7 @@ type Type =
         // seq { } lowers to a CLASS state machine (GenSequenceExpression closure, not
         // ResumableCode): MoveNext is regenerated whole and class layouts may grow, so
         // a fresh enumeration after the update observes the new yields. NOTE the
-        // documented caveat (docs/hot-reload-closure-mapping.md, Phase D): enumerators
+        // documented caveat (docs/hot-reload-closure-mapping.md, "State machines"): enumerators
         // already SUSPENDED mid-sequence at apply time resume on the new MoveNext with
         // their old state number, exactly like C# Debug-mode iterator edits would - F#
         // currently allows the edit where C# reports ChangingStateMachineShape.
@@ -4956,7 +4956,7 @@ type Type =
 """
 
         // The added yield is an added closure occurrence at this optimization level
-        // (the seq desugaring's closure chain), so the C4 capability set is required.
+        // (the seq desugaring's closure chain), so the added-lambda capability set is required.
         applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
             (Some [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ])
             "seq-added-yield"

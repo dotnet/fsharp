@@ -59,7 +59,7 @@ type HotReloadSession =
         /// Session-wide (Roslyn parity: capabilities are a debugging-session property).
         Capabilities: EditAndContinueCapabilities
         /// <summary>
-        /// Active statements supplied by the debugger host before emitting (Phase G). The next
+        /// Active statements supplied by the debugger host before emitting. The next
         /// emitted delta remaps each statement (or fails rude when an edit destroys one). Empty
         /// when no debugger is attached or the host has not reported a break state; the setter
         /// REPLACES the whole set, mirroring Roslyn's per-edit-session active statement fetch.
@@ -248,7 +248,7 @@ type internal HotReloadSessionStore() =
         lock sessionLock (fun () -> sessionCapabilities <- value)
 
     /// <summary>
-    /// Replaces the debugger-supplied active statements consulted by the next emit (Phase G).
+    /// Replaces the debugger-supplied active statements consulted by the next emit.
     /// Hosts call this whenever the debugger reports a break state (Roslyn analog: the
     /// DebuggingSession fetching <c>ManagedActiveStatementDebugInfo</c> from the debugger per
     /// edit session). Passing an empty list clears the set (no statements are active, e.g.
@@ -278,8 +278,8 @@ type internal HotReloadSessionStore() =
                 true)
 
     /// <summary>
-    /// Replaces the committed per-method sequence-point view after a line-shift-only update
-    /// (Phase G). Such updates carry no metadata/IL and consume no generation, so the full
+    /// Replaces the committed per-method sequence-point view after a line-shift-only update.
+    /// Such updates carry no metadata/IL and consume no generation, so the full
     /// pending-baseline commit flow does not apply — but the next emit must diff against the
     /// lines the host just rebound in the debugger, exactly as Roslyn diffs line edits against
     /// the last committed solution.

@@ -136,7 +136,7 @@ type BaselineMemberRefRow =
       Signature: byte[] }
 
 /// Content snapshot of a baseline CustomAttribute row. Attribute edits on EXISTING members
-/// (Phase F) pair the fresh compile's attributes against these rows so changed attributes
+/// pair the fresh compile's attributes against these rows so changed attributes
 /// UPDATE the row in place and removed attributes ZERO it (Roslyn DeltaMetadataWriter
 /// parity, validated against the csharp_enc_reference attr_change/attr_remove templates).
 type BaselineCustomAttributeRow =
@@ -231,38 +231,39 @@ type FSharpEmitBaseline =
         /// keyed by MethodDef token (0x06xxxxxx). Decoded from the baseline portable PDB's EnC
         /// CustomDebugInformation rows when the baseline is captured, and refreshed in memory
         /// for updated/added methods as each delta is applied (see chainEncMethodDebugInfos).
-        /// A baseline compiled without --enable:hotreloaddeltas (or a pre-C2 PDB) yields the
+        /// A baseline compiled without --enable:hotreloaddeltas (or whose PDB carries no EnC rows) yields the
         /// empty map. NOTE: delta PDBs do not yet re-emit EnC CDI rows, so within a session
         /// this in-memory chain is the only generation-accurate source; baseline (gen-0)
-        /// state fully survives process restarts via the on-disk PDB (C6), while restoring
+        /// state fully survives process restarts via the on-disk PDB (occurrence-derived
+        /// naming), while restoring
         /// MID-SESSION state in a new process still needs delta-PDB CDI re-emission.
         /// </summary>
         EncMethodDebugInfos: Map<int, EncMethodDebugInformation>
         /// <summary>
         /// Per-method closure-class name tables (occurrence-chain -> emitted closure type
-        /// name), keyed by MethodDef token (0x06xxxxxx) — the C3 companion of
+        /// name), keyed by MethodDef token (0x06xxxxxx) — the companion of
         /// EncMethodDebugInfos. The Roslyn CDI blob formats carry no name slots, and like
         /// Roslyn (which recomputes C# names from DebugId alone) F# does not persist
-        /// names: under the C6 derivation baseline closure names are a pure function of
+        /// names: under the occurrence-derived derivation baseline closure names are a pure function of
         /// occurrence identity ({member}@hotreload#g0_o{chain}), so the tables are
         /// reconstructed from the decoded EnC CDI occurrence keys — for in-process
         /// captures and for baselines read back from disk in another process alike (see
         /// deriveEncClosureNamesFromEncDebugInfos for the fail-closed rules) — and
         /// chained in memory like EncMethodDebugInfos as deltas allocate
-        /// generation-suffixed names for added occurrences. Empty for flag-off, pre-C6
-        /// and mid-session-recapture baselines: occurrence-keyed naming then stays inert
+        /// generation-suffixed names for added occurrences. Empty for flag-off,
+        /// replay-named (non-derivable) and mid-session-recapture baselines: occurrence-keyed naming then stays inert
         /// and delta compiles keep sequence replay (fail closed).
         /// </summary>
         EncClosureNames: Map<int, Map<int list, string>>
         /// <summary>
         /// Committed per-method sequence points keyed by MethodDef token (0x06xxxxxx) — the
-        /// debugger's current view of each method's lines (Phase G). Decoded from the baseline
+        /// debugger's current view of each method's lines. Decoded from the baseline
         /// portable PDB when the session starts and REPLACED wholesale after every committed delta
         /// with the fresh compile's sequence points (updated methods get their delta-PDB points;
         /// unchanged methods get their line-shift-adjusted points, matching the line updates the
         /// host applied to the debugger). Line-shift detection and active-statement remapping diff
         /// fresh compiles against this map; empty when the baseline had no portable PDB, which
-        /// keeps the Phase G machinery inert (fail closed).
+        /// keeps the sequence-point/active-statement machinery inert (fail closed).
         /// </summary>
         SequencePointSnapshots: Map<int, ActiveStatementAnalysis.MethodSequencePoints>
     }
@@ -554,7 +555,7 @@ let private collectTypeDefSimpleNames (ilModule: ILModuleDef) : Set<string> =
 
 /// <summary>
 /// Reconstructs the per-method occurrence-chain -> closure-class-name tables from the
-/// decoded EnC CDI occurrence keys alone (Phase C6). Under occurrence-derived baseline
+/// decoded EnC CDI occurrence keys alone. Under occurrence-derived baseline
 /// naming, a flag-on baseline compile names every mapped closure
 /// <c>{memberCompiledName}@hotreload#g0_o{chain}</c> — a pure function of the identity
 /// the CDI rows persist — so a session started from the on-disk baseline in another
@@ -565,7 +566,7 @@ let private collectTypeDefSimpleNames (ilModule: ILModuleDef) : Set<string> =
 ///    added closures carry their first-allocation generation); its names are NOT
 ///    derivable from generation-0 identity, so no table is reconstructed at all;
 ///  - per member, every derived name must exist as a baseline TypeDef simple name.
-///    This drops pre-C6 baselines (replay-named closures) and members where an
+///    This drops older replay-named baselines and members where an
 ///    occurrence never lowered to a closure class, so a reconstructed table can never
 ///    claim a name the baseline does not contain.
 /// </summary>
@@ -638,13 +639,13 @@ let private createCore
 
     // The baseline PDB is already in memory here (captured alongside the emitted
     // assembly), so the EnC CDI rows are decoded eagerly; flag-off baselines and
-    // pre-C2 PDBs decode to the empty map.
+    // PDBs without EnC rows decode to the empty map.
     let encMethodDebugInfos =
         portablePdbSnapshot
         |> Option.map (fun snapshot -> readEncMethodDebugInfoFromPortablePdb snapshot.Bytes)
         |> Option.defaultValue Map.empty
 
-    // Phase G: seed the committed sequence-point view from the baseline PDB. No PDB means the
+    // Seed the committed sequence-point view from the baseline PDB. No PDB means the
     // map stays empty and line-shift detection / active-statement remapping stay inert.
     let sequencePointSnapshots =
         portablePdbSnapshot
@@ -682,7 +683,7 @@ let private createCore
         GuidStreamLengthAdded = 0
         AddedOrChangedMethods = []
         EncMethodDebugInfos = encMethodDebugInfos
-        // Closure-name tables are reconstructed from the CDI occurrence keys (C6):
+        // Closure-name tables are reconstructed from the CDI occurrence keys:
         // under occurrence-derived baseline naming they are a pure function of the
         // identity the PDB persists, so this works for baselines read back from disk
         // in another process exactly as for in-process captures (where the capture
@@ -774,7 +775,7 @@ let internal applyDelta
 /// dropped when the fresh compile produced none (fail closed — the method's lambdas must then
 /// be treated as unmappable rather than matched against stale data). Unchanged methods keep
 /// their baseline entries. NOTE: the delta PDB does not yet re-emit EnC CDI rows; this
-/// in-memory chain is what the generation-aware closure lowering (C3) consumes, and PDB
+/// in-memory chain is what the generation-aware closure lowering consumes, and PDB
 /// persistence across session restarts is the remaining gap.
 /// </summary>
 let chainEncMethodDebugInfos
@@ -798,8 +799,7 @@ let chainEncMethodDebugInfos
 /// baseline (see chainEncMethodDebugInfos). Name-to-token resolution mirrors the fail-closed
 /// write-side keying: only compiled names identifying exactly one baseline MethodDef row
 /// resolve, so an entry can never attach to the wrong method. Methods added by the current
-/// delta have no baseline token yet and carry no entry (added lambda members are a C4
-/// concern).
+/// delta have no baseline token yet and carry no entry.
 /// </summary>
 /// Baseline MethodDef tokens keyed by method name, restricted to names identifying
 /// exactly ONE baseline MethodDef row — the shared fail-closed name -> token resolution
@@ -901,11 +901,11 @@ let private memberOccurrencesByUniqueName
 
 /// <summary>
 /// Derives the stamp -> closure-class-name table a flag-on BASELINE compile installs
-/// before lowering (Phase C6): every lambda occurrence's closure class is named
+/// before lowering: every lambda occurrence's closure class is named
 /// <c>{memberCompiledName}@hotreload#g0_o{occurrenceChain}</c> — a pure function of
 /// occurrence identity, so a session started from the on-disk baseline in another
 /// process can re-derive the same names from the persisted EnC CDI occurrence keys
-/// (see deriveEncClosureNamesFromEncDebugInfos). Gating mirrors the C2 CDI emission
+/// (see deriveEncClosureNamesFromEncDebugInfos). Gating mirrors the baseline CDI emission
 /// exactly, so a name is derived if and only if the corresponding occurrence key is
 /// persisted: members without a unique compiled name are dropped, and a member is
 /// dropped entirely when ANY of its occurrence chains is not CDI-encodable (depth > 2
@@ -941,7 +941,7 @@ let computeBaselineOccurrenceKeyedClosureNames
                         acc))
 
 /// <summary>
-/// Runs the occurrence-keyed closure name allocator (Phase C3) for a delta compile:
+/// Runs the occurrence-keyed closure name allocator for a delta compile:
 /// aligns the fresh implementation's lambda occurrences with the previous generation's
 /// (the implementation files the session chains) and assigns each fresh occurrence its
 /// closure class name — the baseline name verbatim for compatible survivors, a

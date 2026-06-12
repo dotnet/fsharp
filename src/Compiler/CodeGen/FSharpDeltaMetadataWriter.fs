@@ -153,7 +153,7 @@ let emitWithTypeDefinitions
             Array.zeroCreate DeltaTokens.TableCount
 
     // A delta can carry row additions without any method-body update: a [<DefaultValue>]
-    // instance field (Phase B2) appends a Field row but changes no constructor. Only
+    // instance field appends a Field row but changes no constructor. Only
     // short-circuit when there is genuinely nothing to write.
     let hasRowPayload =
         not (List.isEmpty updates)

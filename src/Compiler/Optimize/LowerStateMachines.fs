@@ -155,7 +155,7 @@ type LoweredStateMachine =
          afterCode: (Val * Expr) *
          // The state machine's resume points in state-number order: (state number
          // assigned by the conversion, source range of the resumable entry). Hot reload
-         // compiles persist these as the EnC State Machine State Map (Phase D).
+         // compiles persist these as the EnC State Machine State Map.
          resumptionPoints: (int * range) list
 
 type LoweredStateMachineResult =
@@ -181,7 +181,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
 
     // Resume points recorded as the conversion assigns their state numbers (one entry
     // per ConvertResumableEntry, carrying the entry's source range). Surfaced on
-    // LoweredStateMachine for the hot reload EnC State Machine State Map (Phase D).
+    // LoweredStateMachine for the hot reload EnC State Machine State Map.
     let resumptionPoints = ResizeArray<int * range>()
 
     // Record definitions for any resumable code

@@ -131,8 +131,8 @@ module DeltaEmitterTests =
             (mkILExportedTypes [])
             "v4.0.30319"
 
-    // Instance-field additions on classes are supported as of Phase B2 (struct layouts
-    // stay immutable); static-field additions landed in Phase B1b.
+    // Instance-field additions on classes are supported (struct layouts
+    // stay immutable), as are static-field additions.
     let private createModuleWithOptionalField includeField =
         let ilg = PrimaryAssemblyILGlobals
         let methodDef = createMethod ilg "GetValue" 1
@@ -873,9 +873,9 @@ module DeltaEmitterTests =
 
     [<Fact>]
     let ``emitDelta emits added instance fields`` () =
-        // Phase B2: an instance field added to a baseline CLASS is appended to the Field
+        // An instance field added to a baseline CLASS is appended to the Field
         // table with the same (TypeDef, AddField) + (Field, Default) EncLog pairing as the
-        // B1b static path (validated against the Roslyn csharp_enc_reference field_add
+        // static path (validated against the Roslyn csharp_enc_reference field_add
         // template; the CLR appends the field and existing instances read default(T)).
         let _, baseline = createFieldHolderBaseline false
         let updatedModule = createModuleWithOptionalField true |> TestHelpers.withDebuggableAttribute
@@ -999,7 +999,7 @@ module DeltaEmitterTests =
 
     [<Fact>]
     let ``emitDelta emits added static fields`` () =
-        // Phase B1b: a static field added to a baseline type is appended to the Field table
+        // A static field added to a baseline type is appended to the Field table
         // with the Roslyn EncLog shape (parent TypeDef tagged AddField immediately followed
         // by the Field row), and the delta token is chained into the updated baseline.
         let _, baseline = createFieldHolderBaseline false
@@ -2124,8 +2124,8 @@ module DeltaEmitterTests =
         //
         // Note: The specific attribute resolution failures are hard to trigger in tests because
         // they require missing runtime types. This test verifies the exception pattern is used
-        // consistently by testing the struct field addition rejection path (Phase B2 allows
-        // instance fields on classes; struct layouts stay immutable) which uses the same pattern.
+        // consistently by testing the struct field addition rejection path (instance fields
+        // on classes are allowed; struct layouts stay immutable) which uses the same pattern.
 
         let _, baseline = createFieldHolderBaseline false
 
@@ -2250,11 +2250,11 @@ module DeltaEmitterTests =
         | None -> Assert.True(false, "Expected 'Version 3' user string in generation 2 delta.")
 
     // -----------------------------------------------------------------------------
-    // Phase C4: ADDED type definitions (closure classes for lambdas added in a delta)
+    // ADDED type definitions (closure classes for lambdas added in a delta)
     // -----------------------------------------------------------------------------
 
     /// Sample.Multi with GetValue plus a nested generation-suffixed closure class
-    /// (the shape the C3 allocator produces for an ADDED lambda occurrence): one
+    /// (the shape the closure name allocator produces for an ADDED lambda occurrence): one
     /// capture field, a parameterless ctor, and an Invoke method.
     let private createModuleWithAddedClosureType () =
         let ilg = PrimaryAssemblyILGlobals

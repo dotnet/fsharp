@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 /// <summary>
-/// Occurrence-keyed closure name allocation for hot reload delta compiles (Phase C3).
+/// Occurrence-keyed closure name allocation for hot reload delta compiles.
 ///
 /// The replayable name map (<c>FSharpSynthesizedTypeMaps</c> behind
 /// <c>ICompilerGeneratedNameMap</c>) keys synthesized names by basic-name SEQUENCE: the
@@ -12,10 +12,10 @@
 ///
 /// This module re-keys closure identity by OCCURRENCE instead (the Roslyn
 /// <c>EncVariableSlotAllocator.TryGetPreviousLambda/TryGetPreviousClosure</c> analogue,
-/// expressed over the C1 typed-tree occurrence model):
+/// expressed over the typed-tree lambda occurrence model):
 ///
 ///  - a fresh-compile occurrence that ALIGNS with a baseline occurrence (same two-pass
-///    LCS as the C1 diff, with equal capture sets) reuses the baseline closure class
+///    LCS as the typed-tree diff, with equal capture sets) reuses the baseline closure class
 ///    name VERBATIM;
 ///  - an occurrence with no baseline counterpart — or whose baseline counterpart has an
 ///    incompatible capture set, or whose baseline name is unknown — gets a FRESH name
@@ -32,7 +32,7 @@
 /// separators: <c>f@hotreload#g2_o3</c> for the top-level occurrence with ordinal 3
 /// first allocated in generation 2 of a session, <c>f@hotreload#g2_o0_3</c> for the
 /// nested occurrence with ordinal 3 inside occurrence 0. Generation 0 is reserved for
-/// the BASELINE compile (Phase C6): under the flag, baseline closure names are derived
+/// the BASELINE compile: under the flag, baseline closure names are derived
 /// from the same chain (<c>f@hotreload#g0_o3</c>), so they are a pure function of
 /// occurrence identity and can be reconstructed from the persisted EnC CDI occurrence
 /// keys by a session started from disk in another process. The format extends the
@@ -47,7 +47,7 @@
 /// name is derived), so the rendered suffix is bounded too; names are never truncated.
 ///
 /// This is a pure data transformation: it consumes the per-method occurrence data the
-/// session already chains (baseline EnC CDI occurrence keys + the C1 extraction of the
+/// session already chains (baseline EnC CDI occurrence keys + the occurrence extraction of the
 /// fresh compile) and produces name assignments plus the refreshed occurrence→name
 /// table to chain into the next generation. It performs no IO and touches no IlxGen
 /// state, so it is fully unit-testable in isolation.
@@ -71,7 +71,7 @@ type ClosureNameAssignment =
 
     /// The occurrence has no compatible baseline counterpart: its closure class is a
     /// new synthesized member and gets a generation-suffixed fresh name (emission of
-    /// the new member itself is a Phase C4 concern; the allocator fixes the NAME).
+    /// the new member itself is the delta emitter's concern; the allocator fixes the NAME).
     | Fresh of name: string
 
     /// The assigned closure class name, regardless of provenance.
@@ -98,7 +98,7 @@ type MemberClosureNameAllocation =
       RefreshedNamesByOccurrenceChain: Map<int list, string> }
 
 /// <summary>
-/// Root-first ordinal chain of a C1 occurrence (enclosing ordinals outermost first,
+/// Root-first ordinal chain of a lambda occurrence (enclosing ordinals outermost first,
 /// ending with the occurrence's own ordinal) — the same chain
 /// <c>EncMethodDebugInformation.tryEncodeOccurrenceKey</c> packs into the EnC CDI
 /// "syntax offset" slots. The allocator works on unpacked chains so it carries no
@@ -129,7 +129,7 @@ let formatGenerationSuffixedClosureName (baseName: string) (generation: int) (or
 /// <summary>
 /// Recognizes the generation-suffixed closure class names produced by
 /// <see cref="formatGenerationSuffixedClosureName"/> (<c>{base}@hotreload#g{N}_o{chain}</c>).
-/// Under occurrence-derived baseline naming (Phase C6) generation-0 names exist in the
+/// Under occurrence-derived baseline naming generation-0 names exist in the
 /// baseline itself; names of LATER generations only ever exist for occurrences ADDED in
 /// a delta compile (the allocator reuses baseline names verbatim for survivors), so the
 /// delta emitter uses this marker together with the absence of a baseline TypeDef token
@@ -143,7 +143,7 @@ let isGenerationSuffixedClosureName (name: string) =
 /// compile.
 /// </summary>
 /// <param name="baselineOccurrences">The member's occurrence sequence in the previous
-/// generation (extracted by C1 from the implementation files the session stores and
+/// generation (extracted by the occurrence model from the implementation files the session stores and
 /// chains).</param>
 /// <param name="baselineNamesByOccurrenceChain">The previous generation's
 /// occurrence-chain→closure-class-name table for the member (generation 1: derived
@@ -152,7 +152,7 @@ let isGenerationSuffixedClosureName (name: string) =
 /// generation N's allocation). Occurrences absent from this table are treated as
 /// unmappable and allocate fresh — fail closed, a name is never guessed.</param>
 /// <param name="freshOccurrences">The member's occurrence sequence in the fresh
-/// (edited) compile, from the C1 extraction.</param>
+/// (edited) compile, from the occurrence extraction.</param>
 /// <param name="freshNameBase">Basic name lowering would use for the member's closure
 /// classes (the enclosing let-bound value's compiled name).</param>
 /// <param name="generation">The session generation the delta compile is producing
@@ -168,7 +168,7 @@ let allocateMemberClosureNames
     let olds = Array.ofList baselineOccurrences
     let news = Array.ofList freshOccurrences
 
-    // Same alignment as the C1 lambda-edit classification: pass 1 on the full
+    // Same alignment as the lambda-edit classification: pass 1 on the full
     // structural digest, pass 2 (shape-only) pairing reordered survivors and
     // capture-incompatible occurrences.
     let baselineIndexByFreshIndex =
@@ -187,8 +187,8 @@ let allocateMemberClosureNames
                     // A shape-only (pass 2) pair with a different capture set is NOT
                     // compatible: per Roslyn semantics the previous closure member is
                     // stubbed and a new one is synthesized fresh, so the baseline name
-                    // must not be reused. Capture lists are deterministically ordered
-                    // (C1), so structural list equality is the set comparison.
+                    // must not be reused. Capture lists are deterministically ordered,
+                    // so structural list equality is the set comparison.
                     if baselineOcc.Captures = freshOcc.Captures then
                         Map.tryFind (occurrenceOrdinalChain baselineOcc) baselineNamesByOccurrenceChain
                     else
@@ -224,7 +224,7 @@ let allocateMemberClosureNames
 /// IlxGen closure call site) with the lambda occurrence extraction of the SAME typed
 /// tree, producing the per-member occurrence-chain -> closure-class-name tables the
 /// allocator consumes in later generations. Keying is by IL method (compiled) name with
-/// the same fail-closed rules as the C2 CDI emission (the token resolution happens where
+/// the same fail-closed rules as the baseline CDI emission (the token resolution happens where
 /// baseline MethodDef tokens are known):
 ///  - members without a compiled name, or whose compiled name is claimed by more than
 ///    one member binding in the assembly, are dropped (a table can never describe the

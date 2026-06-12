@@ -6,7 +6,7 @@ open FSharp.Compiler.ClosureNameAllocator
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTreeDiff
 
-/// Unit tests for the Phase C3 occurrence-keyed closure name allocator: matched
+/// Unit tests for the occurrence-keyed closure name allocator: matched
 /// occurrences must reuse baseline closure class names verbatim, unmatched (new)
 /// occurrences must get generation-suffixed fresh names, and removed occurrences
 /// must leave their baseline names unused forever.
@@ -30,7 +30,7 @@ module ClosureNameAllocatorTests =
 
     /// Builds an occurrence whose structural identity is determined by its parent
     /// chain and captures (the alignment never keys on the occurrence's own ordinal,
-    /// matching C1). ParentChain is nearest-enclosing-first, as extracted by C1.
+    /// matching the diff). ParentChain is nearest-enclosing-first, as extracted.
     let private mkOccurrence ordinal parentChain (captures: (string * RuntimeTypeIdentity) list) bodyHash : LambdaOccurrence =
         { Id =
             { MemberSymbol = memberSymbol
@@ -56,7 +56,7 @@ module ClosureNameAllocatorTests =
         Assert.Equal("f@hotreload#g2_o3", formatGenerationSuffixedClosureName "f" 2 [ 3 ])
         Assert.Equal("makeAdder@hotreload#g10_o0", formatGenerationSuffixedClosureName "makeAdder" 10 [ 0 ])
         // Nested chains render root-first with underscore separators; generation 0 is
-        // the baseline derivation (Phase C6).
+        // the baseline derivation.
         Assert.Equal("f@hotreload#g0_o0_3", formatGenerationSuffixedClosureName "f" 0 [ 0; 3 ])
 
     [<Fact>]
@@ -290,7 +290,7 @@ module ClosureNameAllocatorTests =
         )
 
     // -----------------------------------------------------------------------
-    // Allocator over REAL C1 extraction: the occurrences below come from actual
+    // Allocator over REAL occurrence extraction: the occurrences below come from actual
     // checker compiles (DiffTestHarness), so ordinals, parent chains, parameter/
     // return identities and capture sets are produced by the real extraction the
     // delta path uses — not hand-built fixtures.

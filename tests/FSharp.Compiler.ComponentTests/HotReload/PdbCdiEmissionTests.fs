@@ -11,7 +11,7 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open FSharp.Compiler.EncMethodDebugInformation
 
-/// Tests for baseline-time EnC CustomDebugInformation emission (Phase C2): compiling
+/// Tests for baseline-time EnC CustomDebugInformation emission: compiling
 /// with --enable:hotreloaddeltas must attach a decodable EnC Lambda and Closure Map CDI
 /// row to lambda-bearing methods in the portable PDB, and compiling without the flag
 /// must emit no EnC CDI rows at all.
@@ -115,7 +115,7 @@ let transform (values: int list) =
 
         Assert.True(lambdaMapBlobs.Length = 1, $"expected exactly one EnC lambda map CDI row, found %d{lambdaMapBlobs.Length}")
 
-        // The blob decodes with the F# decoder and matches the C1 extraction for this
+        // The blob decodes with the F# decoder and matches the occurrence extraction for this
         // source: two occurrences, occurrence key [0] for the outer List.map lambda and
         // [0; 1] for the nested one (the packed key preserves the parent relationship).
         let methodOrdinal, closures, lambdas = deserializeLambdaMap lambdaMapBlobs.Head
@@ -197,7 +197,7 @@ let transform (values: int list) =
                         methodToken
                         (baseline.EncMethodDebugInfos |> Map.toList |> List.map fst)
 
-            // Matches the C1 extraction pinned by the emission test above: occurrence key
+            // Matches the occurrence extraction pinned by the emission test above: occurrence key
             // [0] for the outer List.map lambda and [0; 1] for the nested one, one closure
             // scope per occurrence with lambda i referencing closure i.
             Assert.Equal(UndefinedMethodOrdinal, info.MethodOrdinal)
@@ -216,7 +216,7 @@ let transform (values: int list) =
 
     [<Fact>]
     let ``Baseline PDB without EnC rows decodes to an empty method debug information map`` () =
-        // Back-compat: a flag-off PDB (like any pre-C2 PDB) carries no EnC CDI rows, so the
+        // Back-compat: a flag-off PDB carries no EnC CDI rows, so the
         // baseline read comes back empty instead of failing and sessions start fine on it.
         let assemblyPath = compileSample []
         let pdbPath = pdbPathFor assemblyPath
@@ -263,7 +263,7 @@ let computeAsync (input: int) =
 
         // The blob decodes with the Roslyn-format decoder: two resume points, state
         // numbers 1 and 2 (positional, from the lowering's conversion order), with the
-        // resume-point ORDINAL in the syntax-offset slot (the C2 occurrence-key
+        // resume-point ORDINAL in the syntax-offset slot (the occurrence-key
         // philosophy: deterministic ints, not source offsets).
         let states = deserializeStateMachineStates stateMapBlobs.Head
 

@@ -1314,7 +1314,7 @@ type Calculator<'T>() =
         compileProject checker projectOptions true
 
         // Body-editing a member of a generic type requires the GenericUpdateMethod
-        // runtime capability (Phase E gating, Roslyn parity).
+        // runtime capability (Roslyn parity).
         use session = checker.CreateHotReloadSession(capabilities = [ "GenericUpdateMethod" ])
 
         match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
@@ -1372,7 +1372,7 @@ type Calculator() =
         compileProject checker projectOptions true
 
         // Body-editing a generic method requires the GenericUpdateMethod runtime
-        // capability (Phase E gating, Roslyn parity).
+        // capability (Roslyn parity).
         use session = checker.CreateHotReloadSession(capabilities = [ "GenericUpdateMethod" ])
 
         match session.AddProject(createProjectSnapshot projectOptions) |> Async.RunImmediate with
@@ -2171,7 +2171,7 @@ let mutable newCounter = 0
 
     [<Fact>]
     let ``EmitDelta emits added module value as static field delta`` () =
-        // Phase B1b: an added module-level value lowers to a static backing field on the
+        // An added module-level value lowers to a static backing field on the
         // startup-code class, get_/set_ accessor methods on the module type, and a startup
         // constructor that initializes the field. The delta must append the Field row using
         // the Roslyn EncLog shape: parent TypeDef tagged AddField immediately followed by

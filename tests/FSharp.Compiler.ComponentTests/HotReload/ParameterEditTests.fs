@@ -2,9 +2,9 @@
 
 namespace FSharp.Compiler.ComponentTests.HotReload
 
-// Phase F: parameter metadata updates (UpdateParameters).
+// Parameter metadata updates (UpdateParameters).
 //
-// C# reference template (csharp_enc_reference `phasef` scenario 'param_rename',
+// C# reference template (csharp_enc_reference scenario 'param_rename',
 // Roslyn EmitDifference; mdv recording reference_mdv_param_rename.txt): renaming
 // a parameter of an existing method re-emits the MethodDef row and the Param row
 // as UPDATES (EncMap update entries at the existing row ids); the Param row's
