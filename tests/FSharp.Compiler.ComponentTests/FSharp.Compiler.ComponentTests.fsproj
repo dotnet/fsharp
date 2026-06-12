@@ -65,6 +65,8 @@
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MethodResolution\MethodResolution.fs" />
+	<Compile Include="Conformance\BasicGrammarElements\MethodResolution\StaticMethodResolution.fs" />
+	<Compile Include="Conformance\BasicGrammarElements\PropertyResolution\StaticPropertyResolution.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ModuleDefinitions\ModuleDefinitions.fs" />
     <Compile Include="Conformance\BasicGrammarElements\NamespaceDeclGroups\NamespaceDeclGroups.fs" />
@@ -111,6 +113,7 @@
     <Compile Include="Conformance\Expressions\EvaluationOfElaboratedForms\EvaluationOfElaboratedForms.fs" />
     <Compile Include="Conformance\Expressions\ExpressionQuotations\Baselines.fs" />
     <Compile Include="Conformance\Expressions\ExpressionQuotations\Regressions.fs" />
+    <Compile Include="Conformance\Expressions\ExpressionQuotations\QuotationRendering\QuotationRenderingTests.fs" />
     <Compile Include="Conformance\Expressions\SyntacticSugar\SyntacticSugar.fs" />
     <Compile Include="Conformance\Expressions\SyntacticSugarAndAmbiguities\SyntacticSugarAndAmbiguities.fs" />
     <Compile Include="Conformance\InferenceProcedures\ByrefSafetyAnalysis\ByrefSafetyAnalysis.fs" />
@@ -224,9 +227,11 @@
     <Compile Include="Conformance\TypeForwarding\NestedTests.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\TypesAndTypeConstraints.fs" />
     <Compile Include="Conformance\MultiTargeting.fs" />
+    <Compile Include="EmittedIL\SequencePoints\SequencePointsTests.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\VeryLargeClasses.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
+    <Compile Include="EmittedIL\DebugPointsOnStack\DebugPointsOnStack.fs" />
     <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />
@@ -260,6 +265,9 @@
     <Compile Include="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <Compile Include="EmittedIL\GenericComparison\GenericComparison.fs" />
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_MutualInnerRec_StructuralAssertions.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_RealsigPrivate.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_Specialize_ConstraintVerification.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
