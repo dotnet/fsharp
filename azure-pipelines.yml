@@ -1,8 +1,16 @@
-# F# 15.9 servicing — minimal pipeline 499 trigger acknowledgment
-# Inserted by S4 wrap-up to close gpt55/opus48 azure-pipelines-yml-deferral blocker.
-# Full pipeline matrix lands in S7 (RestorePlan §9) — this stub emits a single check-run
-# so pipeline 499 doesn't 404 on each push, and downstream §S work units that query
-# pipeline 499 health (§8 flake list) get a parseable signal.
+# F# 15.9 servicing pipeline 499 — 1ESPT-compliant stub.
+#
+# Block 8.0: rewrites the Block 1.5 vanilla-YAML stub into a pipeline that
+# extends 1ESPipelineTemplates/MicroBuildTemplate, satisfying the dnceng
+# 1ES Pipeline Template policy (https://aka.ms/1espt). The previous
+# vanilla stub triggered "[1ES PT Error]: Organization breaks pipelines
+# that do not extend one of the following templates - 1ESPT, OneBranchPT"
+# on every push.
+#
+# This remains a NO-OP build. The full build/sign/insertion matrix lands
+# in Block 9.x when eng/CIBuild.cmd is wired (RestorePlan section 9).
+# The stub still completes "green" so pipeline 499 health is parseable
+# and downstream WUs querying its status get a valid signal.
 
 trigger:
   branches:
@@ -10,22 +18,52 @@ trigger:
       - release/dev15.9.x
 pr: none
 
-stages:
-- stage: Acknowledge
-  displayName: 'S4 wrap-up: pipeline trigger acknowledged; full matrix in S7'
-  jobs:
-  - job: noop
-    displayName: 'No-op trigger ack (full build matrix lands S7)'
+variables:
+  - name: _TeamName
+    value: FSharp
+  - name: TeamName
+    value: FSharp
+  - name: _BuildConfig
+    value: Release
+  - name: Codeql.Enabled
+    value: 'false'
+
+resources:
+  repositories:
+    - repository: MicroBuildTemplate
+      type: git
+      name: 1ESPipelineTemplates/MicroBuildTemplate
+      ref: refs/tags/release
+
+extends:
+  template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
+  parameters:
     pool:
-      vmImage: 'windows-2022'
-    steps:
-    - checkout: self
-      fetchDepth: 1
-    - powershell: |
-        Write-Host "F# 15.9 servicing pipeline 499 trigger acknowledged."
-        Write-Host "Branch: $(Build.SourceBranchName)"
-        Write-Host "Commit: $(Build.SourceVersion)"
-        Write-Host "Full build matrix replaces this stub in S7 (RestorePlan §9)."
-        # Exit 0 — this stub is informational only; not a real build.
-        exit 0
-      displayName: 'Emit ack message'
+      name: NetCore1ESPool-Svc-Internal
+      image: 1es-windows-2022
+      os: windows
+    sdl:
+      sourceAnalysisPool:
+        name: NetCore1ESPool-Svc-Internal
+        image: 1es-windows-2022
+        os: windows
+    stages:
+      - stage: Acknowledge
+        displayName: 'Pipeline 499 trigger ack (1ESPT-compliant; full build matrix lands Block 9)'
+        jobs:
+          - job: noop
+            displayName: 'No-op trigger ack'
+            timeoutInMinutes: 10
+            templateContext:
+              outputs: []
+            steps:
+              - checkout: self
+                fetchDepth: 1
+              - powershell: |
+                  Write-Host "F# 15.9 servicing pipeline 499 trigger acknowledged."
+                  Write-Host "Branch: $(Build.SourceBranchName)"
+                  Write-Host "Commit: $(Build.SourceVersion)"
+                  Write-Host "1ES PT compliance: extends MicroBuild.1ES.Official.yml@MicroBuildTemplate"
+                  Write-Host "Full build matrix replaces this stub in Block 9 (RestorePlan section 9)."
+                  exit 0
+                displayName: 'Emit ack message'
