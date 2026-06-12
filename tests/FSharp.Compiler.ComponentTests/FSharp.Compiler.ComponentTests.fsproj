@@ -271,6 +271,7 @@
     <Compile Include="EmittedIL\ByRefTests.fs" />
     <Compile Include="EmittedIL\Misc\Misc.fs" />
     <Compile Include="Misc.fs" />
+    <Compile Include="Optimizations\TaskCEUnitPropertyAccess.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\Platform\Platform.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
