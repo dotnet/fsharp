@@ -3836,7 +3836,7 @@ type FSharpCheckProjectResults
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
     // TODO: Looks like we don't need this
-    member private _.TypedImplementationFiles =
+    member internal _.TypedImplementationFiles =
         if not keepAssemblyContents then
             invalidOp
                 "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"

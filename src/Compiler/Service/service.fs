@@ -7,10 +7,8 @@ open System.Collections
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
-open System.Reflection
 open System.Security.Cryptography
 open System.Threading
-open Microsoft.FSharp.Reflection
 open Internal.Utilities.Collections
 open Internal.Utilities
 open Internal.Utilities.Library
@@ -1083,27 +1081,10 @@ type FSharpChecker
               OptimizeDuringCodeGen = fun _ expr -> expr })
         |> CheckedAssemblyAfterOptimization
 
-    let typedImplementationFilesGetterMethod =
-        typeof<FSharpCheckProjectResults>.GetMethod(
-            "get_TypedImplementationFiles",
-            BindingFlags.Instance ||| BindingFlags.NonPublic)
-
-    let getTypedImplementationFilesViaReflection (projectResults: FSharpCheckProjectResults) =
-        if obj.ReferenceEquals(typedImplementationFilesGetterMethod, null) then
-            invalidOp "Could not resolve get_TypedImplementationFiles on FSharpCheckProjectResults."
-
-        let tupleFields =
-            typedImplementationFilesGetterMethod.Invoke(projectResults, [||])
-            |> FSharpValue.GetTupleFields
-
-        let tcGlobals = tupleFields[0] :?> TcGlobals
-        let typedImplFiles = tupleFields[3] :?> CheckedImplFile list
-        tcGlobals, typedImplFiles
-
     let getHotReloadDiffInputs (projectResults: FSharpCheckProjectResults) =
         // Use non-optimized typed implementation trees for symbol diffing so method-body edits
         // keep user-authored identities (Roslyn parity), while IL deltas still come from built output.
-        let tcGlobals, typedImplFiles = getTypedImplementationFilesViaReflection projectResults
+        let tcGlobals, _thisCcu, _tcImports, typedImplFiles = projectResults.TypedImplementationFiles
         tcGlobals, toHotReloadImplementationSnapshot typedImplFiles
 
     let createHotReloadService sessionStore =
