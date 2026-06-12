@@ -235,7 +235,7 @@ type CompilerEmitArtifacts =
       TokenMappings: FSharp.Compiler.AbstractIL.ILBinaryWriter.ILTokenMappings
       AssemblyBytes: byte[]
       PortablePdbBytes: byte[] option
-      IlxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot
+      IlxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot option
       OptimizedImpls: TypedTree.CheckedAssemblyAfterOptimization
       /// Per-method closure-class name tables (occurrence-chain -> emitted closure type
       /// name) keyed by IL method name, joined in the emit path from the IlxGen
@@ -271,7 +271,7 @@ type ICompilerEmitHook =
         ilxMainModule: ILModuleDef *
         normalizeAssemblyRefs: (ILAssemblyRef -> ILAssemblyRef) *
         optimizedImpls: TypedTree.CheckedAssemblyAfterOptimization *
-        ilxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot *
+        ilxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot option *
         methodClosureNameRows: Map<string, Map<int list, string>> *
         outputFile: string *
         pdbfile: string option -> bool

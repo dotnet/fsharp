@@ -324,6 +324,13 @@ type cenv =
         /// Guard the stack and move to a new one if necessary
         mutable stackGuard: StackGuard
 
+        /// Hot reload side-channel state (closure naming and state machine resume point
+        /// recording) installed on the compilation's CompilerGlobalState by the emit
+        /// hook, resolved once per GenerateCode run. None on compiles that never
+        /// installed any state (flag-off, no hook), so the per-closure and
+        /// per-state-machine call sites do no weak-table probes.
+        hotReloadNameState: ClosureNameAllocationState.ClosureNameStateHolder option
+
     }
 
     member cenv.options =
@@ -3134,9 +3141,8 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 // Resume points are only needed by hot reload baseline-capture compiles
                 // (the EnC State Machine State Map); skip collecting them otherwise.
                 let collectResumptionPoints =
-                    match cenv.g.CompilerGlobalState with
-                    | Some compilerGlobalState ->
-                        ClosureNameAllocationState.isStateMachineResumePointRecordingActive (compilerGlobalState :> obj)
+                    match cenv.hotReloadNameState with
+                    | Some hotReloadNameState -> hotReloadNameState.IsResumePointRecordingActive
                     | None -> false
 
                 let smResult =
@@ -6307,15 +6313,12 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
     // Hot reload: record the state machine's resume points against the
     // emitted struct type name so the fsc emit path can persist them as the EnC State
-    // Machine State Map CDI rows. No recorder installed (flag-off and non-session
-    // compiles) -> strict no-op, byte-identical output.
+    // Machine State Map CDI rows. No state installed (flag-off and non-session
+    // compiles) -> strict no-op, byte-identical output, no weak-table probe.
     do
-        match g.CompilerGlobalState with
-        | Some compilerGlobalState ->
-            ClosureNameAllocationState.recordStateMachineResumePoints
-                (compilerGlobalState :> obj)
-                ilCloTypeRef.FullName
-                (resumptionPoints |> List.map fst)
+        match cenv.hotReloadNameState with
+        | Some hotReloadNameState ->
+            hotReloadNameState.RecordResumePoints(ilCloTypeRef.FullName, resumptionPoints |> List.map fst)
         | None -> ()
 
     // The closure implements what ever interfaces the template implements.
@@ -7227,19 +7230,23 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // hook runs the occurrence-keyed allocator before lowering and installs a
             // stamp -> assigned-name table; consult it FIRST so surviving closures reuse
             // their baseline class names verbatim and added closures get generation-suffixed
-            // names. No table installed (flag-off, non-session compiles, or fail-closed
-            // members) -> existing sequence-replay behavior, byte-identical.
-            let cloName =
-                match ClosureNameAllocationState.tryGetAssignedClosureName (compilerGlobalState :> obj) uniq with
-                | Some assignedName -> assignedName
-                | None -> replayName
+            // names. No state installed (flag-off, non-session compiles, or fail-closed
+            // members) -> existing sequence-replay behavior, byte-identical, and no
+            // side-channel traffic (the holder was resolved once per codegen run).
+            match cenv.hotReloadNameState with
+            | None -> replayName
+            | Some hotReloadNameState ->
+                let cloName =
+                    match hotReloadNameState.TryGetAssignedName uniq with
+                    | Some assignedName -> assignedName
+                    | None -> replayName
 
-            // Baseline capture: record the lambda stamp -> emitted closure type name so the
-            // fsc emit path can join it with the typed-tree lambda occurrence extraction of
-            // the same tree (the stamp bridge documented in docs/hot-reload-closure-mapping.md).
-            // No recorder installed -> strict no-op.
-            ClosureNameAllocationState.recordClosureStampName (compilerGlobalState :> obj) uniq cloName
-            cloName
+                // Baseline capture: record the lambda stamp -> emitted closure type name so the
+                // fsc emit path can join it with the typed-tree lambda occurrence extraction of
+                // the same tree (the stamp bridge documented in docs/hot-reload-closure-mapping.md).
+                // No recorder begun -> strict no-op.
+                hotReloadNameState.Record(uniq, cloName)
+                cloName
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -12688,7 +12695,7 @@ type IlxGenResults =
         topAssemblyAttrs: Attribs
         permissionSets: ILSecurityDecl list
         quotationResourceInfo: (ILTypeRef list * byte[]) list
-        ilxGenEnvSnapshot: IlxGenEnvSnapshot
+        ilxGenEnvSnapshot: IlxGenEnvSnapshot option
     }
 
 let private GenerateResourcesForQuotations reflectedDefinitions cenv =
@@ -12732,6 +12739,18 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
 
     use _ = UseBuildPhase BuildPhase.IlxGen
     let g = cenv.g
+
+    // Hot reload side-channel state for this codegen run, resolved from the weak
+    // table once so the per-closure and per-state-machine call sites consult a plain
+    // field. Compiles that never installed state (flag-off, no emit hook) resolve
+    // None and pay nothing per closure.
+    let cenv =
+        { cenv with
+            hotReloadNameState =
+                g.CompilerGlobalState
+                |> Option.bind (fun compilerGlobalState ->
+                    ClosureNameAllocationState.tryGetClosureNameState (compilerGlobalState :> obj))
+        }
 
     // Generate the implementations into the mgbuf
     let mgbuf = AssemblyBuilder(cenv, anonTypeTable)
@@ -12781,7 +12800,13 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
         topAssemblyAttrs = topAssemblyAttrs
         permissionSets = permissionSets
         quotationResourceInfo = quotationResourceInfo
-        ilxGenEnvSnapshot = snapshotIlxGenEnv eenv
+        // Snapshot the final IlxGen environment only for hot reload baseline-capture
+        // compiles (the emit hook begins closure-name recording before codegen runs);
+        // ordinary compiles must not retain valsInScope/witness maps past codegen.
+        ilxGenEnvSnapshot =
+            match cenv.hotReloadNameState with
+            | Some hotReloadNameState when hotReloadNameState.IsClosureNameRecordingActive -> Some(snapshotIlxGenEnv eenv)
+            | _ -> None
     }
 
 //-------------------------------------------------------------------------
@@ -12932,6 +12957,7 @@ type IlxAssemblyGenerator(amap: ImportMap, g: TcGlobals, tcVal: ConstraintSolver
             optimizeDuringCodeGen = (fun _flag expr -> expr)
             stackGuard = getEmptyStackGuard ()
             delayedGenMethods = Queue()
+            hotReloadNameState = None
         }
 
     /// Register a set of referenced assemblies with the ILX code generator

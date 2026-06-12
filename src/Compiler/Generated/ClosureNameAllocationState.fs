@@ -30,8 +30,12 @@ module internal FSharp.Compiler.ClosureNameAllocationState
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
+/// The per-compilation closure-name state. Exposed (not private) so IlxGen can
+/// resolve the owner's holder ONCE per codegen run and consult it directly at the
+/// per-closure/per-state-machine call sites instead of probing the weak table for
+/// every closure.
 [<Sealed>]
-type private ClosureNameStateHolder() =
+type ClosureNameStateHolder() =
     let syncRoot = obj ()
     let mutable recordedNamesByStamp: Dictionary<int64, string> option = None
     let mutable assignedNamesByStamp: Map<int64, string> = Map.empty
@@ -57,6 +61,9 @@ type private ClosureNameStateHolder() =
             | Some recorded ->
                 recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
             | None -> Map.empty)
+
+    member _.IsClosureNameRecordingActive =
+        lock syncRoot (fun () -> recordedNamesByStamp.IsSome)
 
     member _.IsResumePointRecordingActive =
         lock syncRoot (fun () -> recordedResumePointsByTypeName.IsSome)
@@ -98,17 +105,15 @@ let private tryGetHolder (owner: obj) =
 let private getOrCreateHolder (owner: obj) =
     holders.GetValue(owner, fun _ -> ClosureNameStateHolder())
 
+/// The installed closure-name state of the owner, when any was ever installed for
+/// it; None on compiles that never installed state (flag-off, no emit hook).
+/// Resolve once per codegen run so the per-closure call sites bypass the weak table.
+let tryGetClosureNameState (owner: obj) : ClosureNameStateHolder option = tryGetHolder owner
+
 /// Starts (or restarts) stamp -> emitted-closure-name recording for the owner's
 /// compile. Installed by the emit hook for baseline-capture compiles only.
 let beginClosureStampNameRecording (owner: obj) =
     (getOrCreateHolder owner).BeginRecording()
-
-/// Records the closure type name emitted for a lambda stamp. No-op unless recording
-/// was begun for the owner.
-let recordClosureStampName (owner: obj) (stamp: int64) (name: string) =
-    match tryGetHolder owner with
-    | Some holder -> holder.Record(stamp, name)
-    | None -> ()
 
 /// The stamp -> closure-name recording of the owner's compile; empty when recording
 /// was never begun.
@@ -116,22 +121,6 @@ let getRecordedClosureStampNames (owner: obj) : Map<int64, string> =
     match tryGetHolder owner with
     | Some holder -> holder.RecordedNames()
     | None -> Map.empty
-
-/// True when resume-point recording was begun for the owner (hot reload
-/// baseline-capture compiles only). Lets the state machine lowering skip collecting
-/// resume points entirely on ordinary compiles.
-let isStateMachineResumePointRecordingActive (owner: obj) : bool =
-    match tryGetHolder owner with
-    | Some holder -> holder.IsResumePointRecordingActive
-    | None -> false
-
-/// Records the resume-point state numbers of a lowered state machine against its
-/// emitted struct type's full name. No-op unless recording was begun for
-/// the owner.
-let recordStateMachineResumePoints (owner: obj) (structTypeFullName: string) (resumePoints: int list) =
-    match tryGetHolder owner with
-    | Some holder -> holder.RecordResumePoints(structTypeFullName, resumePoints)
-    | None -> ()
 
 /// The state-machine-struct-name -> resume-point recording of the owner's compile;
 /// empty when recording was never begun.
@@ -143,13 +132,6 @@ let getRecordedStateMachineResumePoints (owner: obj) : Map<string, int list> =
 /// Installs the allocator-assigned stamp -> closure-name table for a delta compile.
 let setAssignedClosureNames (owner: obj) (names: Map<int64, string>) =
     (getOrCreateHolder owner).SetAssignedNames(names)
-
-/// The allocator-assigned name for a lambda stamp, when a table is installed and the
-/// stamp was allocated; None means the caller keeps its existing naming behavior.
-let tryGetAssignedClosureName (owner: obj) (stamp: int64) : string option =
-    match tryGetHolder owner with
-    | Some holder -> holder.TryGetAssignedName stamp
-    | None -> None
 
 /// Clears all closure-name state for the owner (recording and assigned names).
 let clearClosureNameState (owner: obj) =

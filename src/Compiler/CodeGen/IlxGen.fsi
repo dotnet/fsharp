@@ -95,8 +95,9 @@ type public IlxGenResults =
 
         /// The generated IL/ILX resources associated with F# quotations
         quotationResourceInfo: (ILTypeRef list * byte[]) list
-        /// Snapshot of the ILX code generation environment for hot reload baselines
-        ilxGenEnvSnapshot: IlxGenEnvSnapshot
+        /// Snapshot of the ILX code generation environment, populated only for hot
+        /// reload baseline-capture compiles so ordinary compiles retain nothing
+        ilxGenEnvSnapshot: IlxGenEnvSnapshot option
     }
 
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"

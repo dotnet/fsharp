@@ -46,11 +46,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
         =
         let portablePdbSnapshot = artifacts.PortablePdbBytes |> Option.map HotReloadPdb.createSnapshot
 
-        let ilxGenEnvironment =
-            if obj.ReferenceEquals(artifacts.IlxGenEnvSnapshot, null) then
-                None
-            else
-                Some artifacts.IlxGenEnvSnapshot
+        let ilxGenEnvironment = artifacts.IlxGenEnvSnapshot
 
         let baseline =
             HotReloadBaseline.createFromEmittedArtifacts
