@@ -428,6 +428,7 @@ namespace Microsoft.FSharp.Linq.QueryRunExtensions
     /// <namespacedoc><summary>
     ///    Contains modules used to support the F# query syntax.  
     /// </summary></namespacedoc>
+    [<AutoOpen>]
     module LowPriority = 
         type Microsoft.FSharp.Linq.QueryBuilder with
             /// <summary>
@@ -439,6 +440,7 @@ namespace Microsoft.FSharp.Linq.QueryRunExtensions
     /// <summary>
     /// A module used to support the F# query syntax.  
     /// </summary>
+    [<AutoOpen>]
     module HighPriority = 
         type Microsoft.FSharp.Linq.QueryBuilder with
             /// <summary>

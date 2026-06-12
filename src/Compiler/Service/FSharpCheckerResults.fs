@@ -1631,11 +1631,18 @@ type internal TypeCheckInfo
                         | None -> ValueNone
                     | _ -> ValueNone
 
+            // Wildcard _ should not resolve to the member's synthetic self-identifier via fallback.
+            let isDiscardIdentifier =
+                match residueOpt, origLongIdentOpt with
+                | None, Some [ "_" ] -> true
+                | _ -> false
+
             match nameResItems with
             | NameResResult.Cancel(denv, m) -> Some([], denv, m)
             | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) ->
                 // lookup based on name resolution results successful
                 Some(items |> List.map (CompletionItem (getType ()) ValueNone), denv, m)
+            | _ when isDiscardIdentifier -> None
             | _ ->
                 match origLongIdentOpt with
                 | None -> None
