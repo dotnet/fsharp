@@ -8271,8 +8271,8 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
     let mEnumExpr = synEnumExpr.Range
     let mFor = match spFor with DebugPointAtFor.Yes mStart -> mStart | DebugPointAtFor.No -> mEnumExpr
     let mIn = match spIn with DebugPointAtInOrTo.Yes mStart -> mStart | DebugPointAtInOrTo.No -> mBodyExpr
-    let spEnumExpr = DebugPointAtBinding.Yes mEnumExpr
-    let spForBind = match spFor with DebugPointAtFor.Yes m -> DebugPointAtBinding.Yes m | DebugPointAtFor.No -> DebugPointAtBinding.NoneAtSticky
+    let spEnumExpr = match spFor with DebugPointAtFor.Yes _ -> DebugPointAtBinding.Yes mEnumExpr | DebugPointAtFor.No -> DebugPointAtBinding.NoneAtSticky
+    let spForBind = match spFor with DebugPointAtFor.Yes _ -> DebugPointAtBinding.Yes(unionRanges mFor mPat) | DebugPointAtFor.No -> DebugPointAtBinding.NoneAtInvisible
     let spInAsWhile = match spIn with DebugPointAtInOrTo.Yes m -> DebugPointAtWhile.Yes m | DebugPointAtInOrTo.No -> DebugPointAtWhile.No
 
     // Check the expression being enumerated
@@ -8296,10 +8296,10 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
             let elemTy = destArrayTy g enumExprTy
 
             // Evaluate the array index lookup
-            let bodyExprFixup elemVar bodyExpr = mkInvisibleLet mIn elemVar (mkLdelem g mIn elemTy arrExpr idxExpr) bodyExpr
+            let bodyExprFixup elemVar bodyExpr = mkLet spForBind mFor elemVar (mkLdelem g mIn elemTy arrExpr idxExpr) bodyExpr
 
             // Evaluate the array expression once and put it in arrVar
-            let overallExprFixup overallExpr = mkLet spForBind mFor arrVar enumExpr overallExpr
+            let overallExprFixup overallExpr = mkLet spEnumExpr mEnumExpr arrVar enumExpr overallExpr
 
             // Ask for a loop over integers for the given range
             (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero g mFor, mkDecr g mFor (mkLdlen g mFor arrExpr)))
@@ -8317,12 +8317,12 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
                 // Evaluate the span index lookup
                 let bodyExprFixup elemVar bodyExpr =
                     let elemAddrVar, _ = mkCompGenLocal mIn "addr" elemAddrTy
-                    let e = mkInvisibleLet mIn elemVar (mkAddrGet mIn (mkLocalValRef elemAddrVar)) bodyExpr
+                    let e = mkLet spForBind mFor elemVar (mkAddrGet mIn (mkLocalValRef elemAddrVar)) bodyExpr
                     let getItemCallExpr, _ = BuildMethodCall tcVal g cenv.amap PossiblyMutates mWholeExpr true getItemMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] [ idxExpr ] None
                     mkInvisibleLet mIn elemAddrVar getItemCallExpr e
 
                 // Evaluate the span expression once and put it in spanVar
-                let overallExprFixup overallExpr = mkLet spForBind mFor spanVar enumExpr overallExpr
+                let overallExprFixup overallExpr = mkLet spEnumExpr mEnumExpr spanVar enumExpr overallExpr
 
                 let getLengthCallExpr, _ = BuildMethodCall tcVal g cenv.amap PossiblyMutates mWholeExpr true getLengthMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] [] None
 
@@ -8411,13 +8411,13 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
         | Choice3Of3(enumerableVar, enumeratorVar, _, getEnumExpr, _, guardExpr, currentExpr) ->
 
             // This compiled for must be matched EXACTLY by CompiledForEachExpr
-            mkLet spForBind mFor enumerableVar enumExpr
-              (mkLet spEnumExpr mFor enumeratorVar getEnumExpr
+            mkLet spEnumExpr mEnumExpr enumerableVar enumExpr
+              (mkInvisibleLet mFor enumeratorVar getEnumExpr
                    (mkTryFinally g
                        (mkWhile g
                            (spInAsWhile,
                             WhileLoopForCompiledForEachExprMarker, guardExpr,
-                            mkInvisibleLet mIn elemVar currentExpr bodyExpr,
+                            mkLet spForBind mIn elemVar currentExpr bodyExpr,
                             mFor),
                         BuildDisposableCleanup cenv env mWholeExpr enumeratorVar,
                         mFor, g.unit_ty, DebugPointAtTry.No, DebugPointAtFinally.No)))
