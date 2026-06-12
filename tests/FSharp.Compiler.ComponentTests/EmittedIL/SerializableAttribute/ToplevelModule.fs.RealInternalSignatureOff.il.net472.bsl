@@ -63,7 +63,7 @@
 
     .method assembly specialname rtspecialname instance void  .ctor(int32 item) cil managed
     {
-      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+      .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
                                                                                                               class [runtime]System.Type) = ( 01 00 60 06 00 00 08 41 42 43 2B 45 78 70 72 00   
                                                                                                                                                      00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -765,7 +765,7 @@
 
       .method assembly specialname rtspecialname instance void  .ctor(int32 item) cil managed
       {
-        .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+        .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
                                                                                                                 class [runtime]System.Type) = ( 01 00 60 06 00 00 0C 41 42 43 2B 41 42 43 2B 45   
                                                                                                                                                        78 70 72 00 00 )                                  
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
