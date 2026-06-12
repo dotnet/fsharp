@@ -344,7 +344,7 @@ type GenericType<'X> with
 
     one |> withAdditionalSourceFiles [ two; three ]
     |> compile
-    |> verifyILContains [ ".Print<ActualType>" ]
+    |> verifyILPresent [ ".Print<ActualType>" ]
 
 // https://github.com/dotnet/fsharp/issues/14310
 [<Fact>]
@@ -990,9 +990,9 @@ let test() =
     |> shouldSucceed
     |> ignore
 
-// Verify M(()) and M() produce identical IL method signatures
+// Regression for #19615: M(()) emits explicit Unit argument, distinct from a no-arg M().
 [<Fact>]
-let ``Unit param - M(()) and M() produce same IL method signature`` () =
+let ``Unit param - M(()) emits Unit argument distinct from M(int)`` () =
     FSharp """
 module Test
 type D() =
@@ -1001,8 +1001,7 @@ type D() =
 """
     |> compile
     |> shouldSucceed
-    |> verifyILContains [
-        ".method public hidebysig instance int32 M() cil managed"
+    |> verifyILPresent [
+        ".method public hidebysig instance int32 M(class [FSharp.Core]Microsoft.FSharp.Core.Unit _arg1) cil managed"
         ".method public hidebysig instance int32 M(int32 y) cil managed"
     ]
-    |> ignore

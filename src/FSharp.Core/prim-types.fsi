@@ -1233,14 +1233,17 @@ namespace Microsoft.FSharp.Core
 
         /// Represents a byref that can be written
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+        [<Sealed>]
         type Out
 
         /// Represents a byref that can be read
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+        [<Sealed>]
         type In
 
         /// Represents a byref that can be both read and written
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
+        [<Sealed>]
         type InOut
 
     /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
@@ -1745,6 +1748,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="obj">The input object.</param>
             ///
             /// <returns>The managed pointer.</returns>
+            [<NoDynamicInvocation>]
             val inline (~&): obj: 'T -> byref<'T>
 
             /// <summary>Address-of. Uses of this value may result in the generation of unverifiable code.</summary>
@@ -1752,6 +1756,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="obj">The input object.</param>
             ///
             /// <returns>The unmanaged pointer.</returns>
+            [<NoDynamicInvocation>]
             val inline (~&&): obj: 'T -> nativeptr<'T>
 
         //-------------------------------------------------------------------------
@@ -2773,6 +2778,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example-tbd></example-tbd>
         /// 
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (~-): n: ^T -> ^T when ^T: (static member ( ~- ): ^T -> ^T) and default ^T: int
 
         /// <summary>Overloaded addition operator</summary>
@@ -2803,6 +2809,7 @@ namespace Microsoft.FSharp.Core
         /// 10 - 2 //  Evaluates to 8
         /// </code>
         /// </example>
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (-): x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2): (static member (-): ^T1 * ^T2 -> ^T3) and default ^T2: ^T3 and default ^T3: ^T1 and default ^T3: ^T2 and default ^T1: ^T3 and default ^T1: ^T2 and default ^T1: int
         
         /// <summary>Overloaded multiplication operator</summary>
@@ -2831,6 +2838,7 @@ namespace Microsoft.FSharp.Core
         /// 16 / 2 //  Evaluates to 8
         /// </code>
         /// </example>
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (/): x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2): (static member (/): ^T1 * ^T2 -> ^T3) and default ^T2: ^T3 and default ^T3: ^T1 and default ^T3: ^T2 and default ^T1: ^T3 and default ^T1: ^T2 and default ^T1: int
         
         /// <summary>Overloaded modulo operator</summary>
@@ -2845,6 +2853,7 @@ namespace Microsoft.FSharp.Core
         /// 29 % 5 //  Evaluates to 4
         /// </code>
         /// </example>
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (%): x: ^T1 -> y: ^T2 -> ^T3 when (^T1 or ^T2): (static member (%): ^T1 * ^T2 -> ^T3) and default ^T2: ^T3 and default ^T3: ^T1 and default ^T3: ^T2 and default ^T1: ^T3 and default ^T1: ^T2 and default ^T1: int
         
         /// <summary>Overloaded bitwise-AND operator</summary>
@@ -2862,6 +2871,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 9
         /// </example>
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (&&&): x: ^T -> y: ^T -> ^T when ^T: (static member (&&&): ^T * ^T -> ^T) and default ^T: int
         
         /// <summary>Overloaded bitwise-OR operator</summary>
@@ -2879,6 +2889,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 15
         /// </example>
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (|||): x: ^T -> y: ^T -> ^T when ^T: (static member (|||): ^T * ^T -> ^T) and default ^T: int
         
         /// <summary>Overloaded bitwise-XOR operator</summary>
@@ -2896,6 +2907,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 6
         /// </example>
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (^^^): x: ^T -> y: ^T -> ^T when ^T: (static member (^^^): ^T * ^T -> ^T) and default ^T: int
         
         /// <summary>Overloaded byte-shift left operator by a specified number of bits</summary>
@@ -2912,6 +2924,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 208
         /// </example>
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (<<<): value: ^T -> shift: int32 -> ^T when ^T : (static member (<<<) : ^T * int32 -> ^T) and default ^T : int
         
         /// <summary>Overloaded byte-shift right operator by a specified number of bits</summary>
@@ -2930,6 +2943,7 @@ namespace Microsoft.FSharp.Core
         /// Evaluates to 3
         /// </code>
         /// </example>
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (>>>): value: ^T -> shift: int32 -> ^T when ^T: (static member (>>>): ^T * int32 -> ^T) and default ^T: int
         
         /// <summary>Overloaded bitwise-NOT operator</summary>
@@ -2946,6 +2960,7 @@ namespace Microsoft.FSharp.Core
         /// Evaluates to 195
         /// </example>
         /// 
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (~~~): value: ^T -> ^T when ^T: (static member (~~~): ^T -> ^T) and default ^T: int
         
         /// <summary>Overloaded prefix-plus operator</summary>
@@ -2956,6 +2971,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example-tbd></example-tbd>
         /// 
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline (~+): value: ^T -> ^T when ^T: (static member (~+): ^T -> ^T) and default ^T: int
         
         /// <summary>Structural less-than comparison</summary>
@@ -3289,6 +3305,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The result value.</returns>
         [<CompiledName("Rethrow")>]
         [<Obsolete("This function has been renamed to 'reraise'. Please adjust your code to reflect this", true)>]
+        [<NoDynamicInvocation>]
         val inline rethrow: unit -> 'T
 
         /// <summary>Rethrows an exception. This should only be used when handling an exception</summary>
@@ -3310,6 +3327,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Reraise")>]
+        [<NoDynamicInvocation>]
         val inline reraise: unit -> 'T
 
         /// <summary>Builds a <see cref="T:System.Exception"/> object.</summary>
@@ -4493,6 +4511,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToByte")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline byte: value: ^T -> byte when ^T: (static member op_Explicit: ^T -> byte) and default ^T: int        
         
         /// <summary>Converts the argument to signed byte. This is a direct conversion for all 
@@ -4513,6 +4532,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToSByte")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline sbyte: value:^T -> sbyte when ^T: (static member op_Explicit: ^T -> sbyte) and default ^T: int
         
         /// <summary>Converts the argument to signed 16-bit integer. This is a direct conversion for all 
@@ -4533,6 +4553,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToInt16")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline int16: value: ^T -> int16 when ^T: (static member op_Explicit: ^T -> int16) and default ^T: int
         
         /// <summary>Converts the argument to unsigned 16-bit integer. This is a direct conversion for all 
@@ -4553,6 +4574,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToUInt16")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline uint16: value: ^T -> uint16 when ^T: (static member op_Explicit: ^T -> uint16) and default ^T: int
         
         /// <summary>Converts the argument to signed 32-bit integer. This is a direct conversion for all 
@@ -4632,6 +4654,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToInt32")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline int32: value: ^T -> int32 when ^T: (static member op_Explicit: ^T -> int32) and default ^T: int
 
         /// <summary>Converts the argument to unsigned 32-bit integer. This is a direct conversion for all 
@@ -4652,6 +4675,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToUInt32")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline uint32: value: ^T -> uint32 when ^T: (static member op_Explicit: ^T -> uint32) and default ^T: int
 
         /// <summary>Converts the argument to signed 64-bit integer. This is a direct conversion for all 
@@ -4672,6 +4696,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToInt64")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline int64: value: ^T -> int64 when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
 
         /// <summary>Converts the argument to unsigned 64-bit integer. This is a direct conversion for all 
@@ -4692,6 +4717,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToUInt64")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline uint64: value: ^T -> uint64 when ^T: (static member op_Explicit: ^T -> uint64) and default ^T: int
 
         /// <summary>Converts the argument to 32-bit float. This is a direct conversion for all 
@@ -4712,6 +4738,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToSingle")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline float32: value: ^T -> float32 when ^T: (static member op_Explicit: ^T -> float32) and default ^T: int
 
         /// <summary>Converts the argument to 64-bit float. This is a direct conversion for all 
@@ -4732,6 +4759,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToDouble")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline float: value: ^T -> float when ^T: (static member op_Explicit: ^T -> float) and default ^T: int
 
         /// <summary>Converts the argument to signed native integer. This is a direct conversion for all 
@@ -4751,6 +4779,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToIntPtr")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline nativeint: value: ^T -> nativeint when ^T: (static member op_Explicit: ^T -> nativeint) and default ^T: int
 
         /// <summary>Converts the argument to unsigned native integer using a direct conversion for all 
@@ -4770,6 +4799,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToUIntPtr")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline unativeint: value: ^T -> unativeint when ^T: (static member op_Explicit: ^T -> unativeint) and default ^T: int
         
         /// <summary>Converts the argument to a string using <c>ToString</c>.</summary>
@@ -4809,6 +4839,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToDecimal")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline decimal: value: ^T -> decimal when ^T: (static member op_Explicit: ^T -> decimal) and default ^T: int
 
         /// <summary>Converts the argument to character. Numeric inputs are converted according to the UTF-16 
@@ -4828,6 +4859,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToChar")>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         val inline char: value: ^T -> char when ^T: (static member op_Explicit: ^T -> char) and default ^T: int
 
         /// <summary>An active pattern to match values of type <see cref="T:System.Collections.Generic.KeyValuePair"/></summary>
@@ -5929,6 +5961,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline (~-): value: ^T -> ^T when ^T: (static member (~-): ^T -> ^T) and default ^T: int
 
             /// <summary>Overloaded subtraction operator (checks for overflow)</summary>
@@ -5976,6 +6009,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToByte")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline byte: value: ^T -> byte when ^T: (static member op_Explicit: ^T -> byte) and default ^T: int
 
             /// <summary>Converts the argument to <c>sbyte</c>. This is a direct, checked conversion for all 
@@ -5990,6 +6024,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToSByte")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline sbyte: value: ^T -> sbyte when ^T: (static member op_Explicit: ^T -> sbyte) and default ^T: int
 
             /// <summary>Converts the argument to <c>int16</c>. This is a direct, checked conversion for all 
@@ -6004,6 +6039,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToInt16")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline int16: value: ^T -> int16 when ^T: (static member op_Explicit: ^T -> int16) and default ^T: int
 
             /// <summary>Converts the argument to <c>uint16</c>. This is a direct, checked conversion for all 
@@ -6018,6 +6054,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToUInt16")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline uint16: value: ^T -> uint16 when ^T: (static member op_Explicit: ^T -> uint16) and default ^T: int
 
             /// <summary>Converts the argument to <c>int</c>. This is a direct, checked conversion for all 
@@ -6046,6 +6083,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToInt32")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline int32: value: ^T -> int32 when ^T: (static member op_Explicit: ^T -> int32) and default ^T: int
 
             /// <summary>Converts the argument to <c>uint32</c>. This is a direct, checked conversion for all 
@@ -6060,6 +6098,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToUInt32")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline uint32: value: ^T -> uint32 when ^T: (static member op_Explicit: ^T -> uint32) and default ^T: int
 
             /// <summary>Converts the argument to <c>int64</c>. This is a direct, checked conversion for all 
@@ -6074,6 +6113,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToInt64")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline int64: value: ^T -> int64 when ^T: (static member op_Explicit: ^T -> int64) and default ^T: int
 
             /// <summary>Converts the argument to <c>uint64</c>. This is a direct, checked conversion for all 
@@ -6088,6 +6128,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             ///  
             [<CompiledName("ToUInt64")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline uint64: value: ^T -> uint64 when ^T: (static member op_Explicit: ^T -> uint64) and default ^T: int
 
             /// <summary>Converts the argument to <see cref="T:Microsoft.FSharp.Core.nativeint" />. This is a direct, checked conversion for all 
@@ -6101,6 +6142,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToIntPtr")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline nativeint: value: ^T -> nativeint when ^T: (static member op_Explicit: ^T -> nativeint) and default ^T: int
 
             /// <summary>Converts the argument to <c>unativeint</c>. This is a direct, checked conversion for all 
@@ -6114,6 +6156,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToUIntPtr")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline unativeint: value: ^T -> unativeint when ^T: (static member op_Explicit: ^T -> unativeint) and default ^T: int
 
             /// <summary>Converts the argument to <c>char</c>. Numeric inputs are converted using a checked 
@@ -6128,6 +6171,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToChar")>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             val inline char: value: ^T -> char when ^T: (static member op_Explicit: ^T -> char) and default ^T: int
 
 namespace Microsoft.FSharp.Control
