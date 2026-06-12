@@ -85,21 +85,21 @@ A method addition that passes the rude-edit checks requires
 not support it, the diff reports `RudeEditKind.NotSupportedByRuntime` with the
 `hotReloadAdditionNotSupportedByRuntime` FSComp message naming the capability.
 
-## Phase B and beyond
+## Capability gating beyond method additions
 
-Field additions are capability-gated as of Phase B1b/B2:
+Field additions are capability-gated:
 
 - Module-level values (static backing field + accessors) require
-  `AddStaticFieldToExistingType` + `AddMethodToExistingType` (B1b).
+  `AddStaticFieldToExistingType` + `AddMethodToExistingType`.
 - Instance fields on CLASSES (`let mutable` / `[<DefaultValue>] val mutable` /
   auto-property backing fields) require `AddInstanceFieldToExistingType`,
   checked by the entity-level field diff in `compareEntities` (a pure field
   addition no longer reports `TypeLayoutChange`); per-field staticness selects
-  the static or instance capability (B2).
+  the static or instance capability.
 - STRUCT (and record/union/enum) field additions stay `TypeLayoutChange`
   permanently — the runtime cannot re-layout value types (C# identical).
 
-Generic edits are capability-gated as of Phase E (Roslyn parity:
+Generic edits are capability-gated (Roslyn parity:
 `AbstractEditAndContinueAnalyzer.InGenericContext`, which walks the symbol chain
 for a generic method arity or a generic containing type):
 
@@ -123,7 +123,7 @@ typars); erased (measure) typars do not count, so measure-only generic types
 stay gated like non-generic IL. `EntitySnapshot.IsGeneric` mirrors this for
 the entity-level field diff.
 
-Attribute edits are capability-gated as of Phase F: changing the custom
+Attribute edits are capability-gated: changing the custom
 attributes of an EXISTING member (add/remove/argument change, detected via
 `BindingSnapshot.AttributesDigest`) requires `ChangeCustomAttributes`;
 without it the diff reports `RudeEditKind.NotSupportedByRuntime` with the
@@ -134,7 +134,7 @@ the edit is an ordinary member update; members whose attribute rows are
 Property/Event-parented (accessors, module values) fail closed — see
 docs/hot-reload-member-additions.md.
 
-Parameter renames are capability-gated as of Phase F: a matched binding whose
+Parameter renames are capability-gated: a matched binding whose
 compiled parameter NAMES differ (`BindingSnapshot.ParameterNames` — curried/
 tupled groups flattened, the implicit `this` argument excluded; renaming the
 self identifier is not a parameter rename) requires `UpdateParameters`;
@@ -145,8 +145,8 @@ With the capability the member re-emits as an ordinary update whose Param
 rows carry the new names. Parameter TYPE changes remain `SignatureChange`
 rude edits.
 
-`NewTypeDefinition` gates added-lambda closure classes (Phase C4) and, as of
-Phase F, USER-DEFINED type additions: adding a class/record/union/struct
+`NewTypeDefinition` gates added-lambda closure classes and
+USER-DEFINED type additions: adding a class/record/union/struct
 classifies as a `SemanticEditKind.Insert` entity edit when the capability is
 granted (`RudeEditKind.NotSupportedByRuntime` naming it otherwise); other
 representations (interfaces, enums, delegates) stay `DeclarationAdded` rude

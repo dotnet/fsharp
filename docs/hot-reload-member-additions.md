@@ -1,4 +1,4 @@
-# Hot reload: emitting added members (Phases B1b, B2, B3)
+# Hot reload: emitting added members
 
 This note records the delta format decisions behind emitting ADDED members
 (static fields, instance fields, methods, parameters, properties, events) in
@@ -53,8 +53,8 @@ Historically the F# writer put the `Add*` operation on the member row itself
 (e.g. `(Method, rowId, AddMethod)`). That shape can NOT be applied by the
 runtime: `ApplyDelta` treats the member rid as a parent rid, corrupting member
 lists, and never applies the member row contents. It went unnoticed because no
-test ever runtime-applied an added member. Phase B1b switched ALL member kinds
-to the Roslyn/CLR parent+pair shape; there is no remaining method-path
+test ever runtime-applied an added member. The writer now uses the Roslyn/CLR
+parent+pair shape for ALL member kinds; there is no remaining method-path
 discrepancy.
 
 The numeric operation codes were also corrected to the CLR/SRM values
@@ -118,7 +118,7 @@ the F# runtime test:
 - If the type was already initialized, the constructor does not re-run and
   the added field reads `default(T)`.
 
-## Instance field additions (Phase B2)
+## Instance field additions
 
 ### C# reference EncLog (Roslyn EmitDifference, csharp_enc_reference `members` scenario)
 
@@ -139,8 +139,8 @@ EnC Map: TypeRef add, Field add, MethodDef 1 UPDATE, MemberRef add,
          AssemblyRef add (token-sorted; NO entry for the AddField parent)
 ```
 
-Identical `(TypeDef, AddField) + (Field, Default)` pairing as the B1b static
-case; the only structural difference from a static field add is the paired
+Identical `(TypeDef, AddField) + (Field, Default)` pairing as the static
+case above; the only structural difference from a static field add is the paired
 constructor update instead of a `.cctor` update.
 
 ### F# lowering and classification
@@ -149,8 +149,8 @@ constructor update instead of a `.cctor` update.
   constructor: the typed-tree diff pairs the `.ctor` binding (and any member
   body reading the field) as plain MethodBody updates, and the field itself
   surfaces only through the ENTITY representation (`fsobjmodel_rfields`).
-  Constructor pairing therefore needs no by-name resolution (unlike the B1b
-  startup `.cctor`): the ctor IS a typed-tree binding. The diff's runtime
+  Constructor pairing therefore needs no by-name resolution (unlike the
+  module-value startup `.cctor`): the ctor IS a typed-tree binding. The diff's runtime
   return-type identity for constructors is `void` (the IL truth), not the
   constructed type — required for `.ctor` MethodBody edits to resolve against
   baseline method tokens.
@@ -182,7 +182,7 @@ C# EnC parity, asserted by the runtime tests:
 - Multi-generation: a second added field chains through the updated baseline
   (gen-1 field tokens resolve; only the new Field row is appended).
 
-## Property and event additions (Phase B3)
+## Property and event additions
 
 ### C# reference EncLog (Roslyn EmitDifference, csharp_enc_reference `members` scenario)
 
@@ -246,7 +246,7 @@ the MethodSemantics rows, exactly like FieldList/MethodList for added types.
   already exists (baseline or chained from an earlier generation) the parent
   entry reuses it and no map row is emitted. Validated across generations at
   runtime (gen-1 adds the map row, gen-2 reuses it from the chained baseline).
-- An F# auto-property (`member val`) composes the B2 field machinery with the
+- An F# auto-property (`member val`) composes the instance-field machinery with the
   accessor/property machinery: AddField pair (backing field, ctor-paired
   initializer) + two AddMethod pairs + AddProperty pair + two MethodSemantics
   rows — the recorded C# template minus the custom-attribute rows (CA
@@ -297,7 +297,7 @@ in `IlxDeltaEmitter.fs`):
   displaced ADDED Event row itself (chained row 2, fresh row 1, new EventMap
   row for the declaring type) applies and fires.
 
-### mdv parity notes (B2/B3 consolidation)
+### mdv parity notes (field/property/event consolidation)
 
 - A three-generation chain mixing method, instance-field, and auto-property
   additions aggregates cleanly under mdv (no `EnCMap`/table errors), and mdv
@@ -309,15 +309,16 @@ in `IlxDeltaEmitter.fs`):
   row cursors past a gap, so a later generation's added rows produced an
   EncMap readers reject ("EnCMap table not sorted or has missing records")
   and members the runtime could not link. Exposed by the mixed-additions
-  chain (gen 1 update+add in the same table), latent before B2/B3.
+  chain (gen 1 update+add in the same table), previously latent.
 - Divergences from the recorded C# templates, all deliberate this slice:
-  EncLog group ordering is the established F# one (see the C4 notes) rather
+  EncLog group ordering is the established F# one (see the added-closure-class
+  notes below) rather
   than Roslyn's strict by-table interleaving; F# auto-property backing fields
   keep their F# names (`NewProp@`) instead of C#'s `<NewProp>k__BackingField`.
-  (Custom-attribute rows on added members were deferred here and are emitted
-  as of Phase F — see "Custom attribute rows" below.)
+  (Custom-attribute rows on added members were initially deferred and are now
+  emitted — see "Custom attribute rows" below.)
 
-## New type definitions (Phase C4: added closure classes)
+## New type definitions (added closure classes)
 
 ### C# reference EncLog (Roslyn EmitDifference, csharp_enc_reference harness)
 
@@ -394,10 +395,10 @@ This differs from Roslyn's strict by-table interleaving (e.g. Roslyn logs the
 updated parent MethodDef *between* the AddField pair and the AddMethod pairs)
 — the CLR applier only requires that parents exist before Add* entries
 reference them and that each Add* pair stays adjacent, which both orders
-satisfy; the F# order was already validated by ApplyUpdate for B1b member
-additions and is revalidated by the C4 runtime tests.
+satisfy; the F# order was already validated by ApplyUpdate for member
+additions and is revalidated by the added-closure runtime tests.
 
-The emitter (`IlxDeltaEmitter`) detects added types by the C3 allocator's
+The emitter (`IlxDeltaEmitter`) detects added types by the closure name allocator's
 generation-suffix marker (`{base}@hotreload#g{N}_o{i}`, see
 `ClosureNameAllocator.isGenerationSuffixedClosureName`): a fresh-compile type
 with that name and no baseline TypeDef token allocates the next delta TypeDef
@@ -408,7 +409,8 @@ remapped from the fresh compile (TypeRef via the reference remapper, TypeDef
 via the definition remapper). The new type token chains into the
 next-generation baseline `TypeTokens` under its full name, so later body
 edits of the added lambda resolve in place. The machinery is general; only
-the detection is closure-scoped (widening it to user types is Phase F).
+the detection is closure-scoped (widening it to user types is covered in
+"User-defined new type definitions" below).
 
 Validated end-to-end at runtime
 (`ApplyUpdate succeeds for added lambda creating a new closure class`): a
@@ -482,13 +484,13 @@ above (gen-1 entry `9: TypeSpec 0x1b000001 Default`):
   content.
 
 Generic closure CLASSES (closures over generic methods) get their
-GenericParam rows as of Phase E (see "Generic edits" below); the historic
+GenericParam rows (see "Generic edits" below); the historic
 fail-closed gate there is lifted.
 
 ### Session wiring (watch flow)
 
 `checker.StartHotReloadSession` rebuilds the baseline from the on-disk
-assembly, which cannot carry the C3 closure-name tables (the EnC CDI blob
+assembly, which cannot carry the closure-name tables (the EnC CDI blob
 format has no name slots). The session-start path now carries
 `EncClosureNames` over from the in-process capture session it replaces when
 the module identity (MVID) matches — without this, every watch-flow delta
@@ -506,7 +508,7 @@ Known divergences from the C# reference (deliberate this slice):
   a matching baseline row, or appends a new TypeSpec row to the delta for a
   genuinely NEW instantiation (see "TypeSpec row emission" above).
 - Added GENERIC closure classes (closures over generic methods) are
-  supported as of Phase E: the new TypeDef row gets GenericParam rows (see
+  supported: the new TypeDef row gets GenericParam rows (see
   "Generic edits" below). Constrained typars still fail closed.
 - The AsyncStateMachineAttribute synthesis heuristic (nested
   `{method}@hotreload*` type) now additionally requires a `MoveNext` method,
@@ -528,7 +530,7 @@ Known divergences from the C# reference (deliberate this slice):
 - `CaptureSetChanged` stays rude this slice (capture-field mapping is a
   later slice).
 
-## Generic edits (Phase E)
+## Generic edits
 
 ### C# reference EncLog (Roslyn EmitDifference, csharp_enc_reference `generics` scenarios)
 
@@ -585,7 +587,7 @@ field capability + `GenericAddFieldToExistingType`. See
   MethodDef row, row ids continuing from the chained baseline GenericParam
   row count, ordered by (owner coded index, number) to respect the table's
   sort key. Logged as plain Default entries after the parameter pairs;
-  EncMap adds. Before Phase E the added MethodDef row shipped WITHOUT its
+  EncMap adds. Previously the added MethodDef row shipped WITHOUT its
   GenericParam rows: ApplyUpdate accepted the delta but the method was
   corrupt (`MakeGenericMethod` threw NullReferenceException, member access
   BadImageFormatException) — there was no fail-closed gate.
@@ -593,15 +595,15 @@ field capability + `GenericAddFieldToExistingType`. See
   they worked once classification allowed them and are pinned by a runtime
   test (VAR signature + TypeSpec-parented field access).
 - **Added generic closure classes** (an added lambda inside a generic member
-  mentioning 'T): the C4 added-TypeDef path no longer fails closed on
+  mentioning 'T): the added-TypeDef path no longer fails closed on
   generic closures; the new TypeDef row carries GenericParam rows (owner
   tag TypeDef). Validated at runtime: a generic member with one baseline
   lambda gains a second 'T-typed lambda, ApplyUpdate succeeds, both
   instantiations observe the edit. (Members gaining their FIRST lambda still
-  fail closed — the C4 occurrence mapping needs a baseline chain table for
+  fail closed — the occurrence mapping needs a baseline chain table for
   the member; that constraint is orthogonal to generics.)
 - **Constrained typars on ADDED definitions emit GenericParamConstraint
-  rows as of Phase F (sub-slice 5)**. C# reference template
+  rows**. C# reference template
   ('generic_constraint_add', reference_mdv_generic_constraint_add.txt):
   adding `void DisposeIt<T>(T x) where T : IDisposable` logs
   `GenericParamConstraint 0x2c000001 Default` immediately after the
@@ -629,11 +631,11 @@ field capability + `GenericAddFieldToExistingType`. See
   surface through the existing lowered-shape classifiers (state machine /
   lambda shape) or the emitter's fail-closed gates with precise messages.
 
-## Custom attribute rows (Phase F)
+## Custom attribute rows
 
-### Added members (sub-slice 1)
+### Added members
 
-The recurring B1b/C4 gap is closed: members ADDED by a delta now carry their
+The long-standing added-member gap is closed: members ADDED by a delta now carry their
 fresh-compile CustomAttribute rows. The C# reference templates show the
 pattern (`prop_add`: 4 CA rows — `[CompilerGenerated]`/`[DebuggerBrowsable]`
 on the backing field and accessors; `added lambda`: `[CompilerGenerated]` on
@@ -674,9 +676,9 @@ entries, parent-sorted physical rows, and Field-/Property-parented rows.
 Known scoping: CA rows on added PARAM rows are not emitted (F#'s lowering
 does not decorate parameters in the supported scenarios).
 
-### Attribute changes on existing members (sub-slice 2)
+### Attribute changes on existing members
 
-C# reference templates (csharp_enc_reference `phasef` scenarios,
+C# reference templates (csharp_enc_reference attribute scenarios,
 `reference_mdv_attr_{add,change,remove}.txt`):
 
 - `attr_add` (`[Description("x")]` added to an existing method): MethodDef +
@@ -736,7 +738,7 @@ the historic append-only behavior. Consolidation: a two-generation chain
 `exactlyOne` would catch a duplicate append) and a disk-started session
 (the CA row snapshot reconstructed from the on-disk dll) both apply.
 
-### Parameter metadata updates (sub-slice 3)
+### Parameter metadata updates
 
 C# reference template (`reference_mdv_param_rename.txt`): renaming a
 parameter re-emits the MethodDef and Param rows as UPDATES at their existing
@@ -757,7 +759,7 @@ update (the runtime caches ParameterInfo per MethodInfo; a primed cache keeps
 the old name — parameter names are debugger-facing metadata). Negative tests
 pin the UpdateParameters gate and that self-identifier renames do not gate.
 
-## User-defined new type definitions (Phase F sub-slice 4)
+## User-defined new type definitions
 
 ### C# reference EncLog (csharp_enc_reference 'new_class', reference_mdv_new_class.txt)
 
@@ -776,7 +778,7 @@ MethodDef update of the generation-1 row, no type/field/interface rows.
 `NewTypeDefinition` (Roslyn parity; previously always `DeclarationAdded`
 rude). Allowed representations: **class, record, union, struct, enum,
 interface, delegate, module** (`EntitySnapshot.SupportsAddition`; enums,
-interfaces, delegates and modules joined in the post-Phase-F slices below;
+interfaces, delegates and modules are covered in the sections below;
 units of measure classify as added classes — their TypeDef carries
 MeasureAttribute and their uses erase). Type abbreviations and exotic
 representations stay
@@ -798,8 +800,8 @@ long-standing module-function/module-value addition classification — see
   `FSharpSymbolChanges.addedEntitySymbols` and matches fresh-compile TypeDefs
   dot-normalized ('+' vs '.' nesting).
 - `collectTypeMappings` allocates delta TypeDef rows for matched fresh types
-  through the C4 added-TypeDef machinery (rows, AddField/AddMethod pairs,
-  GenericParam rows from E, CustomAttribute rows from sub-slice 1, NestedClass
+  through the added-TypeDef machinery (rows, AddField/AddMethod pairs,
+  GenericParam rows, CustomAttribute rows, NestedClass
   rows for types declared inside modules). Types NESTED inside an added type
   (union case classes, Tags holders, DebugTypeProxy companions) are detected
   via their enclosing type's delta row (parents visit first).
@@ -836,7 +838,7 @@ long-standing module-function/module-value addition classification — see
   session (dotnet-watch topology) applies the added-class-with-interface
   scenario.
 
-## Added modules (post-Phase-F)
+## Added modules
 
 The idiomatic F# new-type case (C# parity: adding a static class, which
 Roslyn supports). An added module lowers to a sealed abstract static class
@@ -852,7 +854,7 @@ EXISTING startup-class TypeDef in one delta.
   the long-standing module-function/module-value addition paths (they carry
   `ContainingEntity = None`), so the value backing field and the startup
   constructor resolve normally.
-- **Emission**: the C4 added-TypeDef machinery applies unchanged — the module
+- **Emission**: the added-TypeDef machinery applies unchanged — the module
   TypeDef row is a plain Default entry preceding its AddMethod pairs; the
   module value's property lands as a PropertyMap-parented AddProperty pair on
   the NEW TypeDef; the `counter@`/`init@` backing fields and the startup
@@ -871,7 +873,7 @@ EXISTING startup-class TypeDef in one delta.
   apply; disk-started session variant; template test pins the static-class
   shape (no InterfaceImpl rows, 5 AddMethod / 2 AddField pairs, AddProperty).
 
-## Added enums and Constant rows (post-Phase-F)
+## Added enums and Constant rows
 
 C# reference template ('new_enum', reference_mdv_new_enum.txt): the added
 enum's TypeDef row is a plain Default entry; `value__` + each member are
@@ -890,7 +892,7 @@ a blob in the DELTA blob heap.
   row count.
 - **The emitter collects Constant rows for EVERY added field** whose
   fresh-compile FieldDef carries a default value: enum members, union Tags
-  holder constants (this CLOSED a latent Phase-F gap — added unions shipped
+  holder constants (this CLOSED a latent gap — added unions previously shipped
   their Tags literals withOUT Constant rows and the constants did not decode),
   and `[<Literal>]` module values.
 - **Runtime evidence**: added enum consumed by an edited function
@@ -903,7 +905,7 @@ a blob in the DELTA blob heap.
   the MdFieldInfo implements GetRawConstantValue — a runtime quirk the test
   pins, not delta corruption.
 
-## Added interfaces and delegates (post-Phase-F): bodiless methods
+## Added interfaces and delegates: bodiless methods
 
 C# reference templates ('new_interface'/'new_delegate'): Roslyn emits
 bodiless members as ordinary AddMethod pairs whose MethodDef rows carry
@@ -912,7 +914,7 @@ and the added delegate's `.ctor`/`Invoke`/`BeginInvoke`/`EndInvoke`
 (ImplAttributes 0x03 = Runtime). F# delegates emit the same four
 runtime-managed members.
 
-- The C4-era "bodiless added methods fail closed" gate now EXEMPTS added
+- The historic "bodiless added methods fail closed" gate now EXEMPTS added
   methods that are abstract or runtime-implemented: no IL chunk enters the
   delta and the MethodDef row's RVA column stays 0. Extern/pinvoke methods
   keep failing closed precisely (they would also need ImplMap rows).

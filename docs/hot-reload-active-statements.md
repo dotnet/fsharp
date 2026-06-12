@@ -1,6 +1,6 @@
-# F# Hot Reload: Active Statements & Sequence Point Updates (Phase G)
+# F# Hot Reload: Active Statements & Sequence Point Updates
 
-Status: landed (2026-06-11) — model types, per-edit sequence-point/line-update computation,
+This document covers the model types, per-edit sequence-point/line-update computation,
 active-statement remapping, and the delta-surface exposure a debugger host consumes.
 Source research: Roslyn main @ June 2026 (`src/Features/Core/Portable/Contracts/EditAndContinue/*`,
 `ActiveStatement.cs`, `ActiveStatementsMap.cs`, `EditSession.cs`,
@@ -8,7 +8,7 @@ Source research: Roslyn main @ June 2026 (`src/Features/Core/Portable/Contracts/
 
 ## Scope
 
-This phase lands the COMPILER-side active-statement machinery: what Roslyn's
+This is the COMPILER-side active-statement machinery: what Roslyn's
 `WatchHotReloadService`/`EmitSolutionUpdate` carries on every update even in watch mode. Full
 debugger-host integration (VS/vsdbg wire-up, `IManagedHotReloadService` plumbing) is out of local
 scope; see "Host integration notes" at the end for what a host has to do.
@@ -54,8 +54,8 @@ matches the session-scoped lifetime of the break state.
 
 ## Sequence-point updates (line shifts)
 
-The typed-tree diff's hashes are deliberately range-independent (C1: ranges are diagnostics-only,
-never identity), so an edit that only MOVES code produces no semantic edits. Confirmed and wired:
+The typed-tree diff's hashes are deliberately range-independent (in the lambda occurrence model,
+ranges are diagnostics-only, never identity), so an edit that only MOVES code produces no semantic edits. Confirmed and wired:
 the line updates come from sequence-point comparison alone.
 
 Pipeline (all inside `IlxDeltaEmitter.emitDeltaWithDebugData` + `ActiveStatementAnalysis`):
@@ -90,7 +90,7 @@ Pipeline (all inside `IlxDeltaEmitter.emitDeltaWithDebugData` + `ActiveStatement
 
 ### Line-shift-only deltas
 
-Before Phase G a line-shift edit emitted `NoChanges` (the debugger's lines went silently stale).
+Previously a line-shift edit emitted `NoChanges` (the debugger's lines went silently stale).
 Now `EmitDeltaForCompilation` always runs the emitter and decides from the artifacts:
 
 - semantic/trivia changes -> normal delta (line updates ride along for the methods that only moved);
@@ -177,7 +177,7 @@ tree — see "Deferred".
 - Line updates compose: each delta's `OldLine` refers to the lines as of the PREVIOUS applied
   update (Roslyn `CommittedSolution` semantics), not to generation 0.
 - The committed view survives process restarts only at generation 0 (decoded from the on-disk
-  PDB); mid-session restore inherits the C2 limitation that delta PDBs are not re-read on restore
+  PDB); mid-session restore inherits the existing limitation that delta PDBs are not re-read on restore
   of a mid-chain session.
 
 ## Deferred
