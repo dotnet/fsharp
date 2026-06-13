@@ -109,10 +109,12 @@ let increment = add 1
         await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
         await Editor.SetTextAsync(code, TestToken);
-        // Build (which also saves the edited buffer to disk) so the F# checker has the project's full
-        // options and on-disk source; without it GoToDefinition can't resolve the symbol and no-ops.
-        // This mirrors FsiAndFsFilesGoToCorrespondentDefinitions, which builds before navigating.
+        // Build so the F# checker has the project's full options; without it GoToDefinition can't resolve
+        // the symbol and no-ops. Building leaves the Build Output pane as the active text view, so re-open
+        // the source file afterwards to make it the active document again (mirrors how
+        // FsiAndFsFilesGoToCorrespondentDefinitions builds and then opens the file it navigates in).
         await SolutionExplorer.BuildSolutionAsync(TestToken);
+        await SolutionExplorer.OpenFileAsync("Library", "Library.fs", TestToken);
 
         await Editor.PlaceCaretAsync("add 1", TestToken);
         await GoToDefinitionWithRetryAsync("add 1", TestToken);
