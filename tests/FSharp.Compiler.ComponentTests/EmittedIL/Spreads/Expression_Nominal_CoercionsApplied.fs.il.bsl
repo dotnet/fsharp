@@ -1475,6 +1475,8 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class assembly/R2 r2@14
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly class assembly/T _arg1@3
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public specialname static class assembly/R1 get_r1() cil managed
   {
     
@@ -1488,6 +1490,14 @@
     
     .maxstack  8
     IL_0000:  ldsfld     class assembly/R2 assembly::r2@14
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static class assembly/T get__arg1@3() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     class assembly/T assembly::_arg1@3
     IL_0005:  ret
   } 
 
@@ -1512,11 +1522,13 @@
     IL_000b:  stsfld     class assembly/R1 assembly::r1@13
     IL_0010:  call       class assembly/R1 assembly::get_r1()
     IL_0015:  ldfld      class assembly/T assembly/R1::A@
-    IL_001a:  box        assembly/T
-    IL_001f:  unbox.any  assembly/U
-    IL_0024:  newobj     instance void assembly/R2::.ctor(class assembly/U)
-    IL_0029:  stsfld     class assembly/R2 assembly::r2@14
-    IL_002e:  ret
+    IL_001a:  stsfld     class assembly/T assembly::_arg1@3
+    IL_001f:  call       class assembly/T assembly::get__arg1@3()
+    IL_0024:  ldfld      int32 assembly/T::item
+    IL_0029:  call       class assembly/U assembly/U::NewU(int32)
+    IL_002e:  newobj     instance void assembly/R2::.ctor(class assembly/U)
+    IL_0033:  stsfld     class assembly/R2 assembly::r2@14
+    IL_0038:  ret
   } 
 
   .property class assembly/R1
@@ -1530,6 +1542,12 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
     .get class assembly/R2 assembly::get_r2()
+  } 
+  .property class assembly/T
+          _arg1@3()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get class assembly/T assembly::get__arg1@3()
   } 
 } 
 

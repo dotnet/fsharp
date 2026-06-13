@@ -7039,10 +7039,9 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
                     |> List.tryPick (fun fspec ->
                         if fspec.LogicalName = fname then
                             let fty = actualTyOfRecdFieldForTycon tycon tinst fspec
-                            let _succeded = AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m fty ty
                             let overallTy = MustConvertTo (false, fty)
                             UnifyOverallType cenv env m overallTy ty
-                            let fieldExpr = TcAdjustExprForTypeDirectedConversions cenv overallTy fty env m spreadValue
+                            let fieldExpr = TcAdjustExprForTypeDirectedConversions cenv overallTy ty env m spreadValue
                             Some ((fname, mkCoerceIfNeeded g fty (tyOfExpr g fieldExpr) fieldExpr) :: checkedFields)
                         else None)
                     |> Option.defaultValue checkedFields // We ignore extra fields from spreads.
