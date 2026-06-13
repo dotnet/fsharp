@@ -3679,10 +3679,15 @@ module EstablishTypeDefinitionCores =
                                         // Update the field ID's range to be that of the spread.
                                         let syntheticId = ident (fieldInfo.RecdField.Id.idText, m)
                                         let fieldTy = fieldInfo.FieldType
+                                        let vis =
+                                            let vis, _ = ComputeAccessAndCompPath g envinner None m None None innerParent
+                                            combineAccess vis thisTyconRef.TypeReprAccessibility
+
                                         let recdField =
                                             { fieldInfo.RecdField with
                                                 rfield_id = syntheticId
-                                                rfield_type = fieldTy }
+                                                rfield_type = fieldTy
+                                                rfield_access = vis }
 
                                         let warnAmbiguousShadowing () =
                                             let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader fieldInfo.TyconRef recdField

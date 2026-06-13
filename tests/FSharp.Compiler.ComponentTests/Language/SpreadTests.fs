@@ -341,15 +341,24 @@ module NominalAndAnonymousRecords =
             let ``Accessibility comes from target`` () =
                 let src =
                     """
-                    type private R1 = { A : int; B : string }
-                    type public R2 = { ...R1 }
+                    open System.Reflection
 
-                    let public r2 : R2 = { A = 1; B = "2" }
+                    module A =
+                        type R = internal { A : int; B : int }
+
+                    module B =
+                        type T = { ...A.R }
+
+                    let (|PropName|) (prop : PropertyInfo) = prop.Name
+
+                    match typeof<B.T>.GetProperties() with
+                    | [|PropName "A"; PropName "B"|] -> ()
+                    | unexpected -> failwith $"Expected B.T to have public properties \"A\" and \"B\" but got %A{unexpected}."
                     """
 
-                FSharp src
+                Fsx src
                 |> withLangVersion SupportedLangVersion
-                |> typecheck
+                |> compileAndRun
                 |> shouldSucceed
 
         module Mutability =
