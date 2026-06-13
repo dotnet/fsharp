@@ -13,9 +13,10 @@
       "cats": []
     },
     "19932": {
-      "sha": "c56d87a0d948e78775a032be95527a3ff5f974eb",
+      "sha": "c3e2b374c43c30485531727b59ec5ddb751a5480",
       "cats": [
-        "Affects-Compiler-Output"
+        "Affects-Compiler-Output",
+        "Affects-Test-Tooling"
       ]
     },
     "19930": {
