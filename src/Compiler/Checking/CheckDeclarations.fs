@@ -4291,10 +4291,13 @@ module EstablishTypeDefinitionCores =
                         ]
 
                     let tycons =
+                        let seen = HashSet ()
                         [
                             for dst, src in edges do
-                                yield dst
-                                yield src
+                                if seen.Add dst.Stamp then
+                                    yield dst
+                                if seen.Add src.Stamp then
+                                    yield src
                         ]
 
                     let graph = Graph<Tycon, Stamp> (_.Stamp, tycons, edges)

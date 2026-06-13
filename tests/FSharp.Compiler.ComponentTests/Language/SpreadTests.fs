@@ -702,6 +702,25 @@ but here has type
 
         module Recursion =
             [<Fact>]
+            let ``Simple mutually recursive type spreads → one error each`` () =
+                let src =
+                    """
+                    module M
+
+                    type A = { ...B }
+                    and  B = { ...A }
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> compile
+                |> shouldFail
+                |> withDiagnostics [
+                    Error 3899, Line 4, Col 26, Line 4, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3899, Line 5, Col 26, Line 5, Col 27, "This type definition involves a cyclic reference through a spread."
+                ]
+
+            [<Fact>]
             let ``Mutually recursive type spreads → error`` () =
                 let src =
                     """
