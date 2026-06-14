@@ -12019,6 +12019,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 // Structs with no instance fields get size 1, pack 0
                                 if
                                     tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic)
+                                    || tycon.IsUnionTycon
                                     ||
                                     // Reflection emit doesn't let us emit 'pack' and 'size' for generic structs.
                                     // In that case we generate a dummy field instead

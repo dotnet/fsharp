@@ -235,3 +235,10 @@ module Structure =
         compilation
         |> getCompilation
         |> verifyExecution
+
+    // SOURCE=StructUnionLayout18125.fs SCFLAGS="-r:CodeGenHelper.dll" # StructUnionLayout18125.fs
+    [<Theory; FileInlineData("StructUnionLayout18125.fs")>]
+    let ``StructUnionLayout18125_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyExecution
