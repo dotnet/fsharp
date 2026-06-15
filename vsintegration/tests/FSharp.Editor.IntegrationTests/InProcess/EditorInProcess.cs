@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using FSharp.Editor.IntegrationTests.Extensions;
 using FSharp.Editor.IntegrationTests.Helpers;
 using Microsoft.VisualStudio.Language.Intellisense;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 
@@ -90,48 +89,9 @@ internal partial class EditorInProcess
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-        // The lightbulb only offers a fix once the F# checker has produced the underlying diagnostic.
-        // The F# editor doesn't drive Roslyn's async-operation listeners, so wait on the error list.
-        await WaitForDocumentDiagnosticsAsync(cancellationToken);
-
-        // PlaceCaretAsync (via dte.Find) leaves the active selection off the editor; re-activate it so
-        // ShowQuickFixes routes to the editor command target.
-        await ActivateAsync(cancellationToken);
-
         var view = await GetActiveTextViewAsync(cancellationToken);
         var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
-        var shell = await GetRequiredGlobalServiceAsync<SVsUIShell, IVsUIShell>(cancellationToken);
 
-        var cmdGroup = typeof(VSConstants.VSStd14CmdID).GUID;
-        var cmdExecOpt = OLECMDEXECOPT.OLECMDEXECOPT_DONTPROMPTUSER;
-        var cmdID = VSConstants.VSStd14CmdID.ShowQuickFixes;
-
-        void Trigger()
-        {
-            object? obj = null;
-            shell.PostExecCommand(cmdGroup, (uint)cmdID, (uint)cmdExecOpt, ref obj);
-        }
-
-        return await LightBulbHelper.WaitForItemsAsync(broker, view, Trigger, cancellationToken);
-    }
-
-    // Polls the error list until the document has at least one diagnostic (any severity, incl. info such
-    // as unused-opens), or until a bounded timeout elapses. Best-effort: on timeout we still try the
-    // lightbulb so this never hangs the test.
-    private async Task WaitForDocumentDiagnosticsAsync(CancellationToken cancellationToken)
-    {
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(60);
-        while (DateTime.UtcNow < deadline)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var count = await TestServices.ErrorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_MESSAGE, cancellationToken);
-            if (count > 0)
-            {
-                return;
-            }
-
-            await Task.Delay(250, cancellationToken);
-        }
+        return await LightBulbHelper.GetCodeActionsAsync(broker, view, cancellationToken);
     }
 }
