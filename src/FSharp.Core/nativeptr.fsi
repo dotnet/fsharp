@@ -25,6 +25,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("OfNativeIntInlined")>]
+    [<NoDynamicInvocation>]
     val inline ofNativeInt: address: nativeint -> nativeptr<'T>
 
     /// <summary>Returns a machine address for a given typed native pointer.</summary>
@@ -36,6 +37,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("ToNativeIntInlined")>]
+    [<NoDynamicInvocation>]
     val inline toNativeInt: address: nativeptr<'T> -> nativeint
 
     /// <summary>Returns a typed native pointer for a untyped native pointer.</summary>
@@ -47,6 +49,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("OfVoidPtrInlined")>]
+    [<NoDynamicInvocation>]
     val inline ofVoidPtr: address: voidptr -> nativeptr<'T>
 
     /// <summary>Returns an untyped native pointer for a given typed native pointer.</summary>
@@ -58,6 +61,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("ToVoidPtrInlined")>]
+    [<NoDynamicInvocation>]
     val inline toVoidPtr: address: nativeptr<'T> -> voidptr
 
     /// <summary>Returns a typed native pointer for a Common IL (Intermediate Language) signature pointer.</summary>
@@ -69,6 +73,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("OfILSigPtrInlined")>]
+    [<NoDynamicInvocation>]
     val inline ofILSigPtr: address: ilsigptr<'T> -> nativeptr<'T>
 
     /// <summary>Returns a Common IL (Intermediate Language) signature pointer for a given typed native pointer.</summary>
@@ -80,6 +85,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("ToILSigPtrInlined")>]
+    [<NoDynamicInvocation>]
     val inline toILSigPtr: address: nativeptr<'T> -> ilsigptr<'T>
 
     /// <summary>Converts a given typed native pointer to a managed pointer.</summary>
@@ -91,6 +97,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("ToByRefInlined")>]
+    [<NoDynamicInvocation>]
     val inline toByRef: address: nativeptr<'T> -> byref<'T>
 
     /// <summary>Returns a typed native pointer by adding index * sizeof&lt;'T&gt; to the
@@ -104,6 +111,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("AddPointerInlined")>]
+    [<NoDynamicInvocation>]
     val inline add: address: nativeptr<'T> -> index: int -> nativeptr<'T>
 
     /// <summary>Dereferences the typed native pointer computed by adding index * sizeof&lt;'T&gt; to the
@@ -117,6 +125,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("GetPointerInlined")>]
+    [<NoDynamicInvocation>]
     val inline get: address: nativeptr<'T> -> index: int -> 'T
 
     /// <summary>Dereferences the given typed native pointer.</summary>
@@ -128,6 +137,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("ReadPointerInlined")>]
+    [<NoDynamicInvocation>]
     val inline read: address: nativeptr<'T> -> 'T
 
     /// <summary>Assigns the <c>value</c> into the memory location referenced by the given typed native pointer.</summary>
@@ -138,6 +148,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("WritePointerInlined")>]
+    [<NoDynamicInvocation>]
     val inline write: address: nativeptr<'T> -> value: 'T -> unit
 
     /// <summary>Assigns the <c>value</c> into the memory location referenced by the typed native
@@ -150,6 +161,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("SetPointerInlined")>]
+    [<NoDynamicInvocation>]
     val inline set: address: nativeptr<'T> -> index: int -> value: 'T -> unit
 
     /// <summary>Allocates a region of memory on the stack.</summary>
@@ -161,6 +173,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("StackAllocate")>]
+    [<NoDynamicInvocation>]
     val inline stackalloc: count: int -> nativeptr<'T>
 
     /// <summary>Gets the null native pointer.</summary>
@@ -171,6 +184,7 @@ module NativePtr =
     [<Unverifiable>]
     [<GeneralizableValue>]
     [<CompiledName("NullPointer")>]
+    [<NoDynamicInvocation>]
     val inline nullPtr<'T when 'T: unmanaged> : nativeptr<'T>
 
     /// <summary>Tests whether the given native pointer is null.</summary>
@@ -182,6 +196,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("IsNullPointer")>]
+    [<NoDynamicInvocation>]
     val inline isNullPtr: address: nativeptr<'T> -> bool
 
     /// <summary>Clears the value stored at the location of a given native pointer.</summary>
@@ -191,6 +206,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("ClearPointerInlined")>]
+    [<NoDynamicInvocation>]
     val inline clear: address: nativeptr<'T> -> unit
 
     /// <summary>Initializes a specified block of memory starting at a specific address to a given byte count and initial byte value.</summary>
@@ -202,6 +218,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("InitializeBlockInlined")>]
+    [<NoDynamicInvocation>]
     val inline initBlock: address: nativeptr<'T> -> value: byte -> count: uint32 -> unit
 
     /// <summary>Copies a value to a specified destination address from a specified source address.</summary>
@@ -212,6 +229,7 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("CopyPointerInlined")>]
+    [<NoDynamicInvocation>]
     val inline copy: destination: nativeptr<'T> -> source: nativeptr<'T> -> unit
 
     /// <summary>Copies a block of memory to a specified destination address starting from a specified source address until a specified byte count of (count * sizeof&lt;'T&gt;).</summary>
@@ -223,4 +241,5 @@ module NativePtr =
     /// <example-tbd></example-tbd>
     [<Unverifiable>]
     [<CompiledName("CopyBlockInlined")>]
+    [<NoDynamicInvocation>]
     val inline copyBlock: destination: nativeptr<'T> -> source: nativeptr<'T> -> count: int -> unit

@@ -65,12 +65,17 @@ module ILChecker =
 
         let unifyImageBase ilCode = replace ilCode ("\.imagebase\s*0x\d*", ".imagebase {value}")
 
+        // Normalize ildasm's platform-specific `ldc.r8 10` vs `ldc.r8 10.` for plain-integer doubles.
+        let unifyFloatLiterals ilCode =
+            Regex.Replace(ilCode, "(ldc\.r8\s+-?\d+)(\s|$)", "$1.$2", RegexOptions.Multiline)
+
         let unifyingAssemblyNames (text: string) =
             match assemblyName with
             | Some name -> text.Replace(name, "assembly")
             | None -> text
             |> unifyRuntimeAssemblyName
             |> unifyImageBase
+            |> unifyFloatLiterals
 
         let stripManagedResources (text: string) =
             let result = Regex.Replace(text, "\.mresource public .*\r?\n{\s*}\r?\n", "", RegexOptions.Multiline)
@@ -195,18 +200,24 @@ module ILChecker =
     let verifyILAndReturnActual args dllFilePath expectedIL =
         checkILPrim args dllFilePath expectedIL
 
-    let checkILNotPresent dllFilePath unexpectedIL =
+    let private checkILFragments shouldBePresent dllFilePath fragments =
         let actualIL = generateIL dllFilePath []
-        if unexpectedIL = [] then
-            Assert.Fail $"No unexpected IL given. This is actual IL: \n{actualIL}"
+        if fragments = [] then
+            Assert.Fail $"No IL fragments given. This is actual IL: \n{actualIL}"
+        let label = if shouldBePresent then "Not found in" else "Found in"
+        let isError (fragment: string) = actualIL.Contains(fragment) <> shouldBePresent
         let errors =
-            unexpectedIL
+            fragments
             |> Seq.map (normalizeILText None)
-            |> Seq.filter actualIL.Contains
-            |> Seq.map (sprintf "Found in actual IL: '%s'")
+            |> Seq.filter isError
+            |> Seq.map (sprintf "%s actual IL: '%s'" label)
             |> String.concat "\n"
         if errors <> "" then
             Assert.Fail $"{errors}\n\n\nEntire actual:\n{actualIL}"
+
+    let checkILNotPresent dllFilePath unexpectedIL = checkILFragments false dllFilePath unexpectedIL
+
+    let checkILPresent dllFilePath expectedIL = checkILFragments true dllFilePath expectedIL
 
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM
