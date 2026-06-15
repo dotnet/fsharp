@@ -3358,7 +3358,7 @@ and securityDeclsReader ctxtH tag =
         |> List.toArray)
 
 and seekReadSecurityDecl ctxt (act, ty) =
-    ILSecurityDecl(
+    ILSecurityDecl.ILSecurityDecl(
         (if List.memAssoc (int act) (Lazy.force ILSecurityActionRevMap) then
              List.assoc (int act) (Lazy.force ILSecurityActionRevMap)
          else
