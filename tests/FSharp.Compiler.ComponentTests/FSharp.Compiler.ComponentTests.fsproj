@@ -301,6 +301,7 @@
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TailCallAttribute.fs" />
+    <Compile Include="ErrorMessages\IndexedSetterNamedArgTests.fs" />
     <Compile Include="ErrorMessages\IndexingSyntax.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
@@ -375,6 +376,7 @@
     <Compile Include="Language\Nullness\NullableReferenceTypesTests.fs" />
     <Compile Include="Language\Nullness\EventNullnessTests.fs" />
     <Compile Include="Language\IndexedSetTests.fs" />
+    <Compile Include="Language\UseBindingDisposalTests.fs" />
     <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />

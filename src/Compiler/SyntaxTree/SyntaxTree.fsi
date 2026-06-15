@@ -258,7 +258,7 @@ type DebugPointAtTarget =
 
 /// Represents a debug point at a leaf expression (e.g. an application or constant).
 [<RequireQualifiedAccess>]
-type DebugPointAtLeafExpr = Yes of range
+type DebugPointAtLeafExpr = Yes of isHidden: bool * range: range
 
 /// Represents whether a debug point should be suppressed for either the
 /// first or second part of a sequential execution, that is whether the

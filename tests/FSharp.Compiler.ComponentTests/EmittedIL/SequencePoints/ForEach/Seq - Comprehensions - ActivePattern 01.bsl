@@ -1,10 +1,21 @@
+module Module
+
+let (|Id|) (x: int) = x
+
+let f (l: int list) =
+    seq {
+        for Id i in l do
+            yield i
+    }
+--------------------------------------------------------------------------------
+
 Module::|Id|
-  (4,23-4,24)  x
+  (3,23-3,24)  x
     IL_0000:  ldarg.0
     IL_0001:  ret
 
 Module::f
-  (7,5-10,6)  seq { for Id i in l do yield i }
+  (6,5-9,6)  seq { for Id i in l do yield i }
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  ldc.i4.0
@@ -12,7 +23,7 @@ Module::f
     IL_0004:  newobj .ctor
     IL_0009:  ret
 
-f@8::GenerateNext
+f@7::GenerateNext
   <hidden>
     IL_0000:  ldarg.0
     IL_0001:  ldfld pc
@@ -37,7 +48,7 @@ f@8::GenerateNext
     IL_0024:  nop
     IL_0025:  br.s IL_0027
 
-  (8,9-8,12)  for
+  (7,9-7,12)  for
     IL_0027:  ldarg.0
     IL_0028:  ldarg.0
     IL_0029:  ldfld l
@@ -57,7 +68,7 @@ f@8::GenerateNext
     IL_0054:  ldloc.1
     IL_0055:  stloc.2
 
-  (9,13-9,20)  yield i
+  (8,13-8,20)  yield i
     IL_0056:  ldarg.0
     IL_0057:  ldc.i4.2
     IL_0058:  stfld pc
@@ -67,7 +78,7 @@ f@8::GenerateNext
     IL_0064:  ldc.i4.1
     IL_0065:  ret
 
-  (8,18-8,20)  in
+  (7,18-7,20)  in
     IL_0066:  ldarg.0
     IL_0067:  ldfld enum
     IL_006c:  callvirt MoveNext
@@ -91,7 +102,7 @@ f@8::GenerateNext
     IL_009b:  ldc.i4.0
     IL_009c:  ret
 
-f@8::Close
+f@7::Close
   <hidden>
     IL_0000:  ldarg.0
     IL_0001:  ldfld pc
@@ -175,7 +186,7 @@ f@8::Close
 
   <hidden>
 
-f@8::get_CheckClose
+f@7::get_CheckClose
   <hidden>
     IL_0000:  ldarg.0
     IL_0001:  ldfld pc
