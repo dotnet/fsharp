@@ -28,11 +28,12 @@ namespace FSharp.Editor.IntegrationTests.Helpers
         // binds System.Collections.Immutable - a version that skews between the test's NuGet reference and
         // the in-proc VS runtime and throws MissingMethodException.
         //
-        // ILightBulbBroker.GetSuggestedActionsSources / ISuggestedActionsSource.HasSuggestedActionsAsync /
-        // GetSuggestedActions / SuggestedActionSet.Actions are all version-safe (no ImmutableArray in their
-        // signatures), deterministic, and have no UI-session lifetime. HasSuggestedActionsAsync drives the
-        // (lazy) F# code-fix computation; we retry until items appear to cover background analyzers whose
-        // diagnostics (e.g. unused-opens) are published asynchronously.
+        // ILightBulbBroker.GetSuggestedActionsSources / ISuggestedActionsSource2.GetSuggestedActionCategoriesAsync
+        // / ISuggestedActionsSource.GetSuggestedActions / SuggestedActionSet.Actions are all version-safe (no
+        // ImmutableArray in their signatures), deterministic, and have no UI-session lifetime.
+        // GetSuggestedActionCategoriesAsync drives the (lazy) F# code-fix computation - the Roslyn-backed
+        // source throws NotImplementedException on HasSuggestedActionsAsync - and we retry until items appear
+        // to cover background analyzers whose diagnostics (e.g. unused-opens) are published asynchronously.
         public static async Task<IReadOnlyList<SuggestedActionSet>> GetCodeActionsAsync(
             ILightBulbBroker broker,
             IWpfTextView view,
@@ -70,20 +71,22 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 foreach (var source in sources)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var name = source.GetType().FullName;
+                    var name = source.GetType().Name;
                     try
                     {
-                        var hasActions = await source.HasSuggestedActionsAsync(
-                            requestedActionCategories: null, range: span, cancellationToken);
-
-                        if (!hasActions)
+                        // The Roslyn-backed source (which surfaces the F# code fixes) throws on
+                        // HasSuggestedActionsAsync ("We implement GetSuggestedActionCategoriesAsync").
+                        // GetSuggestedActionCategoriesAsync is the async driver that runs the lazy fix
+                        // computation; GetSuggestedActions then returns the computed sets.
+                        ISuggestedActionCategorySet? categories = null;
+                        if (source is ISuggestedActionsSource2 source2)
                         {
-                            log.AppendLine($"  {name}: HasSuggestedActions=false");
-                            continue;
+                            categories = await source2.GetSuggestedActionCategoriesAsync(
+                                requestedActionCategories: null, range: span, cancellationToken);
                         }
 
                         var sets = source.GetSuggestedActions(
-                            requestedActionCategories: null, range: span, cancellationToken);
+                            requestedActionCategories: categories, range: span, cancellationToken);
 
                         var count = 0;
                         if (sets is not null)
@@ -98,7 +101,11 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                             }
                         }
 
-                        log.AppendLine($"  {name}: HasSuggestedActions=true, sets={count}");
+                        log.AppendLine($"  {name}: categories={(categories is null ? "null" : "set")}, sets={count}");
+                    }
+                    catch (NotImplementedException)
+                    {
+                        log.AppendLine($"  {name}: not-implemented (skipped)");
                     }
                     catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                     {
