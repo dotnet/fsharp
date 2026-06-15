@@ -1536,9 +1536,11 @@ let MakeAndPublishVals (cenv: cenv) env (altActualParent, inSig, declKind, valRe
         match attrs with
         | ValAttribString g WellKnownValAttributes.CompiledNameAttribute _ ->
             let m =
-                (Map.toList valSchemes, range0)
-                ||> List.foldBack (fun (_, ValScheme(id = id)) acc ->
-                    if Range.equals acc range0 then id.idRange else unionRanges id.idRange acc)
+                match Map.toList valSchemes with
+                | [] -> range0
+                | (_, ValScheme(id = id)) :: rest ->
+                    (id.idRange, rest)
+                    ||> List.fold (fun acc (_, ValScheme(id = id)) -> unionRanges acc id.idRange)
             errorR(Error(FSComp.SR.tcCompiledNameAttributeMisused(), m))
         | _ -> ()
 
