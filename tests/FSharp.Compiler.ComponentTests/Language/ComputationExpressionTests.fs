@@ -2577,9 +2577,9 @@ let test() =
         |> withErrorCode 750
 
     // https://github.com/dotnet/fsharp/issues/19457
-    // After lift, `let! b` follows F# standard shadowing (same as direct `let b = …; let! b = …`).
+    // When lifting would shadow a variable used in innerComp, refuse the lift (FS0750).
     [<Fact>]
-    let ``Issue 19457 - lifted let bang shadows outer binding per standard F# scoping`` () =
+    let ``Issue 19457 - lift refused when it would shadow outer binding used in continuation`` () =
         FSharp """
 module Test
 open System.Threading.Tasks
@@ -2591,14 +2591,11 @@ let test() =
             b
         return (a, b)
     }
-[<EntryPoint>]
-let main _ =
-    let (a, b) = test().Result
-    if a <> 42 || b <> 42 then failwithf "expected (42, 42), got (%d, %d)" a b
-    0
         """
-        |> compileExeAndRun
-        |> shouldSucceed
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
 
     // https://github.com/dotnet/fsharp/issues/19457 - verify that lift still works
     // when there is no shadowing conflict (the lifted name is not used in innerComp).
