@@ -2121,6 +2121,8 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     member _.NestedTypeDefs = gnested
 
+    member _.GetCurrentFields() = gfields |> Seq.map snd |> Seq.readonly
+
     /// Merge Get and Set property nodes, which we generate independently for F# code
     /// when we come across their corresponding methods.
     member _.AddOrMergePropertyDef(pdef, m) =
@@ -2681,6 +2683,9 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards, m)
 
     member _.FindNestedTypeDefBuilder(tref: ILTypeRef) = gtdefs.FindNestedTypeDefBuilder(tref)
+
+    member _.GetCurrentFields(tref: ILTypeRef) =
+        gtdefs.FindNestedTypeDefBuilder(tref).GetCurrentFields()
 
     member _.AddReflectedDefinition(vspec: Val, expr) =
         reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, expr))
@@ -11042,18 +11047,8 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
             GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenvinner mdef
             |> ignore
 
-            // Always emit the cctor force for every module, regardless of whether the module
-            // currently has any static fields. Under --parallelcompilation+ the field defs for
-            // raw-data static blobs created by GenConstArray (IlxGen.fs:~2870) inside
-            // member-method bodies are not added until the deferred iter at IlxGen.fs:12516 runs
-            // — which is long after this check. The original predicate
-            // `not (GetCurrentFields(tref) |> Seq.isEmpty)` saw an empty field set under parallel
-            // codegen and silently omitted the cctor force; the sequential codegen saw the field
-            // immediately and emitted it. Unconditionally calling
-            // GenForceWholeFileInitializationAsPartOfCCtor restores byte-identical output between
-            // the two modes for the cost of a small empty .cctor stub on modules that legitimately
-            // have no static state. See https://github.com/dotnet/fsharp/issues/19732.
-            GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
+            if not (cgbuf.mgbuf.GetCurrentFields(tref) |> Seq.isEmpty) then
+                GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
 
 /// Generate the namespace fragments in a single file
 and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: CheckedImplFileAfterOptimization) =
