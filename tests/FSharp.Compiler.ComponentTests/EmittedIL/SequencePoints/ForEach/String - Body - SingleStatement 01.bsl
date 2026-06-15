@@ -1,5 +1,12 @@
+module Module
+
+let f (l: string) =
+    for c in l do
+        System.Console.WriteLine c
+--------------------------------------------------------------------------------
+
 Module::f
-  (5,14-5,15)  l
+  (4,14-4,15)  l
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldc.i4.0
@@ -13,13 +20,13 @@ Module::f
     IL_000e:  ldloc.2
     IL_000f:  blt.s IL_0029
 
-  (5,5-5,10)  for c
+  (4,5-4,10)  for c
     IL_0011:  ldloc.0
     IL_0012:  ldloc.2
     IL_0013:  callvirt get_Chars
     IL_0018:  stloc.3
 
-  (6,9-6,35)  System.Console.WriteLine c
+  (5,9-5,35)  System.Console.WriteLine c
     IL_0019:  ldloc.3
     IL_001a:  call WriteLine
 
@@ -29,7 +36,7 @@ Module::f
     IL_0021:  add
     IL_0022:  stloc.2
 
-  (5,11-5,13)  in
+  (4,11-4,13)  in
     IL_0023:  ldloc.2
     IL_0024:  ldloc.1
     IL_0025:  ldc.i4.1

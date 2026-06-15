@@ -383,9 +383,6 @@ type OptimizationSettings =
     /// This optimization is off by default, given tiny overhead of including try/with. See https://github.com/dotnet/fsharp/pull/376
     member _.EliminateTryWithAndTryFinally = false 
 
-    /// Determines if we should eliminate first part of sequential expression if it has no effect 
-    member x.EliminateSequential = x.LocalOptimizationsEnabled 
-
     /// Determines if we should determine branches in pattern matching based on known information, e.g.
     /// eliminate a "if true then .. else ... "
     member x.EliminateSwitch = x.LocalOptimizationsEnabled
@@ -2896,12 +2893,8 @@ and OptimizeLinearExpr cenv env expr contf =
 
       OptimizeLinearExpr cenv env e2 (contf << (fun (e2R, e2info) -> 
         if (flag = NormalSeq) &&
-           // Drop bare (compiler-generated) units always; keep a debug-pointed unit in debug code so
-           // it stays steppable (a unit without one must go, else a dangling breakpoint - FSharp 1.0 bug 6034).
-           (cenv.settings.EliminateSequential ||
-            (match e1R with
-             | Expr.DebugPoint(DebugPointAtLeafExpr.Yes _, _) -> false
-             | _ -> match stripDebugPoints e1R with Expr.Const (Const.Unit, _, _) -> true | _ -> false)) &&
+           (cenv.settings.LocalOptimizationsEnabled ||
+            (match e1R with | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden, _), _) -> isHidden | _ -> false)) &&
            not e1info.HasEffect then
             e2R, e2info
         else 
@@ -2964,9 +2957,11 @@ and OptimizeLinearExpr cenv env expr contf =
          OptimizeLinearExpr cenv env argLast (contf << (fun (argLastR, argLastInfo) ->
              OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsHeadR @ [argLastR], argsHeadInfosR @ [argLastInfo], m)))
 
-    | Expr.DebugPoint (m, innerExpr) when not (IsDebugPipeRightExpr cenv innerExpr)-> 
+    | Expr.DebugPoint (m, innerExpr) when not (IsDebugPipeRightExpr cenv innerExpr)->
         OptimizeLinearExpr cenv env innerExpr (contf << (fun (innerExprR, einfo) ->
-            Expr.DebugPoint (m, innerExprR), einfo))
+            match m with
+            | DebugPointAtLeafExpr.Yes(isHidden = true) when not einfo.HasEffect -> innerExprR, einfo
+            | _ -> Expr.DebugPoint (m, innerExprR), einfo))
 
     | _ -> contf (OptimizeExpr cenv env expr)
 
@@ -2988,7 +2983,7 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
     if cenv.settings.EliminateTryWithAndTryFinally && not e1info.HasEffect then 
         let e1R2 = 
             match spTry with 
-            | DebugPointAtTry.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, e1R)
+            | DebugPointAtTry.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), e1R)
             | DebugPointAtTry.No -> e1R
         Expr.Sequential (e1R2, e2R, ThenDoSeq, m), info 
     else
@@ -4242,7 +4237,14 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         if vref.ShouldInline && IsPartialExprVal einfo.Info then 
             errorR(InternalError("the inline value '"+vref.LogicalName+"' was not inferred to have a known value", vref.Range))
         
-        let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env 
+        let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
+
+        // The hidden debug point on the r.h.s. is dropped above, so suppress the binding's debug point too.
+        let spBind =
+            match expr with
+            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden = true), _) when not einfo.HasEffect -> DebugPointAtBinding.NoneAtLet
+            | _ -> spBind
+
         (TBind(vref, exprOptimized, spBind), einfo), env
     with RecoverableException exn -> 
         errorRecovery exn vref.Range 
