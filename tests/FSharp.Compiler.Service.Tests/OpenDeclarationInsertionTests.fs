@@ -84,6 +84,17 @@ let x : System.IO.File = failwith ""
     Assert.Equal(2, insertionPoint.Line)
 
 [<Fact>]
+let ``Open grouped with existing opens below header comment`` () =
+    let source = """// My script header
+open System
+
+let x = System.IO.File.ReadAllText "a"
+"""
+    let insertionPoint = findOpenInsertionPoint "test.fsx" source "System.IO"
+    // Grouped after existing `open System` (line 2), not forced to line 1
+    Assert.Equal(3, insertionPoint.Line)
+
+[<Fact>]
 let ``Open placed after r directives in fsscript`` () =
     let source = """#r "nuget: Newtonsoft.Json"
 #r "nuget: FSharp.Data"
