@@ -51,8 +51,7 @@
     IL_0011:  ldc.i4.0
     IL_0012:  nop
     IL_0013:  stloc.0
-    IL_0014:  nop
-    IL_0015:  ret
+    IL_0014:  ret
   } 
 
 } 

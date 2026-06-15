@@ -81,7 +81,7 @@ let inline arbKeySelectors m =
 // Flag that a debug point should get emitted prior to both the evaluation of 'rhsExpr' and the call to Using
 let inline addBindDebugPoint spBind e =
     match spBind with
-    | DebugPointAtBinding.Yes m -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, e)
+    | DebugPointAtBinding.Yes m -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), false, e)
     | _ -> e
 
 let inline mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
@@ -1345,7 +1345,7 @@ let rec TryTranslateComputationExpression
 
                     let forCall =
                         match spFor with
-                        | DebugPointAtFor.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFor, false, forCall)
+                        | DebugPointAtFor.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFor), false, forCall)
                         | DebugPointAtFor.No -> forCall
 
                     translatedCtxt forCall)
@@ -1389,7 +1389,7 @@ let rec TryTranslateComputationExpression
             // 'while' is hit just before each time the guard is called
             let guardExpr =
                 match spWhile with
-                | DebugPointAtWhile.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
+                | DebugPointAtWhile.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mWhile), false, guardExpr)
                 | DebugPointAtWhile.No -> guardExpr
 
             Some(
@@ -1419,7 +1419,7 @@ let rec TryTranslateComputationExpression
             // 'while!' is hit just before each time the guard is called
             let guardExpr =
                 match spWhile with
-                | DebugPointAtWhile.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
+                | DebugPointAtWhile.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mWhile), false, guardExpr)
                 | DebugPointAtWhile.No -> guardExpr
 
             let rewrittenWhileExpr =
@@ -1557,7 +1557,7 @@ let rec TryTranslateComputationExpression
             // Put down a debug point for the 'finally'
             let unwindExpr2 =
                 match spFinally with
-                | DebugPointAtFinally.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFinally, true, unwindExpr)
+                | DebugPointAtFinally.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFinally), true, unwindExpr)
                 | DebugPointAtFinally.No -> unwindExpr
 
             if ceenv.isQuery then
@@ -1571,7 +1571,7 @@ let rec TryTranslateComputationExpression
 
             let innerExpr =
                 match spTry with
-                | DebugPointAtTry.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mTry, true, innerExpr)
+                | DebugPointAtTry.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mTry), true, innerExpr)
                 | _ -> innerExpr
 
             Some(
@@ -2308,7 +2308,7 @@ let rec TryTranslateComputationExpression
 
             let innerExpr =
                 match spTry with
-                | DebugPointAtTry.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mTry, true, innerExpr)
+                | DebugPointAtTry.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mTry), true, innerExpr)
                 | _ -> innerExpr
 
             let callExpr =
@@ -2345,7 +2345,7 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synYieldExpr then
                     yieldFromCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, yieldFromCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFull), false, yieldFromCall)
 
             Some(translatedCtxt yieldFromCall)
 
@@ -2374,7 +2374,7 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synReturnExpr then
                     returnFromCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, returnFromCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFull), false, returnFromCall)
 
             Some(translatedCtxt returnFromCall)
 
@@ -2393,7 +2393,7 @@ let rec TryTranslateComputationExpression
                 if IsControlFlowExpression synYieldOrReturnExpr then
                     yieldOrReturnCall
                 else
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, false, yieldOrReturnCall)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFull), false, yieldOrReturnCall)
 
             Some(translatedCtxt yieldOrReturnCall)
 
@@ -2704,7 +2704,9 @@ and TranslateComputationExpressionBind
 and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp varSpace innerComp =
     match innerComp with
     | SynExpr.YieldOrReturn((false, _), returnExpr, m, _) ->
-        let returnExpr = SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, returnExpr)
+        let returnExpr =
+            SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), false, returnExpr)
+
         Some(returnExpr, None)
 
     | SynExpr.Match(spMatch, expr, clauses, m, trivia) ->

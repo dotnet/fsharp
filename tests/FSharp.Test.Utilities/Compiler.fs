@@ -1803,7 +1803,8 @@ $ code --diff {outFile} {expectedFile}
                   yield offset, op.Name + text ]
 
     let private formatSequencePoints (source: string) (assemblyPath: string) (pdbReader: MetadataReader) =
-        let lines = source.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n')
+        let normalizedSource = source.Replace("\r\n", "\n").Replace("\r", "\n")
+        let lines = normalizedSource.Split('\n')
 
         let textOf (sp: SequencePoint) =
             let sb = StringBuilder()
@@ -1841,7 +1842,8 @@ $ code --diff {outFile} {expectedFile}
                         if offset >= sp.Offset && offset < nextOffset then
                             sb.AppendLine(sprintf "    IL_%04x:  %s" offset text) |> ignore
                     sb.AppendLine() |> ignore)
-        sb.ToString().Trim() + "\n"
+
+        normalizedSource.Trim() + "\n" + String.replicate 80 "-" + "\n\n" + sb.ToString().Trim() + "\n"
 
     let verifySequencePointsBaseline (source: string) (baselineFilePath: string) (result: CompilationResult) : CompilationResult =
         match result with

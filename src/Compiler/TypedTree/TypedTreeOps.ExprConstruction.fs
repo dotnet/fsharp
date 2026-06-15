@@ -521,7 +521,7 @@ module internal ExprConstruction =
     let valsOfBinds (binds: Bindings) = binds |> List.map (fun b -> b.Var)
 
     let mkDebugPoint m expr =
-        Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, expr)
+        Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), expr)
 
     // Used to remove Expr.Link for inner expressions in pattern matches
     let (|InnerExprPat|) expr = stripExpr expr
