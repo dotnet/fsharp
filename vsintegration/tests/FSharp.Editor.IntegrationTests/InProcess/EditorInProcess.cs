@@ -90,6 +90,10 @@ internal partial class EditorInProcess
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
+        // The lightbulb only offers a fix once the F# checker has produced the underlying diagnostic.
+        // The F# editor doesn't drive Roslyn's async-operation listeners, so wait on the error list.
+        await WaitForDocumentDiagnosticsAsync(cancellationToken);
+
         // PlaceCaretAsync (via dte.Find) leaves the active selection off the editor; re-activate it so
         // ShowQuickFixes routes to the editor command target.
         await ActivateAsync(cancellationToken);
@@ -109,5 +113,25 @@ internal partial class EditorInProcess
         }
 
         return await LightBulbHelper.WaitForItemsAsync(broker, view, Trigger, cancellationToken);
+    }
+
+    // Polls the error list until the document has at least one diagnostic (any severity, incl. info such
+    // as unused-opens), or until a bounded timeout elapses. Best-effort: on timeout we still try the
+    // lightbulb so this never hangs the test.
+    private async Task WaitForDocumentDiagnosticsAsync(CancellationToken cancellationToken)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(60);
+        while (DateTime.UtcNow < deadline)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var count = await TestServices.ErrorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_MESSAGE, cancellationToken);
+            if (count > 0)
+            {
+                return;
+            }
+
+            await Task.Delay(250, cancellationToken);
+        }
     }
 }
