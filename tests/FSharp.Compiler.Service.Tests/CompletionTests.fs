@@ -895,8 +895,8 @@ let _ = Task.Factory.StartNew(action=(fun _ -> ()), state=null, c{caret})
 [<Fact>]
 let ``Issue 19906 - optional args - second optional arg suggested`` () =
     let info = Checker.getCompletionInfo """
-let f (?x:int) (?y:int) (?z:int) = ()
-let _ = f(?x=1, ?y{caret})
+type T() = static member F(?x:int, ?y:int, ?z:int) = ()
+let _ = T.F(?x=1, ?y{caret})
 """
     assertHasItemWithNames ["y"; "z"] info
 

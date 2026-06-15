@@ -676,49 +676,102 @@ type internal TypeCheckInfo
                     | None -> None)
             | _ -> [])
 
-    let GetNamedParametersAndSettableFields endOfExprPos allowObsolete =
+    let GetNamedParametersAndSettableFields endOfExprPos cursorLine (lineStr: string) allowObsolete =
         let cnrs =
             GetCapturedNameResolutions endOfExprPos ResolveOverloads.No
             |> ResizeArray.toList
             |> List.rev
 
-        let result =
-            match cnrs with
-            | CNR(Item.CtorGroup(_, (ctor :: _ as ctors)), _, denv, nenv, ad, m) :: _ ->
-                let props =
-                    ResolveCompletionsInType
-                        ncenv
-                        nenv
-                        ResolveCompletionTargets.SettablePropertiesAndFields
-                        m
-                        ad
-                        false
-                        ctor.ApparentEnclosingType
-                        allowObsolete
+        // For overloaded calls with a malformed argument list, the type-checker can abandon
+        // resolution before publishing the Item.MethodGroup CNR. In that case, re-resolve the
+        // long-ident immediately to the left of endOfExprPos in the best-known name resolution
+        // environment so named-argument completion still works.
+        // Only attempt this when endOfExprPos is on the cursor's line, since lineStr is the
+        // cursor's line - using it to look at columns on a different line of a multi-line call
+        // site could match an unrelated identifier.
+        let tryRecoverGroupFromLineText () =
+            if
+                endOfExprPos.Line <> cursorLine
+                || endOfExprPos.Column <= 0
+                || endOfExprPos.Column > lineStr.Length
+            then
+                None
+            else
+                let plid = QuickParse.GetPartialLongNameEx(lineStr, endOfExprPos.Column - 1)
+                let lastName = plid.PartialIdent
 
-                let parameters = CollectParameters ctors amap m
-                let items = props @ parameters
-                Some(denv, m, items)
-            | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) :: _ ->
-                let props =
-                    methods
-                    |> List.collect (fun meth ->
-                        let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
+                if String.IsNullOrEmpty lastName then
+                    None
+                else
+                    let (nenv, ad), m = GetBestEnvForPos endOfExprPos
 
-                        ResolveCompletionsInType
+                    let items =
+                        ResolvePartialLongIdent
                             ncenv
                             nenv
-                            ResolveCompletionTargets.SettablePropertiesAndFields
+                            (ConstraintSolver.IsApplicableMethApprox g amap m)
                             m
                             ad
+                            plid.QualifyingIdents
                             false
-                            retTy
-                            allowObsolete)
 
-                let parameters = CollectParameters methods amap m
-                let items = props @ parameters
-                Some(denv, m, items)
-            | _ -> None
+                    items
+                    |> List.tryPick (fun item ->
+                        match item with
+                        | Item.CtorGroup(name, (_ :: _ as ctors)) when name = lastName ->
+                            Some(nenv.DisplayEnv, nenv, ad, m, Choice1Of2 ctors)
+                        | Item.MethodGroup(name, (_ :: _ as methods), _) when name = lastName ->
+                            Some(nenv.DisplayEnv, nenv, ad, m, Choice2Of2 methods)
+                        | _ -> None)
+
+        let groupForCtor (ctors: MethInfo list) denv nenv ad m =
+            let ctor = List.head ctors
+
+            let props =
+                ResolveCompletionsInType
+                    ncenv
+                    nenv
+                    ResolveCompletionTargets.SettablePropertiesAndFields
+                    m
+                    ad
+                    false
+                    ctor.ApparentEnclosingType
+                    allowObsolete
+
+            let parameters = CollectParameters ctors amap m
+            denv, m, props @ parameters
+
+        let groupForMethods (methods: MethInfo list) denv nenv ad m =
+            let props =
+                methods
+                |> List.collect (fun meth ->
+                    let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
+
+                    ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy allowObsolete)
+
+            let parameters = CollectParameters methods amap m
+            denv, m, props @ parameters
+
+        // Walk the reversed CNR list and pick the first Ctor/MethodGroup, instead of matching the head only.
+        // Overload refinement or trailing partial arguments can push the original group off the head.
+        let pickedFromCnrs =
+            cnrs
+            |> List.tryPick (fun cnr ->
+                match cnr.Item with
+                | Item.CtorGroup(_, (_ :: _ as ctors)) ->
+                    Some(groupForCtor ctors cnr.DisplayEnv cnr.NameResolutionEnv cnr.AccessorDomain cnr.Range)
+                | Item.MethodGroup(_, (_ :: _ as methods), _) ->
+                    Some(groupForMethods methods cnr.DisplayEnv cnr.NameResolutionEnv cnr.AccessorDomain cnr.Range)
+                | _ -> None)
+
+        let result =
+            match pickedFromCnrs with
+            | Some _ -> pickedFromCnrs
+            | None ->
+                match tryRecoverGroupFromLineText () with
+                | Some(denv, nenv, ad, m, Choice1Of2 ctors) -> Some(groupForCtor ctors denv nenv ad m)
+                | Some(denv, nenv, ad, m, Choice2Of2 methods) -> Some(groupForMethods methods denv nenv ad m)
+                | None -> None
 
         match result with
         | None -> NameResResult.Empty
@@ -1953,7 +2006,7 @@ type internal TypeCheckInfo
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
             | Some(CompletionContext.ParameterList(endPos, fields)) ->
                 let results =
-                    GetNamedParametersAndSettableFields endPos options.SuggestObsoleteSymbols
+                    GetNamedParametersAndSettableFields endPos line lineStr options.SuggestObsoleteSymbols
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
