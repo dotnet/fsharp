@@ -200,9 +200,7 @@ module internal AddressOps =
                 None, mkValAddr m readonly vref, readonly, writeonly
 
             // LVALUE of a type-instantiated local value reference produced by TcVal for generalized let bindings.
-            | Expr.App(Expr.Val(vref, _, _), _, _, [], m) when
-                MustTakeAddressOfVal g vref || CanTakeAddressOfImmutableVal g m vref mut
-                ->
+            | Expr.App(Expr.Val(vref, _, _), _, _, [], m) when MustTakeAddressOfVal g vref || CanTakeAddressOfImmutableVal g m vref mut ->
                 let readonly = not (MustTakeAddressOfVal g vref)
                 let writeonly = false
                 checkTakeNativeAddress readonly

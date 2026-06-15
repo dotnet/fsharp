@@ -141,5 +141,22 @@ let test () =
     let ffff = ValueNone
     x &ffff
         """
-        |> typecheck
+        |> asExe
+        |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19608 - native address of untyped ValueNone binding fails`` () =
+        Fsx """
+#nowarn "51"
+
+module Test
+
+let test () =
+    let ffff = ValueNone
+    let _ = &&ffff
+    ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 256
