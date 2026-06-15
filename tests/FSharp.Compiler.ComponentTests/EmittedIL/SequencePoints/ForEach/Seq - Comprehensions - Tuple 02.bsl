@@ -1,5 +1,14 @@
+module Module
+
+let f (l: (int * int) list) =
+    seq {
+        for i, i1 in l do
+            yield i
+    }
+--------------------------------------------------------------------------------
+
 Module::f
-  (5,5-8,6)  seq { for i, i1 in l do yield i }
+  (4,5-7,6)  seq { for i, i1 in l do yield i }
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  ldc.i4.0
@@ -7,7 +16,7 @@ Module::f
     IL_0004:  newobj .ctor
     IL_0009:  ret
 
-f@6::GenerateNext
+f@5::GenerateNext
   <hidden>
     IL_0000:  ldarg.0
     IL_0001:  ldfld pc
@@ -32,7 +41,7 @@ f@6::GenerateNext
     IL_0024:  nop
     IL_0025:  br.s IL_0027
 
-  (6,9-6,12)  for
+  (5,9-5,12)  for
     IL_0027:  ldarg.0
     IL_0028:  ldarg.0
     IL_0029:  ldfld l
@@ -53,7 +62,7 @@ f@6::GenerateNext
     IL_0055:  call get_Item1
     IL_005a:  stloc.2
 
-  (7,13-7,20)  yield i
+  (6,13-6,20)  yield i
     IL_005b:  ldarg.0
     IL_005c:  ldc.i4.2
     IL_005d:  stfld pc
@@ -63,7 +72,7 @@ f@6::GenerateNext
     IL_0069:  ldc.i4.1
     IL_006a:  ret
 
-  (6,19-6,21)  in
+  (5,19-5,21)  in
     IL_006b:  ldarg.0
     IL_006c:  ldfld enum
     IL_0071:  callvirt MoveNext
@@ -87,7 +96,7 @@ f@6::GenerateNext
     IL_00a0:  ldc.i4.0
     IL_00a1:  ret
 
-f@6::Close
+f@5::Close
   <hidden>
     IL_0000:  ldarg.0
     IL_0001:  ldfld pc
@@ -171,7 +180,7 @@ f@6::Close
 
   <hidden>
 
-f@6::get_CheckClose
+f@5::get_CheckClose
   <hidden>
     IL_0000:  ldarg.0
     IL_0001:  ldfld pc

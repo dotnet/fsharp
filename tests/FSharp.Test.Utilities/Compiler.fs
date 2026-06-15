@@ -1342,14 +1342,15 @@ $ code --diff {outFile} {expectedFile}
             | Some p ->
                 match ILChecker.verifyILAndReturnActual [] p expected with
                 | true, _, _ -> result
-                | false, errorMsg, _actualIL ->
-                    CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = ""})} )
+                | false, errorMsg, _actualIL -> failwith $"IL verification failed:\n{errorMsg}"
         | CompilationResult.Failure f ->
             printfn "Failure:"
             printfn $"{f}"
             failwith $"Result should be \"Success\" in order to get IL."
 
     let verifyIL = doILCheck ILChecker.checkIL
+
+    let verifyILPresent = doILCheck ILChecker.checkILPresent
 
     let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
@@ -1802,7 +1803,8 @@ $ code --diff {outFile} {expectedFile}
                   yield offset, op.Name + text ]
 
     let private formatSequencePoints (source: string) (assemblyPath: string) (pdbReader: MetadataReader) =
-        let lines = source.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n')
+        let normalizedSource = source.Replace("\r\n", "\n").Replace("\r", "\n")
+        let lines = normalizedSource.Split('\n')
 
         let textOf (sp: SequencePoint) =
             let sb = StringBuilder()
@@ -1840,7 +1842,8 @@ $ code --diff {outFile} {expectedFile}
                         if offset >= sp.Offset && offset < nextOffset then
                             sb.AppendLine(sprintf "    IL_%04x:  %s" offset text) |> ignore
                     sb.AppendLine() |> ignore)
-        sb.ToString().Trim() + "\n"
+
+        normalizedSource.Trim() + "\n" + String.replicate 80 "-" + "\n\n" + sb.ToString().Trim() + "\n"
 
     let verifySequencePointsBaseline (source: string) (baselineFilePath: string) (result: CompilationResult) : CompilationResult =
         match result with
