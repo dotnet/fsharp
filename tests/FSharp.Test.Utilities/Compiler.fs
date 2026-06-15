@@ -17,7 +17,9 @@ open System.IO
 open System.Text
 open System.Text.RegularExpressions
 open System.Reflection
+open System.Reflection.Emit
 open System.Reflection.Metadata
+open System.Reflection.Metadata.Ecma335
 open System.Reflection.PortableExecutable
 
 open FSharp.Test.CompilerAssertHelpers
@@ -30,13 +32,54 @@ module rec Compiler =
     let shouldUpdateBaselines =
         Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") <> null
 
+    let private baselineFailureMessage (expectedFile: string) (outFile: string) (diff: string) =
+        $"""Baseline mismatch for {expectedFile}
+to update the baseline:
+$ cp {outFile} {expectedFile}
+to compare:
+$ code --diff {outFile} {expectedFile}
+(or set TEST_UPDATE_BSL=1 and re-run to update the baseline automatically)
+{diff}"""
+
+    let private baselineOutputFile (expectedFile: string) =
+        if Path.GetExtension(expectedFile) = ".bsl" then
+            Path.ChangeExtension(expectedFile, ".out")
+        else
+            expectedFile + ".out"
+
+    let checkBaselineWith (compare: string -> string -> string option) (expected: string) (expectedFile: string) =
+        let outFile = baselineOutputFile expectedFile
+        let baselineContent =
+            if FileSystem.FileExistsShim expectedFile then File.ReadAllText expectedFile else ""
+        let diff = compare baselineContent expected
+
+        match diff with
+        | None ->
+            if FileSystem.FileExistsShim outFile then
+                FileSystem.FileDeleteShim outFile
+        | Some diff ->
+            if shouldUpdateBaselines then
+                if FileSystem.FileExistsShim outFile then
+                    FileSystem.FileDeleteShim outFile
+                File.WriteAllText(expectedFile, expected)
+            else
+                File.WriteAllText(outFile, expected)
+
+            Assert.True(false, baselineFailureMessage expectedFile outFile diff)
+
+    let checkBaseline (expected: string) (expectedFile: string) =
+        let compare fileContent produced =
+            let e = normalizeNewlines fileContent
+            let a = normalizeNewlines produced
+            if e = a then None else Some $"Expected:\n{e}\nActual:\n{a}"
+        checkBaselineWith compare expected expectedFile
+
     [<AutoOpen>]
     type SourceUtilities () =
         static member getCurrentMethodName([<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string) = memberName
 
     type BaselineFile =
         {
-            FilePath: string
             BslSource: string
             Content: string option
         }
@@ -251,8 +294,6 @@ module rec Compiler =
             | Some s -> s
             | None -> sourceFilePath + sourceBaselineSuffix + ".il.bsl"
 
-        let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
-        let ilOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
         let fsBslSource = readFileOrDefault fsBslFilePath
         let ilBslSource = readFileOrDefault ilBslFilePath
 
@@ -262,8 +303,8 @@ module rec Compiler =
                 Some
                     {
                         SourceFilename = Some sourceFilePath
-                        FSBaseline = { FilePath = fsOutFilePath; BslSource = fsBslFilePath; Content = fsBslSource }
-                        ILBaseline = { FilePath = ilOutFilePath; BslSource = ilBslFilePath; Content = ilBslSource }
+                        FSBaseline = { BslSource = fsBslFilePath; Content = fsBslSource }
+                        ILBaseline = { BslSource = ilBslFilePath; Content = ilBslSource }
                     }
             Options           = Compiler.defaultOptions
             OutputType        = Library
@@ -1220,36 +1261,6 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let convenienceBaselineInstructions baseline expected actual =
-        $"""to update baseline:
-$ cp {baseline.FilePath} {baseline.BslSource}
-to compare baseline:
-$ code --diff {baseline.FilePath} {baseline.BslSource}
-Expected:
-{expected}
-Actual:
-{actual}"""
-    let updateBaseLineIfEnvironmentSaysSo baseline =
-        if shouldUpdateBaselines then
-            if FileSystem.FileExistsShim baseline.FilePath then
-                FileSystem.CopyShim(baseline.FilePath, baseline.BslSource, true)
-
-    let assertBaseline expected actual baseline fOnFail =
-        if expected <> actual then
-            fOnFail()
-            updateBaseLineIfEnvironmentSaysSo baseline
-            createBaselineErrors baseline actual
-            Assert.True((expected = actual), convenienceBaselineInstructions baseline expected actual)
-        elif FileSystem.FileExistsShim baseline.FilePath then
-            FileSystem.FileDeleteShim baseline.FilePath
-
-
-    let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
-        printfn $"creating baseline error file for convenience: {baselineFile.FilePath}, expected: {baselineFile.BslSource}"
-        let file = FileSystem.OpenFileForWriteShim(baselineFile.FilePath)
-        file.SetLength(0)
-        file.WriteAllText(actualErrors)
-
     /// Turn our ErrorInfo back into a genuine FSharpDiagnostic
     let private toFSharpDiagnostic (ei: ErrorInfo) : FSharpDiagnostic =
 
@@ -1309,19 +1320,8 @@ Actual:
                 match o.Compilation with
                 | FS fs -> fs
                 | _     -> failwith "verifyBaseline only supports F#"
-        let expected =
-            fsSource.Baseline.Value.FSBaseline.Content
-            |> Option.defaultValue ""
-            |> normalizeNewlines
-
         // 4) Compare or update
-        if expected <> formattedActual then
-            // same update mechanism you already have:
-            fsSource.CreateOutputDirectory()
-            createBaselineErrors fsSource.Baseline.Value.FSBaseline formattedActual
-            updateBaseLineIfEnvironmentSaysSo fsSource.Baseline.Value.FSBaseline
-            let msg = convenienceBaselineInstructions fsSource.Baseline.Value.FSBaseline expected formattedActual
-            Assert.True(false, msg)
+        checkBaseline formattedActual fsSource.Baseline.Value.FSBaseline.BslSource
 
         // 5) Return the original result for fluent chaining
         cResult
@@ -1342,14 +1342,15 @@ Actual:
             | Some p ->
                 match ILChecker.verifyILAndReturnActual [] p expected with
                 | true, _, _ -> result
-                | false, errorMsg, _actualIL ->
-                    CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = ""})} )
+                | false, errorMsg, _actualIL -> failwith $"IL verification failed:\n{errorMsg}"
         | CompilationResult.Failure f ->
             printfn "Failure:"
             printfn $"{f}"
             failwith $"Result should be \"Success\" in order to get IL."
 
     let verifyIL = doILCheck ILChecker.checkIL
+
+    let verifyILPresent = doILCheck ILChecker.checkILPresent
 
     let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
@@ -1387,14 +1388,8 @@ Actual:
                 | None ->  String.Empty
             let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual [] p [expectedIL]
 
-            if not success then
-                // Failed try update baselines if required
-                // If we are here then the il file has been produced we can write it back to the baseline location
-                // if the environment variable TEST_UPDATE_BSL has been set
-                updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
-                createBaselineErrors baseline.ILBaseline actualIL
-                let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
-                Assert.Fail(errorMsg)
+            let compare _ _ = if success then None else Some errorMsg
+            checkBaselineWith compare actualIL baseline.ILBaseline.BslSource
 
     let verifyILBaseline (compilationResult: CompilationResult) : CompilationResult =
         match compilationResult with
@@ -1543,27 +1538,29 @@ Actual:
             if expectedScope <> imports then
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
+    let private getMethodDebugInfos (assemblyReader: MetadataReader) (pdbReader: MetadataReader) =
+        [ for typeDefHandle in assemblyReader.TypeDefinitions do
+            let td = assemblyReader.GetTypeDefinition typeDefHandle
+            let typeName = assemblyReader.GetString td.Name
+            for methodHandle in td.GetMethods() do
+                let md = assemblyReader.GetMethodDefinition methodHandle
+                let methodName = assemblyReader.GetString md.Name
+                let rowNumber = System.Reflection.Metadata.Ecma335.MetadataTokens.GetRowNumber methodHandle
+                let debugInfoHandle = System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDebugInformationHandle rowNumber
+                let debugInfo = pdbReader.GetMethodDebugInformation debugInfoHandle
+                yield typeName, methodName, methodHandle, debugInfo ]
+
     let private getMethodSequencePoints (assemblyPath: string) (pdbReader: MetadataReader) (methodName: string) =
         use peStream = File.OpenRead(assemblyPath)
         use peReader = new PEReader(peStream)
-        let assemblyReader = peReader.GetMetadataReader()
+        let methods =
+            getMethodDebugInfos (peReader.GetMetadataReader()) pdbReader
+            |> List.filter (fun (_, name, _, _) -> name = methodName)
 
-        let methodHandles =
-            [ for typeDef in assemblyReader.TypeDefinitions do
-                let td = assemblyReader.GetTypeDefinition(typeDef)
-                for methodHandle in td.GetMethods() do
-                    let md = assemblyReader.GetMethodDefinition(methodHandle)
-                    let name = assemblyReader.GetString(md.Name)
-                    if name = methodName then
-                        yield methodHandle ]
-
-        if methodHandles.IsEmpty then
+        if methods.IsEmpty then
             failwith (sprintf "Method '%s' not found in assembly '%s'" methodName assemblyPath)
 
-        [ for methodHandle in methodHandles do
-            let rowNumber = System.Reflection.Metadata.Ecma335.MetadataTokens.GetRowNumber(methodHandle)
-            let debugInfoHandle = System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDebugInformationHandle(rowNumber)
-            let debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle)
+        [ for _, _, _, debugInfo in methods do
             yield!
                 debugInfo.GetSequencePoints()
                 |> Seq.filter (fun sp -> not sp.IsHidden)
@@ -1757,6 +1754,108 @@ Actual:
             | VerifyNoDebuggerHiddenOnMethodWithLine line ->
                 verifyNoDebuggerHiddenOnMethodWithLine (optOutputPath |> Option.defaultValue "") reader line
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
+
+    module private Il =
+        // Keyed by the encoded opcode value: one-byte ops as 0x00-0xFF, two-byte (0xFE-prefixed) as 0xFExx.
+        let private opsByValue =
+            dict [ for f in typeof<OpCodes>.GetFields(BindingFlags.Public ||| BindingFlags.Static) do
+                       match f.GetValue null with
+                       | :? OpCode as op -> yield (int op.Value &&& 0xffff), op
+                       | _ -> () ]
+
+        let rec private tokenName (mdReader: MetadataReader) (token: int) =
+            let handle = MetadataTokens.EntityHandle token
+            let row = MetadataTokens.GetRowNumber handle
+            match handle.Kind with
+            | HandleKind.MethodDefinition -> mdReader.GetString (mdReader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle row)).Name
+            | HandleKind.MemberReference -> mdReader.GetString (mdReader.GetMemberReference(MetadataTokens.MemberReferenceHandle row)).Name
+            | HandleKind.FieldDefinition -> mdReader.GetString (mdReader.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle row)).Name
+            | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
+            | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
+            | HandleKind.MethodSpecification -> tokenName mdReader (MetadataTokens.GetToken (mdReader.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle row)).Method)
+            | _ -> sprintf "0x%08x" token
+
+        let decodeMethodIL (mdReader: MetadataReader) (bytes: byte[]) =
+            [ let mutable pos = 0
+              while pos < bytes.Length do
+                  let offset = pos
+                  let b0 = int bytes.[pos]
+                  pos <- pos + 1
+                  let key = if b0 = 0xFE then (let b1 = int bytes.[pos] in pos <- pos + 1; 0xFE00 ||| b1) else b0
+                  let op = opsByValue.[key]
+                  let operand = pos
+                  let next size = pos <- operand + size
+                  let text =
+                      match op.OperandType with
+                      | OperandType.InlineNone -> next 0; ""
+                      | OperandType.ShortInlineBrTarget -> next 1; sprintf " IL_%04x" (operand + 1 + int (sbyte bytes.[operand]))
+                      | OperandType.InlineBrTarget -> next 4; sprintf " IL_%04x" (operand + 4 + BitConverter.ToInt32(bytes, operand))
+                      | OperandType.ShortInlineI -> next 1; sprintf " %d" (sbyte bytes.[operand])
+                      | OperandType.InlineI -> next 4; sprintf " %d" (BitConverter.ToInt32(bytes, operand))
+                      | OperandType.InlineI8 -> next 8; sprintf " %d" (BitConverter.ToInt64(bytes, operand))
+                      | OperandType.ShortInlineR -> next 4; sprintf " %f" (BitConverter.ToSingle(bytes, operand))
+                      | OperandType.InlineR -> next 8; sprintf " %f" (BitConverter.ToDouble(bytes, operand))
+                      | OperandType.ShortInlineVar -> next 1; sprintf " %d" (int bytes.[operand])
+                      | OperandType.InlineVar -> next 2; sprintf " %d" (int (BitConverter.ToUInt16(bytes, operand)))
+                      | OperandType.InlineString -> next 4; sprintf " \"%s\"" (mdReader.GetUserString(MetadataTokens.UserStringHandle(BitConverter.ToInt32(bytes, operand))))
+                      | OperandType.InlineSwitch -> next (4 + 4 * BitConverter.ToInt32(bytes, operand)); sprintf " (%d targets)" (BitConverter.ToInt32(bytes, operand))
+                      | _ -> next 4; " " + tokenName mdReader (BitConverter.ToInt32(bytes, operand))
+                  yield offset, op.Name + text ]
+
+    let private formatSequencePoints (source: string) (assemblyPath: string) (pdbReader: MetadataReader) =
+        let normalizedSource = source.Replace("\r\n", "\n").Replace("\r", "\n")
+        let lines = normalizedSource.Split('\n')
+
+        let textOf (sp: SequencePoint) =
+            let sb = StringBuilder()
+            for lineNo in sp.StartLine .. sp.EndLine do
+                if lineNo >= 1 && lineNo <= lines.Length then
+                    let line = lines.[lineNo - 1]
+                    let startCol = if lineNo = sp.StartLine then sp.StartColumn - 1 else 0
+                    let endCol = if lineNo = sp.EndLine then sp.EndColumn - 1 else line.Length
+                    let startCol = max 0 (min startCol line.Length)
+                    let endCol = max startCol (min endCol line.Length)
+                    sb.Append(line.Substring(startCol, endCol - startCol)).Append(' ') |> ignore
+            Regex.Replace(sb.ToString().Trim(), @"\s+", " ")
+
+        use peStream = File.OpenRead assemblyPath
+        use peReader = new PEReader(peStream)
+        let mdReader = peReader.GetMetadataReader()
+
+        let sb = StringBuilder()
+        for typeName, methodName, methodHandle, debugInfo in getMethodDebugInfos mdReader pdbReader do
+            let points = debugInfo.GetSequencePoints() |> Seq.sortBy (fun sp -> sp.Offset) |> Seq.toList
+            if not points.IsEmpty then
+                let md = mdReader.GetMethodDefinition methodHandle
+                let instructions =
+                    if md.RelativeVirtualAddress = 0 then []
+                    else Il.decodeMethodIL mdReader ((peReader.GetMethodBody md.RelativeVirtualAddress).GetILBytes())
+
+                sb.AppendLine($"{typeName}::{methodName}") |> ignore
+                points |> List.iteri (fun i sp ->
+                    let nextOffset = if i + 1 < points.Length then points.[i + 1].Offset else Int32.MaxValue
+                    if sp.IsHidden then
+                        sb.AppendLine("  <hidden>") |> ignore
+                    else
+                        sb.AppendLine(sprintf "  (%d,%d-%d,%d)  %s" sp.StartLine sp.StartColumn sp.EndLine sp.EndColumn (textOf sp)) |> ignore
+                    for offset, text in instructions do
+                        if offset >= sp.Offset && offset < nextOffset then
+                            sb.AppendLine(sprintf "    IL_%04x:  %s" offset text) |> ignore
+                    sb.AppendLine() |> ignore)
+
+        normalizedSource.Trim() + "\n" + String.replicate 80 "-" + "\n\n" + sb.ToString().Trim() + "\n"
+
+    let verifySequencePointsBaseline (source: string) (baselineFilePath: string) (result: CompilationResult) : CompilationResult =
+        match result with
+        | CompilationResult.Success r ->
+            match r.OutputPath with
+            | Some assemblyPath ->
+                use fileStream = File.OpenRead(Path.ChangeExtension(assemblyPath, ".pdb"))
+                use provider = MetadataReaderProvider.FromPortablePdbStream fileStream
+                checkBaseline (formatSequencePoints source assemblyPath (provider.GetMetadataReader())) baselineFilePath
+                result
+            | None -> failwith "Operation didn't produce any output!"
+        | CompilationResult.Failure f -> failwith $"Compilation failed: {f}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
         match result.OutputPath with
@@ -2011,22 +2110,9 @@ Actual:
                 |> String.Concat
 
             let withResultsMatchingFile (path:string) (result:CompilationResult) =
-                let expectedContent = File.ReadAllText(path) |> normalizeNewLines
-                let actualErrors = renderToString result
-
-                match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
-                | None -> ()
-                | Some diff ->
-                    if shouldUpdateBaselines then
-                        File.WriteAllText(path, actualErrors)
-
-                    printfn $"{Path.GetFullPath path} \n {diff}"
-                    printfn "==========================EXPECTED==========================="
-                    printfn "%s" expectedContent
-                    printfn "===========================ACTUAL============================"
-                    printfn "%s" actualErrors
-                    Assert.True(String.IsNullOrEmpty(diff), path)
-
+                let compare fileContent produced =
+                    Assert.shouldBeSameMultilineStringSets (normalizeNewLines fileContent) produced
+                checkBaselineWith compare (renderToString result) path
                 result
 
         let checkCodes (expected: int list) (selector: CompilationOutput -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
