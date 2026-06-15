@@ -1,10 +1,9 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,98 +14,81 @@ namespace FSharp.Editor.IntegrationTests.Helpers
 {
     internal static class LightBulbHelper
     {
-        // Create and own the session (ILightBulbBroker has no session-created event) instead of posting
-        // ShowQuickFixes then racing to find it: posting races the F# analyzer (NRE / TaskCanceled on CI).
+        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(60);
+        private static readonly TimeSpan s_minRetriggerInterval = TimeSpan.FromMilliseconds(500);
+
+        // We trigger ShowQuickFixes and then *poll* the session via TryGetSuggestedActionSets instead of
+        // subscribing to events / awaiting PopulateWithDataAsync. Two reasons:
+        //  * PopulateWithDataAsync returns Task<ImmutableArray<SuggestedActionSet>>; ImmutableArray binds
+        //    System.Collections.Immutable, whose version skews between the NuGet reference and the in-proc
+        //    VS runtime, so calling it throws MissingMethodException at runtime. TryGetSuggestedActionSets
+        //    only exposes IEnumerable in its signature, so it is version-tolerant.
+        //  * Subscribing after the session exists is racy (missed terminal event -> hang, or Dismissed ->
+        //    cancel). Polling the session state observes the terminal result regardless of timing.
         public static async Task<IEnumerable<SuggestedActionSet>> WaitForItemsAsync(
             ILightBulbBroker broker,
-            ISuggestedActionCategorySet categories,
             IWpfTextView view,
+            Action triggerCommand,
             CancellationToken cancellationToken)
         {
-            // Keep the obsolete simple overload: ILightBulbBroker2.CreateSession's extra category-set
-            // changes expanded-vs-available actions and can't be validated against these tests locally.
-#pragma warning disable CS0618
-            var asyncSession = (IAsyncLightBulbSession)broker.CreateSession(categories, view);
+            var deadline = DateTime.UtcNow + s_timeout;
+            var lastTrigger = DateTime.MinValue;
+            IEnumerable<SuggestedActionSet> lastSets = Array.Empty<SuggestedActionSet>();
+
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (DateTime.UtcNow > deadline)
+                {
+                    return lastSets;
+                }
+
+                var session = broker.GetSession(view);
+                if (session is null)
+                {
+                    // (Re)trigger only when there is no live session, so we never dismiss an in-flight
+                    // one - re-posting over an InProgress session restarts the computation from scratch.
+                    if (DateTime.UtcNow - lastTrigger > s_minRetriggerInterval)
+                    {
+                        triggerCommand();
+                        lastTrigger = DateTime.UtcNow;
+                    }
+
+                    await Task.Delay(100, cancellationToken);
+                    continue;
+                }
+
+#pragma warning disable CS0618 // version-tolerant accessor; see class comment for why we avoid PopulateWithDataAsync
+                var status = session.TryGetSuggestedActionSets(out var sets);
 #pragma warning restore CS0618
-            var tcs = new TaskCompletionSource<IEnumerable<SuggestedActionSet>>();
+                sets ??= Array.Empty<SuggestedActionSet>();
 
-            void Handler(object s, SuggestedActionsUpdatedArgs e)
-            {
-                // Ignore intermediate updates; we only care once the lightbulb items are all computed.
-                if (e.Status == QuerySuggestedActionCompletionStatus.InProgress)
+                // Return only once the lightbulb has actually produced actions. A slow background
+                // analyzer (e.g. unused-opens) can report Completed/CompletedWithoutData with no data on
+                // an early query; in that case we dismiss and re-trigger until the fix shows up.
+                if (status == QuerySuggestedActionCompletionStatus.Completed && sets.Any())
                 {
-                    return;
+                    return sets;
                 }
 
-                if (e.Status == QuerySuggestedActionCompletionStatus.Completed ||
-                    e.Status == QuerySuggestedActionCompletionStatus.CompletedWithoutData)
+                if (status == QuerySuggestedActionCompletionStatus.InProgress)
                 {
-                    tcs.TrySetResult(e.ActionSets ?? Array.Empty<SuggestedActionSet>());
-                }
-                else
-                {
-                    tcs.TrySetException(new InvalidOperationException($"Light bulb transitioned to non-complete state: {e.Status}"));
+                    await Task.Delay(100, cancellationToken);
+                    continue;
                 }
 
-                asyncSession.SuggestedActionsUpdated -= Handler;
-            }
-
-            asyncSession.SuggestedActionsUpdated += Handler;
-
-            try
-            {
-                // Fast path: the computation may already be done; read it synchronously.
-                if (TryGetCompletedActionSets(asyncSession, out var existing))
-                {
-                    return existing;
-                }
-
-                // Drives the F# code-fix sources and awaits them, so slow analyzers (e.g. unused-opens)
-                // are handled here, and guarantees SuggestedActionsUpdated fires with the latest data.
-                await asyncSession.PopulateWithDataAsync(overrideRequestedActionCategories: null, operationContext: null);
-
-                // Prefer the event result; fall back to a synchronous read if it fired before we resumed.
-                if (tcs.Task.IsCompleted)
-                {
-                    return await tcs.Task.WithCancellation(cancellationToken);
-                }
-
-                if (TryGetCompletedActionSets(asyncSession, out existing))
-                {
-                    return existing;
-                }
-
-                return await tcs.Task.WithCancellation(cancellationToken);
-            }
-            finally
-            {
-                asyncSession.SuggestedActionsUpdated -= Handler;
+                lastSets = sets;
                 try
                 {
-                    asyncSession.Dismiss();
+                    broker.DismissSession(view);
                 }
                 catch
                 {
-                    // Best-effort cleanup of the session we created; ignore if already gone.
+                    // best-effort
                 }
-            }
-        }
 
-        private static bool TryGetCompletedActionSets(IAsyncLightBulbSession session, out IEnumerable<SuggestedActionSet> actionSets)
-        {
-            // Defensive fallback read; no non-obsolete synchronous accessor returns the computed sets.
-#pragma warning disable CS0618
-            var status = session.TryGetSuggestedActionSets(out var sets);
-#pragma warning restore CS0618
-            if (status == QuerySuggestedActionCompletionStatus.Completed ||
-                status == QuerySuggestedActionCompletionStatus.CompletedWithoutData)
-            {
-                actionSets = sets ?? Array.Empty<SuggestedActionSet>();
-                return true;
+                await Task.Delay(250, cancellationToken);
             }
-
-            actionSets = Array.Empty<SuggestedActionSet>();
-            return false;
         }
     }
 }
