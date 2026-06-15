@@ -17,9 +17,10 @@
       ]
     },
     "19945": {
-      "sha": "2b5f8723abf24902e33a71a31f11bf0adb3ba6f5",
+      "sha": "92ceb849f387c58e2b58e3fd97eb335ae8d8db1f",
       "cats": [
-        "Affects-Build-Infra"
+        "Affects-Build-Infra",
+        "Affects-Test-Tooling"
       ]
     },
     "19944": {
