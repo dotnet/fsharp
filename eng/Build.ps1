@@ -552,6 +552,23 @@ try {
         $nativeTools
         write-host "Path = $env:PERL5Path"
     }
+    else {
+        $perlCmd = Get-Command "perl.exe" -ErrorAction SilentlyContinue
+        if ($perlCmd -ne $null) {
+            $env:PERL5Path = $perlCmd.Source
+        }
+        else {
+            # Perl not found on PATH despite NativeToolsOnMachine being set.
+            # Download it via native tools installer as a fallback.
+            $perlInstallBin = Join-Path $ToolsDir "bin"
+            $perlInstallerPath = Join-Path $PSScriptRoot "common\native\install-tool.ps1"
+            $perlEngCommonBaseDir = Join-Path $PSScriptRoot "common\native\"
+            & $perlInstallerPath -ToolName "perl" -InstallPath $perlInstallBin -BaseUri "https://netcorenativeassets.blob.core.windows.net/resource-packages/external" -CommonLibraryDirectory $perlEngCommonBaseDir -Version "5.38.2.2"
+            $env:PERL5Path = Join-Path $ToolsDir "bin\perl\5.38.2.2\perl\bin\perl.exe"
+        }
+        write-host "variable:NativeToolsOnMachine = true"
+        write-host "Path = $env:PERL5Path"
+    }
 
     $dotnetPath = InitializeDotNetCli
     $env:DOTNET_ROOT = "$dotnetPath"
@@ -629,7 +646,8 @@ try {
         }
         else
         {
-            Exec-Console "perl.exe" """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+            $perlExe = if ((Get-Command "perl.exe" -ErrorAction SilentlyContinue) -ne $null) { "perl.exe" } else { $env:PERL5Path }
+            Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
         }
 
         write-host "Exec-Console finished"
