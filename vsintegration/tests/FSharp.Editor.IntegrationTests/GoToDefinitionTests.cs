@@ -13,34 +13,25 @@ namespace FSharp.Editor.IntegrationTests;
 
 public class GoToDefinitionTests : AbstractIntegrationTest
 {
-    // GoToDefn only resolves once the editor's backing Roslyn Document and the F# checker are ready for the
-    // file being navigated:
+    // GoToDefn resolves at invocation time: if the F# checker has not produced a result for the active
+    // document yet, the command no-ops, and only re-issuing it (a retry) or getting lucky with a sleep
+    // recovers -- either of which is brittle or masks a real regression. We avoid that by giving every test
+    // the setup the F# checker handles cleanly on the first try: the code is written to disk, the project is
+    // built, and the file is opened FRESH (never an already-open, buffer-edited document). With that a
+    // single GotoDefn resolves, and the only thing left to wait for is the navigation itself --
+    // FSharpNavigation.NavigateToItem schedules the caret move asynchronously (via JoinableTaskFactory), so
+    // the caret has NOT moved by the time Shell.ExecuteCommandAsync(GotoDefn) returns.
     //
-    //   * Editor.SetTextAsync / OpenFileAsync update the buffer synchronously, but Roslyn propagates that
-    //     edit to Workspace.CurrentSolution asynchronously, and the F# editor then typechecks on its own
-    //     cancellableTask infrastructure. F# does NOT participate in Roslyn's IAsynchronousOperationListener
-    //     pattern (grep vsintegration/src for IAsynchronousOperationListener / BeginAsyncOperation: no
-    //     matches), so AsynchronousOperationListenerProvider.WaitAllAsync cannot observe it and
-    //     WaitForProjectSystemAsync only covers VS project-system load. If GotoDefn fires before that
-    //     settles, the F# checker resolves nothing and the command no-ops.
-    //   * The navigation itself is asynchronous: FSharpNavigation.NavigateToItem schedules the caret move as
-    //     UI work via JoinableTaskFactory, so the caret has NOT moved by the time
-    //     Shell.ExecuteCommandAsync(GotoDefn) returns.
-    //
-    // We deliberately issue GotoDefn ONCE rather than retrying: a retry loop would mask a genuine
-    // GoToDefinition regression (one where the first invocations stop navigating) by eventually succeeding.
-    // Instead we wait for the checker to settle after the file has been opened/built, issue the command
-    // once, and then wait for that single navigation to land.
-    private static readonly TimeSpan FSharpCheckerSettleDelay = TimeSpan.FromSeconds(10);
+    // CI data behind this: with SetTextAsync on the auto-opened buffer, GoesToDefinition's first invocation
+    // deterministically no-ops even after a 10s settle (build 1463623), whereas FsiAndFs -- which adds files
+    // to disk and opens them fresh -- passes single-invoke. Editing an already-open buffer is the difference.
     private static readonly TimeSpan GoToDefinitionNavigationTimeout = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan GoToDefinitionNavigationPollDelay = TimeSpan.FromMilliseconds(100);
 
     private async Task GoToDefinitionAsync(string caretMarker, CancellationToken cancellationToken)
     {
-        // Wait for the project system to load the project into the workspace, then give the F# checker time
-        // to typecheck the active (just opened/built) document so the single GotoDefn below can resolve.
+        // Wait for the project system to load the project into the workspace.
         await Workspace.WaitForProjectSystemAsync(cancellationToken);
-        await Task.Delay(FSharpCheckerSettleDelay, cancellationToken);
 
         // Make the editor the active command context (PlaceCaretAsync's dte.Find moves VS's active selection
         // off the editor) and anchor the caret on the call site.
@@ -84,15 +75,13 @@ let increment = add 1
 
         await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
-        await Editor.SetTextAsync(code, TestToken);
-        // Build so the F# checker has the project's full options; without it GoToDefinition can't resolve
-        // the symbol and no-ops. Building leaves the Build Output pane as the active text view, so re-open
-        // the source file afterwards to make it the active document again (mirrors how
-        // FsiAndFsFilesGoToCorrespondentDefinitions builds and then opens the file it navigates in).
+        // Add the code as a real file on disk and open it fresh after building (rather than editing the
+        // auto-opened buffer with SetTextAsync), so the F# checker resolves on the first GotoDefn -- see the
+        // note on GoToDefinitionAsync. Mirrors FsiAndFsFilesGoToCorrespondentDefinitions.
+        await SolutionExplorer.AddFileAsync("Library", "Test.fs", code, TestToken);
         await SolutionExplorer.BuildSolutionAsync(TestToken);
-        await SolutionExplorer.OpenFileAsync("Library", "Library.fs", TestToken);
+        await SolutionExplorer.OpenFileAsync("Library", "Test.fs", TestToken);
 
-        await Editor.PlaceCaretAsync("add 1", TestToken);
         await GoToDefinitionAsync("add 1", TestToken);
         var actualText = await Editor.GetCurrentLineTextAsync(TestToken);
         
@@ -135,7 +124,6 @@ let id (t: SomeType) = t
         await SolutionExplorer.BuildSolutionAsync(TestToken);
 
         await SolutionExplorer.OpenFileAsync("Library", "Module.fsi", TestToken);
-        await Editor.PlaceCaretAsync("SomeType ->", TestToken);
         await GoToDefinitionAsync("SomeType ->", TestToken);
         var expectedText = "type SomeType =";
         var expectedWindow = "Module.fsi";
@@ -145,7 +133,6 @@ let id (t: SomeType) = t
         Assert.Equal(expectedWindow, actualWindow);
 
         await SolutionExplorer.OpenFileAsync("Library", "Module.fs", TestToken);
-        await Editor.PlaceCaretAsync("SomeType)", TestToken);
         await GoToDefinitionAsync("SomeType)", TestToken);
         expectedText = "type SomeType =";
         expectedWindow = "Module.fs";
