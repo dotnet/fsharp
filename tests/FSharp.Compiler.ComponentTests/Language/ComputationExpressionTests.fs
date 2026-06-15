@@ -2400,9 +2400,9 @@ let foo() =
         |> typecheck
         |> shouldSucceed
         
-    // https://github.com/dotnet/fsharp/issues/19456
+    // https://github.com/dotnet/fsharp/issues/19457
     [<Fact>]
-    let ``Issue 19456 - let bang nested in plain let binding inside task CE should raise FS0750`` () =
+    let ``Issue 19457 - let bang nested in plain let binding inside task CE should compile`` () =
         FSharp """
 open System.Threading.Tasks
 
@@ -2416,5 +2416,206 @@ let y() =
         """
         |> asLibrary
         |> typecheck
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/19457
+    [<Fact>]
+    let ``Issue 19457 - let bang nested in plain let returns awaited value not Task`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let y() =
+    task {
+        let a =
+            let! b = Task.FromResult(42)
+            b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = y().Result
+    if r <> 42 then failwithf "expected 42, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/19457
+    [<Fact>]
+    let ``Issue 19457 - do bang nested in plain let inside task CE compiles and runs`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let mutable x = 0
+let test() =
+    task {
+        let a =
+            do! Task.Delay(0)
+            x <- 1
+            42
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 42 then failwithf "expected 42, got %d" r
+    if x <> 1 then failwithf "expected x=1, got %d" x
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/19457
+    [<Fact>]
+    let ``Issue 19457 - multiple sequential let bang nested in plain let inside task CE`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let result =
+            let! a = Task.FromResult(1)
+            let! b = Task.FromResult(2)
+            a + b
+        return result
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 3 then failwithf "expected 3, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/19457
+    [<Fact>]
+    let ``Issue 19457 - let bang nested in plain let inside async CE`` () =
+        FSharp """
+module Test
+let test() =
+    async {
+        let a =
+            let! b = async { return 42 }
+            b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = Async.RunSynchronously(test())
+    if r <> 42 then failwithf "expected 42, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/19457
+    [<Fact>]
+    let ``Issue 19457 - let in let in let bang deep nesting inside task CE`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            let c = 10
+            let! b = Task.FromResult(c)
+            b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 10 then failwithf "expected 10, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/19457
+    [<Fact>]
+    let ``Issue 19457 - outer return uses awaited inner value`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            let! b = Task.FromResult(42)
+            b
+        return a + 1
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 43 then failwithf "expected 43, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/19457 - regression guard:
+    // match! directly in the RHS of a plain let (at tail position) should NOT trigger
+    // the lift (which would cause infinite recursion). It should produce FS0750 instead.
+    [<Fact>]
+    let ``Issue 19457 - match bang at tail of plain let RHS does not cause infinite recursion`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let result =
+            match! Task.FromResult(Some 42) with
+            | Some x -> x
+            | None -> 0
+        return result
+    }
+        """
+        |> asLibrary
+        |> typecheck
         |> shouldFail
         |> withErrorCode 750
+
+    // https://github.com/dotnet/fsharp/issues/19457
+    // When lifting would shadow a variable used in innerComp, refuse the lift (FS0750).
+    [<Fact>]
+    let ``Issue 19457 - lift refused when it would shadow outer binding used in continuation`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let b = 999
+        let a =
+            let! b = Task.FromResult 42
+            b
+        return (a, b)
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // https://github.com/dotnet/fsharp/issues/19457 - verify that lift still works
+    // when there is no shadowing conflict (the lifted name is not used in innerComp).
+    [<Fact>]
+    let ``Issue 19457 - lift works when no shadowing conflict exists`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            let! b = Task.FromResult 42
+            b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 42 then failwithf "expected 42, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed

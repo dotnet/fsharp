@@ -1009,6 +1009,124 @@ let requireBuilderMethod methodName ceenv m1 m2 =
     if not (hasBuilderMethod ceenv m1 methodName) then
         error (Error(FSComp.SR.tcRequireBuilderMethod methodName, m2))
 
+let rec private collectPatternNames (pat: SynPat) (acc: Set<string>) : Set<string> =
+    match pat with
+    | SynPat.Named(ident = SynIdent(id, _)) -> acc.Add(id.idText)
+    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ]); argPats = SynArgPats.Pats []) -> acc.Add(id.idText)
+    | SynPat.Typed(pat = p)
+    | SynPat.Attrib(pat = p)
+    | SynPat.Paren(pat = p) -> collectPatternNames p acc
+    | SynPat.As(lhsPat = p1; rhsPat = p2)
+    | SynPat.Or(lhsPat = p1; rhsPat = p2) -> collectPatternNames p2 (collectPatternNames p1 acc)
+    | SynPat.Tuple(elementPats = pats)
+    | SynPat.ArrayOrList(elementPats = pats) -> pats |> List.fold (fun s p -> collectPatternNames p s) acc
+    | _ -> acc
+
+let rec private collectLiftedBindingNames (rhs: SynExpr) (acc: Set<string>) : Set<string> =
+    match rhs with
+    | (ExprAsLetBang _ | ExprAsUseBang _) & SynExpr.LetOrUse data ->
+        let acc =
+            data.Bindings
+            |> List.fold (fun s (SynBinding(headPat = pat)) -> collectPatternNames pat s) acc
+
+        collectLiftedBindingNames data.Body acc
+    | SynExpr.Sequential(_, _, (SynExpr.DoBang _), body, _, _) -> collectLiftedBindingNames body acc
+    | LetOrUse({ Body = body; IsRecursive = false }, false, false) -> collectLiftedBindingNames body acc
+    | _ -> acc
+
+let private exprMentionsAnyOf (names: Set<string>) (expr: SynExpr) : bool =
+    if names.IsEmpty then
+        false
+    else
+
+        let rec walkBind (SynBinding(expr = e)) = walkExpr e
+
+        and walkExprs es = es |> List.exists walkExpr
+
+        and walkBinds es = es |> List.exists walkBind
+
+        and walkMatchClauses cl =
+            cl
+            |> List.exists (fun (SynMatchClause(whenExpr = we; resultExpr = e)) -> Option.exists walkExpr we || walkExpr e)
+
+        and walkExpr e =
+            match e with
+            | SynExpr.Ident id -> names.Contains(id.idText)
+            | SynExpr.LongIdent(longDotId = SynLongIdent(id = ids)) -> ids |> List.exists (fun id -> names.Contains(id.idText))
+            | SynExpr.Paren(e, _, _, _)
+            | SynExpr.Typed(e, _, _)
+            | SynExpr.Do(e, _)
+            | SynExpr.DoBang(e, _, _)
+            | SynExpr.YieldOrReturn(_, e, _, _)
+            | SynExpr.YieldOrReturnFrom(_, e, _, _)
+            | SynExpr.Lazy(e, _)
+            | SynExpr.InferredUpcast(e, _)
+            | SynExpr.InferredDowncast(e, _)
+            | SynExpr.AddressOf(_, e, _, _)
+            | SynExpr.DotGet(e, _, _, _)
+            | SynExpr.Upcast(e, _, _)
+            | SynExpr.Downcast(e, _, _)
+            | SynExpr.ComputationExpr(_, e, _)
+            | SynExpr.ArrayOrListComputed(_, e, _)
+            | SynExpr.New(_, _, e, _)
+            | SynExpr.TypeApp(e, _, _, _, _, _, _)
+            | SynExpr.TypeTest(e, _, _)
+            | SynExpr.Fixed(e, _)
+            | SynExpr.DebugPoint(_, _, e) -> walkExpr e
+            | SynExpr.App(_, _, e1, e2, _)
+            | SynExpr.Set(e1, e2, _)
+            | SynExpr.DotSet(e1, _, e2, _)
+            | SynExpr.While(_, e1, e2, _)
+            | SynExpr.WhileBang(_, e1, e2, _)
+            | SynExpr.ForEach(_, _, _, _, _, e1, e2, _)
+            | SynExpr.NamedIndexedPropertySet(_, e1, e2, _)
+            | SynExpr.JoinIn(e1, _, e2, _) -> walkExpr e1 || walkExpr e2
+            | SynExpr.Sequential(_, _, e1, e2, _, _)
+            | SynExpr.SequentialOrImplicitYield(_, e1, e2, _, _) -> walkExpr e1 || walkExpr e2
+            | SynExpr.For(identBody = e1; toBody = e2; doBody = e3) -> walkExpr e1 || walkExpr e2 || walkExpr e3
+            | SynExpr.DotNamedIndexedPropertySet(e1, _, e2, e3, _) -> walkExpr e1 || walkExpr e2 || walkExpr e3
+            | SynExpr.ArrayOrList(_, es, _)
+            | SynExpr.Tuple(_, es, _, _) -> walkExprs es
+            | SynExpr.IfThenElse(ifExpr = e1; thenExpr = e2; elseExpr = e3opt) -> walkExpr e1 || walkExpr e2 || Option.exists walkExpr e3opt
+            | SynExpr.Match(expr = e; clauses = cl)
+            | SynExpr.MatchBang(expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
+            | SynExpr.MatchLambda(_, _, cl, _, _) -> walkMatchClauses cl
+            | SynExpr.Lambda(body = e) -> walkExpr e
+            | SynExpr.LetOrUse({ Bindings = bs; Body = e }) -> walkBinds bs || walkExpr e
+            | SynExpr.TryWith(tryExpr = e; withCases = cl) -> walkExpr e || walkMatchClauses cl
+            | SynExpr.TryFinally(tryExpr = e1; finallyExpr = e2) -> walkExpr e1 || walkExpr e2
+            | SynExpr.ObjExpr(bindings = bs; members = ms; extraImpls = is) ->
+                let allBinds =
+                    unionBindingAndMembers bs ms
+                    @ [
+                        for SynInterfaceImpl(bindings = ibs) in is do
+                            yield! ibs
+                    ]
+
+                walkBinds allBinds
+            | SynExpr.Record(_, origExpr, fs, _) ->
+                (match origExpr with
+                 | Some(e, _) -> walkExpr e
+                 | None -> false)
+                || fs
+                   |> List.exists (fun (SynExprRecordField(expr = v)) -> Option.exists walkExpr v)
+            | SynExpr.AnonRecd(copyInfo = origExpr; recordFields = flds) ->
+                (match origExpr with
+                 | Some(e, _) -> walkExpr e
+                 | None -> false)
+                || flds |> List.exists (fun (_, _, e) -> walkExpr e)
+            | SynExpr.InterpolatedString(parts, _, _) ->
+                parts
+                |> List.exists (function
+                    | SynInterpolatedStringPart.FillExpr(x, _) -> walkExpr x
+                    | _ -> false)
+            | SynExpr.IndexFromEnd(e, _) -> walkExpr e
+            | SynExpr.DotIndexedGet(e1, indexArgs, _, _) -> walkExpr e1 || walkExpr indexArgs
+            | SynExpr.DotIndexedSet(e1, indexArgs, e2, _, _, _) -> walkExpr e1 || walkExpr indexArgs || walkExpr e2
+            | _ -> false
+
+        walkExpr expr
+
 /// <summary>
 /// Try translate the syntax sugar
 /// </summary>
@@ -1841,51 +1959,102 @@ let rec TryTranslateComputationExpression
                    false,
                    false) ->
 
-            // For 'query' check immediately
-            if ceenv.isQuery then
-                match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv ceenv.env) binds) with
-                | [ NormalizedBinding(_, SynBindingKind.Normal, false, false, _, _, _, _, _, _, _, _) ] when not isRec -> ()
-                | normalizedBindings ->
-                    let failAt m =
-                        error (Error(FSComp.SR.tcNonSimpleLetBindingInQuery (), m))
+            // https://github.com/dotnet/fsharp/issues/19457
+            // Lift CE-only constructs (let!, use!, do!) that prefix the RHS of a plain
+            // 'let p = rhs in innerComp' so the CE translator sees them in CE position.
+            let liftedRewrite =
+                if ceenv.isQuery || isRec then
+                    None
+                else
+                    match binds with
+                    | [ SynBinding(a, bk, isI, isM, attrs, xml, vd, hp, ri, rhsExpr, br, dp, bt) ] ->
+                        let rebind rhs =
+                            SynBinding(a, bk, isI, isM, attrs, xml, vd, hp, ri, rhs, br, dp, bt)
 
-                    match normalizedBindings with
-                    | NormalizedBinding(mBinding = mBinding) :: _ -> failAt mBinding
-                    | _ -> failAt m
+                        let mkOuterLet rhs =
+                            SynExpr.LetOrUse
+                                {
+                                    IsRecursive = false
+                                    IsFromSource = isFromSource
+                                    Bindings = [ rebind rhs ]
+                                    Body = innerComp
+                                    Range = m
+                                    Trivia = trivia
+                                }
 
-            // Add the variables to the query variable space, on demand
-            let varSpace =
-                addVarsToVarSpace varSpace (fun mQueryOp env ->
-                    // Normalize the bindings before detecting the bound variables
-                    match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with
-                    | [ NormalizedBinding(kind = SynBindingKind.Normal; shouldInline = false; isMutable = false; pat = pat) ] ->
-                        // successful case
-                        use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                        let rec liftHead rhs =
+                            match rhs with
+                            | (ExprAsLetBang _ | ExprAsUseBang _) & SynExpr.LetOrUse data ->
+                                Some(SynExpr.LetOrUse { data with Body = lift data.Body })
+                            | SynExpr.Sequential(sp, isTrueSeq, (SynExpr.DoBang _ as doBang), body, mSeq, trivSeq) ->
+                                Some(SynExpr.Sequential(sp, isTrueSeq, doBang, lift body, mSeq, trivSeq))
+                            | LetOrUse({ Body = body; IsRecursive = false } as data, false, false) ->
+                                liftHead body
+                                |> Option.map (fun body -> SynExpr.LetOrUse { data with Body = body })
+                            | _ -> None
 
-                        let _, _, vspecs, envinner, _ =
-                            TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv pat None TcTrueMatchClause.No
+                        and lift rhs =
+                            match liftHead rhs with
+                            | Some r -> r
+                            | None -> mkOuterLet rhs
 
-                        vspecs, envinner
-                    | _ ->
-                        // error case
-                        error (Error(FSComp.SR.tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings (), mQueryOp)))
+                        let liftedNames = collectLiftedBindingNames rhsExpr Set.empty
 
-            Some(
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
-                    translatedCtxt (
-                        SynExpr.LetOrUse
-                            {
-                                IsRecursive = isRec
-                                //isUse = false,
-                                IsFromSource = isFromSource
-                                //isBang = false,
-                                Bindings = binds
-                                Body = holeFill
-                                Range = m
-                                Trivia = trivia
-                            }
-                    ))
-            )
+                        if exprMentionsAnyOf liftedNames innerComp then
+                            None
+                        else
+                            liftHead rhsExpr
+                    | _ -> None
+
+            match liftedRewrite with
+            | Some rewritten -> Some(TranslateComputationExpression ceenv firstTry q varSpace rewritten translatedCtxt)
+            | None ->
+
+                // For 'query' check immediately
+                if ceenv.isQuery then
+                    match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv ceenv.env) binds) with
+                    | [ NormalizedBinding(_, SynBindingKind.Normal, false, false, _, _, _, _, _, _, _, _) ] when not isRec -> ()
+                    | normalizedBindings ->
+                        let failAt m =
+                            error (Error(FSComp.SR.tcNonSimpleLetBindingInQuery (), m))
+
+                        match normalizedBindings with
+                        | NormalizedBinding(mBinding = mBinding) :: _ -> failAt mBinding
+                        | _ -> failAt m
+
+                // Add the variables to the query variable space, on demand
+                let varSpace =
+                    addVarsToVarSpace varSpace (fun mQueryOp env ->
+                        // Normalize the bindings before detecting the bound variables
+                        match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with
+                        | [ NormalizedBinding(kind = SynBindingKind.Normal; shouldInline = false; isMutable = false; pat = pat) ] ->
+                            // successful case
+                            use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+
+                            let _, _, vspecs, envinner, _ =
+                                TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv pat None TcTrueMatchClause.No
+
+                            vspecs, envinner
+                        | _ ->
+                            // error case
+                            error (Error(FSComp.SR.tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings (), mQueryOp)))
+
+                Some(
+                    TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
+                        translatedCtxt (
+                            SynExpr.LetOrUse
+                                {
+                                    IsRecursive = isRec
+                                    //isUse = false,
+                                    IsFromSource = isFromSource
+                                    //isBang = false,
+                                    Bindings = binds
+                                    Body = holeFill
+                                    Range = m
+                                    Trivia = trivia
+                                }
+                        ))
+                )
 
         // 'use x = expr in expr'
         | LetOrUse({
