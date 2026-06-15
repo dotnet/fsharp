@@ -3411,6 +3411,9 @@ type FSharpCheckFileResults
 
     member _.Diagnostics = errors
 
+    member _.HasErrors =
+        errors |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
     member _.HasFullTypeCheckInfo = details.IsSome
 
     member _.TryGetCurrentTcImports() =

@@ -1,5 +1,12 @@
+module Module
+
+let f (l: (int * int) seq) =
+    for i1, i2 in l do
+        ()
+--------------------------------------------------------------------------------
+
 Module::f
-  (5,19-5,20)  l
+  (4,19-4,20)  l
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
@@ -7,7 +14,7 @@ Module::f
     IL_0008:  stloc.1
     IL_0009:  br.s IL_0022
 
-  (5,5-5,15)  for i1, i2
+  (4,5-4,15)  for i1, i2
     IL_000b:  ldloc.1
     IL_000c:  callvirt get_Current
     IL_0011:  stloc.2
@@ -18,10 +25,10 @@ Module::f
     IL_001a:  call get_Item1
     IL_001f:  stloc.s 4
 
-  (6,9-6,11)  ()
+  (5,9-5,11)  ()
     IL_0021:  nop
 
-  (5,16-5,18)  in
+  (4,16-4,18)  in
     IL_0022:  ldloc.1
     IL_0023:  callvirt MoveNext
     IL_0028:  brtrue.s IL_000b
