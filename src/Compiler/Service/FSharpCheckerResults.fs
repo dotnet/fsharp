@@ -2030,7 +2030,7 @@ type internal TypeCheckInfo
                             })
 
                     match declaredItems with
-                    | None -> Some(toCompletionItems (items, denv, m))
+                    | None -> Some(filtered, denv, m)
                     | Some(declItems, declaredDisplayEnv, declaredRange) -> Some(filtered @ declItems, declaredDisplayEnv, declaredRange)
                 | _ -> declaredItems
 
