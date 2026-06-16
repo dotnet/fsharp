@@ -34,15 +34,6 @@ let rec f () = seq {
              extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.Collections.Generic.IEnumerable`1<int32>>
       {
         .field static assembly initonly class Test/'f@3-1' @_instance
-        .method private specialname rtspecialname static void  .cctor() cil managed
-        {
-      
-          .maxstack  10
-          IL_0000:  newobj     instance void Test/'f@3-1'::.ctor()
-          IL_0005:  stsfld     class Test/'f@3-1' Test/'f@3-1'::@_instance
-          IL_000a:  ret
-        } 
-
         .method assembly specialname rtspecialname 
                 instance void  .ctor() cil managed
         {

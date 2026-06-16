@@ -41,17 +41,6 @@
            extends [runtime]System.Object
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldc.i4.0
-        IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-        IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-        IL_000b:  pop
-        IL_000c:  ret
-      } 
-
       .method public specialname static int32 get_y() cil managed
       {
         
@@ -80,17 +69,6 @@
       } 
     } 
 
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-      IL_000b:  pop
-      IL_000c:  ret
-    } 
-
     .method public specialname static int32 get_x() cil managed
     {
       
@@ -104,17 +82,6 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
       .get int32 assembly/M::get_x()
     } 
-  } 
-
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
   } 
 
 } 
