@@ -93,6 +93,19 @@ internal partial class EditorInProcess
         var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
         var categoryRegistry = await GetComponentModelServiceAsync<ISuggestedActionCategoryRegistryService>(cancellationToken);
 
-        return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.Any, JoinableTaskFactory, cancellationToken);
+        try
+        {
+            return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.Any, JoinableTaskFactory, cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Diagnostic instrumentation: report the error-list contents so we can see whether the
+            // expected diagnostic (e.g. unused-opens) was actually published in the headless instance.
+            var entries = await TestServices.ErrorList.GetAllEntriesAsync(cancellationToken);
+            throw new InvalidOperationException(
+                $"{ex.Message}{Environment.NewLine}--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
+                string.Join(Environment.NewLine, entries),
+                ex);
+        }
     }
 }

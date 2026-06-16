@@ -95,6 +95,32 @@ namespace Microsoft.CodeAnalysis.Testing.InProcess
             return errorItems.Count(e => e.GetCategory() <= minimumSeverity);
         }
 
+        // Diagnostic instrumentation: dumps every error-list entry (all sources and severities) so a failing
+        // test can report whether a given diagnostic (e.g. unused-opens) was actually published headless.
+        public async Task<ImmutableArray<string>> GetAllEntriesAsync(CancellationToken cancellationToken)
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+            var errorItems = await GetErrorItemsAsync(cancellationToken);
+            var list = new List<string>();
+
+            foreach (var item in errorItems)
+            {
+                var source = item.TryGetValue(StandardTableKeyNames.ErrorSource, out ErrorSource errorSource)
+                    ? errorSource.ToString()
+                    : "<no-source>";
+                var tool = item.GetBuildTool();
+                var document = Path.GetFileName(item.GetPath() ?? item.GetDocumentName()) ?? "<unknown>";
+                var line = item.GetLine() ?? -1;
+                var code = item.GetErrorCode() ?? "<none>";
+                var text = item.GetText() ?? "<none>";
+
+                list.Add($"[{item.GetCategory()}] source={source} tool={tool} {document}({line + 1}) {code}: {text}");
+            }
+
+            return list.ToImmutableArray();
+        }
+
         private async Task<ImmutableArray<ITableEntryHandle>> GetErrorItemsAsync(CancellationToken cancellationToken)
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
