@@ -864,15 +864,11 @@ let CreateNewValuesForTLR (scope: PerFileNamingScope) g tlrS arityM fclassM envP
         let fHatArity = MakeSimpleArityInfo newTps (envp.ep_aenvs.Length + wf)
 
         let fHatName =
-            // Names are bucketed by the per-file optimization scope (not by m, which may point at
-            // inlined source from another file) to keep compiler-generated names deterministic under
-            // parallel optimization. m is still used as the new Val's source location below.
             scope.Fresh(name, m)
 
         let fHat = mkLocalNameTypeArity f.IsCompilerGenerated m fHatName fHatTy (Some fHatArity)
         fHat
 
-    // See https://github.com/dotnet/fsharp/issues/19732 for why we sort here.
     let fs =
         Zset.elements tlrS
         |> List.sortWith (fun v1 v2 -> compare (valSourceOrderKey v1) (valSourceOrderKey v2))

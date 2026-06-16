@@ -1999,16 +1999,6 @@ let MergePropertyDefs m ilPropertyDefs =
 
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
-    // Methods, fields and events are stored with a monotonically increasing insertion
-    // index. On Close() they are sorted by (Name, insertion index) so that within each
-    // type the IL emission order is independent of whether the surrounding method body
-    // was emitted inline (sequential codegen) or via the deferred queue at IlxGen.fs:12516
-    // (parallel codegen). The insertion-index tiebreaker preserves source-order grouping
-    // for methods that legitimately share a name (e.g. overloaded constructors and
-    // generic re-instantiations). Method ordering has no IL semantics — metadata tokens
-    // are assigned by the writer based on input order and any references inside the same
-    // assembly are re-resolved against that order.
-    // See https://github.com/dotnet/fsharp/issues/19732.
     let mutable methodIdx = 0
     let mutable fieldIdx = 0
     let mutable eventIdx = 0
@@ -2069,22 +2059,8 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             else
                 tdef.CustomAttrs
 
-        // Methods sort by (Name, insertion-idx) to keep IL emission order independent of
-        // whether the surrounding method body was emitted inline (sequential codegen) or via
-        // the deferred queue at IlxGen.fs:12516 (parallel codegen). Method ordering has no IL
-        // semantics — tokens are assigned by the writer based on input order and any references
-        // inside the same assembly are re-resolved against that order.
         let sortedMethods = gmethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
 
-        // Fields and events MUST preserve insertion order. For struct types, the IL field
-        // declaration order determines physical memory layout (visible via Marshal.SizeOf,
-        // P/Invoke ABI, blittable interop). Sorting fields by name silently breaks any
-        // [<Struct>] DU/Record whose runtime size or layout is observed.
-        // Events are kept symmetric with fields — Add/Remove method pairs reference event
-        // declaration order in metadata, and the only stability we need is "stable across
-        // sequential-vs-parallel codegen", which insertion order via gfieldIdx already
-        // provides because field/event AddXxxDef happens during the SEQUENTIAL spine walk
-        // (not from deferred parallel method bodies).
         let preservedFields =
             gfields |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
 
@@ -2194,17 +2170,6 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
 and TypeDefsBuilder() =
 
-    // Sort key for an entry: (addAtEnd, fileIndex, startLine, startColumn, name, idx)
-    // - addAtEnd=false entries sort first, in source-position order (so user-declared nested
-    //   types preserve declaration order, and compiler-generated closures interleave at their
-    //   originating expression's source position regardless of when they were emitted).
-    // - addAtEnd=true entries (PrivateImplementationDetails, anonymous record types, raw-data
-    //   value types) sort last; we order them by name to canonicalize across runs since these
-    //   types have no meaningful user-source position. The auxiliary types are reached via
-    //   memoization tables whose first-writer wins under parallel codegen, so insertion idx is
-    //   not stable for them.
-    // - idx remains as a final tiebreaker for entries that share an identical (addAtEnd, range,
-    //   name) — currently impossible since name is unique per parent, but kept for safety.
     let tdefs =
         ConcurrentDictionary<string, list<struct (bool * int * int * int * int * int * string) * (TypeDefBuilder * bool)>>(
             HashIdentity.Structural
@@ -2250,27 +2215,11 @@ and TypeDefsBuilder() =
 
         let sortKey =
             if addAtEnd then
-                // addAtEnd=true falls into two buckets:
-                //  * Sequential-end (m.FileIndex > 0): per-file StartupCode + user
-                //    modules, added during the sequential GenImplFile walk. Replicate
-                //    OLD Interlocked.Decrement-then-sort-ASC by sorting on idx so
-                //    later-inserted types come earlier (matches main's order so the
-                //    test framework's Array.last .fsx-entry-point heuristic in
-                //    CompilerAssert.fs:362 keeps finding the script's $Script$fsx type).
-                //  * Parallel-shared (m = range0): PrivateImplementationDetails,
-                //    anon-record carriers, T<N>_<size>Bytes raw-data types — added
-                //    eagerly at GenerateCode entry or racily during parallel body emit.
-                //    idx is racy under parallel emit; sort on tdef.Name instead.
-                //    Names are deterministic via PrimeStableNamesForCodegen pre-
-                //    population of primedRawTypeCounter/AnonTypeGenerationTable.
-                // Bucket 0 (sequential end) sorts before bucket 1 (parallel shared).
                 if m.FileIndex = 0 then
                     struct (true, 1, 0, 0, 0, 0, tdef.Name)
                 else
                     struct (true, 0, 0, 0, 0, idx, tdef.Name)
             else
-                // User-declared types: source-position ASC. idx is a final tiebreaker
-                // for sites that legitimately share an exact range (rare).
                 struct (false, 0, m.FileIndex, m.StartLine, m.StartColumn, idx, tdef.Name)
 
         let newVal = sortKey, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
@@ -2557,14 +2506,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
 
     // A memoization table for generating value types for big constant arrays
     //
-    // primedRawTypeCounter is consulted by the factory before falling back to a fresh
-    // IncrementOnly call. PrimeStableNamesForCodegen populates it in source order so that
-    // the '@T' counter assigned to each (cloc, size) pair is independent of whether the
-    // surrounding method body is emitted inline (sequential codegen) or via the deferred
-    // queue (parallel codegen). The factory still owns AddTypeDef and runs lazily — calling
-    // GenerateRawDataValueType during priming would fail because the destination host type
-    // does not exist until GenImplFile creates it.
-    // See https://github.com/dotnet/fsharp/issues/19732.
     let primedRawTypeCounter =
         ConcurrentDictionary<CompileLocation * int, int>(HashIdentity.Structural)
 
@@ -2592,32 +2533,12 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
             keyComparer = HashIdentity.Structural
         )
 
-    // Stable per-source-location '@field' counter assignment and per-source-range ILFieldSpec
-    // memoization used by GenConstArray. Populated in source order at codegen entry by
-    // PrimeStableNamesForCodegen so the field name allocated to each TOp.Bytes / TOp.UInt16s /
-    // const-array site is independent of whether the surrounding method body is emitted inline
-    // (sequential codegen) or via the deferred queue (parallel codegen — IlxGen.fs:12516).
-    // Without this, top-walk emissions vs deferred-walk emissions within the same file's '@field'
-    // bucket race for the lower IncrementOnly counters and produce different field names across
-    // --parallelcompilation- and --parallelcompilation+ builds. The fieldSpecByRange cache lets two
-    // inlined copies of the same TOp.Bytes site share a single static data field (correct: same
-    // byte data, one field is enough). It is keyed by source range — not by counter — because the
-    // '@field' counter is per-FileIndex and could otherwise collide across files (e.g. file A's
-    // counter 1 and file B's counter 1 would alias to the same cached spec from whichever file's
-    // codegen ran first, silently dropping the second file's field def).
-    // See https://github.com/dotnet/fsharp/issues/19732.
     let primedFieldCounterByRange =
         ConcurrentDictionary<struct (int * int * int * int * int), int>(HashIdentity.Structural)
 
     let fieldSpecByRange =
         ConcurrentDictionary<struct (int * int * int * int * int), ILFieldSpec>(HashIdentity.Structural)
 
-    // Set of ILTypeRefs that PrimeStableNamesForCodegen has determined will host a static
-    // raw-data field once GenConstArray runs (whether inline during top-walk or via the
-    // deferred queue at IlxGen.fs:12516). Consulted by GenModuleBinding's GetCurrentFields
-    // check at IlxGen.fs:~10940 so that the InitClass-cctor-force is emitted for the same
-    // set of modules under --parallelcompilation- and --parallelcompilation+.
-    // See https://github.com/dotnet/fsharp/issues/19732.
     let primedRawDataFieldHosts =
         ConcurrentDictionary<ILTypeRef, unit>(HashIdentity.Structural)
 
@@ -2671,9 +2592,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
 
         rawDataValueTypeGenerator.Apply((cloc, size))
 
-    /// Pre-allocate the deterministic source-order counter for the (cloc, size) raw-data value type
-    /// without forcing the underlying rawDataValueTypeGenerator factory (which would prematurely
-    /// call AddTypeDef before the host type exists). Called from PrimeStableNamesForCodegen.
     member _.PrimeRawDataValueTypeCounter(cloc: CompileLocation, size: int) =
         let cloc =
             if cenv.options.isInteractive then
@@ -2687,19 +2605,10 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         )
         |> ignore
 
-    /// Returns the stable '@field' counter for an array-literal expression at source range 'm'.
-    /// Source-order pre-population by PrimeStableNamesForCodegen guarantees that this returns
-    /// the same counter regardless of whether the surrounding method body is emitted inline
-    /// (sequential codegen) or via the deferred queue (parallel codegen). Falls back to a
-    /// direct IncrementOnly if priming did not cover the site (defensive only).
     member _.GetOrAssignFieldCounter(m: range) =
         let key = struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn)
         primedFieldCounterByRange.GetOrAdd(key, (fun _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@field", m)))
 
-    /// Returns the static-field spec for an array-literal site at 'm', creating and registering it
-    /// the first time. Two inlined copies of the same TOp.Bytes site share the same source range
-    /// (and therefore the same static data field). The 'makeFspec' callback is invoked at most once
-    /// per source range and is responsible for emitting the field def and any associated type def.
     member this.GetOrCreateRawDataFieldSpec(m: range, makeFspec: int -> ILFieldSpec) =
         let key = struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn)
 
@@ -2710,8 +2619,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                 makeFspec counter)
         )
 
-    /// Records that an ILTypeRef will host a static raw-data field once codegen runs.
-    /// Called from PrimeStableNamesForCodegen for every TOp.Bytes / TOp.UInt16s site in source order.
     member _.MarkRawDataFieldHost(tref: ILTypeRef) =
         primedRawDataFieldHosts.TryAdd(tref, ()) |> ignore
 
@@ -11084,17 +10991,6 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
             GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenvinner mdef
             |> ignore
 
-            // Always emit the cctor force for every module, regardless of whether the module
-            // currently has any static fields. Under --parallelcompilation+ the field defs for
-            // raw-data static blobs created by GenConstArray (IlxGen.fs:~2870) inside
-            // member-method bodies are not added until the deferred iter at IlxGen.fs:12516 runs
-            // — which is long after this check. The original predicate
-            // `not (GetCurrentFields(tref) |> Seq.isEmpty)` saw an empty field set under parallel
-            // codegen and silently omitted the cctor force; the sequential codegen saw the field
-            // immediately and emitted it. Unconditionally calling
-            // GenForceWholeFileInitializationAsPartOfCCtor restores byte-identical output between
-            // the two modes for the cost of a small empty .cctor stub on modules that legitimately
-            // have no static state. See https://github.com/dotnet/fsharp/issues/19732.
             GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
 
 /// Generate the namespace fragments in a single file
@@ -12803,49 +12699,6 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
         mgbuf.AddTypeDef(tref, tdef, false, false, None, m)
         Some tref
 
-/// Source-order priming pass that runs once at the entry to CodegenAssembly, before
-/// any IlxGen file walk or deferred-method emission. It pre-populates the compiler's
-/// shared name caches so that names allocated later during the (parallel or sequential)
-/// codegen phase are stable in source order regardless of force/emission order:
-///
-/// 1. Top-level Val.CompiledName  — Val.CompiledName routes through
-///    StableNiceNameGenerator for every Val matching the predicate below. Pinning the
-///    suffix in source order makes ComputeStorageForValWithValReprInfo (called from
-///    AllocValForBind during parallel method-body emit) deterministic.
-///
-/// 2. Closure type names (Expr.Lambda / Expr.TyLambda / Expr.Obj) — GetIlxClosureFreeVars
-///    (IlxGen.fs:~7140) calls StableNameGenerator.GetUniqueCompilerGeneratedName with a
-///    basename derived from the nearest non-compiler-generated Val on eenv.letBoundVars.
-///    The numeric '-N' suffix is allocated by NiceNameGenerator.FreshCompilerGeneratedNameOfBasicName
-///    which uses Interlocked.Increment on a per-(basicName, FileIndex) bucket. The bucket
-///    is shared across files for any basicName that recurs (e.g. '_fsyacc_reductions',
-///    'abstractLazyModulInfo'). Pinning the suffix here in source order, with a
-///    letBoundVars stack mirroring IlxGen's GenBindingAfterDebugPoint/GenLetRecBindings
-///    push semantics, gives every closure site a deterministic name regardless of whether
-///    the surrounding method body is emitted inline (sequential codegen) or via the
-///    deferred queue at IlxGen.fs:12516 (parallel codegen).
-///
-/// 3. Raw-data value types (T{N}_{size}Bytes) — GenConstArray (IlxGen.fs:~2850) calls
-///    mgbuf.GenerateRawDataValueType(cloc, size) which goes through a memoization keyed
-///    by (cloc, size). The factory calls IncrementOnly("@T", cloc.Range) so first-seen
-///    (cloc, size) wins the lower counters. Priming the memoization in source order
-///    populates the cache deterministically.
-///
-/// 4. '@field' counter (field{N} static-data fields) — GenConstArray uses
-///    mgbuf.GetOrAssignFieldCounter(m) which memoizes per source range. Walking every
-///    array-literal site in source order assigns counters in a deterministic order.
-///
-/// Anonymous record types are *not* primed here because they are emitted at the start of
-/// each GenImplFile (IlxGen.fs:~10761) in deterministic Stamp order, ahead of any deferred
-/// method body — that ordering is already independent of --parallelcompilation.
-///
-/// Over-priming (touching a Lambda/Obj that IlxGen eventually does not lower to a closure
-/// type) is harmless: the StableNameGenerator's Lazy<string> is forced once on insertion
-/// and any later GetUniqueCompilerGeneratedName call with the same (basename, uniq) returns
-/// the cached value. Under-priming would leave the race in place, so the walker is biased
-/// towards visiting every site IlxGen might consume.
-///
-/// See https://github.com/dotnet/fsharp/issues/19732 and PR #19810.
 let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles: CheckedImplFileAfterOptimization list) =
     let g = cenv.g
 
@@ -12856,7 +12709,6 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
         let stableNameGen = cgs.StableNameGenerator
 
         let primeVal (v: Val) =
-            // Mirrors the predicate in Val.CompiledName that routes through StableNiceNameGenerator.
             if
                 v.IsCompiledAsTopLevel
                 && not v.IsMember
@@ -12865,10 +12717,6 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 v.CompiledName g.CompilerGlobalState |> ignore
 
         let _primeClosureName (letBoundVars: ValRef list) (uniq: int64) (m: range) =
-            // Replicates the basename-selection in GetIlxClosureFreeVars (IlxGen.fs:~7132).
-            // Currently UNUSED — see Expr.Lambda/TyLambda/Obj cases below for the rationale.
-            // Kept here as a reference for the basename-selection logic if priming is
-            // reintroduced after state-machine lowering moves earlier.
             let boundvar =
                 letBoundVars |> List.tryFind (fun v -> not v.Deref.IsCompilerGenerated)
 
@@ -12882,9 +12730,6 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             stableNameGen.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, m, uniq)
             |> ignore
 
-        // GenConstArray re-routes cloc through CompLocForPrivateImplementationDetails when
-        // running under FSI; PrimeRawDataValueTypeCounter performs the same rewrite internally,
-        // so the walker only needs to track the un-rewritten cloc.
         let stackGuard = StackGuard("PrimeStableNamesForCodegen")
 
         let rec walkExpr (letBoundVars: ValRef list) (cloc: CompileLocation) (expr: Expr) =
@@ -12896,11 +12741,6 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | Expr.WitnessArg _ -> ()
 
                 | Expr.Lambda(_, _, _, _, body, _, _) ->
-                    // Don't prime closure names — state-machine lowering and other late
-                    // transforms create/remove Lambdas after this pass, so priming would
-                    // register phantom (basename, uniq) cache entries that push real codegen
-                    // closures to suffix '-N'. Just recurse to keep walking the AST for raw
-                    // data sites (TOp.Bytes/UInt16s) which still need priming.
                     walkExpr letBoundVars cloc body
 
                 | Expr.TyLambda(_, _, body, _, _) -> walkExpr letBoundVars cloc body
@@ -12916,17 +12756,10 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                             walkExpr letBoundVars cloc e
 
                 | Expr.Let(TBind(v, rhs, _), body, _, _) ->
-                    // Mirror GenBindingAfterDebugPoint (IlxGen.fs:~8643-8654): both the RHS AND
-                    // the body see the let-bound var on letBoundVars — the binding mutates eenv
-                    // and all subsequent generation (including the body) uses the updated eenv.
                     walkExpr (mkLocalValRef v :: letBoundVars) cloc rhs
                     walkExpr (mkLocalValRef v :: letBoundVars) cloc body
 
                 | Expr.LetRec(binds, body, _, _) ->
-                    // Mirror GenLetRecBindings: all rec siblings' Vars are added to letBoundVars
-                    // for BOTH the RHSs and the body. The original "RHS sees only its own bound
-                    // var" comment was incorrect — IlxGen's GenLetRecBindings adds every rec
-                    // sibling's val before generating any of their bodies.
                     let lbvs =
                         (binds |> List.map (fun (TBind(v, _, _)) -> mkLocalValRef v)) @ letBoundVars
 
@@ -12973,11 +12806,6 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | Expr.TyChoose(_, body, _) -> walkExpr letBoundVars cloc body
 
                 | Expr.Quote(e, _, _, _, _) ->
-                    // Quotations are lowered by GenQuotation (IlxGen.fs:~5754) to a TOp.Bytes
-                    // expression whose pickled AST is materialized only at codegen time, so the
-                    // TOp.Bytes site is not visible to this AST walker. Mark the enclosing cloc as
-                    // a raw-data field host to make the line-10940 check consistent across
-                    // --parallelcompilation- and --parallelcompilation+ builds.
                     if cenv.options.emitConstantArraysUsingStaticDataBlobs then
                         mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
 
@@ -13006,15 +12834,6 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | None -> ()
 
         let walkTopBindRhs (v: Val) (rhs: Expr) (cloc: CompileLocation) =
-            // For Vals compiled as top-level methods, the outer TyLambda/Lambda(s) of the RHS
-            // are emitted as method type-args / value-args by GenMethodForBinding, NOT closure-
-            // converted via GetIlxClosureFreeVars. Skip them in priming so we don't register a
-            // phantom (v.CompiledName, range, uniq) entry that pushes the user's real nested
-            // closures to suffix '-N'.
-            //
-            // We can't use stripTopLambda directly — it errors on Lambdas carrying
-            // ctorThisValOpt/baseValOpt (constructors/instance methods). Inline a safe variant
-            // that just walks past plain Lambda/TyLambda nesting without raising.
             let rec stripOuterTopLambdas (e: Expr) =
                 match e with
                 | Expr.TyLambda(_, _, body, _, _) -> stripOuterTopLambdas body
@@ -13055,9 +12874,6 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
 
                 walkModuleContents cloc' mdef
 
-        // Initial cloc derivation mirrors GenImplFile (IlxGen.fs:~10764): the file's contents are
-        // walked under cloc = CompLocForInitClass({fragmentCloc with TopImplQualifiedName = qname.Text;
-        // Range = qname.Range}). Nested module contents are walked under a freshly computed cloc.
         let fragCloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
 
         for implFile in implFiles do
@@ -13072,37 +12888,16 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             let initCloc = CompLocForInitClass fileCloc
             walkModuleContents initCloc contents
 
-/// Post-IlxGen pass that re-orders the members of every emitted ILTypeDef into a deterministic
-/// alphabetical order. IlxGen adds method/field/event/property/nested-type defs to the assembly
-/// builder in non-deterministic order under parallel codegen — the builder's internal lists
-/// reflect whichever thread emitted first. Sorting them after IlxGen finishes (but before
-/// ILBinaryWriter consumes the module) makes the #String/#Blob/#TypeDef/#MethodDef metadata
-/// streams byte-identical across runs without changing IL semantics, since tokens are assigned
-/// by the writer based on input order and references inside the same assembly are re-resolved
-/// against that order. See https://github.com/dotnet/fsharp/issues/19732.
 let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some(firstImplFiles, lastImplFile) ->
 
-        // Prime the StableNiceNameGenerator's niceNames cache by visiting every top-level Val
-        // in source-deterministic order (files in source order from ParseAndCheckInputs, then
-        // module-binding-list order which is single-threaded per file in typecheck and TLR
-        // pass4_rewrite). This pins the suffix assignment for every Val whose CompiledName routes
-        // through StableNiceNameGenerator, so the later parallel codegen calls hit the cache
-        // and return deterministic names regardless of thread scheduling.
-        // See https://github.com/dotnet/fsharp/issues/19732.
         PrimeStableNamesForCodegen cenv mgbuf implFiles
 
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
-        // Restore parallel body emission across files. PrimeStableNamesForCodegen has populated
-        // every (basename, uniq) cache entry deterministically and the deterministic ordering
-        // keys threaded through AddTypeDef / AddMethodDef ensure within-type and cross-type
-        // emit order is independent of thread scheduling. Within a file, the inner Array.iter
-        // stays sequential so AllocVal / TypeDefsBuilder mutation inside a single file remains
-        // single-threaded. See https://github.com/dotnet/fsharp/issues/19732.
         eenv.delayedFileGenReverse
         |> Array.ofList
         |> Array.rev
