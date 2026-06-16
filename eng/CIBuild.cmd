@@ -32,6 +32,21 @@ if not defined _msbuild (
 )
 echo Using MSBuild: !_msbuild!
 
+rem --- Phase 0: restore the legacy packages.config seeds into .\packages ---
+rem The proto build's LKG seeds (FSharp.Compiler.Tools 4.1.27 -> Microsoft.FSharp.Targets,
+rem Microsoft.VisualFSharp.Msbuild.15.0, System.Collections.Immutable 1.5.0, System.ValueTuple)
+rem are declared in packages.config and HintPath'd from .\packages. Arcade's restore populates
+rem the NuGet global cache, not .\packages, so on a clean CI agent .\packages is empty and the
+rem proto's <Import ...\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets>
+rem fails MSB4019. Restore packages.config explicitly into .\packages first. All these packages
+rem resolve through dotnet-public (the CFS-approved nuget.org mirror) per NuGet.Config.
+echo ---------------- Restoring legacy packages.config seeds ----------------
+"%~dp0..\.nuget\NuGet.exe" restore "%~dp0..\packages.config" -PackagesDirectory "%~dp0..\packages" -ConfigFile "%~dp0..\NuGet.Config" -NonInteractive -Verbosity quiet
+if errorlevel 1 (
+  echo Error: legacy packages.config restore failed 1>&2
+  exit /b 1
+)
+
 rem --- Phase 1: build the proto/bootstrap compiler ---
 echo ---------------- Building proto (bootstrap) compiler ----------------
 "!_msbuild!" "%~dp0..\src\fsharp-proto-build.proj" ^
