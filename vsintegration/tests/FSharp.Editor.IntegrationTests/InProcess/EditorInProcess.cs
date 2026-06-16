@@ -93,19 +93,44 @@ internal partial class EditorInProcess
         var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
         var categoryRegistry = await GetComponentModelServiceAsync<ISuggestedActionCategoryRegistryService>(cancellationToken);
 
+        // A code fix only exists once the F# checker has published this document's diagnostic. CI evidence
+        // showed the failures coincide with an EMPTY error list (no diagnostics produced at all), and that
+        // churning the lightbulb meanwhile appears to starve the checker. So first wait quietly - no lightbulb
+        // activity - until the document has diagnostics, then invoke once.
+        await WaitForDocumentDiagnosticsAsync(cancellationToken);
+
         try
         {
             return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.Any, JoinableTaskFactory, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
-            // Diagnostic instrumentation: report the error-list contents so we can see whether the
-            // expected diagnostic (e.g. unused-opens) was actually published in the headless instance.
+            // Report the error-list contents so a failure shows whether the diagnostic was published.
             var entries = await TestServices.ErrorList.GetAllEntriesAsync(cancellationToken);
             throw new InvalidOperationException(
                 $"{ex.Message}{Environment.NewLine}--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
                 string.Join(Environment.NewLine, entries),
                 ex);
+        }
+    }
+
+    // Polls the error list (lightly, no lightbulb activity) until the document has at least one diagnostic of
+    // any severity, or a bounded timeout elapses. Best-effort: on timeout we still try the lightbulb so a
+    // genuinely diagnostic-free state surfaces as the normal assertion failure (plus the error-list dump).
+    private async Task WaitForDocumentDiagnosticsAsync(CancellationToken cancellationToken)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(60);
+        while (DateTime.UtcNow < deadline)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var count = await TestServices.ErrorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_MESSAGE, cancellationToken);
+            if (count > 0)
+            {
+                return;
+            }
+
+            await Task.Delay(500, cancellationToken);
         }
     }
 }
