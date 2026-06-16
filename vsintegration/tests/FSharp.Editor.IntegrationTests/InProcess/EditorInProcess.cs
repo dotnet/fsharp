@@ -99,6 +99,13 @@ internal partial class EditorInProcess
         // activity - until the document has diagnostics, then invoke once.
         await WaitForDocumentDiagnosticsAsync(cancellationToken);
 
+        // EXPERIMENT (temporary): a long, quiet settle with no lightbulb activity, to test whether the
+        // remaining failures are a warm-up/latency race. If the fix becomes cached after everything settles
+        // (checker + analyzers + lightbulb tagger), PopulateWithDataAsync's first snapshot should be non-empty
+        // and the session should survive. If it still fails, settling is irrelevant and the session path is
+        // structurally unfit headless.
+        await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
+
         try
         {
             return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.Any, JoinableTaskFactory, cancellationToken);

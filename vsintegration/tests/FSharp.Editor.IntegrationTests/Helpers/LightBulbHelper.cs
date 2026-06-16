@@ -17,8 +17,8 @@ namespace FSharp.Editor.IntegrationTests.Helpers
 {
     internal static class LightBulbHelper
     {
-        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(60);
-        private static readonly TimeSpan s_perAttemptTimeout = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan s_perAttemptTimeout = TimeSpan.FromSeconds(15);
 
         // We drive the producer-agnostic VS lightbulb broker session rather than querying a specific code-fix
         // source. The broker session aggregates ALL suggested-action sources (Roslyn today, the VS LSP client's
