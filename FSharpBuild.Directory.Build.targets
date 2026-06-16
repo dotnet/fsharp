@@ -34,8 +34,17 @@
 
     <Message Text="Copying build artifacts to $(FinalOutputPath)" />
     <MakeDir Directories="$(FinalOutputPath);$(FinalIntermediateOutputPath)" />
-    <Copy SourceFiles="@(OutputFilesToCopy)" DestinationFolder="$(FinalOutputPath)" />
-    <Copy SourceFiles="@(IntermediateFilesToCopy)" DestinationFolder="$(FinalIntermediateOutputPath)" />
+    <!-- Block 9c: SkipUnchangedFiles + Retries make these copies tolerant of the inherent race in
+         this HACK target. Every net40 project copies into the SHARED $(FinalOutputPath) /
+         $(FinalIntermediateOutputPath) dirs concurrently, so identically-named intermediates
+         (XlfSources.txt, _EmptyResource.resources) and the same FSharp.Core.dll output collide
+         under -m:N. SkipUnchangedFiles avoids re-copying identical content; Retries rides out the
+         brief lock window when two projects touch the same destination. Each project builds clean
+         in isolation; this only hardens the shared-dir copy. -->
+    <Copy SourceFiles="@(OutputFilesToCopy)" DestinationFolder="$(FinalOutputPath)"
+          SkipUnchangedFiles="true" Retries="10" RetryDelayMilliseconds="500" />
+    <Copy SourceFiles="@(IntermediateFilesToCopy)" DestinationFolder="$(FinalIntermediateOutputPath)"
+          SkipUnchangedFiles="true" Retries="10" RetryDelayMilliseconds="500" />
   </Target>
 
   <!-- S5.5 follow-up: remove duplicate imports — `src/FSharpSource.targets:342-343` already imports

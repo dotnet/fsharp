@@ -47,6 +47,12 @@ if errorlevel 1 (
 )
 
 rem --- Phase 2: real build via the Arcade engine (uses Proto\net40\bin) ---
+rem -m:1 forces single-proc msbuild. The legacy 15.9 build copies every net40 project's
+rem output into a SHARED Release\net40\{bin,obj} dir via HACK_CopyOutputsToTheProperLocation,
+rem and builds the same assemblies (e.g. FSharp.Core.dll) for multiple TFM passes; under
+rem multi-proc these collide (MSB3026 copy locks, FS2014 double-write). Every project builds
+rem clean in isolation -- the only failures are shared-output races -- so serializing is the
+rem correct, deterministic fix. The 15.9 build was historically single-proc.
 echo ---------------- Building product (real) ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0common\build.ps1" -ci -restore -build %*
+powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0common\build.ps1" -ci -restore -build /m:1 %*
 exit /b %ERRORLEVEL%
