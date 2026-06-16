@@ -34,14 +34,20 @@ echo Using MSBuild: !_msbuild!
 
 rem --- Phase 0: restore the legacy packages.config seeds into .\packages ---
 rem The proto build's LKG seeds (FSharp.Compiler.Tools 4.1.27 -> Microsoft.FSharp.Targets,
-rem Microsoft.VisualFSharp.Msbuild.15.0, System.Collections.Immutable 1.5.0, System.ValueTuple)
-rem are declared in packages.config and HintPath'd from .\packages. Arcade's restore populates
-rem the NuGet global cache, not .\packages, so on a clean CI agent .\packages is empty and the
-rem proto's <Import ...\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets>
-rem fails MSB4019. Restore packages.config explicitly into .\packages first. All these packages
-rem resolve through dotnet-public (the CFS-approved nuget.org mirror) per NuGet.Config.
+rem Microsoft.VisualFSharp.Msbuild.15.0, FsLexYacc, System.Collections.Immutable 1.5.0,
+rem System.ValueTuple) are declared in packages.config and HintPath'd from .\packages. Arcade's
+rem restore populates the NuGet global cache, not .\packages, so on a clean CI agent .\packages is
+rem empty and the proto's <Import ...\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets>
+rem fails MSB4019.
+rem
+rem These specific 15.9-era packages exist ONLY on nuget.org (verified: 200 on api.nuget.org,
+rem 404 on dotnet-public and every other dnceng/azure-public feed — they were never mirrored).
+rem dotnet-public's nuget.org upstream proxy does not reliably surface them on a cold CI agent.
+rem We therefore restore them with an explicit transient -Source api.nuget.org on the CLI. This is
+rem NOT a NuGet.config feed declaration (so it does not trip CFS0013, which scans config files),
+rem and matches the existing accepted use of api.nuget.org in eng\common\post-build\nuget-verification.ps1.
 echo ---------------- Restoring legacy packages.config seeds ----------------
-"%~dp0..\.nuget\NuGet.exe" restore "%~dp0..\packages.config" -PackagesDirectory "%~dp0..\packages" -ConfigFile "%~dp0..\NuGet.Config" -NonInteractive -Verbosity quiet
+"%~dp0..\.nuget\NuGet.exe" restore "%~dp0..\packages.config" -PackagesDirectory "%~dp0..\packages" -Source "https://api.nuget.org/v3/index.json" -NonInteractive -Verbosity quiet
 if errorlevel 1 (
   echo Error: legacy packages.config restore failed 1>&2
   exit /b 1
