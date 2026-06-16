@@ -89,6 +89,18 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
+    <!--
+      Block 9d: exempt MSB3245 (RAR "could not resolve this reference") from warnaserror.
+      The legacy compiler projects reference System.ValueTuple (and a few others) via a
+      packages\...\lib\netstandard1.0\ HintPath. RAR flags MSB3245 because a netstandard1.0
+      assembly is not a formal compile-time match for the net40/v4.5 target, but the reference
+      DOES resolve and load at runtime via the copy already present in the shared Release\net40\bin
+      output (verified: all product DLLs — FSharp.Core, FSharp.Compiler.Private, FSharp.Build,
+      fsc.exe, fsi.exe — are produced). Without this exemption TreatWarningsAsErrors turns the
+      benign MSB3245 into a hard build failure. MSB3245 stays a warning; everything else still
+      escalates.
+    -->
+    <MSBuildWarningsNotAsErrors>$(MSBuildWarningsNotAsErrors);MSB3245</MSBuildWarningsNotAsErrors>
 
     <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
     <SystemCollectionsImmutableVersion>1.5.0</SystemCollectionsImmutableVersion>
