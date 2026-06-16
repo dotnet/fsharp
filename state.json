@@ -48,7 +48,7 @@
       ]
     },
     "19930": {
-      "sha": "582b83cf110949d1c06e6f54e90b57d7f620152f",
+      "sha": "995eea3e7ca34c270b8b09e5d1586113d393ca18",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Restore",
@@ -224,6 +224,29 @@
     },
     "19953": {
       "sha": "93667fd8303f0568c12af2aee7f79f91f59ca934",
+      "cats": []
+    },
+    "19960": {
+      "sha": "b31402170ca83192346521bdca240a7ca6fa4306",
+      "cats": []
+    },
+    "19958": {
+      "sha": "f1b3158305164229f515ac463bf04dc12c3ee600",
+      "cats": [
+        "Affects-Agent-Config",
+        "Affects-Build-Infra"
+      ]
+    },
+    "19957": {
+      "sha": "70d44a18188ba0e83ee41892657a64ba68f688e8",
+      "cats": [
+        "Affects-Agent-Config",
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
+    },
+    "19955": {
+      "sha": "7ec8e3e866632af779b474c2f26c7f628fbc0998",
       "cats": []
     }
   }
