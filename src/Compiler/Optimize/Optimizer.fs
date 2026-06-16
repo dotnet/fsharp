@@ -383,9 +383,6 @@ type OptimizationSettings =
     /// This optimization is off by default, given tiny overhead of including try/with. See https://github.com/dotnet/fsharp/pull/376
     member _.EliminateTryWithAndTryFinally = false 
 
-    /// Determines if we should eliminate first part of sequential expression if it has no effect 
-    member x.EliminateSequential = x.LocalOptimizationsEnabled 
-
     /// Determines if we should determine branches in pattern matching based on known information, e.g.
     /// eliminate a "if true then .. else ... "
     member x.EliminateSwitch = x.LocalOptimizationsEnabled
@@ -2291,27 +2288,35 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
         //printfn "Not eliminating because no Run found"
         None
 
+let inline (|StringTy|_|) (ilTy: ILType) : bool =
+    ilTy.IsNominal && ilTy.TypeRef.Name = tname_String
+
+let inline private isILMethodRefOnSystemString
+        (methodName: string)
+        (returnTypeName: string)
+        ([<InlineIfLambda>] argsCheck: ILType list -> bool)
+        (mref: ILMethodRef) =
+    mref.Name = methodName &&
+    mref.DeclaringTypeRef.Name = tname_String &&
+    mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = returnTypeName &&
+    argsCheck mref.ArgTypes
+
+let IsILMethodRefSystemStringEquals (mref: ILMethodRef) =
+    mref |> isILMethodRefOnSystemString "Equals" tname_Bool (function
+        | [StringTy; StringTy] -> true
+        | _ -> false)
+
 let IsILMethodRefSystemStringConcat (mref: ILMethodRef) =
-    mref.Name = "Concat" &&
-    mref.DeclaringTypeRef.Name = "System.String" &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.String") &&
-    (mref.ArgCount >= 2 && mref.ArgCount <= 4 &&
-        mref.ArgTypes 
-        |> List.forall (fun ilTy ->
-            ilTy.IsNominal && ilTy.TypeRef.Name = "System.String"))
+    mref |> isILMethodRefOnSystemString "Concat" tname_String (function
+        | [StringTy; StringTy]
+        | [StringTy; StringTy; StringTy]
+        | [StringTy; StringTy; StringTy; StringTy] -> true
+        | _ -> false)
 
 let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
-    mref.Name = "Concat" &&
-    mref.DeclaringTypeRef.Name = "System.String" &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.String") &&
-    (mref.ArgCount = 1 && 
-        mref.ArgTypes
-        |> List.forall (fun ilTy ->          
-            match ilTy with
-            | ILType.Array (shape, ilTy) when shape = ILArrayShape.SingleDimensional &&
-                                              ilTy.IsNominal &&
-                                              ilTy.TypeRef.Name = "System.String" -> true
-            | _ -> false))
+    mref |> isILMethodRefOnSystemString "Concat" tname_String (function
+        | [ILType.Array (shape, StringTy)] when shape = ILArrayShape.SingleDimensional -> true
+        | _ -> false)
 
 let rec IsDebugPipeRightExpr cenv expr =
     let g = cenv.g
@@ -2540,6 +2545,14 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
     | _ ->
         OptimizeExpr cenv env expr
 
+/// Rewrite `String.Equals(x, "")` to `x <> null && x.Length = 0` (issue #19873 —
+/// done here so quotation bodies, which the optimizer skips, keep `op_Equality(_, "")`).
+and MakeOptimizedStringEqualsEmptyCall cenv env m nonEmptyArg =
+    let g = cenv.g
+    let _, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m nonEmptyArg
+    let lengthIsZero = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
+    OptimizeExpr cenv env (mkLetBind m bind (mkLazyAnd g m (mkNonNullTest g m vExpr) lengthIsZero))
+
 /// Optimize/analyze an application of an intrinsic operator to arguments
 and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
@@ -2610,6 +2623,12 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args 
       when IsILMethodRefSystemStringConcat ilMethRef ->
         MakeOptimizedSystemStringConcatCall cenv env m args
+
+    // See MakeOptimizedStringEqualsEmptyCall (issue #19873). `(=)` lowers to `String.Equals` post-inlining.
+    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _,
+        ([nonEmpty; Expr.Const(Const.String "", _, _)] | [Expr.Const(Const.String "", _, _); nonEmpty])
+      when IsILMethodRefSystemStringEquals ilMethRef ->
+        MakeOptimizedStringEqualsEmptyCall cenv env m nonEmpty
 
     | _ -> 
         // Reductions
@@ -2874,12 +2893,8 @@ and OptimizeLinearExpr cenv env expr contf =
 
       OptimizeLinearExpr cenv env e2 (contf << (fun (e2R, e2info) -> 
         if (flag = NormalSeq) &&
-           // Drop bare (compiler-generated) units always; keep a debug-pointed unit in debug code so
-           // it stays steppable (a unit without one must go, else a dangling breakpoint - FSharp 1.0 bug 6034).
-           (cenv.settings.EliminateSequential ||
-            (match e1R with
-             | Expr.DebugPoint(DebugPointAtLeafExpr.Yes _, _) -> false
-             | _ -> match stripDebugPoints e1R with Expr.Const (Const.Unit, _, _) -> true | _ -> false)) &&
+           (cenv.settings.LocalOptimizationsEnabled ||
+            (match e1R with | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden, _), _) -> isHidden | _ -> false)) &&
            not e1info.HasEffect then
             e2R, e2info
         else 
@@ -2942,9 +2957,11 @@ and OptimizeLinearExpr cenv env expr contf =
          OptimizeLinearExpr cenv env argLast (contf << (fun (argLastR, argLastInfo) ->
              OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsHeadR @ [argLastR], argsHeadInfosR @ [argLastInfo], m)))
 
-    | Expr.DebugPoint (m, innerExpr) when not (IsDebugPipeRightExpr cenv innerExpr)-> 
+    | Expr.DebugPoint (m, innerExpr) when not (IsDebugPipeRightExpr cenv innerExpr)->
         OptimizeLinearExpr cenv env innerExpr (contf << (fun (innerExprR, einfo) ->
-            Expr.DebugPoint (m, innerExprR), einfo))
+            match m with
+            | DebugPointAtLeafExpr.Yes(isHidden = true) when not einfo.HasEffect -> innerExprR, einfo
+            | _ -> Expr.DebugPoint (m, innerExprR), einfo))
 
     | _ -> contf (OptimizeExpr cenv env expr)
 
@@ -2966,7 +2983,7 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
     if cenv.settings.EliminateTryWithAndTryFinally && not e1info.HasEffect then 
         let e1R2 = 
             match spTry with 
-            | DebugPointAtTry.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, e1R)
+            | DebugPointAtTry.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), e1R)
             | DebugPointAtTry.No -> e1R
         Expr.Sequential (e1R2, e2R, ThenDoSeq, m), info 
     else
@@ -4220,7 +4237,14 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         if vref.ShouldInline && IsPartialExprVal einfo.Info then 
             errorR(InternalError("the inline value '"+vref.LogicalName+"' was not inferred to have a known value", vref.Range))
         
-        let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env 
+        let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
+
+        // The hidden debug point on the r.h.s. is dropped above, so suppress the binding's debug point too.
+        let spBind =
+            match expr with
+            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden = true), _) when not einfo.HasEffect -> DebugPointAtBinding.NoneAtLet
+            | _ -> spBind
+
         (TBind(vref, exprOptimized, spBind), einfo), env
     with RecoverableException exn -> 
         errorRecovery exn vref.Range 

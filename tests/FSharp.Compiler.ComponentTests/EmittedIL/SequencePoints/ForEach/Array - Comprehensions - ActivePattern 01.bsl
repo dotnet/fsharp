@@ -1,8 +1,24 @@
+module Module
+
+let (|Id|) (x: int) = x
+
+let f (l: int list) =
+    [|
+        for Id i in l do
+            yield i
+    |]
+--------------------------------------------------------------------------------
+
+Module::|Id|
+  (3,23-3,24)  x
+    IL_0000:  ldarg.0
+    IL_0001:  ret
+
 Module::f
-  (7,5-10,7)  [| for Id i in l do yield i |]
+  (6,5-9,7)  [| for Id i in l do yield i |]
     IL_0000:  nop
 
-  (8,9-8,12)  for
+  (7,9-7,12)  for
     IL_0001:  ldarg.0
     IL_0002:  callvirt GetEnumerator
     IL_0007:  stloc.1
@@ -16,13 +32,13 @@ Module::f
     IL_0019:  ldloc.s 4
     IL_001b:  stloc.s 5
 
-  (9,13-9,20)  yield i
+  (8,13-8,20)  yield i
     IL_001d:  ldloca.s 0
     IL_001f:  ldloc.s 5
     IL_0021:  call Add
     IL_0026:  nop
 
-  (8,18-8,20)  in
+  (7,18-7,20)  in
     IL_0027:  ldloc.1
     IL_0028:  callvirt MoveNext
     IL_002d:  brtrue.s IL_000a
@@ -51,8 +67,3 @@ Module::f
     IL_004a:  ldloca.s 0
     IL_004c:  call Close
     IL_0051:  ret
-
-Module::|Id|
-  (4,23-4,24)  x
-    IL_0000:  ldarg.0
-    IL_0001:  ret

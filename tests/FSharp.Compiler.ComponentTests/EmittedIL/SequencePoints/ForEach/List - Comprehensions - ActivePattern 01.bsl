@@ -1,8 +1,24 @@
+module Module
+
+let (|Id|) (x: int) = x
+
+let f (l: int list) =
+    [
+        for Id i in l do
+            yield i
+    ]
+--------------------------------------------------------------------------------
+
+Module::|Id|
+  (3,23-3,24)  x
+    IL_0000:  ldarg.0
+    IL_0001:  ret
+
 Module::f
-  (7,5-10,6)  [ for Id i in l do yield i ]
+  (6,5-9,6)  [ for Id i in l do yield i ]
     IL_0000:  nop
 
-  (8,9-8,12)  for
+  (7,9-7,12)  for
     IL_0001:  ldarg.0
     IL_0002:  stloc.1
     IL_0003:  ldloc.1
@@ -20,7 +36,7 @@ Module::f
     IL_001f:  stloc.s 5
     IL_0021:  stloc.s 6
 
-  (9,13-9,20)  yield i
+  (8,13-8,20)  yield i
     IL_0023:  ldloc.s 6
     IL_0025:  ldloc.s 5
     IL_0027:  call Add
@@ -31,14 +47,9 @@ Module::f
     IL_0030:  call get_TailOrNull
     IL_0035:  stloc.2
 
-  (8,18-8,20)  in
+  (7,18-7,20)  in
     IL_0036:  ldloc.2
     IL_0037:  brtrue.s IL_000c
     IL_0039:  ldloca.s 0
     IL_003b:  call Close
     IL_0040:  ret
-
-Module::|Id|
-  (4,23-4,24)  x
-    IL_0000:  ldarg.0
-    IL_0001:  ret
