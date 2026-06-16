@@ -110,6 +110,22 @@ namespace FSharp.Editor.IntegrationTests.Helpers
             session.Dismissed += OnDismissed;
             try
             {
+                // Expand the session so it survives the async computation. A collapsed/owned session
+                // auto-dismisses the instant PopulateWithDataAsync reports its empty initial snapshot, which
+                // loses the race for fixes that compute slower than that (type-check warnings, background
+                // analyzers); an expanded session persists (the "computing..." lightbulb) and updates as the
+                // sources complete - exactly like a real Ctrl+. invocation.
+                string expandStatus;
+                try
+                {
+                    session.Expand();
+                    expandStatus = "expanded";
+                }
+                catch (Exception ex)
+                {
+                    expandStatus = $"expand-failed {ex.GetType().Name}: {ex.Message}";
+                }
+
                 // Trigger population (fires SuggestedActionsUpdated at least once with the latest data). We don't
                 // rely on its empty early result - the terminal event delivers the aggregated sets.
                 string populateStatus;
@@ -130,15 +146,15 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 try
                 {
                     var (sets, status) = await eventTcs.Task.WithCancellation(perAttempt.Token);
-                    return (sets, $"{populateStatus}, event status={status}, sets={sets.Count}");
+                    return (sets, $"{expandStatus}, {populateStatus}, event status={status}, sets={sets.Count}");
                 }
                 catch (SessionDismissedException)
                 {
-                    return (Array.Empty<SuggestedActionSet>(), $"{populateStatus}, session dismissed");
+                    return (Array.Empty<SuggestedActionSet>(), $"{expandStatus}, {populateStatus}, session dismissed");
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
-                    return (Array.Empty<SuggestedActionSet>(), $"{populateStatus}, no terminal event within {s_perAttemptTimeout.TotalSeconds:F0}s");
+                    return (Array.Empty<SuggestedActionSet>(), $"{expandStatus}, {populateStatus}, no terminal event within {s_perAttemptTimeout.TotalSeconds:F0}s");
                 }
             }
             finally
