@@ -12486,6 +12486,7 @@ FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Create(System.String[], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Empty
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Merge(FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Xml.PreXmlDoc)
+FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc WithExtraParamsForCheck(FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc get_Empty()
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.XmlDoc ToXmlDoc(Boolean, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.Xml.PreXmlDoc: Int32 GetHashCode()

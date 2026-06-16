@@ -796,6 +796,7 @@ stages:
             continueOnError: true
             condition: always()
         - job: ILVerify
+          timeoutInMinutes: 120
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)

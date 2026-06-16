@@ -541,6 +541,19 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
                      (4, 82, 4, 84, 1);
                      (4, 108, 4, 110, 1)|]
 
+[<Fact>]
+let ``Format specifier locations not duplicated in CE`` () =
+    let input = "let _ = seq { sprintf \"%d\" 1 }"
+    let file = "/home/user/Test.fsx"
+    let _parseResult, typeCheckResults = parseAndCheckScript(file, input)
+
+    let locations = typeCheckResults.GetFormatSpecifierLocationsAndArity()
+    let percentD =
+        locations
+        |> Array.filter (fun (r, _) -> r.StartColumn = 23)
+
+    Assert.Equal(1, percentD.Length)
+
 #if ASSUME_PREVIEW_FSHARP_CORE
 [<Fact>]
 let ``Printf specifiers for regular and verbatim interpolated strings`` () =
