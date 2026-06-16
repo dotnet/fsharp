@@ -10,7 +10,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,35 +19,38 @@ namespace FSharp.Editor.IntegrationTests.Helpers
     {
         private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(60);
         private static readonly TimeSpan s_perAttemptTimeout = TimeSpan.FromSeconds(30);
-        private static readonly TimeSpan s_minRetriggerInterval = TimeSpan.FromMilliseconds(500);
 
-        // The action SETS can only be obtained from the async lightbulb session: in modern Roslyn the
-        // synchronous ISuggestedActionsSource.GetSuggestedActions returns null by design, and the real
-        // producer is IAsyncSuggestedActionsSource.GetSuggestedActionsAsync, which the lightbulb session
-        // drives via PopulateWithDataAsync. PopulateWithDataAsync returns Task<ImmutableArray<...>> and
-        // SuggestedActionsUpdatedArgs.ActionSets is also ImmutableArray, both of which bind
-        // System.Collections.Immutable - a version that skews between the test's NuGet reference and the
-        // in-proc VS runtime - so we invoke/read them via reflection and never name ImmutableArray.
+        // We drive the producer-agnostic VS lightbulb broker session rather than querying a specific code-fix
+        // source. The broker session aggregates ALL suggested-action sources (Roslyn today, the VS LSP client's
+        // CodeActionSource once F# code actions move to LSP), so this test stays valid across that migration -
+        // unlike calling Roslyn's IAsyncSuggestedActionsSource directly.
+        //
+        // Mechanics learned the hard way:
+        //  * ShowQuickFixes only creates a session when a fix already exists at the caret, so a background/push
+        //    analyzer (unused-opens) whose diagnostic isn't published yet never produces one. broker.CreateSession
+        //    always gives us an owned session and still aggregates every source.
+        //  * PopulateWithDataAsync returns a fast, EMPTY initial snapshot; the real aggregated sets arrive later
+        //    via SuggestedActionsUpdated as each source completes. So we trigger populate but wait on the terminal
+        //    event, not the populate task result.
+        //  * PopulateWithDataAsync returns Task<ImmutableArray<...>> and SuggestedActionsUpdatedArgs.ActionSets is
+        //    ImmutableArray; System.Collections.Immutable skews between the NuGet ref and the in-proc VS runtime,
+        //    so we invoke/read these via reflection through the non-generic IEnumerable and never name
+        //    ImmutableArray in compiled IL. (These are VS platform APIs, unaffected by the F# LSP move.)
         private static readonly MethodInfo s_populateWithDataAsync =
             typeof(IAsyncLightBulbSession).GetMethod(
                 "PopulateWithDataAsync",
                 new[] { typeof(ISuggestedActionCategorySet), typeof(IUIThreadOperationContext) })
             ?? throw new InvalidOperationException("IAsyncLightBulbSession.PopulateWithDataAsync not found.");
 
-        // Trigger ShowQuickFixes (creates the real, active, non-superseded session), then drive
-        // PopulateWithDataAsync and read its aggregated result. Retry with a fresh session until items
-        // appear (covers background analyzers such as unused-opens whose diagnostics arrive asynchronously)
-        // or the overall timeout elapses, at which point we throw a per-attempt diagnostic dump (the CI log
-        // is the only signal available).
         public static async Task<IReadOnlyList<SuggestedActionSet>> GetCodeActionsAsync(
             ILightBulbBroker broker,
             IWpfTextView view,
-            Action triggerCommand,
+            ISuggestedActionCategorySet categories,
+            JoinableTaskFactory joinableTaskFactory,
             CancellationToken cancellationToken)
         {
             var start = DateTime.UtcNow;
             var deadline = start + s_timeout;
-            var lastTrigger = DateTime.MinValue;
             var attempt = 0;
             var lastDetail = "no attempt completed";
 
@@ -58,25 +60,12 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 if (DateTime.UtcNow > deadline)
                 {
                     throw new InvalidOperationException(
-                        $"No code actions found after {s_timeout.TotalSeconds:F0}s ({attempt} attempts). " +
-                        $"Last: {lastDetail}");
-                }
-
-                if (broker.GetSession(view) is not IAsyncLightBulbSession session)
-                {
-                    // (Re)trigger only when there is no live session, so we never dismiss an in-flight one.
-                    if (DateTime.UtcNow - lastTrigger > s_minRetriggerInterval)
-                    {
-                        triggerCommand();
-                        lastTrigger = DateTime.UtcNow;
-                    }
-
-                    await Task.Delay(100, cancellationToken);
-                    continue;
+                        $"No code actions found after {s_timeout.TotalSeconds:F0}s ({attempt} attempts). Last: {lastDetail}");
                 }
 
                 attempt++;
-                var (sets, detail) = await TryPopulateAsync(session, cancellationToken);
+                var (sets, detail) = await TryPopulateViaSessionAsync(
+                    broker, view, categories, joinableTaskFactory, cancellationToken);
                 lastDetail = $"attempt {attempt}, elapsed {(DateTime.UtcNow - start).TotalSeconds:F1}s: {detail}";
 
                 if (sets.Count > 0)
@@ -84,111 +73,91 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                     return sets;
                 }
 
-                try
-                {
-                    broker.DismissSession(view);
-                }
-                catch
-                {
-                    // best-effort
-                }
-
                 await Task.Delay(250, cancellationToken);
             }
         }
 
-        private static async Task<(IReadOnlyList<SuggestedActionSet> sets, string detail)> TryPopulateAsync(
-            IAsyncLightBulbSession session,
+        private static async Task<(IReadOnlyList<SuggestedActionSet> sets, string detail)> TryPopulateViaSessionAsync(
+            ILightBulbBroker broker,
+            IWpfTextView view,
+            ISuggestedActionCategorySet categories,
+            JoinableTaskFactory joinableTaskFactory,
             CancellationToken cancellationToken)
         {
-            var eventTcs = new TaskCompletionSource<IReadOnlyList<SuggestedActionSet>>();
+            await joinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-            void Handler(object sender, SuggestedActionsUpdatedArgs e)
+#pragma warning disable CS0618 // ILightBulbBroker2.CreateSession's extra category-set param can't be validated for these tests locally
+            var session = (IAsyncLightBulbSession)broker.CreateSession(categories, view);
+#pragma warning restore CS0618
+
+            // Result carries both the action sets and the terminal status (for diagnostics).
+            var eventTcs = new TaskCompletionSource<(IReadOnlyList<SuggestedActionSet> sets, QuerySuggestedActionCompletionStatus status)>();
+
+            void OnUpdated(object sender, SuggestedActionsUpdatedArgs e)
             {
                 if (e.Status == QuerySuggestedActionCompletionStatus.InProgress)
                 {
                     return;
                 }
 
-                eventTcs.TrySetResult(ReadEnumerableProperty(e, "ActionSets"));
+                eventTcs.TrySetResult((ReadEnumerableProperty(e, "ActionSets"), e.Status));
             }
 
-            session.SuggestedActionsUpdated += Handler;
+            void OnDismissed(object sender, EventArgs e)
+                => eventTcs.TrySetException(new SessionDismissedException());
+
+            session.SuggestedActionsUpdated += OnUpdated;
+            session.Dismissed += OnDismissed;
             try
             {
-                Task populateTask;
+                // Trigger population (fires SuggestedActionsUpdated at least once with the latest data). We don't
+                // rely on its empty early result - the terminal event delivers the aggregated sets.
+                string populateStatus;
                 try
                 {
-                    populateTask = (Task)s_populateWithDataAsync.Invoke(session, new object?[] { null, null })!;
-                }
-                catch (TargetInvocationException tie) when (tie.InnerException is { } inner)
-                {
-                    return (Array.Empty<SuggestedActionSet>(), $"populate-invoke-failed {inner.GetType().Name}: {inner.Message}");
+                    var populateTask = (Task)s_populateWithDataAsync.Invoke(session, new object?[] { null, null })!;
+                    populateTask.Forget();
+                    populateStatus = "populate-invoked";
                 }
                 catch (Exception ex)
                 {
-                    return (Array.Empty<SuggestedActionSet>(), $"populate-invoke-failed {ex.GetType().Name}: {ex.Message}");
+                    populateStatus = $"populate-invoke-failed {ex.GetType().Name}: {ex.Message}";
                 }
 
                 using var perAttempt = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 perAttempt.CancelAfter(s_perAttemptTimeout);
 
-                string status;
                 try
                 {
-                    await populateTask.WithCancellation(perAttempt.Token);
-                    status = "populate-completed";
+                    var (sets, status) = await eventTcs.Task.WithCancellation(perAttempt.Token);
+                    return (sets, $"{populateStatus}, event status={status}, sets={sets.Count}");
+                }
+                catch (SessionDismissedException)
+                {
+                    return (Array.Empty<SuggestedActionSet>(), $"{populateStatus}, session dismissed");
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
-                    status = "populate-canceled";
+                    return (Array.Empty<SuggestedActionSet>(), $"{populateStatus}, no terminal event within {s_perAttemptTimeout.TotalSeconds:F0}s");
                 }
-                catch (Exception ex)
-                {
-                    status = $"populate-faulted {ex.GetType().Name}: {ex.Message}";
-                }
-
-                // Prefer the authoritative aggregated task result; fall back to the last event payload.
-                var fromTask = ReadTaskResult(populateTask);
-                if (fromTask.Count > 0)
-                {
-                    return (fromTask, $"{status}, taskStatus={populateTask.Status}, result sets={fromTask.Count}");
-                }
-
-                if (eventTcs.Task.IsCompleted)
-                {
-                    var fromEvent = await eventTcs.Task;
-                    return (fromEvent, $"{status}, taskStatus={populateTask.Status}, result sets=0, event sets={fromEvent.Count}");
-                }
-
-                return (Array.Empty<SuggestedActionSet>(), $"{status}, taskStatus={populateTask.Status}, result sets=0, no event");
             }
             finally
             {
-                session.SuggestedActionsUpdated -= Handler;
+                session.SuggestedActionsUpdated -= OnUpdated;
+                session.Dismissed -= OnDismissed;
+                try
+                {
+                    broker.DismissSession(view);
+                }
+                catch
+                {
+                    // best-effort cleanup of the session we created
+                }
             }
         }
 
-        private static IReadOnlyList<SuggestedActionSet> ReadTaskResult(Task task)
-        {
-            if (task.Status != TaskStatus.RanToCompletion)
-            {
-                return Array.Empty<SuggestedActionSet>();
-            }
-
-            object? result;
-            try
-            {
-                result = task.GetType().GetProperty("Result")?.GetValue(task);
-            }
-            catch
-            {
-                return Array.Empty<SuggestedActionSet>();
-            }
-
-            return ToActionSets(result);
-        }
-
+        // Reads an ImmutableArray<SuggestedActionSet>-typed member through the non-generic IEnumerable
+        // interface, never naming ImmutableArray (see class comment for why).
         private static IReadOnlyList<SuggestedActionSet> ReadEnumerableProperty(object source, string propertyName)
         {
             object? value;
@@ -201,14 +170,7 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 return Array.Empty<SuggestedActionSet>();
             }
 
-            return ToActionSets(value);
-        }
-
-        // Reads an ImmutableArray<SuggestedActionSet>-typed value through the non-generic IEnumerable
-        // interface, never naming ImmutableArray (see class comment for why).
-        private static IReadOnlyList<SuggestedActionSet> ToActionSets(object? boxed)
-        {
-            if (boxed is not IEnumerable sequence)
+            if (value is not IEnumerable sequence)
             {
                 return Array.Empty<SuggestedActionSet>();
             }
@@ -231,6 +193,10 @@ namespace FSharp.Editor.IntegrationTests.Helpers
             }
 
             return list;
+        }
+
+        private sealed class SessionDismissedException : Exception
+        {
         }
     }
 }

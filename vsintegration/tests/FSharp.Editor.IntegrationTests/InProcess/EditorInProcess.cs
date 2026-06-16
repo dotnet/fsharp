@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using FSharp.Editor.IntegrationTests.Extensions;
 using FSharp.Editor.IntegrationTests.Helpers;
 using Microsoft.VisualStudio.Language.Intellisense;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 
@@ -90,24 +89,10 @@ internal partial class EditorInProcess
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-        // PlaceCaretAsync (via dte.Find) leaves the active selection off the editor; re-activate it so
-        // ShowQuickFixes routes to the editor command target.
-        await ActivateAsync(cancellationToken);
-
         var view = await GetActiveTextViewAsync(cancellationToken);
         var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
-        var shell = await GetRequiredGlobalServiceAsync<SVsUIShell, IVsUIShell>(cancellationToken);
+        var categoryRegistry = await GetComponentModelServiceAsync<ISuggestedActionCategoryRegistryService>(cancellationToken);
 
-        var cmdGroup = typeof(VSConstants.VSStd14CmdID).GUID;
-        var cmdExecOpt = OLECMDEXECOPT.OLECMDEXECOPT_DONTPROMPTUSER;
-        var cmdID = VSConstants.VSStd14CmdID.ShowQuickFixes;
-
-        void Trigger()
-        {
-            object? obj = null;
-            shell.PostExecCommand(cmdGroup, (uint)cmdID, (uint)cmdExecOpt, ref obj);
-        }
-
-        return await LightBulbHelper.GetCodeActionsAsync(broker, view, Trigger, cancellationToken);
+        return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.Any, JoinableTaskFactory, cancellationToken);
     }
 }
