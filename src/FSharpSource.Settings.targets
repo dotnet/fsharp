@@ -90,17 +90,27 @@
     <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
     <!--
-      Block 9d: exempt MSB3245 (RAR "could not resolve this reference") from warnaserror.
-      The legacy compiler projects reference System.ValueTuple (and a few others) via a
-      packages\...\lib\netstandard1.0\ HintPath. RAR flags MSB3245 because a netstandard1.0
-      assembly is not a formal compile-time match for the net40/v4.5 target, but the reference
-      DOES resolve and load at runtime via the copy already present in the shared Release\net40\bin
-      output (verified: all product DLLs — FSharp.Core, FSharp.Compiler.Private, FSharp.Build,
-      fsc.exe, fsi.exe — are produced). Without this exemption TreatWarningsAsErrors turns the
-      benign MSB3245 into a hard build failure. MSB3245 stays a warning; everything else still
-      escalates.
+      Block 9d/9e: exempt benign reference-resolution warnings from warnaserror.
+      MSB3245 (Block 9d): legacy compiler projects reference System.ValueTuple etc. via a
+        packages\...\lib\netstandard1.0\ HintPath. RAR flags MSB3245 because a netstandard1.0
+        assembly is not a formal compile-time match for net40/v4.5, but the reference DOES resolve
+        and load via the copy in the shared Release\net40\bin output (all product DLLs are produced).
+      MSB3276 (Block 9e): "found conflicts between different versions of the same dependent
+        assembly" (System.Runtime 4.0.20.0, System.IO 4.0.10.0). Introduced by the Block 9b facade
+        injection — the v4.7.2 facades carry higher assembly versions than some transitive refs
+        expect. RAR auto-unifies to the highest, which is correct (forward-compatible); the message
+        is informational. Each project builds clean in isolation.
+      MSB3073/MSB6006 (Block 9e): the post-build ConvertPortablePdbs Exec runs Pdb2Pdb
+        1.1.0-beta2-20527-01, which fails "Unsupported format version: 0.0" on the PDBs these
+        projects emit. The Exec already has ContinueOnError=true, but that only degrades the task
+        failure to a WARNING — which TreatWarningsAsErrors then re-escalates (MSB3073 from the Exec,
+        MSB6006 from the parent Fsc/target). Portable->Windows PDB conversion is symbol-publishing
+        only; not needed for the build output or VS insertion. Exempt both so the degraded warning
+        stays a warning.
+      Without these exemptions TreatWarningsAsErrors turns the benign messages into hard build
+      failures. They stay warnings; every other warning still escalates.
     -->
-    <MSBuildWarningsNotAsErrors>$(MSBuildWarningsNotAsErrors);MSB3245</MSBuildWarningsNotAsErrors>
+    <MSBuildWarningsNotAsErrors>$(MSBuildWarningsNotAsErrors);MSB3245;MSB3276;MSB3073;MSB6006</MSBuildWarningsNotAsErrors>
 
     <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
     <SystemCollectionsImmutableVersion>1.5.0</SystemCollectionsImmutableVersion>

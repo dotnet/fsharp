@@ -10,7 +10,10 @@ Imports System.Diagnostics
 Imports System.Runtime.CompilerServices
 Imports System.Runtime.InteropServices
 
-Imports Interop = Microsoft.VisualStudio.Editors.Interop
+' Block 9e: renamed alias Interop -> EditorsInterop. `Imports Interop = ...Editors.Interop`
+' collided with the project's own `Interop` root-namespace child (the Interop\ source folder),
+' which the VB compiler rejects as BC31403. Renaming the alias keeps the reference unambiguous.
+Imports EditorsInterop = Microsoft.VisualStudio.Editors.Interop
 
 Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
@@ -21,7 +24,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
     '--------------------------------------------------------------------------
     <CLSCompliant(False)> _
     Friend NotInheritable Class BuildEventCommandLineDialogService
-        Implements Interop.IVsBuildEventCommandLineDialogService
+        Implements EditorsInterop.IVsBuildEventCommandLineDialogService
 
         Private m_serviceProvider As IServiceProvider
 
@@ -29,8 +32,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             m_serviceProvider = sp
         End Sub
 
-        Function EditCommandLine(ByVal WindowText As String, ByVal HelpID As String, ByVal OriginalCommandLine As String, ByVal MacroProvider As Interop.IVsBuildEventMacroProvider, ByRef Result As String) As Integer _
-            Implements Interop.IVsBuildEventCommandLineDialogService.EditCommandLine
+        Function EditCommandLine(ByVal WindowText As String, ByVal HelpID As String, ByVal OriginalCommandLine As String, ByVal MacroProvider As EditorsInterop.IVsBuildEventMacroProvider, ByRef Result As String) As Integer _
+            Implements EditorsInterop.IVsBuildEventCommandLineDialogService.EditCommandLine
 
             Dim frm As New BuildEventCommandLineDialog
             Dim i As Integer

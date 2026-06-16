@@ -14,7 +14,10 @@ Imports Microsoft.VisualStudio.Editors
 Imports OLE = Microsoft.VisualStudio.OLE.Interop
 
 Imports Shell = Microsoft.VisualStudio.Shell
-Imports Interop = Microsoft.VisualStudio.OLE.Interop
+' Block 9e: removed `Imports Interop = Microsoft.VisualStudio.OLE.Interop`. The alias is unused
+' (the only OLE.Interop references in this file are fully qualified) and it collides with the
+' project's own `Interop` root namespace (the Interop\ source folder), which the VB compiler now
+' rejects as BC31403 "Imports alias 'Interop' conflicts with 'Interop' declared in the root namespace".
 Imports Microsoft.VisualStudio.Editors.PropertyPages
 Imports System.Runtime.InteropServices
 Imports System.ComponentModel
