@@ -60,33 +60,45 @@
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
     <!--
+      Block 9b: pin VisualStudioVersion=15.0 for the legacy net40 F# projects. Both the proto
+      (FSharp.Build-proto, Fsc-proto) and the real (FSharp.Build, FSharp.Compiler.Private)
+      compiler projects reference Microsoft.Build.* with Version=$(VisualStudioVersion).0.0 and
+      a HintPath into packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1 (15.0 assemblies). On
+      VS17/VS18 $(VisualStudioVersion) is 17.0/18.0, so the strong-named reference fails to bind
+      ("namespace Build is not defined"). Pin to 15.0 here so it applies to the real build too
+      (eng\CIBuild.cmd passes it explicitly for the proto phase). Only set if unset so an explicit
+      override still wins.
+    -->
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' OR '$(VisualStudioVersion)' != '15.0' ">15.0</VisualStudioVersion>
+    <!--
       Block 5.6 — Patch B (net45 ref-pack shim).
       Modern Windows SDK / VS installs only ship Reference Assemblies\v4.6+ as complete packs.
       v4.5 / v4.5.1 / v4.5.2 folders contain only IntelliSense .xml (no mscorlib.dll, no
       FrameworkList.xml), so MSB3644 fails for every project defaulting to v4.5.
 
-      Block 9b updates the fallback target from v4.6 to v4.7.2: the proto/bootstrap compiler
-      (Fsc-proto) transitively needs the netstandard.dll facade (System.Collections.Immutable
-      1.5.0 ships as netstandard1.0), and netstandard.dll first appears in the v4.7.2 ref pack
-      (v4.6 has only 53 facades, no netstandard.dll; v4.7.2 has 104 incl. netstandard.dll).
-      v4.7.2 BCL is binary-forward-compatible with v4.5; TargetFrameworkVersion is unchanged so
-      emitted IL still declares the original framework requirement.
+      Block 9b updates the fallback target from v4.6 to v4.7.2: the F# compiler projects
+      transitively need the netstandard.dll facade (System.Collections.Immutable 1.5.0 ships as
+      netstandard1.0), and netstandard.dll first appears in the v4.7.2 ref pack (v4.6 has only 53
+      facades, no netstandard.dll; v4.7.2 has 104 incl. netstandard.dll). v4.7.2 BCL is
+      binary-forward-compatible with v4.5; TargetFrameworkVersion is unchanged so emitted IL
+      still declares the original framework requirement.
     -->
     <_Net45RefPackFallback>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2</_Net45RefPackFallback>
     <FrameworkPathOverride Condition=" '$(TargetFrameworkVersion)' == 'v4.5' AND '$(FrameworkPathOverride)' == '' AND Exists('$(_Net45RefPackFallback)\mscorlib.dll') ">$(_Net45RefPackFallback)</FrameworkPathOverride>
   </PropertyGroup>
 
   <!--
-    Block 9b — proto/bootstrap facade injection.
-    The LKG proto compiler (FSharp.Compiler.Tools 4.1.27 fsc) is invoked with NoFramework=true,
-    so it only sees @(ReferencePath) from RAR — which does NOT include the .NET Framework design-time
-    facades (System.Runtime, netstandard, etc.). Several proto sources (FSComp.fs reflection,
-    ilwritepdb.fs ImmutableArray) need types that live in those facades. Inject the full facade set
-    from the resolved FrameworkPathOverride ref pack before CoreCompile. Scoped to the LKG proto
-    build ($(BuildWith)=='LKG') so it never affects the real (post-proto) build.
+    Block 9b — .NET Framework facade injection for the legacy F# compiler build.
+    The F# compiler (proto LKG fsc AND the freshly-built proto fsc used for the real build) is
+    invoked with NoFramework=true, so it only sees @(ReferencePath) from RAR — which does NOT
+    include the .NET Framework design-time facades (System.Runtime, netstandard, etc.). Several
+    sources (FSComp.fs reflection, ilwritepdb.fs ImmutableArray/BlobContentId) need types that
+    live in those facades. Inject the full facade set from the resolved FrameworkPathOverride ref
+    pack before CoreCompile. Scoped to net40 F# projects ($(TargetDotnetProfile)=='net40'), which
+    covers both proto and real compiler/build projects but not coreclr.
   -->
   <Target Name="InjectProtoFacades"
-          Condition=" '$(BuildWith)' == 'LKG' AND '$(ProjectLanguage)' == 'FSharp' AND Exists('$(FrameworkPathOverride)\Facades') "
+          Condition=" '$(TargetDotnetProfile)' == 'net40' AND '$(ProjectLanguage)' == 'FSharp' AND Exists('$(FrameworkPathOverride)\Facades') "
           BeforeTargets="CoreCompile">
     <ItemGroup>
       <ReferencePath Include="$(FrameworkPathOverride)\Facades\*.dll" />
