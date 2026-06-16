@@ -83,7 +83,7 @@
 |---|---|---|---|---|
 | `labelops-pr-maintenance.md` | Proven flake (flaky-test-detector ≥3 distinct unrelated PRs; test not introduced by current PR) | `labelops-flake-fix.md` | `dispatch-workflow: workflows: [labelops-flake-fix]` | Passes inputs; max 3/run |
 | `aw-auto-update.md` | CHANGED_FILES non-empty after `gh aw upgrade + compile` | Copilot Coding Agent (CCA) | `create-agent-session` (base: main, max: 1) | CCA writes `.lock.yml` files using `COPILOT_GITHUB_TOKEN` |
-| `agentic-state-machine.md` | State-machine doc changed | PR reviewer (human) | `create-pull-request` (labels: automation, NO_RELEASE_NOTES; allowed-files: .github/docs/**) | Writes `.github/docs/state-machine.md` |
+| `agentic-state-machine.md` | State-machine doc changed | PR reviewer (human) | `create-pull-request` (allowed-files: .github/docs/**) | Writes `.github/docs/state-machine.md` |
 | `repo-assist.md` | Regression test PR created (Task 2) | `regression-pr-shepherd.md` | Indirect via label `AI-Issue-Regression-PR` on PR | Shepherd picks up in subsequent scheduled run |
 | `commands.yml` | `/run <cmd>` approved PR comment | PR branch | `git push origin HEAD:branch` (direct write) | Requires commenter admin/write access |
 | `backport.yml` | `/backport to <branch>` PR comment | `dotnet/arcade` backport-base.yml | `uses: dotnet/arcade/.github/workflows/backport-base.yml@main` | Reusable workflow; schedule trigger only cleans old runs |
@@ -148,7 +148,7 @@ stateDiagram-v2
 
 | Workflow | Output | Max | Key Constraints |
 |---|---|---|---|
-| `agentic-state-machine.md` | `create-pull-request` | 1 | title `[Agentic State Machine] `; labels `automation, NO_RELEASE_NOTES`; allowed-files `.github/docs/**`; protected-files allowed |
+| `agentic-state-machine.md` | `create-pull-request` | 1 | title `[Agentic State Machine] `; allowed-files `.github/docs/**`; protected-files allowed |
 | `aw-auto-update.md` | `create-agent-session` | 1 | base `main` |
 
 ---
@@ -564,8 +564,8 @@ All labels in one place — who adds, removes, or reads each. **Cross-workflow f
 
 | Label | Type | Added by | Removed by | Read by | Notes |
 |---|---|---|---|---|---|
-| `automation` | always-applied | ASM, LFF (PR), RA (issue) | — | — | via safe-output `labels:` |
-| `NO_RELEASE_NOTES` | always-applied | ASM, LFF, RA (PR) | — | check_release_notes | via safe-output `labels:` |
+| `automation` | always-applied | LFF (PR), RA (issue) | — | — | via safe-output `labels:` (write-only — read by nothing) |
+| `NO_RELEASE_NOTES` | always-applied | LFF, RA (PR) | — | check_release_notes | via safe-output `labels:` |
 | `Flaky` | always-applied | LFF (PR + issue) | — | — | via safe-output `labels:` |
 | `AI-Issue-Regression-PR` | always-applied | RA (PR), RPS (push-to-PR-branch) | — | RPS (selects PRs) | **cross-workflow signal RA → RPS** |
 | `repo-assist` | always-applied | RA (issue) | — | — | via safe-output `labels:` |

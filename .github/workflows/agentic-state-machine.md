@@ -25,7 +25,6 @@ safe-outputs:
     report-as-issue: false
   create-pull-request:
     title-prefix: "[Agentic State Machine] "
-    labels: [automation, NO_RELEASE_NOTES]
     draft: false
     max: 1
     allowed-files: [".github/docs/**"]
