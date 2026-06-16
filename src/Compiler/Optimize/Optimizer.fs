@@ -4476,13 +4476,6 @@ and p_ValInfo (v: ValInfo) st =
     p_bool v.ValMakesNoCriticalTailcalls st
 
 and p_ModuleInfo x st =
-    // Two fixes for parallel-optimization races on the pickled ValInfos:
-    //  1. Sort by stable identity so the pickled byte order is independent of
-    //     hash-table iteration order.
-    //  2. Re-read v.MakesNoCriticalTailcalls (an idempotent OR) at pickle time,
-    //     since SetMakesNoCriticalTailcalls may have been called on the Val
-    //     concurrently after mkValInfo captured the original value.
-    // See https://github.com/dotnet/fsharp/issues/19732.
     let stableValKey (vref: ValRef) =
         let k = vref.Deref.GetLinkageFullKey()
         struct (vref.LogicalName, k.PartialKey.MemberParentMangledName, k.PartialKey.LogicalName)

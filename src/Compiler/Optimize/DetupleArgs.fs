@@ -548,9 +548,6 @@ let mkTransform (scope: PerFileNamingScope) g (f: Val) m tps x1Ntys retTy (callP
     let fCty = mkLambdaTy g tps argTys retTy
 
     let transformedVal =
-        // Names are bucketed by the per-file optimization scope (not by f.Range, which may point at
-        // inlined source from another file) to keep compiler-generated names deterministic under
-        // parallel optimization. f.Range is still used as the Val's source location below.
         mkLocalVal
             f.Range
             (scope.Fresh(f.LogicalName, f.Range))
@@ -705,7 +702,6 @@ let determineTransforms (scope: PerFileNamingScope) g (z: Results) =
                     let callPatterns = sitesCPs sites // callPatterns from sites
                     decideTransform scope g z f callPatterns (m, tps, vss, retTy) // make transform (if required)
 
-    // See https://github.com/dotnet/fsharp/issues/19732 for why we sort here.
     let vtransforms =
         Zmap.toList z.Uses
         |> List.sortBy (fst >> valSourceOrderKey)

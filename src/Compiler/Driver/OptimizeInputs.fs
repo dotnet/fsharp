@@ -437,9 +437,6 @@ let ApplyAllOptimizations
     if tcConfig.extraOptimizationIterations > 0 then
         addPhase "ExtraLoop" extraLoop
 
-    // Each optimizer pass owns a per-file naming scope so its compiler-generated names
-    // are bucketed by the consumer file (not by the inlined source range), making them
-    // deterministic under parallel optimization. See #19732.
     let scopeOf (file: CheckedImplFile) =
         tcGlobals.CompilerGlobalState.Value.NewFileScope(file.QualifiedNameOfFile.Range)
 
@@ -518,11 +515,6 @@ let ApplyAllOptimizations
     let results, optEnvFirstLoop =
         match tcConfig.optSettings.processingMode with
         | Optimizer.OptimizationProcessingMode.Parallel ->
-            // Determinism under Parallel mode relies on the per-pass sorts in
-            // DetupleArgs.determineTransforms and InnerLambdasToTopLevelFuncs.CreateNewValuesForTLR
-            // (via valSourceOrderKey). Any new pass calling NiceNameGenerator from a
-            // parallel optimizer phase must sort its Val collection the same way.
-            // See https://github.com/dotnet/fsharp/issues/19732.
             let results, optEnvFirstPhase =
                 ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
 

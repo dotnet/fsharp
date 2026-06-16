@@ -45,10 +45,6 @@ module internal ExprConstruction =
         }
 
     // Source-position-derived order key for Vals. Used to walk Val collections
-    // in a stable, build-independent order before calling NiceNameGenerator
-    // from parallel optimizer passes. Stamp is the final tiebreaker for
-    // synthetic Vals at the same location; stamps are fixed within a single
-    // process so the order is total. See https://github.com/dotnet/fsharp/issues/19732.
     let valSourceOrderKey (v: Val) =
         let r = v.Range
         struct (r.FileIndex, r.StartLine, r.StartColumn, v.LogicalName, v.Stamp)

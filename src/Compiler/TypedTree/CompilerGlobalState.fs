@@ -42,7 +42,6 @@ type NiceNameGenerator() =
     member _.IncrementOnly(name: string, m: range) = increment name m
 
     /// Allocate a fresh name bucketed by `scopeFileIndex` (not by `m.FileIndex`),
-    /// so inlined ranges can't make names non-deterministic. See #19732.
     member _.FreshCompilerGeneratedNameInScope (scopeFileIndex: int, name: string, m: range) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let count = incrementBucket basicName scopeFileIndex
@@ -56,8 +55,6 @@ type NiceNameGenerator() =
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
 type StableNiceNameGenerator() =
 
-    // Lazy<_> ensures the inner counter-incrementing factory runs exactly once per key
-    // even when GetOrAdd's value-factory is invoked concurrently. See #19732.
     let niceNames = ConcurrentDictionary<string * int64, Lazy<string>>(max Environment.ProcessorCount 1, 127)
     let innerGenerator = NiceNameGenerator()
 
@@ -69,22 +66,13 @@ type StableNiceNameGenerator() =
                 lazy innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
         lazyName.Value
 
-/// Per-file scope for optimizer name allocation. The internal constructor forces
-/// callers to obtain a scope via `CompilerGlobalState.NewFileScope`, so they can't
-/// accidentally bucket names by an inlined-source file. See #19732.
 [<Sealed>]
 type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
 
     /// Allocate a fresh name within this file's bucket. `m` contributes only the
-    /// human-readable source-location marker.
     member _.Fresh (name: string, m: range) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
-/// Per-consumer-file scope for IlxGen closure type names, used only for cross-file
-/// inlined closures. In-file closures stay on StableNiceNameGenerator to keep the
-/// legacy `basicName@<line>[-N]` format; cross-file ones get an `F<consumerFileIndex>`
-/// marker so parallel consumer files inlining the same source range don't collide.
-/// See #19928.
 [<Sealed>]
 type PerFileClosureNameScope(consumerFileIndex: int) =
 
@@ -98,7 +86,6 @@ type PerFileClosureNameScope(consumerFileIndex: int) =
         match byUniq.TryGetValue uniq with
         | true, cached -> cached
         | false, _ ->
-            // Bucket key omits StartColumn so two Lambdas sharing a line share one bucket.
             let bucketKey = struct (basicName, m.FileIndex, m.StartLine)
 
             let occ =
@@ -130,9 +117,6 @@ type internal CompilerGlobalState () =
 
     member _.IlxGenNiceNameGenerator = ilxgenGlobalNng
 
-    /// Create a per-file naming scope tied to a single ImplFile. Names allocated through the returned
-    /// scope are bucketed by 'fileRange.FileIndex', so parallel optimization of different files cannot
-    /// race on a shared name-counter bucket. See https://github.com/dotnet/fsharp/issues/19732.
     member _.NewFileScope (fileRange: range) =
         PerFileNamingScope(globalNng, fileRange.FileIndex)
 
