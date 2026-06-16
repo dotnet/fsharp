@@ -30,13 +30,42 @@ A trivial `private` member (e.g. `= 1`) is **inlined away** by the F# optimizer 
 1. Use a **shipped** SDK fsc as a still-broken control: `& "C:\Program Files\dotnet\sdk\<ver>\FSharp\fsc.dll"` (or `dotnet <fsc.dll>`). Compile the same source with `--realsig+` and `--realsig-`; the bug is the delta.
 2. Always pass `--optimize+` (and a non-inlinable private) so the call survives to runtime.
 3. Inspect IL with ildasm and read **nesting by indentation**: a `.class … C` at 2-space indent with a child `.class … h@N` at 4-space indent = nested (good). Same indent = sibling (the bug). Confirm with the full type name in field refs, e.g. `M/C/h@8` (nested) vs `M/h@8` (sibling).
-4. Runtimeconfig template for running the produced exe:
-   `{"runtimeOptions":{"tfm":"net10.0","framework":{"name":"Microsoft.NETCore.App","version":"10.0.9"}}}`
-5. Compile: `dotnet <fsc.dll> --target:exe --out:X.dll --realsig+ --optimize+ -r:FSharp.Core.dll X.fs` then `dotnet X.dll`.
+4. Minimal repro shape (crashes only under `--realsig+`):
+
+```fsharp
+type C() =
+    static let mutable backing = 0
+    static member Set v = backing <- v
+    static member private Secret() = backing + 1   // non-inlinable -> survives to runtime
+type C with                                          // intrinsic augmentation
+    member _.Run() =
+        let rec h n = if n = 0 then C.Secret() else h (n - 1)
+        h 5
+```
+
+5. Compile and run (runtimeconfig pins the shared runtime):
+
+```bash
+dotnet <fsc.dll> --target:exe --out:X.dll --realsig+ --optimize+ -r:FSharp.Core.dll X.fs
+# X.runtimeconfig.json:
+# {"runtimeOptions":{"tfm":"net10.0","framework":{"name":"Microsoft.NETCore.App","version":"10.0.9"}}}
+dotnet X.dll
+```
 
 ## Instrumentation pattern
 
-`dprintf` is not in scope in `GetIlxClosureFreeVars`; use `eprintfn` to stderr. To pin where two cases diverge, print `String.concat "/" eenv.cloc.Enclosing`, `v.LogicalName`, `v.IsExtensionMember`, and `v.ApparentEnclosingEntity`, and capture `System.Environment.StackTrace` guarded by a predicate (e.g. `if v.LogicalName = "Run"`). Rebuild FCS + fsc Release, compile a minimal intrinsic-vs-augmentation pair, diff the logs. Remove all instrumentation before committing.
+`dprintf` is not in scope in `GetIlxClosureFreeVars`; use `eprintfn` to stderr. To pin where two cases diverge, log the closure's enclosing cloc and the member identity, and capture a stack trace guarded by a predicate:
+
+```fsharp
+// in GenMethodForBinding, after `let m = v.Range`
+eprintfn "MFBDBG v=%s ext=%b cloc=[%s] apparent=%s"
+    v.LogicalName v.IsExtensionMember
+    (String.concat "/" eenv.cloc.Enclosing)
+    (match v.ApparentEnclosingEntity with Parent e -> e.LogicalName | ParentNone -> "<none>")
+if v.LogicalName = "Run" then eprintfn "STACK:\n%s" System.Environment.StackTrace
+```
+
+Rebuild FCS + fsc Release, compile a minimal intrinsic-vs-augmentation pair, diff the logs. Remove all instrumentation before committing.
 
 ## Worked example: #19933 (PR #19955)
 
