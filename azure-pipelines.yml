@@ -1,16 +1,19 @@
-# F# 15.9 servicing pipeline 499 — 1ESPT-compliant stub.
+# F# 15.9 servicing pipeline 499 — 1ESPT-compliant build.
 #
-# Block 8.0: rewrites the Block 1.5 vanilla-YAML stub into a pipeline that
-# extends 1ESPipelineTemplates/MicroBuildTemplate, satisfying the dnceng
-# 1ES Pipeline Template policy (https://aka.ms/1espt). The previous
-# vanilla stub triggered "[1ES PT Error]: Organization breaks pipelines
-# that do not extend one of the following templates - 1ESPT, OneBranchPT"
-# on every push.
+# Block 8.0: extends 1ESPipelineTemplates/MicroBuildTemplate (1ES PT policy).
+# Block 8.1: CFS feed compliance (dotnet-public only; no MyGet/nuget.org).
+# Block 9a: replaces the no-op ack stage with a REAL product build stage that
+#   runs eng\CIBuild.cmd (Arcade engine, restore + build) on a 1ES VS image.
+#   This validates that the 15.9 product (FSharp.Core, compiler, FSharp.Build,
+#   vsintegration) builds end-to-end on CI after the Block 5.x restore/build
+#   fixes. Signing / packing / publishing / VS insertion deliberately remain
+#   OFF and land in subsequent Block 9 increments once the build is proven
+#   green — keeping each slow CI iteration single-variable.
 #
-# This remains a NO-OP build. The full build/sign/insertion matrix lands
-# in Block 9.x when eng/CIBuild.cmd is wired (RestorePlan section 9).
-# The stub still completes "green" so pipeline 499 health is parseable
-# and downstream WUs querying its status get a valid signal.
+# Build/sign/insert logic is modeled on dev16.11 @ 874517c0e (Kevin Ransom's
+# 2025-05 proven-green F# servicing revival) re-wrapped in main's current
+# 1ESPT skeleton, because dev16.11's own YAML predates the mandatory 1ES PT
+# template.
 
 trigger:
   branches:
@@ -48,22 +51,29 @@ extends:
         image: 1es-windows-2022
         os: windows
     stages:
-      - stage: Acknowledge
-        displayName: 'Pipeline 499 trigger ack (1ESPT-compliant; full build matrix lands Block 9)'
+      - stage: Build
+        displayName: 'F# 15.9 Build (Windows Release)'
         jobs:
-          - job: noop
-            displayName: 'No-op trigger ack'
-            timeoutInMinutes: 10
+          - job: BuildWindows
+            displayName: 'Build Windows Release'
+            timeoutInMinutes: 120
+            pool:
+              name: NetCore1ESPool-Svc-Internal
+              image: windows.vs2022preview.amd64
+              os: windows
             templateContext:
-              outputs: []
+              outputs:
+                - output: pipelineArtifact
+                  displayName: 'Publish binary log'
+                  condition: always()
+                  targetPath: '$(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)'
+                  artifactName: 'BuildLogs'
+                  sbomEnabled: false
             steps:
               - checkout: self
+                clean: true
                 fetchDepth: 1
-              - powershell: |
-                  Write-Host "F# 15.9 servicing pipeline 499 trigger acknowledged."
-                  Write-Host "Branch: $(Build.SourceBranchName)"
-                  Write-Host "Commit: $(Build.SourceVersion)"
-                  Write-Host "1ES PT compliance: extends MicroBuild.1ES.Official.yml@MicroBuildTemplate"
-                  Write-Host "Full build matrix replaces this stub in Block 9 (RestorePlan section 9)."
-                  exit 0
-                displayName: 'Emit ack message'
+              - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
+                displayName: 'Build (restore + build, no sign/pack/insert)'
+                env:
+                  DisableLocalization: true
