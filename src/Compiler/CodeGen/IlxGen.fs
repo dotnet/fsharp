@@ -12740,8 +12740,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | Expr.Val _
                 | Expr.WitnessArg _ -> ()
 
-                | Expr.Lambda(_, _, _, _, body, _, _) ->
-                    walkExpr letBoundVars cloc body
+                | Expr.Lambda(_, _, _, _, body, _, _) -> walkExpr letBoundVars cloc body
 
                 | Expr.TyLambda(_, _, body, _, _) -> walkExpr letBoundVars cloc body
 
