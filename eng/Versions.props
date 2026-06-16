@@ -76,7 +76,14 @@
     </RestoreSources>
     <!-- System.* packages -->
     <SystemBuffersVersion>4.5.1</SystemBuffersVersion>
-    <SystemCollectionsImmutableVersion>5.0.0</SystemCollectionsImmutableVersion>
+    <!-- Block 9b: pinned 5.0.0 -> 1.5.0. The legacy proto (Fsc-proto.fsproj:467) and real
+         (FSharp.Compiler.Private.fsproj:681) compiler projects HintPath into
+         packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\netstandard1.0\.
+         System.Collections.Immutable 5.0.0 dropped the netstandard1.0 lib folder (it ships
+         netstandard2.0/net461), so the HintPath resolved to a non-existent file and RAR dropped
+         the reference, breaking the proto compile (ImmutableArray unavailable). 1.5.0 still ships
+         netstandard1.0 and is the version actually restored in packages/. -->
+    <SystemCollectionsImmutableVersion>1.5.0</SystemCollectionsImmutableVersion>
     <SystemConsoleVersion>4.3.0</SystemConsoleVersion>
     <SystemDataSqlClientPackageVersion>4.3.0</SystemDataSqlClientPackageVersion>
     <SystemDesignVersion>4.0.0</SystemDesignVersion>

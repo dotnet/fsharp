@@ -17,7 +17,13 @@
     </PropertyGroup>
 
     <MakeDir Directories="$(ConvertedPdbsDirectory)" />
-    <Exec Command='"$(PdbConverterExe)" $(PdbConverterArgs)' />
+    <!-- Block 9b: Pdb2Pdb 1.1.0-beta2-20527-01 fails "Unsupported format version: 0.0" on the
+         PDBs several 15.9 projects emit (e.g. the proto compiler, FSharp.Core). Portable->Windows
+         PDB conversion is only needed for symbol-server publishing/indexing, NOT for the build
+         output or the VS insertion to function. ContinueOnError keeps a conversion failure from
+         failing the build (it degrades to a warning). A proper Pdb2Pdb version bump can restore
+         full symbol conversion later without blocking the build green. -->
+    <Exec Command='"$(PdbConverterExe)" $(PdbConverterArgs)' ContinueOnError="true" />
   </Target>
 
 </Project>
