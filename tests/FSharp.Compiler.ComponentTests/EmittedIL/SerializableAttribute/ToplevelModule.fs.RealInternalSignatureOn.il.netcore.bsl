@@ -1433,17 +1433,6 @@
       } 
     } 
 
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$ABC::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$ABC::init@
-      IL_000b:  pop
-      IL_000c:  ret
-    } 
-
     .method public static int32  'add'(int32 x,
                                        int32 y) cil managed
     {
@@ -1466,6 +1455,17 @@
       IL_0005:  ret
     } 
 
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$ABC::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$ABC::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
     .method assembly static void  staticInitialization@() cil managed
     {
       
@@ -1477,17 +1477,6 @@
     {
       .get string ABC/ABC::get_greeting()
     } 
-  } 
-
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$ABC::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$ABC::init@
-    IL_000b:  pop
-    IL_000c:  ret
   } 
 
   .method public static int32  'add'(int32 x,
@@ -1510,6 +1499,17 @@
     .maxstack  8
     IL_0000:  ldstr      "hello"
     IL_0005:  ret
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$ABC::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$ABC::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed

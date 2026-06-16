@@ -45,6 +45,17 @@
     IL_0011:  ret
   } 
 
+  .method public static int32  main(string[] _argv) cil managed
+  {
+    .entrypoint
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  tail.
+    IL_0002:  call       int32 assembly::fifth()
+    IL_0007:  ret
+  } 
+
   .method assembly static int32  fifthMethodFirstCallee@4(int32 iterationCount,
                                                           int32 firstArg) cil managed
   {
@@ -115,17 +126,6 @@
     IL_001d:  call       int32 assembly::fifthMethodFirstCallee@4(int32,
                                                                                        int32)
     IL_0022:  ret
-  } 
-
-  .method public static int32  main(string[] _argv) cil managed
-  {
-    .entrypoint
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  tail.
-    IL_0002:  call       int32 assembly::fifth()
-    IL_0007:  ret
   } 
 
 } 
