@@ -124,7 +124,6 @@ extends:
                   zipSources: false
 
             variables:
-            - group: DotNet-Symbol-Server-Pats
             - group: DotNet-DevDiv-Insertion-Workflow-Variables
             - name: _SignType
               value: Real
