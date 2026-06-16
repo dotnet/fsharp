@@ -59,15 +59,6 @@ let rec f () = seq {
           IL_0013:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Append<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>,
                                                                                                                                                                 class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
           IL_0018:  ret
-        } 
-
-        .method private specialname rtspecialname static void  .cctor() cil managed
-        {
-      
-          .maxstack  10
-          IL_0000:  newobj     instance void Test/'f@3-1'::.ctor()
-          IL_0005:  stsfld     class Test/'f@3-1' Test/'f@3-1'::@_instance
-          IL_000a:  ret
         } "]
 
     [<Fact>]
