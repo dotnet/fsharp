@@ -8,7 +8,7 @@
 .assembly extern netstandard
 {
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:1:0:0
+  .ver 2:0:0:0
 }
 .assembly assembly
 {
@@ -92,7 +92,9 @@
       IL_000c:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
+    .method public hidebysig virtual final 
+            instance int32  CompareTo(object obj,
+                                      class [runtime]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -129,7 +131,7 @@
       IL_0008:  ldarg.0
       IL_0009:  ldfld      valuetype [runtime]System.DateTime assembly/C::s
       IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<valuetype [runtime]System.DateTime>(class [runtime]System.Collections.IEqualityComparer,
-                                                                                                                                                                                !!0)
+                                                                                                                                                                          !!0)
       IL_0013:  ldloc.0
       IL_0014:  ldc.i4.6
       IL_0015:  shl
@@ -155,7 +157,9 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool Equals(valuetype assembly/C obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool 
+            Equals(valuetype assembly/C obj,
+                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -175,7 +179,9 @@
       IL_0016:  ret
     } 
 
-    .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final 
+            instance bool  Equals(object obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -295,17 +301,6 @@
 
   } 
 
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
@@ -330,6 +325,7 @@
   } 
 
 } 
+
 
 
 
