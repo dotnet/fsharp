@@ -2000,12 +2000,10 @@ type CodegenFileScope private () =
     [<DefaultValue; System.ThreadStatic>]
     static val mutable private currentFileIdx: int
 
-    static let fileIndexShift = 24
-
-    static member OrderKey(localCounter: byref<int>) : int =
+    static member OrderKey(localCounter: byref<int>) : struct (int * int) =
         let k = localCounter
         localCounter <- k + 1
-        (CodegenFileScope.currentFileIdx <<< fileIndexShift) ||| (k &&& 0xFF_FFFF)
+        struct (CodegenFileScope.currentFileIdx, k)
 
     static member With(fileIdx: int, action: unit -> 'T) : 'T =
         let prev = CodegenFileScope.currentFileIdx
@@ -2027,7 +2025,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
     let mutable eventIdx = 0
 
     let keyed (initial: 'T list) (counter: byref<int>) =
-        let xs = ResizeArray<int * 'T>(initial.Length)
+        let xs = ResizeArray<struct (int * int) * 'T>(initial.Length)
 
         for x in initial do
             xs.Add(CodegenFileScope.OrderKey(&counter), x)
@@ -2060,7 +2058,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             else
                 tdef.CustomAttrs
 
-        let sortByKey (xs: ResizeArray<int * _>) =
+        let sortByKey (xs: ResizeArray<struct (int * int) * _>) =
             xs |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
 
         tdef.With(
@@ -2492,7 +2490,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         ConcurrentDictionary<struct (int * int), int ref>(HashIdentity.Structural)
 
     let fieldSpecByRange =
-        ConcurrentDictionary<struct (int * int * int * int * int * string), ILFieldSpec>(HashIdentity.Structural)
+        ConcurrentDictionary<struct (int * int * int * int * int * string), Lazy<ILFieldSpec>>(HashIdentity.Structural)
 
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
@@ -2566,13 +2564,14 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         fieldSpecByRange.GetOrAdd(
             key,
             (fun _ ->
-                let counterCell =
-                    rawDataLineCounters.GetOrAdd(struct (m.FileIndex, m.StartLine), (fun _ -> ref 0))
+                lazy
+                    let counterCell =
+                        rawDataLineCounters.GetOrAdd(struct (m.FileIndex, m.StartLine), (fun _ -> ref 0))
 
-                let idx = System.Threading.Interlocked.Increment(counterCell)
-                let nameSuffix = sprintf "%d_%d" m.StartLine idx
-                makeFspec nameSuffix)
-        )
+                    let idx = System.Threading.Interlocked.Increment(counterCell)
+                    let nameSuffix = sprintf "%d_%d" m.StartLine idx
+                    makeFspec nameSuffix)
+        ).Value
 
     member _.GenerateAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         anonTypeTable.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo)
@@ -10947,6 +10946,10 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
             GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenvinner mdef
             |> ignore
 
+            // Predicate is safe only because delayCodeGen=true ensures both SEQ and PAR
+            // see the same (empty) field set at this point.
+            assert eenv.delayCodeGen
+
             if not (cgbuf.mgbuf.GetCurrentFields(tref) |> Seq.isEmpty) then
                 GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
 
@@ -12851,7 +12854,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
             eenv.delayedFileGenReverse
             |> Array.ofList
             |> Array.rev
-            |> Array.mapi (fun fileIdx genMeths -> fileIdx, genMeths)
+            |> Array.indexed
 
         if cenv.options.parallelIlxGenEnabled then
             batches |> ArrayParallel.iter runBatch

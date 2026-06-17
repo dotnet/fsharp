@@ -44,7 +44,6 @@ module internal ExprConstruction =
             member _.Compare(v1, v2) = compareBy v1 v2 _.Stamp
         }
 
-    // Source-position-derived order key for Vals. Used to walk Val collections
     let valSourceOrderKey (v: Val) =
         let r = v.Range
         struct (r.FileIndex, r.StartLine, r.StartColumn, v.LogicalName)

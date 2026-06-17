@@ -41,7 +41,7 @@ type NiceNameGenerator() =
 
     member _.IncrementOnly(name: string, m: range) = increment name m
 
-    /// Allocate a fresh name bucketed by `scopeFileIndex` (not by `m.FileIndex`),
+    /// Allocate a fresh name bucketed by `scopeFileIndex` (not by `m.FileIndex`).
     member _.FreshCompilerGeneratedNameInScope (scopeFileIndex: int, name: string, m: range) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let count = incrementBucket basicName scopeFileIndex
@@ -69,7 +69,7 @@ type StableNiceNameGenerator() =
 [<Sealed>]
 type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
 
-    /// Allocate a fresh name within this file's bucket. `m` contributes only the
+    /// Allocate a fresh name within this file's bucket; `m` contributes only the source-location marker.
     member _.Fresh (name: string, m: range) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
