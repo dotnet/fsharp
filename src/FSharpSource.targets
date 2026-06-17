@@ -95,7 +95,7 @@
       still declares the original framework requirement.
     -->
     <_Net45RefPackFallback>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2</_Net45RefPackFallback>
-    <FrameworkPathOverride Condition=" '$(TargetFrameworkVersion)' == 'v4.5' AND '$(FrameworkPathOverride)' == '' AND Exists('$(_Net45RefPackFallback)\mscorlib.dll') ">$(_Net45RefPackFallback)</FrameworkPathOverride>
+    <FrameworkPathOverride Condition=" ('$(TargetFrameworkVersion)' == 'v4.5' OR '$(TargetFrameworkVersion)' == 'v4.6') AND '$(FrameworkPathOverride)' == '' AND Exists('$(_Net45RefPackFallback)\mscorlib.dll') ">$(_Net45RefPackFallback)</FrameworkPathOverride>
   </PropertyGroup>
 
   <!--
@@ -359,14 +359,20 @@
     <Delete Files="@(OldBuildVersionFiles)" TreatErrorsAsWarnings="true"/>
   </Target>
 
+  <!-- Runtime="CLR4" pins these net46 build tasks to the full-framework task host. The modern
+       dnceng CI MSBuild is coreclr, so without it MSBuild falls back to an out-of-process host
+       that cannot instantiate the net46 FSharp.Build.dll (MSB4061/ArgumentException). -->
   <UsingTask TaskName="FSharpEmbedResourceText"
              AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
+             Runtime="CLR4"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="FSharpEmbedResXSource"
              AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
+             Runtime="CLR4"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="WriteCodeFragment"
              AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
+             Runtime="CLR4"
              Condition="'$(Configuration)' != 'Proto'" />
 
   <Target Name="GenerateFSharpTextResources"
