@@ -47,7 +47,7 @@ module internal ExprConstruction =
     // Source-position-derived order key for Vals. Used to walk Val collections
     let valSourceOrderKey (v: Val) =
         let r = v.Range
-        struct (r.FileIndex, r.StartLine, r.StartColumn, v.LogicalName, v.Stamp)
+        struct (r.FileIndex, r.StartLine, r.StartColumn, v.LogicalName)
 
     let tyconOrder =
         { new IComparer<Tycon> with

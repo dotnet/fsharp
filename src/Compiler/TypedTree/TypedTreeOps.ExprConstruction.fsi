@@ -23,7 +23,7 @@ module internal ExprConstruction =
     val valOrder: IComparer<Val>
 
     /// Stable, source-position-derived key for ordering Vals.
-    val valSourceOrderKey: Val -> struct (int * int * int * string * int64)
+    val valSourceOrderKey: Val -> struct (int * int * int * string)
 
     /// An ordering for type definitions, based on stamp
     val tyconOrder: IComparer<Tycon>

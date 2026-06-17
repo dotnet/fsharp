@@ -66,21 +66,21 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .method public static int32  Renamed(class Program/Builder builder,
-                                         int32 i) cil managed
+    .method public static string  Builder.UseDb(class Program/Builder builder,
+                                                string s) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationSourceNameAttribute::.ctor(string) = ( 01 00 05 55 73 65 44 62 00 00 )                   
       
       .maxstack  8
       IL_0000:  ldarg.1
       IL_0001:  ret
     } 
 
-    .method public static string  Builder.UseDb(class Program/Builder builder,
-                                                string s) cil managed
+    .method public static int32  Renamed(class Program/Builder builder,
+                                         int32 i) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationSourceNameAttribute::.ctor(string) = ( 01 00 05 55 73 65 44 62 00 00 )                   
       
       .maxstack  8
       IL_0000:  ldarg.1
