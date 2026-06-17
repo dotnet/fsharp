@@ -798,6 +798,7 @@ module internal ExprFreeVars =
         {
             UsesMethodLocalConstructs = false
             UsesUnboundRethrow = false
+            ContainsILFieldAccess = false
             FreeLocalTyconReprs = emptyFreeTycons
             FreeLocals = emptyFreeLocals
             FreeTyvars = emptyFreeTyvars
@@ -816,6 +817,7 @@ module internal ExprFreeVars =
                 FreeTyvars = unionFreeTyvars fvs1.FreeTyvars fvs2.FreeTyvars
                 UsesMethodLocalConstructs = fvs1.UsesMethodLocalConstructs || fvs2.UsesMethodLocalConstructs
                 UsesUnboundRethrow = fvs1.UsesUnboundRethrow || fvs2.UsesUnboundRethrow
+                ContainsILFieldAccess = fvs1.ContainsILFieldAccess || fvs2.ContainsILFieldAccess
                 FreeLocalTyconReprs = unionFreeTycons fvs1.FreeLocalTyconReprs fvs2.FreeLocalTyconReprs
                 FreeRecdFields = unionFreeRecdFields fvs1.FreeRecdFields fvs2.FreeRecdFields
                 FreeUnionCases = unionFreeUnionCases fvs1.FreeUnionCases fvs2.FreeUnionCases
@@ -866,9 +868,10 @@ module internal ExprFreeVars =
                 }
 
     let boundProtect fvs =
-        if fvs.UsesMethodLocalConstructs then
+        if fvs.UsesMethodLocalConstructs || fvs.ContainsILFieldAccess then
             { fvs with
                 UsesMethodLocalConstructs = false
+                ContainsILFieldAccess = false
             }
         else
             fvs
@@ -880,6 +883,14 @@ module internal ExprFreeVars =
             }
         else
             fvs
+
+    let accContainsILFieldAccess fvs =
+        if fvs.ContainsILFieldAccess then
+            fvs
+        else
+            { fvs with
+                ContainsILFieldAccess = true
+            }
 
     let bound_rethrow fvs =
         if fvs.UsesUnboundRethrow then
@@ -1199,7 +1210,34 @@ module internal ExprFreeVars =
             let acc = accUsesFunctionLocalConstructs (kind = RecdExprIsObjInit) acc
             (accUsedRecdOrUnionTyconRepr opts tcref.Deref (accFreeTyvars opts accFreeTycon tcref acc))
 
-        | TOp.ILAsm(_, retTypes) -> accFreeVarsInTys opts retTypes acc
+        | TOp.ILAsm(instrs, retTypes) ->
+            // A protected (family) IL field load/store is only verifiable inside a method whose
+            // declaring type lies within the field's family. If the optimizer relocates such an
+            // access (by inlining or lambda/method splitting) into a method outside that family it
+            // emits an illegal ldfld/stfld that throws FieldAccessException at runtime (issue
+            // #19963). Field accessibility is not carried on the ILFieldSpec here, so we
+            // conservatively flag any IL field access; the flag (ContainsILFieldAccess) is consumed
+            // only by the optimizer's relocation guards, never by the escape/accessibility checks,
+            // so this can never reject otherwise-valid code. F#-defined fields use TOp.ValFieldGet
+            // and are unaffected.
+            let usesFieldAccess =
+                instrs
+                |> List.exists (function
+                    | I_ldfld _
+                    | I_ldflda _
+                    | I_stfld _
+                    | I_ldsfld _
+                    | I_ldsflda _
+                    | I_stsfld _ -> true
+                    | _ -> false)
+
+            let acc =
+                if usesFieldAccess then
+                    accContainsILFieldAccess acc
+                else
+                    acc
+
+            accFreeVarsInTys opts retTypes acc
 
         | TOp.Reraise -> accUsesRethrow true acc
 

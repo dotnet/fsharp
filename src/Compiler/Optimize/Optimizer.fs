@@ -1447,7 +1447,7 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
             (let fvs = freeInExpr (if isNil boundTyVars then CollectLocalsWithStackGuard() else CollectTyparsAndLocals) expr
              (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
              (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
-             fvs.UsesMethodLocalConstructs) ->
+             fvs.UsesMethodLocalConstructs || fvs.ContainsILFieldAccess) ->
               
               // Trimming lambda
               UnknownValue
@@ -3094,7 +3094,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
 
     | CurriedLambdaValue (_, _, _, expr, _) when shouldInline || inlineIfLambda ->
         let fvs = freeInExpr CollectLocals expr
-        if fvs.UsesMethodLocalConstructs then
+        if fvs.UsesMethodLocalConstructs || fvs.ContainsILFieldAccess then
             // Discarding lambda for binding because uses protected members --- TBD: Should we warn or error here
             None
         else
@@ -3893,7 +3893,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy) 
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals bodyR
-              if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
+              if fvs.UsesMethodLocalConstructs || fvs.ContainsILFieldAccess || fvs.FreeLocals.Contains baseVal then 
                   UnknownValue
               else 
                   let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyTy)
@@ -3976,6 +3976,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
     (let fvs = freeInExpr (CollectLocalsWithStackGuard()) e
      not fvs.UsesUnboundRethrow &&
      not fvs.UsesMethodLocalConstructs &&
+     not fvs.ContainsILFieldAccess &&
      fvs.FreeLocals |> Zset.forall (fun v -> 
           // no direct-self-recursive references
           not (env.dontSplitVars.ContainsVal v) &&
@@ -4168,7 +4169,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     UnknownValue 
                 else
                     let fvs = freeInExpr CollectLocals body
-                    if fvs.UsesMethodLocalConstructs then
+                    if fvs.UsesMethodLocalConstructs || fvs.ContainsILFieldAccess then
                         // Discarding lambda for binding because uses protected members
                         UnknownValue
                     elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then

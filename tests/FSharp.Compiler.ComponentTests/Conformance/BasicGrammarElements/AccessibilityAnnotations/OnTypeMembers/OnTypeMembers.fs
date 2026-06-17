@@ -99,3 +99,56 @@ module AccessibilityAnnotations_OnTypeMembers =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    // Regression for https://github.com/dotnet/fsharp/issues/19963: the optimizer must not relocate
+    // a protected base-field load into a method outside the family. A trivial member returning a C#
+    // protected field gets inlined into module/startup code under --optimize+; before the fix the
+    // relocated `ldfld` threw System.FieldAccessException at runtime. Protected *method* access was
+    // already safe (it sets UsesMethodLocalConstructs); this locks the *field* path to the same.
+    [<Fact>]
+    let ``Protected base field read via optimized member does not crash (issue 19963)`` () =
+        let lib =
+            CSharpFromPath (__SOURCE_DIRECTORY__ ++ "BaseClass.cs")
+            |> withName "BaseClassLib"
+
+        FSharp """
+open TestBaseClass
+
+type DerivedClass() =
+    inherit BaseClass()
+    member x.GetField() = x.ProtectedField
+
+[<EntryPoint>]
+let main _ =
+    if DerivedClass().GetField() = "protected-field" then 0 else 1
+"""
+        |> withReferences [lib]
+        |> withOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    // Companion to the above exercising a protected *static* field (the I_ldsfld branch of the
+    // optimizer relocation guard) for issue https://github.com/dotnet/fsharp/issues/19963.
+    [<Fact>]
+    let ``Protected static base field read via optimized member does not crash (issue 19963)`` () =
+        let lib =
+            CSharpFromPath (__SOURCE_DIRECTORY__ ++ "BaseClass.cs")
+            |> withName "BaseClassLib"
+
+        FSharp """
+open TestBaseClass
+
+type DerivedClass() =
+    inherit BaseClass()
+    member x.GetStaticField() = BaseClass.ProtectedStaticField
+
+[<EntryPoint>]
+let main _ =
+    if DerivedClass().GetStaticField() = "protected-static-field" then 0 else 1
+"""
+        |> withReferences [lib]
+        |> withOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed

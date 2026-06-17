@@ -4411,6 +4411,14 @@ type FreeVars =
         /// Rethrow may only occur in such locations.
         UsesUnboundRethrow: bool
 
+        /// Indicates if the expression contains a direct IL field load/store. Such an access to a
+        /// protected (family) field is only verifiable inside a method whose declaring type is within
+        /// the field's family, so the optimizer must not relocate it (by inlining or splitting) into a
+        /// method outside that family (issue #19963). Field accessibility is not available where free
+        /// variables are summarised, so this is set for any IL field access and is consumed only by the
+        /// optimizer's relocation guards, never by escape/accessibility checks.
+        ContainsILFieldAccess: bool
+
         /// The summary of locally defined tycon representations used in the expression. These may be made private by a signature
         /// or marked 'internal' or 'private' type we have to check various conditions associated with that.
         FreeLocalTyconReprs: FreeTycons
