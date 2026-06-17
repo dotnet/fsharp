@@ -2000,8 +2000,6 @@ let MergePropertyDefs m ilPropertyDefs =
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
     let mutable methodIdx = 0
-    let mutable fieldIdx = 0
-    let mutable eventIdx = 0
 
     let gmethods =
         let initial = tdef.Methods.AsList()
@@ -2015,30 +2013,12 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
         xs
 
-    let gfields =
-        let initial = tdef.Fields.AsList()
-        let xs = ResizeArray<struct (string * int) * ILFieldDef>(initial.Length)
-
-        for f in initial do
-            let k = fieldIdx
-            fieldIdx <- fieldIdx + 1
-            xs.Add(struct (f.Name, k), f)
-
-        xs
+    let gfields = ResizeArray<ILFieldDef>(tdef.Fields.AsList())
 
     let gproperties: Dictionary<PropKey, int * ILPropertyDef> =
         Dictionary<_, _>(3, HashIdentity.Structural)
 
-    let gevents =
-        let initial = tdef.Events.AsList()
-        let xs = ResizeArray<struct (string * int) * ILEventDef>(initial.Length)
-
-        for e in initial do
-            let k = eventIdx
-            eventIdx <- eventIdx + 1
-            xs.Add(struct (e.Name, k), e)
-
-        xs
+    let gevents = ResizeArray<ILEventDef>(tdef.Events.AsList())
 
     let gnested = TypeDefsBuilder()
 
@@ -2061,30 +2041,18 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
         let sortedMethods = gmethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
 
-        let preservedFields =
-            gfields |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
-
-        let preservedEvents =
-            gevents |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
-
         tdef.With(
             methods = mkILMethods sortedMethods,
-            fields = mkILFields preservedFields,
+            fields = mkILFields (List.ofSeq gfields),
             properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
-            events = mkILEvents preservedEvents,
+            events = mkILEvents (List.ofSeq gevents),
             nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close(g)),
             customAttrs = storeILCustomAttrs attrs
         )
 
-    member _.AddEventDef(edef: ILEventDef) =
-        let k = eventIdx
-        eventIdx <- eventIdx + 1
-        gevents.Add(struct (edef.Name, k), edef)
+    member _.AddEventDef(edef: ILEventDef) = gevents.Add(edef)
 
-    member _.AddFieldDef(ilFieldDef: ILFieldDef) =
-        let k = fieldIdx
-        fieldIdx <- fieldIdx + 1
-        gfields.Add(struct (ilFieldDef.Name, k), ilFieldDef)
+    member _.AddFieldDef(ilFieldDef: ILFieldDef) = gfields.Add(ilFieldDef)
 
     member _.AddMethodDef(ilMethodDef: ILMethodDef) =
         let discard =
