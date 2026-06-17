@@ -271,3 +271,29 @@ type MyDelegate = delegate of int -> string
             && (let text = substringOfRange source c.Range
                 text = "BeginInvoke" || text = "EndInvoke"))
     Assert.Empty(asyncInvokeMethods)
+
+/// (#19905 item 1) The whole `delegate of . -> .` clause must not get a wide-range
+/// `Method` classification covering keywords/type punctuation.
+[<Fact>]
+let ``Delegate declaration body should not be classified as method`` () =
+    let source = """
+type SumDelegate = delegate of x: int * y: int -> int
+"""
+    let classifications = getClassifications source
+
+    // Any Method classification on line 2 must be no wider than a plausible identifier
+    // (e.g. "Invoke" = 6 columns). The wide range covering the delegate signature was
+    // ~36 columns wide. Use a generous threshold of 10 to remain robust to formatting tweaks.
+    let badWideMethods =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.Method
+            && c.Range.StartLine = 2
+            && (c.Range.EndColumn - c.Range.StartColumn) > 10)
+
+    Assert.True(
+        badWideMethods.Length = 0,
+        sprintf
+            "Delegate declaration should not produce a wide Method classification, but found: %A"
+            (badWideMethods |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )

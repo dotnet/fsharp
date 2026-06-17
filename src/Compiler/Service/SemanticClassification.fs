@@ -228,7 +228,19 @@ module TcResolutionsExtensions =
                             elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                                 add m SemanticClassificationType.Property
                             elif vref.IsMember then
-                                add m SemanticClassificationType.Method
+                                // (#19905 item 1) Suppress wide-range Method classification produced by
+                                // the parser-synthesized SynValSig for an F# delegate's `Invoke` abstract
+                                // slot. Its idRange covers the whole `delegate of . -> .` clause, which
+                                // would otherwise paint keywords/punctuation as if they were a method call.
+                                let isSynthesizedDelegateInvoke =
+                                    let name = vref.LogicalName
+
+                                    (name = "Invoke" || name = "BeginInvoke" || name = "EndInvoke")
+                                    && vref.IsDispatchSlot
+                                    && vref.MemberApparentEntity.IsFSharpDelegateTycon
+
+                                if not isSynthesizedDelegateInvoke then
+                                    add m SemanticClassificationType.Method
                             elif IsOperatorDisplayName vref.DisplayName then
                                 add m SemanticClassificationType.Operator
                             else
