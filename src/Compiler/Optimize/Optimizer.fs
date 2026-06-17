@@ -4481,7 +4481,14 @@ and p_ModuleInfo x st =
         |> Seq.toArray
         |> Array.sortBy (fun (vref: ValRef, _) ->
             let k = vref.Deref.GetLinkageFullKey()
-            struct (vref.LogicalName, k.PartialKey.MemberParentMangledName, k.PartialKey.LogicalName, k.PartialKey.TotalArgCount))
+
+            struct (
+                vref.LogicalName,
+                k.PartialKey.MemberParentMangledName,
+                k.PartialKey.TotalArgCount,
+                k.PartialKey.MemberIsOverride,
+                vref.Deref.Stamp
+            ))
         |> Array.map (fun (vref, vinfo) ->
             let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
             if merged = vinfo.ValMakesNoCriticalTailcalls then
