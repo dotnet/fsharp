@@ -59,7 +59,7 @@
       "rollForward": false
     },
     "microsoft.aitools.binlogmcp": {
-      "version": "1.0.731501",
+      "version": "1.0.0",
       "commands": [
         "binlog-mcp"
       ],
