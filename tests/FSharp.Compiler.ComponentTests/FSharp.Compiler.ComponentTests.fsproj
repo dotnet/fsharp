@@ -269,7 +269,6 @@
     <Compile Include="EmittedIL\Inlining\Regression_TLR_MutualInnerRec_StructuralAssertions.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_TLR_RealsigPrivate.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_RealsigAugmentationClosure.fs" />
-    <Compile Include="EmittedIL\Inlining\Regression_RealsigAugmentationClosure_StructuralAssertions.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_Specialize_ConstraintVerification.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />

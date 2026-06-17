@@ -1,92 +1,87 @@
 namespace EmittedIL.RealInternalSignature
 
 open Xunit
-open FSharp.Test
 open FSharp.Test.Compiler
 
-/// Runtime regression tests for dotnet/fsharp#19933.
+/// Regression tests for dotnet/fsharp#19933.
 ///
 /// A closure synthesized inside a member declared in an *intrinsic augmentation*
-/// (`type C with member ...`) used to be emitted as a sibling of `C` in the
-/// enclosing module class rather than nested inside `C`. Under `--realsig+` a
-/// source-`private` member of `C` compiles to IL `private` (type-scoped), so the
-/// sibling closure could not reach it and the CLR raised `MethodAccessException`
-/// at first invocation. Members declared in the type's own body were always nested
-/// correctly; the fix makes augmentation members consistent with them.
+/// (`type C with member ...`) used to be emitted as a sibling of `C` in the enclosing
+/// module class instead of nested inside `C`. Under `--realsig+` a source-`private`
+/// member of `C` is IL `private` (type-scoped), so the sibling closure could not reach
+/// it and the CLR raised `MethodAccessException` at first call. Members declared in the
+/// type's own body were always nested correctly; the fix makes augmentation members
+/// consistent with them. These programs are legal F#; only IL placement was wrong.
 ///
-/// These programs are legal F# (the type checker accepts private access from any
-/// lexical position within the declaring type, including inner lambdas / `task` /
-/// `seq` / quotations). The bug was purely in IL closure placement; the fix does
-/// not change access semantics — the private member stays IL `private`.
+/// THE FIX IS GATED ON `--realsig+`. Under `--realsig-` the member is IL `assembly` and
+/// the closure reaches it regardless (and the inner-rec is often lambda-lifted to a module
+/// static), so the emitted IL is identical before and after the fix — a `--realsig-`
+/// runtime test cannot distinguish the buggy compiler from the fixed one. The matrix below
+/// therefore runs under `--realsig+` only; one `--realsig-` smoke is kept for
+/// defense-in-depth, and both realsig modes of the canonical shape are snapshotted by a
+/// `.bsl` baseline (`AugmentationClosureNesting.fs`, hosted in `Inlining.fs`).
 ///
-/// IMPORTANT: every private member here is marked `[<NoCompilerInlining>]` (or
-/// reads non-inlinable state). A trivial private body is inlined by the optimizer
-/// before codegen, which removes the call site and HIDES the bug — such a test
-/// would pass even on the buggy compiler and guard nothing. The IL-nesting shape
-/// is additionally locked by `Regression_RealsigAugmentationClosure_StructuralAssertions.fs`.
+/// Each case compiles `--realsig+ --optimize+`, asserts the closure nests INSIDE the
+/// declaring type (`<Type>/<closure>@N`, present) and is NOT a module/namespace sibling
+/// (`<scope>/<closure>@N`, absent), then runs it. present/absent are raw IL substrings:
+/// keep the trailing `@` but omit the `@N` digits so the fragment survives line-number
+/// churn. Each assertion FAILS on the pre-fix compiler (sibling) and PASSES on the fix.
 ///
-/// Each test runs under both realsig settings so a regression in either path is
-/// caught at runtime.
+/// Every private member is `[<NoCompilerInlining>]`: a trivial private body is inlined
+/// before codegen, erasing the call site and hiding the bug.
 module Regression_RealsigAugmentationClosure =
 
-    let private compileOptimized realsig source =
-        FSharp source
-        |> withRealInternalSignature realsig
-        |> asExe
-        |> withOptimize
-        |> ignoreWarnings
+    /// Shared skeleton for the shapes that differ only in the augmentation member body:
+    /// a non-generic `C` with a static private `Secret`, augmented with `memberBody`, then
+    /// invoked by `invoke` (which must yield 42). Triple-quoted-string concatenation (not
+    /// interpolation) keeps embedded `seq { }` braces literal.
+    let private header =
+        "module Sample\n"
+        + "type C() =\n"
+        + "    static let mutable backing = 0\n"
+        + "    static member Set v = backing <- v\n"
+        + "    [<NoCompilerInlining>]\n"
+        + "    static member private Secret() = backing + 1\n"
+        + "type C with\n"
 
-    let private compileRunSucceeds realsig source =
-        source |> compileOptimized realsig |> compileExeAndRun |> shouldSucceed |> ignore
+    let private cWith (memberBody: string) (invoke: string) =
+        header
+        + memberBody
+        + "\n[<EntryPoint>]\nlet main _ =\n    C.Set 41\n    if "
+        + invoke
+        + " = 42 then 0 else 1\n"
 
-    /// Canonical #19933 shape: bare inner `let rec` in an augmentation member of a
-    /// generic type, calling a type-private static.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation inner-rec calls type-private static of generic type`` (realsig: bool) =
-        """module Sample
-type Holder<'T>() =
-    static let mutable backing = 0
-    static member Set v = backing <- v
-    [<NoCompilerInlining>]
-    static member private Secret() = backing + 1
-type Holder<'T> with
-    member _.Run() =
-        let rec h n = if n = 0 then Holder<'T>.Secret() else h (n - 1)
-        h 5
-[<EntryPoint>]
-let main _ =
-    Holder<int>.Set 41
-    if Holder<int>().Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+    /// (name, source, present [nested], absent [sibling]).
+    let shapeCases =
+        [
+          // ---- shapes sharing the C/Secret/EntryPoint skeleton (cWith) ----
+          "inner-rec (canonical)",
+            cWith "    member _.Run() =\n        let rec h n = if n = 0 then C.Secret() else h (n - 1)\n        h 5" "C().Run()",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
 
-    /// Same shape on a non-generic type.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation inner-rec calls type-private static of non-generic type`` (realsig: bool) =
-        """module Sample
-type C() =
-    static let mutable backing = 0
-    static member Set v = backing <- v
-    [<NoCompilerInlining>]
-    static member private Secret() = backing + 1
-type C with
-    member _.Run() =
-        let rec h n = if n = 0 then C.Secret() else h (n - 1)
-        h 5
-[<EntryPoint>]
-let main _ =
-    C.Set 41
-    if C().Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+          ; "property getter",
+            cWith "    member _.Prop =\n        let rec h n = if n = 0 then C.Secret() else h (n - 1)\n        h 5" "C().Prop",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
 
-    /// Type-private *instance* method accessed from an inner-rec in an augmentation.
-    /// `[<NoCompilerInlining>]` is essential — without it the trivial instance getter
-    /// inlines to an `assembly` field read and the test passes even on the buggy
-    /// compiler.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation inner-rec calls type-private instance method`` (realsig: bool) =
-        """module Sample
+          ; "static method",
+            cWith "    static member Run() =\n        let rec h n = if n = 0 then C.Secret() else h (n - 1)\n        h 5" "C.Run()",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
+
+          ; "nested closures",
+            cWith "    member _.Run() =\n        let rec h n =\n            let inner () = C.Secret()\n            if n = 0 then inner () else h (n - 1)\n        h 5" "C().Run()",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
+
+          ; "mutual inner-rec",
+            cWith "    member _.Run() =\n        let rec ev n = if n = 0 then C.Secret() else od (n - 1)\n        and od n = if n = 0 then C.Secret() else ev (n - 1)\n        ev 5" "C().Run()",
+            [| "Sample/C/ev@"; "Sample/C/od@" |], [| "Sample/ev@"; "Sample/od@" |]
+
+          ; "seq state machine",
+            cWith "    member _.Run() = seq { yield C.Secret() }" "(C().Run() |> Seq.head)",
+            [| "Sample/C/Run@" |], [| "Sample/Run@" |]
+
+          // ---- shapes with genuinely different skeletons ----
+          ; "instance private method",
+            """module Sample
 type C() =
     let mutable backing = 0
     member _.Set v = backing <- v
@@ -100,33 +95,48 @@ type C with
 let main _ =
     let c = C() in c.Set 41
     if c.Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+""",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
 
-    /// Augmentation property getter with an inner-rec calling a type-private member.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation property getter inner-rec calls type-private`` (realsig: bool) =
-        """module Sample
-type C() =
+          ; "generic type inner-rec",
+            """module Sample
+type Holder<'T>() =
     static let mutable backing = 0
     static member Set v = backing <- v
     [<NoCompilerInlining>]
     static member private Secret() = backing + 1
-type C with
-    member _.Prop =
-        let rec h n = if n = 0 then C.Secret() else h (n - 1)
+type Holder<'T> with
+    member _.Run() =
+        let rec h n = if n = 0 then Holder<'T>.Secret() else h (n - 1)
         h 5
 [<EntryPoint>]
 let main _ =
-    C.Set 41
-    if C().Prop = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+    Holder<int>.Set 41
+    if Holder<int>().Run() = 42 then 0 else 1
+""",
+            [| "Sample/Holder`1/h@" |], [| "Sample/h@" |]
 
-    /// Augmentation property setter with an inner-rec calling a type-private member.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation property setter inner-rec calls type-private`` (realsig: bool) =
-        """module Sample
+          ; "generic method threads typars",
+            """module Sample
+type Holder<'T>() =
+    static let mutable backing = 0
+    static member Set v = backing <- v
+    [<NoCompilerInlining>]
+    static member private Secret() = backing + 1
+type Holder<'T> with
+    member _.M<'U>(u: 'U) =
+        let rec h n (acc: 'U) = if n = 0 then (acc, Holder<'T>.Secret()) else h (n - 1) acc
+        h 5 u
+[<EntryPoint>]
+let main _ =
+    Holder<int>.Set 41
+    let (_, s) = Holder<int>().M<string>("x")
+    if s = 42 then 0 else 1
+""",
+            [| "Sample/Holder`1/h@" |], [| "Sample/h@" |]
+
+          ; "property setter",
+            """module Sample
 type C() =
     static let mutable result = 0
     static member Get() = result
@@ -143,13 +153,11 @@ let main _ =
     let c = C()
     c.Prop <- 41
     if C.Get() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+""",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
 
-    /// Augmentation indexed property (`Item with get(i)`).
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation indexer inner-rec calls type-private`` (realsig: bool) =
-        """module Sample
+          ; "indexer",
+            """module Sample
 type C() =
     [<NoCompilerInlining>]
     static member private Secret(i) = i + 1
@@ -160,33 +168,11 @@ type C with
             h 1 0
 [<EntryPoint>]
 let main _ = if C().[41] = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+""",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
 
-    /// Augmentation STATIC method (not instance) with an inner-rec calling a private.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation static method inner-rec calls type-private`` (realsig: bool) =
-        """module Sample
-type C() =
-    static let mutable backing = 0
-    static member Set v = backing <- v
-    [<NoCompilerInlining>]
-    static member private Secret() = backing + 1
-type C with
-    static member Run() =
-        let rec h n = if n = 0 then C.Secret() else h (n - 1)
-        h 5
-[<EntryPoint>]
-let main _ =
-    C.Set 41
-    if C.Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
-
-    /// Operator (`static member (+)`) declared in an augmentation.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation operator inner-rec calls type-private`` (realsig: bool) =
-        """module Sample
+          ; "operator",
+            """module Sample
 type C(v: int) =
     member _.V = v
     [<NoCompilerInlining>]
@@ -197,13 +183,11 @@ type C with
         C(h b.V 0)
 [<EntryPoint>]
 let main _ = if (C(41) + C(1)).V = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+""",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
 
-    /// `task { }` state machine in an augmentation referencing a type-private member.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation task computation expression calls type-private member`` (realsig: bool) =
-        """module Sample
+          ; "task state machine",
+            """module Sample
 open System.Threading.Tasks
 type C() =
     static let mutable backing = 0
@@ -216,13 +200,11 @@ type C with
 let main _ =
     C.Set 41
     if (C().Run()).Result = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+""",
+            [| "Sample/C/Run@" |], [| "Sample/Run@"; "Sample/'Run@" |]
 
-    /// `async { }` variant.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation async computation expression calls type-private member`` (realsig: bool) =
-        """module Sample
+          ; "async",
+            """module Sample
 type C() =
     static let mutable backing = 0
     static member Set v = backing <- v
@@ -234,156 +216,11 @@ type C with
 let main _ =
     C.Set 41
     if (C().Run() |> Async.RunSynchronously) = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+""",
+            [| "Sample/C/Run@" |], [| "Sample/Run@"; "Sample/'Run@" |]
 
-    /// `seq { }` state machine in an augmentation.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation seq computation expression calls type-private member`` (realsig: bool) =
-        """module Sample
-type C() =
-    static let mutable backing = 0
-    static member Set v = backing <- v
-    [<NoCompilerInlining>]
-    static member private Secret() = backing + 1
-type C with
-    member _.Run() = seq { yield C.Secret() }
-[<EntryPoint>]
-let main _ =
-    C.Set 41
-    if (C().Run() |> Seq.head) = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
-
-    /// Mutual recursion (`let rec ... and ...`) in an augmentation member.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation mutual inner-rec calls type-private member`` (realsig: bool) =
-        """module Sample
-type C() =
-    static let mutable backing = 0
-    static member Set v = backing <- v
-    [<NoCompilerInlining>]
-    static member private Secret() = backing + 1
-type C with
-    member _.Run() =
-        let rec ev n = if n = 0 then C.Secret() else od (n - 1)
-        and od n = if n = 0 then C.Secret() else ev (n - 1)
-        ev 5
-[<EntryPoint>]
-let main _ =
-    C.Set 41
-    if C().Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
-
-    /// Nested closures (a lambda inside the inner-rec) touching a type-private member.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation nested closures call type-private member`` (realsig: bool) =
-        """module Sample
-type C() =
-    static let mutable backing = 0
-    static member Set v = backing <- v
-    [<NoCompilerInlining>]
-    static member private Secret() = backing + 1
-type C with
-    member _.Run() =
-        let rec h n =
-            let inner () = C.Secret()
-            if n = 0 then inner () else h (n - 1)
-        h 5
-[<EntryPoint>]
-let main _ =
-    C.Set 41
-    if C().Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
-
-    /// Generic class with a generic augmentation method whose closure captures both
-    /// the class typar 'T and the method typar 'U and calls a type-private member.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation generic method threads typars and calls type-private`` (realsig: bool) =
-        """module Sample
-type Holder<'T>() =
-    static let mutable backing = 0
-    static member Set v = backing <- v
-    [<NoCompilerInlining>]
-    static member private Secret() = backing + 1
-type Holder<'T> with
-    member _.M<'U>(u: 'U) =
-        let rec h n (acc: 'U) = if n = 0 then (acc, Holder<'T>.Secret()) else h (n - 1) acc
-        h 5 u
-[<EntryPoint>]
-let main _ =
-    Holder<int>.Set 41
-    let (_, s) = Holder<int>().M<string>("x")
-    if s = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
-
-    /// Two augmentation members of DIFFERENT generic types in the same module whose
-    /// inner-recs share the local name `h` — verifies no IL type-name collision after
-    /// re-homing the closures under their respective types.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentations on two types with same closure name do not collide`` (realsig: bool) =
-        """module Sample
-type Alpha<'T>() =
-    [<NoCompilerInlining>]
-    static member private S() = 1
-type Beta<'U>() =
-    [<NoCompilerInlining>]
-    static member private S() = 2
-type Alpha<'T> with
-    member _.Run() =
-        let rec h n acc = if n = 0 then acc else h (n - 1) (acc + Alpha<'T>.S())
-        h 5 0
-type Beta<'U> with
-    member _.Run() =
-        let rec h n acc = if n = 0 then acc else h (n - 1) (acc + Beta<'U>.S())
-        h 5 0
-[<EntryPoint>]
-let main _ =
-    if Alpha<int>().Run() = 5 && Beta<int>().Run() = 10 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
-
-    /// Record-type augmentation.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation on record type inner-rec calls type-private`` (realsig: bool) =
-        """module Sample
-type R = { X: int } with
-    [<NoCompilerInlining>]
-    static member private Secret(v) = v + 1
-type R with
-    member this.Run() =
-        let rec h n acc = if n = 0 then acc else h (n - 1) (acc + R.Secret(this.X))
-        h 1 0
-[<EntryPoint>]
-let main _ = if { X = 41 }.Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
-
-    /// DU-type augmentation.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation on DU type inner-rec calls type-private`` (realsig: bool) =
-        """module Sample
-type D =
-    | A of int
-    [<NoCompilerInlining>]
-    static member private Secret(v) = v + 1
-type D with
-    member this.Run() =
-        let x = match this with A v -> v
-        let rec h n acc = if n = 0 then acc else h (n - 1) (acc + D.Secret(x))
-        h 1 0
-[<EntryPoint>]
-let main _ = if (A 41).Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
-
-    /// Quotation splice whose value is computed by an inner-rec in the augmentation.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation quotation splice driven by inner-rec calls type-private`` (realsig: bool) =
-        """module Sample
+          ; "quotation splice",
+            """module Sample
 open Microsoft.FSharp.Quotations
 type C() =
     static let mutable backing = 0
@@ -401,13 +238,92 @@ let main _ =
     match C().MakeQ() with
     | Patterns.Value(o, _) -> if unbox<int> o = 30 then 0 else 1
     | _ -> 2
-"""
-        |> compileRunSucceeds realsig
+""",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
 
-    /// Type declared inside a namespace (not a module), augmentation in same namespace.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation inner-rec on namespace-scoped type calls type-private`` (realsig: bool) =
-        """namespace MyNs
+          ; "record augmentation",
+            """module Sample
+type R = { X: int } with
+    [<NoCompilerInlining>]
+    static member private Secret(v) = v + 1
+type R with
+    member this.Run() =
+        let rec h n acc = if n = 0 then acc else h (n - 1) (acc + R.Secret(this.X))
+        h 1 0
+[<EntryPoint>]
+let main _ = if { X = 41 }.Run() = 42 then 0 else 1
+""",
+            [| "Sample/R/h@" |], [| "Sample/h@" |]
+
+          ; "DU augmentation",
+            """module Sample
+type D =
+    | A of int
+    [<NoCompilerInlining>]
+    static member private Secret(v) = v + 1
+type D with
+    member this.Run() =
+        let x = match this with A v -> v
+        let rec h n acc = if n = 0 then acc else h (n - 1) (acc + D.Secret(x))
+        h 1 0
+[<EntryPoint>]
+let main _ = if (A 41).Run() = 42 then 0 else 1
+""",
+            [| "Sample/D/h@" |], [| "Sample/h@" |]
+
+          ; "override member",
+            """module Sample
+[<AbstractClass>]
+type B() =
+    abstract M : unit -> int
+type C() =
+    inherit B()
+    [<NoCompilerInlining>]
+    static member private Secret() = 42
+type C with
+    override _.M() =
+        let rec h n = if n = 0 then C.Secret() else h (n - 1)
+        h 5
+[<EntryPoint>]
+let main _ = if (C() :> B).M() = 42 then 0 else 1
+""",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
+
+          ; "secondary constructor",
+            """module Sample
+type C(x: int) =
+    member _.X = x
+    [<NoCompilerInlining>]
+    static member private Secret() = 42
+type C with
+    new() =
+        let rec h n = if n = 0 then C.Secret() else h (n - 1)
+        C(h 5)
+[<EntryPoint>]
+let main _ = if C().X = 42 then 0 else 1
+""",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
+
+          ; "struct augmentation",
+            """module Sample
+[<Struct>]
+type C =
+    val X: int
+    new(x) = { X = x }
+    [<NoCompilerInlining>]
+    static member private Secret(v) = v + 1
+type C with
+    member this.Run() =
+        let captured = this.X
+        let rec h n acc = if n = 0 then acc else h (n - 1) (acc + C.Secret(captured))
+        h 1 0
+[<EntryPoint>]
+let main _ = if C(41).Run() = 42 then 0 else 1
+""",
+            [| "Sample/C/h@" |], [| "Sample/h@" |]
+
+          ; "namespace-scoped type",
+            """namespace MyNs
 type C() =
     static let mutable backing = 0
     static member Set v = backing <- v
@@ -422,13 +338,11 @@ module Main =
     let main _ =
         C.Set 41
         if C().Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+""",
+            [| "MyNs.C/h@" |], [| "MyNs.h@" |]
 
-    /// Type declared in a nested module, augmentation in the same nested module.
-    [<Theory; InlineData(true); InlineData(false)>]
-    let ``Augmentation inner-rec on nested-module type calls type-private`` (realsig: bool) =
-        """module Top
+          ; "nested-module type",
+            """module Top
 module Inner =
     type C() =
         static let mutable backing = 0
@@ -443,5 +357,74 @@ module Inner =
 let main _ =
     Inner.C.Set 41
     if Inner.C().Run() = 42 then 0 else 1
-"""
-        |> compileRunSucceeds realsig
+""",
+            [| "Top/Inner/C/h@" |], [| "Top/Inner/h@" |]
+
+          // Two augmentations sharing the local closure name `h`: each must nest under its
+          // OWN type and NEITHER may remain a module sibling. The shipped compiler emits the
+          // second sibling with a disambiguator (`'h@N-1'`), so the absent list covers both
+          // the plain and the quoted spellings rather than pinning Beta's mangled name.
+          ; "two types, same closure name",
+            """module Sample
+type Alpha<'T>() =
+    [<NoCompilerInlining>]
+    static member private S() = 1
+type Beta<'U>() =
+    [<NoCompilerInlining>]
+    static member private S() = 2
+type Alpha<'T> with
+    member _.Run() =
+        let rec h n acc = if n = 0 then acc else h (n - 1) (acc + Alpha<'T>.S())
+        h 5 0
+type Beta<'U> with
+    member _.Run() =
+        let rec h n acc = if n = 0 then acc else h (n - 1) (acc + Beta<'U>.S())
+        h 5 0
+[<EntryPoint>]
+let main _ =
+    if Alpha<int>().Run() = 5 && Beta<int>().Run() = 10 then 0 else 1
+""",
+            [| "Sample/Alpha`1/h@" |], [| "Sample/h@"; "Sample/'h@" |]
+        ]
+        |> List.map (fun (name: string, src: string, nested: string[], sibling: string[]) ->
+            [| box name; box src; box nested; box sibling |])
+
+    /// Compile `--realsig+ --optimize+`, assert the closure nests under its declaring type
+    /// (present) and is not a module/namespace sibling (absent), then run. The IL check sits
+    /// between `compile` and `run`, so this cannot reuse `compileExeAndRun`.
+    [<Theory; MemberData(nameof shapeCases)>]
+    let ``Augmentation closure nests under its declaring type``
+        (name: string)
+        (source: string)
+        (nested: string[])
+        (sibling: string[])
+        =
+        ignore name
+
+        let result =
+            FSharp source
+            |> withRealInternalSignature true
+            |> asExe
+            |> withOptimize
+            |> ignoreWarnings
+            |> compile
+            |> shouldSucceed
+
+        result |> verifyILPresent (List.ofArray nested)
+        result |> verifyILNotPresent (List.ofArray sibling)
+        result |> run |> shouldSucceed |> ignore
+
+    /// Defense-in-depth only: under `--realsig-` the fix is a no-op (the legacy path emits
+    /// the same IL before and after), so this does NOT guard #19933 — it guards against a
+    /// future un-gating or a shared-path regression breaking the legacy path.
+    [<Fact>]
+    let ``Canonical augmentation closure still compiles and runs under realsig-`` () =
+        cWith "    member _.Run() =\n        let rec h n = if n = 0 then C.Secret() else h (n - 1)\n        h 5" "C().Run()"
+        |> FSharp
+        |> withRealInternalSignature false
+        |> asExe
+        |> withOptimize
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
