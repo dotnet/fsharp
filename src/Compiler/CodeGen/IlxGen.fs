@@ -2092,6 +2092,8 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     member _.NestedTypeDefs = gnested
 
+    member _.GetCurrentFields() = gfields :> seq<_>
+
     /// Merge Get and Set property nodes, which we generate independently for F# code
     /// when we come across their corresponding methods.
     member _.AddOrMergePropertyDef(pdef, m) =
@@ -2596,6 +2598,9 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards, m)
 
     member _.FindNestedTypeDefBuilder(tref: ILTypeRef) = gtdefs.FindNestedTypeDefBuilder(tref)
+
+    member _.GetCurrentFields(tref: ILTypeRef) =
+        gtdefs.FindNestedTypeDefBuilder(tref).GetCurrentFields()
 
     member _.AddReflectedDefinition(vspec: Val, expr) =
         reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, expr))
