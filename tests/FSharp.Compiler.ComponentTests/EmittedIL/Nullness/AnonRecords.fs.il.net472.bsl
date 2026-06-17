@@ -204,77 +204,6 @@
   .field private !'<C>j__TPar' C@
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(!'<A>j__TPar' A,
-                               !'<B>j__TPar' B,
-                               !'<C>j__TPar' C) cil managed
-  {
-    .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                            class [runtime]System.Type) = ( 01 00 60 06 00 00 1E 3C 3E 66 5F 5F 41 6E 6F 6E   
-                                                                                                                             79 6D 6F 75 73 54 79 70 65 32 34 33 30 37 35 36   
-                                                                                                                             31 36 32 60 33 00 00 )                            
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Object::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldarg.1
-    IL_0008:  stfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
-    IL_000d:  ldarg.0
-    IL_000e:  ldarg.2
-    IL_000f:  stfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
-    IL_0014:  ldarg.0
-    IL_0015:  ldarg.3
-    IL_0016:  stfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
-    IL_001b:  ret
-  } 
-
-  .method public hidebysig specialname instance !'<A>j__TPar' get_A() cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
-    IL_0006:  ret
-  } 
-
-  .method public hidebysig specialname instance !'<B>j__TPar' get_B() cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
-    IL_0006:  ret
-  } 
-
-  .method public hidebysig specialname instance !'<C>j__TPar' get_C() cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
-    IL_0006:  ret
-  } 
-
-  .method public strict virtual instance string ToString() cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldstr      "%+A"
-    IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>>::.ctor(string)
-    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-    IL_000f:  ldarg.0
-    IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>,string>::Invoke(!0)
-    IL_0015:  ret
-  } 
-
   .method public hidebysig virtual final instance int32  CompareTo(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -373,9 +302,7 @@
     IL_000e:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance int32  CompareTo(object obj,
-                                    class [runtime]System.Collections.IComparer comp) cil managed
+  .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .param [1]
@@ -547,9 +474,7 @@
     IL_000d:  ret
   } 
 
-  .method public hidebysig instance bool 
-          Equals(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj,
-                 class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  .method public hidebysig instance bool Equals(class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'> obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -611,9 +536,7 @@
     IL_0052:  ret
   } 
 
-  .method public hidebysig virtual final 
-          instance bool  Equals(object obj,
-                                class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .param [1]
@@ -716,6 +639,77 @@
     IL_0015:  ret
   } 
 
+  .method public specialname rtspecialname 
+          instance void  .ctor(!'<A>j__TPar' A,
+                               !'<B>j__TPar' B,
+                               !'<C>j__TPar' C) cil managed
+  {
+    .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+                                                                                            class [runtime]System.Type) = ( 01 00 60 06 00 00 1E 3C 3E 66 5F 5F 41 6E 6F 6E   
+                                                                                                                             79 6D 6F 75 73 54 79 70 65 32 34 33 30 37 35 36   
+                                                                                                                             31 36 32 60 33 00 00 )                            
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [runtime]System.Object::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  ldarg.1
+    IL_0008:  stfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
+    IL_000d:  ldarg.0
+    IL_000e:  ldarg.2
+    IL_000f:  stfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
+    IL_0014:  ldarg.0
+    IL_0015:  ldarg.3
+    IL_0016:  stfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
+    IL_001b:  ret
+  } 
+
+  .method public hidebysig specialname instance !'<A>j__TPar' get_A() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld      !0 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::A@
+    IL_0006:  ret
+  } 
+
+  .method public hidebysig specialname instance !'<B>j__TPar' get_B() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld      !1 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::B@
+    IL_0006:  ret
+  } 
+
+  .method public hidebysig specialname instance !'<C>j__TPar' get_C() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld      !2 class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>::C@
+    IL_0006:  ret
+  } 
+
+  .method public strict virtual instance string ToString() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldstr      "%+A"
+    IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>>::.ctor(string)
+    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+    IL_000f:  ldarg.0
+    IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class '<>f__AnonymousType2430756162`3'<!'<A>j__TPar',!'<B>j__TPar',!'<C>j__TPar'>,string>::Invoke(!0)
+    IL_0015:  ret
+  } 
+
   .property instance !'<A>j__TPar' A()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
@@ -771,9 +765,7 @@
   .field private class [runtime]System.Type Type@
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType,
-                               class [runtime]System.Type Type) cil managed
+  .method public specialname rtspecialname instance void  .ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType, class [runtime]System.Type Type) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
