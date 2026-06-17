@@ -14,8 +14,10 @@ rem ============================================================================
 set "_root=%~dp0.."
 
 rem --- Step 1: install the .NET SDK (global.json tools.dotnet) + Arcade restore ---
+rem    DisableLocalization=true so the project evaluation skips the XliffTasks import
+rem    (its packages.config-style path is not on the Arcade restore graph).
 echo ---------------- Arcade restore + SDK acquisition ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -restore -configuration Release -projects '%_root%\FSharp.sln'"
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -restore -configuration Release -projects '%_root%\FSharp.sln' /p:DisableLocalization=true; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: Arcade restore / SDK acquisition failed 1>&2 & exit /b 1 )
 
 rem --- Step 2: restore the legacy packages.config HintPath deps from dotnet-public ---
@@ -36,5 +38,5 @@ rem    -m:1 forces single-proc msbuild: the legacy build copies every net40 proj
 rem    output into a shared Release\net40\bin dir, which races under multi-proc.
 rem    DisableLocalization=true defers XliffTasks (loc satellites handled separately).
 echo ---------------- Building product (real) ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.sln' /m:1 /p:DisableLocalization=true %*"
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.sln' /m:1 /p:DisableLocalization=true %*; exit $LASTEXITCODE"
 exit /b %ERRORLEVEL%
