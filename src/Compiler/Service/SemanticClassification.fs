@@ -180,18 +180,22 @@ module TcResolutionsExtensions =
 
                     // Custom builders like 'async { }' are both Item.Value and Item.CustomBuilder.
                     // We should prefer the latter, otherwise they would not get classified as CEs.
+                    // Inside list/array comprehensions the same range can host more than 2 CNRs; we
+                    // still want to keep the CustomBuilder ones if any are present.
                     let takeCustomBuilder (cnrs: CapturedNameResolution[]) =
                         assert (cnrs.Length > 0)
 
                         if cnrs.Length = 1 then
                             cnrs
-                        elif cnrs.Length = 2 then
-                            match cnrs[0].Item, cnrs[1].Item with
-                            | Item.Value _, Item.CustomBuilder _ -> [| cnrs[1] |]
-                            | Item.CustomBuilder _, Item.Value _ -> [| cnrs[0] |]
-                            | _ -> cnrs
                         else
-                            cnrs
+                            let customBuilders =
+                                cnrs
+                                |> Array.filter (fun cnr ->
+                                    match cnr.Item with
+                                    | Item.CustomBuilder _ -> true
+                                    | _ -> false)
+
+                            if customBuilders.Length > 0 then customBuilders else cnrs
 
                     let resolutions =
                         match range with

@@ -378,3 +378,97 @@ let mbx = new MailboxProcessor<int * int>(fun mbx -> async { return () })
             "Generic disposable constructor call should not produce a DisposableType span wider than the type name, but found: %A"
             (badWideDisposable |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
     )
+
+/// (#19905 item 2) A computation-expression builder identifier used inside a list comprehension
+/// must classify as ComputationExpression, not Value.
+[<Fact>]
+let ``CE builder name inside list comprehension is classified as ComputationExpression`` () =
+    let source = """
+type OptionalBuilder() =
+    member _.Zero() = None
+    member _.Bind(x, f) = Option.bind f x
+    member _.Return(x) = Some x
+    member _.ReturnFrom(x) = x
+
+let optional = OptionalBuilder()
+let myList = [1; 2; 3]
+let myNewList = [
+    for i in myList do
+        optional {
+            return! Some(i+1)
+        }
+]
+"""
+    let fileName, snapshot, checker = singleFileChecker source
+    let results = checker.ParseAndCheckFileInProject(fileName, snapshot) |> Async.RunSynchronously
+    let checkResults = getTypeCheckResult results
+    // Use a range-based call (mirrors what VS classification does); 'None' bypasses takeCustomBuilder.
+    let wholeFile = Range.mkRange fileName (Position.mkPos 1 0) (Position.mkPos 1000 0)
+    let classifications = checkResults.GetSemanticClassification(Some wholeFile, RelatedSymbolUseKind.All)
+
+    // The 'optional {' inside the comprehension is on line 12, starting at column 8 (8 spaces of indent).
+    let ceItemsOnLine12 =
+        classifications
+        |> Array.filter (fun c ->
+            c.Range.StartLine = 12
+            && c.Range.StartColumn = 8
+            && c.Type = SemanticClassificationType.ComputationExpression)
+
+    Assert.True(
+        ceItemsOnLine12.Length >= 1,
+        sprintf
+            "Expected ComputationExpression classification for 'optional' at line 12, col 8. Items on line 12: %A"
+            (classifications
+             |> Array.filter (fun i -> i.Range.StartLine = 12)
+             |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
+
+    // And the same span must NOT also be classified as Value.
+    let valueItemsOnSameSpan =
+        classifications
+        |> Array.filter (fun c ->
+            c.Range.StartLine = 12
+            && c.Range.StartColumn = 8
+            && c.Range.EndColumn = 16
+            && c.Type = SemanticClassificationType.Value)
+
+    Assert.True(
+        valueItemsOnSameSpan.Length = 0,
+        sprintf
+            "Same span for 'optional' must not also be classified as Value, but found: %A"
+            (valueItemsOnSameSpan |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
+
+/// (#19905 item 2 - guard) Top-level CE usage must keep classifying as ComputationExpression
+/// after the takeCustomBuilder generalization.
+[<Fact>]
+let ``CE builder name at top level still classifies as ComputationExpression`` () =
+    let source = """
+type OptionalBuilder() =
+    member _.Zero() = None
+    member _.Bind(x, f) = Option.bind f x
+    member _.Return(x) = Some x
+
+let optional = OptionalBuilder()
+let z = optional { return! Some 42 }
+"""
+    let fileName, snapshot, checker = singleFileChecker source
+    let results = checker.ParseAndCheckFileInProject(fileName, snapshot) |> Async.RunSynchronously
+    let checkResults = getTypeCheckResult results
+    let wholeFile = Range.mkRange fileName (Position.mkPos 1 0) (Position.mkPos 1000 0)
+    let classifications = checkResults.GetSemanticClassification(Some wholeFile, RelatedSymbolUseKind.All)
+
+    let ceItemsOnLine8 =
+        classifications
+        |> Array.filter (fun c ->
+            c.Range.StartLine = 8
+            && c.Type = SemanticClassificationType.ComputationExpression)
+
+    Assert.True(
+        ceItemsOnLine8.Length >= 1,
+        sprintf
+            "Expected ComputationExpression classification on line 8 for top-level CE usage. Items: %A"
+            (classifications
+             |> Array.filter (fun i -> i.Range.StartLine = 8)
+             |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
