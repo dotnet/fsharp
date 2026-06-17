@@ -2618,7 +2618,8 @@ module ParsedInput =
                     Pos = mkPos 1 0
                 }
 
-        // In scripts, `#r`/`#load` must precede any `open`.
+        // In scripts, `#r`/`#load` must precede any `open`, so an inserted open has to land after the
+        // last leading `#r`/`#load` directive. Other directives (`#nowarn`, `#I`, ...) impose no such order.
         match parsedInput with
         | ParsedInput.ImplFile impl when impl.IsScript ->
             let topDecls =
@@ -2628,26 +2629,25 @@ module ParsedInput =
 
             let rec lastLeadingHashEndLine acc decls =
                 match decls with
-                | SynModuleDecl.HashDirective(_, range) :: rest -> lastLeadingHashEndLine (max acc range.EndLine) rest
+                | SynModuleDecl.HashDirective(ParsedHashDirective(ident, _, _), range) :: rest ->
+                    let acc =
+                        if ident = "r" || ident = "load" then
+                            max acc range.EndLine
+                        else
+                            acc
+
+                    lastLeadingHashEndLine acc rest
                 | _ -> acc
 
             let lastHashLine = lastLeadingHashEndLine 0 topDecls
 
-            let hasExistingOpens =
-                topDecls
-                |> List.exists (function
-                    | SynModuleDecl.Open _ -> true
-                    | _ -> false)
-
-            if lastHashLine > 0 && lastHashLine >= ctx.Pos.Line then
+            if lastHashLine > 0 then
+                // Keep the position computed above when it already groups below the directives, but never let it
+                // (or the later `AdjustInsertionPoint`) move above them: the `HashDirective` scope is passed through
+                // unchanged by `AdjustInsertionPoint`.
                 {
                     ScopeKind = ScopeKind.HashDirective
-                    Pos = mkPos (lastHashLine + 1) 0
-                }
-            elif lastHashLine = 0 && ctx.Pos.Line > 1 && not hasExistingOpens then
-                {
-                    ScopeKind = ScopeKind.TopModule
-                    Pos = mkPos 1 0
+                    Pos = mkPos (max (lastHashLine + 1) ctx.Pos.Line) 0
                 }
             else
                 ctx
