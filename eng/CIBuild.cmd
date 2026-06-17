@@ -40,5 +40,5 @@ rem    -m:1 forces single-proc msbuild: the legacy build copies every net40 proj
 rem    output into a shared Release\net40\bin dir, which races under multi-proc.
 rem    DisableLocalization=true defers XliffTasks (loc satellites handled separately).
 echo ---------------- Building product (real) ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.sln' /m:1 /p:DisableLocalization=true %*; exit $LASTEXITCODE"
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.sln' /m:1 /p:DisableLocalization=true; exit $LASTEXITCODE"
 exit /b %ERRORLEVEL%
