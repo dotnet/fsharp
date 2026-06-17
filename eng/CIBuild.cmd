@@ -1,79 +1,40 @@
 @echo off
 setlocal enabledelayedexpansion
-rem F# 15.9 servicing CI build entry point.
+rem ============================================================================
+rem  F# 15.9 servicing CI build entry point (Block 9i: .NET 9 SDK proto, no nuget.org).
 rem
-rem Block 9b: builds the legacy proto/bootstrap compiler FIRST (the 15.9 self-hosting
-rem build is 2-phase: LKG proto compiler -> real compiler), then runs the Arcade-engine
-rem real build. The proto build is the part the modern Arcade engine does NOT do.
-rem
-rem Proto recipe (all verified on the dev box; see RestorePlan Block 9b notes):
-rem   /p:Configuration=Proto                 - the proto flavour
-rem   /p:VisualStudioVersion=15.0            - FSharp.Build-proto Microsoft.Build.* refs pin
-rem                                            Version=$(VisualStudioVersion).0.0 against the 15.0
-rem                                            assemblies in Microsoft.VisualFSharp.Msbuild.15.0
-rem   /p:SystemCollectionsImmutableVersion=1.5.0 - belt-and-suspenders pin (also in eng/Versions.props);
-rem                                            the legacy HintPath needs the netstandard1.0 lib that
-rem                                            only 1.5.0 carries
-rem   /p:DisableLocalization=true           - XliffTasks deferred
-rem   facade injection + v4.7.2 FrameworkPathOverride are baked into src/FSharpSource.targets
-rem   (InjectProtoFacades target + _Net45RefPackFallback) so they apply automatically.
+rem  The 15.9 build is 2-phase (LKG proto compiler -> real compiler). We build the
+rem  proto with the .NET 9 SDK's bundled F# toolset (see eng\build-proto-net9.ps1),
+rem  which removes every nuget.org-only seed (FSharp.Compiler.Tools 4.1.27,
+rem  Microsoft.VisualFSharp.Msbuild.15.0, FsLexYacc 7.0.6). All remaining build
+rem  dependencies are restored from dotnet-public (CFS-compliant; the nuget.org
+rem  upstream is fetched server-side, which works on the network-isolated agents).
+rem ============================================================================
 
-set DisableLocalization=true
+set "_root=%~dp0.."
 
-rem --- locate full VS MSBuild (the legacy proto proj needs full-framework MSBuild) ---
-set "_vswhere=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-set "_msbuild="
-if exist "%_vswhere%" (
-  for /f "usebackq delims=" %%i in (`"%_vswhere%" -latest -prerelease -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do set "_msbuild=%%i"
-)
-if not defined _msbuild (
-  echo Error: could not locate full VS MSBuild.exe via vswhere. 1>&2
-  exit /b 1
-)
-echo Using MSBuild: !_msbuild!
+rem --- Step 1: install the .NET SDK (global.json tools.dotnet) + Arcade restore ---
+echo ---------------- Arcade restore + SDK acquisition ----------------
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -restore -configuration Release -projects '%_root%\FSharp.sln'"
+if errorlevel 1 ( echo Error: Arcade restore / SDK acquisition failed 1>&2 & exit /b 1 )
 
-rem --- Phase 0: restore the legacy packages.config seeds into .\packages ---
-rem The proto build's LKG seeds (FSharp.Compiler.Tools 4.1.27 -> Microsoft.FSharp.Targets,
-rem Microsoft.VisualFSharp.Msbuild.15.0, FsLexYacc, System.Collections.Immutable 1.5.0,
-rem System.ValueTuple) are declared in packages.config and HintPath'd from .\packages. Arcade's
-rem restore populates the NuGet global cache, not .\packages, so on a clean CI agent .\packages is
-rem empty and the proto's <Import ...\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets>
-rem fails MSB4019.
-rem
-rem These specific 15.9-era packages exist ONLY on nuget.org (verified: 200 on api.nuget.org,
-rem 404 on dotnet-public and every other dnceng/azure-public feed — they were never mirrored).
-rem dotnet-public's nuget.org upstream proxy does not reliably surface them on a cold CI agent.
-rem We therefore restore them with an explicit transient -Source api.nuget.org on the CLI. This is
-rem NOT a NuGet.config feed declaration (so it does not trip CFS0013, which scans config files),
-rem and matches the existing accepted use of api.nuget.org in eng\common\post-build\nuget-verification.ps1.
-echo ---------------- Restoring legacy packages.config seeds ----------------
-"%~dp0..\.nuget\NuGet.exe" restore "%~dp0..\packages.config" -PackagesDirectory "%~dp0..\packages" -Source "https://api.nuget.org/v3/index.json" -NonInteractive -Verbosity quiet
-if errorlevel 1 (
-  echo Error: legacy packages.config restore failed 1>&2
-  exit /b 1
-)
+rem --- Step 2: restore the legacy packages.config HintPath deps from dotnet-public ---
+rem    No explicit -Source: NuGet.config routes to the approved dotnet-public feed
+rem    (whose upstream is fetched server-side), so the agent never contacts the public
+rem    NuGet gallery directly. This is CFS-compliant and works on isolated agents.
+echo ---------------- Restoring packages.config (dotnet-public) ----------------
+"%~dp0..\.nuget\NuGet.exe" restore "%~dp0..\packages.config" -PackagesDirectory "%~dp0..\packages" -ConfigFile "%~dp0..\NuGet.config" -NonInteractive -Verbosity quiet
+if errorlevel 1 ( echo Error: packages.config restore failed 1>&2 & exit /b 1 )
 
-rem --- Phase 1: build the proto/bootstrap compiler ---
+rem --- Step 3: build the proto/bootstrap compiler with the .NET 9 SDK ---
 echo ---------------- Building proto (bootstrap) compiler ----------------
-"!_msbuild!" "%~dp0..\src\fsharp-proto-build.proj" ^
-  /p:Configuration=Proto ^
-  /p:VisualStudioVersion=15.0 ^
-  /p:SystemCollectionsImmutableVersion=1.5.0 ^
-  /p:DisableLocalization=true ^
-  /nologo /v:minimal ^
-  /bl:"%~dp0..\artifacts\log\Release\proto.binlog"
-if errorlevel 1 (
-  echo Error: proto compiler build failed 1>&2
-  exit /b 1
-)
+powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0build-proto-net9.ps1"
+if errorlevel 1 ( echo Error: proto compiler build failed 1>&2 & exit /b 1 )
 
-rem --- Phase 2: real build via the Arcade engine (uses Proto\net40\bin) ---
-rem -m:1 forces single-proc msbuild. The legacy 15.9 build copies every net40 project's
-rem output into a SHARED Release\net40\{bin,obj} dir via HACK_CopyOutputsToTheProperLocation,
-rem and builds the same assemblies (e.g. FSharp.Core.dll) for multiple TFM passes; under
-rem multi-proc these collide (MSB3026 copy locks, FS2014 double-write). Every project builds
-rem clean in isolation -- the only failures are shared-output races -- so serializing is the
-rem correct, deterministic fix. The 15.9 build was historically single-proc.
+rem --- Step 4: real build via the Arcade engine (uses Proto\net40\bin) ---
+rem    -m:1 forces single-proc msbuild: the legacy build copies every net40 project's
+rem    output into a shared Release\net40\bin dir, which races under multi-proc.
+rem    DisableLocalization=true defers XliffTasks (loc satellites handled separately).
 echo ---------------- Building product (real) ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0common\build.ps1" -ci -restore -build /m:1 %*
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.sln' /m:1 /p:DisableLocalization=true %*"
 exit /b %ERRORLEVEL%
