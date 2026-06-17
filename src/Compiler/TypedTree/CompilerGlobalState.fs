@@ -73,6 +73,7 @@ type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
     member _.Fresh (name: string, m: range) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
+/// Not thread-safe: one instance per file batch, accessed sequentially within batch.
 [<Sealed>]
 type PerFileClosureNameScope(consumerFileIndex: int) =
 

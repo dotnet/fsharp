@@ -416,7 +416,7 @@ module Consumer%d{i}
 
 let result%d{i} () =
     let v = Lib.withClosure (fun y -> y * %d{i}) %d{i + 10}
-    v + int Lib.data1.[%d{i}]
+    v + int Lib.data1.[%d{i}] + int Lib.data2.[%d{i % 8}]
 """
 
         let getMvid (parallelFlag: string) =
@@ -438,8 +438,10 @@ let result%d{i} () =
 
     // Verify that compiled output actually runs correctly — not just that IL is identical.
     // Guards against the FSharpPlus-class runtime hang caused by dropped .cctor initialization.
-    [<Fact>]
-    let ``Deterministic multi-file compile produces correct runtime behavior`` () =
+    [<Theory>]
+    [<InlineData("--parallelcompilation+")>]
+    [<InlineData("--parallelcompilation-")>]
+    let ``Deterministic multi-file compile produces correct runtime behavior`` (parallelFlag: string) =
         let mainFile = """
 module Main
 
@@ -478,7 +480,7 @@ let valueB = sideEffect
         ]
         |> asExe
         |> withOptimize
-        |> withOptions [ "--deterministic"; "--nowarn:75"; "--parallelcompilation+" ]
+        |> withOptions [ "--deterministic"; "--nowarn:75"; parallelFlag ]
         |> compileAndRun
         |> shouldSucceed
         |> withStdOutContains "OK"

@@ -10948,8 +10948,8 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
             GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenvinner mdef
             |> ignore
 
-            // Predicate is safe only because delayCodeGen=true ensures both SEQ and PAR
-            // see the same (empty) field set at this point.
+            // Safe: delayCodeGen=true defers raw-data field additions to the drain phase,
+            // so SEQ and PAR see the same spine-walk-only fields at this point.
             assert eenv.delayCodeGen
 
             if not (cgbuf.mgbuf.GetCurrentFields(tref) |> Seq.isEmpty) then

@@ -4478,7 +4478,14 @@ and p_ValInfo (v: ValInfo) st =
 and p_ModuleInfo x st =
     let stableValKey (vref: ValRef) =
         let k = vref.Deref.GetLinkageFullKey()
-        struct (vref.LogicalName, k.PartialKey.MemberParentMangledName, k.PartialKey.LogicalName, k.PartialKey.TotalArgCount)
+
+        struct (
+            vref.LogicalName,
+            k.PartialKey.MemberParentMangledName,
+            k.PartialKey.TotalArgCount,
+            k.PartialKey.MemberIsOverride,
+            vref.Deref.Stamp
+        )
 
     let mergeRacedFlags (vref: ValRef, vinfo: ValInfo) =
         let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
