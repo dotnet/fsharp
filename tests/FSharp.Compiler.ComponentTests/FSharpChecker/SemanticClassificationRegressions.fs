@@ -297,3 +297,84 @@ type SumDelegate = delegate of x: int * y: int -> int
             "Delegate declaration should not produce a wide Method classification, but found: %A"
             (badWideMethods |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
     )
+
+/// (#19905 item 3) For `MyType.Method<int>()`, the Method classification on the
+/// identifier must not extend past the identifier into the `<int>(` punctuation.
+[<Fact>]
+let ``Static generic method call should not extend Method range over type args`` () =
+    let source = """
+type MyType() =
+    static member Method<'a>() = Unchecked.defaultof<'a>
+
+let x = MyType.Method<int>()
+"""
+    let classifications = getClassifications source
+
+    // The method identifier on line 5 ("Method") spans columns 15..21 (6 chars).
+    // Before the fix, a single Method classification spanned the whole "Method<int>()"
+    // (~ columns 15..27, 12+ chars). Assert no Method classification on the call
+    // line has width > 8.
+    let badWideMethods =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.Method
+            && c.Range.StartLine = 5
+            && (c.Range.EndColumn - c.Range.StartColumn) > 8)
+
+    Assert.True(
+        badWideMethods.Length = 0,
+        sprintf
+            "Static generic method call should not produce a Method span wider than the identifier, but found: %A"
+            (badWideMethods |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
+
+/// (#19905 item 6) Sibling of item 3: `MailboxProcessor<int>.Start(.)` - the
+/// method name should be a narrow Method classification, not a wide span.
+[<Fact>]
+let ``Generic type then static method call should not extend Method range over type args`` () =
+    let source = """
+let mbx = MailboxProcessor<int>.Start(fun mbx -> async { return () })
+"""
+    let classifications = getClassifications source
+
+    // "Start" on line 2 spans 5 chars. Before the fix, a wide Method classification
+    // covered "Start(fun mbx -> async { return () })".
+    let badWideMethods =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.Method
+            && c.Range.StartLine = 2
+            && (c.Range.EndColumn - c.Range.StartColumn) > 8)
+
+    Assert.True(
+        badWideMethods.Length = 0,
+        sprintf
+            "Generic-type static method call should not produce a Method span wider than the identifier, but found: %A"
+            (badWideMethods |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
+
+/// (#19905 item 4) For `new MailboxProcessor<int * int>(...)`, the
+/// DisposableType classification must not extend over the constructor argument list.
+[<Fact>]
+let ``Generic disposable constructor call should not classify argument list as DisposableType`` () =
+    let source = """
+let mbx = new MailboxProcessor<int * int>(fun mbx -> async { return () })
+"""
+    let classifications = getClassifications source
+
+    // The type name "MailboxProcessor" spans 16 chars. Before the fix, a single
+    // DisposableType classification spanned everything from the type name through
+    // the entire argument list (~ 60+ chars).
+    let badWideDisposable =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.DisposableType
+            && c.Range.StartLine = 2
+            && (c.Range.EndColumn - c.Range.StartColumn) > 20)
+
+    Assert.True(
+        badWideDisposable.Length = 0,
+        sprintf
+            "Generic disposable constructor call should not produce a DisposableType span wider than the type name, but found: %A"
+            (badWideDisposable |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )

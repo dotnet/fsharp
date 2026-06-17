@@ -206,6 +206,34 @@ module TcResolutionsExtensions =
 
                     let results = ImmutableArray.CreateBuilder()
 
+                    // (#19905 items 3 and 6) For Method/Property classifications, the CNR range may
+                    // span an entire dotted/generic prefix (e.g. `MyType.Method` or
+                    // `MailboxProcessor<int>.Start`). The wide range is needed for find-references and
+                    // goto-definition, but classification should color only the trailing identifier.
+                    // Narrow to the last `displayName.Length` characters of the range when the source
+                    // span is wider than the identifier and the range lies on a single line.
+                    let narrowMethodOrPropertyRange (displayName: string) (m: range) =
+                        if m.StartLine = m.EndLine
+                           && not (System.String.IsNullOrEmpty displayName)
+                           && displayName.Length > 0
+                           && m.EndColumn - m.StartColumn > displayName.Length
+                           && m.EndColumn >= displayName.Length then
+                            mkRange m.FileName (Position.mkPos m.EndLine (m.EndColumn - displayName.Length)) m.End
+                        else
+                            m
+
+                    // (#19905 item 4) For CtorGroup classifications on `new T<typeArgs>(...)`, the CNR
+                    // range covers the whole type-with-args. Narrow to the leading type-name portion so
+                    // DisposableType/ctor colors do not extend over the `<.>` type arguments.
+                    let narrowCtorRange (displayName: string) (m: range) =
+                        if m.StartLine = m.EndLine
+                           && not (System.String.IsNullOrEmpty displayName)
+                           && displayName.Length > 0
+                           && m.EndColumn - m.StartColumn > displayName.Length then
+                            mkRange m.FileName m.Start (Position.mkPos m.StartLine (m.StartColumn + displayName.Length))
+                        else
+                            m
+
                     let inline add m (typ: SemanticClassificationType) =
                         if duplicates.Add m then
                             results.Add(SemanticClassificationItem((m, typ)))
@@ -281,29 +309,30 @@ module TcResolutionsExtensions =
                             else
                                 add m SemanticClassificationType.RecordField
 
-                        | Item.Property(info = pinfo :: _), _, m ->
+                        | Item.Property(info = pinfo :: _) as item, _, m ->
                             if not pinfo.IsIndexer then
-                                add m SemanticClassificationType.Property
+                                add (narrowMethodOrPropertyRange item.DisplayNameCore m) SemanticClassificationType.Property
 
-                        | Item.CtorGroup(_, minfos), _, m ->
+                        | Item.CtorGroup(_, minfos) as item, _, m ->
+                            let mNarrow = narrowCtorRange item.DisplayNameCore m
                             match minfos with
-                            | [] -> add m SemanticClassificationType.ConstructorForReferenceType
+                            | [] -> add mNarrow SemanticClassificationType.ConstructorForReferenceType
                             | _ ->
                                 if
                                     minfos
                                     |> List.forall (fun minfo -> isDisposableTy g amap minfo.ApparentEnclosingType)
                                 then
-                                    add m SemanticClassificationType.DisposableType
+                                    add mNarrow SemanticClassificationType.DisposableType
                                 elif minfos |> List.forall (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
-                                    add m SemanticClassificationType.ConstructorForValueType
+                                    add mNarrow SemanticClassificationType.ConstructorForValueType
                                 else
-                                    add m SemanticClassificationType.ConstructorForReferenceType
+                                    add mNarrow SemanticClassificationType.ConstructorForReferenceType
 
                         | Item.DelegateCtor _, _, m -> add m SemanticClassificationType.ConstructorForReferenceType
 
-                        | Item.MethodGroup(_, minfos, _), _, m ->
+                        | Item.MethodGroup(_, minfos, _) as item, _, m ->
                             match minfos with
-                            | [] -> add m SemanticClassificationType.Method
+                            | [] -> add (narrowMethodOrPropertyRange item.DisplayNameCore m) SemanticClassificationType.Method
                             | _ ->
                                 let isSynthesizedDelegateMemberInDecl =
                                     minfos
@@ -314,15 +343,17 @@ module TcResolutionsExtensions =
                                         && minfo.ApparentEnclosingTyconRef.IsFSharpDelegateTycon
                                         && rangeContainsRange minfo.ApparentEnclosingTyconRef.Range m)
 
+                                let mNarrow = narrowMethodOrPropertyRange item.DisplayNameCore m
+
                                 if isSynthesizedDelegateMemberInDecl then
                                     ()
                                 elif
                                     minfos
                                     |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember)
                                 then
-                                    add m SemanticClassificationType.ExtensionMethod
+                                    add mNarrow SemanticClassificationType.ExtensionMethod
                                 else
-                                    add m SemanticClassificationType.Method
+                                    add mNarrow SemanticClassificationType.Method
 
                         // Special case measures for struct types
                         | Item.Types(_, AppTy g (tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurrence, m when
