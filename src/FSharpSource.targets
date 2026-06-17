@@ -56,6 +56,13 @@
   <Import Project="FSharpSource.Profiles.targets" />
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
+    <!-- FSharp.Build references Microsoft.Build.* 15.8.166 (dotnet-public, AsmVer 15.1.0.0 = the
+         MSBuild VS2017 15.9 actually runs). Those assemblies are built against net46, so the shipped
+         FSharp.Build desktop must target net46 (VS2017 15.9 hosts on 4.7.2, so this is invisible at
+         runtime). All other net40-profile projects keep v4.5. The original 15.0.0.0/net45 reference
+         assemblies live only in the nuget.org-only Microsoft.VisualFSharp.Msbuild.15.0 package, which
+         the network-isolated CI cannot restore. -->
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == '' AND '$(MSBuildProjectName)' == 'FSharp.Build'">v4.6</TargetFrameworkVersion>
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
