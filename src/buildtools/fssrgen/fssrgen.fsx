@@ -329,7 +329,7 @@ let StringBoilerPlate filename =
     // END BOILERPLATE        
 "            
 
-let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
+let RunMain(filename: string, outFilename, outXmlFilenameOpt, projectNameOpt) =
     try
         let justfilename = System.IO.Path.GetFileNameWithoutExtension(filename)
         if justfilename |> Seq.exists (fun c -> not(System.Char.IsLetterOrDigit(c))) then

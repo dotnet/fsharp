@@ -233,6 +233,10 @@
          Output is byte-identical to FsLexYacc 7.0.6. Overridable via the command line if needed. -->
     <FsLexToolPath Condition="'$(FsLexToolPath)' == ''">$(FSharpSourcesRoot)\..\artifacts\bin\fslex\Proto</FsLexToolPath>
     <FsYaccToolPath Condition="'$(FsYaccToolPath)' == ''">$(FSharpSourcesRoot)\..\artifacts\bin\fsyacc\Proto</FsYaccToolPath>
+    <!-- fssrgen is built from source (src/buildtools/fssrgen) into an exe, eliminating the LKG fsi
+         that the resource generator otherwise needs. Overridable via the command line. -->
+    <FsSrGenToolPath Condition="'$(FsSrGenToolPath)' == ''">$(FSharpSourcesRoot)\..\artifacts\bin\fssrgen\Proto</FsSrGenToolPath>
+    <FsSrGenToolExe Condition="'$(FsSrGenToolExe)' == ''">fssrgen.exe</FsSrGenToolExe>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>

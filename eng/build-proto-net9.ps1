@@ -55,12 +55,14 @@ Write-Host "dotnet        : $dotnet"
 Write-Host "SDK FSharp    : $sdkFSharp"
 Write-Host "SDK FSharp 8.3: $sdkFSharpShort"
 
-# --- Phase 0: fslex + fsyacc from source ---
-Write-Host "`n==== Phase 0: build fslex/fsyacc from source ====" -ForegroundColor Cyan
+# --- Phase 0: fslex + fsyacc + fssrgen from source ---
+Write-Host "`n==== Phase 0: build fslex/fsyacc/fssrgen from source ====" -ForegroundColor Cyan
 & $dotnet build (Join-Path $RepoRoot 'src\buildtools\fslex\fslex.fsproj')   -c Proto /p:DisableLocalization=true --nologo /v:minimal
 if ($LASTEXITCODE) { throw "fslex build failed ($LASTEXITCODE)" }
 & $dotnet build (Join-Path $RepoRoot 'src\buildtools\fsyacc\fsyacc.fsproj') -c Proto /p:DisableLocalization=true --nologo /v:minimal
 if ($LASTEXITCODE) { throw "fsyacc build failed ($LASTEXITCODE)" }
+& $dotnet build (Join-Path $RepoRoot 'src\buildtools\fssrgen\fssrgen.fsproj') -c Proto /p:DisableLocalization=true --nologo /v:minimal
+if ($LASTEXITCODE) { throw "fssrgen build failed ($LASTEXITCODE)" }
 
 # --- Phase 1: proto/bootstrap compiler ---
 Write-Host "`n==== Phase 1: build proto compiler ====" -ForegroundColor Cyan

@@ -24,8 +24,10 @@ Copyright (C) Microsoft Corporation. All Rights Reserved.
         Condition="'@(FsSrGen)'!=''">
     <!-- Create the output directory in case it doesn't exist yet -->
     <MakeDir Directories="$(IntermediateOutputPath)"/>
-    <!-- Run the tool -->
-    <Exec Command="&quot;$([System.IO.Path]::GetFullPath('$(FsiToolPath)\$(FsiToolExe)'))&quot; --exec &quot;$(MSBuildThisFileDirectory)fssrgen.fsx&quot; &quot;%(FsSrGen.FullPath)&quot; &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).fs&quot;  &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).resx&quot; $(FsSrGenProjectName)" Condition="'$(OS)' != 'Unix'" />
+    <!-- Run the tool. fssrgen is built from source (src/buildtools/fssrgen) into an exe, so it
+         no longer needs the LKG fsi to run fssrgen.fsx as a script. Same fssrgen.fsx logic, so the
+         generated .fs/.resx are equivalent. FsSrGenToolPath defaults to the built tool (Settings.targets). -->
+    <Exec Command="&quot;$(FsSrGenToolPath)\$(FsSrGenToolExe)&quot; &quot;%(FsSrGen.FullPath)&quot; &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).fs&quot;  &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).resx&quot; $(FsSrGenProjectName)" Condition="'$(OS)' != 'Unix'" />
     <Exec Command="mono $([System.IO.Path]::GetFullPath('$(FsiToolPath)\$(FsiToolExe)')) --exec &quot;$(MSBuildThisFileDirectory)fssrgen.fsx&quot; &quot;%(FsSrGen.FullPath)&quot; &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).fs&quot;  &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).resx&quot; $(FsSrGenProjectName)" Condition="'$(OS)' == 'Unix'" />
   </Target>
 
