@@ -53,6 +53,90 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .method public static valuetype assembly/U NewU(int32 item1, int32 item2) cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  3
+      .locals init (valuetype assembly/U V_0)
+      IL_0000:  ldloca.s   V_0
+      IL_0002:  initobj    assembly/U
+      IL_0008:  ldloca.s   V_0
+      IL_000a:  ldarg.0
+      IL_000b:  stfld      int32 assembly/U::item1
+      IL_0010:  ldloca.s   V_0
+      IL_0012:  ldarg.1
+      IL_0013:  stfld      int32 assembly/U::item2
+      IL_0018:  ldloc.0
+      IL_0019:  ret
+    } 
+
+    .method public hidebysig instance int32 get_Item1() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 assembly/U::item1
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig instance int32 get_Item2() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 assembly/U::item2
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig instance int32 get_Tag() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  pop
+      IL_0002:  ldc.i4.0
+      IL_0003:  ret
+    } 
+
+    .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldstr      "%+0.8A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  ldobj      assembly/U
+      IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>::Invoke(!0)
+      IL_001a:  ret
+    } 
+
+    .method public strict virtual instance string ToString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,valuetype assembly/U>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  ldobj      assembly/U
+      IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>::Invoke(!0)
+      IL_001a:  ret
+    } 
+
     .method public hidebysig virtual final instance int32  CompareTo(valuetype assembly/U obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -182,6 +266,59 @@
       IL_0046:  ret
     } 
 
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0)
+      IL_0000:  ldc.i4.0
+      IL_0001:  stloc.0
+      IL_0002:  ldarg.0
+      IL_0003:  pop
+      IL_0004:  ldc.i4.0
+      IL_0005:  stloc.0
+      IL_0006:  ldc.i4     0x9e3779b9
+      IL_000b:  ldarg.0
+      IL_000c:  ldfld      int32 assembly/U::item2
+      IL_0011:  ldloc.0
+      IL_0012:  ldc.i4.6
+      IL_0013:  shl
+      IL_0014:  ldloc.0
+      IL_0015:  ldc.i4.2
+      IL_0016:  shr
+      IL_0017:  add
+      IL_0018:  add
+      IL_0019:  add
+      IL_001a:  stloc.0
+      IL_001b:  ldc.i4     0x9e3779b9
+      IL_0020:  ldarg.0
+      IL_0021:  ldfld      int32 assembly/U::item1
+      IL_0026:  ldloc.0
+      IL_0027:  ldc.i4.6
+      IL_0028:  shl
+      IL_0029:  ldloc.0
+      IL_002a:  ldc.i4.2
+      IL_002b:  shr
+      IL_002c:  add
+      IL_002d:  add
+      IL_002e:  add
+      IL_002f:  stloc.0
+      IL_0030:  ldloc.0
+      IL_0031:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 assembly/U::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
+    } 
+
     .method public hidebysig instance bool Equals(valuetype assembly/U obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -273,143 +410,6 @@
       IL_0016:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0)
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  ldarg.0
-      IL_0003:  pop
-      IL_0004:  ldc.i4.0
-      IL_0005:  stloc.0
-      IL_0006:  ldc.i4     0x9e3779b9
-      IL_000b:  ldarg.0
-      IL_000c:  ldfld      int32 assembly/U::item2
-      IL_0011:  ldloc.0
-      IL_0012:  ldc.i4.6
-      IL_0013:  shl
-      IL_0014:  ldloc.0
-      IL_0015:  ldc.i4.2
-      IL_0016:  shr
-      IL_0017:  add
-      IL_0018:  add
-      IL_0019:  add
-      IL_001a:  stloc.0
-      IL_001b:  ldc.i4     0x9e3779b9
-      IL_0020:  ldarg.0
-      IL_0021:  ldfld      int32 assembly/U::item1
-      IL_0026:  ldloc.0
-      IL_0027:  ldc.i4.6
-      IL_0028:  shl
-      IL_0029:  ldloc.0
-      IL_002a:  ldc.i4.2
-      IL_002b:  shr
-      IL_002c:  add
-      IL_002d:  add
-      IL_002e:  add
-      IL_002f:  stloc.0
-      IL_0030:  ldloc.0
-      IL_0031:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 assembly/U::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
-    .method public static valuetype assembly/U NewU(int32 item1, int32 item2) cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                  int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  3
-      .locals init (valuetype assembly/U V_0)
-      IL_0000:  ldloca.s   V_0
-      IL_0002:  initobj    assembly/U
-      IL_0008:  ldloca.s   V_0
-      IL_000a:  ldarg.0
-      IL_000b:  stfld      int32 assembly/U::item1
-      IL_0010:  ldloca.s   V_0
-      IL_0012:  ldarg.1
-      IL_0013:  stfld      int32 assembly/U::item2
-      IL_0018:  ldloc.0
-      IL_0019:  ret
-    } 
-
-    .method public strict virtual instance string ToString() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldstr      "%+A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,valuetype assembly/U>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  ldobj      assembly/U
-      IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>::Invoke(!0)
-      IL_001a:  ret
-    } 
-
-    .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldstr      "%+0.8A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  ldobj      assembly/U
-      IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype assembly/U,string>::Invoke(!0)
-      IL_001a:  ret
-    } 
-
-    .method public hidebysig instance int32 get_Item1() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 assembly/U::item1
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig instance int32 get_Item2() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 assembly/U::item2
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig instance int32 get_Tag() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  pop
-      IL_0002:  ldc.i4.0
-      IL_0003:  ret
-    } 
-
     .property instance int32 Tag()
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -435,6 +435,124 @@
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .get instance int32 assembly/U::get_Item2()
     } 
+  } 
+
+  .method public static int32  g1(valuetype assembly/U _arg1) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarga.s   _arg1
+    IL_0002:  ldfld      int32 assembly/U::item1
+    IL_0007:  ldarga.s   _arg1
+    IL_0009:  ldfld      int32 assembly/U::item2
+    IL_000e:  add
+    IL_000f:  ret
+  } 
+
+  .method public static int32  g2(valuetype assembly/U u) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  nop
+    IL_0001:  ldarga.s   u
+    IL_0003:  ldfld      int32 assembly/U::item1
+    IL_0008:  ldarga.s   u
+    IL_000a:  ldfld      int32 assembly/U::item2
+    IL_000f:  add
+    IL_0010:  ret
+  } 
+
+  .method public static int32  g3(valuetype assembly/U x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  nop
+    IL_0001:  ldarga.s   x
+    IL_0003:  ldfld      int32 assembly/U::item1
+    IL_0008:  ldc.i4.3
+    IL_0009:  sub
+    IL_000a:  switch     ( 
+                          IL_0015)
+    IL_0013:  br.s       IL_001d
+
+    IL_0015:  ldarga.s   x
+    IL_0017:  ldfld      int32 assembly/U::item2
+    IL_001c:  ret
+
+    IL_001d:  ldarga.s   x
+    IL_001f:  ldfld      int32 assembly/U::item1
+    IL_0024:  ldarga.s   x
+    IL_0026:  ldfld      int32 assembly/U::item2
+    IL_002b:  add
+    IL_002c:  ret
+  } 
+
+  .method public static int32  g4(valuetype assembly/U x,
+                                  valuetype assembly/U y) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+    
+    .maxstack  6
+    .locals init (int32 V_0,
+             int32 V_1,
+             int32 V_2,
+             int32 V_3)
+    IL_0000:  nop
+    IL_0001:  ldarga.s   x
+    IL_0003:  ldfld      int32 assembly/U::item1
+    IL_0008:  ldc.i4.3
+    IL_0009:  sub
+    IL_000a:  switch     ( 
+                          IL_0015)
+    IL_0013:  br.s       IL_0059
+
+    IL_0015:  ldarga.s   y
+    IL_0017:  ldfld      int32 assembly/U::item1
+    IL_001c:  ldc.i4.5
+    IL_001d:  sub
+    IL_001e:  switch     ( 
+                          IL_0049)
+    IL_0027:  ldarga.s   y
+    IL_0029:  ldfld      int32 assembly/U::item2
+    IL_002e:  ldarga.s   y
+    IL_0030:  ldfld      int32 assembly/U::item1
+    IL_0035:  ldarga.s   x
+    IL_0037:  ldfld      int32 assembly/U::item2
+    IL_003c:  ldarga.s   x
+    IL_003e:  ldfld      int32 assembly/U::item1
+    IL_0043:  stloc.3
+    IL_0044:  stloc.2
+    IL_0045:  stloc.1
+    IL_0046:  stloc.0
+    IL_0047:  br.s       IL_0079
+
+    IL_0049:  ldarga.s   x
+    IL_004b:  ldfld      int32 assembly/U::item2
+    IL_0050:  ldarga.s   y
+    IL_0052:  ldfld      int32 assembly/U::item2
+    IL_0057:  add
+    IL_0058:  ret
+
+    IL_0059:  ldarga.s   y
+    IL_005b:  ldfld      int32 assembly/U::item2
+    IL_0060:  stloc.0
+    IL_0061:  ldarga.s   y
+    IL_0063:  ldfld      int32 assembly/U::item1
+    IL_0068:  stloc.1
+    IL_0069:  ldarga.s   x
+    IL_006b:  ldfld      int32 assembly/U::item2
+    IL_0070:  stloc.2
+    IL_0071:  ldarga.s   x
+    IL_0073:  ldfld      int32 assembly/U::item1
+    IL_0078:  stloc.3
+    IL_0079:  ldloc.3
+    IL_007a:  ldloc.2
+    IL_007b:  add
+    IL_007c:  ldloc.1
+    IL_007d:  add
+    IL_007e:  ldloc.0
+    IL_007f:  add
+    IL_0080:  ret
   } 
 
   .method public static int32  f1(valuetype assembly/U& x) cil managed
@@ -564,124 +682,6 @@
     IL_0094:  ret
   } 
 
-  .method public static int32  g1(valuetype assembly/U _arg1) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarga.s   _arg1
-    IL_0002:  ldfld      int32 assembly/U::item1
-    IL_0007:  ldarga.s   _arg1
-    IL_0009:  ldfld      int32 assembly/U::item2
-    IL_000e:  add
-    IL_000f:  ret
-  } 
-
-  .method public static int32  g2(valuetype assembly/U u) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarga.s   u
-    IL_0003:  ldfld      int32 assembly/U::item1
-    IL_0008:  ldarga.s   u
-    IL_000a:  ldfld      int32 assembly/U::item2
-    IL_000f:  add
-    IL_0010:  ret
-  } 
-
-  .method public static int32  g3(valuetype assembly/U x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarga.s   x
-    IL_0003:  ldfld      int32 assembly/U::item1
-    IL_0008:  ldc.i4.3
-    IL_0009:  sub
-    IL_000a:  switch     ( 
-                          IL_0015)
-    IL_0013:  br.s       IL_001d
-
-    IL_0015:  ldarga.s   x
-    IL_0017:  ldfld      int32 assembly/U::item2
-    IL_001c:  ret
-
-    IL_001d:  ldarga.s   x
-    IL_001f:  ldfld      int32 assembly/U::item1
-    IL_0024:  ldarga.s   x
-    IL_0026:  ldfld      int32 assembly/U::item2
-    IL_002b:  add
-    IL_002c:  ret
-  } 
-
-  .method public static int32  g4(valuetype assembly/U x,
-                                  valuetype assembly/U y) cil managed
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    
-    .maxstack  6
-    .locals init (int32 V_0,
-             int32 V_1,
-             int32 V_2,
-             int32 V_3)
-    IL_0000:  nop
-    IL_0001:  ldarga.s   x
-    IL_0003:  ldfld      int32 assembly/U::item1
-    IL_0008:  ldc.i4.3
-    IL_0009:  sub
-    IL_000a:  switch     ( 
-                          IL_0015)
-    IL_0013:  br.s       IL_0059
-
-    IL_0015:  ldarga.s   y
-    IL_0017:  ldfld      int32 assembly/U::item1
-    IL_001c:  ldc.i4.5
-    IL_001d:  sub
-    IL_001e:  switch     ( 
-                          IL_0049)
-    IL_0027:  ldarga.s   y
-    IL_0029:  ldfld      int32 assembly/U::item2
-    IL_002e:  ldarga.s   y
-    IL_0030:  ldfld      int32 assembly/U::item1
-    IL_0035:  ldarga.s   x
-    IL_0037:  ldfld      int32 assembly/U::item2
-    IL_003c:  ldarga.s   x
-    IL_003e:  ldfld      int32 assembly/U::item1
-    IL_0043:  stloc.3
-    IL_0044:  stloc.2
-    IL_0045:  stloc.1
-    IL_0046:  stloc.0
-    IL_0047:  br.s       IL_0079
-
-    IL_0049:  ldarga.s   x
-    IL_004b:  ldfld      int32 assembly/U::item2
-    IL_0050:  ldarga.s   y
-    IL_0052:  ldfld      int32 assembly/U::item2
-    IL_0057:  add
-    IL_0058:  ret
-
-    IL_0059:  ldarga.s   y
-    IL_005b:  ldfld      int32 assembly/U::item2
-    IL_0060:  stloc.0
-    IL_0061:  ldarga.s   y
-    IL_0063:  ldfld      int32 assembly/U::item1
-    IL_0068:  stloc.1
-    IL_0069:  ldarga.s   x
-    IL_006b:  ldfld      int32 assembly/U::item2
-    IL_0070:  stloc.2
-    IL_0071:  ldarga.s   x
-    IL_0073:  ldfld      int32 assembly/U::item1
-    IL_0078:  stloc.3
-    IL_0079:  ldloc.3
-    IL_007a:  ldloc.2
-    IL_007b:  add
-    IL_007c:  ldloc.1
-    IL_007d:  add
-    IL_007e:  ldloc.0
-    IL_007f:  add
-    IL_0080:  ret
-  } 
-
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
@@ -696,6 +696,7 @@
   } 
 
 } 
+
 
 
 
