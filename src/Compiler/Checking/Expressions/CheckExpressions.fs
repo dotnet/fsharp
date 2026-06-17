@@ -6930,7 +6930,15 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
             match setInfo with
             // expr1.[expr2]
             | None  ->
-                [ DelayedDotLookup([ ident(nm, mWholeExpr)], mWholeExpr)
+                // For slice getters (isIndex=false: synthesized GetSlice call), syntheticize the
+                // synthesized identifier range so the resolver does not emit a Method classification
+                // covering the closing ']' of an open-ended slice (#19905 item 5). For the regular
+                // Item indexer (isIndex=true) keep the real range so symbol uses remain visible to
+                // IDE features.
+                let mIdent =
+                    if isIndex then mWholeExpr
+                    else mWholeExpr.MakeSynthetic()
+                [ DelayedDotLookup([ ident(nm, mIdent)], mIdent)
                   DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, MakeIndexParam None, mWholeExpr)
                   yield! delayed ]
 
@@ -6942,7 +6950,10 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
                       MakeDelayedSet(expr3, mWholeExpr)
                       yield! delayed ]
                 else
-                    [ DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet)
+                    // SetSlice synthesized identifier: syntheticize the range to suppress the
+                    // wide-range Method classification on the closing ']' (#19905 item 5).
+                    let mSyntheticSet = mOfLeftOfSet.MakeSynthetic()
+                    [ DelayedDotLookup([ident("SetSlice", mSyntheticSet)], mSyntheticSet)
                       DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, MakeIndexParam (Some expr3), mWholeExpr)
                       yield! delayed ]
 

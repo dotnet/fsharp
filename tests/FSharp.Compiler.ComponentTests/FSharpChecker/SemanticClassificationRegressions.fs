@@ -472,3 +472,59 @@ let z = optional { return! Some 42 }
              |> Array.filter (fun i -> i.Range.StartLine = 8)
              |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
     )
+
+/// (#19905 item 5) The synthesized GetSlice member on an open-ended slice must not
+/// produce a Method/Function classification that covers the closing ']'.
+[<Fact>]
+let ``Open-ended slice closing bracket is not classified as Method`` () =
+    let source = """
+let list = [1; 2; 3]
+let x    = list[0..]
+"""
+    let classifications = getClassifications source
+
+    // Line 3 contains "let x    = list[0..]".
+    let bracketCol = source.Replace("\r\n", "\n").Split('\n').[2].IndexOf(']')
+    Assert.True(bracketCol >= 0, "Test source must contain ']'")
+
+    let bad =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.Method
+            && c.Range.StartLine = 3
+            && c.Range.StartColumn <= bracketCol
+            && c.Range.EndColumn > bracketCol)
+
+    Assert.True(
+        bad.Length = 0,
+        sprintf
+            "Closing ']' of open-ended slice must not be inside a Method classification, but found: %A"
+            (bad |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
+
+/// (#19905 item 5 - guard) Closed-bound slice should keep working.
+[<Fact>]
+let ``Closed-bound slice does not produce a wide Method classification`` () =
+    let source = """
+let list = [1; 2; 3]
+let y    = list[0..2]
+"""
+    let classifications = getClassifications source
+
+    let bracketCol = source.Replace("\r\n", "\n").Split('\n').[2].IndexOf(']')
+    Assert.True(bracketCol >= 0, "Test source must contain ']'")
+
+    let bad =
+        classifications
+        |> Array.filter (fun c ->
+            c.Type = SemanticClassificationType.Method
+            && c.Range.StartLine = 3
+            && c.Range.StartColumn <= bracketCol
+            && c.Range.EndColumn > bracketCol)
+
+    Assert.True(
+        bad.Length = 0,
+        sprintf
+            "Closing ']' of closed-bound slice must not be inside a Method classification, but found: %A"
+            (bad |> Array.map (fun i -> i.Range.StartColumn, i.Range.EndColumn, i.Type))
+    )
