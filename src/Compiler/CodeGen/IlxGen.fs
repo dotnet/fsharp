@@ -2077,10 +2077,12 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                     userMethods.Add(entry)
 
             let sortedUser =
-                userMethods |> Seq.sortBy (fun (struct (_, k), _) -> k) |> Seq.map snd |> List.ofSeq
+                userMethods
+                |> Seq.sortBy (fun (struct (_, k), _) -> k)
+                |> Seq.map snd
+                |> List.ofSeq
 
-            let sortedDeferred =
-                deferredMethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
+            let sortedDeferred = deferredMethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
 
             sortedUser @ sortedDeferred
 
