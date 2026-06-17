@@ -42,7 +42,7 @@
                     [runtime]System.Collections.IStructuralComparable
   {
     .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
-                                                                                                         61 79 28 29 2C 6E 71 7D 00 00 )                   
+                                                                                                   61 79 28 29 2C 6E 71 7D 00 00 )                   
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
     .field assembly initonly int32 item
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -64,8 +64,8 @@
     .method assembly specialname rtspecialname instance void  .ctor(int32 item) cil managed
     {
       .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 08 41 42 43 2B 45 78 70 72 00   
-                                                                                                                                                     00 ) 
+                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 08 41 42 43 2B 45 78 70 72 00   
+                                                                                                                               00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -481,7 +481,7 @@
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
-                                                                                 valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+                                                                           valuetype [runtime]System.Runtime.Serialization.StreamingContext)
       IL_0008:  ret
     } 
 
@@ -744,7 +744,7 @@
                       [runtime]System.Collections.IStructuralComparable
     {
       .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
-                                                                                                           61 79 28 29 2C 6E 71 7D 00 00 )                   
+                                                                                                     61 79 28 29 2C 6E 71 7D 00 00 )                   
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
       .field assembly initonly int32 item
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -766,8 +766,8 @@
       .method assembly specialname rtspecialname instance void  .ctor(int32 item) cil managed
       {
         .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 0C 41 42 43 2B 41 42 43 2B 45   
-                                                                                                                                                       78 70 72 00 00 )                                  
+                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 0C 41 42 43 2B 41 42 43 2B 45   
+                                                                                                                                 78 70 72 00 00 )                                  
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         
@@ -1183,7 +1183,7 @@
         IL_0001:  ldarg.1
         IL_0002:  ldarg.2
         IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
-                                                                                   valuetype [runtime]System.Runtime.Serialization.StreamingContext)
+                                                                             valuetype [runtime]System.Runtime.Serialization.StreamingContext)
         IL_0008:  ret
       } 
 
@@ -1455,17 +1455,6 @@
       IL_0005:  ret
     } 
 
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$ABC::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$ABC::init@
-      IL_000b:  pop
-      IL_000c:  ret
-    } 
-
     .property string greeting()
     {
       .get string ABC/ABC::get_greeting()
@@ -1492,17 +1481,6 @@
     .maxstack  8
     IL_0000:  ldstr      "hello"
     IL_0005:  ret
-  } 
-
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$ABC::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$ABC::init@
-    IL_000b:  pop
-    IL_000c:  ret
   } 
 
   .property string greeting()
@@ -1532,7 +1510,8 @@
     IL_000c:  ret
   } 
 
-}
+} 
+
 .class private auto ansi serializable sealed System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
        extends [runtime]System.Enum
 {

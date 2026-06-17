@@ -42,7 +42,7 @@
                     [runtime]System.Collections.IStructuralComparable
   {
     .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
-                                                                                                         61 79 28 29 2C 6E 71 7D 00 00 )                   
+                                                                                                   61 79 28 29 2C 6E 71 7D 00 00 )                   
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
     .field static assembly initonly class assembly/Weirdo _unique_C
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -60,9 +60,9 @@
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                                              class [runtime]System.Type) = ( 01 00 E0 07 00 00 1F 47 65 6E 65 72 61 6C 69 7A   
-                                                                                                                                                     61 74 69 6F 6E 4F 6E 55 6E 69 6F 6E 73 30 31 2B   
-                                                                                                                                                     57 65 69 72 64 6F 00 00 )                         
+                                                                                              class [runtime]System.Type) = ( 01 00 E0 07 00 00 1F 47 65 6E 65 72 61 6C 69 7A   
+                                                                                                                               61 74 69 6F 6E 4F 6E 55 6E 69 6F 6E 73 30 31 2B   
+                                                                                                                               57 65 69 72 64 6F 00 00 )                         
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -342,17 +342,6 @@
     IL_0001:  ret
   } 
 
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
@@ -373,7 +362,8 @@
     IL_0007:  ret
   } 
 
-}
+} 
+
 .class private auto ansi serializable sealed System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
        extends [runtime]System.Enum
 {
