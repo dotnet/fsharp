@@ -87,6 +87,11 @@ internal partial class EditorInProcess
     }
 
     public async Task<IEnumerable<SuggestedActionSet>> InvokeCodeActionListAsync(CancellationToken cancellationToken)
+        => await InvokeCodeActionListAsync(waitForErrorListDiagnostics: true, cancellationToken);
+
+    // waitForErrorListDiagnostics: skip for fixes whose diagnostic is Hidden (e.g. F# unused-opens), which
+    // never appears in the error list - waiting on it there can never succeed and just wastes the timeout.
+    public async Task<IEnumerable<SuggestedActionSet>> InvokeCodeActionListAsync(bool waitForErrorListDiagnostics, CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
@@ -94,12 +99,15 @@ internal partial class EditorInProcess
         var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
         var categoryRegistry = await GetComponentModelServiceAsync<ISuggestedActionCategoryRegistryService>(cancellationToken);
 
-        // Wait until the editor's own lightbulb tagger reports a fix is available, then invoke. This is the
-        // producer-agnostic "fix is ready" signal and - unlike the error list - it also covers Hidden
-        // diagnostics (F# unused-opens is Hidden, so it never appears in the error list). The cap doubles as a
-        // quiet settle (no lightbulb churn) for fixes whose computation lags, which CI showed is what the
-        // compiler-diagnostic fixes need.
-        var barrier = await WaitForLightBulbAvailableAsync(broker, view, cancellationToken);
+        // Bring back the 2-minute settle (best producer-agnostic result so far): optionally wait quietly for the
+        // document's diagnostics (no lightbulb churn), then settle for 2 minutes so lagging fix computations
+        // are ready, then invoke. Running this a few times to measure how flaky it really is.
+        if (waitForErrorListDiagnostics)
+        {
+            await WaitForDocumentDiagnosticsAsync(cancellationToken);
+        }
+
+        await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
 
         try
         {
@@ -107,35 +115,32 @@ internal partial class EditorInProcess
         }
         catch (InvalidOperationException ex)
         {
-            // Report the barrier outcome and error-list contents so a failure is self-explaining.
+            // Report the error-list contents so a failure is self-explaining.
             var entries = await TestServices.ErrorList.GetAllEntriesAsync(cancellationToken);
             throw new InvalidOperationException(
-                $"{ex.Message}{Environment.NewLine}Barrier: {barrier}{Environment.NewLine}" +
-                $"--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
+                $"{ex.Message}{Environment.NewLine}--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
                 string.Join(Environment.NewLine, entries),
                 ex);
         }
     }
 
-    // Polls IsLightBulbSessionActive (no lightbulb churn of our own) until the editor reports a lightbulb is
-    // available, or a bounded timeout elapses. Returns an outcome string for diagnostics. Best-effort: on
-    // timeout we still invoke, and the cap acts as a quiet settle for lagging fix computations.
-    private async Task<string> WaitForLightBulbAvailableAsync(ILightBulbBroker broker, IWpfTextView view, CancellationToken cancellationToken)
+    // Polls the error list (lightly, no lightbulb activity) until the document has at least one diagnostic of
+    // any severity, or a bounded timeout elapses. Best-effort: on timeout we still invoke. (Note: F# unused-opens
+    // is a Hidden diagnostic and never appears here, so for that test this just acts as extra settle time.)
+    private async Task WaitForDocumentDiagnosticsAsync(CancellationToken cancellationToken)
     {
-        var start = DateTime.UtcNow;
-        var deadline = start + TimeSpan.FromSeconds(120);
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(60);
         while (DateTime.UtcNow < deadline)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (broker.IsLightBulbSessionActive(view))
+            var count = await TestServices.ErrorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_MESSAGE, cancellationToken);
+            if (count > 0)
             {
-                return $"lightbulb active after {(DateTime.UtcNow - start).TotalSeconds:F1}s";
+                return;
             }
 
             await Task.Delay(500, cancellationToken);
         }
-
-        return "lightbulb not active within 120s";
     }
 }
