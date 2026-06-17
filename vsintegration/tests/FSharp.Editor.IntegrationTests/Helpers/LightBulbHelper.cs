@@ -15,27 +15,19 @@ using System.Threading.Tasks;
 
 namespace FSharp.Editor.IntegrationTests.Helpers
 {
+    // Reads code actions from the editor's OWN lightbulb session (triggered via the real ShowQuickFixes command),
+    // exactly like the TypeScript-VS Apex tests and Roslyn's integration tests. We do NOT create a broker-owned
+    // session: that gets superseded/dismissed by the editor's real lightbulb within ~20ms headless. The real
+    // session is producer-agnostic (aggregates Roslyn today, the VS LSP CodeActionSource tomorrow).
     internal static class LightBulbHelper
     {
-        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(60);
         private static readonly TimeSpan s_perAttemptTimeout = TimeSpan.FromSeconds(15);
+        private static readonly TimeSpan s_activeWait = TimeSpan.FromSeconds(5);
 
-        // We drive the producer-agnostic VS lightbulb broker session rather than querying a specific code-fix
-        // source. The broker session aggregates ALL suggested-action sources (Roslyn today, the VS LSP client's
-        // CodeActionSource once F# code actions move to LSP), so this test stays valid across that migration -
-        // unlike calling Roslyn's IAsyncSuggestedActionsSource directly.
-        //
-        // Mechanics learned the hard way:
-        //  * ShowQuickFixes only creates a session when a fix already exists at the caret, so a background/push
-        //    analyzer (unused-opens) whose diagnostic isn't published yet never produces one. broker.CreateSession
-        //    always gives us an owned session and still aggregates every source.
-        //  * PopulateWithDataAsync returns a fast, EMPTY initial snapshot; the real aggregated sets arrive later
-        //    via SuggestedActionsUpdated as each source completes. So we trigger populate but wait on the terminal
-        //    event, not the populate task result.
-        //  * PopulateWithDataAsync returns Task<ImmutableArray<...>> and SuggestedActionsUpdatedArgs.ActionSets is
-        //    ImmutableArray; System.Collections.Immutable skews between the NuGet ref and the in-proc VS runtime,
-        //    so we invoke/read these via reflection through the non-generic IEnumerable and never name
-        //    ImmutableArray in compiled IL. (These are VS platform APIs, unaffected by the F# LSP move.)
+        // PopulateWithDataAsync returns Task<ImmutableArray<...>> and ActionSets is ImmutableArray;
+        // System.Collections.Immutable skews between the NuGet ref and the in-proc VS runtime, so we invoke/read
+        // these via reflection through the non-generic IEnumerable and never name ImmutableArray in compiled IL.
         private static readonly MethodInfo s_populateWithDataAsync =
             typeof(IAsyncLightBulbSession).GetMethod(
                 "PopulateWithDataAsync",
@@ -45,8 +37,8 @@ namespace FSharp.Editor.IntegrationTests.Helpers
         public static async Task<IReadOnlyList<SuggestedActionSet>> GetCodeActionsAsync(
             ILightBulbBroker broker,
             IWpfTextView view,
-            ISuggestedActionCategorySet categories,
             JoinableTaskFactory joinableTaskFactory,
+            Func<Task> showLightBulbAsync,
             Func<CancellationToken, Task> drainLightBulbOperationsAsync,
             CancellationToken cancellationToken)
         {
@@ -65,8 +57,8 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 }
 
                 attempt++;
-                var (sets, detail) = await TryPopulateViaSessionAsync(
-                    broker, view, categories, joinableTaskFactory, drainLightBulbOperationsAsync, cancellationToken);
+                var (sets, detail) = await TryGetFromRealSessionAsync(
+                    broker, view, joinableTaskFactory, showLightBulbAsync, drainLightBulbOperationsAsync, cancellationToken);
                 lastDetail = $"attempt {attempt}, elapsed {(DateTime.UtcNow - start).TotalSeconds:F1}s: {detail}";
 
                 if (sets.Count > 0)
@@ -78,21 +70,42 @@ namespace FSharp.Editor.IntegrationTests.Helpers
             }
         }
 
-        private static async Task<(IReadOnlyList<SuggestedActionSet> sets, string detail)> TryPopulateViaSessionAsync(
+        private static async Task<(IReadOnlyList<SuggestedActionSet> sets, string detail)> TryGetFromRealSessionAsync(
             ILightBulbBroker broker,
             IWpfTextView view,
-            ISuggestedActionCategorySet categories,
             JoinableTaskFactory joinableTaskFactory,
+            Func<Task> showLightBulbAsync,
             Func<CancellationToken, Task> drainLightBulbOperationsAsync,
             CancellationToken cancellationToken)
         {
             await joinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-#pragma warning disable CS0618 // ILightBulbBroker2.CreateSession's extra category-set param can't be validated for these tests locally
-            var session = (IAsyncLightBulbSession)broker.CreateSession(categories, view);
-#pragma warning restore CS0618
+            // Clean slate then trigger the editor's own lightbulb (Ctrl+.). Dismissing first avoids ShowQuickFixes
+            // toggling/collapsing an already-expanded session from a previous attempt.
+            if (broker.IsLightBulbSessionActive(view))
+            {
+                broker.DismissSession(view);
+            }
 
-            // Result carries both the action sets and the terminal status (for diagnostics).
+            await showLightBulbAsync();
+
+            // Push-model diagnostics (e.g. background unused-opens) can lag, so the session may not appear at once.
+            var activeDeadline = DateTime.UtcNow + s_activeWait;
+            while (!broker.IsLightBulbSessionActive(view))
+            {
+                if (DateTime.UtcNow > activeDeadline)
+                {
+                    return (Array.Empty<SuggestedActionSet>(), "no active lightbulb session");
+                }
+
+                await Task.Delay(100, cancellationToken);
+            }
+
+            if (broker.GetSession(view) is not IAsyncLightBulbSession session)
+            {
+                return (Array.Empty<SuggestedActionSet>(), "session active but GetSession not IAsyncLightBulbSession");
+            }
+
             var eventTcs = new TaskCompletionSource<(IReadOnlyList<SuggestedActionSet> sets, QuerySuggestedActionCompletionStatus status)>();
 
             void OnUpdated(object sender, SuggestedActionsUpdatedArgs e)
@@ -112,24 +125,12 @@ namespace FSharp.Editor.IntegrationTests.Helpers
             session.Dismissed += OnDismissed;
             try
             {
-                // Expand the session so it survives the async computation. A collapsed/owned session
-                // auto-dismisses the instant PopulateWithDataAsync reports its empty initial snapshot, which
-                // loses the race for fixes that compute slower than that (type-check warnings, background
-                // analyzers); an expanded session persists (the "computing..." lightbulb) and updates as the
-                // sources complete - exactly like a real Ctrl+. invocation.
-                string expandStatus;
-                try
+                if (session.IsDismissed)
                 {
-                    session.Expand();
-                    expandStatus = "expanded";
-                }
-                catch (Exception ex)
-                {
-                    expandStatus = $"expand-failed {ex.GetType().Name}: {ex.Message}";
+                    return (Array.Empty<SuggestedActionSet>(), "session already dismissed");
                 }
 
-                // Trigger population (fires SuggestedActionsUpdated at least once with the latest data). We don't
-                // rely on its empty early result - the terminal event delivers the aggregated sets.
+                // Ensure the session fires SuggestedActionsUpdated at least once with the latest computed data.
                 string populateStatus;
                 try
                 {
@@ -142,17 +143,14 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                     populateStatus = $"populate-invoke-failed {ex.GetType().Name}: {ex.Message}";
                 }
 
-                // Deterministically drain the lightbulb async computation (focus-independent) so the terminal event
-                // below reflects the fully-computed sets rather than racing a headless session dismissal.
-                string drainStatus;
+                // Best-effort deterministic drain (no-op if F# work isn't tracked by Roslyn's LightBulb listener).
                 try
                 {
                     await drainLightBulbOperationsAsync(cancellationToken);
-                    drainStatus = "drained";
                 }
-                catch (Exception ex)
+                catch
                 {
-                    drainStatus = $"drain-failed {ex.GetType().Name}: {ex.Message}";
+                    // ignore - the terminal event below is the source of truth
                 }
 
                 using var perAttempt = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -161,29 +159,21 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 try
                 {
                     var (sets, status) = await eventTcs.Task.WithCancellation(perAttempt.Token);
-                    return (sets, $"{expandStatus}, {populateStatus}, {drainStatus}, event status={status}, sets={sets.Count}");
+                    return (sets, $"{populateStatus}, event status={status}, sets={sets.Count}");
                 }
                 catch (SessionDismissedException)
                 {
-                    return (Array.Empty<SuggestedActionSet>(), $"{expandStatus}, {populateStatus}, {drainStatus}, session dismissed");
+                    return (Array.Empty<SuggestedActionSet>(), $"{populateStatus}, real session dismissed");
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
-                    return (Array.Empty<SuggestedActionSet>(), $"{expandStatus}, {populateStatus}, {drainStatus}, no terminal event within {s_perAttemptTimeout.TotalSeconds:F0}s");
+                    return (Array.Empty<SuggestedActionSet>(), $"{populateStatus}, no terminal event within {s_perAttemptTimeout.TotalSeconds:F0}s");
                 }
             }
             finally
             {
                 session.SuggestedActionsUpdated -= OnUpdated;
                 session.Dismissed -= OnDismissed;
-                try
-                {
-                    broker.DismissSession(view);
-                }
-                catch
-                {
-                    // best-effort cleanup of the session we created
-                }
             }
         }
 

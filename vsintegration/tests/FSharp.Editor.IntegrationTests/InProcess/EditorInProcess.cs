@@ -18,6 +18,11 @@ namespace Microsoft.VisualStudio.Extensibility.Testing;
 
 internal partial class EditorInProcess
 {
+    // VSStd14CmdID command-set GUID + ShowQuickFixes (Ctrl+.) id; OLECMDEXECOPT_DONTPROMPTUSER = 2.
+    private static readonly Guid s_vsStd14CmdSet = new Guid("4c7763bf-5faf-4264-a366-b7e1f27ba958");
+    private const uint ShowQuickFixesCmdId = 1;
+    private const uint OleCmdExecOptDontPromptUser = 2;
+
     public async Task<string> GetTextAsync(CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
@@ -94,21 +99,34 @@ internal partial class EditorInProcess
         var view = await GetActiveTextViewAsync(cancellationToken);
         var componentModel = await GetRequiredGlobalServiceAsync<SComponentModel, IComponentModel>(cancellationToken);
         var broker = componentModel.GetService<ILightBulbBroker>();
-        var categoryRegistry = componentModel.GetService<ISuggestedActionCategoryRegistryService>();
+        var shell = await GetRequiredGlobalServiceAsync<SVsUIShell, IVsUIShell>(cancellationToken);
 
-        // Deterministically wait for the analyzer/diagnostic work that produces the fixes (focus-independent),
-        // so the fix exists before we open the UI session - replaces the old error-list poll and 2-minute sleep.
+        // PlaceCaretAsync leaves the active command target on the Find feature, so re-activate the document or the
+        // posted ShowQuickFixes command routes to the wrong target.
+        await ActivateAsync(cancellationToken);
+
+        // Best-effort deterministic wait for the analyzer/diagnostic work that produces the fixes (focus-independent).
         await AsyncOperationWaiter.WaitForFeaturesAsync(
             componentModel,
             new[] { AsyncOperationWaiter.Workspace, AsyncOperationWaiter.SolutionCrawlerLegacy, AsyncOperationWaiter.DiagnosticService },
             cancellationToken);
+
+        // Invoke the editor's real lightbulb (Ctrl+. / VSStd14CmdID.ShowQuickFixes) so we read the editor-owned
+        // session, which is not superseded the way a broker.CreateSession session is. Caller is on the main thread.
+        Task ShowLightBulbAsync()
+        {
+            var cmdGroup = s_vsStd14CmdSet;
+            object? inArg = null;
+            shell.PostExecCommand(ref cmdGroup, ShowQuickFixesCmdId, OleCmdExecOptDontPromptUser, ref inArg);
+            return Task.CompletedTask;
+        }
 
         Task DrainLightBulbAsync(CancellationToken token)
             => AsyncOperationWaiter.WaitForFeaturesAsync(componentModel, new[] { AsyncOperationWaiter.LightBulb }, token);
 
         try
         {
-            return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.Any, JoinableTaskFactory, DrainLightBulbAsync, cancellationToken);
+            return await LightBulbHelper.GetCodeActionsAsync(broker, view, JoinableTaskFactory, ShowLightBulbAsync, DrainLightBulbAsync, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
