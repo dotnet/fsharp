@@ -9,11 +9,6 @@ let f (l: int list) =
     |]
 --------------------------------------------------------------------------------
 
-Module::|Id|
-  (3,23-3,24)  x
-    IL_0000:  ldarg.0
-    IL_0001:  ret
-
 Module::f
   (6,5-9,7)  [| for Id i in l do yield i |]
     IL_0000:  nop
@@ -67,3 +62,8 @@ Module::f
     IL_004a:  ldloca.s 0
     IL_004c:  call Close
     IL_0051:  ret
+
+Module::|Id|
+  (3,23-3,24)  x
+    IL_0000:  ldarg.0
+    IL_0001:  ret

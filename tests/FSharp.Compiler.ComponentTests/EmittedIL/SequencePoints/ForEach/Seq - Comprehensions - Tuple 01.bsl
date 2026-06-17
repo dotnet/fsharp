@@ -16,82 +16,6 @@ Module::f
     IL_0004:  newobj .ctor
     IL_0009:  ret
 
-f@5::GenerateNext
-  <hidden>
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld pc
-    IL_0006:  ldc.i4.1
-    IL_0007:  sub
-    IL_0008:  switch (3 targets)
-    IL_0019:  br.s IL_0024
-
-  <hidden>
-    IL_001b:  nop
-    IL_001c:  br.s IL_006c
-
-  <hidden>
-    IL_001e:  nop
-    IL_001f:  br.s IL_005f
-
-  <hidden>
-    IL_0021:  nop
-    IL_0022:  br.s IL_008d
-
-  <hidden>
-    IL_0024:  nop
-    IL_0025:  br.s IL_0027
-
-  (5,9-5,12)  for
-    IL_0027:  ldarg.0
-    IL_0028:  ldarg.0
-    IL_0029:  ldfld l
-    IL_002e:  callvirt GetEnumerator
-    IL_0033:  stfld enum
-    IL_0038:  ldarg.0
-    IL_0039:  ldc.i4.1
-    IL_003a:  stfld pc
-    IL_003f:  br.s IL_005f
-    IL_0041:  ldarg.0
-    IL_0042:  ldfld enum
-    IL_0047:  callvirt get_Current
-    IL_004c:  stloc.0
-    IL_004d:  ldarg.0
-    IL_004e:  ldc.i4.2
-    IL_004f:  stfld pc
-    IL_0054:  ldarg.0
-    IL_0055:  stloc.1
-
-  (6,13-6,20)  yield n
-    IL_0056:  ldloc.1
-    IL_0057:  ldloc.0
-    IL_0058:  stfld current
-    IL_005d:  ldc.i4.1
-    IL_005e:  ret
-
-  (5,15-5,17)  in
-    IL_005f:  ldarg.0
-    IL_0060:  ldfld enum
-    IL_0065:  callvirt MoveNext
-    IL_006a:  brtrue.s IL_0041
-    IL_006c:  ldarg.0
-    IL_006d:  ldc.i4.3
-    IL_006e:  stfld pc
-    IL_0073:  ldarg.0
-    IL_0074:  ldfld enum
-    IL_0079:  call Dispose
-    IL_007e:  nop
-    IL_007f:  ldarg.0
-    IL_0080:  ldnull
-    IL_0081:  stfld enum
-    IL_0086:  ldarg.0
-    IL_0087:  ldc.i4.3
-    IL_0088:  stfld pc
-    IL_008d:  ldarg.0
-    IL_008e:  ldnull
-    IL_008f:  stfld current
-    IL_0094:  ldc.i4.0
-    IL_0095:  ret
-
 f@5::Close
   <hidden>
     IL_0000:  ldarg.0
@@ -175,6 +99,82 @@ f@5::Close
     IL_007d:  ret
 
   <hidden>
+
+f@5::GenerateNext
+  <hidden>
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld pc
+    IL_0006:  ldc.i4.1
+    IL_0007:  sub
+    IL_0008:  switch (3 targets)
+    IL_0019:  br.s IL_0024
+
+  <hidden>
+    IL_001b:  nop
+    IL_001c:  br.s IL_006c
+
+  <hidden>
+    IL_001e:  nop
+    IL_001f:  br.s IL_005f
+
+  <hidden>
+    IL_0021:  nop
+    IL_0022:  br.s IL_008d
+
+  <hidden>
+    IL_0024:  nop
+    IL_0025:  br.s IL_0027
+
+  (5,9-5,12)  for
+    IL_0027:  ldarg.0
+    IL_0028:  ldarg.0
+    IL_0029:  ldfld l
+    IL_002e:  callvirt GetEnumerator
+    IL_0033:  stfld enum
+    IL_0038:  ldarg.0
+    IL_0039:  ldc.i4.1
+    IL_003a:  stfld pc
+    IL_003f:  br.s IL_005f
+    IL_0041:  ldarg.0
+    IL_0042:  ldfld enum
+    IL_0047:  callvirt get_Current
+    IL_004c:  stloc.0
+    IL_004d:  ldarg.0
+    IL_004e:  ldc.i4.2
+    IL_004f:  stfld pc
+    IL_0054:  ldarg.0
+    IL_0055:  stloc.1
+
+  (6,13-6,20)  yield n
+    IL_0056:  ldloc.1
+    IL_0057:  ldloc.0
+    IL_0058:  stfld current
+    IL_005d:  ldc.i4.1
+    IL_005e:  ret
+
+  (5,15-5,17)  in
+    IL_005f:  ldarg.0
+    IL_0060:  ldfld enum
+    IL_0065:  callvirt MoveNext
+    IL_006a:  brtrue.s IL_0041
+    IL_006c:  ldarg.0
+    IL_006d:  ldc.i4.3
+    IL_006e:  stfld pc
+    IL_0073:  ldarg.0
+    IL_0074:  ldfld enum
+    IL_0079:  call Dispose
+    IL_007e:  nop
+    IL_007f:  ldarg.0
+    IL_0080:  ldnull
+    IL_0081:  stfld enum
+    IL_0086:  ldarg.0
+    IL_0087:  ldc.i4.3
+    IL_0088:  stfld pc
+    IL_008d:  ldarg.0
+    IL_008e:  ldnull
+    IL_008f:  stfld current
+    IL_0094:  ldc.i4.0
+    IL_0095:  ret
 
 f@5::get_CheckClose
   <hidden>
