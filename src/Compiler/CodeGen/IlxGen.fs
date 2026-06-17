@@ -2561,17 +2561,19 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         let key =
             struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn, bytesKey)
 
-        fieldSpecByRange.GetOrAdd(
-            key,
-            (fun _ ->
-                lazy
-                    let counterCell =
-                        rawDataLineCounters.GetOrAdd(struct (m.FileIndex, m.StartLine), (fun _ -> ref 0))
+        fieldSpecByRange
+            .GetOrAdd(
+                key,
+                (fun _ ->
+                    lazy
+                        let counterCell =
+                            rawDataLineCounters.GetOrAdd(struct (m.FileIndex, m.StartLine), (fun _ -> ref 0))
 
-                    let idx = System.Threading.Interlocked.Increment(counterCell)
-                    let nameSuffix = sprintf "%d_%d" m.StartLine idx
-                    makeFspec nameSuffix)
-        ).Value
+                        let idx = System.Threading.Interlocked.Increment(counterCell)
+                        let nameSuffix = sprintf "%d_%d" m.StartLine idx
+                        makeFspec nameSuffix)
+            )
+            .Value
 
     member _.GenerateAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         anonTypeTable.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo)
@@ -12851,10 +12853,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
             CodegenFileScope.With(fileIdx + 1, fun () -> genMeths |> Array.iter (fun gen -> gen ()))
 
         let batches =
-            eenv.delayedFileGenReverse
-            |> Array.ofList
-            |> Array.rev
-            |> Array.indexed
+            eenv.delayedFileGenReverse |> Array.ofList |> Array.rev |> Array.indexed
 
         if cenv.options.parallelIlxGenEnabled then
             batches |> ArrayParallel.iter runBatch

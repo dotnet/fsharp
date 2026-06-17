@@ -416,7 +416,7 @@ module Consumer%d{i}
 
 let result%d{i} () =
     let v = Lib.withClosure (fun y -> y * %d{i}) %d{i + 10}
-    v + Lib.data1.[%d{i}] |> int
+    v + int Lib.data1.[%d{i}]
 """
 
         let getMvid (parallelFlag: string) =
@@ -426,7 +426,7 @@ let result%d{i} () =
             |> withOptimize
             |> withName "SeqParTest"
             |> withOutputDirectory (Some outputDir)
-            |> withOptions [ "--deterministic"; parallelFlag ]
+            |> withOptions [ "--deterministic"; "--nowarn:75"; parallelFlag ]
             |> compileGuid
 
         try
@@ -478,8 +478,8 @@ let valueB = sideEffect
         ]
         |> asExe
         |> withOptimize
-        |> withOptions [ "--deterministic"; "--parallelcompilation+" ]
+        |> withOptions [ "--deterministic"; "--nowarn:75"; "--parallelcompilation+" ]
         |> compileAndRun
         |> shouldSucceed
-        |> withOutputContaining "OK"
+        |> withStdOutContains "OK"
         |> ignore
