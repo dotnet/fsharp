@@ -5676,6 +5676,49 @@ type UseTheThings(i:int) =
            (((37, 10), (37, 21)), "open type FSharpEnum2 // Unused, should appear.")]
     unusedOpensData |> shouldEqual expected
 
+/// (#19905 item 7) `open type X` where X is a class (not enum/module) with static
+/// members must be reported as USED when one of its static helpers is invoked.
+[<Fact>]
+let ``open type for class with used static member is not reported unused`` () =
+
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1Text = """
+module Module
+
+module Helpers =
+    type View() =
+        static member Button(label: string) = label
+
+open type Helpers.View
+
+let label = Button "hello"
+"""
+    let fileSource1 = SourceText.ofString fileSource1Text
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
+
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
+
+    let fileCheckResults =
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunImmediate
+        |> function
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+
+    let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1])) |> Async.RunImmediate
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines[uo.StartLine-1] ]
+
+    let openTypeOnLine8 = unusedOpensData |> List.exists (fun ((_, _), text) -> text.Contains("open type Helpers.View"))
+    Assert.False(
+        openTypeOnLine8,
+        sprintf "Expected `open type Helpers.View` to be reported USED. Actual unused opens: %A" unusedOpensData)
+
 [<Fact>]
 let ``Unused opens smoke test auto open`` () =
 
