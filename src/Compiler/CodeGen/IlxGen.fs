@@ -2099,8 +2099,6 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     member _.NestedTypeDefs = gnested
 
-    member _.GetCurrentFields() = gfields |> Seq.map snd |> Seq.readonly
-
     /// Merge Get and Set property nodes, which we generate independently for F# code
     /// when we come across their corresponding methods.
     member _.AddOrMergePropertyDef(pdef, m) =
@@ -2113,19 +2111,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             AddPropertyDefToHash m gproperties pdef
 
     member _.AppendInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        let findIdx =
-            let mutable found = -1
-            let mutable i = 0
-
-            for _, md in gmethods do
-                if found < 0 && cond md then
-                    found <- i
-
-                i <- i + 1
-
-            if found >= 0 then Some found else None
-
-        match findIdx with
+        match gmethods |> Seq.tryFindIndex (fun (_, md) -> cond md) with
         | Some idx ->
             let k, md = gmethods[idx]
             gmethods[idx] <- (k, appendInstrsToMethod instrs md)
@@ -2139,19 +2125,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             gmethods.Add(struct (cctor.Name, k), cctor)
 
     member this.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
-        let findIdx =
-            let mutable found = -1
-            let mutable i = 0
-
-            for _, md in gmethods do
-                if found < 0 && cond md then
-                    found <- i
-
-                i <- i + 1
-
-            if found >= 0 then Some found else None
-
-        match findIdx with
+        match gmethods |> Seq.tryFindIndex (fun (_, md) -> cond md) with
         | Some idx ->
             let k, md = gmethods[idx]
             gmethods[idx] <- (k, prependInstrsToMethod instrs md)
@@ -2539,9 +2513,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
     let fieldSpecByRange =
         ConcurrentDictionary<struct (int * int * int * int * int), ILFieldSpec>(HashIdentity.Structural)
 
-    let primedRawDataFieldHosts =
-        ConcurrentDictionary<ILTypeRef, unit>(HashIdentity.Structural)
-
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
     /// static init fields on script modules.
@@ -2619,13 +2590,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                 makeFspec counter)
         )
 
-    member _.MarkRawDataFieldHost(tref: ILTypeRef) =
-        primedRawDataFieldHosts.TryAdd(tref, ()) |> ignore
-
-    /// True if PrimeStableNamesForCodegen recorded this ILTypeRef as a future raw-data field host.
-    member _.WillHaveRawDataFields(tref: ILTypeRef) =
-        primedRawDataFieldHosts.ContainsKey(tref)
-
     member _.GenerateAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         anonTypeTable.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo)
 
@@ -2639,9 +2603,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards, m)
 
     member _.FindNestedTypeDefBuilder(tref: ILTypeRef) = gtdefs.FindNestedTypeDefBuilder(tref)
-
-    member _.GetCurrentFields(tref: ILTypeRef) =
-        gtdefs.FindNestedTypeDefBuilder(tref).GetCurrentFields()
 
     member _.AddReflectedDefinition(vspec: Val, expr) =
         reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, expr))
@@ -12704,9 +12665,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
 
     match g.CompilerGlobalState with
     | None -> ()
-    | Some cgs ->
-
-        let stableNameGen = cgs.StableNameGenerator
+    | Some _ ->
 
         let primeVal (v: Val) =
             if
@@ -12715,20 +12674,6 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 && (v.IsCompilerGenerated || not v.IsMemberOrModuleBinding)
             then
                 v.CompiledName g.CompilerGlobalState |> ignore
-
-        let _primeClosureName (letBoundVars: ValRef list) (uniq: int64) (m: range) =
-            let boundvar =
-                letBoundVars |> List.tryFind (fun v -> not v.Deref.IsCompilerGenerated)
-
-            let basename =
-                match boundvar with
-                | Some v -> v.Deref.CompiledName g.CompilerGlobalState
-                | None -> "clo"
-
-            let basenameSafeForUseAsTypename = CleanUpGeneratedTypeName basename
-
-            stableNameGen.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, m, uniq)
-            |> ignore
 
         let stackGuard = StackGuard("PrimeStableNamesForCodegen")
 
@@ -12772,11 +12717,9 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                     | TOp.Bytes bytes when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
                         mgbuf.PrimeRawDataValueTypeCounter(cloc, bytes.Length)
                         mgbuf.GetOrAssignFieldCounter(m) |> ignore
-                        mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
                     | TOp.UInt16s arr when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
                         mgbuf.PrimeRawDataValueTypeCounter(cloc, arr.Length * 2)
                         mgbuf.GetOrAssignFieldCounter(m) |> ignore
-                        mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
                     | _ -> ()
 
                     for a in args do
@@ -12804,11 +12747,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
 
                 | Expr.TyChoose(_, body, _) -> walkExpr letBoundVars cloc body
 
-                | Expr.Quote(e, _, _, _, _) ->
-                    if cenv.options.emitConstantArraysUsingStaticDataBlobs then
-                        mgbuf.MarkRawDataFieldHost(TypeRefForCompLoc cloc)
-
-                    walkExpr letBoundVars cloc e
+                | Expr.Quote(e, _, _, _, _) -> walkExpr letBoundVars cloc e
 
                 | Expr.Link r -> walkExpr letBoundVars cloc r.Value
 
