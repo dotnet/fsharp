@@ -13,12 +13,14 @@ rem ============================================================================
 
 set "_root=%~dp0.."
 
-rem --- Step 1: install the .NET SDK (global.json tools.dotnet) + Arcade restore ---
-rem    DisableLocalization=true so the project evaluation skips the XliffTasks import
-rem    (its packages.config-style path is not on the Arcade restore graph).
+rem --- Step 1: install the .NET SDK (global.json tools.dotnet) + Arcade toolset ---
+rem    build.ps1 installs the SDK + Arcade toolset FIRST, then attempts a solution restore.
+rem    FSharp.sln is entirely packages.config (no PackageReference), so NuGet emits NU1503
+rem    ("nothing to restore") -- expected and non-fatal: the SDK is already installed and the
+rem    legacy HintPath packages are restored in Step 2. We therefore do NOT abort on Step 1's
+rem    exit code; Step 3 (proto) fails loudly if the SDK is genuinely missing.
 echo ---------------- Arcade restore + SDK acquisition ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -restore -configuration Release -projects '%_root%\FSharp.sln' /p:DisableLocalization=true; exit $LASTEXITCODE"
-if errorlevel 1 ( echo Error: Arcade restore / SDK acquisition failed 1>&2 & exit /b 1 )
 
 rem --- Step 2: restore the legacy packages.config HintPath deps from dotnet-public ---
 rem    No explicit -Source: NuGet.config routes to the approved dotnet-public feed

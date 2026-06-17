@@ -214,7 +214,11 @@
     <Error Text="Expect $(FsYaccToolPath)\$(FsYaccToolExe) to exist" Condition="!Exists('$(FsYaccToolPath)\$(FsYaccToolExe)')" />
   </Target>
 
-  <Import Condition="'$(ProjectLanguage)' == 'FSharp'" Project="$(FSharpTargetsPath)"/>
+  <!-- Guard with Exists(): during the Arcade *restore* pass the proto compiler has not
+       been built yet, so Proto\net40\bin\Microsoft.FSharp.Targets is absent. Restore does
+       not need the F# build targets; the real build (after the proto exists) imports them,
+       and ValidateBuildTools still hard-fails if FSharpTargetsPath is missing at build time. -->
+  <Import Condition="'$(ProjectLanguage)' == 'FSharp' AND Exists('$(FSharpTargetsPath)')" Project="$(FSharpTargetsPath)"/>
 
   <!-- Hook up .NET Core to enable solution refresh of packages -->
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">
