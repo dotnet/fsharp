@@ -393,3 +393,93 @@ let X = 43
         let mvid1, mvid2 = calculateRefAssMvids codeWithLiteral42 codeWithLiteral43
         // Different literal values should produce different MVIDs
         Assert.NotEqual(mvid1, mvid2)
+
+    // https://github.com/dotnet/fsharp/issues/19928
+    // The core SEQ=PAR invariant: sequential and parallel codegen must produce identical output.
+    // Exercises cross-file inlined closures, byte arrays, and the full deferred drain pipeline.
+    [<Fact>]
+    let ``Sequential and parallel codegen produce identical MVID`` () =
+        let outputDir = DirectoryInfo(Path.Combine(Path.GetTempPath(), $"fsharp-seqpar-{Guid.NewGuid():N}"))
+        outputDir.Create()
+
+        let libFile = """
+module Lib
+
+let inline withClosure f x = (fun y -> f y + x) 1
+
+let data1 = [| 0uy .. 200uy |]
+let data2 = [| 1us; 2us; 3us; 4us; 5us; 6us; 7us; 8us |]
+"""
+
+        let consumerFile i = $"""
+module Consumer%d{i}
+
+let result%d{i} () =
+    let v = Lib.withClosure (fun y -> y * %d{i}) %d{i + 10}
+    v + Lib.data1.[%d{i}] |> int
+"""
+
+        let getMvid (parallelFlag: string) =
+            FSharp(libFile)
+            |> withAdditionalSourceFiles [ for i in 1..30 -> FsSourceWithFileName $"Consumer%d{i}.fs" (consumerFile i) ]
+            |> asLibrary
+            |> withOptimize
+            |> withName "SeqParTest"
+            |> withOutputDirectory (Some outputDir)
+            |> withOptions [ "--deterministic"; parallelFlag ]
+            |> compileGuid
+
+        try
+            let seqMvid = getMvid "--parallelcompilation-"
+            let parMvid = getMvid "--parallelcompilation+"
+            Assert.Equal(seqMvid, parMvid)
+        finally
+            outputDir.Delete(true)
+
+    // Verify that compiled output actually runs correctly — not just that IL is identical.
+    // Guards against the FSharpPlus-class runtime hang caused by dropped .cctor initialization.
+    [<Fact>]
+    let ``Deterministic multi-file compile produces correct runtime behavior`` () =
+        let mainFile = """
+module Main
+
+[<EntryPoint>]
+let main _ =
+    let r1 = ModuleA.valueA
+    let r2 = ModuleB.valueB
+    if r1 = 42 && r2 = 99 then
+        printfn "OK"
+        0
+    else
+        printfn "FAIL: %d %d" r1 r2
+        1
+"""
+
+        let moduleA = """
+module ModuleA
+
+let mutable sideEffect = 0
+do sideEffect <- 42
+let valueA = sideEffect
+"""
+
+        let moduleB = """
+module ModuleB
+
+let mutable sideEffect = 0
+do sideEffect <- 99
+let valueB = sideEffect
+"""
+
+        FSharp(moduleA)
+        |> withAdditionalSourceFiles [
+            FsSourceWithFileName "ModuleB.fs" moduleB
+            FsSourceWithFileName "Main.fs" mainFile
+        ]
+        |> asExe
+        |> withOptimize
+        |> withOptions [ "--deterministic"; "--parallelcompilation+" ]
+        |> compileAndRun
+        |> shouldSucceed
+        |> withOutputContaining "OK"
+        |> ignore
