@@ -10,6 +10,49 @@
 #nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in compilation failures if you attempt to invoke the member constraint from your own code.
 #nowarn "3218" // mismatch of parameter name for 'fst' and 'snd'
 
+#if BUILDING_WITH_LKG
+// Block 9g: BUILDING_WITH_LKG is defined ONLY for the throwaway Proto/bootstrap FSharp.Core.
+// When the proto is seeded with a modern fsc (the .NET 9 SDK compiler), that compiler emits
+// trimming/AOT annotations referencing System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+// a type added in .NET 5 that the 2018-era 15.9 BCL ref-pack (net4x) does not define — producing
+// "internal error: One of your modules expects the type ... to be defined within the module FSharp.Core"
+// (FS0073). Modern FSharp.Core carries this same polyfill; we provide it here ONLY for the proto so
+// the modern fsc can self-host. The SHIPPED 15.9 FSharp.Core (Release config, no BUILDING_WITH_LKG)
+// is built by the 15.9 proto fsc, which does NOT inject these attributes, so the shipped binary is
+// unchanged. Definition copied verbatim from dotnet/fsharp main src/FSharp.Core/prim-types.fs.
+namespace System.Diagnostics.CodeAnalysis
+
+    open System
+    open Microsoft.FSharp.Core
+
+    [<Flags>]
+    type internal DynamicallyAccessedMemberTypes =
+        | None = 0
+        | PublicParameterlessConstructor = 0x0001
+        | PublicConstructors = 0x0003
+        | NonPublicConstructors = 0x0004
+        | PublicMethods = 0x0008
+        | NonPublicMethods = 0x0010
+        | PublicFields = 0x0020
+        | NonPublicFields = 0x0040
+        | PublicNestedTypes = 0x0080
+        | NonPublicNestedTypes = 0x0100
+        | PublicProperties = 0x0200
+        | NonPublicProperties = 0x0400
+        | PublicEvents = 0x0800
+        | NonPublicEvents = 0x1000
+        | Interfaces = 0x2000
+        | All = 0xffffffff
+
+    [<AttributeUsage(
+        AttributeTargets.Field ||| AttributeTargets.ReturnValue ||| AttributeTargets.GenericParameter |||
+        AttributeTargets.Parameter ||| AttributeTargets.Property ||| AttributeTargets.Method,
+        Inherited = false)>]
+    type internal DynamicallyAccessedMembersAttribute (memberTypes: DynamicallyAccessedMemberTypes) =
+        inherit Attribute ()
+        member val MemberTypes = memberTypes with get, set
+#endif
+
 namespace Microsoft.FSharp.Core
 
     open System
@@ -1811,7 +1854,18 @@ namespace Microsoft.FSharp.Core
             let inline HashString (s:string) = 
                  match s with 
                  | null -> 0 
+#if BUILDING_WITH_LKG
+                 // Block 9g: BUILDING_WITH_LKG is defined ONLY for the throwaway Proto/bootstrap
+                 // FSharp.Core (FSharp.Core.fsproj). Modern bootstrap compilers (e.g. the .NET 9 SDK
+                 // fsc used to seed the proto) cannot parse the method-call inline-IL form below
+                 // (FS0371). This branch uses the equivalent managed call so the proto FSharp.Core
+                 // compiles on a modern fsc. The SHIPPED FSharp.Core (Release config, #else branch)
+                 // is unchanged and is built by the 15.9 proto fsc, which DOES parse the inline IL —
+                 // so the shipped FSharp.Core.dll is byte-identical to the legacy bootstrap.
+                 | _ -> s.GetHashCode()
+#else
                  | _ -> (# "call instance int32 [mscorlib]System.String::GetHashCode()" s : int #)
+#endif
                     
             // from mscorlib v4.0.30319
             let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)

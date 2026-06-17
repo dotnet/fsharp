@@ -1,10 +1,10 @@
 {
   "sdk": {
-    "version": "6.0.135",
-    "rollForward": "minor"
+    "version": "9.0.315",
+    "rollForward": "latestMajor"
   },
   "tools": {
-    "dotnet": "6.0.135",
+    "dotnet": "9.0.315",
     "vs": {
       "version": "16.8",
       "components": [

@@ -19,6 +19,18 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <OtherFlags>$(OtherFlags) --stackReserveSize:4096000</OtherFlags>
+    <!--
+      Block 9g: when the proto is seeded with a modern fsc (the .NET 9 SDK compiler), the
+      fsyacc-generated parser (pars.fs, from src/fsharp/pars.fsy) uses the ML-style multiple
+      parenthesized type-parameter syntax (e.g. '(int, int) Map'), which modern fsc removed
+      (FS0062). The mlcompatibility plus langversion 5.0 flags below re-enable exactly that legacy
+      syntax so the modern fsc can compile the 15.9 parser. This is the Fsc-PROTO project (the
+      throwaway bootstrap compiler); the SHIPPED compiler (FSharp.Compiler.Private) is built by the
+      15.9 proto fsc, which accepts the ML syntax natively and needs no flag, so the shipped
+      compiler is unchanged. The legacy fsc 4.1.27 ignores langversion (predates it) and accepts
+      mlcompatibility, so this is harmless if the proto is ever seeded the old way.
+    -->
+    <OtherFlags>$(OtherFlags) --mlcompatibility --langversion:5.0</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <FsSrGen Include="..\FSComp.txt">
@@ -460,14 +472,21 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <!-- Block 9g: proto-only HintPaths repointed from netstandard1.x to portable-net45 libs.
+         The proto is built under the .NET SDK (coreclr) MSBuild, whose RAR rejects netstandard1.x
+         assemblies for the net45 target (dropping them, which cascades to dozens of FS0039 'Blob/
+         BlobBuilder not defined' errors). The portable-net45 libs in these same packages are net45-
+         compatible and resolve cleanly. This is the Fsc-PROTO project only; the shipped
+         FSharp.Compiler.Private keeps its netstandard HintPaths (it is built in phase 2 by the 15.9
+         proto fsc under full-framework MSBuild, where netstandard1.x resolves fine). -->
     <Reference Include="System.Reflection.Metadata">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.1.6.0\lib\netstandard1.1\System.Reflection.Metadata.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.1.6.0\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.Collections.Immutable">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\netstandard1.0\System.Collections.Immutable.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
     </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
@@ -476,18 +495,22 @@
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+      <SpecificVersion>false</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.15.8.166\lib\net46\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
+      <SpecificVersion>false</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.15.8.166\lib\net46\Microsoft.Build.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+      <SpecificVersion>false</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Utilities.Core.15.8.166\lib\net46\Microsoft.Build.Utilities.Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
+      <SpecificVersion>false</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.15.8.166\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
+  <Import Project="$(FSharpSourcesRoot)\buildtools\buildtools.targets" />
 </Project>

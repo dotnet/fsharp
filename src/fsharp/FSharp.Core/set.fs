@@ -447,7 +447,11 @@ namespace Microsoft.FSharp.Collections
             | [],[] ->  0
             | [],_  -> -1
             | _ ,[] ->  1
+#if BUILDING_WITH_LKG
+            | (SetEmpty    :: t1),(SetEmpty    :: t2) -> compareStacks comparer t1 t2
+#else
             | (SetEmpty  _ :: t1),(SetEmpty    :: t2) -> compareStacks comparer t1 t2
+#endif
             | (SetOne(n1k) :: t1),(SetOne(n2k) :: t2) -> 
                  let c = comparer.Compare(n1k,n2k) 
                  if c <> 0 then c else compareStacks comparer t1 t2

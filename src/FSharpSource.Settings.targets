@@ -229,8 +229,10 @@
 
   <PropertyGroup>
     <!-- Compiler tool locations.		-->
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build</FsYaccToolPath>
+    <!-- fslex/fsyacc are built from source (src/buildtools) into artifacts, eliminating the FsLexYacc nuget.org package.
+         Output is byte-identical to FsLexYacc 7.0.6. Overridable via the command line if needed. -->
+    <FsLexToolPath Condition="'$(FsLexToolPath)' == ''">$(FSharpSourcesRoot)\..\artifacts\bin\fslex\Proto</FsLexToolPath>
+    <FsYaccToolPath Condition="'$(FsYaccToolPath)' == ''">$(FSharpSourcesRoot)\..\artifacts\bin\fsyacc\Proto</FsYaccToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>

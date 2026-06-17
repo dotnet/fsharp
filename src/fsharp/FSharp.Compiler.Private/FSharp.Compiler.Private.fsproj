@@ -36,7 +36,7 @@
   </Target>
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
+  <Import Project="$(FSharpSourcesRoot)\buildtools\buildtools.targets" />
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
     <InternalsVisibleTo Include="FSharp.Build" />
