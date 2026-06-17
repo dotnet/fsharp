@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FSharp.Editor.IntegrationTests.Extensions;
 using FSharp.Editor.IntegrationTests.Helpers;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
@@ -87,60 +88,37 @@ internal partial class EditorInProcess
     }
 
     public async Task<IEnumerable<SuggestedActionSet>> InvokeCodeActionListAsync(CancellationToken cancellationToken)
-        => await InvokeCodeActionListAsync(waitForErrorListDiagnostics: true, cancellationToken);
-
-    // waitForErrorListDiagnostics: skip for fixes whose diagnostic is Hidden (e.g. F# unused-opens), which
-    // never appears in the error list - waiting on it there can never succeed and just wastes the timeout.
-    public async Task<IEnumerable<SuggestedActionSet>> InvokeCodeActionListAsync(bool waitForErrorListDiagnostics, CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
         var view = await GetActiveTextViewAsync(cancellationToken);
-        var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
-        var categoryRegistry = await GetComponentModelServiceAsync<ISuggestedActionCategoryRegistryService>(cancellationToken);
+        var componentModel = await GetRequiredGlobalServiceAsync<SComponentModel, IComponentModel>(cancellationToken);
+        var broker = componentModel.GetService<ILightBulbBroker>();
+        var categoryRegistry = componentModel.GetService<ISuggestedActionCategoryRegistryService>();
 
-        // Bring back the 2-minute settle (best producer-agnostic result so far): optionally wait quietly for the
-        // document's diagnostics (no lightbulb churn), then settle for 2 minutes so lagging fix computations
-        // are ready, then invoke. Running this a few times to measure how flaky it really is.
-        if (waitForErrorListDiagnostics)
-        {
-            await WaitForDocumentDiagnosticsAsync(cancellationToken);
-        }
+        // Deterministically wait for the analyzer/diagnostic work that produces the fixes (focus-independent),
+        // so the fix exists before we open the UI session - replaces the old error-list poll and 2-minute sleep.
+        await AsyncOperationWaiter.WaitForFeaturesAsync(
+            componentModel,
+            new[] { AsyncOperationWaiter.Workspace, AsyncOperationWaiter.SolutionCrawlerLegacy, AsyncOperationWaiter.DiagnosticService },
+            cancellationToken);
 
-        await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
+        Task DrainLightBulbAsync(CancellationToken token)
+            => AsyncOperationWaiter.WaitForFeaturesAsync(componentModel, new[] { AsyncOperationWaiter.LightBulb }, token);
 
         try
         {
-            return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.Any, JoinableTaskFactory, cancellationToken);
+            return await LightBulbHelper.GetCodeActionsAsync(broker, view, categoryRegistry.Any, JoinableTaskFactory, DrainLightBulbAsync, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
-            // Report the error-list contents so a failure is self-explaining.
+            // Report the error-list contents and tracking state so a failure is self-explaining.
             var entries = await TestServices.ErrorList.GetAllEntriesAsync(cancellationToken);
             throw new InvalidOperationException(
-                $"{ex.Message}{Environment.NewLine}--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
+                $"{ex.Message}{Environment.NewLine}trackingEnabled={AsyncOperationWaiter.IsTrackingEnabled()}{Environment.NewLine}" +
+                $"--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
                 string.Join(Environment.NewLine, entries),
                 ex);
-        }
-    }
-
-    // Polls the error list (lightly, no lightbulb activity) until the document has at least one diagnostic of
-    // any severity, or a bounded timeout elapses. Best-effort: on timeout we still invoke. (Note: F# unused-opens
-    // is a Hidden diagnostic and never appears here, so for that test this just acts as extra settle time.)
-    private async Task WaitForDocumentDiagnosticsAsync(CancellationToken cancellationToken)
-    {
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(60);
-        while (DateTime.UtcNow < deadline)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var count = await TestServices.ErrorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_MESSAGE, cancellationToken);
-            if (count > 0)
-            {
-                return;
-            }
-
-            await Task.Delay(500, cancellationToken);
         }
     }
 }

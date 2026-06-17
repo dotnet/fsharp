@@ -47,6 +47,7 @@ namespace FSharp.Editor.IntegrationTests.Helpers
             IWpfTextView view,
             ISuggestedActionCategorySet categories,
             JoinableTaskFactory joinableTaskFactory,
+            Func<CancellationToken, Task> drainLightBulbOperationsAsync,
             CancellationToken cancellationToken)
         {
             var start = DateTime.UtcNow;
@@ -65,7 +66,7 @@ namespace FSharp.Editor.IntegrationTests.Helpers
 
                 attempt++;
                 var (sets, detail) = await TryPopulateViaSessionAsync(
-                    broker, view, categories, joinableTaskFactory, cancellationToken);
+                    broker, view, categories, joinableTaskFactory, drainLightBulbOperationsAsync, cancellationToken);
                 lastDetail = $"attempt {attempt}, elapsed {(DateTime.UtcNow - start).TotalSeconds:F1}s: {detail}";
 
                 if (sets.Count > 0)
@@ -82,6 +83,7 @@ namespace FSharp.Editor.IntegrationTests.Helpers
             IWpfTextView view,
             ISuggestedActionCategorySet categories,
             JoinableTaskFactory joinableTaskFactory,
+            Func<CancellationToken, Task> drainLightBulbOperationsAsync,
             CancellationToken cancellationToken)
         {
             await joinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
@@ -140,21 +142,34 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                     populateStatus = $"populate-invoke-failed {ex.GetType().Name}: {ex.Message}";
                 }
 
+                // Deterministically drain the lightbulb async computation (focus-independent) so the terminal event
+                // below reflects the fully-computed sets rather than racing a headless session dismissal.
+                string drainStatus;
+                try
+                {
+                    await drainLightBulbOperationsAsync(cancellationToken);
+                    drainStatus = "drained";
+                }
+                catch (Exception ex)
+                {
+                    drainStatus = $"drain-failed {ex.GetType().Name}: {ex.Message}";
+                }
+
                 using var perAttempt = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 perAttempt.CancelAfter(s_perAttemptTimeout);
 
                 try
                 {
                     var (sets, status) = await eventTcs.Task.WithCancellation(perAttempt.Token);
-                    return (sets, $"{expandStatus}, {populateStatus}, event status={status}, sets={sets.Count}");
+                    return (sets, $"{expandStatus}, {populateStatus}, {drainStatus}, event status={status}, sets={sets.Count}");
                 }
                 catch (SessionDismissedException)
                 {
-                    return (Array.Empty<SuggestedActionSet>(), $"{expandStatus}, {populateStatus}, session dismissed");
+                    return (Array.Empty<SuggestedActionSet>(), $"{expandStatus}, {populateStatus}, {drainStatus}, session dismissed");
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
-                    return (Array.Empty<SuggestedActionSet>(), $"{expandStatus}, {populateStatus}, no terminal event within {s_perAttemptTimeout.TotalSeconds:F0}s");
+                    return (Array.Empty<SuggestedActionSet>(), $"{expandStatus}, {populateStatus}, {drainStatus}, no terminal event within {s_perAttemptTimeout.TotalSeconds:F0}s");
                 }
             }
             finally

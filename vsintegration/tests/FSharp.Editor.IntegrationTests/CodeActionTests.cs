@@ -30,8 +30,7 @@ let x = 42
         await Editor.PlaceCaretAsync("open System", TestToken);
 
         await Workspace.WaitForProjectSystemAsync(TestToken);
-        // Unused-opens is a Hidden diagnostic, so it never appears in the error list - skip that wait.
-        var codeActions = await Editor.InvokeCodeActionListAsync(waitForErrorListDiagnostics: false, TestToken);
+        var codeActions = await Editor.InvokeCodeActionListAsync(TestToken);
         await Workspace.WaitForProjectSystemAsync(TestToken);
 
         Assert.Single(codeActions);
