@@ -2,8 +2,19 @@
   <!-- Import target frameworks from single source of truth.
        We can't import root Directory.Build.props because MSBuildThisFileDirectory would be wrong. -->
   <Import Project="$(MSBuildThisFileDirectory)../../eng/TargetFrameworks.props" />
+  
+  <PropertyGroup>
+    <LocalFSharpBuildBinPath>$(MSBuildThisFileDirectory)/../../artifacts/bin/fsc/Release/$(FSharpNetCoreProductTargetFramework)</LocalFSharpBuildBinPath>    
+  </PropertyGroup>
 
   <PropertyGroup>
+        <!-- 
+      Use FSharpTargetsShim to redirect to the locally built targets file.
+      This is how the .NET SDK supports testing against local F# builds.
+      See https://github.com/dotnet/sdk/blob/main/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
+    -->
+    <FSharpTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpPropsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <NoWarn>$(NoWarn);NU1603</NoWarn> 
     <!-- error NU1603: Warning As Error: Equality depends on Microsoft.NET.ILLink.Tasks 
     (>= 10.0.0-preview.7.25322.101) but Microsoft.NET.ILLink.Tasks 10.0.0-preview.7.25322.101 was not found.

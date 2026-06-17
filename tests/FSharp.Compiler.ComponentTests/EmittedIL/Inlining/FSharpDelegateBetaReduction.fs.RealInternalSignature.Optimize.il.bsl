@@ -45,6 +45,10 @@
       {
       } 
 
+      .method public hidebysig strict virtual instance void  Invoke(!T A_1) runtime managed
+      {
+      } 
+
       .method public hidebysig strict virtual 
               instance class [runtime]System.IAsyncResult 
               BeginInvoke(!T A_1,
@@ -54,10 +58,6 @@
       } 
 
       .method public hidebysig strict virtual instance void  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
-      {
-      } 
-
-      .method public hidebysig strict virtual instance void  Invoke(!T A_1) runtime managed
       {
       } 
 
@@ -84,6 +84,10 @@
       {
       } 
 
+      .method public hidebysig strict virtual instance void  Invoke(!T A_1) runtime managed
+      {
+      } 
+
       .method public hidebysig strict virtual 
               instance class [runtime]System.IAsyncResult 
               BeginInvoke(!T A_1,
@@ -93,10 +97,6 @@
       } 
 
       .method public hidebysig strict virtual instance void  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
-      {
-      } 
-
-      .method public hidebysig strict virtual instance void  Invoke(!T A_1) runtime managed
       {
       } 
 
@@ -123,6 +123,10 @@
       {
       } 
 
+      .method public hidebysig strict virtual instance void  Invoke() runtime managed
+      {
+      } 
+
       .method public hidebysig strict virtual 
               instance class [runtime]System.IAsyncResult 
               BeginInvoke(class [runtime]System.AsyncCallback callback,
@@ -131,10 +135,6 @@
       } 
 
       .method public hidebysig strict virtual instance void  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
-      {
-      } 
-
-      .method public hidebysig strict virtual instance void  Invoke() runtime managed
       {
       } 
 
@@ -180,6 +180,10 @@
       {
       } 
 
+      .method public hidebysig strict virtual instance void  Invoke() runtime managed
+      {
+      } 
+
       .method public hidebysig strict virtual 
               instance class [runtime]System.IAsyncResult 
               BeginInvoke(class [runtime]System.AsyncCallback callback,
@@ -188,10 +192,6 @@
       } 
 
       .method public hidebysig strict virtual instance void  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
-      {
-      } 
-
-      .method public hidebysig strict virtual instance void  Invoke() runtime managed
       {
       } 
 
@@ -239,6 +239,7 @@
   } 
 
 } 
+
 
 
 

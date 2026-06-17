@@ -79,17 +79,6 @@
 
   } 
 
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
   .method public specialname static bool get_q() cil managed
   {
     

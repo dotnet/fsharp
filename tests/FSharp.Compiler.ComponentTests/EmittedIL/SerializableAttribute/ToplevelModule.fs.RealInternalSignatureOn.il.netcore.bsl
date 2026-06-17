@@ -48,6 +48,19 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .method public static class ABC/Expr NewNum(int32 item) cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  newobj     instance void ABC/Expr::.ctor(int32)
+      IL_0006:  ret
+    } 
+
     .method assembly specialname rtspecialname instance void  .ctor(int32 item) cil managed
     {
       .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
@@ -63,6 +76,56 @@
       IL_0007:  ldarg.1
       IL_0008:  stfld      int32 ABC/Expr::item
       IL_000d:  ret
+    } 
+
+    .method public hidebysig instance int32 get_Item() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 ABC/Expr::item
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig instance int32 get_Tag() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  pop
+      IL_0002:  ldc.i4.0
+      IL_0003:  ret
+    } 
+
+    .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldstr      "%+0.8A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>::Invoke(!0)
+      IL_0015:  ret
+    } 
+
+    .method public strict virtual instance string ToString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/Expr>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>::Invoke(!0)
+      IL_0015:  ret
     } 
 
     .method public hidebysig virtual final instance int32  CompareTo(class ABC/Expr obj) cil managed
@@ -185,6 +248,58 @@
 
       IL_0044:  ldc.i4.0
       IL_0045:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0,
+               class ABC/Expr V_1,
+               class [runtime]System.Collections.IEqualityComparer V_2)
+      IL_0000:  ldarg.0
+      IL_0001:  brfalse.s  IL_0024
+
+      IL_0003:  ldc.i4.0
+      IL_0004:  stloc.0
+      IL_0005:  ldarg.0
+      IL_0006:  pop
+      IL_0007:  ldarg.0
+      IL_0008:  stloc.1
+      IL_0009:  ldc.i4.0
+      IL_000a:  stloc.0
+      IL_000b:  ldc.i4     0x9e3779b9
+      IL_0010:  ldarg.1
+      IL_0011:  stloc.2
+      IL_0012:  ldloc.1
+      IL_0013:  ldfld      int32 ABC/Expr::item
+      IL_0018:  ldloc.0
+      IL_0019:  ldc.i4.6
+      IL_001a:  shl
+      IL_001b:  ldloc.0
+      IL_001c:  ldc.i4.2
+      IL_001d:  shr
+      IL_001e:  add
+      IL_001f:  add
+      IL_0020:  add
+      IL_0021:  stloc.0
+      IL_0022:  ldloc.0
+      IL_0023:  ret
+
+      IL_0024:  ldc.i4.0
+      IL_0025:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  callvirt   instance int32 ABC/Expr::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
     } 
 
     .method public hidebysig instance bool Equals(class ABC/Expr obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -311,121 +426,6 @@
       IL_0013:  ret
     } 
 
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0,
-               class ABC/Expr V_1,
-               class [runtime]System.Collections.IEqualityComparer V_2)
-      IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0024
-
-      IL_0003:  ldc.i4.0
-      IL_0004:  stloc.0
-      IL_0005:  ldarg.0
-      IL_0006:  pop
-      IL_0007:  ldarg.0
-      IL_0008:  stloc.1
-      IL_0009:  ldc.i4.0
-      IL_000a:  stloc.0
-      IL_000b:  ldc.i4     0x9e3779b9
-      IL_0010:  ldarg.1
-      IL_0011:  stloc.2
-      IL_0012:  ldloc.1
-      IL_0013:  ldfld      int32 ABC/Expr::item
-      IL_0018:  ldloc.0
-      IL_0019:  ldc.i4.6
-      IL_001a:  shl
-      IL_001b:  ldloc.0
-      IL_001c:  ldc.i4.2
-      IL_001d:  shr
-      IL_001e:  add
-      IL_001f:  add
-      IL_0020:  add
-      IL_0021:  stloc.0
-      IL_0022:  ldloc.0
-      IL_0023:  ret
-
-      IL_0024:  ldc.i4.0
-      IL_0025:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  callvirt   instance int32 ABC/Expr::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
-    .method public static class ABC/Expr NewNum(int32 item) cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                  int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  newobj     instance void ABC/Expr::.ctor(int32)
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance string ToString() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldstr      "%+A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/Expr>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>::Invoke(!0)
-      IL_0015:  ret
-    } 
-
-    .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldstr      "%+0.8A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/Expr,string>::Invoke(!0)
-      IL_0015:  ret
-    } 
-
-    .method public hidebysig instance int32 get_Item() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 ABC/Expr::item
-      IL_0006:  ret
-    } 
-
-    .method public hidebysig instance int32 get_Tag() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  pop
-      IL_0002:  ldc.i4.0
-      IL_0003:  ret
-    } 
-
     .property instance int32 Tag()
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -483,6 +483,74 @@
       IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
                                                                                  valuetype [runtime]System.Runtime.Serialization.StreamingContext)
       IL_0008:  ret
+    } 
+
+    .method public hidebysig specialname instance int32  get_Data0() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 ABC/MyExn::Data0@
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance string get_Message() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/MyExn>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/MyExn,string>::Invoke(!0)
+      IL_0015:  ret
+    } 
+
+    .method public hidebysig virtual instance int32 GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  7
+      .locals init (int32 V_0,
+               class [runtime]System.Collections.IEqualityComparer V_1)
+      IL_0000:  ldarg.0
+      IL_0001:  brfalse.s  IL_0023
+
+      IL_0003:  ldc.i4.0
+      IL_0004:  stloc.0
+      IL_0005:  ldc.i4     0x9e3779b9
+      IL_000a:  ldarg.1
+      IL_000b:  stloc.1
+      IL_000c:  ldarg.0
+      IL_000d:  castclass  ABC/MyExn
+      IL_0012:  call       instance int32 ABC/MyExn::get_Data0()
+      IL_0017:  ldloc.0
+      IL_0018:  ldc.i4.6
+      IL_0019:  shl
+      IL_001a:  ldloc.0
+      IL_001b:  ldc.i4.2
+      IL_001c:  shr
+      IL_001d:  add
+      IL_001e:  add
+      IL_001f:  add
+      IL_0020:  stloc.0
+      IL_0021:  ldloc.0
+      IL_0022:  ret
+
+      IL_0023:  ldc.i4.0
+      IL_0024:  ret
+    } 
+
+    .method public hidebysig virtual instance int32 GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  callvirt   instance int32 ABC/MyExn::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
     } 
 
     .method public hidebysig instance bool Equals(class [runtime]System.Exception obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -621,74 +689,6 @@
       IL_0013:  ret
     } 
 
-    .method public hidebysig virtual instance int32 GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  7
-      .locals init (int32 V_0,
-               class [runtime]System.Collections.IEqualityComparer V_1)
-      IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0023
-
-      IL_0003:  ldc.i4.0
-      IL_0004:  stloc.0
-      IL_0005:  ldc.i4     0x9e3779b9
-      IL_000a:  ldarg.1
-      IL_000b:  stloc.1
-      IL_000c:  ldarg.0
-      IL_000d:  castclass  ABC/MyExn
-      IL_0012:  call       instance int32 ABC/MyExn::get_Data0()
-      IL_0017:  ldloc.0
-      IL_0018:  ldc.i4.6
-      IL_0019:  shl
-      IL_001a:  ldloc.0
-      IL_001b:  ldc.i4.2
-      IL_001c:  shr
-      IL_001d:  add
-      IL_001e:  add
-      IL_001f:  add
-      IL_0020:  stloc.0
-      IL_0021:  ldloc.0
-      IL_0022:  ret
-
-      IL_0023:  ldc.i4.0
-      IL_0024:  ret
-    } 
-
-    .method public hidebysig virtual instance int32 GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  callvirt   instance int32 ABC/MyExn::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
-    .method public hidebysig specialname instance int32  get_Data0() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 ABC/MyExn::Data0@
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance string get_Message() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldstr      "%+A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/MyExn>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/MyExn,string>::Invoke(!0)
-      IL_0015:  ret
-    } 
-
     .property instance int32 Data0()
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
@@ -750,6 +750,19 @@
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .method public static class ABC/ABC/Expr NewNum(int32 item) cil managed
+      {
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                    int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  newobj     instance void ABC/ABC/Expr::.ctor(int32)
+        IL_0006:  ret
+      } 
+
       .method assembly specialname rtspecialname instance void  .ctor(int32 item) cil managed
       {
         .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
@@ -765,6 +778,56 @@
         IL_0007:  ldarg.1
         IL_0008:  stfld      int32 ABC/ABC/Expr::item
         IL_000d:  ret
+      } 
+
+      .method public hidebysig instance int32 get_Item() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      int32 ABC/ABC/Expr::item
+        IL_0006:  ret
+      } 
+
+      .method public hidebysig instance int32 get_Tag() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  pop
+        IL_0002:  ldc.i4.0
+        IL_0003:  ret
+      } 
+
+      .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldstr      "%+0.8A"
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_000f:  ldarg.0
+        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>::Invoke(!0)
+        IL_0015:  ret
+      } 
+
+      .method public strict virtual instance string ToString() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldstr      "%+A"
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/ABC/Expr>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_000f:  ldarg.0
+        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>::Invoke(!0)
+        IL_0015:  ret
       } 
 
       .method public hidebysig virtual final instance int32  CompareTo(class ABC/ABC/Expr obj) cil managed
@@ -887,6 +950,58 @@
 
         IL_0044:  ldc.i4.0
         IL_0045:  ret
+      } 
+
+      .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  7
+        .locals init (int32 V_0,
+                 class ABC/ABC/Expr V_1,
+                 class [runtime]System.Collections.IEqualityComparer V_2)
+        IL_0000:  ldarg.0
+        IL_0001:  brfalse.s  IL_0024
+
+        IL_0003:  ldc.i4.0
+        IL_0004:  stloc.0
+        IL_0005:  ldarg.0
+        IL_0006:  pop
+        IL_0007:  ldarg.0
+        IL_0008:  stloc.1
+        IL_0009:  ldc.i4.0
+        IL_000a:  stloc.0
+        IL_000b:  ldc.i4     0x9e3779b9
+        IL_0010:  ldarg.1
+        IL_0011:  stloc.2
+        IL_0012:  ldloc.1
+        IL_0013:  ldfld      int32 ABC/ABC/Expr::item
+        IL_0018:  ldloc.0
+        IL_0019:  ldc.i4.6
+        IL_001a:  shl
+        IL_001b:  ldloc.0
+        IL_001c:  ldc.i4.2
+        IL_001d:  shr
+        IL_001e:  add
+        IL_001f:  add
+        IL_0020:  add
+        IL_0021:  stloc.0
+        IL_0022:  ldloc.0
+        IL_0023:  ret
+
+        IL_0024:  ldc.i4.0
+        IL_0025:  ret
+      } 
+
+      .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+        IL_0006:  callvirt   instance int32 ABC/ABC/Expr::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+        IL_000b:  ret
       } 
 
       .method public hidebysig instance bool Equals(class ABC/ABC/Expr obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -1013,121 +1128,6 @@
         IL_0013:  ret
       } 
 
-      .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  7
-        .locals init (int32 V_0,
-                 class ABC/ABC/Expr V_1,
-                 class [runtime]System.Collections.IEqualityComparer V_2)
-        IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_0024
-
-        IL_0003:  ldc.i4.0
-        IL_0004:  stloc.0
-        IL_0005:  ldarg.0
-        IL_0006:  pop
-        IL_0007:  ldarg.0
-        IL_0008:  stloc.1
-        IL_0009:  ldc.i4.0
-        IL_000a:  stloc.0
-        IL_000b:  ldc.i4     0x9e3779b9
-        IL_0010:  ldarg.1
-        IL_0011:  stloc.2
-        IL_0012:  ldloc.1
-        IL_0013:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0018:  ldloc.0
-        IL_0019:  ldc.i4.6
-        IL_001a:  shl
-        IL_001b:  ldloc.0
-        IL_001c:  ldc.i4.2
-        IL_001d:  shr
-        IL_001e:  add
-        IL_001f:  add
-        IL_0020:  add
-        IL_0021:  stloc.0
-        IL_0022:  ldloc.0
-        IL_0023:  ret
-
-        IL_0024:  ldc.i4.0
-        IL_0025:  ret
-      } 
-
-      .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-        IL_0006:  callvirt   instance int32 ABC/ABC/Expr::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-        IL_000b:  ret
-      } 
-
-      .method public static class ABC/ABC/Expr NewNum(int32 item) cil managed
-      {
-        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                    int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  newobj     instance void ABC/ABC/Expr::.ctor(int32)
-        IL_0006:  ret
-      } 
-
-      .method public strict virtual instance string ToString() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldstr      "%+A"
-        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/ABC/Expr>::.ctor(string)
-        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-        IL_000f:  ldarg.0
-        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>::Invoke(!0)
-        IL_0015:  ret
-      } 
-
-      .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldstr      "%+0.8A"
-        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
-        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-        IL_000f:  ldarg.0
-        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/Expr,string>::Invoke(!0)
-        IL_0015:  ret
-      } 
-
-      .method public hidebysig instance int32 get_Item() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0006:  ret
-      } 
-
-      .method public hidebysig instance int32 get_Tag() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  pop
-        IL_0002:  ldc.i4.0
-        IL_0003:  ret
-      } 
-
       .property instance int32 Tag()
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1185,6 +1185,74 @@
         IL_0003:  call       instance void [runtime]System.Exception::.ctor(class [runtime]System.Runtime.Serialization.SerializationInfo,
                                                                                    valuetype [runtime]System.Runtime.Serialization.StreamingContext)
         IL_0008:  ret
+      } 
+
+      .method public hidebysig specialname instance int32  get_Data0() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      int32 ABC/ABC/MyExn::Data0@
+        IL_0006:  ret
+      } 
+
+      .method public strict virtual instance string get_Message() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldstr      "%+A"
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/ABC/MyExn>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_000f:  ldarg.0
+        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/MyExn,string>::Invoke(!0)
+        IL_0015:  ret
+      } 
+
+      .method public hidebysig virtual instance int32 GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  7
+        .locals init (int32 V_0,
+                 class [runtime]System.Collections.IEqualityComparer V_1)
+        IL_0000:  ldarg.0
+        IL_0001:  brfalse.s  IL_0023
+
+        IL_0003:  ldc.i4.0
+        IL_0004:  stloc.0
+        IL_0005:  ldc.i4     0x9e3779b9
+        IL_000a:  ldarg.1
+        IL_000b:  stloc.1
+        IL_000c:  ldarg.0
+        IL_000d:  castclass  ABC/ABC/MyExn
+        IL_0012:  call       instance int32 ABC/ABC/MyExn::get_Data0()
+        IL_0017:  ldloc.0
+        IL_0018:  ldc.i4.6
+        IL_0019:  shl
+        IL_001a:  ldloc.0
+        IL_001b:  ldc.i4.2
+        IL_001c:  shr
+        IL_001d:  add
+        IL_001e:  add
+        IL_001f:  add
+        IL_0020:  stloc.0
+        IL_0021:  ldloc.0
+        IL_0022:  ret
+
+        IL_0023:  ldc.i4.0
+        IL_0024:  ret
+      } 
+
+      .method public hidebysig virtual instance int32 GetHashCode() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+        IL_0006:  callvirt   instance int32 ABC/ABC/MyExn::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+        IL_000b:  ret
       } 
 
       .method public hidebysig instance bool Equals(class [runtime]System.Exception obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -1321,74 +1389,6 @@
 
         IL_0012:  ldc.i4.0
         IL_0013:  ret
-      } 
-
-      .method public hidebysig virtual instance int32 GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  7
-        .locals init (int32 V_0,
-                 class [runtime]System.Collections.IEqualityComparer V_1)
-        IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_0023
-
-        IL_0003:  ldc.i4.0
-        IL_0004:  stloc.0
-        IL_0005:  ldc.i4     0x9e3779b9
-        IL_000a:  ldarg.1
-        IL_000b:  stloc.1
-        IL_000c:  ldarg.0
-        IL_000d:  castclass  ABC/ABC/MyExn
-        IL_0012:  call       instance int32 ABC/ABC/MyExn::get_Data0()
-        IL_0017:  ldloc.0
-        IL_0018:  ldc.i4.6
-        IL_0019:  shl
-        IL_001a:  ldloc.0
-        IL_001b:  ldc.i4.2
-        IL_001c:  shr
-        IL_001d:  add
-        IL_001e:  add
-        IL_001f:  add
-        IL_0020:  stloc.0
-        IL_0021:  ldloc.0
-        IL_0022:  ret
-
-        IL_0023:  ldc.i4.0
-        IL_0024:  ret
-      } 
-
-      .method public hidebysig virtual instance int32 GetHashCode() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-        IL_0006:  callvirt   instance int32 ABC/ABC/MyExn::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-        IL_000b:  ret
-      } 
-
-      .method public hidebysig specialname instance int32  get_Data0() cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ABC/ABC/MyExn::Data0@
-        IL_0006:  ret
-      } 
-
-      .method public strict virtual instance string get_Message() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldstr      "%+A"
-        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/ABC/MyExn>::.ctor(string)
-        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-        IL_000f:  ldarg.0
-        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/MyExn,string>::Invoke(!0)
-        IL_0015:  ret
       } 
 
       .property instance int32 Data0()
@@ -1543,6 +1543,7 @@
   } 
 
 } 
+
 
 
 

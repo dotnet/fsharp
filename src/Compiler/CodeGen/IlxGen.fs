@@ -2039,7 +2039,32 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             else
                 tdef.CustomAttrs
 
-        let sortedMethods = gmethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
+        // Methods come from two sources with different ordering semantics:
+        //   1. User method definitions added during the sequential spine walk (ctors,
+        //      properties, member bindings). Preserve insertion order for these.
+        //   2. Deferred-codegen methods (closure invokers with '@' in name) — sort by
+        //      name for deterministic parallel-emit ordering.
+        let sortedMethods =
+            let userMethods = ResizeArray<struct (string * int) * ILMethodDef>()
+            let deferredMethods = ResizeArray<struct (string * int) * ILMethodDef>()
+
+            for entry in gmethods do
+                let struct (name, _) = fst entry
+
+                if name.Contains("@") then
+                    deferredMethods.Add(entry)
+                else
+                    userMethods.Add(entry)
+
+            let sortedUser =
+                userMethods
+                |> Seq.sortBy (fun (struct (_, k), _) -> k)
+                |> Seq.map snd
+                |> List.ofSeq
+
+            let sortedDeferred = deferredMethods |> Seq.sortBy fst |> Seq.map snd |> List.ofSeq
+
+            sortedUser @ sortedDeferred
 
         tdef.With(
             methods = mkILMethods sortedMethods,
@@ -10920,7 +10945,8 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
             GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenvinner mdef
             |> ignore
 
-            GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
+            if not (cgbuf.mgbuf.GetCurrentFields(tref) |> Seq.isEmpty) then
+                GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
 
 /// Generate the namespace fragments in a single file
 and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: CheckedImplFileAfterOptimization) =
