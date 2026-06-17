@@ -45,6 +45,15 @@ if (-not $sdkFSharp) {
 if (-not $sdkFSharp) { throw "No >= 9.x .NET SDK with FSharp\fsc.dll found under: $($roots -join '; ')" }
 $dotnet = Join-Path $dotnetRoot 'dotnet.exe'
 
+# The from-source build tools (fslex/fsyacc/fssrgen) are framework-dependent net9.0 apphosts.
+# On a clean CI agent the .NET 9 runtime lives under the Arcade-installed .dotnet (NOT globally
+# registered), so the apphosts fail with "You must install or update .NET to run this application".
+# Point DOTNET_ROOT at the resolved dotnet root (and put it first on PATH) so they find the runtime.
+$env:DOTNET_ROOT = $dotnetRoot
+$env:DOTNET_ROOT_X64 = $dotnetRoot
+$env:DOTNET_MULTILEVEL_LOOKUP = '0'
+$env:PATH = "$dotnetRoot;$env:PATH"
+
 # 8.3 short paths: the legacy Fsc MSBuild task splits a path on its first space
 # (e.g. "C:\Program Files\..."), so feed it space-free short paths.
 $fso = New-Object -ComObject Scripting.FileSystemObject
