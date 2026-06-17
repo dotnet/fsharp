@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Block 9j: this project exists ONLY so the Arcade engine can acquire the .NET SDK
+       (global.json tools.dotnet) and its toolset during CI, WITHOUT restoring the
+       all-packages.config FSharp.sln. Restoring FSharp.sln via the SDK yields NU1503
+       ("nothing to restore") and a "no project to restore" error that the 1ES task
+       surfaces as a build failure. The legacy HintPath packages are restored separately
+       by NuGet.exe (CIBuild.cmd Step 1); the product is built in Step 4. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+  </PropertyGroup>
+
+</Project>
