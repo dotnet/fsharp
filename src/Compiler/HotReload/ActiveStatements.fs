@@ -37,6 +37,7 @@ namespace FSharp.Compiler.CodeAnalysis
 /// Mirrors <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue.SourceSpan</c>.
 /// All coordinates are zero-based.
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpSourceSpan =
     {
         /// <summary>Zero-based start line.</summary>
@@ -54,6 +55,7 @@ type FSharpSourceSpan =
 /// Mirrors <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue.ManagedModuleMethodId</c>
 /// (the module MVID of Roslyn's <c>ManagedMethodId</c> is implicit in the single-module session).
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpManagedModuleMethodId =
     {
         /// <summary>MethodDef metadata token (0x06xxxxxx) of the method that contains the statement.</summary>
@@ -69,6 +71,7 @@ type FSharpManagedModuleMethodId =
 /// Active instruction identifier: the information necessary to track an active instruction within a
 /// debug session. Mirrors <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue.ManagedInstructionId</c>.
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpManagedInstructionId =
     {
         /// <summary>Method version which the instruction is scoped to.</summary>
@@ -82,6 +85,7 @@ type FSharpManagedInstructionId =
 /// Replaces the <c>LeafFrame</c>/<c>NonLeafFrame</c> bits of Roslyn's <c>ActiveStatementFlags</c>
 /// with a closed union so "neither leaf nor non-leaf" is unrepresentable.
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 [<RequireQualifiedAccess>]
 type FSharpActiveStatementFrameKind =
     /// <summary>Every thread owning the statement is stopped in a leaf (topmost) frame.</summary>
@@ -102,6 +106,7 @@ type FSharpActiveStatementFrameKind =
 /// Flags describing an active statement, aggregated across the threads that own it.
 /// Mirrors <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue.ActiveStatementFlags</c>.
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpActiveStatementFlags =
     {
         /// <summary>Leaf/non-leaf position of the owning frames (Roslyn <c>LeafFrame</c>/<c>NonLeafFrame</c> bits).</summary>
@@ -130,6 +135,7 @@ type FSharpActiveStatementFlags =
 /// supplied to the compiler before a delta is emitted.
 /// Mirrors <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue.ManagedActiveStatementDebugInfo</c>.
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpManagedActiveStatementDebugInfo =
     {
         /// <summary>The instruction of the active statement that is being executed.</summary>
@@ -147,6 +153,7 @@ type FSharpManagedActiveStatementDebugInfo =
 /// before the edit starts on <see cref="NewLine"/> after it. Zero-based line numbers.
 /// Mirrors <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue.SourceLineUpdate</c>.
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpSourceLineUpdate =
     {
         /// <summary>Zero-based line number before the update was made.</summary>
@@ -161,6 +168,7 @@ type FSharpSourceLineUpdate =
 /// entry's old line (Roslyn emits explicit zero-delta entries to terminate shifted segments, and so
 /// does F#). Mirrors <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue.SequencePointUpdates</c>.
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpSequencePointUpdates =
     {
         /// <summary>Name of the modified file as stored in the PDB.</summary>
@@ -174,6 +182,7 @@ type FSharpSequencePointUpdates =
 /// the instruction pointer to the appropriate location in the new method version.
 /// Mirrors <c>Microsoft.CodeAnalysis.Contracts.EditAndContinue.ManagedActiveStatementUpdate</c>.
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpManagedActiveStatementUpdate =
     {
         /// <summary>Method id (token and version) BEFORE the change was made, as supplied by the debugger.</summary>
@@ -190,6 +199,7 @@ type FSharpManagedActiveStatementUpdate =
 /// carries only the remapped statements (statements in methods untouched by the delta are simply
 /// absent); F# reports the untouched ones explicitly so hosts can assert method-up-to-date-ness.
 /// </summary>
+[<Experimental("This FCS API is experimental and subject to change.")>]
 [<RequireQualifiedAccess>]
 type FSharpActiveStatementRemapResult =
     /// <summary>The containing method was recompiled by this delta; the statement maps to a new span.</summary>
