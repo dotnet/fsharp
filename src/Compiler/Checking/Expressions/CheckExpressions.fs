@@ -3029,7 +3029,7 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
     if isSealedTy g srcTy then
         error(RuntimeCoercionSourceSealed(denv, srcTy, m))
 
-    if (isSealedTy g tgtTy || isTyparTy g tgtTy || not (isInterfaceTy g srcTy)) && not (isObjTyAnyNullness g srcTy) then
+    if (isSealedTy g tgtTy || isTyparTy g tgtTy || not (isInterfaceTy g srcTy)) && not (isObjTyAnyNullness g srcTy) && not (isAnonUnionTy g srcTy) then
         let context = if isCast then ContextInfo.RuntimeTypeTest isOperator else ContextInfo.NoContext
         AddCxTypeMustSubsumeType context denv cenv.css m NoTrace srcTy tgtTy
 

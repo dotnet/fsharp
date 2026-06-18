@@ -653,6 +653,24 @@ let discrimsEq (g: TcGlobals) d1 d2 =
 
   | _ -> false
 
+/// Exhaustiveness of anonymous union pattern matching
+let isAnonymousUnionExhaustive g amap m constituents discrims =
+        constituents |> List.forall (fun constituent ->
+            discrims |> List.exists (fun discrim ->
+                match discrim with
+                | DecisionTreeTest.IsInst (_, tgtTy) ->
+                    // Check if this type test covers the constituent
+                    TypeFeasiblySubsumesType 0 g amap m tgtTy CanCoerce constituent ||
+                    typeEquiv g tgtTy constituent
+                | _ -> false))
+
+let isAnonymousUnionAndExhaustive g amap m srcTy discrims =
+    srcTy
+    |> stripTyEqns g
+    |> (function
+    | TType_anon_union(_, constituents) -> isAnonymousUnionExhaustive g amap m constituents discrims
+    | _ -> false)
+
 /// Redundancy of 'isinst' patterns
 let isDiscrimSubsumedBy g amap m discrim taken =
     discrimsEq g discrim taken
@@ -1550,6 +1568,7 @@ let private CompilePatternBasic
         | DecisionTreeTest.Const (Const.SByte _) :: _  when simulSetOfCases.Length = 256 ->  None
         | DecisionTreeTest.Const Const.Unit :: _  ->  None
         | DecisionTreeTest.UnionCase (ucref, _) :: _ when  simulSetOfCases.Length = ucref.TyconRef.UnionCasesArray.Length -> None
+        | DecisionTreeTest.IsInst (srcTy, _) :: _ when isAnonymousUnionAndExhaustive g amap mExpr srcTy simulSetOfDiscrims -> None
         | DecisionTreeTest.ActivePatternCase _ :: _ -> error(InternalError("DecisionTreeTest.ActivePatternCase should have been eliminated", mMatch))
         | _ ->
             let fallthroughPathFrontiers = List.filter (isRefuted >> not) fallthroughPathFrontiers
