@@ -185,22 +185,36 @@ module TcResolutionsExtensions =
 
                         if cnrs.Length = 1 then
                             cnrs
-                        elif cnrs.Length = 2 then
-                            match cnrs[0].Item, cnrs[1].Item with
-                            | Item.Value _, Item.CustomBuilder _ -> [| cnrs[1] |]
-                            | Item.CustomBuilder _, Item.Value _ -> [| cnrs[0] |]
-                            | _ -> cnrs
                         else
-                            cnrs
+                            let isCE (cnr: CapturedNameResolution) =
+                                match cnr.Item with
+                                | Item.CustomBuilder _
+                                | Item.CustomOperation _ -> true
+                                | _ -> false
+
+                            let isPlainValue (cnr: CapturedNameResolution) =
+                                match cnr.Item with
+                                | Item.Value _ -> true
+                                | _ -> false
+
+                            let ceCnrs = cnrs |> Array.filter isCE
+
+                            if ceCnrs.Length > 0 && cnrs |> Array.forall (fun c -> isCE c || isPlainValue c) then
+                                ceCnrs
+                            else
+                                cnrs
 
                     let resolutions =
-                        match range with
-                        | Some range ->
-                            sResolutions.CapturedNameResolutions.ToArray()
-                            |> Array.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
-                            |> Array.groupBy (fun cnr -> cnr.Range)
-                            |> Array.collect (fun (_, cnrs) -> takeCustomBuilder cnrs)
-                        | None -> sResolutions.CapturedNameResolutions.ToArray()
+                        let baseCnrs =
+                            match range with
+                            | Some range ->
+                                sResolutions.CapturedNameResolutions.ToArray()
+                                |> Array.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
+                            | None -> sResolutions.CapturedNameResolutions.ToArray()
+
+                        baseCnrs
+                        |> Array.groupBy (fun cnr -> cnr.Range)
+                        |> Array.collect (fun (_, cnrs) -> takeCustomBuilder cnrs)
 
                     let duplicates = HashSet<range>(comparer)
 
@@ -209,6 +223,9 @@ module TcResolutionsExtensions =
                     let inline add m (typ: SemanticClassificationType) =
                         if duplicates.Add m then
                             results.Add(SemanticClassificationItem((m, typ)))
+
+                    let isDelegateInvokeMemberName name =
+                        name = "Invoke" || name = "BeginInvoke" || name = "EndInvoke"
 
                     resolutions
                     |> Array.iter (fun cnr ->
@@ -228,7 +245,13 @@ module TcResolutionsExtensions =
                             elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                                 add m SemanticClassificationType.Property
                             elif vref.IsMember then
-                                add m SemanticClassificationType.Method
+                                let isSynthesizedDelegateMember =
+                                    isDelegateInvokeMemberName vref.DisplayName
+                                    && vref.HasDeclaringEntity
+                                    && vref.DeclaringEntity.IsFSharpDelegateTycon
+
+                                if not isSynthesizedDelegateMember then
+                                    add m SemanticClassificationType.Method
                             elif IsOperatorDisplayName vref.DisplayName then
                                 add m SemanticClassificationType.Operator
                             else
@@ -296,13 +319,16 @@ module TcResolutionsExtensions =
                                 let isSynthesizedDelegateMemberInDecl =
                                     minfos
                                     |> List.forall (fun minfo ->
-                                        let name = minfo.LogicalName
-
-                                        (name = "Invoke" || name = "BeginInvoke" || name = "EndInvoke")
+                                        isDelegateInvokeMemberName minfo.LogicalName
                                         && minfo.ApparentEnclosingTyconRef.IsFSharpDelegateTycon
                                         && rangeContainsRange minfo.ApparentEnclosingTyconRef.Range m)
 
                                 if isSynthesizedDelegateMemberInDecl then
+                                    ()
+                                elif
+                                    minfos
+                                    |> List.forall (fun minfo -> minfo.LogicalName = "GetSlice" || minfo.LogicalName = "SetSlice")
+                                then
                                     ()
                                 elif
                                     minfos

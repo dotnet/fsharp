@@ -6772,7 +6772,7 @@ and ExpandIndexArgs (cenv: cenv) (synLeftExprOpt: SynExpr option) indexArgs =
                    | Some (a2, isFromEnd2) ->
                        yield mkSynSomeExpr range2 (if isFromEnd2 then rewriteReverseExpr pos a2 range2 else a2)
                    | None ->
-                       yield mkSynNoneExpr range1
+                       yield mkSynNoneExpr range2
                 ]
         )
         |> List.collect id
