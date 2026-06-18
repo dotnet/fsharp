@@ -2085,7 +2085,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     member _.NestedTypeDefs = gnested
 
-    member _.GetCurrentFields() = gfields |> Seq.map snd |> Seq.readonly
+    member _.HasFields() = gfields.Count > 0
 
     /// Merge Get and Set property nodes, which we generate independently for F# code
     /// when we come across their corresponding methods.
@@ -2563,8 +2563,8 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
 
     member _.FindNestedTypeDefBuilder(tref: ILTypeRef) = gtdefs.FindNestedTypeDefBuilder(tref)
 
-    member _.GetCurrentFields(tref: ILTypeRef) =
-        gtdefs.FindNestedTypeDefBuilder(tref).GetCurrentFields()
+    member _.HasFields(tref: ILTypeRef) =
+        gtdefs.FindNestedTypeDefBuilder(tref).HasFields()
 
     member _.AddReflectedDefinition(vspec: Val, expr) =
         reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, expr))
@@ -10922,9 +10922,9 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
             // Safe: delayCodeGen=true defers raw-data field additions to the drain phase,
             // so SEQ and PAR see the same spine-walk-only fields at this point.
             if not eenv.delayCodeGen then
-                invalidOp "GetCurrentFields predicate requires delayCodeGen=true for SEQ=PAR safety"
+                invalidOp "HasFields predicate requires delayCodeGen=true for SEQ=PAR safety"
 
-            if not (cgbuf.mgbuf.GetCurrentFields(tref) |> Seq.isEmpty) then
+            if cgbuf.mgbuf.HasFields(tref) then
                 GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
 
 /// Generate the namespace fragments in a single file
@@ -12633,7 +12633,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
         mgbuf.AddTypeDef(tref, tdef, false, false, None, m)
         Some tref
 
-let PrimeStableNamesForCodegen (cenv: cenv) (_mgbuf: AssemblyBuilder) (implFiles: CheckedImplFileAfterOptimization list) =
+let PrimeStableNamesForCodegen (cenv: cenv) (implFiles: CheckedImplFileAfterOptimization list) =
     let g = cenv.g
 
     match g.CompilerGlobalState with
@@ -12650,67 +12650,20 @@ let PrimeStableNamesForCodegen (cenv: cenv) (_mgbuf: AssemblyBuilder) (implFiles
 
         let primingFolder =
             { ExprFolder0 with
-                exprIntercept =
-                    fun _recurseF noIntercept () expr ->
-                        match stripDebugPoints expr with
-                        | Expr.Let(TBind(v, _, _), _, _, _) ->
-                            if IsCompilerGeneratedName v.LogicalName then
-                                primeVal v
-                            noIntercept () expr
-                        | Expr.LetRec(binds, _, _, _) ->
-                            for TBind(v, _, _) in binds do
-                                if IsCompilerGeneratedName v.LogicalName then
-                                    primeVal v
-                            noIntercept () expr
-                        | _ -> noIntercept () expr }
-
-        let foldExpr expr = FoldExpr primingFolder () expr |> ignore
-
-        let walkTopBindRhs (v: Val) (rhs: Expr) =
-            let rec stripOuterTopLambdas (e: Expr) =
-                match e with
-                | Expr.TyLambda(_, _, body, _, _) -> stripOuterTopLambdas body
-                | Expr.Lambda(_, ctorThisValOpt, baseValOpt, _, body, _, _) when Option.isNone ctorThisValOpt && Option.isNone baseValOpt ->
-                    stripOuterTopLambdas body
-                | _ -> e
-
-            if v.IsCompiledAsTopLevel then
-                foldExpr (stripOuterTopLambdas rhs)
-            else
-                foldExpr rhs
-
-        let rec walkModuleContents (x: ModuleOrNamespaceContents) =
-            match x with
-            | TMDefRec(_, _, _, mbinds, _) ->
-                for mb in mbinds do
-                    walkModuleBinding mb
-            | TMDefLet(TBind(v, rhs, _), _) ->
-                primeVal v
-                walkTopBindRhs v rhs
-            | TMDefDo(e, _) -> foldExpr e
-            | TMDefOpens _ -> ()
-            | TMDefs defs ->
-                for d in defs do
-                    walkModuleContents d
-
-        and walkModuleBinding (mb: ModuleOrNamespaceBinding) =
-            match mb with
-            | ModuleOrNamespaceBinding.Binding(TBind(v, rhs, _)) ->
-                primeVal v
-                walkTopBindRhs v rhs
-            | ModuleOrNamespaceBinding.Module(_, mdef) ->
-                walkModuleContents mdef
+                valBindingSiteIntercept =
+                    fun () (_, v) ->
+                        primeVal v
+                        () }
 
         for implFile in implFiles do
-            let (CheckedImplFile(_, _, contents, _, _, _, _)) = implFile.ImplFile
-            walkModuleContents contents
+            FoldImplFile primingFolder () implFile.ImplFile |> ignore
 
 let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some(firstImplFiles, lastImplFile) ->
 
-        PrimeStableNamesForCodegen cenv mgbuf implFiles
+        PrimeStableNamesForCodegen cenv implFiles
 
         let eenv, _ =
             firstImplFiles

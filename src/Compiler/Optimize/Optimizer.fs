@@ -4491,7 +4491,11 @@ and p_ModuleInfo x st =
 
     let mergeRacedFlags (vref: ValRef, vinfo: ValInfo) =
         let merged = vinfo.ValMakesNoCriticalTailcalls || vref.Deref.MakesNoCriticalTailcalls
-        vref, { vinfo with ValMakesNoCriticalTailcalls = merged }
+
+        if merged = vinfo.ValMakesNoCriticalTailcalls then
+            vref, vinfo
+        else
+            vref, { vinfo with ValMakesNoCriticalTailcalls = merged }
 
     let entries =
         x.ValInfos.Entries
