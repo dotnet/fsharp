@@ -470,7 +470,6 @@
     <Compile Include="CodeGen\DeltaTableLayout.fs" />
     <Compile Include="CodeGen\DeltaIndexSizing.fs" />
     <Compile Include="CodeGen\DeltaMetadataSerializer.fs" />
-    <Compile Include="CodeGen\DeltaMetadataSrmWriter.fs" />
     <Compile Include="CodeGen\FSharpDeltaMetadataWriter.fs" />
     <Compile Include="HotReload\SymbolMatcher.fs" />
     <Compile Include="HotReload\HotReloadAccessorTypes.fs" />

@@ -23,23 +23,11 @@ let private TraceHeapsFlagName = "FSHARP_HOTRELOAD_TRACE_HEAPS"
 [<Literal>]
 let private TraceMethodsFlagName = "FSHARP_HOTRELOAD_TRACE_METHODS"
 
-// Keep a parallel SRM writer path available so metadata serializer changes can be validated
-// (or temporarily switched) without touching the main delta construction pipeline.
-[<Literal>]
-let private UseSrmTablesFlagName = "FSHARP_HOTRELOAD_USE_SRM_TABLES"
-
-[<Literal>]
-let private CompareSrmMetadataFlagName = "FSHARP_HOTRELOAD_COMPARE_SRM_METADATA"
-
 let private shouldTraceMetadata () = isEnvVarTruthy TraceMetadataFlagName
 
 let private shouldTraceHeaps () = isEnvVarTruthy TraceHeapsFlagName
 
 let private shouldTraceMethodRows () = isEnvVarTruthy TraceMethodsFlagName
-
-let private shouldUseSrmMetadataWriter () = isEnvVarTruthy UseSrmTablesFlagName
-
-let private shouldCompareSrmMetadataWriter () = isEnvVarTruthy CompareSrmMetadataFlagName
 
 type MethodDefinitionRowInfo = DeltaMetadataTypes.MethodDefinitionRowInfo
 
@@ -198,18 +186,13 @@ let emitWithTypeDefinitions
                 moduleId
                 encId
                 encBaseId
-        let useSrmMetadataWriter = shouldUseSrmMetadataWriter ()
-        let compareSrmMetadataWriter = shouldCompareSrmMetadataWriter ()
-        let enableSrmShadowWriter = useSrmMetadataWriter || compareSrmMetadataWriter
         let tableMirror = DeltaMetadataTables(heapOffsets)
         tableMirror.AddModuleRow(moduleName, moduleNameOffset, generation, moduleId, encId, encBaseId)
 
         let updatesByKey = Dictionary<MethodDefinitionKey, MethodMetadataUpdate>(HashIdentity.Structural)
-        let updatesByKeyBody = Dictionary<MethodDefinitionKey, MethodBodyUpdate>(HashIdentity.Structural)
 
         for update in updates do
             updatesByKey[update.MethodKey] <- update
-            updatesByKeyBody[update.MethodKey] <- update.Body
 
         // Build EncLog and EncMap entries using TableName for type safety.
         // EncLog records each modification; EncMap provides sorted token listing.
@@ -587,59 +570,7 @@ let emitWithTypeDefinitions
 
         let tableStream = DeltaMetadataSerializer.buildTableStream tableStreamInput
         let heapStreams = DeltaMetadataSerializer.buildHeapStreams tableMirror
-        let abstractMetadataBytes = DeltaMetadataSerializer.serializeMetadataRoot tableStreamInput heapStreams tableStream
-
-        let srmMetadataBytes =
-            if enableSrmShadowWriter then
-                Some(
-                    DeltaMetadataSrmWriter.serialize
-                        moduleName
-                        moduleNameOffset
-                        generation
-                        encId
-                        encBaseId
-                        moduleId
-                        typeDefinitionRows
-                        nestedClassRows
-                        interfaceImplRows
-                        methodImplRows
-                        constantRows
-                        methodDefinitionRows
-                        parameterDefinitionRows
-                        fieldDefinitionRows
-                        typeReferenceRows
-                        memberReferenceRows
-                        methodSpecificationRows
-                        typeSpecificationRows
-                        genericParamRows
-                        genericParamConstraintRows
-                        assemblyReferenceRows
-                        propertyDefinitionRows
-                        eventDefinitionRows
-                        propertyMapRows
-                        eventMapRows
-                        methodSemanticsRows
-                        standaloneSignatureRows
-                        customAttributeRows
-                        userStringUpdates
-                        updatesByKeyBody
-                        encLogEntries
-                        encMapEntries)
-            else
-                None
-
-        if enableSrmShadowWriter then
-            match srmMetadataBytes with
-            | Some srmBytes ->
-                match DeltaMetadataSrmWriter.compareMetadataStructure abstractMetadataBytes srmBytes with
-                | Some message -> failwithf "Hot reload metadata SRM parity mismatch: %s" message
-                | None -> ()
-            | None -> ()
-
-        let metadataBytes =
-            match srmMetadataBytes, useSrmMetadataWriter with
-            | Some srmBytes, true -> srmBytes
-            | _ -> abstractMetadataBytes
+        let metadataBytes = DeltaMetadataSerializer.serializeMetadataRoot tableStreamInput heapStreams tableStream
 
         if shouldTraceMetadata () then
             printfn

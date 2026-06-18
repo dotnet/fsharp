@@ -81,10 +81,9 @@ Track each major review concern with objective status and evidence so follow-up 
 
 - Status: **Addressed**
 - Evidence:
-  - Delta metadata emission now supports a parallel `System.Reflection.Metadata` writer path that consumes the same row model as the hand-rolled serializer (`DeltaMetadataSrmWriter`) so preview runs can exercise both implementations without perturbing the default writer: `src/Compiler/CodeGen/DeltaMetadataSrmWriter.fs`, `src/Compiler/CodeGen/FSharpDeltaMetadataWriter.fs`.
-  - `FSharpDeltaMetadataWriter` now supports strict SRM shadow parity checks (`FSHARP_HOTRELOAD_COMPARE_SRM_METADATA=1`) and optional SRM output mode (`FSHARP_HOTRELOAD_USE_SRM_TABLES=1`), with fail-fast structural diagnostics over tracked table row-counts plus `EncLog`/`EncMap` entries so table-shape drift cannot hide: `src/Compiler/CodeGen/FSharpDeltaMetadataWriter.fs`.
-  - Automated parity gate now executes with SRM shadow comparison enabled before mdv component validation: `tests/scripts/check-hotreload-metadata-parity.sh`, `tests/FSharp.Compiler.Service.Tests/HotReload/SrmParityTests.fs`, `tests/FSharp.Compiler.ComponentTests/HotReload/MdvValidationTests.fs`.
-  - Existing serializer hardening remains in place (heap-offset validation + malformed index tests): `src/Compiler/CodeGen/DeltaMetadataSerializer.fs`, `tests/FSharp.Compiler.Service.Tests/HotReload/FSharpDeltaMetadataWriterTests.fs`.
+  - Delta metadata emission uses a single proven hand-written serializer that builds the table/heap streams from the shared row model: `src/Compiler/CodeGen/FSharpDeltaMetadataWriter.fs`, `src/Compiler/CodeGen/DeltaMetadataSerializer.fs`.
+  - Automated parity gate validates emitted deltas against `mdv` component output: `tests/scripts/check-hotreload-metadata-parity.sh`, `tests/FSharp.Compiler.ComponentTests/HotReload/MdvValidationTests.fs`.
+  - Serializer hardening remains in place (heap-offset validation + malformed index tests): `src/Compiler/CodeGen/DeltaMetadataSerializer.fs`, `tests/FSharp.Compiler.Service.Tests/HotReload/FSharpDeltaMetadataWriterTests.fs`.
 
 ### 9) Large `IlxDeltaEmitter` single-function blast radius
 

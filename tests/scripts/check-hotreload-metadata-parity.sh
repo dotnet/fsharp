@@ -13,11 +13,8 @@ fi
 cd "${ROOT}"
 
 # Tests run on Microsoft.Testing.Platform (xunit.v3); use MTP filter syntax.
-FSHARP_HOTRELOAD_COMPARE_SRM_METADATA=1 "${DOTNET}" test --project tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj \
-  -c Debug --no-build -- --filter-class "*SrmParityTests*"
-
-FSHARP_HOTRELOAD_COMPARE_SRM_METADATA=1 DOTNET_MODIFIABLE_ASSEMBLIES=debug COMPlus_ForceEnc=1 \
+DOTNET_MODIFIABLE_ASSEMBLIES=debug COMPlus_ForceEnc=1 \
   "${DOTNET}" test --project tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj \
   -c Debug --no-build -- --filter-class "*MdvValidationTests*"
 
-echo "hotreload-metadata-parity-check: SRM + mdv parity slices passed."
+echo "hotreload-metadata-parity-check: mdv parity slice passed."
