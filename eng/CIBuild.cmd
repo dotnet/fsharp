@@ -59,17 +59,14 @@ rem    Arcade signs the embedded FSharp.Core.dll / compiler / e_sqlite3.dll with
 rem    %SignType% / %TeamName% defaults above are ready scaffolding for that step.
 echo ---------------- Building product (real) ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Product.sln' /m:1 /p:DisableLocalization=true; exit $LASTEXITCODE"
-if errorlevel 1 ( echo Error: product build failed 1>&2 & exit /b 1 )
+exit /b %ERRORLEVEL%
 
-rem --- Step 5: vsintegration IDE build (EPIC V, NON-FATAL while iterating) ---
-rem    Builds the VS IDE assemblies (vsintegration\src) via FSharp.Insertion.sln so the
-rem    signed VS insertion (EPIC I) can later package the VSIX. The product projects are a
-rem    superset prerequisite (already built in Step 4 -> incremental here). This step is
-rem    deliberately NON-FATAL: EPIC V is mid-iteration (Block 9n repointed the MSBuild deps;
-rem    BC30389/VSIX work remains) and a vsintegration failure must NOT regress the proven-
-rem    green product build at 213261902. Read THIS step's log for the PASS/FAIL + real error;
-rem    it is made fatal (and folded into the signed insertion build) once green.
-echo ---------------- Building vsintegration IDE (EPIC V, non-fatal) ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -restore -build -configuration Release -projects '%_root%\FSharp.Insertion.sln' /m:1 /p:DisableLocalization=true; exit $LASTEXITCODE"
-if errorlevel 1 ( echo ##vso[task.logissue type=warning]EPIC V: vsintegration IDE build FAILED ^(non-fatal^) - see log above ) else ( echo EPIC V: vsintegration IDE build PASSED )
-exit /b 0
+rem --- vsintegration IDE build: STAGED, not wired here (Blocks 9n-9q) ---
+rem    FSharp.Insertion.sln (product + 9 vsintegration\src IDE projects) and the Block-9n/9p MSBuild
+rem    repoint are validated to COMPILE on CI (build 3003213: product green, IDE assemblies compiled,
+rem    MSB3277 + FS2003 resolved). It is intentionally NOT built here: the VsSDK CreatePkgDef step for
+rem    the legacy VS package FSharp.ProjectSystem.FSharp loads the delay-signed assembly at build time and
+rem    fails strong-name validation on the SN-enforcing dnceng agents - signing happens post-build (Arcade
+rem    -sign), so the assembly is never SN-valid in time. This couples vsintegration packaging to the signed
+rem    build (EPIC S/I): it is re-wired, with SN-skip/signing, in the insertion build. See
+rem    files/signing-insertion-backlog.md.
