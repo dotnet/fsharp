@@ -604,6 +604,7 @@
     <Compile Include="Service\BackgroundCompiler.fs" />
     <Compile Include="Service\TransparentCompiler.fsi" />
     <Compile Include="Service\TransparentCompiler.fs" />
+    <Compile Include="HotReload\FSharpHotReloadSession.fs" />
     <Compile Include="Service\service.fsi" />
     <Compile Include="Service\service.fs" />
     <Compile Include="Service\FSharpWorkspaceState.fs" />
