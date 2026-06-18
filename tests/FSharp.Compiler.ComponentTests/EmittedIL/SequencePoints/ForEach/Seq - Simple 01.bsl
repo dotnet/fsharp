@@ -24,20 +24,18 @@ Module::f
 
   (4,11-4,13)  in
     IL_0013:  ldloc.1
-    IL_0014:  callvirt MoveNext
+    IL_0014:  callvirt IEnumerator::MoveNext
     IL_0019:  brtrue.s IL_000b
     IL_001b:  leave.s IL_002f
     IL_001d:  ldloc.1
     IL_001e:  isinst IDisposable
     IL_0023:  stloc.3
-
-  <hidden>
     IL_0024:  ldloc.3
     IL_0025:  brfalse.s IL_002e
 
   <hidden>
     IL_0027:  ldloc.3
-    IL_0028:  callvirt Dispose
+    IL_0028:  callvirt IDisposable::Dispose
     IL_002d:  endfinally
 
   <hidden>

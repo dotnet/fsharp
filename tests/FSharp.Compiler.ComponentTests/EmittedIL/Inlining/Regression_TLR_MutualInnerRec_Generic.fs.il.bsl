@@ -58,19 +58,18 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldc.i4.1
-    IL_0002:  ldc.i4.0
-    IL_0003:  call       !!0 assembly::outer<int32>(!!0,
+    IL_0000:  ldc.i4.1
+    IL_0001:  ldc.i4.0
+    IL_0002:  call       !!0 assembly::outer<int32>(!!0,
                                                                                  !!0)
-    IL_0008:  ldc.i4.1
-    IL_0009:  bne.un.s   IL_000d
+    IL_0007:  ldc.i4.1
+    IL_0008:  bne.un.s   IL_000c
 
-    IL_000b:  ldc.i4.0
-    IL_000c:  ret
+    IL_000a:  ldc.i4.0
+    IL_000b:  ret
 
-    IL_000d:  ldc.i4.1
-    IL_000e:  ret
+    IL_000c:  ldc.i4.1
+    IL_000d:  ret
   } 
 
   .method assembly static !!T  a@4<T>(!!T zero,
@@ -79,39 +78,37 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.1
-    IL_0002:  brtrue.s   IL_0006
+    IL_0000:  ldarg.1
+    IL_0001:  brtrue.s   IL_0005
 
-    IL_0004:  ldarg.2
-    IL_0005:  ret
+    IL_0003:  ldarg.2
+    IL_0004:  ret
 
-    IL_0006:  nop
-    IL_0007:  ldarg.1
-    IL_0008:  ldc.i4.2
-    IL_0009:  rem
-    IL_000a:  brtrue.s   IL_0019
+    IL_0005:  ldarg.1
+    IL_0006:  ldc.i4.2
+    IL_0007:  rem
+    IL_0008:  brtrue.s   IL_0017
 
-    IL_000c:  ldarg.0
-    IL_000d:  ldarg.1
-    IL_000e:  ldc.i4.1
-    IL_000f:  sub
-    IL_0010:  ldarg.2
-    IL_0011:  tail.
-    IL_0013:  call       !!0 assembly::b@8<!!0>(!!0,
+    IL_000a:  ldarg.0
+    IL_000b:  ldarg.1
+    IL_000c:  ldc.i4.1
+    IL_000d:  sub
+    IL_000e:  ldarg.2
+    IL_000f:  tail.
+    IL_0011:  call       !!0 assembly::b@8<!!0>(!!0,
                                                                              int32,
                                                                              !!0)
-    IL_0018:  ret
+    IL_0016:  ret
 
-    IL_0019:  ldarg.0
-    IL_001a:  ldarg.1
-    IL_001b:  ldc.i4.1
-    IL_001c:  sub
-    IL_001d:  ldarg.2
-    IL_001e:  starg.s    v
-    IL_0020:  starg.s    n
-    IL_0022:  starg.s    zero
-    IL_0024:  br.s       IL_0000
+    IL_0017:  ldarg.0
+    IL_0018:  ldarg.1
+    IL_0019:  ldc.i4.1
+    IL_001a:  sub
+    IL_001b:  ldarg.2
+    IL_001c:  starg.s    v
+    IL_001e:  starg.s    n
+    IL_0020:  starg.s    zero
+    IL_0022:  br.s       IL_0000
   } 
 
   .method assembly static !!T  b@8<T>(!!T zero,
@@ -120,39 +117,37 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.1
-    IL_0002:  brtrue.s   IL_0006
+    IL_0000:  ldarg.1
+    IL_0001:  brtrue.s   IL_0005
 
-    IL_0004:  ldarg.0
-    IL_0005:  ret
+    IL_0003:  ldarg.0
+    IL_0004:  ret
 
-    IL_0006:  nop
-    IL_0007:  ldarg.1
-    IL_0008:  ldc.i4.2
-    IL_0009:  rem
-    IL_000a:  brtrue.s   IL_0019
+    IL_0005:  ldarg.1
+    IL_0006:  ldc.i4.2
+    IL_0007:  rem
+    IL_0008:  brtrue.s   IL_0017
 
-    IL_000c:  ldarg.0
-    IL_000d:  ldarg.1
-    IL_000e:  ldc.i4.1
-    IL_000f:  sub
-    IL_0010:  ldarg.2
-    IL_0011:  starg.s    v
-    IL_0013:  starg.s    n
-    IL_0015:  starg.s    zero
-    IL_0017:  br.s       IL_0000
+    IL_000a:  ldarg.0
+    IL_000b:  ldarg.1
+    IL_000c:  ldc.i4.1
+    IL_000d:  sub
+    IL_000e:  ldarg.2
+    IL_000f:  starg.s    v
+    IL_0011:  starg.s    n
+    IL_0013:  starg.s    zero
+    IL_0015:  br.s       IL_0000
 
-    IL_0019:  ldarg.0
-    IL_001a:  ldarg.1
-    IL_001b:  ldc.i4.1
-    IL_001c:  sub
-    IL_001d:  ldarg.2
-    IL_001e:  tail.
-    IL_0020:  call       !!0 assembly::a@4<!!0>(!!0,
+    IL_0017:  ldarg.0
+    IL_0018:  ldarg.1
+    IL_0019:  ldc.i4.1
+    IL_001a:  sub
+    IL_001b:  ldarg.2
+    IL_001c:  tail.
+    IL_001e:  call       !!0 assembly::a@4<!!0>(!!0,
                                                                              int32,
                                                                              !!0)
-    IL_0025:  ret
+    IL_0023:  ret
   } 
 
 } 
