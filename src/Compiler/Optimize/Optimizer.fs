@@ -4476,6 +4476,8 @@ and p_ValInfo (v: ValInfo) st =
     p_bool v.ValMakesNoCriticalTailcalls st
 
 and p_ModuleInfo x st =
+    // Stamp tiebreaker is safe: every Val reaching ValInfos.Entries has its stamp
+    // assigned during single-threaded type-checking.
     let stableValKey (vref: ValRef) =
         let k = vref.Deref.GetLinkageFullKey()
 

@@ -436,6 +436,38 @@ let result%d{i} () =
         finally
             outputDir.Delete(true)
 
+    // bytesKey correctness: two distinct inline byte arrays in one function body get the same
+    // range after remarkExpr inlining. Without bytesKey they would alias → wrong runtime values.
+    [<Fact>]
+    let ``Inline byte arrays with same range produce distinct correct values`` () =
+        let libFile = """
+module Lib
+let inline twoArrays () = ([| 10uy; 20uy; 30uy; 40uy; 50uy; 60uy |], [| 99uy; 88uy; 77uy; 66uy; 55uy; 44uy |])
+"""
+
+        let mainFile = """
+module Main
+[<EntryPoint>]
+let main _ =
+    let (a, b) = Lib.twoArrays ()
+    if a.[0] = 10uy && b.[0] = 99uy then
+        printfn "OK"
+        0
+    else
+        printfn "FAIL: %d %d" a.[0] b.[0]
+        1
+"""
+
+        FSharp(libFile)
+        |> withAdditionalSourceFiles [ FsSourceWithFileName "Main.fs" mainFile ]
+        |> asExe
+        |> withOptimize
+        |> withOptions [ "--deterministic"; "--nowarn:75"; "--parallelcompilation+" ]
+        |> compileAndRun
+        |> shouldSucceed
+        |> withStdOutContains "OK"
+        |> ignore
+
     // Verify that compiled output actually runs correctly — not just that IL is identical.
     // Guards against the FSharpPlus-class runtime hang caused by dropped .cctor initialization.
     [<Theory>]

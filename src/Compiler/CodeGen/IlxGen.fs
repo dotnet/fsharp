@@ -2554,6 +2554,8 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         |> ignore
 
     member this.GetOrCreateRawDataFieldSpec(m: range, bytes: byte[], makeFspec: string -> ILFieldSpec) =
+        // bytesKey is load-bearing: remarkExpr collapses distinct inline arrays to one range,
+        // so bytes content is the sole discriminator preventing silent field aliasing.
         let bytesKey = System.Convert.ToBase64String(bytes)
 
         let key =
@@ -10945,7 +10947,8 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
             // Safe: delayCodeGen=true defers raw-data field additions to the drain phase,
             // so SEQ and PAR see the same spine-walk-only fields at this point.
-            assert eenv.delayCodeGen
+            if not eenv.delayCodeGen then
+                invalidOp "GetCurrentFields predicate requires delayCodeGen=true for SEQ=PAR safety"
 
             if not (cgbuf.mgbuf.GetCurrentFields(tref) |> Seq.isEmpty) then
                 GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
