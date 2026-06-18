@@ -33,11 +33,15 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
 
                     let! unusedRanges = UnusedDeclarations.getUnusedDeclarations (checkResults, (isScriptFile document.FilePath))
 
-                    let! sourceText = document.GetTextAsync()
+                    if checkResults.HasErrors then
+                        return ImmutableArray.Empty
+                    else
+                        let! sourceText = document.GetTextAsync()
 
-                    return
-                        unusedRanges
-                        |> Seq.map (fun m -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
-                        |> Seq.toImmutableArray
+                        return
+                            unusedRanges
+                            |> Seq.map (fun m ->
+                                Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
+                            |> Seq.toImmutableArray
                 }
                 |> CancellableTask.start cancellationToken

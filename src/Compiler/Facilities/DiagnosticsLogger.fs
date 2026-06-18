@@ -132,7 +132,9 @@ exception DiagnosticWithSuggestions of number: int * message: string * range: ra
 /// A diagnostic that is raised when enabled manually, or by default with a language feature
 exception DiagnosticEnabledWithLanguageFeature of number: int * message: string * range: range * enabledByLangFeature: bool
 
-/// A diagnostic that is raised when a diagnostic is obsolete
+type ObsoleteDiagnosticInfo =
+    | ObsoleteDiagnosticInfo of isError: bool * diagnosticId: string option * message: string option * urlFormat: string option
+
 exception ObsoleteDiagnostic of
     isError: bool *
     diagnosticId: string option *
@@ -179,7 +181,7 @@ let inline protectAssemblyExplorationNoReraise dflt1 dflt2 ([<InlineIfLambda>] f
 
 // Attach a range if this is a range dual exception.
 let rec AttachRange m (exn: exn) =
-    if equals m range0 then
+    if Range.equals m range0 then
         exn
     else
         match exn with

@@ -4,8 +4,11 @@ namespace CompilerOptions.Fsc
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
+open FSharp.Test.Utilities
 open System
 open System.IO
+open System.Reflection.Metadata
+open System.Reflection.PortableExecutable
 
 module determinism =
 
@@ -139,3 +142,45 @@ module Determinism
             areSame (Path.ChangeExtension(exename1, "pdb")) (Path.ChangeExtension(exename2, "pdb"))
         | _ -> raise (new Exception "Pathmap1 and PathMap2 do not match")
 
+    /// Compile to ref assembly out-of-process via runFscProcess.
+    /// Separate processes needed because String.GetHashCode is seeded once per process.
+    let private compileRefAssembly (workDir: string) (sourceFile: string) : string * string =
+        Directory.CreateDirectory workDir |> ignore
+        let outDll = Path.Combine(workDir, "Out.dll")
+        let outRef = Path.Combine(workDir, "Out.ref.dll")
+        let defaultOpts = CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
+        let result = runFscProcess [
+            yield "--target:library"
+            yield "--deterministic+"
+            yield! (defaultOpts |> Array.toList)
+            yield $"--refout:{outRef}"
+            yield $"-o:{outDll}"
+            yield sourceFile
+        ]
+        if result.ExitCode <> 0 then
+            failwithf "fsc exit %d\nstdout:%s\nstderr:%s" result.ExitCode result.StdOut result.StdErr
+        outDll, outRef
+
+    let private readMvid (dll: string) : Guid =
+        use peReader = new PEReader(File.OpenRead dll)
+        let reader = peReader.GetMetadataReader()
+        reader.GetGuid(reader.GetModuleDefinition().Mvid)
+
+    // Regression test for https://github.com/dotnet/fsharp/issues/19751
+    // Two separate fsc processes needed to detect randomized String.GetHashCode seeds.
+    [<FactForNETCOREAPP>]
+    let ``Reference assembly MVID is deterministic across separate fsc invocations`` () =
+        let tempRoot =
+            Path.Combine(Path.GetTempPath(), "fsharp-ref-mvid-test-" + Guid.NewGuid().ToString("N"))
+        try
+            Directory.CreateDirectory tempRoot |> ignore
+            let src = Path.Combine(tempRoot, "Foo.fs")
+            File.WriteAllText(src, "module Foo.Core\n\nlet foo (x: int) : int = x + 1\n")
+
+            let dll1, ref1 = compileRefAssembly (Path.Combine(tempRoot, "out1")) src
+            let dll2, ref2 = compileRefAssembly (Path.Combine(tempRoot, "out2")) src
+
+            Assert.Equal(readMvid ref1, readMvid ref2)
+            Assert.Equal(readMvid dll1, readMvid dll2)
+        finally
+            try Directory.Delete(tempRoot, true) with _ -> ()

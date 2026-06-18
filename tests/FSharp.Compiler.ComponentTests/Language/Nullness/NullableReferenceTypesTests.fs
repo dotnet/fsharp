@@ -2066,6 +2066,146 @@ let processMyStr (x:mystring<mykg>) =
     ]
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation over string allows nullable annotation in all positions`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+[<Measure>] type test
+type TestType = string<test>
+
+let x: (TestType | null) = Unchecked.defaultof<TestType>
+
+let consume (s: TestType | null) = ()
+
+let produce () : TestType | null = null
+
+type NullableTestType = TestType | null
+
+let y: (string<test> | null) = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation over user reference type allows nullable annotation`` () =
+    FSharp """module MyLibrary
+
+type MyRef() = member _.Hello = "hi"
+
+[<MeasureAnnotatedAbbreviation>]
+type MyRef<[<Measure>] 'm> = MyRef
+
+[<Measure>] type tag
+type Tagged = MyRef<tag>
+
+let f (x: Tagged | null) : Tagged | null = x
+let g : Tagged | null = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation over value type rejects nullable annotation`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type int<[<Measure>] 'm> = int
+
+[<MeasureAnnotatedAbbreviation>]
+type DateTime<[<Measure>] 'm> = System.DateTime
+
+[<Measure>] type kg
+[<Measure>] type s
+
+let bad1 : (int<kg> | null) = null
+let bad2 : (DateTime<s> | null) = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3260, Line 12, Col 13, Line 12, Col 27, "The type 'int<kg>' does not support a nullness qualification."
+        Error 43, Line 12, Col 13, Line 12, Col 27, "A generic construct requires that the type 'int<kg>' have reference semantics, but it does not, i.e. it is a struct"
+        Error 3260, Line 13, Col 13, Line 13, Col 31, "The type 'DateTime<s>' does not support a nullness qualification."
+        Error 43, Line 13, Col 13, Line 13, Col 31, "A generic construct requires that the type 'DateTime<s>' have reference semantics, but it does not, i.e. it is a struct"
+    ]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Nullness flow and not-null constraints work with MeasureAnnotatedAbbreviation over string`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+[<Measure>] type tag
+type S = string<tag>
+
+let onlyNotNull (s: S) = ()
+
+let widen (x: S) : S | null = x
+
+let narrowBad (x: S | null) : S = x
+
+let matched (x: S | null) =
+    match x with
+    | null -> ()
+    | nn -> onlyNotNull nn
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 13, Col 35, Line 13, Col 36, "Nullness warning: A non-nullable 'S' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation satisfies not-struct constraint`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+[<Measure>] type tag
+type S = string<tag>
+
+let needsRef<'T when 'T : not struct> (x: 'T) = ()
+let callIt (s: S) = needsRef s
+let callNullable (s: S | null) = needsRef s
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation over obj, interface, and chained abbreviation allows nullable`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type obj<[<Measure>] 'm> = obj
+
+[<MeasureAnnotatedAbbreviation>]
+type IDisposable<[<Measure>] 'm> = System.IDisposable
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+type chainedString<[<Measure>] 'm> = string<'m>
+
+[<Measure>] type tag
+
+let a : obj<tag> | null = null
+let b : IDisposable<tag> | null = null
+let c : chainedString<tag> | null = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``ToString on reference type still returns nullable string`` () =
     FSharp """module MyLibrary
 
@@ -2373,3 +2513,25 @@ let main _ = 0
     |> compile
     |> run
     |> verifyOutputContains [|"-1"|]
+
+// https://github.com/dotnet/fsharp/issues/19646
+// After `| null -> … | s -> …`, `s` must keep its type alias, not the BCL type.
+[<Theory>]
+[<InlineData("", "string", "'string'")>]
+[<InlineData("type MyStr = string", "MyStr", "'MyStr'")>]
+[<InlineData("open System\ntype MyUri = Uri", "MyUri", "'MyUri'")>]
+let ``Issue 19646 - type alias is preserved after null pattern``
+    (typeDef: string, paramTypeName: string, expectedSubstring: string) =
+    FSharp $"""module Test
+
+{typeDef}
+
+let test (x: {paramTypeName} | null) : int =
+    match x with
+    | null -> 0
+    | s -> s
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches expectedSubstring

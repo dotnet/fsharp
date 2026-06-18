@@ -272,9 +272,9 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
         | SynExpr.Match(spMatch, expr, clauses, _m, _trivia) ->
             let inputExpr, inputTy, tpenv = TcExprOfUnknownType cenv env tpenv expr
 
-            let tclauses, tpenv =
-                (tpenv, clauses)
-                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, _trivia) as clause) ->
+            let tclauses, (tpenv, _finalInputTy) =
+                ((tpenv, inputTy), clauses)
+                ||> List.mapFold (fun (tpenv, inputTy) (SynMatchClause(pat, cond, innerComp, _, sp, _trivia) as clause) ->
                     let isTrueMatchClause =
                         if clause.IsTrueMatchClause then
                             TcTrueMatchClause.Yes
@@ -290,7 +290,9 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                         | DebugPointAtTarget.No -> envinner
 
                     let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
-                    MatchClause(patR, condR, TTarget(vspecs, innerExpr, None), patR.Range), tpenv)
+
+                    let nextInputTy = EliminateNullnessFromInputType cenv.g inputTy patR condR
+                    MatchClause(patR, condR, TTarget(vspecs, innerExpr, None), patR.Range), (tpenv, nextInputTy))
 
             let inputExprTy = tyOfExpr cenv.g inputExpr
             let inputExprMark = inputExpr.Range
@@ -385,7 +387,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             Some(resultExpr, tpenv)
 
-        | SynExpr.YieldOrReturn(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnKeyword = m }) ->
+        | SynExpr.YieldOrReturn(flags = (isYield, _); expr = synYieldExpr; range = m) ->
             let env = { env with eIsControlFlow = false }
             let genResultTy = NewInferenceType g
 
@@ -402,7 +404,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                 if IsControlFlowExpression synYieldExpr then
                     resultExpr
                 else
-                    mkDebugPoint synYieldExpr.Range resultExpr
+                    mkDebugPoint m resultExpr
 
             Some(resultExpr, tpenv)
 

@@ -2100,7 +2100,7 @@ type FormattedDiagnostic =
     | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
 let FormatDiagnosticLocation (tcConfig: TcConfig) (m: Range) : FormattedDiagnosticLocation =
-    if equals m rangeStartup || equals m rangeCmdArgs then
+    if Range.equals m rangeStartup || Range.equals m rangeCmdArgs then
         {
             Range = m
             TextRepresentation = ""
