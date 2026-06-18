@@ -60,7 +60,16 @@
 
   <ItemGroup>
     <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" />
-    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="$(MicrosoftVisualFSharpMSBuild150PackageVersion)" />
+    <!-- Block 9n (EPIC V): replaced nuget.org-only Microsoft.VisualFSharp.Msbuild.15.0 (Microsoft.Build.*
+         15.0.0.0) with dotnet-public packages at assembly 15.1.0.0 (matches Block-9g compiler@15.8.166, no
+         MSB3277). Compile-only (VS provides MSBuild at runtime). Conversion.Core/Engine back the legacy
+         ProjectFileConverter usage in ProjectFactory.cs (kept as-is: no product change). -->
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildSubstituteVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildSubstituteVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildSubstituteVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildSubstituteVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Conversion.Core" Version="$(MicrosoftBuildConversionCoreVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Engine" Version="$(MicrosoftBuildEngineVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="$(MicrosoftVisualStudioShellImmutable100PackageVersion)" />

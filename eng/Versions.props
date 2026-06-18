@@ -138,6 +138,13 @@
     <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
     <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
     <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
+    <!-- Block 9n (EPIC V): dotnet-public substitutes for the nuget.org-only Microsoft.VisualFSharp.Msbuild.15.0
+         package used by vsintegration. All assembly version 15.1.0.0 (MSBuild froze it across 15.x/16.x),
+         matching the Block-9g compiler repoint to Microsoft.Build 15.8.166 -> no MSB3277. Conversion.Core/Engine
+         (legacy, needed by FSharp.ProjectSystem.* ProjectFileConverter) are on dotnet-public only at 15.1.x. -->
+    <MicrosoftBuildSubstituteVersion>15.8.166</MicrosoftBuildSubstituteVersion>
+    <MicrosoftBuildConversionCoreVersion>15.1.237-preview5</MicrosoftBuildConversionCoreVersion>
+    <MicrosoftBuildEngineVersion>15.1.237-preview5</MicrosoftBuildEngineVersion>
     <!-- Visual Studio editor packages -->
     <VisualStudioEditorPackagesVersion>16.8.39</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
