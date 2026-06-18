@@ -429,6 +429,14 @@ type HotReloadEmissionContext =
 
 let private emissionContextLock = obj ()
 
+// INVARIANT: a single process-wide slot, written only by FSharpChecker.Compile (which brackets
+// set/finally-clear around one in-process compile) and read only by the fsc emit hook's driver
+// phases; the primary EmitDelta path never consults it. This is safe today because no host calls
+// FSharpChecker.Compile concurrently for two projects of one session — fsc.exe is one project per
+// process and FCS hosts serialize these compiles. If a concurrent same-session compiler host is
+// ever introduced, scope this per-compile (thread it through tcConfig.compilerEmitHook) rather
+// than via AsyncLocal: F# async does not flow ExecutionContext like C# await, so an AsyncLocal
+// approach would need a concurrent-compile test to confirm it before being relied on.
 let mutable private currentEmissionContext: HotReloadEmissionContext option = None
 
 /// Sets (or clears, with None) the scoped emission context consulted by the fsc emit hook.

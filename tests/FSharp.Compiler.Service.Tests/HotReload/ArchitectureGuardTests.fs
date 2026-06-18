@@ -226,3 +226,23 @@ let ``delta builder fallback keeps staged signature disambiguation`` () =
     Assert.Contains("resolvedTypeNames |> List.exists (typeNamesEquivalent key.DeclaringType)", source)
     Assert.Contains("Ok rawCandidates", source)
     Assert.DoesNotContain("| _ -> MethodResolved", source)
+
+[<Fact>]
+let ``ilxgen centralizes compiler-generated-name access through helper wrappers`` () =
+    // Mirrors tests/scripts/check-ilxgen-name-path.sh so the name-path guard runs in CI: every
+    // compiler-generated name must flow through the freshIlxName/freshCoreName/nextIlxOrdinal
+    // wrappers, which are the only sites permitted to touch the CompilerGlobalState generators.
+    // A new direct generator call outside a wrapper (or a removed wrapper) breaks the hot-reload
+    // name-replay invariant and must fail here.
+    let source = readCompilerFile "src/Compiler/CodeGen/IlxGen.fs"
+
+    Assert.Contains("let private freshIlxName", source)
+    Assert.Contains("let private freshCoreName", source)
+    Assert.Contains("let private nextIlxOrdinal", source)
+
+    let directGeneratorCalls =
+        System.Text.RegularExpressions.Regex.Matches(
+            source,
+            @"CompilerGlobalState\.Value\.(IlxGenNiceNameGenerator|NiceNameGenerator)\.(FreshCompilerGeneratedName|IncrementOnly)")
+
+    Assert.Equal(3, directGeneratorCalls.Count)
