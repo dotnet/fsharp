@@ -327,7 +327,7 @@ type IncrClassReprInfo =
             nm, takenFieldNames.Add nm
                  
         let reportIfUnused() = 
-            if not v.HasBeenReferenced && not v.IsCompiledAsTopLevel && not (v.DisplayName.StartsWithOrdinal("_")) && not v.IsCompilerGenerated then 
+            if not v.HasBeenReferenced && not (v.DisplayName.StartsWithOrdinal("_")) && not v.IsCompilerGenerated then 
                 warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
 
         let repr = 
@@ -802,7 +802,7 @@ let MakeCtorForIncrClassConstructionPhase2C(
                 // Extend the range of any immediate debug point to include the 'do'
                 let doExpr =
                     match doExpr with
-                    | Expr.DebugPoint(_, innerExpr) -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, innerExpr)
+                    | Expr.DebugPoint(_, innerExpr) -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFull), innerExpr)
                     | e -> e
                 let binder = (fun e -> mkSequential mFull doExpr e)
                 let isPriorToSuperInit = false
@@ -940,7 +940,7 @@ let MakeCtorForIncrClassConstructionPhase2C(
             // Add the debug point
             let inheritsExpr =
                 if inheritsIsVisible then
-                    Expr.DebugPoint(DebugPointAtLeafExpr.Yes inheritsExpr.Range, inheritsExpr)
+                    Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, inheritsExpr.Range), inheritsExpr)
                 else
                     inheritsExpr
                 

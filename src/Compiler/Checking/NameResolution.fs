@@ -1990,7 +1990,7 @@ let ItemsAreEffectivelyEqual g orig other =
          | TType_var (tp1, _), TType_var (tp2, _) ->
             not tp1.IsCompilerGenerated && not tp1.IsFromError &&
             not tp2.IsCompilerGenerated && not tp2.IsFromError &&
-            equals tp1.Range tp2.Range
+            Range.equals tp1.Range tp2.Range
          | AbbrevOrAppTy(tcref1, _), AbbrevOrAppTy(tcref2, _) ->
             tyconRefDefnEq g tcref1 tcref2
          | _ -> false)
@@ -4296,8 +4296,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
             // #16621
             match refinedItem with
             | Item.Property(_, pinfos, _) ->
-                let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
-                RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
+                RegisterUnionCaseTesterForProperty sink itemIdentRange pinfos
             | _ -> ()
 
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
@@ -4372,8 +4371,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 // #16621
                 match refinedItem with
                 | Item.Property(_, pinfos, _) ->
-                    let propIdentRange = if rest.IsEmpty then (List.last lid).idRange else itemRange
-                    RegisterUnionCaseTesterForProperty sink propIdentRange pinfos
+                    RegisterUnionCaseTesterForProperty sink itemIdentRange pinfos
                 | _ -> ()
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =

@@ -178,25 +178,7 @@ let ParseFile fileName =
         |> normalize
         |> sprintf "%s\n"
 
-    let bslPath = $"{fullPath}.bsl"
-    let actualPath = $"{fullPath}.actual"
-
-    let expected =
-        if File.Exists bslPath then
-            File.ReadAllText bslPath |> normalize
-        else
-            "No baseline was found"
-
-    if expected = actual then
-        File.Delete(actualPath)
-    else
-        if shouldUpdateBaselines then
-            File.Delete(actualPath)
-            File.WriteAllText(bslPath, actual)
-        else
-            File.WriteAllText(actualPath, actual)
-
-    Assert.Equal(expected, actual)
+    checkBaseline actual $"{fullPath}.bsl"
 
     // Run type checker to assert that it doesn't fail with the tree produced by the parser
     CompilerAssert.ParseAndTypeCheck([|"--langversion:preview"|], fileName, contents) |> ignore

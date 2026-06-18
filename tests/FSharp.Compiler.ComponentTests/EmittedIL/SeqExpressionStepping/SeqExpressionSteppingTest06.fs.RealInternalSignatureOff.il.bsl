@@ -86,8 +86,10 @@
       {
         
         .maxstack  6
-        .locals init (int32 V_0,
-                 int32 V_1)
+        .locals init (class SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6 V_0,
+                 int32 V_1,
+                 class SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6 V_2,
+                 int32 V_3)
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
         IL_0006:  ldc.i4.1
@@ -107,18 +109,18 @@
         IL_0027:  br.s       IL_0083
 
         IL_0029:  nop
-        IL_002a:  br         IL_00fc
+        IL_002a:  br         IL_00fe
 
         IL_002f:  nop
-        IL_0030:  br         IL_00ef
+        IL_0030:  br         IL_00f1
 
         IL_0035:  nop
-        IL_0036:  br         IL_011d
+        IL_0036:  br         IL_011f
 
         IL_003b:  nop
-        IL_003c:  br.s       IL_003e
-
-        IL_003e:  ldarg.0
+        IL_003c:  ldarg.0
+        IL_003d:  stloc.0
+        IL_003e:  ldloc.0
         IL_003f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6::get_es()
         IL_0044:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
         IL_0049:  stfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::'enum'
@@ -130,7 +132,7 @@
         IL_0057:  ldarg.0
         IL_0058:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::'enum'
         IL_005d:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-        IL_0062:  stloc.0
+        IL_0062:  stloc.1
         IL_0063:  ldstr      "hello"
         IL_0068:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
         IL_006d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -139,7 +141,7 @@
         IL_0074:  ldc.i4.2
         IL_0075:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
         IL_007a:  ldarg.0
-        IL_007b:  ldloc.0
+        IL_007b:  ldloc.1
         IL_007c:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::current
         IL_0081:  ldc.i4.1
         IL_0082:  ret
@@ -160,54 +162,56 @@
         IL_00a4:  ldnull
         IL_00a5:  stfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::'enum'
         IL_00aa:  ldarg.0
-        IL_00ab:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6::get_es()
-        IL_00b0:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-        IL_00b5:  stfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
-        IL_00ba:  ldarg.0
-        IL_00bb:  ldc.i4.3
-        IL_00bc:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
-        IL_00c1:  br.s       IL_00ef
+        IL_00ab:  stloc.2
+        IL_00ac:  ldloc.2
+        IL_00ad:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6::get_es()
+        IL_00b2:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+        IL_00b7:  stfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
+        IL_00bc:  ldarg.0
+        IL_00bd:  ldc.i4.3
+        IL_00be:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
+        IL_00c3:  br.s       IL_00f1
 
-        IL_00c3:  ldarg.0
-        IL_00c4:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
-        IL_00c9:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-        IL_00ce:  stloc.1
-        IL_00cf:  ldstr      "goodbye"
-        IL_00d4:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-        IL_00d9:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-        IL_00de:  pop
-        IL_00df:  ldarg.0
-        IL_00e0:  ldc.i4.4
-        IL_00e1:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
-        IL_00e6:  ldarg.0
-        IL_00e7:  ldloc.1
-        IL_00e8:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::current
-        IL_00ed:  ldc.i4.1
-        IL_00ee:  ret
+        IL_00c5:  ldarg.0
+        IL_00c6:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
+        IL_00cb:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+        IL_00d0:  stloc.3
+        IL_00d1:  ldstr      "goodbye"
+        IL_00d6:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+        IL_00db:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+        IL_00e0:  pop
+        IL_00e1:  ldarg.0
+        IL_00e2:  ldc.i4.4
+        IL_00e3:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
+        IL_00e8:  ldarg.0
+        IL_00e9:  ldloc.3
+        IL_00ea:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::current
+        IL_00ef:  ldc.i4.1
+        IL_00f0:  ret
 
-        IL_00ef:  ldarg.0
-        IL_00f0:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
-        IL_00f5:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
-        IL_00fa:  brtrue.s   IL_00c3
+        IL_00f1:  ldarg.0
+        IL_00f2:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
+        IL_00f7:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
+        IL_00fc:  brtrue.s   IL_00c5
 
-        IL_00fc:  ldarg.0
-        IL_00fd:  ldc.i4.5
-        IL_00fe:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
-        IL_0103:  ldarg.0
-        IL_0104:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
-        IL_0109:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-        IL_010e:  nop
-        IL_010f:  ldarg.0
-        IL_0110:  ldnull
-        IL_0111:  stfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
-        IL_0116:  ldarg.0
-        IL_0117:  ldc.i4.5
-        IL_0118:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
-        IL_011d:  ldarg.0
-        IL_011e:  ldc.i4.0
-        IL_011f:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::current
-        IL_0124:  ldc.i4.0
-        IL_0125:  ret
+        IL_00fe:  ldarg.0
+        IL_00ff:  ldc.i4.5
+        IL_0100:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
+        IL_0105:  ldarg.0
+        IL_0106:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
+        IL_010b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+        IL_0110:  nop
+        IL_0111:  ldarg.0
+        IL_0112:  ldnull
+        IL_0113:  stfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
+        IL_0118:  ldarg.0
+        IL_0119:  ldc.i4.5
+        IL_011a:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
+        IL_011f:  ldarg.0
+        IL_0120:  ldc.i4.0
+        IL_0121:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::current
+        IL_0126:  ldc.i4.0
+        IL_0127:  ret
       } 
 
       .method public strict virtual instance void Close() cil managed
@@ -225,7 +229,7 @@
         IL_0011:  br.s       IL_0019
 
         IL_0013:  nop
-        IL_0014:  br         IL_00a0
+        IL_0014:  br         IL_009e
 
         IL_0019:  nop
         .try
@@ -242,74 +246,72 @@
           IL_003d:  br.s       IL_0051
 
           IL_003f:  nop
-          IL_0040:  br.s       IL_0080
+          IL_0040:  br.s       IL_007e
 
           IL_0042:  nop
-          IL_0043:  br.s       IL_006c
+          IL_0043:  br.s       IL_006a
 
           IL_0045:  nop
-          IL_0046:  br.s       IL_006b
+          IL_0046:  br.s       IL_0069
 
           IL_0048:  nop
-          IL_0049:  br.s       IL_0055
+          IL_0049:  br.s       IL_0053
 
           IL_004b:  nop
-          IL_004c:  br.s       IL_0054
+          IL_004c:  br.s       IL_0052
 
           IL_004e:  nop
-          IL_004f:  br.s       IL_0080
+          IL_004f:  br.s       IL_007e
 
           IL_0051:  nop
-          IL_0052:  br.s       IL_0054
+          IL_0052:  nop
+          IL_0053:  ldarg.0
+          IL_0054:  ldc.i4.5
+          IL_0055:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
+          IL_005a:  ldarg.0
+          IL_005b:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
+          IL_0060:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+          IL_0065:  nop
+          IL_0066:  nop
+          IL_0067:  br.s       IL_007e
 
-          IL_0054:  nop
-          IL_0055:  ldarg.0
-          IL_0056:  ldc.i4.5
-          IL_0057:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
-          IL_005c:  ldarg.0
-          IL_005d:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::enum0
-          IL_0062:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-          IL_0067:  nop
-          IL_0068:  nop
-          IL_0069:  br.s       IL_0080
-
-          IL_006b:  nop
-          IL_006c:  ldarg.0
-          IL_006d:  ldc.i4.5
-          IL_006e:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
-          IL_0073:  ldarg.0
-          IL_0074:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::'enum'
-          IL_0079:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-          IL_007e:  nop
-          IL_007f:  nop
-          IL_0080:  ldarg.0
-          IL_0081:  ldc.i4.5
-          IL_0082:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
-          IL_0087:  ldarg.0
-          IL_0088:  ldc.i4.0
-          IL_0089:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::current
-          IL_008e:  leave.s    IL_009a
+          IL_0069:  nop
+          IL_006a:  ldarg.0
+          IL_006b:  ldc.i4.5
+          IL_006c:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
+          IL_0071:  ldarg.0
+          IL_0072:  ldfld      class [runtime]System.Collections.Generic.IEnumerator`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::'enum'
+          IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+          IL_007c:  nop
+          IL_007d:  nop
+          IL_007e:  ldarg.0
+          IL_007f:  ldc.i4.5
+          IL_0080:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
+          IL_0085:  ldarg.0
+          IL_0086:  ldc.i4.0
+          IL_0087:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::current
+          IL_008c:  leave.s    IL_0098
 
         }  
         catch [runtime]System.Object 
         {
-          IL_0090:  castclass  [runtime]System.Exception
-          IL_0095:  stloc.1
-          IL_0096:  ldloc.1
-          IL_0097:  stloc.0
-          IL_0098:  leave.s    IL_009a
+          IL_008e:  castclass  [runtime]System.Exception
+          IL_0093:  stloc.1
+          IL_0094:  ldloc.1
+          IL_0095:  stloc.0
+          IL_0096:  leave.s    IL_0098
 
         }  
-        IL_009a:  nop
-        IL_009b:  br         IL_0000
+        IL_0098:  nop
+        IL_0099:  br         IL_0000
 
-        IL_00a0:  ldloc.0
-        IL_00a1:  brfalse.s  IL_00a5
+        IL_009e:  ldloc.0
+        IL_009f:  brfalse.s  IL_00a3
 
-        IL_00a3:  ldloc.0
-        IL_00a4:  throw
+        IL_00a1:  ldloc.0
+        IL_00a2:  throw
 
-        IL_00a5:  ret
+        IL_00a3:  ret
       } 
 
       .method public strict virtual instance bool get_CheckClose() cil managed
@@ -328,25 +330,26 @@
         IL_0023:  br.s       IL_0037
 
         IL_0025:  nop
-        IL_0026:  br.s       IL_0042
+        IL_0026:  br.s       IL_0040
 
         IL_0028:  nop
-        IL_0029:  br.s       IL_0040
+        IL_0029:  br.s       IL_003e
 
         IL_002b:  nop
-        IL_002c:  br.s       IL_003e
+        IL_002c:  br.s       IL_003c
 
         IL_002e:  nop
-        IL_002f:  br.s       IL_003c
+        IL_002f:  br.s       IL_003a
 
         IL_0031:  nop
-        IL_0032:  br.s       IL_003a
+        IL_0032:  br.s       IL_0038
 
         IL_0034:  nop
-        IL_0035:  br.s       IL_0042
+        IL_0035:  br.s       IL_0040
 
         IL_0037:  nop
-        IL_0038:  br.s       IL_003a
+        IL_0038:  ldc.i4.1
+        IL_0039:  ret
 
         IL_003a:  ldc.i4.1
         IL_003b:  ret
@@ -357,11 +360,8 @@
         IL_003e:  ldc.i4.1
         IL_003f:  ret
 
-        IL_0040:  ldc.i4.1
+        IL_0040:  ldc.i4.0
         IL_0041:  ret
-
-        IL_0042:  ldc.i4.0
-        IL_0043:  ret
       } 
 
       .method public strict virtual instance int32 get_LastGenerated() cil managed
@@ -465,7 +465,6 @@
   } 
 
 } 
-
 
 
 
