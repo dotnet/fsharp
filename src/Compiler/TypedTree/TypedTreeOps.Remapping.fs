@@ -1211,28 +1211,15 @@ module internal ExprFreeVars =
             (accUsedRecdOrUnionTyconRepr opts tcref.Deref (accFreeTyvars opts accFreeTycon tcref acc))
 
         | TOp.ILAsm(instrs, retTypes) ->
-            // A protected (family) IL field load/store is only verifiable inside a method whose
-            // declaring type lies within the field's family. If the optimizer relocates such an
-            // access (by inlining or lambda/method splitting) into a method outside that family it
-            // emits an illegal ldfld/stfld that throws FieldAccessException at runtime (issue
-            // #19963). Field accessibility is not carried on the ILFieldSpec here, so we
-            // conservatively flag any IL field access; the flag (ContainsILFieldAccess) is consumed
-            // only by the optimizer's relocation guards, never by the escape/accessibility checks,
-            // so this can never reject otherwise-valid code. F#-defined fields use TOp.ValFieldGet
-            // and are unaffected.
-            let usesFieldAccess =
-                instrs
-                |> List.exists (function
-                    | I_ldfld _
-                    | I_ldflda _
-                    | I_stfld _
-                    | I_ldsfld _
-                    | I_ldsflda _
-                    | I_stsfld _ -> true
-                    | _ -> false)
-
+            // Flag any IL field load/store (cheap, over-approximate). The optimizer refines this to
+            // protected (family) fields, which must not be relocated out of their family (issue #19963).
             let acc =
-                if usesFieldAccess then
+                if
+                    instrs
+                    |> List.exists (function
+                        | ILFieldInstr _ -> true
+                        | _ -> false)
+                then
                     accContainsILFieldAccess acc
                 else
                     acc

@@ -152,3 +152,24 @@ let main _ =
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+    // Positive companion to the issue 19963 regressions above: the relocation barrier must fire ONLY
+    // for protected (family) fields. A PUBLIC IL field (System.String.Empty, an I_ldsfld) inside an
+    // `inline` value must still be inlined under --optimize+. The over-broad form pinned every IL
+    // field, so this failed with FS1118 while bootstrapping FSharp.Core (whose `inline GetStringSlice`
+    // reads String.Empty). FS1118 is escalated to an error so the test actually guards the regression.
+    [<Fact>]
+    let ``Public IL field access inside an inline value is still optimized away (issue 19963)`` () =
+        FSharp """
+module Test
+let inline emptyOr (s: string) = if s.Length = 0 then System.String.Empty else s
+
+[<EntryPoint>]
+let main _ =
+    if emptyOr "" = "" && emptyOr "x" = "x" then 0 else 1
+"""
+        |> withOptimize
+        |> withOptions ["--warnaserror:1118"]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
