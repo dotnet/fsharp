@@ -10,6 +10,7 @@ open Xunit
 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
+open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.IlxDeltaEmitter
 open FSharp.Compiler.IlxDeltaStreams
@@ -1367,3 +1368,120 @@ module PdbTests =
         match artifacts.PdbPath with
         | Some path when File.Exists(path) -> File.Delete(path)
         | _ -> ()
+
+    /// Regression for the T-Gro PDB EncMap bug: the PDB delta's EncMap
+    /// MethodDebugInformation row must address the BASELINE MethodDef row (the row the
+    /// metadata delta re-emits the method at), NOT the FRESH compile's row. They diverge
+    /// whenever an earlier edit ADDED a method (or otherwise shifted rows), so the fresh
+    /// layout puts a pre-existing method at a different MethodDef row than its baseline row.
+    /// The previous code recorded the fresh row in the PDB EncMap while the metadata delta
+    /// emitted the method at its baseline row, so ApplyUpdate attached sequence points to the
+    /// wrong method (or rejected the PDB delta) — breaking breakpoints/stepping after reload.
+    ///
+    /// LIMITATION: the in-memory emit harness cannot easily chain a real "gen-1 add then gen-2
+    /// edit" (that requires the gen-1 add to flow into the baseline MethodTokens AND the gen-2
+    /// fresh compile to lay the pre-existing method out at a shifted row). We reproduce the SAME
+    /// root condition faithfully and deterministically by REORDERING the methods in the fresh
+    /// module: the baseline declares [GetFirst; GetSecond] (baseline rows 1, 2) and the updated
+    /// module declares [GetSecond; GetFirst] (fresh rows 1, 2). Editing GetFirst then exercises a
+    /// method whose baseline MethodDef row (1) differs from its fresh MethodDef row (2) — the
+    /// exact skew an add-then-edit produces. The assertion is on the emitted PDB EncMap row.
+    [<Fact>]
+    let ``PDB EncMap addresses baseline MethodDef row when fresh row is shifted`` () =
+        let ilg = PrimaryAssemblyILGlobals
+        let typeName = "Sample.ReorderDemo"
+
+        let mkModule (orderedMethods: (string * int) list) =
+            let methods =
+                orderedMethods
+                |> List.map (fun (name, value) -> createMethodWithSeqPoint ilg name value "Reorder.fs")
+
+            let typeDef =
+                mkILSimpleClass
+                    ilg
+                    (
+                        typeName,
+                        ILTypeDefAccess.Public,
+                        mkILMethods methods,
+                        mkILFields [],
+                        emptyILTypeDefs,
+                        mkILProperties [],
+                        mkILEvents [],
+                        emptyILCustomAttrs,
+                        ILTypeInit.BeforeField )
+
+            mkILSimpleModule
+                "ReorderAssembly"
+                "ReorderModule"
+                true
+                (4, 0)
+                false
+                (mkILTypeDefs [ typeDef ])
+                None
+                None
+                0
+                (mkILExportedTypes [])
+                "v4.0.30319"
+
+        // Baseline: GetFirst at MethodDef row 1, GetSecond at row 2.
+        let artifacts = TestHelpers.createBaselineFromModule (mkModule [ "GetFirst", 1; "GetSecond", 2 ])
+        let editedKey = TestHelpers.methodKey typeName "GetFirst" [] ilg.typ_Int32
+        let baselineToken = artifacts.Baseline.MethodTokens[editedKey]
+        let baselineRow = MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle baselineToken)
+
+        // Updated module REORDERS the methods: GetSecond first (fresh row 1), GetFirst second
+        // (fresh row 2). GetFirst is edited; its fresh row (2) now differs from its baseline row (1).
+        let updatedModule =
+            mkModule [ "GetSecond", 2; "GetFirst", 99 ]
+            |> TestHelpers.withDebuggableAttribute
+
+        let request : IlxDeltaRequest =
+            { Baseline = artifacts.Baseline
+              UpdatedTypes = [ typeName ]
+              UpdatedMethods = [ editedKey ]
+              UpdatedAccessors = []
+              Module = updatedModule
+              SymbolChanges = None
+              CurrentGeneration = 1
+              PreviousGenerationId = None
+              SynthesizedNames = None }
+
+        try
+            let delta = emitDelta request
+
+            let pdbBytes =
+                match delta.Pdb with
+                | Some bytes -> bytes
+                | None -> failwith "Expected portable PDB delta for the reordered method edit."
+
+            let _pdbEncLog, pdbEncMap = readEncTablesFromPdb pdbBytes
+
+            // Every PDB EncMap entry must be a MethodDebugInformation entry (existing invariant).
+            for (table, _rowId) in pdbEncMap do
+                Assert.Equal(TableIndex.MethodDebugInformation, table)
+
+            // The edited method's PDB EncMap MethodDebugInformation row must equal its BASELINE
+            // MethodDef row (1), NOT its shifted fresh row (2). Before the fix the emitter recorded
+            // the fresh row read from the reordered fresh PDB (GetFirst sits at fresh row 2), so the
+            // PDB EncMap would have contained row 2 instead of the baseline row 1.
+            let encMapRows = pdbEncMap |> Array.map snd
+            Assert.Contains(baselineRow, encMapRows)
+            Assert.DoesNotContain((baselineRow + 1), encMapRows)
+
+            // Cross-table invariant the bug violated: the metadata delta re-emits the method at its
+            // BASELINE row, so the metadata delta's Method EncMap row(s) must each appear in the PDB
+            // EncMap (same baseline coordinate, same order). Single edited method here, so the PDB
+            // EncMap row equals the metadata delta's Method EncMap row equals the baseline row.
+            let metadataMethodRows =
+                delta.EncMap
+                |> Array.filter (fun (table, _) -> table = TableNames.Method)
+                |> Array.map snd
+            Assert.NotEmpty(metadataMethodRows)
+            for row in metadataMethodRows do
+                Assert.Contains(row, encMapRows)
+        finally
+            if not (keepArtifacts ()) then
+                if File.Exists(artifacts.AssemblyPath) then File.Delete(artifacts.AssemblyPath)
+                match artifacts.PdbPath with
+                | Some path when File.Exists(path) -> File.Delete(path)
+                | _ -> ()
