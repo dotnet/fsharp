@@ -12671,99 +12671,29 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             then
                 v.CompiledName g.CompilerGlobalState |> ignore
 
-        let stackGuard = StackGuard("PrimeStableNamesForCodegen")
+        let primingFolder =
+            { ExprFolder0 with
+                exprIntercept =
+                    fun _recurseF noIntercept cloc expr ->
+                        match stripDebugPoints expr with
+                        | Expr.Op(TOp.Bytes bytes, _, _, _) when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
+                            mgbuf.PrimeRawDataValueTypeCounter(cloc, bytes.Length)
+                            noIntercept cloc expr
+                        | Expr.Op(TOp.UInt16s arr, _, _, _) when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
+                            mgbuf.PrimeRawDataValueTypeCounter(cloc, arr.Length * 2)
+                            noIntercept cloc expr
+                        | Expr.Let(TBind(v, _, _), _, _, _) ->
+                            if IsCompilerGeneratedName v.LogicalName then
+                                primeVal v
+                            noIntercept cloc expr
+                        | Expr.LetRec(binds, _, _, _) ->
+                            for TBind(v, _, _) in binds do
+                                if IsCompilerGeneratedName v.LogicalName then
+                                    primeVal v
+                            noIntercept cloc expr
+                        | _ -> noIntercept cloc expr }
 
-        let rec walkExpr (cloc: CompileLocation) (expr: Expr) =
-            stackGuard.Guard
-            <| fun () ->
-                match stripDebugPoints expr with
-                | Expr.Const _
-                | Expr.Val _
-                | Expr.WitnessArg _ -> ()
-
-                | Expr.Lambda(_, _, _, _, body, _, _) -> walkExpr cloc body
-                | Expr.TyLambda(_, _, body, _, _) -> walkExpr cloc body
-
-                | Expr.Obj(_, _, _, basecall, overrides, iimpls, _) ->
-                    walkExpr cloc basecall
-
-                    for TObjExprMethod(_, _, _, _, e, _) in overrides do
-                        walkExpr cloc e
-
-                    for _, ims in iimpls do
-                        for TObjExprMethod(_, _, _, _, e, _) in ims do
-                            walkExpr cloc e
-
-                | Expr.Let(TBind(v, rhs, _), body, _, _) ->
-                    if IsCompilerGeneratedName v.LogicalName then
-                        primeVal v
-
-                    walkExpr cloc rhs
-                    walkExpr cloc body
-
-                | Expr.LetRec(binds, body, _, _) ->
-                    for TBind(v, _, _) in binds do
-                        if IsCompilerGeneratedName v.LogicalName then
-                            primeVal v
-
-                    for TBind(_, rhs, _) in binds do
-                        walkExpr cloc rhs
-
-                    walkExpr cloc body
-
-                | Expr.Op(op, _, args, _) ->
-                    match op with
-                    | TOp.Bytes bytes when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
-                        mgbuf.PrimeRawDataValueTypeCounter(cloc, bytes.Length)
-                    | TOp.UInt16s arr when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
-                        mgbuf.PrimeRawDataValueTypeCounter(cloc, arr.Length * 2)
-                    | _ -> ()
-
-                    for a in args do
-                        walkExpr cloc a
-
-                | Expr.App(f, _, _, args, _) ->
-                    walkExpr cloc f
-
-                    for a in args do
-                        walkExpr cloc a
-
-                | Expr.Sequential(e1, e2, _, _) ->
-                    walkExpr cloc e1
-                    walkExpr cloc e2
-
-                | Expr.Match(_, _, dt, targets, _, _) ->
-                    walkDtree cloc dt
-
-                    for TTarget(_, body, _) in targets do
-                        walkExpr cloc body
-
-                | Expr.StaticOptimization(_, e2, e3, _) ->
-                    walkExpr cloc e2
-                    walkExpr cloc e3
-
-                | Expr.TyChoose(_, body, _) -> walkExpr cloc body
-                | Expr.Quote(e, _, _, _, _) -> walkExpr cloc e
-                | Expr.Link r -> walkExpr cloc r.Value
-                | Expr.DebugPoint(_, inner) -> walkExpr cloc inner
-
-        and walkDtree cloc dt =
-            match dt with
-            | TDBind(TBind(_, rhs, _), rest) ->
-                walkExpr cloc rhs
-                walkDtree cloc rest
-            | TDSuccess(args, _) ->
-                for a in args do
-                    walkExpr cloc a
-            | TDSwitch(test, cases, dflt, _) ->
-                walkExpr cloc test
-
-                for TCase(_, sub) in cases do
-                    walkDtree cloc sub
-
-                match dflt with
-                | Some d -> walkDtree cloc d
-                | None -> ()
+        let foldExpr cloc expr = FoldExpr primingFolder cloc expr
 
         let walkTopBindRhs (v: Val) (rhs: Expr) (cloc: CompileLocation) =
             let rec stripOuterTopLambdas (e: Expr) =
@@ -12774,9 +12704,9 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | _ -> e
 
             if v.IsCompiledAsTopLevel then
-                walkExpr cloc (stripOuterTopLambdas rhs)
+                foldExpr cloc (stripOuterTopLambdas rhs) |> ignore
             else
-                walkExpr cloc rhs
+                foldExpr cloc rhs |> ignore
 
         let rec walkModuleContents (cloc: CompileLocation) (x: ModuleOrNamespaceContents) =
             match x with
@@ -12786,7 +12716,7 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
             | TMDefLet(TBind(v, rhs, _), _) ->
                 primeVal v
                 walkTopBindRhs v rhs cloc
-            | TMDefDo(e, _) -> walkExpr cloc e
+            | TMDefDo(e, _) -> foldExpr cloc e |> ignore
             | TMDefOpens _ -> ()
             | TMDefs defs ->
                 for d in defs do
