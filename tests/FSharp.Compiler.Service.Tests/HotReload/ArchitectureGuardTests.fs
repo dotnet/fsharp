@@ -82,10 +82,14 @@ let ``checker compile injects explicit hook-only argument for active hot reload 
 
 [<Fact>]
 let ``hot reload checker path uses service-owned enc instance`` () =
-    let source = readCompilerFile "src/Compiler/Service/service.fs"
+    // FSharpHotReloadService (which owns editAndContinueService) now lives in its own file;
+    // the .Instance ambient anti-pattern must appear in neither it nor the checker.
+    let serviceSource = readCompilerFile "src/Compiler/HotReload/FSharpHotReloadSession.fs"
+    let checkerSource = readCompilerFile "src/Compiler/Service/service.fs"
 
-    Assert.Contains("let editAndContinueService = FSharpEditAndContinueLanguageService(sessionStore)", source)
-    Assert.DoesNotContain("FSharpEditAndContinueLanguageService.Instance", source)
+    Assert.Contains("let editAndContinueService = FSharpEditAndContinueLanguageService(sessionStore)", serviceSource)
+    Assert.DoesNotContain("FSharpEditAndContinueLanguageService.Instance", serviceSource)
+    Assert.DoesNotContain("FSharpEditAndContinueLanguageService.Instance", checkerSource)
 
 let private sliceBetween (source: string) (startMarker: string) (endMarker: string) =
     let startIndex = source.IndexOf(startMarker, System.StringComparison.Ordinal)
