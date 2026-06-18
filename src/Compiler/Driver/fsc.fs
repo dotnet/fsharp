@@ -424,6 +424,39 @@ let getParallelReferenceResolutionFromEnvironment () =
                 Some ParallelReferenceResolution.Off
         | false, _ -> None)
 
+/// Hot reload determinism pins. Both the baseline capture (--enable:hotreloaddeltas) and
+/// the replay (--enable:hotreloadhook) compiles install the emit hook, and BOTH must produce
+/// byte-reproducible codegen: a recapture or replay of identical source must lay out metadata
+/// rows, heaps and closure ordinals exactly like the running baseline, or every chained delta
+/// is built against the wrong tokens. Pin the determinism knobs for any compile that installs
+/// the emit hook (tcConfigB.compilerEmitHook = Some), leaving the normal path (None) untouched:
+///  - deterministic: stable MVID/timestamp and deterministic PE emission;
+///  - parallelIlxGen off: parallel IlxGen name-set merge ordering can permute synthesized
+///    closure/type rows between runs (dotnet/fsharp #19732, #19928), and the replay's
+///    GetOrAddName hands names out in call order, so parallel IlxGen would permute the replayed
+///    names relative to the sequential baseline and point the delta at the wrong tokens — a
+///    silent, crash-free wrong delta;
+///  - optimization processing mode Sequential: parallel optimization can reorder optimized
+///    method bodies feeding codegen.
+/// msbuild cannot reliably switch parallelism off itself (dotnet/fsharp #19935), so the pin
+/// lives in the compiler, not in build logic, and is not a user-facing error. Graph
+/// type-checking is deliberately left as configured: lambda occurrence keys and typed-tree
+/// emission order depend on the file order of the compilation, not on the order files are
+/// CHECKED in, so TypeCheckingMode.Graph cannot perturb captured output.
+let internal applyHotReloadDeterminismPins (tcConfigB: TcConfigBuilder) =
+    if tcConfigB.compilerEmitHook.IsSome then
+        tcConfigB.deterministic <- true
+        tcConfigB.parallelIlxGen <- false
+
+        if
+            tcConfigB.optSettings.processingMode
+            <> Optimizer.OptimizationProcessingMode.Sequential
+        then
+            tcConfigB.optSettings <-
+                { tcConfigB.optSettings with
+                    processingMode = Optimizer.OptimizationProcessingMode.Sequential
+                }
+
 /// First phase of compilation.
 ///   - Set up console encoding and code page settings
 ///   - Process command line, flags and collect filenames
@@ -518,34 +551,10 @@ let main1
     | Some parallelReferenceResolution -> tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
     | None -> ()
 
-    // Hot reload baseline capture (--enable:hotreloaddeltas) requires byte-reproducible
-    // output: a recapture compile of identical source must lay out metadata rows, heaps
-    // and closure ordinals exactly like the running baseline, or every chained delta is
-    // built against the wrong tokens. Pin the determinism knobs silently here, after all
-    // flags are processed (a flag-implies-flag rule, like other config finalization above):
-    //  - deterministic: stable MVID/timestamp and deterministic PE emission;
-    //  - parallelIlxGen off: parallel IlxGen name-set merge ordering can permute
-    //    synthesized closure/type rows between runs (dotnet/fsharp #19732, #19928);
-    //  - optimization processing mode Sequential: parallel optimization can reorder
-    //    optimized method bodies feeding codegen.
-    // msbuild cannot reliably switch parallelism off itself (dotnet/fsharp #19935), so
-    // the pin lives in the compiler, not in build logic, and is not a user-facing error:
-    // capture already requires --debug+ --optimize-, where these settings have no cost.
-    // Graph type-checking is deliberately left as configured: lambda occurrence keys and
-    // typed-tree emission order depend on the file order of the compilation, not on the
-    // order files are CHECKED in, so TypeCheckingMode.Graph cannot perturb captured output.
-    if tcConfigB.emitCaptureArtifacts then
-        tcConfigB.deterministic <- true
-        tcConfigB.parallelIlxGen <- false
-
-        if
-            tcConfigB.optSettings.processingMode
-            <> Optimizer.OptimizationProcessingMode.Sequential
-        then
-            tcConfigB.optSettings <-
-                { tcConfigB.optSettings with
-                    processingMode = Optimizer.OptimizationProcessingMode.Sequential
-                }
+    // Pin determinism for hot reload capture and replay compiles, after all flags are
+    // processed (a flag-implies-flag rule, like other config finalization above). See
+    // applyHotReloadDeterminismPins for why BOTH capture and replay must be pinned.
+    applyHotReloadDeterminismPins tcConfigB
 
     if tcConfigB.utf8output && Console.OutputEncoding <> Encoding.UTF8 then
         let previousEncoding = Console.OutputEncoding

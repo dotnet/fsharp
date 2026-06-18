@@ -2,6 +2,23 @@ module FSharp.Compiler.Service.Tests.HotReload.ArchitectureGuardTests
 
 open System.IO
 open Xunit
+open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.Driver
+open FSharp.Compiler.Service.Tests.TestDoubles
+
+[<Fact>]
+let ``hot reload replay compile pins sequential codegen`` () =
+    // The replay/hook compile (--enable:hotreloadhook) installs the emit hook and runs
+    // IlxGen, so it must be pinned to sequential codegen exactly like the capture compile
+    // (--enable:hotreloaddeltas) — otherwise parallel IlxGen permutes the replayed
+    // synthesized names relative to the sequential baseline and the delta points at the
+    // wrong tokens. applyHotReloadDeterminismPins keys off compilerEmitHook (Some for both
+    // capture and replay), not emitCaptureArtifacts (Some for capture only).
+    let b = getArbitraryTcConfigBuilder ()
+    ParseCompilerOptions(ignore, GetCoreFscCompilerOptions b, [ "--enable:hotreloadhook" ])
+    applyHotReloadDeterminismPins b
+    Assert.False(b.parallelIlxGen)
+    Assert.Equal(FSharp.Compiler.Optimizer.OptimizationProcessingMode.Sequential, b.optSettings.processingMode)
 
 let private repoRoot =
     Path.Combine(__SOURCE_DIRECTORY__, "../../..") |> Path.GetFullPath
