@@ -17,34 +17,43 @@ type private NameMapHolder() =
 
 let private holders = ConditionalWeakTable<obj, NameMapHolder>()
 
-let private getHolder (owner: obj) =
+let private getOrCreateHolder (owner: obj) =
     holders.GetValue(owner, fun _ -> NameMapHolder())
 
+/// Pure read: never inserts, so a compile that never installs a map pays a single
+/// failed weak-table lookup (mirrors ClosureNameAllocationState.tryGetHolder).
+let private tryGetHolder (owner: obj) =
+    match holders.TryGetValue owner with
+    | true, holder -> Some holder
+    | _ -> None
+
 let tryGetCompilerGeneratedNameMap (owner: obj) =
-    getHolder owner |> fun holder -> holder.TryGet()
+    match tryGetHolder owner with
+    | Some holder -> holder.TryGet()
+    | None -> None
 
-/// A reader for the owner's name-map slot that resolves the weak-table entry once (on
-/// first use) and afterwards reads a single field per call. The per-name path of
-/// NiceNameGenerator goes through this so compiles without an installed map (no
-/// --enable:hotreloaddeltas hook) pay one None check per generated name instead of a
-/// ConditionalWeakTable probe and lock.
+/// A reader for the owner's name-map slot. The holder is resolved exactly ONCE here and
+/// captured by the returned closure, so each generated name costs a single volatile field
+/// read (holder.TryGet()) rather than a ConditionalWeakTable probe and lock.
+///
+/// The holder is created eagerly (GetValue), not resolved lazily, on purpose: the emit
+/// hook installs the map LATER in the compile (HotReloadEmitHook.PrepareForCodeGeneration),
+/// after CompilerGlobalState — and therefore this accessor — has been constructed, and it
+/// installs through the SAME owner. Pre-creating the holder means that later install mutates
+/// the very object this closure captured, so the map is observed. Resolving lazily with a
+/// mutable cache would reintroduce a torn read of the multi-field option across the parallel
+/// IlxGen threads (volatile cannot make a multi-field struct write atomic); resolving via
+/// TryGetValue up front would capture None and miss the install entirely. Exactly one holder
+/// is allocated per CompilerGlobalState (once per compile), never per generated name.
 let getCompilerGeneratedNameMapAccessor (owner: obj) : unit -> ICompilerGeneratedNameMap option =
-    let mutable resolvedHolder = ValueNone
-
-    fun () ->
-        match resolvedHolder with
-        | ValueSome(holder: NameMapHolder) -> holder.TryGet()
-        | ValueNone ->
-            // Benign race: GetValue returns the same holder for concurrent resolvers.
-            let holder = getHolder owner
-            resolvedHolder <- ValueSome holder
-            holder.TryGet()
+    let holder = getOrCreateHolder owner
+    fun () -> holder.TryGet()
 
 let setCompilerGeneratedNameMap (owner: obj) (map: ICompilerGeneratedNameMap) =
-    getHolder owner |> fun holder -> holder.Set(Some map)
+    (getOrCreateHolder owner).Set(Some map)
 
 let setCompilerGeneratedNameMapOpt (owner: obj) (map: ICompilerGeneratedNameMap option) =
-    getHolder owner |> fun holder -> holder.Set(map)
+    (getOrCreateHolder owner).Set(map)
 
 let clearCompilerGeneratedNameMap (owner: obj) =
-    getHolder owner |> fun holder -> holder.Set(None)
+    (getOrCreateHolder owner).Set(None)
