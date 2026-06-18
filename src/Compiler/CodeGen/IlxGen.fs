@@ -3793,19 +3793,6 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
 
                          //assert(cgbuf.GetCurrentStack() = stackAfterJoin)  // REVIEW: Since gen_dtree* now sets stack, stack should be stackAfterJoin at this point...
                          CG.SetStack cgbuf stackAfterJoin
-                         // If any values are left on the stack after the join then we're certainly going to do something with them
-                         // For example, we may be about to execute a 'stloc' for
-                         //
-                         //   let y2 = if System.DateTime.Now.Year < 2000 then 1 else 2
-                         //
-                         // or a 'stelem' for
-                         //
-                         //   arr.[0] <- if System.DateTime.Now.Year > 2000 then 1 else 2
-                         //
-                         // In both cases, any instructions that come after this point will be falsely associated with the last branch of the control
-                         // prior to the join point. This is base, e.g. see FSharp 1.0 bug 5155
-                         cgbuf.EmitStartOfHiddenCode()
-
                          GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
                          Fake))
 
@@ -8029,8 +8016,6 @@ and GenDecisionTreeSwitch
     let g = cenv.g
     let m = e.Range
     cgbuf.SetMarkToHereIfNecessary inplabOpt
-
-    cgbuf.EmitStartOfHiddenCode()
 
     match cases with
     // optimize a test against a boolean value, i.e. the all-important if-then-else
