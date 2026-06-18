@@ -76,7 +76,7 @@ extends:
                 clean: true
                 fetchDepth: 1
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (restore + build + sign:$(SignType), no pack/insert)'
+                displayName: 'Build (restore + build; sign/insert deferred to EPIC I/VSIX)'
                 env:
                   DisableLocalization: true
                   SignType: $(SignType)
