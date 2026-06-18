@@ -222,11 +222,10 @@ module internal TypeRemapping =
             | Some tcrefR -> TType_ucase(UnionCaseRef(tcrefR, n), remapTypesAux tyenv tinst)
             | None -> TType_ucase(UnionCaseRef(tcref, n), remapTypesAux tyenv tinst)
 
-        // Remap single disjoint?
-        | TType_anon_union(_, l) as ty ->
-            match l with
-            | [ singleCase ] -> singleCase
-            | _ -> ty
+        | TType_anon_union(unionInfo, l) as ty ->
+            let lR = remapTypesAux tyenv l
+
+            if lR === l then ty else TType_anon_union(unionInfo, lR)
 
         | TType_anon(anonInfo, l) as ty ->
             let tupInfoR = remapTupInfoAux tyenv anonInfo.TupInfo
