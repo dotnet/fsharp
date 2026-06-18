@@ -394,6 +394,46 @@ let X = 43
         // Different literal values should produce different MVIDs
         Assert.NotEqual(mvid1, mvid2)
 
+    // Guards stableValKey total ordering: same-arity overloads (f(int) vs f(string))
+    // must serialize in deterministic order in p_ModuleInfo optimization data.
+    [<Fact>]
+    let ``Overloaded members produce deterministic MVID`` () =
+        let outputDir = DirectoryInfo(Path.Combine(Path.GetTempPath(), $"fsharp-overload-{Guid.NewGuid():N}"))
+        outputDir.Create()
+
+        let libFile = """
+module OverloadLib
+
+type Processor() =
+    member _.Handle(x: int) = x * 2
+    member _.Handle(x: string) = x.Length
+    member _.Handle(x: float) = int x
+    member _.Handle(x: int, y: int) = x + y
+"""
+
+        let consumerFile = """
+module Consumer
+
+let run () =
+    let p = OverloadLib.Processor()
+    p.Handle(42) + p.Handle("hello") + p.Handle(3.14) + p.Handle(1, 2)
+"""
+
+        let getMvid () =
+            FSharp(libFile)
+            |> withAdditionalSourceFiles [ FsSourceWithFileName "Consumer.fs" consumerFile ]
+            |> asLibrary
+            |> withOptimize
+            |> withName "OverloadTest"
+            |> withOutputDirectory (Some outputDir)
+            |> withOptions [ "--deterministic"; "--nowarn:75" ]
+            |> compileGuid
+
+        try
+            Assert.Equal(getMvid (), getMvid ())
+        finally
+            outputDir.Delete(true)
+
     // https://github.com/dotnet/fsharp/issues/19928
     // The core SEQ=PAR invariant: sequential and parallel codegen must produce identical output.
     // Exercises cross-file inlined closures, byte arrays, and the full deferred drain pipeline.

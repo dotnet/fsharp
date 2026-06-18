@@ -1999,6 +1999,7 @@ type CodegenFileScope private () =
     static val mutable private currentFileIdx: int
 
     static member OrderKey(localCounter: byref<int>) : struct (int * int) =
+        System.Diagnostics.Debug.Assert(CodegenFileScope.currentFileIdx > 0, "OrderKey called outside CodegenFileScope.With")
         let k = localCounter
         localCounter <- k + 1
         struct (CodegenFileScope.currentFileIdx, k)
