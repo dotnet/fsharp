@@ -216,6 +216,15 @@
     "19758": {
       "sha": "57de6b28b5be185c31368a086f472b3f87437428",
       "cats": []
+    },
+    "19971": {
+      "sha": "f571df97b148fdbc309429a0c0f39d669eb9a9de",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output",
+        "Affects-Test-Tooling"
+      ]
     }
   }
 }
