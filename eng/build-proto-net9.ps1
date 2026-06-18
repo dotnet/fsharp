@@ -84,6 +84,9 @@ New-Item -ItemType Directory -Force -Path (Split-Path $protoBinlog) | Out-Null
   /p:DisableLocalization=true `
   /p:TargetFrameworkVersion=v4.7.2 `
   /p:TreatWarningsAsErrors=false `
+  /p:SignAssembly=false `
+  /p:DelaySign=false `
+  /p:PublicSign=false `
   "/p:FSharpTargetsPath=$sdkFSharpShort\Microsoft.FSharp.Targets" `
   "/p:FSharpBuildAssemblyFile=$sdkFSharpShort\FSharp.Build.dll" `
   "/p:DotnetFscCompilerPath=$sdkFSharpShort\fsc.dll" `
