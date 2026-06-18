@@ -1157,13 +1157,21 @@ type FSharpChecker
             mapHotReloadError
         )
 
-    // Creating a checker resets the process-local capture slot (the module store the fsc emit
-    // hook publishes flag-on baseline captures into). This preserves the retired default-store
-    // registration's freshness property: a freshly created checker never observes (or chains
-    // capture naming against) another owner's stale captures, while consecutive captures with
-    // NO checker creation in between (one logical host) still chain. Session entities are
-    // unaffected: they own private stores and reconstruct baselines from disk artifacts.
-    do FSharp.Compiler.HotReloadState.clearSessionState ()
+    // We deliberately do NOT reset the process-global capture store here. Wiping it from a
+    // per-instance constructor is unsound: the store is shared by the whole process, so a host
+    // that creates a second checker (an IDE, or a test run) would silently discard the first
+    // checker's hot-reload capture state — including committed baselines owned by a still-live
+    // checker.
+    //
+    // The freshness property the wipe used to provide is preserved at capture time instead: the
+    // fsc emit hook's ambient capture path (HotReloadState.SetBaseline) REPLACEs the ambient
+    // project slot on every fresh capture, so a new owner's first capture overwrites the relevant
+    // entry without clobbering committed/other-project state belonging to another live checker.
+    // Consecutive captures with NO checker creation between still chain, because the store is
+    // never replaced. Session entities are unaffected regardless: they own private stores
+    // (createSessionStore) and reconstruct baselines from disk artifacts. Explicit teardown of the
+    // process-global store remains available via HotReloadState.clearSessionState for callers that
+    // genuinely own that lifetime.
 
     // Projects tracked by LIVE session entities created via CreateHotReloadSession, keyed by
     // the resolved output path each AddProject baselined (most recent first). Compile consults
