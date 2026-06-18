@@ -1383,6 +1383,10 @@ type ModuleOrNamespaceType =
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member AddProvidedTypeEntity: entity: Entity -> unit
+
+    /// Interns a provided-type entity by mangled name so concurrent linking from multiple files yields one
+    /// Entity. The first caller's 'create' wins; callers must use the returned entity.
+    member GetOrInternProvidedEntity: mangledName: string * create: (unit -> Entity) -> Entity
 #endif
 
     /// Return a new module or namespace type with a value added.

@@ -5,6 +5,7 @@ module internal rec FSharp.Compiler.TypedTree
 
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.Diagnostics
 open Internal.Utilities.Collections
@@ -2009,6 +2010,11 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 
     /// Mutation used during compilation of FSharp.Core.dll
     let mutable entities = entities 
+
+#if !NO_TYPEPROVIDERS
+    // One Entity per provided type even when linked concurrently from several files (graph-based checking).
+    let mutable providedEntitiesByMangledName: ConcurrentDictionary<string, Lazy<Entity>> | null = null
+#endif
       
     // Lookup tables keyed the way various clients expect them to be keyed.
     // We attach them here so we don't need to store lookup tables via any other technique.
@@ -2056,11 +2062,28 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member mtyp.AddProvidedTypeEntity(entity: Entity) = 
-        entities <- QueueList.appendOne entities entity
+        let rec append () =
+            let current = entities
+            let updated = QueueList.appendOne current entity
+            if not (obj.ReferenceEquals(System.Threading.Interlocked.CompareExchange(&entities, updated, current), current)) then
+                append ()
+        append ()
         tyconsByMangledNameCache <- None          
         tyconsByDemangledNameAndArityCache <- None
         tyconsByAccessNamesCache <- None
         allEntitiesByMangledNameCache <- None             
+
+    /// Interns a provided-type entity by mangled name; callers must use the returned entity.
+    member mtyp.GetOrInternProvidedEntity(mangledName: string, create: unit -> Entity) : Entity =
+        let table =
+            match providedEntitiesByMangledName with
+            | null ->
+                let created = ConcurrentDictionary<string, Lazy<Entity>>()
+                match System.Threading.Interlocked.CompareExchange(&providedEntitiesByMangledName, created, null) with
+                | null -> created
+                | existing -> existing
+            | existing -> existing
+        table.GetOrAdd(mangledName, fun _ -> lazy (let entity = create () in mtyp.AddProvidedTypeEntity entity; entity)).Value
 #endif 
           
     /// Return a new module or namespace type with an entity added.
@@ -3505,10 +3528,12 @@ type NonLocalEntityRef =
                 match st.PApply((fun st -> st.GetNestedType path[i]), m) with
                 | Tainted.Null -> ValueNone
                 | Tainted.NonNull st -> 
-                    let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
-                    parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity newEntity
-                    if i = path.Length-1 then ValueSome newEntity
-                    else tryResolveNestedTypeOf(newEntity, resolutionEnvironment, st, i+1)
+                    let canonicalEntity =
+                        parentEntity.ModuleOrNamespaceType.GetOrInternProvidedEntity(
+                            path[i],
+                            (fun () -> Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)))
+                    if i = path.Length-1 then ValueSome canonicalEntity
+                    else tryResolveNestedTypeOf(canonicalEntity, resolutionEnvironment, st, i+1)
 
             tryResolveNestedTypeOf(entity, resolutionEnvironment, st, i)
 
@@ -3551,9 +3576,9 @@ type NonLocalEntityRef =
                     // Note: this is similar to code in CompileOps.fs
                     let rec injectNamespacesFromIToJ (entity: Entity) k = 
                         if k = j then 
-                            let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
-                            entity.ModuleOrNamespaceType.AddProvidedTypeEntity newEntity
-                            newEntity
+                            entity.ModuleOrNamespaceType.GetOrInternProvidedEntity(
+                                path[j],
+                                (fun () -> Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)))
                         else
                             let cpath = entity.CompilationPath.NestedCompPath entity.LogicalName (ModuleOrNamespaceKind.Namespace false)
                             let newEntity = 
