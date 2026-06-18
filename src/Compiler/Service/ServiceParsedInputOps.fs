@@ -2618,35 +2618,32 @@ module ParsedInput =
                     Pos = mkPos 1 0
                 }
 
-        // In scripts, `#r`/`#reference`/`#load` must precede any `open`, so an inserted open has to land
-        // after the last leading one. Other directives (`#nowarn`, `#I`, `#time`, ...) impose no such order.
+        // In scripts, leading `#r`/`#reference`/`#load` directives must precede any `open`.
         match parsedInput with
         | ParsedInput.ImplFile impl when impl.IsScript ->
-            let isReferenceDirective ident =
-                // `#reference` is an alias of `#r`; `#load` is the only spelling for itself.
-                ident = "r" || ident = "reference" || ident = "load"
-
-            let rec lastLeadingReferenceEndLine acc decls =
-                match decls with
-                | SynModuleDecl.HashDirective(ParsedHashDirective(ident, _, _), range) :: rest ->
-                    let acc =
-                        if isReferenceDirective ident then
-                            max acc range.EndLine
-                        else
-                            acc
-
-                    lastLeadingReferenceEndLine acc rest
-                | _ -> acc
+            let isReferenceOrLoad =
+                function
+                | "r"
+                | "reference"
+                | "load" -> true
+                | _ -> false
 
             let lastReferenceLine =
                 match impl.Contents with
-                | SynModuleOrNamespace(decls = decls) :: _ -> lastLeadingReferenceEndLine 0 decls
+                | SynModuleOrNamespace(decls = decls) :: _ ->
+                    decls
+                    |> List.takeWhile (function
+                        | SynModuleDecl.HashDirective _ -> true
+                        | _ -> false)
+                    |> List.choose (function
+                        | SynModuleDecl.HashDirective(ParsedHashDirective(ident, _, _), range) when isReferenceOrLoad ident ->
+                            Some range.EndLine
+                        | _ -> None)
+                    |> List.fold max 0
                 | _ -> 0
 
             if lastReferenceLine > 0 then
-                // Place after the directives and never above them: the `HashDirective` scope is passed
-                // through unchanged by `AdjustInsertionPoint`, while `max` keeps any lower grouping with
-                // existing opens.
+                // ScopeKind.HashDirective is passed through unchanged by AdjustInsertionPoint.
                 {
                     ScopeKind = ScopeKind.HashDirective
                     Pos = mkPos (max (lastReferenceLine + 1) ctx.Pos.Line) 0
