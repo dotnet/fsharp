@@ -402,6 +402,11 @@
         <target state="new">Error when invalid declarations are used in type definitions.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnMissingSignatureAttribute">
+        <source>error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</source>
+        <target state="new">error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorReportingOnStaticClasses">
         <source>Error reporting on static classes</source>
         <target state="translated">静的クラスに関するエラー報告</target>
@@ -830,6 +835,11 @@
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
         <target state="translated">再開可能なコード コンストラクト '{0}' は、 'if __useResumableCode then ...' によって保護されているインライン コードでのみ使用でき、コンポジション全体は有効な再開可能コードを形成する必要があります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implAttributeMissingFromSignature">
+        <source>The attribute '{0}' is present on '{1}' in the implementation but not in the signature, which takes precedence for tooling and consumers. Add the attribute to the signature, to ensure the attribute is not ignored by the compiler.</source>
+        <target state="new">The attribute '{0}' is present on '{1}' in the implementation but not in the signature, which takes precedence for tooling and consumers. Add the attribute to the signature, to ensure the attribute is not ignored by the compiler.</target>
         <note />
       </trans-unit>
       <trans-unit id="implMissingInlineIfLambda">

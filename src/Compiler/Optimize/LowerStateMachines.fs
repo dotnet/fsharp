@@ -77,7 +77,7 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
     let (TBind(v, e, sp)) = bind
     let addDebugPoint innerExpr =
         match sp with
-        | DebugPointAtBinding.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr)
+        | DebugPointAtBinding.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), innerExpr)
         | _ -> innerExpr
     let vref = mkLocalValRef v
     { resBody with
