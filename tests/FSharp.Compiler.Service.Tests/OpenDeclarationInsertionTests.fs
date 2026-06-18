@@ -129,6 +129,15 @@ let x = System.IO.File.ReadAllText "a"
     // #time is not a reference directive, so the open is placed by the normal top-of-file logic.
     Assert.Equal(1, line)
 
+[<Fact>]  // #reference is an alias of #r; the open must still land after it
+let ``Open placed after reference directive in fsx`` () =
+    let source = """#reference "nuget: Newtonsoft.Json"
+
+let x : Newtonsoft.Json.JsonConvert = failwith ""
+"""
+    let line = findOpenInsertionLine "test.fsx" source "Newtonsoft.Json"
+    Assert.Equal(2, line)
+
 [<Fact>]  // #I precedes #r; the open still lands after the last #r, not merely after #I
 let ``Open after r preceded by I directive in fsx`` () =
     let source = """#I "/tmp"

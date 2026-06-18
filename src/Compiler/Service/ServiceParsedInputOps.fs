@@ -2631,7 +2631,8 @@ module ParsedInput =
                 match decls with
                 | SynModuleDecl.HashDirective(ParsedHashDirective(ident, _, _), range) :: rest ->
                     let acc =
-                        if ident = "r" || ident = "load" then
+                        // `#reference` is an alias of `#r`; `#load` is the only spelling for itself.
+                        if ident = "r" || ident = "reference" || ident = "load" then
                             max acc range.EndLine
                         else
                             acc
