@@ -2876,7 +2876,7 @@ module internal ExprAnalysis =
             // Incorporate spBind as a note if present
             let res =
                 match spBind with
-                | DebugPointAtBinding.Yes dp -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes dp, res)
+                | DebugPointAtBinding.Yes dp -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, dp), res)
                 | _ -> res
 
             res
