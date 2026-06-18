@@ -13,6 +13,14 @@ rem ============================================================================
 
 set "_root=%~dp0.."
 
+rem --- Signing defaults (Block 9m) ---
+rem    SignType=Test validates the Arcade SignTool manifest + file discovery with no
+rem    operator/prod-signing-service dependency (in-build test certs). SignType=Real
+rem    (set by the pipeline once it is authorized for prod signing + the MicroBuild
+rem    signing plugin is enabled via templateContext.mb.signing) does the real sign.
+if "%SignType%"=="" set "SignType=Test"
+if "%TeamName%"=="" set "TeamName=FSharp"
+
 rem --- Step 1: restore packages.config (HintPath deps) into .\packages FIRST ---
 rem    NuGet.exe is standalone (no SDK needed). This must precede the Arcade restore:
 rem    the legacy projects import packages\MicroBuild.Core\...\MicroBuild.Core.props at
@@ -35,12 +43,14 @@ echo ---------------- Building proto (bootstrap) compiler ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0build-proto-net9.ps1"
 if errorlevel 1 ( echo Error: proto compiler build failed 1>&2 & exit /b 1 )
 
-rem --- Step 4: real build via the Arcade engine (uses Proto\net40\bin) ---
+rem --- Step 4: real build + sign via the Arcade engine (uses Proto\net40\bin) ---
 rem    -m:1 forces single-proc msbuild (the legacy build shares a Release\net40\bin dir
 rem    that races under multi-proc). DisableLocalization=true defers XliffTasks.
 rem    FSharp.Product.sln is FSharp.sln minus the unit-test projects: the VS insertion needs
 rem    only the product, and the test projects pull build-time fsi (subst.fsx) + test packages
 rem    that are out of scope for the product build. Tests are wired up in a later step.
-echo ---------------- Building product (real) ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Product.sln' /m:1 /p:DisableLocalization=true; exit $LASTEXITCODE"
+rem    -sign runs Microsoft.DotNet.SignTool over the build outputs per eng\Signing.props.
+rem    %SignType% gates Test (manifest/discovery validation, no operator config) vs Real.
+echo ---------------- Building product (real) + signing (%SignType%) ----------------
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -sign -configuration Release -projects '%_root%\FSharp.Product.sln' /m:1 /p:DisableLocalization=true /p:SignType=%SignType% /p:DotNetSignType=%SignType% /p:TeamName=%TeamName%; exit $LASTEXITCODE"
 exit /b %ERRORLEVEL%

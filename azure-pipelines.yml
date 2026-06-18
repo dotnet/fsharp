@@ -28,6 +28,8 @@ variables:
     value: FSharp
   - name: _BuildConfig
     value: Release
+  - name: SignType
+    value: Test
   - name: Codeql.Enabled
     value: 'false'
 
@@ -74,6 +76,8 @@ extends:
                 clean: true
                 fetchDepth: 1
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (restore + build, no sign/pack/insert)'
+                displayName: 'Build (restore + build + sign:$(SignType), no pack/insert)'
                 env:
                   DisableLocalization: true
+                  SignType: $(SignType)
+                  TeamName: $(_TeamName)
