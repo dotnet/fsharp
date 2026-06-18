@@ -6086,9 +6086,8 @@ type FreeVars =
       /// Rethrow may only occur in such locations. 
       UsesUnboundRethrow: bool 
 
-      /// Indicates if the expression contains a direct IL field load/store. This is a cheap,
-      /// over-approximate gate: the optimizer refines it to protected (family) fields, which must
-      /// not be relocated out of their family scope (issue #19963). Never read by escape checks.
+      /// Indicates if the expression contains a direct IL field load/store — a cheap over-approximate
+      /// gate the optimizer refines to protected (family) fields (issue #19963). Never read by escape checks.
       ContainsILFieldAccess: bool 
 
       /// The summary of locally defined tycon representations used in the expression. These may be made private by a signature 

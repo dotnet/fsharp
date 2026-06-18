@@ -1415,21 +1415,13 @@ let AbstractOptimizationInfoToEssentials =
       
     abstractLazyModulInfo
 
-/// True if the IL field referenced by a load/store has protected (family) accessibility. Such an
-/// access is only verifiable from within the field's family, so the optimizer must not relocate it
-/// (by inlining or method-splitting) outside that family — doing so emits illegal IL that throws
-/// FieldAccessException at runtime (issue #19963).
+/// True if the IL field has protected (family) accessibility.
 let private isProtectedILFieldSpec cenv m (fspec: ILFieldSpec) =
-    let tref = fspec.DeclaringTypeRef
-
-    if Import.CanImportILTypeRef cenv.amap m tref then
-        let tcref = Import.ImportILTypeRef cenv.amap m tref
-
-        tcref.IsILTycon
-        && tcref.ILTyconRawMetadata.Fields.LookupByName fspec.Name
-           |> List.exists (fun fdef -> fdef.Access = ILMemberAccess.Family || fdef.Access = ILMemberAccess.FamilyOrAssembly)
-    else
-        false
+    match fspec.DeclaringTypeRef with
+    | Import.TryImportILTypeRef cenv.amap m (ILTyconRawMetadata tdef) ->
+        tdef.Fields.LookupByName fspec.Name
+        |> List.exists (fun fdef -> fdef.Access = ILMemberAccess.Family || fdef.Access = ILMemberAccess.FamilyOrAssembly)
+    | _ -> false
 
 /// True if the expression loads or stores a protected (family) IL field anywhere in its body.
 let private exprReferencesProtectedILField cenv expr =
@@ -3138,7 +3130,6 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
     | CurriedLambdaValue (_, _, _, expr, _) when shouldInline || inlineIfLambda ->
         let fvs = freeInExpr CollectLocals expr
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
-            // Don't inline: the body references method-local or protected (family) constructs that must not be relocated
             None
         else
             let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
@@ -4212,7 +4203,6 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                 else
                     let fvs = freeInExpr CollectLocals body
                     if usesMethodLocalConstructsOrProtectedField cenv fvs body then
-                        // Don't keep optimization info: body references method-local or protected (family) constructs
                         UnknownValue
                     elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
                         // Discarding lambda for binding because uses private members

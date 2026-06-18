@@ -1211,8 +1211,7 @@ module internal ExprFreeVars =
             (accUsedRecdOrUnionTyconRepr opts tcref.Deref (accFreeTyvars opts accFreeTycon tcref acc))
 
         | TOp.ILAsm(instrs, retTypes) ->
-            // Flag any IL field load/store (cheap, over-approximate). The optimizer refines this to
-            // protected (family) fields, which must not be relocated out of their family (issue #19963).
+            // Cheap over-approximate gate; the optimizer refines this to protected (family) fields (issue #19963).
             let acc =
                 if
                     instrs
