@@ -147,3 +147,31 @@ let x : Newtonsoft.Json.JsonConvert = failwith ""
 """
     let line = findOpenInsertionLine "test.fsx" source "Newtonsoft.Json"
     Assert.Equal(3, line)
+[<Fact>]  // comments / blank lines between directives are trivia, not decls: scan still spans both
+let ``Open after r and load separated by comment and blank line in fsx`` () =
+    let source = """#r "nuget: FSharp.Data"
+
+// pull in a helper
+#load "helper.fsx"
+
+let x = SomeNs.foo
+"""
+    let line = findOpenInsertionLine "test.fsx" source "SomeNs"
+    Assert.Equal(5, line)  // after #load on line 4
+
+[<Fact>]  // a non-reference directive between two references must not stop the scan
+let ``Open after last reference with interleaved I directive in fsx`` () =
+    let source = """#r "nuget: A"
+#I "/tmp"
+#load "b.fsx"
+
+let x = SomeNs.foo
+"""
+    let line = findOpenInsertionLine "test.fsx" source "SomeNs"
+    Assert.Equal(4, line)  // after #load on line 3, not after #I on line 2
+
+[<Fact>]  // CRLF line endings must not shift the computed line
+let ``Open placed after r directive with CRLF line endings`` () =
+    let source = "#r \"nuget: Newtonsoft.Json\"\r\n\r\nlet x : Newtonsoft.Json.JsonConvert = failwith \"\"\r\n"
+    let line = findOpenInsertionLine "test.fsx" source "Newtonsoft.Json"
+    Assert.Equal(2, line)

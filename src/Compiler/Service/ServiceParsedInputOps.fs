@@ -2618,37 +2618,38 @@ module ParsedInput =
                     Pos = mkPos 1 0
                 }
 
-        // In scripts, `#r`/`#load` must precede any `open`, so an inserted open has to land after the
-        // last leading `#r`/`#load` directive. Other directives (`#nowarn`, `#I`, ...) impose no such order.
+        // In scripts, `#r`/`#reference`/`#load` must precede any `open`, so an inserted open has to land
+        // after the last leading one. Other directives (`#nowarn`, `#I`, `#time`, ...) impose no such order.
         match parsedInput with
         | ParsedInput.ImplFile impl when impl.IsScript ->
-            let topDecls =
-                match parsedInput with
-                | ParsedInput.ImplFile(ParsedImplFileInput(contents = SynModuleOrNamespace(decls = decls) :: _)) -> decls
-                | _ -> []
+            let isReferenceDirective ident =
+                // `#reference` is an alias of `#r`; `#load` is the only spelling for itself.
+                ident = "r" || ident = "reference" || ident = "load"
 
-            let rec lastLeadingHashEndLine acc decls =
+            let rec lastLeadingReferenceEndLine acc decls =
                 match decls with
                 | SynModuleDecl.HashDirective(ParsedHashDirective(ident, _, _), range) :: rest ->
                     let acc =
-                        // `#reference` is an alias of `#r`; `#load` is the only spelling for itself.
-                        if ident = "r" || ident = "reference" || ident = "load" then
+                        if isReferenceDirective ident then
                             max acc range.EndLine
                         else
                             acc
 
-                    lastLeadingHashEndLine acc rest
+                    lastLeadingReferenceEndLine acc rest
                 | _ -> acc
 
-            let lastHashLine = lastLeadingHashEndLine 0 topDecls
+            let lastReferenceLine =
+                match impl.Contents with
+                | SynModuleOrNamespace(decls = decls) :: _ -> lastLeadingReferenceEndLine 0 decls
+                | _ -> 0
 
-            if lastHashLine > 0 then
-                // Keep the position computed above when it already groups below the directives, but never let it
-                // (or the later `AdjustInsertionPoint`) move above them: the `HashDirective` scope is passed through
-                // unchanged by `AdjustInsertionPoint`.
+            if lastReferenceLine > 0 then
+                // Place after the directives and never above them: the `HashDirective` scope is passed
+                // through unchanged by `AdjustInsertionPoint`, while `max` keeps any lower grouping with
+                // existing opens.
                 {
                     ScopeKind = ScopeKind.HashDirective
-                    Pos = mkPos (max (lastHashLine + 1) ctx.Pos.Line) 0
+                    Pos = mkPos (max (lastReferenceLine + 1) ctx.Pos.Line) 0
                 }
             else
                 ctx
