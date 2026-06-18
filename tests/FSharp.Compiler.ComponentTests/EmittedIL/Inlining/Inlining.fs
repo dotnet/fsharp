@@ -28,6 +28,30 @@ module Inlining =
         |> getCompilation
         |> verifyCompilation
 
+    [<Theory; FileInlineData("Regression_TLR_MutualInnerRec.fs", Realsig=BooleanOptions.Both)>]
+    let ``Regression_TLR_MutualInnerRec_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
+    [<Theory; FileInlineData("Regression_TLR_MutualInnerRec_Point2D.fs", Realsig=BooleanOptions.Both)>]
+    let ``Regression_TLR_MutualInnerRec_Point2D_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
+    [<Theory; FileInlineData("Regression_TLR_MutualInnerRec_Generic.fs", Realsig=BooleanOptions.Both)>]
+    let ``Regression_TLR_MutualInnerRec_Generic_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
+    [<Theory; FileInlineData("Regression_TLR_MutualInnerRec_CapturedEnv.fs", Realsig=BooleanOptions.Both)>]
+    let ``Regression_TLR_MutualInnerRec_CapturedEnv_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
     // SOURCE=Match02.fs SCFLAGS="-a --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Match02.dll"	# Match02.fs
     [<Theory; FileInlineData("Match02.fs")>]
     let ``Match02_fs`` compilation =
