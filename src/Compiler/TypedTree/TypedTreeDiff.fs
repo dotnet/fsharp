@@ -1863,6 +1863,25 @@ and private snapshotTycon denv path (tycon: Tycon) =
         | TNoRepr ->
             sb.Append("|norepr") |> ignore
 
+        // Base type and implemented interfaces are part of the type's runtime layout but
+        // are not carried in TypeReprInfo, so fold them into the non-field digest here. A
+        // base-class change (inherit A() -> inherit B()) otherwise slips through as an
+        // allowed ctor MethodBody edit while TypeDef.Extends stays A (an invalid delta),
+        // and adding a member-less marker interface produces no field/member change at all
+        // and would be silently dropped. Both must surface as a TypeLayoutChange rude edit.
+        let superText =
+            match tycon.TypeContents.tcaug_super with
+            | Some t -> tyToString denv t
+            | None -> ""
+
+        sb.Append("|super:").Append(superText) |> ignore
+
+        for intf in
+            tycon.ImmediateInterfaceTypesOfFSharpTycon
+            |> List.map (tyToString denv)
+            |> List.sort do
+            sb.Append("|intf:").Append(intf) |> ignore
+
         sb.ToString()
 
     // Field digests append directly after the fs-kind segment today, so concatenation

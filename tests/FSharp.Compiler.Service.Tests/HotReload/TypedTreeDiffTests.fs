@@ -223,6 +223,45 @@ module TypedTreeDiffTests =
         Assert.Equal(RudeEditKind.TypeLayoutChange, result.RudeEdits[0].Kind)
 
     [<Fact>]
+    let ``base class change triggers rude edit`` () =
+        // Changing the base type (inherit A() -> inherit B()) leaves the ctor body as an
+        // allowed MethodBody edit but shifts TypeDef.Extends. The representation hash must
+        // catch it now that it reads tcaug_super.
+        use harness = new DiffTestHarness()
+        let baseline_source =
+            "module Library\ntype A() = class end\ntype B() = class end\ntype C() =\n    inherit A()\n"
+        let updated_source =
+            "module Library\ntype A() = class end\ntype B() = class end\ntype C() =\n    inherit B()\n"
+
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.TypeLayoutChange)
+
+    [<Fact>]
+    let ``adding a marker interface triggers rude edit`` () =
+        // A member-less marker interface adds no field/member edit, so without hashing the
+        // interface set it would be silently dropped. The representation hash must catch it.
+        use harness = new DiffTestHarness()
+        let baseline_source =
+            "module Library\ntype IMarker = interface end\ntype C() = class end\n"
+        let updated_source =
+            "module Library\ntype IMarker = interface end\ntype C() =\n    interface IMarker\n"
+
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.TypeLayoutChange)
+
+    [<Fact>]
     let ``lambda lowering shape change triggers rude edit`` () =
         use harness = new DiffTestHarness()
         let baseline_source = """
