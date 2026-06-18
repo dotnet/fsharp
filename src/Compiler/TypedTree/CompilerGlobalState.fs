@@ -73,35 +73,6 @@ type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
     member _.Fresh (name: string, m: range) =
         nng.FreshCompilerGeneratedNameInScope(fileIndex, name, m)
 
-/// Not thread-safe: one instance per file batch, accessed sequentially within batch.
-[<Sealed>]
-type PerFileClosureNameScope(consumerFileIndex: int) =
-
-    let byUniq = System.Collections.Generic.Dictionary<int64, string>()
-    let buckets =
-        System.Collections.Generic.Dictionary<struct (string * int * int), int>()
-
-    member _.ConsumerFileIndex = consumerFileIndex
-
-    member _.EmitClosureName(basicName: string, m: range, uniq: int64) =
-        match byUniq.TryGetValue uniq with
-        | true, cached -> cached
-        | false, _ ->
-            let bucketKey = struct (basicName, m.FileIndex, m.StartLine)
-
-            let occ =
-                match buckets.TryGetValue bucketKey with
-                | true, n -> n
-                | false, _ -> 0
-
-            buckets[bucketKey] <- occ + 1
-
-            let lineMarker = string m.StartLine + "F" + string consumerFileIndex
-            let suffix = if occ = 0 then "" else "-" + string occ
-            let name = CompilerGeneratedNameSuffix basicName (lineMarker + suffix)
-            byUniq[uniq] <- name
-            name
-
 type internal CompilerGlobalState () =
     /// A global generator of compiler generated names
     let globalNng = NiceNameGenerator()

@@ -1270,8 +1270,6 @@ and IlxGenEnv =
         /// Collection of code-gen functions where each inner array represents codegen (method bodies) functions for a single file
         delayedFileGenReverse: list<(unit -> unit)[]>
 
-        closureNameScope: PerFileClosureNameScope option
-
         /// Other information from the emit of this assembly
         intraAssemblyInfo: IlxGenIntraAssemblyInfo
 
@@ -7313,14 +7311,11 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            match eenv.closureNameScope with
-            | Some s when expr.Range.FileIndex <> s.ConsumerFileIndex -> s.EmitClosureName(basenameSafeForUseAsTypename, expr.Range, uniq)
-            | _ ->
-                g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(
-                    basenameSafeForUseAsTypename,
-                    expr.Range,
-                    uniq
-                )
+            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(
+                basenameSafeForUseAsTypename,
+                expr.Range,
+                uniq
+            )
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -10977,7 +10972,6 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
         { eenv with
             cloc = withQName eenv.cloc
             moduleCloc = withQName eenv.moduleCloc
-            closureNameScope = Some(PerFileClosureNameScope(m.FileIndex))
         }
 
     cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
@@ -12924,7 +12918,6 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         imports = None
         delayCodeGen = true
         delayedFileGenReverse = []
-        closureNameScope = None
         intraAssemblyInfo = IlxGenIntraAssemblyInfo.Create()
         realsig = g.realsig
         initClassFieldSpec = None
