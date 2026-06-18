@@ -2464,7 +2464,10 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
             (fun (parentRef, size) ->
                 let name = CompilerGeneratedName $"T_{size}Bytes"
                 let vtdef = mkRawDataValueTypeDef g.iltyp_ValueType (name, size, 0us)
-                let vtref = mkILNestedTyRef (parentRef.Scope, parentRef.Enclosing @ [ parentRef.Name ], vtdef.Name)
+
+                let vtref =
+                    mkILNestedTyRef (parentRef.Scope, parentRef.Enclosing @ [ parentRef.Name ], vtdef.Name)
+
                 let vtspec = mkILTySpec (vtref, [])
 
                 let vtdef =
@@ -7288,11 +7291,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(
-                basenameSafeForUseAsTypename,
-                expr.Range,
-                uniq
-            )
+            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -12654,7 +12653,8 @@ let PrimeStableNamesForCodegen (cenv: cenv) (implFiles: CheckedImplFileAfterOpti
                 valBindingSiteIntercept =
                     fun () (_, v) ->
                         primeVal v
-                        () }
+                        ()
+            }
 
         for implFile in implFiles do
             FoldImplFile primingFolder () implFile.ImplFile |> ignore
