@@ -209,7 +209,9 @@ let decodeOccurrenceKey (key: int) : int list =
 let private invalidData (blobName: string) (offset: int) =
     raise (InvalidDataException $"invalid EnC %s{blobName} blob: unexpected data at offset %d{offset}")
 
-let private isEmpty (blob: byte[]) = blob.Length = 0
+// Absent CDI rows arrive as null at runtime even though the parameter is non-null in the
+// nullness model, so guard with box (FS3261-safe) rather than dropping the check.
+let private isEmpty (blob: byte[]) = isNull (box blob) || blob.Length = 0
 
 // ---------------------------------------------------------------------------
 // EnC Local Slot Map

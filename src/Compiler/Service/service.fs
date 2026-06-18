@@ -502,21 +502,21 @@ type FSharpChecker
             mapHotReloadError
         )
 
-    // We deliberately do NOT reset the process-global capture store here. Wiping it from a
-    // per-instance constructor is unsound: the store is shared by the whole process, so a host
-    // that creates a second checker (an IDE, or a test run) would silently discard the first
-    // checker's hot-reload capture state — including committed baselines owned by a still-live
-    // checker.
+    // Creating a checker resets the process-local capture slot (the module store the fsc emit
+    // hook publishes flag-on baseline captures into). A freshly created checker never observes
+    // (or chains capture naming against) another owner's stale captures, while consecutive
+    // captures with NO checker creation in between (one logical host) still chain. Session
+    // entities are unaffected: they own private stores and reconstruct baselines from disk.
     //
-    // The freshness property the wipe used to provide is preserved at capture time instead: the
-    // fsc emit hook's ambient capture path (HotReloadState.SetBaseline) REPLACEs the ambient
-    // project slot on every fresh capture, so a new owner's first capture overwrites the relevant
-    // entry without clobbering committed/other-project state belonging to another live checker.
-    // Consecutive captures with NO checker creation between still chain, because the store is
-    // never replaced. Session entities are unaffected regardless: they own private stores
-    // (createSessionStore) and reconstruct baselines from disk artifacts. Explicit teardown of the
-    // process-global store remains available via HotReloadState.clearSessionState for callers that
-    // genuinely own that lifetime.
+    // NOTE (review: T-Gro): clearing process-global state from a per-instance ctor is
+    // architecturally questionable — a second FSharpChecker.Create discards a still-live first
+    // checker's AMBIENT (legacy) capture state. But this reset is load-bearing for the legacy
+    // fsc ambient capture path: the RuntimeIntegration tests create a checker per scenario and
+    // rely on each starting from a clean ambient slot, and SetBaseline's per-capture REPLACE
+    // alone does not isolate the chained closure-name recording across scenarios (removing this
+    // clear breaks ce-local-lambda closure-chain alignment). Properly scoping the ambient store
+    // per checker is a larger follow-up; until then the reset stays.
+    do FSharp.Compiler.HotReloadState.clearSessionState ()
 
     // Projects tracked by LIVE session entities created via CreateHotReloadSession, keyed by
     // the resolved output path each AddProject baselined (most recent first). Compile consults
