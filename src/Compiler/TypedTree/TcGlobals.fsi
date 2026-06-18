@@ -1003,8 +1003,6 @@ type internal TcGlobals =
 
     member splice_raw_expr_vref: TypedTree.ValRef
 
-    member sprintf_info: IntrinsicValRef
-
     member sprintf_vref: TypedTree.ValRef
 
     member string_ty: TypedTree.TType

@@ -7162,7 +7162,7 @@ interpolatedStringParts:
      { [ SynInterpolatedStringPart.String(fst $1, rhs parseState 1) ] }
 
   | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
-     { SynInterpolatedStringPart.String(fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
+     { mkInterpolatedStringFillParts (fst $1, rhs parseState 1, $2) @ $3 }
 
   | INTERP_STRING_PART interpolatedStringParts
      { let rbrace = parseState.InputEndPosition 1
@@ -7176,7 +7176,7 @@ interpolatedStringParts:
 interpolatedString:
   | INTERP_STRING_BEGIN_PART interpolatedStringFill interpolatedStringParts
     { let s, synStringKind, _ = $1
-      SynInterpolatedStringPart.String(s, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3, synStringKind }
+      mkInterpolatedStringFillParts (s, rhs parseState 1, $2) @ $3, synStringKind }
 
   | INTERP_STRING_BEGIN_END
     { let s, synStringKind, _ = $1

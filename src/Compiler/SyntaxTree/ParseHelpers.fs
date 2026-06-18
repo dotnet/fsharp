@@ -69,6 +69,50 @@ let rhs2 (parseState: IParseState) i j =
 /// Get the range corresponding to one of the r.h.s. symbols of a grammar rule while it is being reduced
 let rhs parseState i = rhs2 parseState i i
 
+/// Split a trailing printf specifier (e.g. "%d") off an interpolated-string literal that precedes a
+/// hole. '%%' is a literal escape, not a specifier.
+let peelTrailingPrintfSpecifier (litText: string) : string * string option =
+    let n = litText.Length
+    let mutable i = 0
+    let mutable specStart = -1
+
+    while i < n && specStart < 0 do
+        if litText[i] = '%' then
+            if i + 1 < n && litText[i + 1] = '%' then
+                i <- i + 2 // '%%' escape, keep scanning
+            else
+                specStart <- i // start of a real specifier
+        else
+            i <- i + 1
+
+    // A real printf specifier ends, immediately before the hole, with a type character. Anything else
+    // (for example the explicit '%P(' placeholder syntax) is left in the literal untouched.
+    if specStart < 0 || "bscdiuxXoBeEfFgGMOAat".IndexOf litText[n - 1] < 0 then
+        litText, None
+    else
+        litText[.. specStart - 1], Some litText[specStart..]
+
+/// Build the [String literal; FillExpr hole] pair for one interpolation hole, splitting the '{x,n}'
+/// alignment out of its tuple encoding and peeling a trailing printf specifier onto the hole.
+let mkInterpolatedStringFillParts (litText: string, litRange: range, fill: SynExpr * Ident option) =
+    let fillExpr, qualifier = fill
+
+    let holeExpr, alignment =
+        match fillExpr with
+        | SynExpr.Tuple(false, [ e; (SynExpr.Const(SynConst.Int32 _, _) as n) ], _, _) -> e, Some n
+        | _ -> fillExpr, None
+
+    let litValue, formatting =
+        match qualifier, alignment with
+        | None, None ->
+            match peelTrailingPrintfSpecifier litText with
+            | lit, Some spec -> lit, SynInterpolationFormatting.Printf(spec, litRange)
+            | _, None -> litText, SynInterpolationFormatting.DotNet(None, None)
+        | _ -> litText, SynInterpolationFormatting.DotNet(alignment, qualifier)
+
+    [ SynInterpolatedStringPart.String(litValue, litRange)
+      SynInterpolatedStringPart.FillExpr(holeExpr, formatting) ]
+
 //------------------------------------------------------------------------
 // Parsing/lexing: status of #if/#endif processing in lexing, used for continuations
 // for whitespace tokens in parser specification.

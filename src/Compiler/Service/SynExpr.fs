@@ -1090,7 +1090,7 @@ module SynExpr =
             | SynExpr.InterpolatedString(contents = contents), Dangling.Problematic _ ->
                 contents
                 |> List.exists (function
-                    | SynInterpolatedStringPart.FillExpr(qualifiers = Some _) -> true
+                    | SynInterpolatedStringPart.FillExpr(formatting = SynInterpolationFormatting.DotNet(format = Some _)) -> true
                     | _ -> false)
 
             // { (!x) with … }

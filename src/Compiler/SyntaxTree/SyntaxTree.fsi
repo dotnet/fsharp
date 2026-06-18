@@ -999,7 +999,16 @@ type SynExprRecordField =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
     | String of value: string * range: range
-    | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
+    | FillExpr of fillExpr: SynExpr * formatting: SynInterpolationFormatting
+
+/// Represents how an interpolation hole in an interpolated string is formatted.
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynInterpolationFormatting =
+    /// .NET-style formatting: optional alignment '{x,n}' and optional format '{x:fmt}'.
+    | DotNet of alignment: SynExpr option * format: Ident option
+
+    /// printf-style formatting: a single specifier, the '%d' in '%d{x}'.
+    | Printf of specifier: string * range: range
 
 /// Represents a syntax tree for simple F# patterns
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

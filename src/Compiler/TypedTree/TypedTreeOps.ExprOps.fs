@@ -1449,9 +1449,6 @@ module internal Makers =
     let mkCallSeqEmpty g m ty1 =
         mkApps g (typedExprForIntrinsic g m g.seq_empty_info, [ [ ty1 ] ], [], m)
 
-    let mkCall_sprintf (g: TcGlobals) m funcTy fmtExpr fillExprs =
-        mkApps g (typedExprForIntrinsic g m g.sprintf_info, [ [ funcTy ] ], fmtExpr :: fillExprs, m)
-
     let mkCallDeserializeQuotationFSharp20Plus g m e1 e2 e3 e4 =
         let args = [ e1; e2; e3; e4 ]
         mkApps g (typedExprForIntrinsic g m g.deserialize_quoted_FSharp_20_plus_info, [], [ mkRefTupledNoTypes g m args ], m)

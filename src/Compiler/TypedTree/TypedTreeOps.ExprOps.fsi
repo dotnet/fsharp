@@ -401,9 +401,6 @@ module internal Makers =
 
     val mkCallSeqEmpty: TcGlobals -> range -> TType -> Expr
 
-    /// Make a call to the 'isprintf' function for string interpolation
-    val mkCall_sprintf: g: TcGlobals -> m: range -> funcTy: TType -> fmtExpr: Expr -> fillExprs: Expr list -> Expr
-
     val mkCallDeserializeQuotationFSharp20Plus: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
 
     val mkCallDeserializeQuotationFSharp40Plus: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
