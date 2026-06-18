@@ -2643,10 +2643,17 @@ module ParsedInput =
                 | _ -> 0
 
             if lastReferenceLine > 0 then
-                // ScopeKind.HashDirective is passed through unchanged by AdjustInsertionPoint.
+                // `AdjustInsertionPoint` snaps a `TopModule` position up to line 1, above the directives;
+                // remap it to `HashDirective`, which (like the other scopes) it passes through unchanged.
+                let scopeKind =
+                    if ctx.ScopeKind = ScopeKind.TopModule then
+                        ScopeKind.HashDirective
+                    else
+                        ctx.ScopeKind
+
                 {
-                    ScopeKind = ScopeKind.HashDirective
-                    Pos = mkPos (max (lastReferenceLine + 1) ctx.Pos.Line) 0
+                    ScopeKind = scopeKind
+                    Pos = mkPos (max (lastReferenceLine + 1) ctx.Pos.Line) ctx.Pos.Column
                 }
             else
                 ctx

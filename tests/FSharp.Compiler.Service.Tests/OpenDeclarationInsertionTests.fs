@@ -4,10 +4,10 @@ open Xunit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
 
-/// Computes the line an `open` would be inserted at, mirroring the real editor consumer
+/// Computes the position an `open` would be inserted at, mirroring the real editor consumer
 /// (RoslynHelpers.insertContext): `FindNearestPointToInsertOpenDeclaration` followed by
 /// `AdjustInsertionPoint`. Asserting on the adjusted position is what the user actually sees.
-let private findOpenInsertionLine (fileName: string) (source: string) (entity: string) : int =
+let private findOpenInsertion (insertionPoint: OpenStatementInsertionPoint) (fileName: string) (source: string) (entity: string) =
     let parseTree = parseSourceCode (fileName, source)
 
     let lines = source.Replace("\r\n", "\n").Split('\n')
@@ -21,16 +21,16 @@ let private findOpenInsertionLine (fileName: string) (source: string) (entity: s
     let idents = entity.Split('.')
 
     let ctx =
-        ParsedInput.FindNearestPointToInsertOpenDeclaration
-            currentLine
-            parseTree
-            idents
-            OpenStatementInsertionPoint.TopLevel
+        ParsedInput.FindNearestPointToInsertOpenDeclaration currentLine parseTree idents insertionPoint
 
     let getLineStr line =
         if line >= 0 && line < lines.Length then lines.[line].Trim() else ""
 
-    (ParsedInput.AdjustInsertionPoint getLineStr ctx).Line
+    let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
+    pos.Line, pos.Column
+
+let private findOpenInsertionLine fileName source entity =
+    findOpenInsertion OpenStatementInsertionPoint.TopLevel fileName source entity |> fst
 
 [<Fact>]
 let ``Open placed after r directives in fsx`` () =
@@ -175,3 +175,14 @@ let ``Open placed after r directive with CRLF line endings`` () =
     let source = "#r \"nuget: Newtonsoft.Json\"\r\n\r\nlet x : Newtonsoft.Json.JsonConvert = failwith \"\"\r\n"
     let line = findOpenInsertionLine "test.fsx" source "Newtonsoft.Json"
     Assert.Equal(2, line)
+
+[<Fact>]  // Nearest insertion inside a nested module keeps the open's indentation (not forced to col 0,
+          // which would break the module's offside) while still landing after the leading #r.
+let ``Open under Nearest keeps indentation inside nested module after r`` () =
+    let source = """#r "nuget: FSharp.Data"
+module Outer =
+    module Inner =
+        let _z = FSharp.Data.JsonValue.Parse "1"
+"""
+    let line, col = findOpenInsertion OpenStatementInsertionPoint.Nearest "test.fsx" source "FSharp.Data"
+    Assert.Equal((4, 8), (line, col))
