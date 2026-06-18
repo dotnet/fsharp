@@ -2054,28 +2054,28 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), m)))
     Some(tinst, tcref, fldsmap, List.rev rfldsList)
 
-let ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m (cenv: cenv) env overallTy item =
+let ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m mItemIdent (cenv: cenv) env overallTy item =
     let g = cenv.g
     let ad = env.eAccessRights
     match item with
     | Item.ExnCase ecref ->
-        CheckEntityAttributes g ecref m |> CommitOperationResult
+        CheckEntityAttributes g ecref mItemIdent |> CommitOperationResult
         UnifyTypes cenv env m overallTy g.exn_ty
-        CheckTyconAccessible cenv.amap m ad ecref |> ignore
+        CheckTyconAccessible cenv.amap mItemIdent ad ecref |> ignore
         let mkf = makerForExnTag ecref
         mkf, recdFieldTysOfExnDefRef ecref, [ for f in (recdFieldsOfExnDefRef ecref) -> f.Id ]
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, m)
+            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, mItemIdent)
             if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
                 errorR(diagnostic)
             else
                 warning(diagnostic)
 
         let ucref = ucinfo.UnionCaseRef
-        CheckUnionCaseAttributes g ucref m |> CommitOperationResult
-        CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
+        CheckUnionCaseAttributes g ucref mItemIdent |> CommitOperationResult
+        CheckUnionCaseAccessible cenv.amap mItemIdent ad ucref |> ignore
         let resTy = actualResultTyOfUnionCase ucinfo.TypeInst ucref
         let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
         UnifyTypes cenv env m overallTy resTy
@@ -2083,9 +2083,9 @@ let ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m (cenv: cenv) env o
         mkf, actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f.Id ]
     | _ -> invalidArg "item" "not a union case or exception reference"
 
-let ApplyUnionCaseOrExnTypes m (cenv: cenv) env overallTy c =
+let ApplyUnionCaseOrExnTypes m mItemIdent (cenv: cenv) env overallTy c =
   ApplyUnionCaseOrExn ((fun (a, b) mArgs args -> mkUnionCaseExpr(a, b, args, unionRanges m mArgs)),
-                       (fun a mArgs args -> mkExnExpr (a, args, unionRanges m mArgs))) m cenv env overallTy c
+                       (fun a mArgs args -> mkExnExpr (a, args, unionRanges m mArgs))) m mItemIdent cenv env overallTy c
 
 let UnionCaseOrExnCheck (env: TcEnv) numArgTys numArgs m =
   if numArgs <> numArgTys then error (UnionCaseWrongArguments(env.DisplayEnv, numArgTys, numArgs, m))
@@ -2096,7 +2096,8 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
     let mkf, argTys, _argNames =
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId ExtraDotAfterIdentifier.No with
         | Item.UnionCase _ | Item.ExnCase _ as item ->
-            ApplyUnionCaseOrExn funcs m cenv env ty1 item
+            // mItemIdent = m: pattern context has no separate terminal-ident range
+            ApplyUnionCaseOrExn funcs m m cenv env ty1 item
         | _ -> error(Error(FSComp.SR.tcUnknownUnion(), m))
 
     if fieldNum >= argTys.Length then
@@ -8675,7 +8676,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId None
             let resolvesAsExpr =
                 match nameResolutionResult with
-                | Result (tinstEnclosing, item, mItem, mItemIdent, rest, afterRes)
+                | Result (_, item, _, _, _, _ as res)
                     when
                          (match item with
                           | Item.DelegateCtor _
@@ -8686,7 +8687,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
                               | _ -> true
                           | _ -> true) ->
                     let overallTy = match overallTyOpt with None -> MustEqual (NewInferenceType g) | Some t -> t
-                    let _, _ = TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, mItemIdent, rest, afterRes) None delayed
+                    let _, _ = TcItemThen cenv overallTy env tpenv res None delayed
                     true
                 | _ ->
                     false
@@ -8913,11 +8914,11 @@ and TcLongIdentThen (cenv: cenv) (overallTy: OverallTy) env tpenv (SynLongIdent(
 
     let ad = env.eAccessRights
     let typeNameResInfo = GetLongIdentTypeNameInfo delayed
-    let (tinstEnclosing, item, mItem, mItemIdent, rest, afterResolution) =
+    let nameResolutionResult =
         let maybeAppliedArgExpr = DelayedItem.maybeAppliedArgForPreferExtensionOverProperty delayed
         ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId maybeAppliedArgExpr
         |> ForceRaise
-    TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, mItemIdent, rest, afterResolution) None delayed
+    TcItemThen cenv overallTy env tpenv nameResolutionResult None delayed
 
 //-------------------------------------------------------------------------
 // Typecheck "item+projections"
@@ -8929,7 +8930,7 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
     match item with
     // x where x is a union case or active pattern result tag.
     | Item.UnionCase _ | Item.ExnCase _ | Item.ActivePatternResult _ as item ->
-        TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tpenv mItem delayed
+        TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tpenv mItem mItemIdent delayed
 
     | Item.Types(nm, ty :: _) ->
         TcTypeItemThen cenv overallTy env nm ty tpenv mItem tinstEnclosing delayed
@@ -8950,26 +8951,26 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
         TcDelegateCtorItemThen cenv overallTy env ty tinstEnclosing tpenv mItem delayed
 
     | Item.Value vref ->
-        TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed
+        TcValueItemThen cenv overallTy env vref tpenv mItem mItemIdent afterResolution delayed
 
     | Item.Property (nm, pinfos, _) ->
         TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem mItemIdent afterResolution staticTyOpt delayed
 
     | Item.ILField finfo ->
-        TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed
+        TcILFieldItemThen cenv overallTy env finfo tpenv mItem mItemIdent delayed
 
     | Item.RecdField rfinfo ->
-        TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem delayed
+        TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem mItemIdent delayed
 
     | Item.Event einfo ->
-        TcEventItemThen cenv overallTy env tpenv mItem mItem None einfo delayed
+        TcEventItemThen cenv overallTy env tpenv mItem mItemIdent mItem None einfo delayed
 
     | Item.CustomOperation (nm, usageTextOpt, _) ->
         // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
         RecordNameAndTypeResolutionsDelayed cenv env tpenv delayed
         match usageTextOpt() with
-        | None -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly nm, mItem))
-        | Some usageText -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly2(nm, usageText), mItem))
+        | None -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly nm, mItemIdent))
+        | Some usageText -> error(Error(FSComp.SR.tcCustomOperationNotUsedCorrectly2(nm, usageText), mItemIdent))
 
     // These items are not expected here - they are only used for reporting symbols from name resolution to language service
     | Item.ActivePatternCase _
@@ -8983,13 +8984,13 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
     | Item.UnionCaseField _
     | Item.UnqualifiedType _
     | Item.Types(_, []) ->
-        error(Error(FSComp.SR.tcLookupMayNotBeUsedHere(), mItem))
+        error(Error(FSComp.SR.tcLookupMayNotBeUsedHere(), mItemIdent))
 
 /// Type check the application of a union case. Also used to cover constructions of F# exception values, and
 /// applications of active pattern result labels.
 //
 // NOTE: the code for this is all a bit convoluted and should really be simplified/regularized.
-and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env item tpenv mItem delayed =
+and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env item tpenv mItem mItemIdent delayed =
     let g = cenv.g
     let ad = env.eAccessRights
     // ucaseAppTy is the type of the union constructor applied to its (optional) argument
@@ -9006,9 +9007,9 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
                 let ucref = mkChoiceCaseRef g m aparity n
                 let _, _, tinst, _ = FreshenTyconRef2 g mItem ucref.TyconRef
                 let ucinfo = UnionCaseInfo (tinst, ucref)
-                ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy (Item.UnionCase(ucinfo, false))
+                ApplyUnionCaseOrExnTypes mItem mItemIdent cenv env ucaseAppTy (Item.UnionCase(ucinfo, false))
         | _ ->
-            ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy item
+            ApplyUnionCaseOrExnTypes mItem mItemIdent cenv env ucaseAppTy item
     let numArgTys = List.length argTys
 
     // Subsumption at data constructions if argument type is nominal prior to equations for any arguments or return types
@@ -9228,7 +9229,7 @@ and TcMethodItemThen (cenv: cenv) overallTy env item methodName minfos tpenv mIt
     | _ ->
 #if !NO_TYPEPROVIDERS
         if not minfos.IsEmpty && minfos[0].ProvidedStaticParameterInfo.IsSome then
-            error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
+            error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItemIdent))
 #endif
         TcMethodApplicationThen cenv env overallTy None tpenv None [] mItem mItemIdent methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic staticTyOpt delayed
 
@@ -9490,7 +9491,7 @@ and TcDelegateCtorItemThen cenv overallTy env ty tinstEnclosing tpenv mItem dela
     | _ ->
         error(Error(FSComp.SR.tcInvalidUseOfDelegate(), mItem))
 
-and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed =
+and TcValueItemThen cenv overallTy env vref tpenv mItem mItemIdent afterResolution delayed =
     let g = cenv.g
     match delayed with
     // Mutable value set: 'v <- e'
@@ -9498,8 +9499,8 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
         if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
         UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
         vref.Deref.SetHasBeenReferenced()
-        CheckValAccessible mItem env.AccessRights vref
-        CheckValAttributes g vref mItem |> CommitOperationResult
+        CheckValAccessible mItemIdent env.AccessRights vref
+        CheckValAttributes g vref mItemIdent |> CommitOperationResult
         let vTy = vref.Type
         let vty2 =
             if isByrefTy g vTy then
@@ -9606,7 +9607,7 @@ and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem mItemIdent after
             ExprAtomicFlag.Atomic, None, [mkSynUnit mItem], delayed, tpenv
 
     if not pinfo.IsStatic then
-        error (Error (FSComp.SR.tcPropertyIsNotStatic nm, mItem))
+        error (Error (FSComp.SR.tcPropertyIsNotStatic nm, mItemIdent))
 
     match delayed with
     | DelayedSet(expr2, mStmt) :: otherDelayed ->
@@ -9622,28 +9623,28 @@ and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem mItemIdent after
             let isByrefMethReturnSetter = meths |> List.exists (function _,Some pinfo -> isByrefTy g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
 
             if not isByrefMethReturnSetter then
-                errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItemIdent))
 
             // x.P <- ... byref setter
-            if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
+            if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItemIdent))
             TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItemIdent nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic staticTyOpt delayed
         else
             let args = if pinfo.IsIndexer then args else []
             if isNil meths then
-                errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItemIdent))
             // Note: static calls never mutate a struct object argument
             TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mStmt mItemIdent nm ad NeverMutates true meths afterResolution NormalValUse (args@[expr2]) ExprAtomicFlag.NonAtomic staticTyOpt otherDelayed
     | _ ->
         // Static Property Get (possibly indexer)
         let meths = pinfos |> GettersOfPropInfos
-        if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
+        if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItemIdent))
         // Note: static calls never mutate a struct object argument
         TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItemIdent nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic staticTyOpt delayed
 
-and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
+and TcILFieldItemThen cenv overallTy env finfo tpenv mItem mItemIdent delayed =
     let g = cenv.g
     let ad = env.eAccessRights
-    ILFieldStaticChecks g cenv.amap cenv.infoReader ad mItem finfo
+    ILFieldStaticChecks g cenv.amap cenv.infoReader ad mItemIdent finfo
     let fref = finfo.ILFieldRef
     let exprTy = finfo.FieldType(cenv.amap, mItem)
     match delayed with
@@ -9687,13 +9688,13 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
 
         PropagateThenTcDelayed cenv overallTy env tpenv mItem exprFlex exprTy ExprAtomicFlag.Atomic delayed
 
-and TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem delayed =
+// Get static F# field or literal
+and TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem mItemIdent delayed =
     let g = cenv.g
     let ad = env.eAccessRights
-    // Get static F# field or literal
-    CheckRecdFieldInfoAccessible cenv.amap mItem ad rfinfo
-    if not rfinfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), mItem))
-    CheckRecdFieldInfoAttributes g rfinfo mItem |> CommitOperationResult
+    CheckRecdFieldInfoAccessible cenv.amap mItemIdent ad rfinfo
+    if not rfinfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), mItemIdent))
+    CheckRecdFieldInfoAttributes g rfinfo mItemIdent |> CommitOperationResult
     let fref = rfinfo.RecdFieldRef
     let fieldTy = rfinfo.FieldType
     match delayed with
@@ -9701,7 +9702,7 @@ and TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem delayed =
         if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
 
         // Set static F# field
-        CheckRecdFieldMutation mItem env.DisplayEnv rfinfo
+        CheckRecdFieldMutation mItemIdent env.DisplayEnv rfinfo
         UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
         let fieldTy = rfinfo.FieldType
         // Always allow subsumption on assignment to fields
@@ -9783,7 +9784,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         match minfos with
         | minfo :: _ ->
             // Check if we have properties with "init-only" setters, which we try to call after init is done.
-            CheckInitProperties g minfo methodName mItem
+            CheckInitProperties g minfo methodName mItemIdent
         | _ -> ()
 
 #if !NO_TYPEPROVIDERS
@@ -9796,7 +9797,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
             TcMethodApplicationThen cenv env overallTy None tpenv None objArgs mExprAndItem mItemIdent methodName ad mutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse args atomicFlag None delayed
         | None ->
         if not minfos.IsEmpty && minfos[0].ProvidedStaticParameterInfo.IsSome then
-            error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
+            error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItemIdent))
 #endif
 
         let tyArgsOpt, tpenv = TcMemberTyArgsOpt cenv env tpenv tyArgsOpt
@@ -9814,7 +9815,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
             if pinfo.IsIndexer
             then GetMemberApplicationArgs delayed cenv env tpenv
             else ExprAtomicFlag.Atomic, None, [mkSynUnit mItem], delayed, tpenv
-        if pinfo.IsStatic then error (Error (FSComp.SR.tcPropertyIsStatic nm, mItem))
+        if pinfo.IsStatic then error (Error (FSComp.SR.tcPropertyIsStatic nm, mItemIdent))
 
 
         match delayed with
@@ -9827,14 +9828,14 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
                 let meths = pinfos |> GettersOfPropInfos
                 let isByrefMethReturnSetter = meths |> List.exists (function _,Some pinfo -> isByrefTy g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
                 if not isByrefMethReturnSetter then
-                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItemIdent))
                 // x.P <- ... byref setter
-                if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
+                if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItemIdent))
                 TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItemIdent nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
             else
 
                 if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly then
-                    errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 nm, mItem))
+                    errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 nm, mItemIdent))
 
                 let args = if pinfo.IsIndexer then args else []
                 let mut = (if isStructTy g (tyOfExpr g objExpr) then DefinitelyMutates else PossiblyMutates)
@@ -9842,12 +9843,12 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         | _ ->
             // Instance property getter
             let meths = GettersOfPropInfos pinfos
-            if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
+            if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItemIdent))
             TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItemIdent nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
 
     | Item.RecdField rfinfo ->
         // Get or set instance F# field or literal
-        RecdFieldInstanceChecks g cenv.amap ad mItem rfinfo
+        RecdFieldInstanceChecks g cenv.amap ad mItemIdent rfinfo
         let tgtTy = rfinfo.DeclaringType
         let boxity = isStructTy g tgtTy
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace tgtTy objExprTy
@@ -9856,8 +9857,8 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         match delayed with
         | DelayedSet(expr2, mStmt) :: otherDelayed ->
             // Mutable value set: 'v <- e'
-            if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mItem))
-            CheckRecdFieldMutation mItem env.DisplayEnv rfinfo
+            if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mItemIdent))
+            CheckRecdFieldMutation mItemIdent env.DisplayEnv rfinfo
             UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
             // Always allow subsumption on assignment to fields
             let expr2R, tpenv = TcExprFlex cenv true false fieldTy env tpenv expr2
@@ -9875,7 +9876,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         let fieldTy = List.item n tinst
         match delayed with
         | DelayedSet _ :: _otherDelayed ->
-            error(Error(FSComp.SR.tcInvalidAssignment(),mItem))
+            error(Error(FSComp.SR.tcInvalidAssignment(),mItemIdent))
         | _ ->
             // Instance F# Anonymous Record
             let objExpr' = mkAnonRecdFieldGet g (anonInfo,objExpr,tinst,n,mExprAndItem)
@@ -9883,7 +9884,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
 
     | Item.ILField finfo ->
         // Get or set instance IL field
-        ILFieldInstanceChecks g cenv.amap ad mItem finfo
+        ILFieldInstanceChecks g cenv.amap ad mItemIdent finfo
         let exprTy = finfo.FieldType(cenv.amap, mItem)
 
         match delayed with
@@ -9900,12 +9901,12 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
 
     | Item.Event einfo ->
         // Instance IL event (fake up event-as-value)
-        TcEventItemThen cenv overallTy env tpenv mItem mExprAndItem (Some(objExpr, objExprTy)) einfo delayed
+        TcEventItemThen cenv overallTy env tpenv mItem mItemIdent mExprAndItem (Some(objExpr, objExprTy)) einfo delayed
 
     | Item.Trait traitInfo ->
         TcTraitItemThen cenv overallTy env (Some objExpr) traitInfo tpenv mItem delayed
 
-    | Item.DelegateCtor _ -> error (Error (FSComp.SR.tcConstructorsCannotBeFirstClassValues(), mItem))
+    | Item.DelegateCtor _ -> error (Error (FSComp.SR.tcConstructorsCannotBeFirstClassValues(), mItemIdent))
 
     | Item.UnionCase(info, _) ->
         let clashingNames = info.Tycon.MembersOfFSharpTyconSorted |> List.tryFind(fun mem -> mem.DisplayNameCore = info.DisplayNameCore)
@@ -9915,7 +9916,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
             let kind = if value.IsMember then "member" else "value"
             errorR (NameClash(info.DisplayNameCore, kind, info.DisplayNameCore, value.Range, FSComp.SR.typeInfoUnionCase(), info.DisplayNameCore, value.Range))
 
-        error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
+        error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItemIdent))
     // These items are not expected here - they can't be the result of a instance member dot-lookup "expr.Ident"
     | Item.ActivePatternResult _
     | Item.CustomOperation _
@@ -9934,31 +9935,31 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
     | Item.CustomBuilder _
     | Item.OtherName _
     | Item.ActivePatternCase _ ->
-        error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
+        error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItemIdent))
 
 // Instance IL event (fake up event-as-value)
-and TcEventItemThen (cenv: cenv) overallTy env tpenv mItem mExprAndItem objDetails (einfo: EventInfo) delayed =
+and TcEventItemThen (cenv: cenv) overallTy env tpenv mItem mItemIdent mExprAndItem objDetails (einfo: EventInfo) delayed =
     let g = cenv.g
     let ad = env.eAccessRights
 
     let nm = einfo.EventName
 
     match objDetails, einfo.IsStatic with
-    | Some _, true -> error (Error (FSComp.SR.tcEventIsStatic nm, mItem))
-    | None, false -> error (Error (FSComp.SR.tcEventIsNotStatic nm, mItem))
+    | Some _, true -> error (Error (FSComp.SR.tcEventIsStatic nm, mItemIdent))
+    | None, false -> error (Error (FSComp.SR.tcEventIsNotStatic nm, mItemIdent))
     | _ -> ()
 
     // The F# wrappers around events are null safe (impl is in FSharp.Core). Therefore, from an F# perspective, the type of the delegate can be considered Not Null.
     let delTy = einfo.GetDelegateType(cenv.amap, mItem) |> replaceNullnessOfTy KnownWithoutNull
     let (SigOfFunctionForDelegate(delInvokeMeth, delArgTys, _, _)) = GetSigOfFunctionForDelegate cenv.infoReader delTy mItem ad
     let objArgs = Option.toList (Option.map fst objDetails)
-    MethInfoChecks g cenv.amap true None objArgs env.eAccessRights mItem delInvokeMeth
+    MethInfoChecks g cenv.amap true None objArgs env.eAccessRights mItemIdent delInvokeMeth
 
-    CheckILEventAttributes g einfo.DeclaringTyconRef (einfo.GetCustomAttrs()) mItem |> CommitOperationResult
+    CheckILEventAttributes g einfo.DeclaringTyconRef (einfo.GetCustomAttrs()) mItemIdent |> CommitOperationResult
 
     // This checks for and drops the 'object' sender
     let argsTy = ArgsTypeOfEventInfo cenv.infoReader mItem ad einfo
-    if not (slotSigHasVoidReturnTy (delInvokeMeth.GetSlotSig(cenv.amap, mItem))) then errorR (nonStandardEventError einfo.EventName mItem)
+    if not (slotSigHasVoidReturnTy (delInvokeMeth.GetSlotSig(cenv.amap, mItem))) then errorR (nonStandardEventError einfo.EventName mItemIdent)
     let delEventTy = mkIEventType g delTy argsTy
 
     let bindObjArgs f =

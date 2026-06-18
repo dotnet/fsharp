@@ -34,6 +34,9 @@ tools:
     file-glob: ["*.json"]
 
 safe-outputs:
+  # Runs hourly — a transient engine/infra crash must not open a tracking issue.
+  # Real signal is the labels this workflow applies to PRs.
+  report-failure-as-issue: false
   noop:
     report-as-issue: false
   add-labels:
