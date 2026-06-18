@@ -2457,23 +2457,13 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
 
     // A memoization table for generating value types for big constant arrays
     //
-    let primedRawTypeCounter =
-        ConcurrentDictionary<CompileLocation * int, int>(HashIdentity.Structural)
-
     let rawDataValueTypeGenerator =
-        MemoizationTable<CompileLocation * int, ILTypeSpec>(
+        MemoizationTable<ILTypeRef * int, ILTypeSpec>(
             "rawDataValueTypeGenerator",
-            (fun (cloc, size) ->
-
-                let unique =
-                    match primedRawTypeCounter.TryGetValue((cloc, size)) with
-                    | true, c -> c
-                    | _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@T", cloc.Range)
-
-                let name = CompilerGeneratedName $"T{unique}_{size}Bytes" // Type names ending ...$T<unique>_37Bytes
-
+            (fun (parentRef, size) ->
+                let name = CompilerGeneratedName $"T_{size}Bytes"
                 let vtdef = mkRawDataValueTypeDef g.iltyp_ValueType (name, size, 0us)
-                let vtref = NestedTypeRefForCompLoc cloc vtdef.Name
+                let vtref = mkILNestedTyRef (parentRef.Scope, parentRef.Enclosing @ [ parentRef.Name ], vtdef.Name)
                 let vtspec = mkILTySpec (vtref, [])
 
                 let vtdef =
@@ -2529,29 +2519,13 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         | None -> ()
 
     member _.GenerateRawDataValueType(cloc, size) =
-        // Byte array literals require a ValueType of size the required number of bytes.
-        // With fsi.exe, S.R.Emit TypeBuilder CreateType has restrictions when a ValueType VT is nested inside a type T, and T has a field of type VT.
-        // To avoid this situation, these ValueTypes are generated under the private implementation rather than in the current cloc. [was bug 1532].
         let cloc =
             if cenv.options.isInteractive then
                 CompLocForPrivateImplementationDetails cloc
             else
                 cloc
 
-        rawDataValueTypeGenerator.Apply((cloc, size))
-
-    member _.PrimeRawDataValueTypeCounter(cloc: CompileLocation, size: int) =
-        let cloc =
-            if cenv.options.isInteractive then
-                CompLocForPrivateImplementationDetails cloc
-            else
-                cloc
-
-        primedRawTypeCounter.GetOrAdd(
-            (cloc, size),
-            (fun _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@T", cloc.Range))
-        )
-        |> ignore
+        rawDataValueTypeGenerator.Apply((TypeRefForCompLoc cloc, size))
 
     member this.GetOrCreateRawDataFieldSpec(m: range, bytes: byte[], makeFspec: string -> ILFieldSpec) =
         // bytesKey is load-bearing: remarkExpr collapses distinct inline arrays to one range,
@@ -12659,7 +12633,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
         mgbuf.AddTypeDef(tref, tdef, false, false, None, m)
         Some tref
 
-let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles: CheckedImplFileAfterOptimization list) =
+let PrimeStableNamesForCodegen (cenv: cenv) (_mgbuf: AssemblyBuilder) (implFiles: CheckedImplFileAfterOptimization list) =
     let g = cenv.g
 
     match g.CompilerGlobalState with
@@ -12677,28 +12651,22 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
         let primingFolder =
             { ExprFolder0 with
                 exprIntercept =
-                    fun _recurseF noIntercept cloc expr ->
+                    fun _recurseF noIntercept () expr ->
                         match stripDebugPoints expr with
-                        | Expr.Op(TOp.Bytes bytes, _, _, _) when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
-                            mgbuf.PrimeRawDataValueTypeCounter(cloc, bytes.Length)
-                            noIntercept cloc expr
-                        | Expr.Op(TOp.UInt16s arr, _, _, _) when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
-                            mgbuf.PrimeRawDataValueTypeCounter(cloc, arr.Length * 2)
-                            noIntercept cloc expr
                         | Expr.Let(TBind(v, _, _), _, _, _) ->
                             if IsCompilerGeneratedName v.LogicalName then
                                 primeVal v
-                            noIntercept cloc expr
+                            noIntercept () expr
                         | Expr.LetRec(binds, _, _, _) ->
                             for TBind(v, _, _) in binds do
                                 if IsCompilerGeneratedName v.LogicalName then
                                     primeVal v
-                            noIntercept cloc expr
-                        | _ -> noIntercept cloc expr }
+                            noIntercept () expr
+                        | _ -> noIntercept () expr }
 
-        let foldExpr cloc expr = FoldExpr primingFolder cloc expr
+        let foldExpr expr = FoldExpr primingFolder () expr |> ignore
 
-        let walkTopBindRhs (v: Val) (rhs: Expr) (cloc: CompileLocation) =
+        let walkTopBindRhs (v: Val) (rhs: Expr) =
             let rec stripOuterTopLambdas (e: Expr) =
                 match e with
                 | Expr.TyLambda(_, _, body, _, _) -> stripOuterTopLambdas body
@@ -12707,51 +12675,35 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
                 | _ -> e
 
             if v.IsCompiledAsTopLevel then
-                foldExpr cloc (stripOuterTopLambdas rhs) |> ignore
+                foldExpr (stripOuterTopLambdas rhs)
             else
-                foldExpr cloc rhs |> ignore
+                foldExpr rhs
 
-        let rec walkModuleContents (cloc: CompileLocation) (x: ModuleOrNamespaceContents) =
+        let rec walkModuleContents (x: ModuleOrNamespaceContents) =
             match x with
             | TMDefRec(_, _, _, mbinds, _) ->
                 for mb in mbinds do
-                    walkModuleBinding cloc mb
+                    walkModuleBinding mb
             | TMDefLet(TBind(v, rhs, _), _) ->
                 primeVal v
-                walkTopBindRhs v rhs cloc
-            | TMDefDo(e, _) -> foldExpr cloc e |> ignore
+                walkTopBindRhs v rhs
+            | TMDefDo(e, _) -> foldExpr e
             | TMDefOpens _ -> ()
             | TMDefs defs ->
                 for d in defs do
-                    walkModuleContents cloc d
+                    walkModuleContents d
 
-        and walkModuleBinding (cloc: CompileLocation) (mb: ModuleOrNamespaceBinding) =
+        and walkModuleBinding (mb: ModuleOrNamespaceBinding) =
             match mb with
             | ModuleOrNamespaceBinding.Binding(TBind(v, rhs, _)) ->
                 primeVal v
-                walkTopBindRhs v rhs cloc
-            | ModuleOrNamespaceBinding.Module(mspec, mdef) ->
-                let cloc' =
-                    if mspec.IsNamespace then
-                        cloc
-                    else
-                        CompLocForFixedModule cloc.QualifiedNameOfFile cloc.TopImplQualifiedName mspec
-
-                walkModuleContents cloc' mdef
-
-        let fragCloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+                walkTopBindRhs v rhs
+            | ModuleOrNamespaceBinding.Module(_, mdef) ->
+                walkModuleContents mdef
 
         for implFile in implFiles do
-            let (CheckedImplFile(qname, _, contents, _, _, _, _)) = implFile.ImplFile
-
-            let fileCloc =
-                { fragCloc with
-                    TopImplQualifiedName = qname.Text
-                    Range = qname.Range
-                }
-
-            let initCloc = CompLocForInitClass fileCloc
-            walkModuleContents initCloc contents
+            let (CheckedImplFile(_, _, contents, _, _, _, _)) = implFile.ImplFile
+            walkModuleContents contents
 
 let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
