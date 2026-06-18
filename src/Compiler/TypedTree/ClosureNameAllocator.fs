@@ -86,16 +86,18 @@ type ClosureNameAssignment =
 /// next-generation baseline (the input table for the NEXT delta's allocation).
 /// </summary>
 type MemberClosureNameAllocation =
-    { /// One assignment per fresh-compile occurrence, in occurrence (pre-order
-      /// ordinal) order — the order in which lowering encounters the closures.
-      Assignments: (LambdaOccurrence * ClosureNameAssignment) list
+    {
+        /// One assignment per fresh-compile occurrence, in occurrence (pre-order
+        /// ordinal) order — the order in which lowering encounters the closures.
+        Assignments: (LambdaOccurrence * ClosureNameAssignment) list
 
-      /// Root-first occurrence ordinal chain → assigned closure class name, for every
-      /// fresh-compile occurrence. This is the table to chain forward: baseline names
-      /// whose occurrences were removed are deliberately absent (never reused), and
-      /// freshly allocated generation-suffixed names are present so the NEXT
-      /// generation can reuse them for surviving occurrences.
-      RefreshedNamesByOccurrenceChain: Map<int list, string> }
+        /// Root-first occurrence ordinal chain → assigned closure class name, for every
+        /// fresh-compile occurrence. This is the table to chain forward: baseline names
+        /// whose occurrences were removed are deliberately absent (never reused), and
+        /// freshly allocated generation-suffixed names are present so the NEXT
+        /// generation can reuse them for surviving occurrences.
+        RefreshedNamesByOccurrenceChain: Map<int list, string>
+    }
 
 /// <summary>
 /// Root-first ordinal chain of a lambda occurrence (enclosing ordinals outermost first,
@@ -216,8 +218,10 @@ let allocateMemberClosureNames
         |> List.map (fun (occ, assignment) -> occurrenceOrdinalChain occ, assignment.Name)
         |> Map.ofList
 
-    { Assignments = assignments
-      RefreshedNamesByOccurrenceChain = refreshedNames }
+    {
+        Assignments = assignments
+        RefreshedNamesByOccurrenceChain = refreshedNames
+    }
 
 /// <summary>
 /// Joins a baseline compile's stamp -> emitted-closure-name recording (captured at the

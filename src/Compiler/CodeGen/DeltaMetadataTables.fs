@@ -17,11 +17,11 @@ open FSharp.Compiler.CodeGen.DeltaMetadataTypes
 module Encoding = FSharp.Compiler.CodeGen.DeltaMetadataEncoding
 
 let private traceHeapOffsets =
-    lazy (
-        match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS") with
-        | null | "" -> false
-        | value -> value = "1" || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
-    )
+    lazy
+        (match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS") with
+         | null
+         | "" -> false
+         | value -> value = "1" || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
 
 /// Mirrors the AbstractIL metadata tables for the subset of rows emitted by
 /// hot reload deltas. The tables are populated alongside the SRM metadata
@@ -35,18 +35,22 @@ type MetadataHeapOffsets =
     }
 
     static member Zero =
-        { StringHeapStart = 0
-          BlobHeapStart = 0
-          GuidHeapStart = 0
-          UserStringHeapStart = 0 }
+        {
+            StringHeapStart = 0
+            BlobHeapStart = 0
+            GuidHeapStart = 0
+            UserStringHeapStart = 0
+        }
 
     static member OfHeapSizes(heapSizes: MetadataHeapSizes) =
-        { StringHeapStart = heapSizes.StringHeapSize
-          BlobHeapStart = heapSizes.BlobHeapSize
-          GuidHeapStart = heapSizes.GuidHeapSize
-          UserStringHeapStart = heapSizes.UserStringHeapSize }
+        {
+            StringHeapStart = heapSizes.StringHeapSize
+            BlobHeapStart = heapSizes.BlobHeapSize
+            GuidHeapStart = heapSizes.GuidHeapSize
+            UserStringHeapStart = heapSizes.UserStringHeapSize
+        }
 
-let private byteArrayComparer : IEqualityComparer<byte[]> =
+let private byteArrayComparer: IEqualityComparer<byte[]> =
     { new IEqualityComparer<byte[]> with
         member _.Equals(x, y) =
             match x, y with
@@ -54,24 +58,33 @@ let private byteArrayComparer : IEqualityComparer<byte[]> =
             | null, _
             | _, null -> false
             | x, y ->
-                if obj.ReferenceEquals(x, y) then true
-                elif x.Length <> y.Length then false
+                if obj.ReferenceEquals(x, y) then
+                    true
+                elif x.Length <> y.Length then
+                    false
                 else
                     let mutable idx = 0
                     let mutable equal = true
+
                     while equal && idx < x.Length do
                         if x[idx] <> y[idx] then
                             equal <- false
+
                         idx <- idx + 1
+
                     equal
 
         member _.GetHashCode(array: byte[]) =
-            if isNull (box array) then 0
+            if isNull (box array) then
+                0
             else
                 let mutable hash = 17
+
                 for value in array do
                     hash <- (hash * 23) + int value
-                hash }
+
+                hash
+    }
 
 let private writeCompressedUnsigned (writer: BinaryWriter) (value: int) =
     if value <= 0x7F then
@@ -130,6 +143,7 @@ type private StringHeapBuilder() =
             let entryOffsets = Array.zeroCreate (entries.Count + 1)
             writer.Write(byte 0)
             let mutable currentOffset = int ms.Length
+
             for i = 0 to entries.Count - 1 do
                 let entryIndex = i + 1
                 entryOffsets.[entryIndex] <- currentOffset
@@ -137,19 +151,18 @@ type private StringHeapBuilder() =
                 writer.Write(bytes)
                 writer.Write(byte 0)
                 currentOffset <- currentOffset + bytes.Length + 1
+
             writer.Flush()
             bytesCache <- Some(ms.ToArray())
             offsetsCache <- Some entryOffsets
 
-    member this.Bytes
-        with get () =
-            this.BuildIfNeeded()
-            bytesCache.Value
+    member this.Bytes =
+        this.BuildIfNeeded()
+        bytesCache.Value
 
-    member this.EntryOffsets
-        with get () =
-            this.BuildIfNeeded()
-            offsetsCache.Value
+    member this.EntryOffsets =
+        this.BuildIfNeeded()
+        offsetsCache.Value
 
 type private ByteArrayHeapBuilder() =
     let entries = ResizeArray<byte[]>()
@@ -180,35 +193,37 @@ type private ByteArrayHeapBuilder() =
             let entryOffsets = Array.zeroCreate (entries.Count + 1)
             writer.Write(byte 0)
             let mutable currentOffset = int ms.Length
+
             for i = 0 to entries.Count - 1 do
                 let entryIndex = i + 1
                 entryOffsets.[entryIndex] <- currentOffset
                 let value = entries.[i]
                 writeCompressedUnsigned writer value.Length
+
                 if value.Length > 0 then
                     writer.Write(value)
+
                 currentOffset <- int ms.Length
+
             writer.Flush()
             bytesCache <- Some(ms.ToArray())
             offsetsCache <- Some entryOffsets
 
-    member this.Bytes
-        with get () =
-            this.BuildIfNeeded()
-            bytesCache.Value
+    member this.Bytes =
+        this.BuildIfNeeded()
+        bytesCache.Value
 
-    member this.EntryOffsets
-        with get () =
-            this.BuildIfNeeded()
-            offsetsCache.Value
+    member this.EntryOffsets =
+        this.BuildIfNeeded()
+        offsetsCache.Value
 
     member _.Entries = entries |> Seq.toArray
 
 type private UserStringHeapBuilder() =
     let entries = HashSet<int>()
-    let mutable buffer : byte[] option = None
+    let mutable buffer: byte[] option = None
     let mutable maxLength = 1
-    let mutable bytesCache : byte[] option = None
+    let mutable bytesCache: byte[] option = None
 
     /// Encodes a user string per ECMA-335 II.24.2.4:
     /// - Compressed unsigned length prefix (byte count including trailing flag)
@@ -232,6 +247,7 @@ type private UserStringHeapBuilder() =
 
     let ensureBuffer lengthNeeded =
         let requiredLength = max lengthNeeded 1
+
         match buffer with
         | Some existing when existing.Length >= requiredLength -> existing
         | Some existing ->
@@ -260,27 +276,28 @@ type private UserStringHeapBuilder() =
 
     member _.NextOffset = maxLength
 
-    member this.Bytes
-        with get () =
-            match buffer with
-            | Some data ->
-                match bytesCache with
-                | Some cached -> cached
-                | None ->
-                    let length = max maxLength 1
-                    let trimmed =
-                        if data.Length = length then
-                            data
-                        else
-                            let slice = Array.zeroCreate<byte> length
-                            Buffer.BlockCopy(data, 0, slice, 0, min data.Length length)
-                            slice
-                    bytesCache <- Some trimmed
-                    trimmed
+    member this.Bytes =
+        match buffer with
+        | Some data ->
+            match bytesCache with
+            | Some cached -> cached
             | None ->
-                let minimal = Array.zeroCreate<byte> 1
-                minimal[0] <- 0uy
-                minimal
+                let length = max maxLength 1
+
+                let trimmed =
+                    if data.Length = length then
+                        data
+                    else
+                        let slice = Array.zeroCreate<byte> length
+                        Buffer.BlockCopy(data, 0, slice, 0, min data.Length length)
+                        slice
+
+                bytesCache <- Some trimmed
+                trimmed
+        | None ->
+            let minimal = Array.zeroCreate<byte> 1
+            minimal[0] <- 0uy
+            minimal
 
 type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let heapOffsets = defaultArg heapOffsets MetadataHeapOffsets.Zero
@@ -321,30 +338,54 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let encMapRows = RowTableBuilder()
 
     let rowElement tag value =
-        { Tag = tag
-          Value = value
-          IsAbsolute = false }
+        {
+            Tag = tag
+            Value = value
+            IsAbsolute = false
+        }
 
     let rowElementAbsolute tag value =
-        { Tag = tag
-          Value = value
-          IsAbsolute = true }
+        {
+            Tag = tag
+            Value = value
+            IsAbsolute = true
+        }
 
-    let rowElementUShort (value: uint16) = rowElement Encoding.RowElementTags.UShort (int value)
-    let rowElementULong (value: int) = rowElement Encoding.RowElementTags.ULong value
-    let rowElementString value = rowElement Encoding.RowElementTags.String value
-    let rowElementBlob value = rowElement Encoding.RowElementTags.Blob value
-    let rowElementStringAbsolute value = rowElementAbsolute Encoding.RowElementTags.String value
-    let rowElementBlobAbsolute value = rowElementAbsolute Encoding.RowElementTags.Blob value
-    let rowElementGuidAbsolute value = rowElementAbsolute Encoding.RowElementTags.Guid value
-    let rowElementSimpleIndex table value = rowElement (Encoding.RowElementTags.SimpleIndex table) value
-    let rowElementTypeDefOrRef tag value = rowElement (Encoding.RowElementTags.TypeDefOrRefOrSpec tag) value
-    let rowElementHasSemantics tag value = rowElement (Encoding.RowElementTags.HasSemantics tag) value
+    let rowElementUShort (value: uint16) =
+        rowElement Encoding.RowElementTags.UShort (int value)
+
+    let rowElementULong (value: int) =
+        rowElement Encoding.RowElementTags.ULong value
+
+    let rowElementString value =
+        rowElement Encoding.RowElementTags.String value
+
+    let rowElementBlob value =
+        rowElement Encoding.RowElementTags.Blob value
+
+    let rowElementStringAbsolute value =
+        rowElementAbsolute Encoding.RowElementTags.String value
+
+    let rowElementBlobAbsolute value =
+        rowElementAbsolute Encoding.RowElementTags.Blob value
+
+    let rowElementGuidAbsolute value =
+        rowElementAbsolute Encoding.RowElementTags.Guid value
+
+    let rowElementSimpleIndex table value =
+        rowElement (Encoding.RowElementTags.SimpleIndex table) value
+
+    let rowElementTypeDefOrRef tag value =
+        rowElement (Encoding.RowElementTags.TypeDefOrRefOrSpec tag) value
+
+    let rowElementHasSemantics tag value =
+        rowElement (Encoding.RowElementTags.HasSemantics tag) value
+
     let rowElementMethodDefOrRef (methodRef: MethodDefOrRef) =
-        rowElement (Encoding.RowElementTags.MethodDefOrRef (mkMethodDefOrRefTag methodRef.CodedTag)) methodRef.RowId
+        rowElement (Encoding.RowElementTags.MethodDefOrRef(mkMethodDefOrRefTag methodRef.CodedTag)) methodRef.RowId
 
     let rowElementTypeOrMethodDef (owner: TypeOrMethodDef) =
-        rowElement (Encoding.RowElementTags.TypeOrMethodDef (mkTypeOrMethodDefTag owner.CodedTag)) owner.RowId
+        rowElement (Encoding.RowElementTags.TypeOrMethodDef(mkTypeOrMethodDefTag owner.CodedTag)) owner.RowId
 
     let rowElementResolutionScope (scope: ResolutionScope) =
         rowElement (Encoding.RowElementTags.ResolutionScopeMin + scope.CodedTag) scope.RowId
@@ -374,7 +415,11 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         let tag = mkILCustomAttributeTypeTag ctor.CodedTag
         rowElement (Encoding.RowElementTags.CustomAttributeType tag) ctor.RowId
 
-    let addStringValue (value: string) = if String.IsNullOrEmpty value then 0 else strings.AddSharedEntry value
+    let addStringValue (value: string) =
+        if String.IsNullOrEmpty value then
+            0
+        else
+            strings.AddSharedEntry value
 
     let addUserStringValue (value: string) =
         if String.IsNullOrEmpty value then
@@ -394,24 +439,28 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
 
     let addExistingStringOffset (offsetOpt: StringOffset option) (value: string) : int * bool =
         match offsetOpt with
-        | Some (StringOffset offset) -> offset, true
+        | Some(StringOffset offset) -> offset, true
         | None ->
             let idx = addStringValue value
             idx, false
 
     let addExistingStringOffsetOption (offsetOpt: StringOffset option) (valueOpt: string option) : int * bool =
         match offsetOpt with
-        | Some (StringOffset offset) -> offset, true
+        | Some(StringOffset offset) -> offset, true
         | None ->
             match valueOpt with
             | Some v when not (String.IsNullOrEmpty v) -> strings.AddSharedEntry v, false
             | _ -> 0, false
 
-    let addBlobBytes (bytes: byte[]) = if obj.ReferenceEquals(bytes, null) || bytes.Length = 0 then 0 else blobs.AddSharedEntry bytes
+    let addBlobBytes (bytes: byte[]) =
+        if obj.ReferenceEquals(bytes, null) || bytes.Length = 0 then
+            0
+        else
+            blobs.AddSharedEntry bytes
 
     let addExistingBlobOffset (offsetOpt: BlobOffset option) (value: byte[]) : int * bool =
         match offsetOpt with
-        | Some (BlobOffset offset) -> offset, true
+        | Some(BlobOffset offset) -> offset, true
         | None ->
             let idx = addBlobBytes value
             idx, false
@@ -421,8 +470,17 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let forceAddGuidValue (value: Guid) =
         guids.AddSharedEntry(value.ToByteArray())
 
-    let stringElement (token, isAbsolute) = if isAbsolute then rowElementStringAbsolute token else rowElementString token
-    let blobElement (token, isAbsolute) = if isAbsolute then rowElementBlobAbsolute token else rowElementBlob token
+    let stringElement (token, isAbsolute) =
+        if isAbsolute then
+            rowElementStringAbsolute token
+        else
+            rowElementString token
+
+    let blobElement (token, isAbsolute) =
+        if isAbsolute then
+            rowElementBlobAbsolute token
+        else
+            rowElementBlob token
 
     let encodeTypeDefOrRef (typeRef: TypeDefOrRef) =
         match typeRef with
@@ -443,47 +501,60 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 writer.Write(entry)
             else
                 invalidArg "entry" "GUID entries must be 16 bytes."
+
         if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_METADATA") = "1" then
             let dumpGuid (bytes: byte[]) =
                 if bytes.Length >= 16 then
                     BitConverter.ToString(bytes, 0, 16)
                 else
                     "<invalid>"
+
             printfn "[delta-guid-heap] entries=%d" guids.Entries.Length
+
             guids.Entries
             |> Seq.mapi (fun idx b -> idx + 1, dumpGuid b)
             |> Seq.iter (fun (idx, g) -> printfn "[delta-guid-heap] idx=%d guidBytes=%s" idx g)
+
         writer.Flush()
         ms.ToArray()
+
     let buildUserStringHeapBytes () = userStrings.Bytes
 
     member _.AddModuleRow(name: string, nameOffsetOpt: StringOffset option, generation: int, moduleId: Guid, encId: Guid, encBaseId: Guid) =
         if moduleRows.Count = 0 then
             let nameToken =
                 match nameOffsetOpt with
-                | Some (StringOffset offset) -> offset, true
+                | Some(StringOffset offset) -> offset, true
                 | None -> addStringValue name, false
             // For EnC deltas:
             // - Delta GUID heap contains: nil at 1, MVID at 2, EncId at 3
             // - Module row stores raw delta-local indices using rowElementGuidAbsolute
             // - The runtime interprets these as-is (no baseline offset adjustment needed)
             // Force-add GUIDs in order to get predictable indices:
-            let _nilGuidIndex = forceAddGuidValue System.Guid.Empty  // Index 1 (nil placeholder)
-            let mvidIndex = forceAddGuidValue moduleId               // Index 2
-            let encIdIndex = forceAddGuidValue encId                 // Index 3
+            let _nilGuidIndex = forceAddGuidValue System.Guid.Empty // Index 1 (nil placeholder)
+            let mvidIndex = forceAddGuidValue moduleId // Index 2
+            let encIdIndex = forceAddGuidValue encId // Index 3
             // EncBaseId is 0 (nil) for generation 1, otherwise reference previous EncId
             let encBaseIdIndex =
-                if encBaseId = System.Guid.Empty then 0
-                else forceAddGuidValue encBaseId                     // Index 4 if not nil
+                if encBaseId = System.Guid.Empty then
+                    0
+                else
+                    forceAddGuidValue encBaseId // Index 4 if not nil
+
             if traceHeapOffsets.Value then
-                printfn "[fsharp-hotreload][module-row-write] generation=%d mvidIndex=%d encIdIndex=%d encBaseIdIndex=%d"
-                    generation mvidIndex encIdIndex encBaseIdIndex
+                printfn
+                    "[fsharp-hotreload][module-row-write] generation=%d mvidIndex=%d encIdIndex=%d encBaseIdIndex=%d"
+                    generation
+                    mvidIndex
+                    encIdIndex
+                    encBaseIdIndex
+
             moduleRows.Add
                 [|
                     rowElementUShort (uint16 generation)
                     stringElement nameToken
-                    rowElementGuidAbsolute mvidIndex      // MVID - delta-local absolute index
-                    rowElementGuidAbsolute encIdIndex     // EncId - delta-local absolute index
+                    rowElementGuidAbsolute mvidIndex // MVID - delta-local absolute index
+                    rowElementGuidAbsolute encIdIndex // EncId - delta-local absolute index
                     rowElementGuidAbsolute encBaseIdIndex // EncBaseId - 0 or delta-local index
                 |]
 
@@ -509,6 +580,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 rowElementSimpleIndex TableNames.Field 0
                 rowElementSimpleIndex TableNames.Method 0
             |]
+
         typeDefRows.Add rowElements
 
     /// Add a NestedClass table row per ECMA-335 II.22.32: NestedClass and
@@ -519,6 +591,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 rowElementSimpleIndex TableNames.TypeDef row.NestedTypeDefRowId
                 rowElementSimpleIndex TableNames.TypeDef row.EnclosingTypeDefRowId
             |]
+
         nestedClassRows.Add rowElements
 
     /// Add an InterfaceImpl table row per ECMA-335 II.22.23: Class (TypeDef row index)
@@ -585,6 +658,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 blobElement signatureToken
                 rowElementSimpleIndex TableNames.Param (row.FirstParameterRowId |> Option.defaultValue 0)
             |]
+
         methodRows.Add rowElements
 
     /// Add a Field table row per ECMA-335 II.22.15: Flags (2 bytes), Name (string
@@ -599,52 +673,60 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 stringElement nameToken
                 blobElement signatureToken
             |]
+
         fieldRows.Add rowElements
 
     member _.AddParameterRow(row: ParameterDefinitionRowInfo) =
         // Validate parameter row per ECMA-335 II.22.33
         if row.RowId <= 0 then
             invalidArg "row" $"Parameter RowId must be > 0, got {row.RowId}"
+
         if row.SequenceNumber < 0 then
             invalidArg "row" $"Parameter SequenceNumber must be >= 0, got {row.SequenceNumber}"
+
         let nameToken = addExistingStringOffsetOption row.NameOffset row.Name
+
         let rowElements =
             [|
                 rowElementUShort (uint16 row.Attributes)
                 rowElementUShort (uint16 row.SequenceNumber)
                 stringElement nameToken
             |]
+
         paramRows.Add rowElements
 
     member _.AddTypeReferenceRow(row: TypeReferenceRowInfo) =
         let nameToken = addExistingStringOffset row.NameOffset row.Name
         let namespaceToken = addExistingStringOffset row.NamespaceOffset row.Namespace
+
         let rowElements =
             [|
                 rowElementResolutionScope row.ResolutionScope
                 stringElement nameToken
                 stringElement namespaceToken
             |]
+
         typeRefRows.Add rowElements
 
     member _.AddMemberReferenceRow(row: MemberReferenceRowInfo) =
         let nameToken = addExistingStringOffset row.NameOffset row.Name
         let signatureToken = addExistingBlobOffset row.SignatureOffset row.Signature
+
         let rowElements =
             [|
                 rowElementMemberRefParent row.Parent
                 stringElement nameToken
                 blobElement signatureToken
             |]
+
         memberRefRows.Add rowElements
 
     member _.AddMethodSpecificationRow(row: MethodSpecificationRowInfo) =
         let signatureToken = addExistingBlobOffset row.SignatureOffset row.Signature
+
         let rowElements =
-            [|
-                rowElementMethodDefOrRef row.Method
-                blobElement signatureToken
-            |]
+            [| rowElementMethodDefOrRef row.Method; blobElement signatureToken |]
+
         methodSpecRows.Add rowElements
 
     member _.AddTypeSpecificationRow(row: TypeSpecificationRowInfo) =
@@ -688,12 +770,16 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         genericParamConstraintRows.Add rowElements
 
     member _.AddAssemblyReferenceRow(row: AssemblyReferenceRowInfo) =
-        let publicKeyToken = addExistingBlobOffset row.PublicKeyOrTokenOffset row.PublicKeyOrToken
+        let publicKeyToken =
+            addExistingBlobOffset row.PublicKeyOrTokenOffset row.PublicKeyOrToken
+
         let nameToken = addExistingStringOffset row.NameOffset row.Name
         let cultureToken = addExistingStringOffsetOption row.CultureOffset row.Culture
         let hashToken = addExistingBlobOffset row.HashValueOffset row.HashValue
+
         let versionComponent value =
             if value >= 0s then uint16 value else 0us
+
         let rowElements =
             [|
                 rowElementUShort (versionComponent (int16 row.Version.Major))
@@ -706,15 +792,13 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 stringElement cultureToken
                 blobElement hashToken
             |]
+
         assemblyRefRows.Add rowElements
 
     member _.AddStandaloneSignatureRow(signatureBytes: byte[]) =
         if not (isNull (box signatureBytes)) && signatureBytes.Length > 0 then
             let blobIndex = addBlobBytes signatureBytes
-            let rowElements =
-                [|
-                    blobElement (blobIndex, false)
-                |]
+            let rowElements = [| blobElement (blobIndex, false) |]
             standAloneSigRows.Add rowElements
 
     member _.AddCustomAttributeRow(row: CustomAttributeRowInfo) =
@@ -740,17 +824,20 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 stringElement nameToken
                 blobElement signatureToken
             |]
+
         propertyRows.Add rowElements
 
     member _.AddEventRow(row: EventDefinitionRowInfo) =
         let tdorTag, tdorRow = encodeTypeDefOrRef row.EventType
         let nameToken = addExistingStringOffset row.NameOffset row.Name
+
         let rowElements =
             [|
                 rowElementUShort (uint16 row.Attributes)
                 stringElement nameToken
                 rowElementTypeDefOrRef tdorTag tdorRow
             |]
+
         eventRows.Add rowElements
 
     member _.AddPropertyMapRow(row: PropertyMapRowInfo) =
@@ -759,6 +846,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 rowElementSimpleIndex TableNames.TypeDef row.TypeDefRowId
                 rowElementSimpleIndex TableNames.Property (row.FirstPropertyRowId |> Option.defaultValue 0)
             |]
+
         propertyMapRows.Add rowElements
 
     member _.AddEventMapRow(row: EventMapRowInfo) =
@@ -767,20 +855,24 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 rowElementSimpleIndex TableNames.TypeDef row.TypeDefRowId
                 rowElementSimpleIndex TableNames.Event (row.FirstEventRowId |> Option.defaultValue 0)
             |]
+
         eventMapRows.Add rowElements
 
     member _.AddMethodSemanticsRow(row: MethodSemanticsMetadataUpdate) =
         let methodRowId = DeltaTokens.getRowNumber row.MethodToken
+
         let assocTag, assocRowId =
             match row.AssociationInfo with
             | MethodSemanticsAssociation.PropertyAssociation(_, propertyRowId) -> hs_Property, propertyRowId
             | MethodSemanticsAssociation.EventAssociation(_, eventRowId) -> hs_Event, eventRowId
+
         let rowElements =
             [|
                 rowElementUShort (uint16 row.Attributes)
                 rowElementSimpleIndex TableNames.Method methodRowId
                 rowElementHasSemantics assocTag assocRowId
             |]
+
         methodSemanticsRows.Add rowElements
 
     /// Add an entry to the EncLog table.
@@ -788,11 +880,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     /// Per ECMA-335 II.22.7, each entry contains a token and operation.
     member _.AddEncLogRow(table: TableName, rowId: int, operation: EditAndContinueOperation) =
         let token = DeltaTokens.makeToken table rowId
-        let rowElements =
-            [|
-                rowElementULong token
-                rowElementULong operation.Value
-            |]
+        let rowElements = [| rowElementULong token; rowElementULong operation.Value |]
         encLogRows.Add rowElements
 
     /// Add an entry to the EncMap table.
@@ -800,51 +888,44 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     /// Per ECMA-335 II.22.6, entries are sorted by table then row.
     member _.AddEncMapRow(table: TableName, rowId: int) =
         let token = DeltaTokens.makeToken table rowId
-        let rowElements =
-            [|
-                rowElementULong token
-            |]
+        let rowElements = [| rowElementULong token |]
         encMapRows.Add rowElements
 
-    member _.StringHeapBytes
-        with get () =
-            match stringHeapBytesCache with
-            | Some bytes -> bytes
-            | None ->
-                let bytes = buildStringHeapBytes ()
-                stringHeapBytesCache <- Some bytes
-                bytes
+    member _.StringHeapBytes =
+        match stringHeapBytesCache with
+        | Some bytes -> bytes
+        | None ->
+            let bytes = buildStringHeapBytes ()
+            stringHeapBytesCache <- Some bytes
+            bytes
 
     member _.StringHeapOffsets = strings.EntryOffsets
 
-    member _.BlobHeapBytes
-        with get () =
-            match blobHeapBytesCache with
-            | Some bytes -> bytes
-            | None ->
-                let bytes = buildBlobHeapBytes ()
-                blobHeapBytesCache <- Some bytes
-                bytes
+    member _.BlobHeapBytes =
+        match blobHeapBytesCache with
+        | Some bytes -> bytes
+        | None ->
+            let bytes = buildBlobHeapBytes ()
+            blobHeapBytesCache <- Some bytes
+            bytes
 
     member _.BlobHeapOffsets = blobs.EntryOffsets
 
-    member _.GuidHeapBytes
-        with get () =
-            match guidHeapBytesCache with
-            | Some bytes -> bytes
-            | None ->
-                let bytes = buildGuidHeapBytes ()
-                guidHeapBytesCache <- Some bytes
-                bytes
+    member _.GuidHeapBytes =
+        match guidHeapBytesCache with
+        | Some bytes -> bytes
+        | None ->
+            let bytes = buildGuidHeapBytes ()
+            guidHeapBytesCache <- Some bytes
+            bytes
 
-    member _.UserStringHeapBytes
-        with get () =
-            match userStringHeapBytesCache with
-            | Some bytes -> bytes
-            | None ->
-                let bytes = buildUserStringHeapBytes ()
-                userStringHeapBytesCache <- Some bytes
-                bytes
+    member _.UserStringHeapBytes =
+        match userStringHeapBytesCache with
+        | Some bytes -> bytes
+        | None ->
+            let bytes = buildUserStringHeapBytes ()
+            userStringHeapBytesCache <- Some bytes
+            bytes
 
     member this.StringHeapSize = this.StringHeapBytes.Length
 
@@ -852,44 +933,48 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
 
     member this.GuidHeapSize = this.GuidHeapBytes.Length
 
-    member this.HeapSizes : MetadataHeapSizes =
-        { StringHeapSize = this.StringHeapSize
-          UserStringHeapSize = this.UserStringHeapBytes.Length
-          BlobHeapSize = this.BlobHeapSize
-          GuidHeapSize = this.GuidHeapSize }
+    member this.HeapSizes: MetadataHeapSizes =
+        {
+            StringHeapSize = this.StringHeapSize
+            UserStringHeapSize = this.UserStringHeapBytes.Length
+            BlobHeapSize = this.BlobHeapSize
+            GuidHeapSize = this.GuidHeapSize
+        }
 
-    member _.TableRows : TableRows =
-        { Module = moduleRows.Entries
-          TypeDef = typeDefRows.Entries
-          NestedClass = nestedClassRows.Entries
-          InterfaceImpl = interfaceImplRows.Entries
-          Constant = constantRows.Entries
-          MethodImpl = methodImplRows.Entries
-          Field = fieldRows.Entries
-          MethodDef = methodRows.Entries
-          Param = paramRows.Entries
-          TypeRef = typeRefRows.Entries
-          MemberRef = memberRefRows.Entries
-          MethodSpec = methodSpecRows.Entries
-          TypeSpec = typeSpecRows.Entries
-          GenericParam = genericParamRows.Entries
-          GenericParamConstraint = genericParamConstraintRows.Entries
-          AssemblyRef = assemblyRefRows.Entries
-          StandAloneSig = standAloneSigRows.Entries
-          CustomAttribute = customAttributeRows.Entries
-          Property = propertyRows.Entries
-          Event = eventRows.Entries
-          PropertyMap = propertyMapRows.Entries
-          EventMap = eventMapRows.Entries
-          MethodSemantics = methodSemanticsRows.Entries
-          EncLog = encLogRows.Entries
-          EncMap = encMapRows.Entries }
+    member _.TableRows: TableRows =
+        {
+            Module = moduleRows.Entries
+            TypeDef = typeDefRows.Entries
+            NestedClass = nestedClassRows.Entries
+            InterfaceImpl = interfaceImplRows.Entries
+            Constant = constantRows.Entries
+            MethodImpl = methodImplRows.Entries
+            Field = fieldRows.Entries
+            MethodDef = methodRows.Entries
+            Param = paramRows.Entries
+            TypeRef = typeRefRows.Entries
+            MemberRef = memberRefRows.Entries
+            MethodSpec = methodSpecRows.Entries
+            TypeSpec = typeSpecRows.Entries
+            GenericParam = genericParamRows.Entries
+            GenericParamConstraint = genericParamConstraintRows.Entries
+            AssemblyRef = assemblyRefRows.Entries
+            StandAloneSig = standAloneSigRows.Entries
+            CustomAttribute = customAttributeRows.Entries
+            Property = propertyRows.Entries
+            Event = eventRows.Entries
+            PropertyMap = propertyMapRows.Entries
+            EventMap = eventMapRows.Entries
+            MethodSemantics = methodSemanticsRows.Entries
+            EncLog = encLogRows.Entries
+            EncMap = encMapRows.Entries
+        }
 
     member _.HeapOffsets = heapOffsets
 
     /// Returns an array of row counts indexed by table number.
     /// Uses TableNames from BinaryConstants for ECMA-335 table indices.
-    member _.TableRowCounts : int[] =
+    member _.TableRowCounts: int[] =
         let counts = Array.zeroCreate DeltaTokens.TableCount
         counts[TableNames.Module.Index] <- moduleRows.Count
         counts[TableNames.TypeDef.Index] <- typeDefRows.Count
@@ -927,11 +1012,22 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         let start = heapOffsets.UserStringHeapStart
         // Use >= to properly compute relative offset when offset equals the heap start
         let relativeOffset = if offset >= start then offset - start else offset
+
         if traceHeapOffsets.Value then
-            printfn "[fsharp-hotreload][heap-offsets] AddUserStringLiteral: absolute offset=%d, heapStart=%d, relative=%d, value=%A%s"
-                offset start relativeOffset (value.Substring(0, min 20 value.Length)) (if value.Length > 20 then "..." else "")
+            printfn
+                "[fsharp-hotreload][heap-offsets] AddUserStringLiteral: absolute offset=%d, heapStart=%d, relative=%d, value=%A%s"
+                offset
+                start
+                relativeOffset
+                (value.Substring(0, min 20 value.Length))
+                (if value.Length > 20 then "..." else "")
+
             if offset <= start then
-                printfn "[fsharp-hotreload][heap-offsets] WARNING: offset %d <= heapStart %d - this may indicate stale baseline!" offset start
+                printfn
+                    "[fsharp-hotreload][heap-offsets] WARNING: offset %d <= heapStart %d - this may indicate stale baseline!"
+                    offset
+                    start
+
         userStrings.AddEntry(relativeOffset, value)
         userStringHeapBytesCache <- None
 
@@ -947,7 +1043,8 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
             member _.GetStringHeapIdx s = addStringValue s
             member _.GetBlobHeapIdx bytes = addBlobBytes bytes
             member _.GetGuidIdx info = guids.AddSharedEntry info
-            member _.GetUserStringHeapIdx s = addUserStringValue s }
+            member _.GetUserStringHeapIdx s = addUserStringValue s
+        }
 
     // =========================================================================
     // IEncLogWriter interface implementation
@@ -959,7 +1056,9 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         { new IEncLogWriter with
             member _.RecordAddition(table, rowId, operation) =
                 this.AddEncLogRow(table, rowId, operation)
+
             member _.RecordUpdate(table, rowId) =
                 this.AddEncLogRow(table, rowId, EditAndContinueOperation.Default)
-            member _.RecordEncMapEntry(table, rowId) =
-                this.AddEncMapRow(table, rowId) }
+
+            member _.RecordEncMapEntry(table, rowId) = this.AddEncMapRow(table, rowId)
+        }

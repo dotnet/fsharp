@@ -99,7 +99,9 @@ type internal HotReloadSessionStore() =
 
     let sessionLock = obj ()
     let mutable projects: Map<HotReloadProjectKey, HotReloadProjectState> = Map.empty
-    let mutable committedProjects: Map<HotReloadProjectKey, HotReloadProjectState> = Map.empty
+
+    let mutable committedProjects: Map<HotReloadProjectKey, HotReloadProjectState> =
+        Map.empty
 
     // The slot identity-less callers (legacy module helpers, the fsc emit hook) operate on:
     // the most recently started project. Single-project compatibility flows therefore behave
@@ -161,7 +163,10 @@ type internal HotReloadSessionStore() =
             sessionCapabilities <- defaultArg capabilities EditAndContinueCapabilities.BaselineOnly
             sessionActiveStatements <- []
 
-            if hadExistingSession then ReplacedExisting else StartedFresh)
+            if hadExistingSession then
+                ReplacedExisting
+            else
+                StartedFresh)
 
     /// <summary>
     /// Adds (or recaptures) ONE project without touching other projects or the session-wide
@@ -169,11 +174,8 @@ type internal HotReloadSessionStore() =
     /// capturing an <c>EmitBaseline</c> for one more module inside the same DebuggingSession).
     /// </summary>
     member _.AddProject
-        (
-            key: HotReloadProjectKey,
-            value: FSharpEmitBaseline,
-            implementationFiles: CheckedAssemblyAfterOptimization
-        ) : HotReloadSessionStart =
+        (key: HotReloadProjectKey, value: FSharpEmitBaseline, implementationFiles: CheckedAssemblyAfterOptimization)
+        : HotReloadSessionStart =
         lock sessionLock (fun () ->
             let hadExistingSlot = Map.containsKey key projects
             let newState = mkProjectState value implementationFiles
@@ -285,10 +287,8 @@ type internal HotReloadSessionStore() =
     /// the last committed solution.
     /// </summary>
     member _.UpdateCommittedSequencePoints
-        (
-            snapshots: Map<int, FSharp.Compiler.HotReload.ActiveStatementAnalysis.MethodSequencePoints>,
-            ?key: HotReloadProjectKey
-        ) =
+        (snapshots: Map<int, FSharp.Compiler.HotReload.ActiveStatementAnalysis.MethodSequencePoints>, ?key: HotReloadProjectKey)
+        =
         lock sessionLock (fun () ->
             updateProject
                 (resolveKey key)
@@ -296,7 +296,8 @@ type internal HotReloadSessionStore() =
                     { state with
                         Baseline =
                             { state.Baseline with
-                                SequencePointSnapshots = snapshots }
+                                SequencePointSnapshots = snapshots
+                            }
                     })
                 true)
 
@@ -325,11 +326,7 @@ type internal HotReloadSessionStore() =
     /// deferred commit (the session-entity flow) can advance the committed diff inputs together
     /// with the baseline. No-op when the project has no pending update.
     /// </summary>
-    member _.StagePendingImplementationFiles
-        (
-            implementationFiles: CheckedAssemblyAfterOptimization,
-            ?key: HotReloadProjectKey
-        ) =
+    member _.StagePendingImplementationFiles(implementationFiles: CheckedAssemblyAfterOptimization, ?key: HotReloadProjectKey) =
         lock sessionLock (fun () ->
             updateProject
                 (resolveKey key)
@@ -340,7 +337,8 @@ type internal HotReloadSessionStore() =
                             PendingUpdate =
                                 Some
                                     { pending with
-                                        ImplementationFiles = Some implementationFiles }
+                                        ImplementationFiles = Some implementationFiles
+                                    }
                         }
                     | None -> state)
                 false)
@@ -348,13 +346,12 @@ type internal HotReloadSessionStore() =
     member private _.CommitPendingLocked(pendings: (HotReloadProjectKey * HotReloadProjectState * PendingHotReloadUpdate) list) =
         for key, state, pending in pendings do
             let updated =
-                {
-                    state with
-                        Baseline = pending.Baseline
-                        ImplementationFiles = defaultArg pending.ImplementationFiles state.ImplementationFiles
-                        CurrentGeneration = state.CurrentGeneration + 1
-                        PreviousGenerationId = Some pending.GenerationId
-                        PendingUpdate = None
+                { state with
+                    Baseline = pending.Baseline
+                    ImplementationFiles = defaultArg pending.ImplementationFiles state.ImplementationFiles
+                    CurrentGeneration = state.CurrentGeneration + 1
+                    PreviousGenerationId = Some pending.GenerationId
+                    PendingUpdate = None
                 }
 
             projects <- Map.add key updated projects
@@ -376,9 +373,7 @@ type internal HotReloadSessionStore() =
             let pendings =
                 projects
                 |> Map.toList
-                |> List.choose (fun (key, state) ->
-                    state.PendingUpdate
-                    |> Option.map (fun pending -> key, state, pending))
+                |> List.choose (fun (key, state) -> state.PendingUpdate |> Option.map (fun pending -> key, state, pending))
 
             if List.isEmpty pendings then
                 invalidOp "Cannot commit delta: no pending hot reload update."
@@ -402,17 +397,14 @@ type internal HotReloadSessionStore() =
             let pendings =
                 projects
                 |> Map.toList
-                |> List.choose (fun (key, state) ->
-                    state.PendingUpdate
-                    |> Option.map (fun pending -> key, state, pending))
+                |> List.choose (fun (key, state) -> state.PendingUpdate |> Option.map (fun pending -> key, state, pending))
 
             this.CommitPendingLocked pendings
             pendings |> List.map (fun (_, _, pending) -> pending.GenerationId))
 
     /// Discards ALL pending project updates (Roslyn's <c>DiscardSolutionUpdate</c>).
     member _.DiscardPendingUpdate() =
-        lock sessionLock (fun () ->
-            projects <- projects |> Map.map (fun _ state -> { state with PendingUpdate = None }))
+        lock sessionLock (fun () -> projects <- projects |> Map.map (fun _ state -> { state with PendingUpdate = None }))
 
 /// <summary>
 /// The project being compiled in-process on behalf of a hot reload session: the store of the

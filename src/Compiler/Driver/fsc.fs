@@ -1006,7 +1006,12 @@ let main4
         error (Error(FSComp.SR.fscQuotationLiteralsStaticLinking0 (), rangeStartup))
 
     let compilerEmitHook = resolveCompilerEmitHookForCompile tcConfig
-    compilerEmitHook.ValidateConfiguration(tcConfig.emitCaptureArtifacts, tcConfig.debuginfo, tcConfig.optSettings.LocalOptimizationsEnabled)
+
+    compilerEmitHook.ValidateConfiguration(
+        tcConfig.emitCaptureArtifacts,
+        tcConfig.debuginfo,
+        tcConfig.optSettings.LocalOptimizationsEnabled
+    )
 
     // Compute a static linker, it gets called later.
     let staticLinker = StaticLink(ctok, tcConfig, tcImports, tcGlobals)
@@ -1260,15 +1265,11 @@ let main6
                             // so the recording is complete; flag-off compiles never
                             // begin recording and read the empty map.
                             let stateMachineResumePoints =
-                                ClosureNameAllocationState.getRecordedStateMachineResumePoints
-                                    (tcGlobals.CompilerGlobalState.Value :> obj)
+                                ClosureNameAllocationState.getRecordedStateMachineResumePoints (tcGlobals.CompilerGlobalState.Value :> obj)
 
                             let implFiles = implFiles |> List.map (fun implFile -> implFile.ImplFile)
 
-                            EncMethodDebugInformation.computeMethodCustomDebugInfoRows
-                                tcGlobals
-                                implFiles
-                                stateMachineResumePoints
+                            EncMethodDebugInformation.computeMethodCustomDebugInfoRows tcGlobals implFiles stateMachineResumePoints
                         | None -> Map.empty
 
                     // Hot reload closure mapping: join the stamp -> closure-name pairs
@@ -1281,16 +1282,14 @@ let main6
                         match hotReloadCaptureInputs with
                         | Some captureInputs ->
                             let recordedClosureNames =
-                                ClosureNameAllocationState.getRecordedClosureStampNames
-                                    (tcGlobals.CompilerGlobalState.Value :> obj)
+                                ClosureNameAllocationState.getRecordedClosureStampNames (tcGlobals.CompilerGlobalState.Value :> obj)
 
                             if Map.isEmpty recordedClosureNames then
                                 Map.empty
                             else
                                 let (CheckedAssemblyAfterOptimization implFiles) = captureInputs.OptimizedImpls
 
-                                let implFiles =
-                                    implFiles |> List.map (fun implFile -> implFile.ImplFile)
+                                let implFiles = implFiles |> List.map (fun implFile -> implFile.ImplFile)
 
                                 ClosureNameAllocator.computeBaselineClosureNameRows tcGlobals implFiles recordedClosureNames
                         | None -> Map.empty

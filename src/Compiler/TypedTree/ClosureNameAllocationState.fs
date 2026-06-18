@@ -42,7 +42,8 @@ type ClosureNameStateHolder() =
     // State machine resume points recorded by IlxGen lowering, keyed by the
     // emitted state machine struct's full type name. Shares the recording lifecycle of
     // recordedNamesByStamp: both begin/clear together, so flag-off compiles never pay.
-    let mutable recordedResumePointsByTypeName: Dictionary<string, int list> option = None
+    let mutable recordedResumePointsByTypeName: Dictionary<string, int list> option =
+        None
 
     member _.BeginRecording() =
         lock syncRoot (fun () ->
@@ -58,8 +59,7 @@ type ClosureNameStateHolder() =
     member _.RecordedNames() =
         lock syncRoot (fun () ->
             match recordedNamesByStamp with
-            | Some recorded ->
-                recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
+            | Some recorded -> recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
             | None -> Map.empty)
 
     member _.IsClosureNameRecordingActive =
@@ -77,8 +77,7 @@ type ClosureNameStateHolder() =
     member _.RecordedResumePoints() =
         lock syncRoot (fun () ->
             match recordedResumePointsByTypeName with
-            | Some recorded ->
-                recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
+            | Some recorded -> recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
             | None -> Map.empty)
 
     member _.SetAssignedNames(names: Map<int64, string>) =

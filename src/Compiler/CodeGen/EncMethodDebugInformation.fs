@@ -105,47 +105,57 @@ type EncLocalSlotInfo =
 /// index in EncMethodDebugInformation.Closures; lambdas reference closures by that index.
 /// SyntaxOffset: in F#, the occurrence key of the closure's occurrence.
 type EncClosureInfo =
-    { /// Occurrence key (Roslyn: syntax offset of the scope owning the closure).
-      SyntaxOffset: int }
+    {
+        /// Occurrence key (Roslyn: syntax offset of the scope owning the closure).
+        SyntaxOffset: int
+    }
 
 /// One lambda in the EnC Lambda and Closure Map.
 type EncLambdaInfo =
-    { /// Occurrence key (Roslyn: syntax offset of the lambda body).
-      SyntaxOffset: int
-      /// Index into EncMethodDebugInformation.Closures of the closure holding the
-      /// lambda's captures, or StaticClosureOrdinal / ThisOnlyClosureOrdinal.
-      ClosureOrdinal: int }
+    {
+        /// Occurrence key (Roslyn: syntax offset of the lambda body).
+        SyntaxOffset: int
+        /// Index into EncMethodDebugInformation.Closures of the closure holding the
+        /// lambda's captures, or StaticClosureOrdinal / ThisOnlyClosureOrdinal.
+        ClosureOrdinal: int
+    }
 
 /// One suspension point in the EnC State Machine State Map.
 type EncStateMachineStateInfo =
-    { /// State machine state number assigned to the suspension point (may be negative:
-      /// Roslyn uses negative numbers for increasing-iteration finalize states).
-      StateNumber: int
-      /// Occurrence key (Roslyn: syntax offset of the await/yield syntax node).
-      SyntaxOffset: int }
+    {
+        /// State machine state number assigned to the suspension point (may be negative:
+        /// Roslyn uses negative numbers for increasing-iteration finalize states).
+        StateNumber: int
+        /// Occurrence key (Roslyn: syntax offset of the await/yield syntax node).
+        SyntaxOffset: int
+    }
 
 /// Debugging information associated with a method, persisted by the compiler in the
 /// Portable PDB to support Edit and Continue. Mirrors Roslyn's
 /// EditAndContinueMethodDebugInformation.
 type EncMethodDebugInformation =
-    { /// Ordinal of the method within its generation (>= -1; UndefinedMethodOrdinal when absent).
-      MethodOrdinal: int
-      /// Local slot layout, in slot-index order (EnC Local Slot Map).
-      LocalSlots: EncLocalSlotInfo list
-      /// Closure scopes, in ordinal order (EnC Lambda and Closure Map).
-      Closures: EncClosureInfo list
-      /// Lambdas, in ordinal order (EnC Lambda and Closure Map).
-      Lambdas: EncLambdaInfo list
-      /// State machine suspension points (EnC State Machine State Map).
-      StateMachineStates: EncStateMachineStateInfo list }
+    {
+        /// Ordinal of the method within its generation (>= -1; UndefinedMethodOrdinal when absent).
+        MethodOrdinal: int
+        /// Local slot layout, in slot-index order (EnC Local Slot Map).
+        LocalSlots: EncLocalSlotInfo list
+        /// Closure scopes, in ordinal order (EnC Lambda and Closure Map).
+        Closures: EncClosureInfo list
+        /// Lambdas, in ordinal order (EnC Lambda and Closure Map).
+        Lambdas: EncLambdaInfo list
+        /// State machine suspension points (EnC State Machine State Map).
+        StateMachineStates: EncStateMachineStateInfo list
+    }
 
     /// An empty map (no slots, lambdas, closures or states; undefined method ordinal).
     static member Empty =
-        { MethodOrdinal = UndefinedMethodOrdinal
-          LocalSlots = []
-          Closures = []
-          Lambdas = []
-          StateMachineStates = [] }
+        {
+            MethodOrdinal = UndefinedMethodOrdinal
+            LocalSlots = []
+            Closures = []
+            Lambdas = []
+            StateMachineStates = []
+        }
 
 // ---------------------------------------------------------------------------
 // Occurrence-key packing
@@ -327,7 +337,10 @@ let serializeLambdaMap (info: EncMethodDebugInformation) : byte[] =
             builder.WriteCompressedInteger(closure.SyntaxOffset - syntaxOffsetBaseline)
 
         for lambda in lambdas do
-            if lambda.ClosureOrdinal < MinClosureOrdinal || lambda.ClosureOrdinal >= closures.Length then
+            if
+                lambda.ClosureOrdinal < MinClosureOrdinal
+                || lambda.ClosureOrdinal >= closures.Length
+            then
                 invalidArg
                     (nameof info)
                     $"lambda closure ordinal %d{lambda.ClosureOrdinal} is outside [%d{MinClosureOrdinal}, %d{closures.Length})"
@@ -370,8 +383,10 @@ let deserializeLambdaMap (blob: byte[]) : int * EncClosureInfo list * EncLambdaI
                         invalidData "lambda map" reader.Offset
 
                     lambdas.Add
-                        { SyntaxOffset = syntaxOffset
-                          ClosureOrdinal = closureOrdinal }
+                        {
+                            SyntaxOffset = syntaxOffset
+                            ClosureOrdinal = closureOrdinal
+                        }
             with :? BadImageFormatException ->
                 invalidData "lambda map" reader.Offset
 
@@ -409,9 +424,7 @@ let serializeStateMachineStates (info: EncMethodDebugInformation) : byte[] =
         // (relative ordinal must fit a byte, line 344); fail closed at write time.
         for _, group in states |> List.groupBy (fun s -> s.SyntaxOffset) do
             if group.Length > 256 then
-                invalidArg
-                    (nameof info)
-                    $"more than 256 state machine states share syntax offset %d{group.Head.SyntaxOffset}"
+                invalidArg (nameof info) $"more than 256 state machine states share syntax offset %d{group.Head.SyntaxOffset}"
 
         for state in states |> List.sortBy (fun s -> s.SyntaxOffset) do
             builder.WriteCompressedSignedInteger state.StateNumber
@@ -451,14 +464,20 @@ let deserializeStateMachineStates (blob: byte[]) : EncStateMachineStateInfo list
                         if syntaxOffset < lastSyntaxOffset then
                             invalidData "state machine state map" reader.Offset
 
-                        relativeOrdinal <- if syntaxOffset = lastSyntaxOffset then relativeOrdinal + 1 else 0
+                        relativeOrdinal <-
+                            if syntaxOffset = lastSyntaxOffset then
+                                relativeOrdinal + 1
+                            else
+                                0
 
                         if relativeOrdinal > 255 then
                             invalidData "state machine state map" reader.Offset
 
                         states.Add
-                            { StateNumber = stateNumber
-                              SyntaxOffset = syntaxOffset }
+                            {
+                                StateNumber = stateNumber
+                                SyntaxOffset = syntaxOffset
+                            }
 
                         lastSyntaxOffset <- syntaxOffset
             with :? BadImageFormatException ->
@@ -473,11 +492,13 @@ let deserializeStateMachineStates (blob: byte[]) : EncStateMachineStateInfo list
 let deserialize (slotMapBlob: byte[]) (lambdaMapBlob: byte[]) (stateMachineStateMapBlob: byte[]) : EncMethodDebugInformation =
     let methodOrdinal, closures, lambdas = deserializeLambdaMap lambdaMapBlob
 
-    { MethodOrdinal = methodOrdinal
-      LocalSlots = deserializeLocalSlots slotMapBlob
-      Closures = closures
-      Lambdas = lambdas
-      StateMachineStates = deserializeStateMachineStates stateMachineStateMapBlob }
+    {
+        MethodOrdinal = methodOrdinal
+        LocalSlots = deserializeLocalSlots slotMapBlob
+        Closures = closures
+        Lambdas = lambdas
+        StateMachineStates = deserializeStateMachineStates stateMachineStateMapBlob
+    }
 
 // ---------------------------------------------------------------------------
 // Baseline emission bridge: lambda occurrences -> CDI rows for the
@@ -509,8 +530,7 @@ let private occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
 /// occurrences, so the method then gets no lambda map at all.
 let tryCreateFromLambdaOccurrences (occurrences: LambdaOccurrence list) : EncMethodDebugInformation option =
     let keys =
-        occurrences
-        |> List.map (occurrenceOrdinalChain >> tryEncodeOccurrenceKey)
+        occurrences |> List.map (occurrenceOrdinalChain >> tryEncodeOccurrenceKey)
 
     if keys |> List.exists Option.isNone then
         None
@@ -518,15 +538,19 @@ let tryCreateFromLambdaOccurrences (occurrences: LambdaOccurrence list) : EncMet
         let keys = keys |> List.map Option.get
 
         Some
-            { MethodOrdinal = UndefinedMethodOrdinal
-              LocalSlots = []
-              Closures = keys |> List.map (fun key -> { SyntaxOffset = key })
-              Lambdas =
-                keys
-                |> List.mapi (fun closureOrdinal key ->
-                    { SyntaxOffset = key
-                      ClosureOrdinal = closureOrdinal })
-              StateMachineStates = [] }
+            {
+                MethodOrdinal = UndefinedMethodOrdinal
+                LocalSlots = []
+                Closures = keys |> List.map (fun key -> { SyntaxOffset = key })
+                Lambdas =
+                    keys
+                    |> List.mapi (fun closureOrdinal key ->
+                        {
+                            SyntaxOffset = key
+                            ClosureOrdinal = closureOrdinal
+                        })
+                StateMachineStates = []
+            }
 
 /// Computes the per-member EnC method debug information of a flag-on compilation from its
 /// implementation files, keyed by IL method (compiled) name. Keying is fail closed: members
@@ -601,8 +625,10 @@ let computeMethodCustomDebugInfoRows
                     resumePoints
                     |> List.sortBy id
                     |> List.mapi (fun ordinal stateNumber ->
-                        { StateNumber = stateNumber
-                          SyntaxOffset = ordinal })
+                        {
+                            StateNumber = stateNumber
+                            SyntaxOffset = ordinal
+                        })
 
                 Some(methName, states)
             | _ -> None)
@@ -620,8 +646,10 @@ let computeMethodCustomDebugInfoRows
                 Map.add
                     methName
                     [
-                        { KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap
-                          Blob = lambdaMapBlob }
+                        {
+                            KindGuid = PortableCustomDebugInfoKinds.encLambdaAndClosureMap
+                            Blob = lambdaMapBlob
+                        }
                     ]
                     acc)
 
@@ -630,14 +658,17 @@ let computeMethodCustomDebugInfoRows
         let stateMapBlob =
             serializeStateMachineStates
                 { EncMethodDebugInformation.Empty with
-                    StateMachineStates = states }
+                    StateMachineStates = states
+                }
 
         if stateMapBlob.Length = 0 then
             acc
         else
             let stateRow =
-                { KindGuid = PortableCustomDebugInfoKinds.encStateMachineStateMap
-                  Blob = stateMapBlob }
+                {
+                    KindGuid = PortableCustomDebugInfoKinds.encStateMachineStateMap
+                    Blob = stateMapBlob
+                }
 
             match Map.tryFind methName acc with
             | Some rows -> Map.add methName (rows @ [ stateRow ]) acc
@@ -685,12 +716,7 @@ let readEncMethodDebugInfoFromPortablePdb (pdbBytes: byte[]) : Map<int, EncMetho
                         stateMapBlobs[methodToken] <- reader.GetBlobBytes cdi.Value
 
             let methodTokens =
-                Seq.concat
-                    [
-                        slotMapBlobs.Keys :> seq<int>
-                        lambdaMapBlobs.Keys
-                        stateMapBlobs.Keys
-                    ]
+                Seq.concat [ slotMapBlobs.Keys :> seq<int>; lambdaMapBlobs.Keys; stateMapBlobs.Keys ]
                 |> Seq.distinct
 
             let tryBlob (blobs: Dictionary<int, byte[]>) token =

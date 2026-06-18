@@ -33,7 +33,8 @@ let private shouldTracePdb () =
         | value when String.Equals(value, "true", StringComparison.OrdinalIgnoreCase) -> true
         | _ -> false
 
-    isEnabled "FSHARP_HOTRELOAD_TRACE_PDB" || isEnabled "FSHARP_HOTRELOAD_TRACE_METADATA"
+    isEnabled "FSHARP_HOTRELOAD_TRACE_PDB"
+    || isEnabled "FSHARP_HOTRELOAD_TRACE_METADATA"
 
 /// Create a PDB snapshot from Portable PDB bytes.
 /// Uses pure F# parsing instead of SRM for the reading path.
@@ -65,9 +66,11 @@ let createSnapshot (pdbBytes: byte[]) : PortablePdbSnapshot =
         // Index 6 = StateMachineMethod (0x36), not commonly used
         counts.[DeltaTokens.tableCustomDebugInformation] <- pdbMeta.TableRowCounts.[7]
 
-        { Bytes = Array.copy pdbBytes
-          TableRowCounts = ImmutableArray.CreateRange counts
-          EntryPointToken = pdbMeta.EntryPointToken }
+        {
+            Bytes = Array.copy pdbBytes
+            TableRowCounts = ImmutableArray.CreateRange counts
+            EntryPointToken = pdbMeta.EntryPointToken
+        }
 
 /// Emit a PDB delta for the given hot reload generation.
 /// Takes the metadata EncLog and EncMap (using TableName for type safety)
@@ -104,9 +107,12 @@ let emitDelta
         if List.isEmpty distinctTokens then
             if shouldTracePdb () then
                 printfn "[hotreload-pdb] distinct token list empty"
+
             None
         else
-            use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange updatedPdbBytes)
+            use provider =
+                MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange updatedPdbBytes)
+
             let reader = provider.GetMetadataReader()
             let metadata = MetadataBuilder()
             let documentMap = Dictionary<DocumentHandle, DocumentHandle>()
@@ -120,6 +126,7 @@ let emitDelta
                     try
                         let document = reader.GetDocument sourceHandle
                         let nameBytes = reader.GetBlobBytes document.Name
+
                         let hashBytes =
                             if document.Hash.IsNil then
                                 Array.empty<byte>
@@ -148,11 +155,11 @@ let emitDelta
 
                         documentMap[sourceHandle] <- added
                         added
-                    with
-                    | :? BadImageFormatException as ex ->
+                    with :? BadImageFormatException as ex ->
                         // Corrupted PDB metadata - skip this document gracefully
                         if shouldTracePdb () then
                             printfn "[hotreload-pdb] warning: could not read document (handle=%A): %s" sourceHandle ex.Message
+
                         DocumentHandle()
 
             for token in distinctTokens do
@@ -181,10 +188,13 @@ let emitDelta
                         // (the prior bug) made the PDB EncMap disagree with the metadata EncMap
                         // once an earlier edit ADDED a method and shifted the fresh rows.
                         let methodRow = MetadataTokens.GetRowNumber sourceHandle
-                        let baselineMethodRow = MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle token)
+
+                        let baselineMethodRow =
+                            MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle token)
 
                         if methodRow <= reader.MethodDebugInformation.Count then
                             let methodInfo = reader.GetMethodDebugInformation sourceHandle
+
                             let targetDocument =
                                 if methodInfo.Document.IsNil then
                                     DocumentHandle()
@@ -197,18 +207,22 @@ let emitDelta
                                 else
                                     metadata.GetOrAddBlob(reader.GetBlobBytes methodInfo.SequencePointsBlob)
 
-                            metadata.AddMethodDebugInformation(targetDocument, sequencePointsHandle) |> ignore
+                            metadata.AddMethodDebugInformation(targetDocument, sequencePointsHandle)
+                            |> ignore
+
                             emittedMethodRows.Add(baselineMethodRow)
                             emitted <- true
-                        else
+                        else if
                             // Newly added methods may not have debug info in the updated PDB if their row
                             // exceeds the MethodDebugInformation table count. This is a known limitation -
                             // debuggers won't be able to step into newly added methods until a full rebuild.
                             // TODO: Emit empty MethodDebugInformation entries for new methods to enable debugging.
-                            if shouldTracePdb () then
-                                let rowCount = reader.MethodDebugInformation.Count
-                                printfn
-                                    $"[hotreload-pdb] skipping newly added method (row %d{methodRow} > count %d{rowCount}) - debugger stepping unavailable (delta=0x%08x{token}, source=0x%08x{sourceToken})"
+                            shouldTracePdb ()
+                        then
+                            let rowCount = reader.MethodDebugInformation.Count
+
+                            printfn
+                                $"[hotreload-pdb] skipping newly added method (row %d{methodRow} > count %d{rowCount}) - debugger stepping unavailable (delta=0x%08x{token}, source=0x%08x{sourceToken})"
 
             // Per Roslyn DeltaMetadataWriter.cs: PDB delta EncMap should contain MethodDebugInformation
             // entries (which correspond 1:1 to MethodDef), not metadata table entries. The PDB EncLog
@@ -233,6 +247,7 @@ let emitDelta
             if not emitted then
                 if shouldTracePdb () then
                     printfn $"[hotreload-pdb] no method debug info emitted for tokens {distinctTokens}"
+
                 None
             else
                 let entryPointHandle =

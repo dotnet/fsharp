@@ -44,31 +44,38 @@ type FSharpHotReloadCapabilities internal (flags: FSharpHotReloadCapability) =
     member _.SupportsIl = flags.HasFlag(FSharpHotReloadCapability.Il)
     member _.SupportsMetadata = flags.HasFlag(FSharpHotReloadCapability.Metadata)
     member _.SupportsPortablePdb = flags.HasFlag(FSharpHotReloadCapability.PortablePdb)
-    member _.SupportsMultipleGenerations = flags.HasFlag(FSharpHotReloadCapability.MultipleGenerations)
+
+    member _.SupportsMultipleGenerations =
+        flags.HasFlag(FSharpHotReloadCapability.MultipleGenerations)
+
     member _.SupportsRuntimeApply = flags.HasFlag(FSharpHotReloadCapability.RuntimeApply)
 
     static member internal FromInternalFlags(flags: HotReloadCapabilityFlags) =
-        let casted = enum<FSharpHotReloadCapability>(int flags)
+        let casted = enum<FSharpHotReloadCapability> (int flags)
         FSharpHotReloadCapabilities(casted)
 
 type FSharpAddedOrChangedMethodInfo =
-    { MethodToken: int
-      LocalSignatureToken: int
-      CodeOffset: int
-      CodeLength: int }
+    {
+        MethodToken: int
+        LocalSignatureToken: int
+        CodeOffset: int
+        CodeLength: int
+    }
 
 type FSharpHotReloadDelta =
-    { Metadata: byte[]
-      IL: byte[]
-      Pdb: byte[] option
-      UpdatedTypes: int list
-      UpdatedMethods: int list
-      AddedOrChangedMethods: FSharpAddedOrChangedMethodInfo list
-      UserStringUpdates: struct (int * int * string) list
-      GenerationId: Guid
-      BaseGenerationId: Guid
-      SequencePointUpdates: FSharpSequencePointUpdates list
-      ActiveStatementUpdates: FSharpActiveStatementRemapResult list }
+    {
+        Metadata: byte[]
+        IL: byte[]
+        Pdb: byte[] option
+        UpdatedTypes: int list
+        UpdatedMethods: int list
+        AddedOrChangedMethods: FSharpAddedOrChangedMethodInfo list
+        UserStringUpdates: struct (int * int * string) list
+        GenerationId: Guid
+        BaseGenerationId: Guid
+        SequencePointUpdates: FSharpSequencePointUpdates list
+        ActiveStatementUpdates: FSharpActiveStatementRemapResult list
+    }
 
 [<Sealed>]
 type internal FSharpHotReloadService
@@ -84,13 +91,12 @@ type internal FSharpHotReloadService
         getErrorDiagnostics: FSharpDiagnostic[] -> FSharpDiagnostic[],
         waitForStableFile: string -> unit,
         tryGetOutputFingerprint: string -> (DateTime * byte[] option) option,
-        hasOutputFingerprintChanged:
-            string -> (DateTime * byte[] option) option -> (DateTime * byte[] option) option -> bool,
+        hasOutputFingerprintChanged: string -> (DateTime * byte[] option) option -> (DateTime * byte[] option) option -> bool,
         toPublicDelta: IlxDelta -> FSharpHotReloadDelta,
         mapHotReloadError: HotReloadError -> FSharpHotReloadError
     ) =
 
-    let hotReloadGate = obj()
+    let hotReloadGate = obj ()
 
     // Per-project synthesized-name replay maps (keyed like the session store slots).
     let synthesizedTypeMaps =
@@ -152,17 +158,13 @@ type internal FSharpHotReloadService
                     let tcGlobals, implementationFiles = getHotReloadDiffInputs projectResults
                     waitForStableFile outputPath
 
-                    let baselineResult : Result<_, FSharpHotReloadError> =
+                    let baselineResult: Result<_, FSharpHotReloadError> =
                         try
                             let ilModule = readIlModule outputPath
                             let baseline = createBaseline tcGlobals ilModule outputPath
                             Ok(baseline, implementationFiles)
                         with ex ->
-                            Result.Error(
-                                FSharpHotReloadError.DeltaEmissionFailed(
-                                    $"Failed to create hot reload baseline: {ex.Message}"
-                                )
-                            )
+                            Result.Error(FSharpHotReloadError.DeltaEmissionFailed($"Failed to create hot reload baseline: {ex.Message}"))
 
                     match baselineResult with
                     | Result.Error error -> return Result.Error error
@@ -208,6 +210,7 @@ type internal FSharpHotReloadService
                              | _ -> ())
 
                             let compilerState = tcGlobals.CompilerGlobalState.Value
+
                             let map =
                                 let targetMap = getOrCreateSynthesizedTypeMap projectKey
 
@@ -215,6 +218,7 @@ type internal FSharpHotReloadService
                                 |> Map.toSeq
                                 |> Seq.map (fun (k, v) -> struct (k, v))
                                 |> targetMap.LoadSnapshot
+
                                 targetMap.BeginSession()
                                 targetMap
 
@@ -235,7 +239,7 @@ type internal FSharpHotReloadService
                             committedOutputFingerprints[projectKey] <- tryGetOutputFingerprint outputPath
                             pendingOutputFingerprints.Remove projectKey |> ignore)
 
-                        return Result.Ok ()
+                        return Result.Ok()
         }
 
     /// <summary>
@@ -292,6 +296,7 @@ type internal FSharpHotReloadService
                                     |> Map.toSeq
                                     |> Seq.map (fun (k, v) -> struct (k, v))
                                     |> map.LoadSnapshot
+
                                     map.BeginSession()
                                     setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
                                     true
@@ -306,11 +311,7 @@ type internal FSharpHotReloadService
                                 | ValueNone -> None
                                 | ValueSome session ->
                                     let symbolChanges =
-                                        computeSymbolChanges
-                                            tcGlobals
-                                            session.Capabilities
-                                            session.ImplementationFiles
-                                            implementationFiles
+                                        computeSymbolChanges tcGlobals session.Capabilities session.ImplementationFiles implementationFiles
 
                                     match mapSymbolChangesToDelta session.Baseline symbolChanges with
                                     | Error mappingErrors ->
@@ -342,7 +343,7 @@ type internal FSharpHotReloadService
                         match staleOutputErrorOpt with
                         | Some staleError -> return Result.Error staleError
                         | None ->
-                            let ilModuleResult : Result<_, FSharpHotReloadError> =
+                            let ilModuleResult: Result<_, FSharpHotReloadError> =
                                 try
                                     readIlModule outputPath |> Ok
                                 with ex ->
@@ -359,7 +360,10 @@ type internal FSharpHotReloadService
                                     match synthesizedTypeMaps.TryGetValue projectKey with
                                     | true, map ->
                                         map.BeginSession()
-                                        setCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) (map :> ICompilerGeneratedNameMap)
+
+                                        setCompilerGeneratedNameMap
+                                            (tcGlobals.CompilerGlobalState.Value :> obj)
+                                            (map :> ICompilerGeneratedNameMap)
                                     | false, _ -> ())
 
                                 // Sequence-point tracking: the fresh compile's on-disk PDB carries the sequence
@@ -393,10 +397,9 @@ type internal FSharpHotReloadService
                                 with
                                 | Ok result ->
                                     match result.Delta.UpdatedBaseline with
-                                    | Some _ ->
-                                        lock hotReloadGate (fun () ->
-                                            pendingOutputFingerprints[projectKey] <- outputFingerprint)
+                                    | Some _ -> lock hotReloadGate (fun () -> pendingOutputFingerprints[projectKey] <- outputFingerprint)
                                     | None -> ()
+
                                     return Result.Ok(toPublicDelta result.Delta)
                                 | Error error -> return Result.Error(mapHotReloadError error)
         }
@@ -527,10 +530,12 @@ type FSharpHotReloadSession
             let opName = defaultArg userOpName "Unknown"
 
             use _ =
-                Activity.start "FSharpHotReloadSession.AddProject" [|
-                    Activity.Tags.userOpName, opName
-                    Activity.Tags.project, projectSnapshot.ProjectFileName
-                |]
+                Activity.start
+                    "FSharpHotReloadSession.AddProject"
+                    [|
+                        Activity.Tags.userOpName, opName
+                        Activity.Tags.project, projectSnapshot.ProjectFileName
+                    |]
 
             let projectKey = projectKeyOfSnapshot projectSnapshot
 
@@ -545,10 +550,7 @@ type FSharpHotReloadSession
             let trackedInputs = computeTrackedInputs projectSnapshot
 
             let! result =
-                hotReloadService.AddHotReloadProject
-                    projectKey
-                    (fun () -> parseAndCheckSnapshot projectSnapshot opName)
-                    resolvedOutputPath
+                hotReloadService.AddHotReloadProject projectKey (fun () -> parseAndCheckSnapshot projectSnapshot opName) resolvedOutputPath
 
             match result, resolvedOutputPath with
             | Ok(), Some path ->
@@ -579,10 +581,12 @@ type FSharpHotReloadSession
             let opName = defaultArg userOpName "Unknown"
 
             use _ =
-                Activity.start "FSharpHotReloadSession.EmitDelta" [|
-                    Activity.Tags.userOpName, opName
-                    Activity.Tags.project, projectSnapshot.ProjectFileName
-                |]
+                Activity.start
+                    "FSharpHotReloadSession.EmitDelta"
+                    [|
+                        Activity.Tags.userOpName, opName
+                        Activity.Tags.project, projectSnapshot.ProjectFileName
+                    |]
 
             let projectKey = projectKeyOfSnapshot projectSnapshot
 

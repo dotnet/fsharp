@@ -49,11 +49,8 @@ let getCompilerGeneratedNameMapAccessor (owner: obj) : unit -> ICompilerGenerate
     let holder = getOrCreateHolder owner
     fun () -> holder.TryGet()
 
-let setCompilerGeneratedNameMap (owner: obj) (map: ICompilerGeneratedNameMap) =
-    (getOrCreateHolder owner).Set(Some map)
+let setCompilerGeneratedNameMap (owner: obj) (map: ICompilerGeneratedNameMap) = (getOrCreateHolder owner).Set(Some map)
 
-let setCompilerGeneratedNameMapOpt (owner: obj) (map: ICompilerGeneratedNameMap option) =
-    (getOrCreateHolder owner).Set(map)
+let setCompilerGeneratedNameMapOpt (owner: obj) (map: ICompilerGeneratedNameMap option) = (getOrCreateHolder owner).Set(map)
 
-let clearCompilerGeneratedNameMap (owner: obj) =
-    (getOrCreateHolder owner).Set(None)
+let clearCompilerGeneratedNameMap (owner: obj) = (getOrCreateHolder owner).Set(None)

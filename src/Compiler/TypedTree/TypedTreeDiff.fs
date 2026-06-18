@@ -46,17 +46,19 @@ type RuntimeTypeIdentity =
 
 /// Stable identity for values and entities tracked across baseline/hot reload sessions.
 type SymbolId =
-    { Path: string list
-      LogicalName: string
-      Stamp: Stamp
-      Kind: SymbolKind
-      MemberKind: SymbolMemberKind option
-      IsSynthesized: bool
-      CompiledName: string option
-      TotalArgCount: int option
-      GenericArity: int option
-      ParameterTypeIdentities: RuntimeTypeIdentity list option
-      ReturnTypeIdentity: RuntimeTypeIdentity option }
+    {
+        Path: string list
+        LogicalName: string
+        Stamp: Stamp
+        Kind: SymbolKind
+        MemberKind: SymbolMemberKind option
+        IsSynthesized: bool
+        CompiledName: string option
+        TotalArgCount: int option
+        GenericArity: int option
+        ParameterTypeIdentities: RuntimeTypeIdentity list option
+        ReturnTypeIdentity: RuntimeTypeIdentity option
+    }
 
     member x.QualifiedName =
         match x.Path with
@@ -83,12 +85,12 @@ type RudeEditKind =
     | SynthesizedDeclarationChange
     | Unsupported
     // Method addition restrictions (following Roslyn patterns)
-    | InsertVirtual           // Virtual/abstract/override methods cannot be added
-    | InsertConstructor       // Constructors cannot be added to existing types
-    | InsertOperator          // User-defined operators cannot be added
+    | InsertVirtual // Virtual/abstract/override methods cannot be added
+    | InsertConstructor // Constructors cannot be added to existing types
+    | InsertOperator // User-defined operators cannot be added
     | InsertExplicitInterface // Explicit interface implementations cannot be added
-    | InsertIntoInterface     // Members cannot be added to interfaces
-    | FieldAdded              // Fields cannot be added (type layout change)
+    | InsertIntoInterface // Members cannot be added to interfaces
+    | FieldAdded // Fields cannot be added (type layout change)
     // The edit itself is valid for hot reload, but the runtime did not advertise the
     // capability required to apply it (mirrors Roslyn's RudeEditKind.NotSupportedByRuntime).
     | NotSupportedByRuntime
@@ -111,17 +113,21 @@ let capabilityForAddition (kind: AdditionKind) : EditAndContinueCapability =
     | AdditionKind.StaticField -> EditAndContinueCapability.AddStaticFieldToExistingType
 
 type SemanticEdit =
-    { Symbol: SymbolId
-      Kind: SemanticEditKind
-      BaselineHash: int option
-      UpdatedHash: int option
-      IsSynthesized: bool
-      ContainingEntity: string option }
+    {
+        Symbol: SymbolId
+        Kind: SemanticEditKind
+        BaselineHash: int option
+        UpdatedHash: int option
+        IsSynthesized: bool
+        ContainingEntity: string option
+    }
 
 type RudeEdit =
-    { Symbol: SymbolId option
-      Kind: RudeEditKind
-      Message: string }
+    {
+        Symbol: SymbolId option
+        Kind: RudeEditKind
+        Message: string
+    }
 
 // ---------------------------------------------------------------------------
 // Lambda occurrence model
@@ -136,53 +142,59 @@ type RudeEdit =
 
 /// Identity of a single lambda occurrence within a member body.
 type LambdaOccurrenceId =
-    { /// The member whose body contains this lambda occurrence.
-      MemberSymbol: SymbolId
-      /// Pre-order traversal index of this occurrence among all lambda occurrences
-      /// extracted from the member body (consecutive curried lambdas form ONE occurrence).
-      Ordinal: int
-      /// Ordinals of the enclosing lambda occurrences, nearest enclosing first.
-      /// Empty for occurrences directly inside the member body.
-      ParentChain: int list }
+    {
+        /// The member whose body contains this lambda occurrence.
+        MemberSymbol: SymbolId
+        /// Pre-order traversal index of this occurrence among all lambda occurrences
+        /// extracted from the member body (consecutive curried lambdas form ONE occurrence).
+        Ordinal: int
+        /// Ordinals of the enclosing lambda occurrences, nearest enclosing first.
+        /// Empty for occurrences directly inside the member body.
+        ParentChain: int list
+    }
 
 /// Identity of a value captured by a lambda occurrence from an enclosing scope:
 /// logical (source) name plus runtime type identity. Mirrors Roslyn's display-class
 /// field matching, which keys captured variables by name and type. Self captures are
 /// normalized to 'this'/'base' so renaming the F# self identifier is not a capture rename.
 type CaptureIdentity =
-    { /// Source-level logical name of the captured value.
-      LogicalName: string
-      /// Runtime type identity of the captured value.
-      Type: RuntimeTypeIdentity }
+    {
+        /// Source-level logical name of the captured value.
+        LogicalName: string
+        /// Runtime type identity of the captured value.
+        Type: RuntimeTypeIdentity
+    }
 
 /// A lambda occurrence extracted from a member body. Consecutive curried lambdas
 /// (fun x -> fun y -> ...) are merged into one occurrence, matching how IlxGen forms
 /// a single closure class for a curried lambda chain.
 type LambdaOccurrence =
-    { /// Structural/positional identity of this occurrence.
-      Id: LambdaOccurrenceId
-      /// Number of consecutive curried lambda groups merged into this occurrence.
-      CurriedArity: int
-      /// Runtime type identities of the parameters in each curried group. Part of the
-      /// structural digest so parameter-shape changes never silently align (the legacy
-      /// digest treated them as shape changes, and so do we).
-      ParameterTypes: RuntimeTypeIdentity list list
-      /// Values captured from enclosing scopes (free locals of the occurrence expression
-      /// that are not module/member-level), ordered deterministically by identity.
-      Captures: CaptureIdentity list
-      /// Runtime type identity of the value produced after all curried groups are applied.
-      ReturnTypeIdentity: RuntimeTypeIdentity
-      /// Digest of the occurrence expression, used to detect pure body edits between two
-      /// occurrences that share the same structural digest. Never part of identity.
-      BodyHash: int
-      /// Unique stamp of the occurrence's root lambda expression (the outermost
-      /// Expr.Lambda of a curried group). This is the bridge to IlxGen's closure naming
-      /// call site, which sees the same stamp when lowering the same tree — extraction
-      /// bookkeeping only, never part of the structural digest or alignment, and only
-      /// meaningful within the compilation that produced the expression.
-      RootExprStamp: int64
-      /// Source range of the occurrence. Diagnostics only — never identity.
-      Range: range }
+    {
+        /// Structural/positional identity of this occurrence.
+        Id: LambdaOccurrenceId
+        /// Number of consecutive curried lambda groups merged into this occurrence.
+        CurriedArity: int
+        /// Runtime type identities of the parameters in each curried group. Part of the
+        /// structural digest so parameter-shape changes never silently align (the legacy
+        /// digest treated them as shape changes, and so do we).
+        ParameterTypes: RuntimeTypeIdentity list list
+        /// Values captured from enclosing scopes (free locals of the occurrence expression
+        /// that are not module/member-level), ordered deterministically by identity.
+        Captures: CaptureIdentity list
+        /// Runtime type identity of the value produced after all curried groups are applied.
+        ReturnTypeIdentity: RuntimeTypeIdentity
+        /// Digest of the occurrence expression, used to detect pure body edits between two
+        /// occurrences that share the same structural digest. Never part of identity.
+        BodyHash: int
+        /// Unique stamp of the occurrence's root lambda expression (the outermost
+        /// Expr.Lambda of a curried group). This is the bridge to IlxGen's closure naming
+        /// call site, which sees the same stamp when lowering the same tree — extraction
+        /// bookkeeping only, never part of the structural digest or alignment, and only
+        /// meaningful within the compilation that produced the expression.
+        RootExprStamp: int64
+        /// Source range of the occurrence. Diagnostics only — never identity.
+        Range: range
+    }
 
 /// A change to the captured-value set of a matched lambda occurrence pair, classified
 /// with C#-parity kinds (RenamingCapturedVariable / ChangingCapturedVariableType /
@@ -227,18 +239,22 @@ type LambdaEdit =
 /// semantic/rude edits so added-lambda emission can consume the structured data without
 /// re-running occurrence extraction.
 type MemberLambdaEdits =
-    { /// The member whose body produced these lambda edits (baseline-side symbol).
-      MemberSymbol: SymbolId
-      /// Aligned per-occurrence edits, ordered by occurrence ordinal.
-      Edits: LambdaEdit list }
+    {
+        /// The member whose body produced these lambda edits (baseline-side symbol).
+        MemberSymbol: SymbolId
+        /// Aligned per-occurrence edits, ordered by occurrence ordinal.
+        Edits: LambdaEdit list
+    }
 
 type TypedTreeDiffResult =
-    { SemanticEdits: SemanticEdit list
-      RudeEdits: RudeEdit list
-      /// Structured lambda occurrence edits for members whose lambda sets were analyzed,
-      /// including members that produced rude edits (the payload names exactly which
-      /// occurrences were added/removed/capture-incompatible).
-      LambdaEdits: MemberLambdaEdits list }
+    {
+        SemanticEdits: SemanticEdit list
+        RudeEdits: RudeEdit list
+        /// Structured lambda occurrence edits for members whose lambda sets were analyzed,
+        /// including members that produced rude edits (the payload names exactly which
+        /// occurrences were added/removed/capture-incompatible).
+        LambdaEdits: MemberLambdaEdits list
+    }
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -275,7 +291,11 @@ let private traceHotReloadMethodDiff =
 
 let private propertyDisplayName (vref: ValRef) =
     let name = vref.PropertyName
-    if String.IsNullOrWhiteSpace name then vref.DisplayName else name
+
+    if String.IsNullOrWhiteSpace name then
+        vref.DisplayName
+    else
+        name
 
 let private tryEventMemberKind (compiledName: string) =
     if String.IsNullOrEmpty compiledName then
@@ -291,12 +311,14 @@ let private tryEventMemberKind (compiledName: string) =
 
 let private memberKindOfVal (var: Val) =
     let vref = mkLocalValRef var
+
     if vref.IsPropertyGetterMethod then
         Some(SymbolMemberKind.PropertyGet(propertyDisplayName vref))
     elif vref.IsPropertySetterMethod then
         Some(SymbolMemberKind.PropertySet(propertyDisplayName vref))
     else
         let compiledName = vref.CompiledName None
+
         match tryEventMemberKind compiledName with
         | Some accessor -> Some accessor
         | None when vref.MemberInfo.IsSome -> Some SymbolMemberKind.Method
@@ -346,8 +368,10 @@ let private normalizeTypeString (text: string) =
 
     while i < text.Length do
         let ch = text[i]
+
         if ch = '?' then
             let mutable j = i + 1
+
             while j < text.Length && Char.IsDigit text[j] do
                 j <- j + 1
 
@@ -366,19 +390,14 @@ let private normalizeTypeString (text: string) =
 
     sb.ToString().Replace("  ", " ").Trim()
 
-let private tyToString (_: DisplayEnv) (ty: TType) =
-    normalizeTypeString (ty.ToString())
+let private tyToString (_: DisplayEnv) (ty: TType) = normalizeTypeString (ty.ToString())
 
 let private runtimeNamedTypeIdentity (typeName: string) (args: RuntimeTypeIdentity list) =
     RuntimeTypeIdentity.NamedType(typeName, args)
 
 /// Encodes typed-tree parameter types into a typed runtime identity model that mirrors
 /// IL signature structure closely enough for structural token matching in DeltaBuilder.
-let rec private tryTypeIdentityFromTType
-    (g: TcGlobals)
-    (typarOrdinals: Map<Stamp, int>)
-    (ty: TType)
-    : RuntimeTypeIdentity option =
+let rec private tryTypeIdentityFromTType (g: TcGlobals) (typarOrdinals: Map<Stamp, int>) (ty: TType) : RuntimeTypeIdentity option =
     let ty = stripTyEqnsAndMeasureEqns g ty
 
     let tryEncodeGenericArgs (args: TType list) =
@@ -395,14 +414,17 @@ let rec private tryTypeIdentityFromTType
     | _ when isArrayTy g ty ->
         let rank = rankOfArrayTy g ty
         let elementType = destArrayTy g ty
+
         tryTypeIdentityFromTType g typarOrdinals elementType
         |> Option.map (fun elementIdentity -> RuntimeTypeIdentity.ArrayType(rank, elementIdentity))
     | _ when isByrefTy g ty ->
         let elementType = destByrefTy g ty
+
         tryTypeIdentityFromTType g typarOrdinals elementType
         |> Option.map RuntimeTypeIdentity.ByRefType
     | _ when isNativePtrTy g ty ->
         let elementType = destNativePtrTy g ty
+
         tryTypeIdentityFromTType g typarOrdinals elementType
         |> Option.map RuntimeTypeIdentity.PointerType
     | TType_app(tcref, tinst, _) ->
@@ -412,8 +434,7 @@ let rec private tryTypeIdentityFromTType
             with _ ->
                 tcref.CompiledName
 
-        tryEncodeGenericArgs tinst
-        |> Option.map (runtimeNamedTypeIdentity fullName)
+        tryEncodeGenericArgs tinst |> Option.map (runtimeNamedTypeIdentity fullName)
     | TType_anon(anonInfo, tys) ->
         tryEncodeGenericArgs tys
         |> Option.map (runtimeNamedTypeIdentity anonInfo.ILTypeRef.FullName)
@@ -424,8 +445,7 @@ let rec private tryTypeIdentityFromTType
             else
                 $"System.Tuple`{List.length tys}"
 
-        tryEncodeGenericArgs tys
-        |> Option.map (runtimeNamedTypeIdentity tupleName)
+        tryEncodeGenericArgs tys |> Option.map (runtimeNamedTypeIdentity tupleName)
     | TType_fun(domainTy, rangeTy, _) ->
         match tryTypeIdentityFromTType g typarOrdinals domainTy, tryTypeIdentityFromTType g typarOrdinals rangeTy with
         | Some domainIdentity, Some rangeIdentity ->
@@ -438,9 +458,8 @@ let rec private tryTypeIdentityFromTType
             with _ ->
                 ucref.TyconRef.CompiledName
 
-        tryEncodeGenericArgs tinst
-        |> Option.map (runtimeNamedTypeIdentity fullName)
-    | TType_var (typar, _) ->
+        tryEncodeGenericArgs tinst |> Option.map (runtimeNamedTypeIdentity fullName)
+    | TType_var(typar, _) ->
         Map.tryFind typar.Stamp typarOrdinals
         |> Option.map RuntimeTypeIdentity.TypeVariable
     | TType_measure _ -> None
@@ -450,7 +469,10 @@ let private tryGetMethodTyparOrdinalsAndGenericArity (g: TcGlobals) (var: Val) =
     | None -> None
     | Some valReprInfo ->
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal var
-        let tps, _, _, _, _ = GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars var.Type var.Range
+
+        let tps, _, _, _, _ =
+            GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars var.Type var.Range
+
         let nonErasedTypars = tps |> List.filter (fun typar -> not typar.IsErased)
 
         // Keep typar ordinals aligned with IL generation (TypeReprEnv.Add drops erased typars).
@@ -466,26 +488,24 @@ let private tryGetMethodTyparOrdinalsAndGenericArity (g: TcGlobals) (var: Val) =
             else
                 [], tps
 
-        let methodGenericArity = methodTypars |> List.filter (fun typar -> not typar.IsErased) |> List.length
+        let methodGenericArity =
+            methodTypars |> List.filter (fun typar -> not typar.IsErased) |> List.length
 
         // Non-erased enclosing typars: > 0 when the member is declared in a generic type
         // (in IL terms its signatures may reference VAR elements). Measure-only generic
         // enclosing types erase to non-generic IL and do not count.
-        let enclosingGenericArity = enclosingTypars |> List.filter (fun typar -> not typar.IsErased) |> List.length
+        let enclosingGenericArity =
+            enclosingTypars |> List.filter (fun typar -> not typar.IsErased) |> List.length
+
         Some(typarOrdinals, methodGenericArity, enclosingGenericArity)
 
 let private tryGetParameterTypeIdentities (g: TcGlobals) (typarOrdinals: Map<Stamp, int>) (var: Val) =
     let parameterTypes =
         match var.MemberInfo, var.ValReprInfo with
-        | Some _, _ ->
-            ArgInfosOfMember g (mkLocalValRef var)
-            |> List.concat
-            |> List.map fst
+        | Some _, _ -> ArgInfosOfMember g (mkLocalValRef var) |> List.concat |> List.map fst
         | None, Some valReprInfo ->
             let _, argInfos, _, _ = GetValReprTypeInFSharpForm g valReprInfo var.Type var.Range
-            argInfos
-            |> List.concat
-            |> List.map fst
+            argInfos |> List.concat |> List.map fst
         | None, None -> []
 
     let encoded = parameterTypes |> List.map (tryTypeIdentityFromTType g typarOrdinals)
@@ -505,7 +525,9 @@ let private tryGetReturnTypeIdentity (g: TcGlobals) (typarOrdinals: Map<Stamp, i
         match var.ValReprInfo with
         | Some valReprInfo ->
             let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal var
-            let _, _, _, returnTy, _ = GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars var.Type var.Range
+
+            let _, _, _, returnTy, _ =
+                GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars var.Type var.Range
 
             match returnTy with
             | None -> Some RuntimeTypeIdentity.VoidType
@@ -570,14 +592,14 @@ let private opDigest (denv: DisplayEnv) (op: TOp) =
     match op with
     | TOp.UnionCase ucref -> "UnionCase:" + ucref.CaseName
     | TOp.ExnConstr ecref -> "ExnConstr:" + ecref.LogicalName
-    | TOp.Tuple (TupInfo.Const isStruct) ->
+    | TOp.Tuple(TupInfo.Const isStruct) ->
         let kind = if isStruct then "struct" else "ref"
         "Tuple:" + kind
     | TOp.AnonRecd anonInfo ->
         // Include anonymous record field names for stability
         let fields = anonInfo.SortedNames |> String.concat ","
         "AnonRecd:" + fields
-    | TOp.AnonRecdGet (anonInfo, idx) ->
+    | TOp.AnonRecdGet(anonInfo, idx) ->
         let fields = anonInfo.SortedNames |> String.concat ","
         "AnonRecdGet:" + fields + ":" + string idx
     | TOp.Array -> "Array"
@@ -589,26 +611,31 @@ let private opDigest (denv: DisplayEnv) (op: TOp) =
         // Hash the actual uint16 content
         let arrHash = arr |> Array.fold (fun acc v -> hashCombine acc (int v)) 17
         "UInt16s:" + string arrHash
-    | TOp.While (_, marker) -> "While:" + string marker
-    | TOp.IntegerForLoop (_, _, style) -> "IntegerForLoop:" + string style
+    | TOp.While(_, marker) -> "While:" + string marker
+    | TOp.IntegerForLoop(_, _, style) -> "IntegerForLoop:" + string style
     | TOp.TryWith _ -> "TryWith"
     | TOp.TryFinally _ -> "TryFinally"
-    | TOp.Recd (info, tcref) -> "Recd:" + string info + ":" + tcref.LogicalName
+    | TOp.Recd(info, tcref) -> "Recd:" + string info + ":" + tcref.LogicalName
     | TOp.ValFieldSet rfref -> "ValFieldSet:" + rfref.FieldName
     | TOp.ValFieldGet rfref -> "ValFieldGet:" + rfref.FieldName
-    | TOp.ValFieldGetAddr (rfref, readonly) -> "ValFieldGetAddr:" + rfref.FieldName + ":" + string readonly
+    | TOp.ValFieldGetAddr(rfref, readonly) -> "ValFieldGetAddr:" + rfref.FieldName + ":" + string readonly
     | TOp.UnionCaseTagGet tcref -> "UnionCaseTagGet:" + tcref.LogicalName
     | TOp.UnionCaseProof ucref -> "UnionCaseProof:" + ucref.CaseName
-    | TOp.UnionCaseFieldGet (ucref, idx) -> "UnionCaseFieldGet:" + ucref.CaseName + ":" + string idx
-    | TOp.UnionCaseFieldGetAddr (ucref, idx, readonly) ->
-        "UnionCaseFieldGetAddr:" + ucref.CaseName + ":" + string idx + ":" + string readonly
-    | TOp.UnionCaseFieldSet (ucref, idx) -> "UnionCaseFieldSet:" + ucref.CaseName + ":" + string idx
-    | TOp.ExnFieldGet (tcref, idx) -> "ExnFieldGet:" + tcref.LogicalName + ":" + string idx
-    | TOp.ExnFieldSet (tcref, idx) -> "ExnFieldSet:" + tcref.LogicalName + ":" + string idx
-    | TOp.TupleFieldGet (TupInfo.Const isStruct, idx) ->
+    | TOp.UnionCaseFieldGet(ucref, idx) -> "UnionCaseFieldGet:" + ucref.CaseName + ":" + string idx
+    | TOp.UnionCaseFieldGetAddr(ucref, idx, readonly) ->
+        "UnionCaseFieldGetAddr:"
+        + ucref.CaseName
+        + ":"
+        + string idx
+        + ":"
+        + string readonly
+    | TOp.UnionCaseFieldSet(ucref, idx) -> "UnionCaseFieldSet:" + ucref.CaseName + ":" + string idx
+    | TOp.ExnFieldGet(tcref, idx) -> "ExnFieldGet:" + tcref.LogicalName + ":" + string idx
+    | TOp.ExnFieldSet(tcref, idx) -> "ExnFieldSet:" + tcref.LogicalName + ":" + string idx
+    | TOp.TupleFieldGet(TupInfo.Const isStruct, idx) ->
         let kind = if isStruct then "struct" else "ref"
         "TupleFieldGet:" + kind + ":" + string idx
-    | TOp.ILAsm (instrs, retTypes) ->
+    | TOp.ILAsm(instrs, retTypes) ->
         let instrsStr = instrs |> List.map (fun i -> i.ToString()) |> String.concat ";"
         let retStr = retTypes |> List.map (tyToString denv) |> String.concat ","
         "ILAsm:" + instrsStr + ":" + retStr
@@ -619,29 +646,44 @@ let private opDigest (denv: DisplayEnv) (op: TOp) =
     | TOp.Goto label -> "Goto:" + string label
     | TOp.Label label -> "Label:" + string label
     | TOp.TraitCall traitInfo -> "TraitCall:" + traitInfo.MemberLogicalName
-    | TOp.LValueOp (lvOp, vref) -> "LValueOp:" + string lvOp + ":" + vref.LogicalName
-    | TOp.ILCall (isVirtual, isProtected, isStruct, isCtor, valUseFlag, isProperty, noTailCall, ilMethRef, _, _, _) ->
-        "ILCall:" + string isVirtual + ":" + string isProtected + ":" + string isStruct + ":" +
-        string isCtor + ":" + string valUseFlag + ":" + string isProperty + ":" + string noTailCall +
-        ":" + ilMethRef.DeclaringTypeRef.FullName + "." + ilMethRef.Name
+    | TOp.LValueOp(lvOp, vref) -> "LValueOp:" + string lvOp + ":" + vref.LogicalName
+    | TOp.ILCall(isVirtual, isProtected, isStruct, isCtor, valUseFlag, isProperty, noTailCall, ilMethRef, _, _, _) ->
+        "ILCall:"
+        + string isVirtual
+        + ":"
+        + string isProtected
+        + ":"
+        + string isStruct
+        + ":"
+        + string isCtor
+        + ":"
+        + string valUseFlag
+        + ":"
+        + string isProperty
+        + ":"
+        + string noTailCall
+        + ":"
+        + ilMethRef.DeclaringTypeRef.FullName
+        + "."
+        + ilMethRef.Name
 
 type private LoweredShapeCollector =
-    { LambdaArities: ResizeArray<int>
-      // Ordered (source-order) sequence of calls into resumable-code builder members
-      // (`task` and other [<ResumableCode>]-typed CEs). Genuine state machines lower
-      // these to MoveNext resume points whose state numbers are assigned positionally,
-      // so the ORDER of the sequence is part of the state machine shape.
-      ResumableCodeCalls: ResizeArray<string>
-      QueryStructuralOperations: ResizeArray<string> }
+    {
+        LambdaArities: ResizeArray<int>
+        // Ordered (source-order) sequence of calls into resumable-code builder members
+        // (`task` and other [<ResumableCode>]-typed CEs). Genuine state machines lower
+        // these to MoveNext resume points whose state numbers are assigned positionally,
+        // so the ORDER of the sequence is part of the state machine shape.
+        ResumableCodeCalls: ResizeArray<string>
+        QueryStructuralOperations: ResizeArray<string>
+    }
 
 let private traitConstraintShapeDigest (denv: DisplayEnv) (traitInfo: TraitConstraintInfo) =
     // Capture a structural trait-call fingerprint for lowered-shape classification.
     // This tracks new builder operations without depending solely on member-name
     // heuristic lists that are brittle across compiler/runtime changes.
     let supportTypes =
-        traitInfo.SupportTypes
-        |> List.map (tyToString denv)
-        |> String.concat ","
+        traitInfo.SupportTypes |> List.map (tyToString denv) |> String.concat ","
 
     let argumentTypes =
         traitInfo.GetCompiledArgumentTypes()
@@ -660,10 +702,7 @@ let private addDistinct (items: ResizeArray<string>) (value: string) =
         items.Add value
 
 let private formatLoweredShapeDigest (structural: ResizeArray<string>) =
-    let structuralDigest =
-        structural
-        |> Seq.sort
-        |> String.concat ","
+    let structuralDigest = structural |> Seq.sort |> String.concat ","
 
     $"struct=[{structuralDigest}]"
 
@@ -680,7 +719,7 @@ let private formatResumableShapeDigest (calls: ResizeArray<string>) =
 /// resolved nonlocal entity references only compare equal within one TcImports.
 let private isResumableCodeAppTy g ty =
     match stripTyEqns g ty with
-    | TType_app (tcref, _, _) when tcref.LogicalName.Equals("ResumableCode`2", StringComparison.Ordinal) ->
+    | TType_app(tcref, _, _) when tcref.LogicalName.Equals("ResumableCode`2", StringComparison.Ordinal) ->
         (try
             tcref.CompiledRepresentationForNamedType.FullName.Equals(
                 "Microsoft.FSharp.Core.CompilerServices.ResumableCode`2",
@@ -700,15 +739,17 @@ let rec private isReturnsResumableCodeAppTy g ty =
 
 let private collectLoweredShapeInfo (g: TcGlobals) (denv: DisplayEnv) (expr: Expr) =
     let collector =
-        { LambdaArities = ResizeArray()
-          ResumableCodeCalls = ResizeArray()
-          QueryStructuralOperations = ResizeArray() }
+        {
+            LambdaArities = ResizeArray()
+            ResumableCodeCalls = ResizeArray()
+            QueryStructuralOperations = ResizeArray()
+        }
 
     // Strips wrappers off the applied function expression so builder member calls
     // (Expr.App over the member's Val) are recognized through debug points and links.
     let rec stripAppliedFunction (expr: Expr) =
         match expr with
-        | Expr.DebugPoint (_, inner) -> stripAppliedFunction inner
+        | Expr.DebugPoint(_, inner) -> stripAppliedFunction inner
         | Expr.Link eref -> stripAppliedFunction eref.Value
         | _ -> expr
 
@@ -716,42 +757,37 @@ let private collectLoweredShapeInfo (g: TcGlobals) (denv: DisplayEnv) (expr: Exp
         match expr with
         | Expr.Const _ -> ()
         | Expr.Val _ -> ()
-        | Expr.App (funcExpr, _, tyargs, args, _) ->
+        | Expr.App(funcExpr, _, tyargs, args, _) ->
             // Calls returning ResumableCode-typed values are the typed-tree shape of a
             // genuine state machine CE (`task` etc.): Bind/Combine/Delay/While/... all
             // return ResumableCode. Record them in source order with their type
             // instantiations: state numbers are positional, so this sequence IS the
             // resume-point structure the lowering will produce.
             (match stripAppliedFunction funcExpr with
-             | Expr.Val (vref, _, _) when isReturnsResumableCodeAppTy g vref.TauType ->
-                 let instantiation =
-                     tyargs |> List.map (tyToString denv) |> String.concat ","
+             | Expr.Val(vref, _, _) when isReturnsResumableCodeAppTy g vref.TauType ->
+                 let instantiation = tyargs |> List.map (tyToString denv) |> String.concat ","
 
                  collector.ResumableCodeCalls.Add $"{vref.LogicalName}<{instantiation}>({args.Length})"
              | _ -> ())
 
             walk funcExpr
             args |> List.iter walk
-        | Expr.Sequential (expr1, expr2, _, _) ->
+        | Expr.Sequential(expr1, expr2, _, _) ->
             walk expr1
             walk expr2
-        | Expr.Lambda (_, _, _, valParams, bodyExpr, _, _) ->
+        | Expr.Lambda(_, _, _, valParams, bodyExpr, _, _) ->
             collector.LambdaArities.Add(valParams.Length)
             walk bodyExpr
-        | Expr.TyLambda (_, _, bodyExpr, _, _) ->
-            walk bodyExpr
-        | Expr.Let (binding, bodyExpr, _, _) ->
-            let (TBind (_, bindingExpr, _)) = binding
+        | Expr.TyLambda(_, _, bodyExpr, _, _) -> walk bodyExpr
+        | Expr.Let(binding, bodyExpr, _, _) ->
+            let (TBind(_, bindingExpr, _)) = binding
             walk bindingExpr
             walk bodyExpr
-        | Expr.LetRec (bindings, bodyExpr, _, _) ->
-            bindings
-            |> List.iter (fun (TBind (_, bindingExpr, _)) -> walk bindingExpr)
+        | Expr.LetRec(bindings, bodyExpr, _, _) ->
+            bindings |> List.iter (fun (TBind(_, bindingExpr, _)) -> walk bindingExpr)
             walk bodyExpr
-        | Expr.Match (_, _, _, targets, _, _) ->
-            targets
-            |> Array.iter (fun (TTarget(_, targetExpr, _)) -> walk targetExpr)
-        | Expr.Op (op, _, args, _) ->
+        | Expr.Match(_, _, _, targets, _, _) -> targets |> Array.iter (fun (TTarget(_, targetExpr, _)) -> walk targetExpr)
+        | Expr.Op(op, _, args, _) ->
             // Plain control flow (try/with, try/finally, while, for) lowers to ordinary
             // IL inside the containing method (or closure) body: it is NOT state machine
             // evidence and stays freely editable. Genuine state machines are detected
@@ -774,7 +810,7 @@ let private collectLoweredShapeInfo (g: TcGlobals) (denv: DisplayEnv) (expr: Exp
             | _ -> ()
 
             args |> List.iter walk
-        | Expr.Obj (_, objTy, _, ctorCall, overrides, interfaceImpls, _) ->
+        | Expr.Obj(_, objTy, _, ctorCall, overrides, interfaceImpls, _) ->
             // Direct construction of a ResumableCode delegate (low-level resumable code,
             // `ResumableCode(fun sm -> ...)`) is state machine structure too.
             if isResumableCodeAppTy g objTy then
@@ -782,40 +818,28 @@ let private collectLoweredShapeInfo (g: TcGlobals) (denv: DisplayEnv) (expr: Exp
 
             walk ctorCall
 
-            overrides
-            |> List.iter (fun (TObjExprMethod(_, _, _, _, body, _)) -> walk body)
+            overrides |> List.iter (fun (TObjExprMethod(_, _, _, _, body, _)) -> walk body)
 
             interfaceImpls
-            |> List.iter (fun (_, methods) ->
-                methods
-                |> List.iter (fun (TObjExprMethod(_, _, _, _, body, _)) -> walk body))
-        | Expr.Quote (quotedExpr, _, _, _, _) ->
-            walk quotedExpr
-        | Expr.DebugPoint (_, body) ->
-            walk body
-        | Expr.Link eref ->
-            walk eref.Value
-        | Expr.TyChoose (_, bodyExpr, _) ->
-            walk bodyExpr
-        | Expr.WitnessArg (traitInfo, _) ->
+            |> List.iter (fun (_, methods) -> methods |> List.iter (fun (TObjExprMethod(_, _, _, _, body, _)) -> walk body))
+        | Expr.Quote(quotedExpr, _, _, _, _) -> walk quotedExpr
+        | Expr.DebugPoint(_, body) -> walk body
+        | Expr.Link eref -> walk eref.Value
+        | Expr.TyChoose(_, bodyExpr, _) -> walk bodyExpr
+        | Expr.WitnessArg(traitInfo, _) ->
             let traitDigest = traitConstraintShapeDigest denv traitInfo
             addDistinct collector.QueryStructuralOperations traitDigest
-        | Expr.StaticOptimization (_, onExpr, elseExpr, _) ->
+        | Expr.StaticOptimization(_, onExpr, elseExpr, _) ->
             walk onExpr
             walk elseExpr
 
     walk expr
 
-    let lambdaDigest =
-        collector.LambdaArities
-        |> Seq.map string
-        |> String.concat ","
+    let lambdaDigest = collector.LambdaArities |> Seq.map string |> String.concat ","
 
-    let stateMachineDigest =
-        formatResumableShapeDigest collector.ResumableCodeCalls
+    let stateMachineDigest = formatResumableShapeDigest collector.ResumableCodeCalls
 
-    let queryDigest =
-        formatLoweredShapeDigest collector.QueryStructuralOperations
+    let queryDigest = formatLoweredShapeDigest collector.QueryStructuralOperations
 
     lambdaDigest, stateMachineDigest, queryDigest
 
@@ -823,12 +847,8 @@ let rec private exprDigest (denv: DisplayEnv) (expr: Expr) =
     let recurse = exprDigest denv
 
     match expr with
-    | Expr.Const (c, _, ty) ->
-        [ 1
-          stableHash (constDigest c)
-          stableHash (tyToString denv ty) ]
-        |> hashList
-    | Expr.Val (vref, _, _) ->
+    | Expr.Const(c, _, ty) -> [ 1; stableHash (constDigest c); stableHash (tyToString denv ty) ] |> hashList
+    | Expr.Val(vref, _, _) ->
         // References to top-level values/members hash by compiled identity rather than stamps.
         // This keeps caller hashes stable when callees are recompiled with new stamps.
         let referenceHash =
@@ -840,61 +860,46 @@ let rec private exprDigest (denv: DisplayEnv) (expr: Expr) =
                 stableHash $"local:{vref.LogicalName}|ty={tyToString denv vref.Type}"
 
         hashCombine 2 referenceHash
-    | Expr.App (funcExpr, _, _, args, _) ->
+    | Expr.App(funcExpr, _, _, args, _) ->
         let funcHash = recurse funcExpr
         let argHash = args |> Seq.map recurse |> hashList
         hashCombine (hashCombine 3 funcHash) argHash
-    | Expr.Sequential (expr1, expr2, _, _) ->
-        hashCombine (hashCombine 4 (recurse expr1)) (recurse expr2)
-    | Expr.Lambda (_, _, _, valParams, bodyExpr, _, _) ->
+    | Expr.Sequential(expr1, expr2, _, _) -> hashCombine (hashCombine 4 (recurse expr1)) (recurse expr2)
+    | Expr.Lambda(_, _, _, valParams, bodyExpr, _, _) ->
         let paramsHash =
-            valParams
-            |> Seq.map (fun v -> stableHash v.LogicalName)
-            |> hashList
+            valParams |> Seq.map (fun v -> stableHash v.LogicalName) |> hashList
 
         hashCombine (hashCombine 5 paramsHash) (recurse bodyExpr)
-    | Expr.TyLambda (_, typars, bodyExpr, _, _) ->
-        let typarHash =
-            typars
-            |> Seq.map (fun tp -> stableHash tp.DisplayName)
-            |> hashList
+    | Expr.TyLambda(_, typars, bodyExpr, _, _) ->
+        let typarHash = typars |> Seq.map (fun tp -> stableHash tp.DisplayName) |> hashList
 
         hashCombine (hashCombine 6 typarHash) (recurse bodyExpr)
-    | Expr.Let (binding, bodyExpr, _, _) ->
+    | Expr.Let(binding, bodyExpr, _, _) ->
         let bindHash = bindingDigest denv binding
         hashCombine (hashCombine 7 bindHash) (recurse bodyExpr)
-    | Expr.LetRec (bindings, bodyExpr, _, _) ->
-        let bindsHash =
-            bindings
-            |> Seq.map (bindingDigest denv)
-            |> hashList
+    | Expr.LetRec(bindings, bodyExpr, _, _) ->
+        let bindsHash = bindings |> Seq.map (bindingDigest denv) |> hashList
 
         hashCombine (hashCombine 8 bindsHash) (recurse bodyExpr)
-    | Expr.Match (_, _, _, targets, _, _) ->
+    | Expr.Match(_, _, _, targets, _, _) ->
         let targetsHash =
             targets
             |> Array.map (fun tgt ->
                 match tgt with
                 | TTarget(boundVals, targetExpr, _) ->
-                    let valsHash =
-                        boundVals
-                        |> Seq.map (fun v -> stableHash v.LogicalName)
-                        |> hashList
+                    let valsHash = boundVals |> Seq.map (fun v -> stableHash v.LogicalName) |> hashList
 
                     hashCombine valsHash (recurse targetExpr))
             |> hashList
 
         hashCombine 9 targetsHash
-    | Expr.Op (op, typeArgs, args, _) ->
+    | Expr.Op(op, typeArgs, args, _) ->
         let opHash = stableHash (opDigest denv op)
         let argsHash = args |> Seq.map recurse |> hashList
-        let tyHash =
-            typeArgs
-            |> Seq.map (tyToString denv >> stableHash)
-            |> hashList
+        let tyHash = typeArgs |> Seq.map (tyToString denv >> stableHash) |> hashList
 
         [ 10; opHash; argsHash; tyHash ] |> hashList
-    | Expr.Obj (_, objTy, _, ctorCall, overrides, interfaceImpls, _) ->
+    | Expr.Obj(_, objTy, _, ctorCall, overrides, interfaceImpls, _) ->
         let overridesHash =
             overrides
             |> Seq.map (fun (TObjExprMethod(_, _, _, _, body, _)) -> recurse body)
@@ -908,31 +913,25 @@ let rec private exprDigest (denv: DisplayEnv) (expr: Expr) =
                 |> hashList)
             |> hashList
 
-        [ 11
-          stableHash (tyToString denv objTy)
-          recurse ctorCall
-          overridesHash
-          interfaceHash ]
+        [
+            11
+            stableHash (tyToString denv objTy)
+            recurse ctorCall
+            overridesHash
+            interfaceHash
+        ]
         |> hashList
-    | Expr.Quote (quotedExpr, _, _, _, _) ->
-        hashCombine 12 (recurse quotedExpr)
-    | Expr.DebugPoint (_, body) ->
-        recurse body
-    | Expr.Link eref ->
-        recurse eref.Value
-    | Expr.TyChoose (typars, bodyExpr, _) ->
-        let typarHash =
-            typars
-            |> Seq.map (fun tp -> stableHash tp.DisplayName)
-            |> hashList
+    | Expr.Quote(quotedExpr, _, _, _, _) -> hashCombine 12 (recurse quotedExpr)
+    | Expr.DebugPoint(_, body) -> recurse body
+    | Expr.Link eref -> recurse eref.Value
+    | Expr.TyChoose(typars, bodyExpr, _) ->
+        let typarHash = typars |> Seq.map (fun tp -> stableHash tp.DisplayName) |> hashList
 
         hashCombine (hashCombine 13 typarHash) (recurse bodyExpr)
-    | Expr.WitnessArg (traitInfo, _) ->
-        hashCombine 14 (stableHash traitInfo.MemberLogicalName)
-    | Expr.StaticOptimization (_, onExpr, elseExpr, _) ->
-        hashCombine (hashCombine 15 (recurse onExpr)) (recurse elseExpr)
+    | Expr.WitnessArg(traitInfo, _) -> hashCombine 14 (stableHash traitInfo.MemberLogicalName)
+    | Expr.StaticOptimization(_, onExpr, elseExpr, _) -> hashCombine (hashCombine 15 (recurse onExpr)) (recurse elseExpr)
 
-and private bindingDigest denv (TBind (var, body, _)) =
+and private bindingDigest denv (TBind(var, body, _)) =
     let sigHash = tyToString denv var.Type |> stableHash
     hashCombine sigHash (exprDigest denv body)
 
@@ -960,8 +959,7 @@ let private attribsDigest (denv: DisplayEnv) (attribs: Attrib list) =
                 $"{name}:{tyToString denv ty}:{isField}={exprDigest denv evaluated}")
             |> String.concat ","
 
-        let target =
-            targets |> Option.map string |> Option.defaultValue ""
+        let target = targets |> Option.map string |> Option.defaultValue ""
 
         $"{typeName}({unnamed})[{named}]|getset={appliedToGetterOrSetter}|target={target}")
     |> String.concat ";"
@@ -982,7 +980,7 @@ type private LambdaOccurrenceExtraction =
 /// Looks through wrappers that carry no structure of their own.
 let rec private stripDebugPointsAndLinks (expr: Expr) =
     match expr with
-    | Expr.DebugPoint (_, inner) -> stripDebugPointsAndLinks inner
+    | Expr.DebugPoint(_, inner) -> stripDebugPointsAndLinks inner
     | Expr.Link eref -> stripDebugPointsAndLinks eref.Value
     | _ -> expr
 
@@ -993,7 +991,7 @@ let rec private stripDebugPointsAndLinks (expr: Expr) =
 let private stripMemberTopLambdas (valReprInfo: ValReprInfo option) (expr: Expr) =
     let rec stripTyLambdas expr =
         match stripDebugPointsAndLinks expr with
-        | Expr.TyLambda (_, _, body, _, _) -> stripTyLambdas body
+        | Expr.TyLambda(_, _, body, _, _) -> stripTyLambdas body
         | stripped -> stripped
 
     let rec stripLambdas remaining expr =
@@ -1001,7 +999,7 @@ let private stripMemberTopLambdas (valReprInfo: ValReprInfo option) (expr: Expr)
             expr
         else
             match stripDebugPointsAndLinks expr with
-            | Expr.Lambda (_, _, _, _, body, _, _) -> stripLambdas (remaining - 1) body
+            | Expr.Lambda(_, _, _, _, body, _, _) -> stripLambdas (remaining - 1) body
             | stripped -> stripped
 
     match valReprInfo with
@@ -1057,8 +1055,10 @@ let private extractLambdaOccurrences
 
                     tryTypeIdentity v.Type
                     |> Option.map (fun tyIdentity ->
-                        { LogicalName = logicalName
-                          Type = tyIdentity }))
+                        {
+                            LogicalName = logicalName
+                            Type = tyIdentity
+                        }))
             |> List.distinct
             |> List.sortBy (fun capture -> capture.LogicalName, capture.Type)
 
@@ -1068,8 +1068,7 @@ let private extractLambdaOccurrences
     // occurrence: parameter groups plus the body/return type after the last group.
     let rec gatherCurriedGroups acc expr =
         match stripDebugPointsAndLinks expr with
-        | Expr.Lambda (_, _, _, valParams, bodyExpr, _, bodyTy) ->
-            gatherCurriedGroups ((valParams, bodyTy) :: acc) bodyExpr
+        | Expr.Lambda(_, _, _, valParams, bodyExpr, _, bodyTy) -> gatherCurriedGroups ((valParams, bodyTy) :: acc) bodyExpr
         | _ -> List.rev acc, expr
 
     let rec walk (parentChain: int list) (expr: Expr) =
@@ -1081,23 +1080,26 @@ let private extractLambdaOccurrences
             markUnsupported "a local type function"
         | Expr.Const _ -> ()
         | Expr.Val _ -> ()
-        | Expr.App (funcExpr, _, _, args, _) ->
+        | Expr.App(funcExpr, _, _, args, _) ->
             walk parentChain funcExpr
             args |> List.iter (walk parentChain)
-        | Expr.Sequential (expr1, expr2, _, _) ->
+        | Expr.Sequential(expr1, expr2, _, _) ->
             walk parentChain expr1
             walk parentChain expr2
-        | Expr.Let (TBind (_, bindingExpr, _), bodyExpr, _, _) ->
+        | Expr.Let(TBind(_, bindingExpr, _), bodyExpr, _, _) ->
             walk parentChain bindingExpr
             walk parentChain bodyExpr
-        | Expr.LetRec (bindings, bodyExpr, _, _) ->
-            bindings |> List.iter (fun (TBind (_, bindingExpr, _)) -> walk parentChain bindingExpr)
+        | Expr.LetRec(bindings, bodyExpr, _, _) ->
+            bindings
+            |> List.iter (fun (TBind(_, bindingExpr, _)) -> walk parentChain bindingExpr)
+
             walk parentChain bodyExpr
-        | Expr.Match (_, _, _, targets, _, _) ->
+        | Expr.Match(_, _, _, targets, _, _) ->
             // Mirrors the legacy digest traversal: classification is driven by the
             // expressions in the match targets.
-            targets |> Array.iter (fun (TTarget (_, targetExpr, _)) -> walk parentChain targetExpr)
-        | Expr.Op (op, _, args, _) ->
+            targets
+            |> Array.iter (fun (TTarget(_, targetExpr, _)) -> walk parentChain targetExpr)
+        | Expr.Op(op, _, args, _) ->
             match op with
             | TOp.While _
             | TOp.IntegerForLoop _
@@ -1114,17 +1116,17 @@ let private extractLambdaOccurrences
         | Expr.Quote _ ->
             // Quotation-bearing members stay entirely on the query/legacy digest paths.
             markUnsupported "a quotation"
-        | Expr.DebugPoint (_, body) -> walk parentChain body
+        | Expr.DebugPoint(_, body) -> walk parentChain body
         | Expr.Link eref -> walk parentChain eref.Value
-        | Expr.TyChoose (_, bodyExpr, _) -> walk parentChain bodyExpr
+        | Expr.TyChoose(_, bodyExpr, _) -> walk parentChain bodyExpr
         | Expr.WitnessArg _ -> ()
-        | Expr.StaticOptimization (_, onExpr, elseExpr, _) ->
+        | Expr.StaticOptimization(_, onExpr, elseExpr, _) ->
             walk parentChain onExpr
             walk parentChain elseExpr
 
     and walkThroughOperandLambda parentChain expr =
         match stripDebugPointsAndLinks expr with
-        | Expr.Lambda (_, _, _, _, bodyExpr, _, _) -> walk parentChain bodyExpr
+        | Expr.Lambda(_, _, _, _, bodyExpr, _, _) -> walk parentChain bodyExpr
         | other -> walk parentChain other
 
     and visitLambda parentChain lambdaExpr =
@@ -1136,7 +1138,7 @@ let private extractLambdaOccurrences
         // call site receives when it forms the single closure for the curried chain.
         let rootExprStamp =
             match stripDebugPointsAndLinks lambdaExpr with
-            | Expr.Lambda (uniq, _, _, _, _, _, _) -> uniq
+            | Expr.Lambda(uniq, _, _, _, _, _, _) -> uniq
             | _ -> 0L
 
         let groups, innerBody = gatherCurriedGroups [] lambdaExpr
@@ -1146,8 +1148,7 @@ let private extractLambdaOccurrences
         | _ ->
             let parameterTypes =
                 groups
-                |> List.map (fun (valParams, _) ->
-                    valParams |> List.choose (fun (v: Val) -> tryTypeIdentity v.Type))
+                |> List.map (fun (valParams, _) -> valParams |> List.choose (fun (v: Val) -> tryTypeIdentity v.Type))
 
             let returnTypeIdentity =
                 let _, lastBodyTy = List.last groups
@@ -1157,17 +1158,21 @@ let private extractLambdaOccurrences
                 match returnTypeIdentity with
                 | Some returnIdentity ->
                     occurrences.Add
-                        { Id =
-                            { MemberSymbol = memberSymbol
-                              Ordinal = ordinal
-                              ParentChain = parentChain }
-                          CurriedArity = groups.Length
-                          ParameterTypes = parameterTypes
-                          Captures = captureIdentities lambdaExpr
-                          ReturnTypeIdentity = returnIdentity
-                          BodyHash = exprDigest denv lambdaExpr
-                          RootExprStamp = rootExprStamp
-                          Range = lambdaExpr.Range }
+                        {
+                            Id =
+                                {
+                                    MemberSymbol = memberSymbol
+                                    Ordinal = ordinal
+                                    ParentChain = parentChain
+                                }
+                            CurriedArity = groups.Length
+                            ParameterTypes = parameterTypes
+                            Captures = captureIdentities lambdaExpr
+                            ReturnTypeIdentity = returnIdentity
+                            BodyHash = exprDigest denv lambdaExpr
+                            RootExprStamp = rootExprStamp
+                            Range = lambdaExpr.Range
+                        }
                 | None -> ()
 
             walk (ordinal :: parentChain) innerBody
@@ -1249,17 +1254,13 @@ let private diffCaptureSets (baseline: CaptureIdentity list) (updated: CaptureId
         for removedCapture in removed do
             match takeAdded (fun a -> a.LogicalName = removedCapture.LogicalName) with
             | Some addedCapture ->
-                changes.Add(
-                    CaptureSetChange.TypeChanged(removedCapture.LogicalName, removedCapture.Type, addedCapture.Type)
-                )
+                changes.Add(CaptureSetChange.TypeChanged(removedCapture.LogicalName, removedCapture.Type, addedCapture.Type))
             | None -> unpaired <- removedCapture :: unpaired
 
         for removedCapture in List.rev unpaired do
             match takeAdded (fun a -> a.Type = removedCapture.Type) with
             | Some addedCapture ->
-                changes.Add(
-                    CaptureSetChange.Renamed(removedCapture.LogicalName, addedCapture.LogicalName, removedCapture.Type)
-                )
+                changes.Add(CaptureSetChange.Renamed(removedCapture.LogicalName, addedCapture.LogicalName, removedCapture.Type))
             | None -> changes.Add(CaptureSetChange.CaptureRemoved removedCapture)
 
         for addedCapture in remainingAdded do
@@ -1274,7 +1275,7 @@ let private classifyCaptureScopeMoves (edits: LambdaEdit list) =
     let capturesOf selector =
         edits
         |> List.collect (function
-            | LambdaEdit.CaptureSetChanged (_, _, changes) -> changes |> List.choose selector
+            | LambdaEdit.CaptureSetChanged(_, _, changes) -> changes |> List.choose selector
             | _ -> [])
         |> Set.ofList
 
@@ -1295,12 +1296,11 @@ let private classifyCaptureScopeMoves (edits: LambdaEdit list) =
     else
         edits
         |> List.map (function
-            | LambdaEdit.CaptureSetChanged (baseline, updated, changes) ->
+            | LambdaEdit.CaptureSetChanged(baseline, updated, changes) ->
                 let upgraded =
                     changes
                     |> List.map (function
-                        | CaptureSetChange.CaptureAdded c when Set.contains c moved ->
-                            CaptureSetChange.ScopeChanged(c.LogicalName, c.Type)
+                        | CaptureSetChange.CaptureAdded c when Set.contains c moved -> CaptureSetChange.ScopeChanged(c.LogicalName, c.Type)
                         | CaptureSetChange.CaptureRemoved c when Set.contains c moved ->
                             CaptureSetChange.ScopeChanged(c.LogicalName, c.Type)
                         | other -> other)
@@ -1319,21 +1319,24 @@ let private classifyCaptureScopeMoves (edits: LambdaEdit list) =
 /// removals (baseline side) or additions (updated side).
 let alignLambdaOccurrenceIndexPairs (olds: LambdaOccurrence[]) (news: LambdaOccurrence[]) : (int * int) list =
     let pass1 =
-        lcsMatchIndexes
-            (fun i j -> occurrenceStructuralKey olds[i] = occurrenceStructuralKey news[j])
-            olds.Length
-            news.Length
+        lcsMatchIndexes (fun i j -> occurrenceStructuralKey olds[i] = occurrenceStructuralKey news[j]) olds.Length news.Length
 
     let matchedOld = HashSet(pass1 |> List.map fst)
     let matchedNew = HashSet(pass1 |> List.map snd)
 
     let leftoverOld =
-        [| for i in 0 .. olds.Length - 1 do
-               if not (matchedOld.Contains i) then yield i |]
+        [|
+            for i in 0 .. olds.Length - 1 do
+                if not (matchedOld.Contains i) then
+                    yield i
+        |]
 
     let leftoverNew =
-        [| for j in 0 .. news.Length - 1 do
-               if not (matchedNew.Contains j) then yield j |]
+        [|
+            for j in 0 .. news.Length - 1 do
+                if not (matchedNew.Contains j) then
+                    yield j
+        |]
 
     let pass2 =
         lcsMatchIndexes
@@ -1375,19 +1378,23 @@ let private alignLambdaOccurrences (baseline: LambdaOccurrence list) (updated: L
             | changes -> Some(LambdaEdit.CaptureSetChanged(baselineOcc, updatedOcc, changes)))
 
     let removedEdits =
-        [ for i in 0 .. olds.Length - 1 do
-              if not (pairedOld.Contains i) then
-                  yield LambdaEdit.Removed olds[i] ]
+        [
+            for i in 0 .. olds.Length - 1 do
+                if not (pairedOld.Contains i) then
+                    yield LambdaEdit.Removed olds[i]
+        ]
 
     let addedEdits =
-        [ for j in 0 .. news.Length - 1 do
-              if not (pairedNew.Contains j) then
-                  yield LambdaEdit.Added news[j] ]
+        [
+            for j in 0 .. news.Length - 1 do
+                if not (pairedNew.Contains j) then
+                    yield LambdaEdit.Added news[j]
+        ]
 
     let ordinalOf =
         function
-        | LambdaEdit.BodyEdited (_, updatedOcc)
-        | LambdaEdit.CaptureSetChanged (_, updatedOcc, _)
+        | LambdaEdit.BodyEdited(_, updatedOcc)
+        | LambdaEdit.CaptureSetChanged(_, updatedOcc, _)
         | LambdaEdit.Added updatedOcc -> updatedOcc.Id.Ordinal
         | LambdaEdit.Removed baselineOcc -> baselineOcc.Id.Ordinal
 
@@ -1398,97 +1405,103 @@ let private alignLambdaOccurrences (baseline: LambdaOccurrence list) (updated: L
 /// Properties needed to check if a method addition is allowed.
 /// Following Roslyn patterns for Edit and Continue restrictions.
 type private MethodAdditionInfo =
-    { IsMethod: bool                    // True if this is a method (vs module value/field)
-      IsDispatchSlot: bool              // Virtual or abstract
-      IsOverrideOrExplicitImpl: bool    // Override or explicit interface impl
-      IsExplicitInterfaceImplementation: bool // Explicit interface implementation
-      IsConstructor: bool               // .ctor or .cctor
-      IsOperator: bool                  // User-defined operator
-      IsInInterface: bool               // Member of an interface type
-      IsField: bool                     // Field (not a method)
-      IsModuleBinding: bool }           // Bound at module scope (lowers to static members of the module type)
+    {
+        IsMethod: bool // True if this is a method (vs module value/field)
+        IsDispatchSlot: bool // Virtual or abstract
+        IsOverrideOrExplicitImpl: bool // Override or explicit interface impl
+        IsExplicitInterfaceImplementation: bool // Explicit interface implementation
+        IsConstructor: bool // .ctor or .cctor
+        IsOperator: bool // User-defined operator
+        IsInInterface: bool // Member of an interface type
+        IsField: bool // Field (not a method)
+        IsModuleBinding: bool
+    } // Bound at module scope (lowers to static members of the module type)
 
     static member Default =
-        { IsMethod = false
-          IsDispatchSlot = false
-          IsOverrideOrExplicitImpl = false
-          IsExplicitInterfaceImplementation = false
-          IsConstructor = false
-          IsOperator = false
-          IsInInterface = false
-          IsField = false
-          IsModuleBinding = false }
+        {
+            IsMethod = false
+            IsDispatchSlot = false
+            IsOverrideOrExplicitImpl = false
+            IsExplicitInterfaceImplementation = false
+            IsConstructor = false
+            IsOperator = false
+            IsInInterface = false
+            IsField = false
+            IsModuleBinding = false
+        }
 
 type private BindingSnapshot =
-    { Symbol: SymbolId
-      InlineInfo: ValInline
-      SignatureText: string
-      ConstraintsText: string
-      BodyHash: int
-      LambdaShapeDigest: string
-      StateMachineShapeDigest: string
-      QueryShapeDigest: string
-      // Structured lambda occurrence sequence (or the reason extraction was not possible,
-      // in which case lambda classification falls back to LambdaShapeDigest).
-      LambdaOccurrenceData: LambdaOccurrenceExtraction
-      IsSynthesized: bool
-      ContainingEntity: string option
-      /// True when editing this member touches generic IL: the compiled method has its own
-      /// generic parameters (MVAR) or is declared in a generic type (VAR). Mirrors Roslyn's
-      /// InGenericContext: such updates require the GenericUpdateMethod runtime capability,
-      /// and such additions additionally require GenericAddMethodToExistingType /
-      /// GenericAddFieldToExistingType.
-      InGenericContext: bool
-      /// Structured digest of the member's custom attributes (type, arguments, named
-      /// arguments, targets). A digest change on a matched binding is an attribute edit:
-      /// gated on the ChangeCustomAttributes runtime capability (Roslyn parity), emitted
-      /// as a member update when the attribute rows are MethodDef-parented.
-      AttributesDigest: string
-      /// Source names of the compiled IL parameters (curried/tupled groups flattened, the
-      /// implicit 'this' argument excluded). A name change on a matched binding is a
-      /// parameter RENAME: gated on the UpdateParameters runtime capability (Roslyn
-      /// parity), emitted as a member update whose Param rows carry the new names.
-      ParameterNames: string option list
-      AdditionInfo: MethodAdditionInfo }
+    {
+        Symbol: SymbolId
+        InlineInfo: ValInline
+        SignatureText: string
+        ConstraintsText: string
+        BodyHash: int
+        LambdaShapeDigest: string
+        StateMachineShapeDigest: string
+        QueryShapeDigest: string
+        // Structured lambda occurrence sequence (or the reason extraction was not possible,
+        // in which case lambda classification falls back to LambdaShapeDigest).
+        LambdaOccurrenceData: LambdaOccurrenceExtraction
+        IsSynthesized: bool
+        ContainingEntity: string option
+        /// True when editing this member touches generic IL: the compiled method has its own
+        /// generic parameters (MVAR) or is declared in a generic type (VAR). Mirrors Roslyn's
+        /// InGenericContext: such updates require the GenericUpdateMethod runtime capability,
+        /// and such additions additionally require GenericAddMethodToExistingType /
+        /// GenericAddFieldToExistingType.
+        InGenericContext: bool
+        /// Structured digest of the member's custom attributes (type, arguments, named
+        /// arguments, targets). A digest change on a matched binding is an attribute edit:
+        /// gated on the ChangeCustomAttributes runtime capability (Roslyn parity), emitted
+        /// as a member update when the attribute rows are MethodDef-parented.
+        AttributesDigest: string
+        /// Source names of the compiled IL parameters (curried/tupled groups flattened, the
+        /// implicit 'this' argument excluded). A name change on a matched binding is a
+        /// parameter RENAME: gated on the UpdateParameters runtime capability (Roslyn
+        /// parity), emitted as a member update whose Param rows carry the new names.
+        ParameterNames: string option list
+        AdditionInfo: MethodAdditionInfo
+    }
 
 /// Structured digest of a single entity field: staticness drives the runtime
 /// capability required to add it; the digest captures mutability and formal type.
-type private EntityFieldDigest =
-    { IsStatic: bool
-      Digest: string }
+type private EntityFieldDigest = { IsStatic: bool; Digest: string }
 
 type private EntitySnapshot =
-    { Symbol: SymbolId
-      RepresentationHash: int
-      RepresentationText: string
-      /// Representation digest with the field segment removed. When this matches between
-      /// baseline and update and the baseline fields are preserved verbatim, the only
-      /// representation change is added fields (the capability-gated field-addition edit).
-      NonFieldRepresentationText: string
-      /// Field digests keyed by logical name (class-like representations only).
-      Fields: Map<string, EntityFieldDigest>
-      /// True only for TFSharpClass representations: the CLR can append fields to classes
-      /// (AddInstanceFieldToExistingType); struct/record/union layouts stay immutable.
-      IsFSharpClass: bool
-      /// True when the entity compiles to a generic IL type (non-erased typars). Field
-      /// additions then also require GenericAddFieldToExistingType (Roslyn parity:
-      /// GetRequiredAddFieldCapabilities ORs it in when InGenericContext).
-      IsGeneric: bool
-      /// IL-compiled full name, used to address the entity against baseline TypeDef tokens
-      /// when a field addition is emitted as a TypeDefinition edit.
-      CompiledFullName: string option
-      /// True for representations the delta writer can emit as a NEW TypeDef (classes,
-      /// records, unions, structs, enums, interfaces, delegates, modules; measure
-      /// types classify as classes — their TypeDef carries MeasureAttribute and their
-      /// uses erase). Type abbreviations and exotic representations stay rude when
-      /// added.
-      SupportsAddition: bool
-      /// True when the entity is an F# module (lowered to a sealed abstract static
-      /// class). Modules share their logical name space with types (`module X` +
-      /// `type X` is legal; the module compiles with a ModuleSuffix), so the entity
-      /// map key carries a module marker to keep the two snapshots distinct.
-      IsModule: bool
-      IsSynthesized: bool }
+    {
+        Symbol: SymbolId
+        RepresentationHash: int
+        RepresentationText: string
+        /// Representation digest with the field segment removed. When this matches between
+        /// baseline and update and the baseline fields are preserved verbatim, the only
+        /// representation change is added fields (the capability-gated field-addition edit).
+        NonFieldRepresentationText: string
+        /// Field digests keyed by logical name (class-like representations only).
+        Fields: Map<string, EntityFieldDigest>
+        /// True only for TFSharpClass representations: the CLR can append fields to classes
+        /// (AddInstanceFieldToExistingType); struct/record/union layouts stay immutable.
+        IsFSharpClass: bool
+        /// True when the entity compiles to a generic IL type (non-erased typars). Field
+        /// additions then also require GenericAddFieldToExistingType (Roslyn parity:
+        /// GetRequiredAddFieldCapabilities ORs it in when InGenericContext).
+        IsGeneric: bool
+        /// IL-compiled full name, used to address the entity against baseline TypeDef tokens
+        /// when a field addition is emitted as a TypeDefinition edit.
+        CompiledFullName: string option
+        /// True for representations the delta writer can emit as a NEW TypeDef (classes,
+        /// records, unions, structs, enums, interfaces, delegates, modules; measure
+        /// types classify as classes — their TypeDef carries MeasureAttribute and their
+        /// uses erase). Type abbreviations and exotic representations stay rude when
+        /// added.
+        SupportsAddition: bool
+        /// True when the entity is an F# module (lowered to a sealed abstract static
+        /// class). Modules share their logical name space with types (`module X` +
+        /// `type X` is legal; the module compiles with a ModuleSuffix), so the entity
+        /// map key carries a module marker to keep the two snapshots distinct.
+        IsModule: bool
+        IsSynthesized: bool
+    }
 
 let private hasLoweredShapeDigestSegmentValues (segmentName: string) (digest: string) =
     let marker = segmentName + "=["
@@ -1514,8 +1527,7 @@ let private tryClassifySynthesizedLoweredShapeChurn (snapshot: BindingSnapshot) 
         let hasQueryStructuralEvidence =
             hasLoweredShapeDigestSegmentValues "struct" snapshot.QueryShapeDigest
 
-        let hasQueryEvidence =
-            hasQueryStructuralEvidence
+        let hasQueryEvidence = hasQueryStructuralEvidence
 
         let hasStateMachineStructuralEvidence =
             hasLoweredShapeDigestSegmentValues "resumable" snapshot.StateMachineShapeDigest
@@ -1524,8 +1536,7 @@ let private tryClassifySynthesizedLoweredShapeChurn (snapshot: BindingSnapshot) 
             hasStateMachineStructuralEvidence
             || logicalName.Equals("MoveNext", StringComparison.Ordinal)
 
-        let hasLambdaEvidence =
-            not (String.IsNullOrEmpty snapshot.LambdaShapeDigest)
+        let hasLambdaEvidence = not (String.IsNullOrEmpty snapshot.LambdaShapeDigest)
 
         if hasQueryEvidence then
             Some RudeEditKind.QueryExpressionShapeChange
@@ -1551,17 +1562,19 @@ let private symbolId
     parameterTypeIdentities
     returnTypeIdentity
     =
-    { Path = path
-      LogicalName = logicalName
-      Stamp = stamp
-      Kind = kind
-      MemberKind = memberKind
-      IsSynthesized = isSynthesized
-      CompiledName = compiledName
-      TotalArgCount = totalArgCount
-      GenericArity = genericArity
-      ParameterTypeIdentities = parameterTypeIdentities
-      ReturnTypeIdentity = returnTypeIdentity }
+    {
+        Path = path
+        LogicalName = logicalName
+        Stamp = stamp
+        Kind = kind
+        MemberKind = memberKind
+        IsSynthesized = isSynthesized
+        CompiledName = compiledName
+        TotalArgCount = totalArgCount
+        GenericArity = genericArity
+        ParameterTypeIdentities = parameterTypeIdentities
+        ReturnTypeIdentity = returnTypeIdentity
+    }
 
 let private bindingKey (snapshot: BindingSnapshot) =
     let entityKey = snapshot.ContainingEntity |> Option.defaultValue ""
@@ -1589,24 +1602,26 @@ let private snapshotModuleEntity (moduleEntity: ModuleOrNamespace) path : Entity
         with _ ->
             None
 
-    { Symbol = symbolId path moduleEntity.LogicalName moduleEntity.Stamp SymbolKind.Entity None false None None None None None
-      RepresentationHash = stableHash reprText
-      RepresentationText = reprText
-      NonFieldRepresentationText = reprText
-      Fields = Map.empty
-      IsFSharpClass = false
-      IsGeneric = false
-      CompiledFullName = compiledFullName
-      SupportsAddition = true
-      IsModule = true
-      IsSynthesized = false }
+    {
+        Symbol = symbolId path moduleEntity.LogicalName moduleEntity.Stamp SymbolKind.Entity None false None None None None None
+        RepresentationHash = stableHash reprText
+        RepresentationText = reprText
+        NonFieldRepresentationText = reprText
+        Fields = Map.empty
+        IsFSharpClass = false
+        IsGeneric = false
+        CompiledFullName = compiledFullName
+        SupportsAddition = true
+        IsModule = true
+        IsSynthesized = false
+    }
 
 let rec private snapshotModuleBinding g denv (path: string list) (map, entities) binding =
     match binding with
     | ModuleOrNamespaceBinding.Binding b ->
         let snapshot = snapshotBinding g denv path b
         (Map.add (bindingKey snapshot) snapshot map, entities)
-    | ModuleOrNamespaceBinding.Module (moduleEntity, contents) ->
+    | ModuleOrNamespaceBinding.Module(moduleEntity, contents) ->
         // Snapshot MODULE entities (not namespaces — namespaces have no TypeDef): a
         // module lowers to a sealed abstract static class, so an ADDED module is a new
         // type definition the emitter can express through the added-TypeDef
@@ -1625,13 +1640,11 @@ let rec private snapshotModuleBinding g denv (path: string list) (map, entities)
 
 and private snapshotModuleContents g denv path (map, entities) contents =
     match contents with
-    | ModuleOrNamespaceContents.TMDefs defs ->
-        ((map, entities), defs)
-        ||> List.fold (snapshotModuleContents g denv path)
-    | ModuleOrNamespaceContents.TMDefLet (binding, _) ->
+    | ModuleOrNamespaceContents.TMDefs defs -> ((map, entities), defs) ||> List.fold (snapshotModuleContents g denv path)
+    | ModuleOrNamespaceContents.TMDefLet(binding, _) ->
         let snapshot = snapshotBinding g denv path binding
         (Map.add (bindingKey snapshot) snapshot map, entities)
-    | ModuleOrNamespaceContents.TMDefRec (_, _, tycons, bindings, _) ->
+    | ModuleOrNamespaceContents.TMDefRec(_, _, tycons, bindings, _) ->
         let entitiesWithTypes =
             (entities, tycons)
             ||> List.fold (fun acc tycon ->
@@ -1649,22 +1662,28 @@ and private tryGetContainingEntityFullName (var: Val) =
             let tyconRef = memberInfo.ApparentEnclosingEntity
             let ilTypeRef = tyconRef.CompiledRepresentationForNamedType
             Some(ilTypeRef.FullName)
-        with _ -> None
+        with _ ->
+            None
     | None -> None
 
-and private snapshotBinding g denv path (TBind (var, expr, _)) =
+and private snapshotBinding g denv path (TBind(var, expr, _)) =
     let signature = tyToString denv var.Type
     let constraints = typarConstraintsDigest denv var.Typars
     let bodyHash = exprDigest denv expr
-    let lambdaShapeDigest, stateMachineShapeDigest, queryShapeDigest = collectLoweredShapeInfo g denv expr
+
+    let lambdaShapeDigest, stateMachineShapeDigest, queryShapeDigest =
+        collectLoweredShapeInfo g denv expr
+
     let containingEntity = tryGetContainingEntityFullName var
     let memberKind = memberKindOfVal var
     let vref = mkLocalValRef var
+
     let compiledName =
         try
             Some(vref.CompiledName None)
         with _ ->
             None
+
     let isInstanceMember =
         match var.MemberInfo with
         | Some memberInfo -> memberInfo.MemberFlags.IsInstance
@@ -1686,7 +1705,7 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
     // rename.
     let parameterNames =
         match var.ValReprInfo with
-        | Some (ValReprInfo(_, curriedArgInfos, _)) ->
+        | Some(ValReprInfo(_, curriedArgInfos, _)) ->
             let argGroups =
                 if isInstanceMember then
                     match curriedArgInfos with
@@ -1715,6 +1734,7 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
         match methodTypeInfo with
         | Some(_, methodArity, enclosingArity) -> methodArity > 0 || enclosingArity > 0
         | None -> var.Typars |> List.exists (fun typar -> not typar.IsErased)
+
     let parameterTypeIdentities = tryGetParameterTypeIdentities g typarOrdinals var
     let returnTypeIdentity = tryGetReturnTypeIdentity g typarOrdinals var
 
@@ -1740,55 +1760,68 @@ and private snapshotBinding g denv path (TBind (var, expr, _)) =
     // Determine addition info for hot reload restrictions
     let additionInfo =
         let isMethod = memberKind.IsSome
+
         let isDispatchSlot =
             match var.MemberInfo with
             | Some memberInfo -> memberInfo.MemberFlags.IsDispatchSlot
             | None -> false
+
         let isOverrideOrExplicitImpl =
             match var.MemberInfo with
             | Some memberInfo -> memberInfo.MemberFlags.IsOverrideOrExplicitImpl
             | None -> false
+
         let isExplicitInterfaceImplementation =
             try
                 ValRefIsExplicitImpl g vref
             with _ ->
                 false
+
         let isConstructor = var.IsConstructor || var.IsClassConstructor
         // Operators have logical names starting with "op_"
         let isOperator = var.LogicalName.StartsWith("op_", StringComparison.Ordinal)
+
         let isInInterface =
             match var.MemberInfo with
             | Some memberInfo ->
-                try memberInfo.ApparentEnclosingEntity.IsFSharpInterfaceTycon
-                with _ -> false
+                try
+                    memberInfo.ApparentEnclosingEntity.IsFSharpInterfaceTycon
+                with _ ->
+                    false
             | None -> false
         // A field is a module-level mutable value or a non-method member
         let isField = not isMethod && var.IsMutable
-        { IsMethod = isMethod
-          IsDispatchSlot = isDispatchSlot
-          IsOverrideOrExplicitImpl = isOverrideOrExplicitImpl
-          IsExplicitInterfaceImplementation = isExplicitInterfaceImplementation
-          IsConstructor = isConstructor
-          IsOperator = isOperator
-          IsInInterface = isInInterface
-          IsField = isField
-          IsModuleBinding = var.IsModuleBinding }
 
-    { Symbol = symbol
-      InlineInfo = var.InlineInfo
-      SignatureText = signature
-      ConstraintsText = constraints
-      BodyHash = bodyHash
-      LambdaShapeDigest = lambdaShapeDigest
-      StateMachineShapeDigest = stateMachineShapeDigest
-      QueryShapeDigest = queryShapeDigest
-      LambdaOccurrenceData = lambdaOccurrenceData
-      IsSynthesized = var.IsCompilerGenerated
-      ContainingEntity = containingEntity
-      InGenericContext = inGenericContext
-      AttributesDigest = attribsDigest denv var.Attribs
-      ParameterNames = parameterNames
-      AdditionInfo = additionInfo }: BindingSnapshot
+        {
+            IsMethod = isMethod
+            IsDispatchSlot = isDispatchSlot
+            IsOverrideOrExplicitImpl = isOverrideOrExplicitImpl
+            IsExplicitInterfaceImplementation = isExplicitInterfaceImplementation
+            IsConstructor = isConstructor
+            IsOperator = isOperator
+            IsInInterface = isInInterface
+            IsField = isField
+            IsModuleBinding = var.IsModuleBinding
+        }
+
+    {
+        Symbol = symbol
+        InlineInfo = var.InlineInfo
+        SignatureText = signature
+        ConstraintsText = constraints
+        BodyHash = bodyHash
+        LambdaShapeDigest = lambdaShapeDigest
+        StateMachineShapeDigest = stateMachineShapeDigest
+        QueryShapeDigest = queryShapeDigest
+        LambdaOccurrenceData = lambdaOccurrenceData
+        IsSynthesized = var.IsCompilerGenerated
+        ContainingEntity = containingEntity
+        InGenericContext = inGenericContext
+        AttributesDigest = attribsDigest denv var.Attribs
+        ParameterNames = parameterNames
+        AdditionInfo = additionInfo
+    }
+    : BindingSnapshot
 
 and private snapshotTycon denv path (tycon: Tycon) =
     // The field segment of class-like representations is kept separate so a pure field
@@ -1812,6 +1845,7 @@ and private snapshotTycon denv path (tycon: Tycon) =
                 |> List.iter (fun case ->
                     sb.Append("|case:") |> ignore
                     sb.Append(case.LogicalName) |> ignore
+
                     case.FieldTable.FieldsByIndex
                     |> Array.iter (fun field ->
                         sb.Append(":") |> ignore
@@ -1832,7 +1866,10 @@ and private snapshotTycon denv path (tycon: Tycon) =
                 |> Array.iter (fun field ->
                     fieldSegment.Append("|field:") |> ignore
                     fieldSegment.Append(field.LogicalName) |> ignore
-                    if field.IsMutable then fieldSegment.Append("[mutable]") |> ignore
+
+                    if field.IsMutable then
+                        fieldSegment.Append("[mutable]") |> ignore
+
                     fieldSegment.Append("=") |> ignore
                     fieldSegment.Append(tyToString denv field.FormalType) |> ignore
 
@@ -1840,11 +1877,18 @@ and private snapshotTycon denv path (tycon: Tycon) =
                         let mutability = if field.IsMutable then "[mutable]" else ""
                         $"{mutability}={tyToString denv field.FormalType}"
 
-                    fields <- fields.Add(field.LogicalName, { IsStatic = field.IsStatic; Digest = digest }))
+                    fields <-
+                        fields.Add(
+                            field.LogicalName,
+                            {
+                                IsStatic = field.IsStatic
+                                Digest = digest
+                            }
+                        ))
             | FSharpTyconKind.TFSharpDelegate slotSig ->
                 sb.Append("|delegate:") |> ignore
                 sb.Append(slotSig.Name) |> ignore
-        | TILObjectRepr (TILObjectReprData(_, _, definition)) ->
+        | TILObjectRepr(TILObjectReprData(_, _, definition)) ->
             sb.Append("|til:") |> ignore
             sb.Append(definition.Name) |> ignore
         | TAsmRepr ilTy ->
@@ -1857,11 +1901,9 @@ and private snapshotTycon denv path (tycon: Tycon) =
         | TProvidedTypeRepr info ->
             sb.Append("|provided:") |> ignore
             sb.Append(string info.IsErased) |> ignore
-        | TProvidedNamespaceRepr _ ->
-            sb.Append("|provided-namespace") |> ignore
+        | TProvidedNamespaceRepr _ -> sb.Append("|provided-namespace") |> ignore
 #endif
-        | TNoRepr ->
-            sb.Append("|norepr") |> ignore
+        | TNoRepr -> sb.Append("|norepr") |> ignore
 
         // Base type and implemented interfaces are part of the type's runtime layout but
         // are not carried in TypeReprInfo, so fold them into the non-field digest here. A
@@ -1913,19 +1955,22 @@ and private snapshotTycon denv path (tycon: Tycon) =
             | FSharpTyconKind.TFSharpDelegate _ -> true
         | _ -> false
 
-    { Symbol = symbolId path tycon.LogicalName tycon.Stamp SymbolKind.Entity None false None None None None None
-      RepresentationHash = stableHash reprText
-      RepresentationText = reprText
-      NonFieldRepresentationText = nonFieldText
-      Fields = fields
-      IsFSharpClass = isFSharpClass
-      IsGeneric = tycon.TyparsNoRange |> List.exists (fun typar -> not typar.IsErased)
-      CompiledFullName = compiledFullName
-      SupportsAddition = supportsAddition
-      IsModule = false
-      IsSynthesized = false }: EntitySnapshot
+    {
+        Symbol = symbolId path tycon.LogicalName tycon.Stamp SymbolKind.Entity None false None None None None None
+        RepresentationHash = stableHash reprText
+        RepresentationText = reprText
+        NonFieldRepresentationText = nonFieldText
+        Fields = fields
+        IsFSharpClass = isFSharpClass
+        IsGeneric = tycon.TyparsNoRange |> List.exists (fun typar -> not typar.IsErased)
+        CompiledFullName = compiledFullName
+        SupportsAddition = supportsAddition
+        IsModule = false
+        IsSynthesized = false
+    }
+    : EntitySnapshot
 
-let private collectSnapshots g denv (CheckedImplFile (qualifiedNameOfFile = qual; contents = contents)) =
+let private collectSnapshots g denv (CheckedImplFile(qualifiedNameOfFile = qual; contents = contents)) =
     let initialPath = [ qual.Text ]
     let initialBindings: Map<string, BindingSnapshot> = Map.empty
     let initialEntities: Map<string, EntitySnapshot> = Map.empty
@@ -1933,13 +1978,10 @@ let private collectSnapshots g denv (CheckedImplFile (qualifiedNameOfFile = qual
 
 /// Formats a structured message for a lambda-set change, naming the counts and ordinals
 /// of the added/removed occurrences (e.g. "1 lambda added at ordinal 2").
-let private formatLambdaSetChangeMessage
-    (symbol: SymbolId)
-    (added: LambdaOccurrence list)
-    (removed: LambdaOccurrence list)
-    =
+let private formatLambdaSetChangeMessage (symbol: SymbolId) (added: LambdaOccurrence list) (removed: LambdaOccurrence list) =
     let describe verb (occs: LambdaOccurrence list) =
-        let ordinals = occs |> List.map (fun occ -> string occ.Id.Ordinal) |> String.concat ", "
+        let ordinals =
+            occs |> List.map (fun occ -> string occ.Id.Ordinal) |> String.concat ", "
 
         if occs.Length = 1 then
             $"1 lambda {verb} at ordinal {ordinals}"
@@ -1947,8 +1989,12 @@ let private formatLambdaSetChangeMessage
             $"{occs.Length} lambdas {verb} at ordinals {ordinals}"
 
     let parts =
-        [ if not removed.IsEmpty then describe "removed" removed
-          if not added.IsEmpty then describe "added" added ]
+        [
+            if not removed.IsEmpty then
+                describe "removed" removed
+            if not added.IsEmpty then
+                describe "added" added
+        ]
 
     $"""Lambda set changed for '{symbol.QualifiedName}': {String.concat "; " parts}."""
 
@@ -1957,22 +2003,20 @@ let private formatLambdaSetChangeMessage
 let private formatCaptureSetChangeMessage (symbol: SymbolId) (captureChanged: LambdaEdit list) =
     let describeChange ordinal change =
         match change with
-        | CaptureSetChange.Renamed (oldName, newName, _) ->
+        | CaptureSetChange.Renamed(oldName, newName, _) ->
             $"RenamingCapturedVariable: captured value '{oldName}' renamed to '{newName}' (lambda ordinal {ordinal})"
-        | CaptureSetChange.TypeChanged (name, _, _) ->
+        | CaptureSetChange.TypeChanged(name, _, _) ->
             $"ChangingCapturedVariableType: captured value '{name}' changed type (lambda ordinal {ordinal})"
-        | CaptureSetChange.ScopeChanged (name, _) ->
+        | CaptureSetChange.ScopeChanged(name, _) ->
             $"ChangingCapturedVariableScope: captured value '{name}' moved to a different lambda scope (lambda ordinal {ordinal})"
         | CaptureSetChange.CaptureAdded capture ->
             $"lambda at ordinal {ordinal} captures additional value '{capture.LogicalName}' (may become a supported edit via AddInstanceFieldToExistingType)"
-        | CaptureSetChange.CaptureRemoved capture ->
-            $"lambda at ordinal {ordinal} no longer captures value '{capture.LogicalName}'"
+        | CaptureSetChange.CaptureRemoved capture -> $"lambda at ordinal {ordinal} no longer captures value '{capture.LogicalName}'"
 
     let parts =
         captureChanged
         |> List.collect (function
-            | LambdaEdit.CaptureSetChanged (_, updatedOcc, changes) ->
-                changes |> List.map (describeChange updatedOcc.Id.Ordinal)
+            | LambdaEdit.CaptureSetChanged(_, updatedOcc, changes) -> changes |> List.map (describeChange updatedOcc.Id.Ordinal)
             | _ -> [])
 
     $"""Lambda capture set changed for '{symbol.QualifiedName}': {String.concat "; " parts}."""
@@ -2003,13 +2047,16 @@ let private compareBindings
 
     let handleEdit (snapshot: BindingSnapshot) kind baselineHash updatedHash =
         let symbol = snapshot.Symbol
+
         edits.Add(
-            { Symbol = symbol
-              Kind = kind
-              BaselineHash = baselineHash
-              UpdatedHash = updatedHash
-              IsSynthesized = snapshot.IsSynthesized
-              ContainingEntity = snapshot.ContainingEntity }
+            {
+                Symbol = symbol
+                Kind = kind
+                BaselineHash = baselineHash
+                UpdatedHash = updatedHash
+                IsSynthesized = snapshot.IsSynthesized
+                ContainingEntity = snapshot.ContainingEntity
+            }
         )
 
     let compareMatchedBindings (baselineBinding: BindingSnapshot) (updatedBinding: BindingSnapshot) =
@@ -2033,25 +2080,33 @@ let private compareBindings
             && baselineBinding.Symbol.ParameterTypeIdentities = updatedBinding.Symbol.ParameterTypeIdentities
             && baselineBinding.Symbol.ReturnTypeIdentity = updatedBinding.Symbol.ReturnTypeIdentity
 
-        if baselineBinding.SignatureText <> updatedBinding.SignatureText && not hasEquivalentRuntimeSignature then
+        if
+            baselineBinding.SignatureText <> updatedBinding.SignatureText
+            && not hasEquivalentRuntimeSignature
+        then
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.SignatureChange
-                  Message =
-                    $"Signature changed from '{baselineBinding.SignatureText}' to '{updatedBinding.SignatureText}'." }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = RudeEditKind.SignatureChange
+                    Message = $"Signature changed from '{baselineBinding.SignatureText}' to '{updatedBinding.SignatureText}'."
+                }
             )
         elif baselineBinding.ConstraintsText <> updatedBinding.ConstraintsText then
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.SignatureChange
-                  Message =
-                    $"Type parameter constraints changed from '{baselineBinding.ConstraintsText}' to '{updatedBinding.ConstraintsText}'." }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = RudeEditKind.SignatureChange
+                    Message =
+                        $"Type parameter constraints changed from '{baselineBinding.ConstraintsText}' to '{updatedBinding.ConstraintsText}'."
+                }
             )
         elif baselineBinding.InlineInfo <> updatedBinding.InlineInfo then
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.InlineChange
-                  Message = "Inline annotation changed." }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = RudeEditKind.InlineChange
+                    Message = "Inline annotation changed."
+                }
             )
         elif
             baselineBinding.AttributesDigest <> updatedBinding.AttributesDigest
@@ -2061,13 +2116,15 @@ let private compareBindings
             // EditAndContinueCapabilities.ChangeCustomAttributes, else
             // RudeEditKind.ChangingAttributesNotSupportedByRuntime).
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.NotSupportedByRuntime
-                  Message =
-                    FSComp.SR.hotReloadAttributeChangeNotSupportedByRuntime (
-                        baselineBinding.Symbol.QualifiedName,
-                        EditAndContinueCapability.ChangeCustomAttributes.Name
-                    ) }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = RudeEditKind.NotSupportedByRuntime
+                    Message =
+                        FSComp.SR.hotReloadAttributeChangeNotSupportedByRuntime (
+                            baselineBinding.Symbol.QualifiedName,
+                            EditAndContinueCapability.ChangeCustomAttributes.Name
+                        )
+                }
             )
         elif
             baselineBinding.ParameterNames <> updatedBinding.ParameterNames
@@ -2078,13 +2135,15 @@ let private compareBindings
             // RudeEditKind.RenamingNotSupportedByRuntime). Parameter TYPE changes are
             // SignatureChange rude edits above; only names can differ here.
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.NotSupportedByRuntime
-                  Message =
-                    FSComp.SR.hotReloadParameterRenameNotSupportedByRuntime (
-                        baselineBinding.Symbol.QualifiedName,
-                        EditAndContinueCapability.UpdateParameters.Name
-                    ) }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = RudeEditKind.NotSupportedByRuntime
+                    Message =
+                        FSComp.SR.hotReloadParameterRenameNotSupportedByRuntime (
+                            baselineBinding.Symbol.QualifiedName,
+                            EditAndContinueCapability.UpdateParameters.Name
+                        )
+                }
             )
         elif
             baselineBinding.AttributesDigest <> updatedBinding.AttributesDigest
@@ -2095,19 +2154,26 @@ let private compareBindings
             // yet, so the edit fails closed instead of applying without the attribute
             // change.
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.Unsupported
-                  Message =
-                    $"Changing attributes of '{baselineBinding.Symbol.QualifiedName}' is not supported: its attribute rows are parented by a Property or Event row, which hot reload deltas cannot update yet. Please rebuild." }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = RudeEditKind.Unsupported
+                    Message =
+                        $"Changing attributes of '{baselineBinding.Symbol.QualifiedName}' is not supported: its attribute rows are parented by a Property or Event row, which hot reload deltas cannot update yet. Please rebuild."
+                }
             )
         elif baselineBinding.QueryShapeDigest <> updatedBinding.QueryShapeDigest then
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.QueryExpressionShapeChange
-                  Message =
-                    $"Query-expression lowering shape changed from '{baselineBinding.QueryShapeDigest}' to '{updatedBinding.QueryShapeDigest}'." }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = RudeEditKind.QueryExpressionShapeChange
+                    Message =
+                        $"Query-expression lowering shape changed from '{baselineBinding.QueryShapeDigest}' to '{updatedBinding.QueryShapeDigest}'."
+                }
             )
-        elif baselineBinding.StateMachineShapeDigest <> updatedBinding.StateMachineShapeDigest then
+        elif
+            baselineBinding.StateMachineShapeDigest
+            <> updatedBinding.StateMachineShapeDigest
+        then
             // The resumable-code call sequence changed: the lowering assigns resume-point
             // state numbers positionally, and the state machine struct's hoisted/awaiter
             // field layout follows the sequence, so adding, removing, or reordering steps
@@ -2115,10 +2181,12 @@ let private compareBindings
             // task state machines are structs, so even append-only new awaits would
             // change the immutable struct layout).
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.StateMachineShapeChange
-                  Message =
-                    $"Resumable state-machine structure changed for '{baselineBinding.Symbol.QualifiedName}': the sequence of computation-expression steps (let!/do!/return!/control flow) changed from '{baselineBinding.StateMachineShapeDigest}' to '{updatedBinding.StateMachineShapeDigest}'. Adding, removing, or reordering steps in a task or resumable computation requires a rebuild." }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = RudeEditKind.StateMachineShapeChange
+                    Message =
+                        $"Resumable state-machine structure changed for '{baselineBinding.Symbol.QualifiedName}': the sequence of computation-expression steps (let!/do!/return!/control flow) changed from '{baselineBinding.StateMachineShapeDigest}' to '{updatedBinding.StateMachineShapeDigest}'. Adding, removing, or reordering steps in a task or resumable computation requires a rebuild."
+                }
             )
         else
             // Lambda classification: when occurrence extraction succeeded on both
@@ -2141,8 +2209,10 @@ let private compareBindings
 
                     if not lambdaEditList.IsEmpty then
                         memberLambdaEdits.Add
-                            { MemberSymbol = baselineBinding.Symbol
-                              Edits = lambdaEditList }
+                            {
+                                MemberSymbol = baselineBinding.Symbol
+                                Edits = lambdaEditList
+                            }
 
                     let hasStructuralLambdaEdit =
                         lambdaEditList
@@ -2191,8 +2261,10 @@ let private compareBindings
                         // present the member body update covers the edit — the delta
                         // emitter discovers and emits the new closure TypeDef.
                         let requiredCapabilities =
-                            [ EditAndContinueCapability.NewTypeDefinition
-                              EditAndContinueCapability.AddMethodToExistingType ]
+                            [
+                                EditAndContinueCapability.NewTypeDefinition
+                                EditAndContinueCapability.AddMethodToExistingType
+                            ]
 
                         match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
                         | None -> None
@@ -2227,9 +2299,11 @@ let private compareBindings
             match lambdaRudeEdit with
             | Some(kind, message) ->
                 rude.Add(
-                    { Symbol = Some baselineBinding.Symbol
-                      Kind = kind
-                      Message = message }
+                    {
+                        Symbol = Some baselineBinding.Symbol
+                        Kind = kind
+                        Message = message
+                    }
                 )
             | None ->
                 // An attribute-only change still re-emits the member (the CA rows pair
@@ -2270,13 +2344,15 @@ let private compareBindings
                         && not (capabilities.Supports requiredGenericCapability)
                     then
                         rude.Add(
-                            { Symbol = Some baselineBinding.Symbol
-                              Kind = RudeEditKind.NotSupportedByRuntime
-                              Message =
-                                FSComp.SR.hotReloadGenericUpdateNotSupportedByRuntime (
-                                    baselineBinding.Symbol.QualifiedName,
-                                    requiredGenericCapability.Name
-                                ) }
+                            {
+                                Symbol = Some baselineBinding.Symbol
+                                Kind = RudeEditKind.NotSupportedByRuntime
+                                Message =
+                                    FSComp.SR.hotReloadGenericUpdateNotSupportedByRuntime (
+                                        baselineBinding.Symbol.QualifiedName,
+                                        requiredGenericCapability.Name
+                                    )
+                            }
                         )
                     else
                         handleEdit
@@ -2293,16 +2369,21 @@ let private compareBindings
                     $"Synthesized declaration removed for '{baselineBinding.Symbol.QualifiedName}', but no known lowered-shape classifier matched."
                 else
                     $"Synthesized declaration removed while lowered shape changed for '{baselineBinding.Symbol.QualifiedName}'."
+
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = loweredKind
-                  Message = message }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = loweredKind
+                    Message = message
+                }
             )
         | None ->
             rude.Add(
-                { Symbol = Some baselineBinding.Symbol
-                  Kind = RudeEditKind.DeclarationRemoved
-                  Message = "Declaration removed." }
+                {
+                    Symbol = Some baselineBinding.Symbol
+                    Kind = RudeEditKind.DeclarationRemoved
+                    Message = "Declaration removed."
+                }
             )
 
     let addAddedDeclarationOrInsertEdit (updatedBinding: BindingSnapshot) =
@@ -2318,146 +2399,162 @@ let private compareBindings
         | Some containingEntity when Set.contains containingEntity addedEntityCompiledNames -> ()
         | _ ->
 
-        match tryClassifySynthesizedLoweredShapeChurn updatedBinding with
-        | Some loweredKind ->
-            let message =
-                if loweredKind = RudeEditKind.SynthesizedDeclarationChange then
-                    $"Synthesized declaration added for '{updatedBinding.Symbol.QualifiedName}', but no known lowered-shape classifier matched."
-                else
-                    $"Synthesized declaration added while lowered shape changed for '{updatedBinding.Symbol.QualifiedName}'."
-            rude.Add(
-                { Symbol = Some updatedBinding.Symbol
-                  Kind = loweredKind
-                  Message = message }
-            )
-        | None ->
-            let info = updatedBinding.AdditionInfo
+            match tryClassifySynthesizedLoweredShapeChurn updatedBinding with
+            | Some loweredKind ->
+                let message =
+                    if loweredKind = RudeEditKind.SynthesizedDeclarationChange then
+                        $"Synthesized declaration added for '{updatedBinding.Symbol.QualifiedName}', but no known lowered-shape classifier matched."
+                    else
+                        $"Synthesized declaration added while lowered shape changed for '{updatedBinding.Symbol.QualifiedName}'."
 
-            // Additions in a generic context (the added member is generic, or its declaring
-            // type is generic) additionally require the generic-aware runtime capabilities
-            // (Roslyn parity: GetRequiredAddMethodCapabilities /
-            // GetRequiredAddFieldCapabilities OR in GenericAddMethodToExistingType /
-            // GenericAddFieldToExistingType when InGenericContext).
-            let genericMethodAdditionCapabilities =
-                if updatedBinding.InGenericContext then
-                    [ EditAndContinueCapability.GenericAddMethodToExistingType ]
-                else
-                    []
-
-            let genericFieldAdditionCapabilities =
-                if updatedBinding.InGenericContext then
-                    [ EditAndContinueCapability.GenericAddFieldToExistingType ]
-                else
-                    []
-
-            // Single insertion seam: emit the Insert edit when every required capability is
-            // granted, otherwise report RudeEditKind.NotSupportedByRuntime naming the first
-            // missing capability.
-            let insertOrRude (requiredCapabilities: EditAndContinueCapability list) =
-                match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
-                | None -> handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
-                | Some missing ->
-                    rude.Add(
-                        { Symbol = Some updatedBinding.Symbol
-                          Kind = RudeEditKind.NotSupportedByRuntime
-                          Message =
-                            FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
-                                updatedBinding.Symbol.QualifiedName,
-                                missing.Name
-                            ) }
-                    )
-
-            // Module-level values lower to a static field on the module type plus accessor
-            // methods (get_/set_), with initialization appended to the startup-code class
-            // constructor. Applying one therefore needs BOTH the static-field and the method
-            // runtime capabilities (Roslyn parity: a C# static field with initializer needs
-            // AddStaticFieldToExistingType, and our accessors additionally need
-            // AddMethodToExistingType). Generic module values (type functions) lower to
-            // generic methods, so the generic addition capabilities join the requirement.
-            let addModuleValueInsertOrRude () =
-                insertOrRude (
-                    [ capabilityForAddition AdditionKind.StaticField
-                      capabilityForAddition AdditionKind.Method ]
-                    @ genericFieldAdditionCapabilities
-                    @ genericMethodAdditionCapabilities
+                rude.Add(
+                    {
+                        Symbol = Some updatedBinding.Symbol
+                        Kind = loweredKind
+                        Message = message
+                    }
                 )
+            | None ->
+                let info = updatedBinding.AdditionInfo
 
-            // Check restrictions following Roslyn patterns
-            if info.IsField then
-                if info.IsModuleBinding then
-                    // Mutable module-level value: static field + get_/set_ accessors.
-                    addModuleValueInsertOrRude ()
-                else
-                    // Instance fields on classes are capability-gated. Class
-                    // let-bounds normally surface through the entity-level field diff (the
-                    // binding folds into the constructor body); any field binding reaching
-                    // here is gated on the same runtime capability. Struct field additions
-                    // stay rude via the entity-level TypeLayoutChange (runtime restriction,
-                    // identical for C#).
+                // Additions in a generic context (the added member is generic, or its declaring
+                // type is generic) additionally require the generic-aware runtime capabilities
+                // (Roslyn parity: GetRequiredAddMethodCapabilities /
+                // GetRequiredAddFieldCapabilities OR in GenericAddMethodToExistingType /
+                // GenericAddFieldToExistingType when InGenericContext).
+                let genericMethodAdditionCapabilities =
+                    if updatedBinding.InGenericContext then
+                        [ EditAndContinueCapability.GenericAddMethodToExistingType ]
+                    else
+                        []
+
+                let genericFieldAdditionCapabilities =
+                    if updatedBinding.InGenericContext then
+                        [ EditAndContinueCapability.GenericAddFieldToExistingType ]
+                    else
+                        []
+
+                // Single insertion seam: emit the Insert edit when every required capability is
+                // granted, otherwise report RudeEditKind.NotSupportedByRuntime naming the first
+                // missing capability.
+                let insertOrRude (requiredCapabilities: EditAndContinueCapability list) =
+                    match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
+                    | None -> handleEdit updatedBinding SemanticEditKind.Insert None (Some updatedBinding.BodyHash)
+                    | Some missing ->
+                        rude.Add(
+                            {
+                                Symbol = Some updatedBinding.Symbol
+                                Kind = RudeEditKind.NotSupportedByRuntime
+                                Message =
+                                    FSComp.SR.hotReloadAdditionNotSupportedByRuntime (updatedBinding.Symbol.QualifiedName, missing.Name)
+                            }
+                        )
+
+                // Module-level values lower to a static field on the module type plus accessor
+                // methods (get_/set_), with initialization appended to the startup-code class
+                // constructor. Applying one therefore needs BOTH the static-field and the method
+                // runtime capabilities (Roslyn parity: a C# static field with initializer needs
+                // AddStaticFieldToExistingType, and our accessors additionally need
+                // AddMethodToExistingType). Generic module values (type functions) lower to
+                // generic methods, so the generic addition capabilities join the requirement.
+                let addModuleValueInsertOrRude () =
                     insertOrRude (
-                        capabilityForAddition AdditionKind.InstanceField
-                        :: genericFieldAdditionCapabilities
+                        [
+                            capabilityForAddition AdditionKind.StaticField
+                            capabilityForAddition AdditionKind.Method
+                        ]
+                        @ genericFieldAdditionCapabilities
+                        @ genericMethodAdditionCapabilities
                     )
-            elif info.IsExplicitInterfaceImplementation then
-                rude.Add(
-                    { Symbol = Some updatedBinding.Symbol
-                      Kind = RudeEditKind.InsertExplicitInterface
-                      Message = "Adding explicit interface implementations is not supported." }
-                )
-            elif info.IsDispatchSlot || info.IsOverrideOrExplicitImpl then
-                // Virtual, abstract, or override methods cannot be added
-                rude.Add(
-                    { Symbol = Some updatedBinding.Symbol
-                      Kind = RudeEditKind.InsertVirtual
-                      Message = "Adding virtual, abstract, or override methods is not supported." }
-                )
-            elif info.IsConstructor then
-                // Constructors cannot be added to existing types
-                rude.Add(
-                    { Symbol = Some updatedBinding.Symbol
-                      Kind = RudeEditKind.InsertConstructor
-                      Message = "Adding constructors is not supported." }
-                )
-            elif info.IsOperator then
-                // User-defined operators cannot be added
-                rude.Add(
-                    { Symbol = Some updatedBinding.Symbol
-                      Kind = RudeEditKind.InsertOperator
-                      Message = "Adding user-defined operators is not supported." }
-                )
-            elif info.IsInInterface then
-                // Members cannot be added to interfaces
-                rude.Add(
-                    { Symbol = Some updatedBinding.Symbol
-                      Kind = RudeEditKind.InsertIntoInterface
-                      Message = "Adding members to interfaces is not supported." }
-                )
-            elif info.IsMethod then
-                // The edit kind itself is supported; whether it can be applied depends on the
-                // capabilities the runtime negotiated at session start (Roslyn parity:
-                // AbstractEditAndContinueAnalyzer reports RudeEditKind.NotSupportedByRuntime
-                // when an otherwise-valid edit exceeds the runtime's capabilities).
-                insertOrRude (capabilityForAddition AdditionKind.Method :: genericMethodAdditionCapabilities)
-            elif info.IsModuleBinding then
-                match updatedBinding.Symbol.TotalArgCount with
-                | Some argCount when argCount > 0 ->
-                    // Module-level functions lower to plain static methods on the module type —
-                    // the same edit shape as adding a type member, gated the same way (generic
-                    // functions, including auto-generalized ones, also need the generic
-                    // addition capability).
+
+                // Check restrictions following Roslyn patterns
+                if info.IsField then
+                    if info.IsModuleBinding then
+                        // Mutable module-level value: static field + get_/set_ accessors.
+                        addModuleValueInsertOrRude ()
+                    else
+                        // Instance fields on classes are capability-gated. Class
+                        // let-bounds normally surface through the entity-level field diff (the
+                        // binding folds into the constructor body); any field binding reaching
+                        // here is gated on the same runtime capability. Struct field additions
+                        // stay rude via the entity-level TypeLayoutChange (runtime restriction,
+                        // identical for C#).
+                        insertOrRude (
+                            capabilityForAddition AdditionKind.InstanceField
+                            :: genericFieldAdditionCapabilities
+                        )
+                elif info.IsExplicitInterfaceImplementation then
+                    rude.Add(
+                        {
+                            Symbol = Some updatedBinding.Symbol
+                            Kind = RudeEditKind.InsertExplicitInterface
+                            Message = "Adding explicit interface implementations is not supported."
+                        }
+                    )
+                elif info.IsDispatchSlot || info.IsOverrideOrExplicitImpl then
+                    // Virtual, abstract, or override methods cannot be added
+                    rude.Add(
+                        {
+                            Symbol = Some updatedBinding.Symbol
+                            Kind = RudeEditKind.InsertVirtual
+                            Message = "Adding virtual, abstract, or override methods is not supported."
+                        }
+                    )
+                elif info.IsConstructor then
+                    // Constructors cannot be added to existing types
+                    rude.Add(
+                        {
+                            Symbol = Some updatedBinding.Symbol
+                            Kind = RudeEditKind.InsertConstructor
+                            Message = "Adding constructors is not supported."
+                        }
+                    )
+                elif info.IsOperator then
+                    // User-defined operators cannot be added
+                    rude.Add(
+                        {
+                            Symbol = Some updatedBinding.Symbol
+                            Kind = RudeEditKind.InsertOperator
+                            Message = "Adding user-defined operators is not supported."
+                        }
+                    )
+                elif info.IsInInterface then
+                    // Members cannot be added to interfaces
+                    rude.Add(
+                        {
+                            Symbol = Some updatedBinding.Symbol
+                            Kind = RudeEditKind.InsertIntoInterface
+                            Message = "Adding members to interfaces is not supported."
+                        }
+                    )
+                elif info.IsMethod then
+                    // The edit kind itself is supported; whether it can be applied depends on the
+                    // capabilities the runtime negotiated at session start (Roslyn parity:
+                    // AbstractEditAndContinueAnalyzer reports RudeEditKind.NotSupportedByRuntime
+                    // when an otherwise-valid edit exceeds the runtime's capabilities).
                     insertOrRude (capabilityForAddition AdditionKind.Method :: genericMethodAdditionCapabilities)
-                | _ ->
-                    // Immutable module-level value: static field (+ getter) initialized from the
-                    // startup-code class constructor — same capability pair as the mutable case.
-                    addModuleValueInsertOrRude ()
-            else
-                // Additions that are neither members, fields, nor module bindings (e.g. local
-                // bindings surfaced at this level) remain unsupported.
-                rude.Add(
-                    { Symbol = Some updatedBinding.Symbol
-                      Kind = RudeEditKind.DeclarationAdded
-                      Message = "Adding this kind of declaration is not supported." }
-                )
+                elif info.IsModuleBinding then
+                    match updatedBinding.Symbol.TotalArgCount with
+                    | Some argCount when argCount > 0 ->
+                        // Module-level functions lower to plain static methods on the module type —
+                        // the same edit shape as adding a type member, gated the same way (generic
+                        // functions, including auto-generalized ones, also need the generic
+                        // addition capability).
+                        insertOrRude (capabilityForAddition AdditionKind.Method :: genericMethodAdditionCapabilities)
+                    | _ ->
+                        // Immutable module-level value: static field (+ getter) initialized from the
+                        // startup-code class constructor — same capability pair as the mutable case.
+                        addModuleValueInsertOrRude ()
+                else
+                    // Additions that are neither members, fields, nor module bindings (e.g. local
+                    // bindings surfaced at this level) remain unsupported.
+                    rude.Add(
+                        {
+                            Symbol = Some updatedBinding.Symbol
+                            Kind = RudeEditKind.DeclarationAdded
+                            Message = "Adding this kind of declaration is not supported."
+                        }
+                    )
 
     let hasSameBindingIdentity (baselineBinding: BindingSnapshot) (updatedBinding: BindingSnapshot) =
         baselineBinding.Symbol.QualifiedName = updatedBinding.Symbol.QualifiedName
@@ -2489,8 +2586,7 @@ let private compareBindings
             | Some(updatedKey, updatedBinding) ->
                 matchedUpdatedKeys.Add updatedKey |> ignore
                 compareMatchedBindings baselineBinding updatedBinding
-            | None ->
-                addRemovedDeclarationRudeEdit baselineBinding
+            | None -> addRemovedDeclarationRudeEdit baselineBinding
 
     for KeyValue(key, updatedBinding) in updated do
         if not (matchedUpdatedKeys.Contains key) && not (Map.containsKey key baseline) then
@@ -2512,10 +2608,12 @@ let private compareEntities
             if baselineEntity.RepresentationHash <> updatedEntity.RepresentationHash then
                 let addTypeLayoutChange () =
                     rude.Add(
-                        { Symbol = Some baselineEntity.Symbol
-                          Kind = RudeEditKind.TypeLayoutChange
-                          Message =
-                            $"Type representation changed from '{baselineEntity.RepresentationText}' to '{updatedEntity.RepresentationText}'." }
+                        {
+                            Symbol = Some baselineEntity.Symbol
+                            Kind = RudeEditKind.TypeLayoutChange
+                            Message =
+                                $"Type representation changed from '{baselineEntity.RepresentationText}' to '{updatedEntity.RepresentationText}'."
+                        }
                     )
 
                 // Pure field addition: the non-field representation is unchanged and every
@@ -2544,24 +2642,25 @@ let private compareEntities
                             // generic-aware runtime capability (Roslyn parity:
                             // GetRequiredAddFieldCapabilities ORs in
                             // GenericAddFieldToExistingType when InGenericContext).
-                            [ if digest.IsStatic then
-                                  capabilityForAddition AdditionKind.StaticField
-                              else
-                                  capabilityForAddition AdditionKind.InstanceField
-                              if updatedEntity.IsGeneric then
-                                  EditAndContinueCapability.GenericAddFieldToExistingType ])
+                            [
+                                if digest.IsStatic then
+                                    capabilityForAddition AdditionKind.StaticField
+                                else
+                                    capabilityForAddition AdditionKind.InstanceField
+                                if updatedEntity.IsGeneric then
+                                    EditAndContinueCapability.GenericAddFieldToExistingType
+                            ])
                         |> List.distinct
 
                     match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
                     | Some missing ->
                         rude.Add(
-                            { Symbol = Some updatedEntity.Symbol
-                              Kind = RudeEditKind.NotSupportedByRuntime
-                              Message =
-                                FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
-                                    updatedEntity.Symbol.QualifiedName,
-                                    missing.Name
-                                ) }
+                            {
+                                Symbol = Some updatedEntity.Symbol
+                                Kind = RudeEditKind.NotSupportedByRuntime
+                                Message =
+                                    FSComp.SR.hotReloadAdditionNotSupportedByRuntime (updatedEntity.Symbol.QualifiedName, missing.Name)
+                            }
                         )
                     | None ->
                         match updatedEntity.CompiledFullName with
@@ -2585,21 +2684,26 @@ let private compareEntities
                                 | last :: revPrefix ->
                                     { updatedEntity.Symbol with
                                         Path = List.rev revPrefix
-                                        LogicalName = last }
+                                        LogicalName = last
+                                    }
 
                             edits.Add(
-                                { Symbol = symbol
-                                  Kind = SemanticEditKind.TypeDefinition
-                                  BaselineHash = Some baselineEntity.RepresentationHash
-                                  UpdatedHash = Some updatedEntity.RepresentationHash
-                                  IsSynthesized = false
-                                  ContainingEntity = None }
+                                {
+                                    Symbol = symbol
+                                    Kind = SemanticEditKind.TypeDefinition
+                                    BaselineHash = Some baselineEntity.RepresentationHash
+                                    UpdatedHash = Some updatedEntity.RepresentationHash
+                                    IsSynthesized = false
+                                    ContainingEntity = None
+                                }
                             )
         | None ->
             rude.Add(
-                { Symbol = Some baselineEntity.Symbol
-                  Kind = RudeEditKind.DeclarationRemoved
-                  Message = "Type declaration removed." }
+                {
+                    Symbol = Some baselineEntity.Symbol
+                    Kind = RudeEditKind.DeclarationRemoved
+                    Message = "Type declaration removed."
+                }
             )
 
     for KeyValue(key, updatedEntity) in updated do
@@ -2613,20 +2717,24 @@ let private compareEntities
             // this single Insert edit (compareBindings skips them).
             if not updatedEntity.SupportsAddition then
                 rude.Add(
-                    { Symbol = Some updatedEntity.Symbol
-                      Kind = RudeEditKind.DeclarationAdded
-                      Message =
-                        $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: only classes, records, unions, structs, enums, interfaces, delegates, and modules can be added (type abbreviations and other representations require a rebuild)." }
+                    {
+                        Symbol = Some updatedEntity.Symbol
+                        Kind = RudeEditKind.DeclarationAdded
+                        Message =
+                            $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: only classes, records, unions, structs, enums, interfaces, delegates, and modules can be added (type abbreviations and other representations require a rebuild)."
+                    }
                 )
             elif not (capabilities.Supports EditAndContinueCapability.NewTypeDefinition) then
                 rude.Add(
-                    { Symbol = Some updatedEntity.Symbol
-                      Kind = RudeEditKind.NotSupportedByRuntime
-                      Message =
-                        FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
-                            updatedEntity.Symbol.QualifiedName,
-                            EditAndContinueCapability.NewTypeDefinition.Name
-                        ) }
+                    {
+                        Symbol = Some updatedEntity.Symbol
+                        Kind = RudeEditKind.NotSupportedByRuntime
+                        Message =
+                            FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
+                                updatedEntity.Symbol.QualifiedName,
+                                EditAndContinueCapability.NewTypeDefinition.Name
+                            )
+                    }
                 )
             else
                 match updatedEntity.CompiledFullName with
@@ -2634,10 +2742,12 @@ let private compareEntities
                     // Fail closed: without a compiled type name the emitter cannot match
                     // the fresh-compile TypeDef.
                     rude.Add(
-                        { Symbol = Some updatedEntity.Symbol
-                          Kind = RudeEditKind.DeclarationAdded
-                          Message =
-                            $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: the compiled type name could not be computed." }
+                        {
+                            Symbol = Some updatedEntity.Symbol
+                            Kind = RudeEditKind.DeclarationAdded
+                            Message =
+                                $"Adding type declaration '{updatedEntity.Symbol.QualifiedName}' is not supported: the compiled type name could not be computed."
+                        }
                     )
                 | Some compiledFullName ->
                     // The symbol path mirrors the IL name (like the TypeDefinition edit
@@ -2652,15 +2762,18 @@ let private compareEntities
                         | last :: revPrefix ->
                             { updatedEntity.Symbol with
                                 Path = List.rev revPrefix
-                                LogicalName = last }
+                                LogicalName = last
+                            }
 
                     edits.Add(
-                        { Symbol = symbol
-                          Kind = SemanticEditKind.Insert
-                          BaselineHash = None
-                          UpdatedHash = Some updatedEntity.RepresentationHash
-                          IsSynthesized = false
-                          ContainingEntity = None }
+                        {
+                            Symbol = symbol
+                            Kind = SemanticEditKind.Insert
+                            BaselineHash = None
+                            UpdatedHash = Some updatedEntity.RepresentationHash
+                            IsSynthesized = false
+                            ContainingEntity = None
+                        }
                     )
 
     edits |> Seq.toList, rude |> Seq.toList
@@ -2708,8 +2821,11 @@ let diffImplementationFile (g: TcGlobals) (capabilities: EditAndContinueCapabili
     let semanticEdits, bindingRudeEdits, lambdaEdits =
         compareBindings capabilities addedEntityCompiledNames baselineBindings updatedBindings
 
-    let entityEdits, entityRudeEdits = compareEntities capabilities baselineEntities updatedEntities
+    let entityEdits, entityRudeEdits =
+        compareEntities capabilities baselineEntities updatedEntities
 
-    { SemanticEdits = semanticEdits @ entityEdits
-      RudeEdits = bindingRudeEdits @ entityRudeEdits
-      LambdaEdits = lambdaEdits }
+    {
+        SemanticEdits = semanticEdits @ entityEdits
+        RudeEdits = bindingRudeEdits @ entityRudeEdits
+        LambdaEdits = lambdaEdits
+    }

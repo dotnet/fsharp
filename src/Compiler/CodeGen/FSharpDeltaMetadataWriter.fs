@@ -87,7 +87,6 @@ type MetadataDelta =
         BaseGenerationId: Guid
     }
 
-
 let emitWithTypeDefinitions
     (moduleName: string)
     (moduleNameOffset: StringOffset option)
@@ -124,16 +123,15 @@ let emitWithTypeDefinitions
     : MetadataDelta =
     if shouldTraceMetadata () then
         printfn "[fsharp-hotreload][metadata-writer] emit invoked updates=%d" (List.length updates)
+
         for row in methodDefinitionRows do
             let offset =
                 match row.NameOffset with
-                | Some (StringOffset o) -> Some o
+                | Some(StringOffset o) -> Some o
                 | None -> None
-            printfn
-                "[fsharp-hotreload][metadata-writer] method-row name=%s isAdded=%b offset=%A"
-                row.Name
-                row.IsAdded
-                offset
+
+            printfn "[fsharp-hotreload][metadata-writer] method-row name=%s isAdded=%b offset=%A" row.Name row.IsAdded offset
+
     let normalizedExternalRowCounts =
         if externalRowCounts.Length = DeltaTokens.TableCount then
             externalRowCounts
@@ -157,26 +155,32 @@ let emitWithTypeDefinitions
 
     if not hasRowPayload then
         let emptyMirror = DeltaMetadataTables(heapOffsets)
-        let emptySizes = DeltaMetadataSerializer.computeMetadataSizes emptyMirror normalizedExternalRowCounts
 
-        { Metadata = Array.empty
-          StringHeap = Array.empty
-          BlobHeap = Array.empty
-          GuidHeap = Array.empty
-          EncLog = Array.empty
-          EncMap = Array.empty
-          TableRowCounts = emptySizes.RowCounts
-          HeapSizes = emptySizes.HeapSizes
-          HeapOffsets = heapOffsets
-          Tables = emptyMirror.TableRows
-          TableBitMasks = emptySizes.BitMasks
-          IndexSizes = emptySizes.IndexSizes
-          TableStream =
-            { Bytes = Array.empty
-              UnpaddedSize = 0
-              PaddedSize = 0 }
-          GenerationId = encId
-          BaseGenerationId = encBaseId }
+        let emptySizes =
+            DeltaMetadataSerializer.computeMetadataSizes emptyMirror normalizedExternalRowCounts
+
+        {
+            Metadata = Array.empty
+            StringHeap = Array.empty
+            BlobHeap = Array.empty
+            GuidHeap = Array.empty
+            EncLog = Array.empty
+            EncMap = Array.empty
+            TableRowCounts = emptySizes.RowCounts
+            HeapSizes = emptySizes.HeapSizes
+            HeapOffsets = heapOffsets
+            Tables = emptyMirror.TableRows
+            TableBitMasks = emptySizes.BitMasks
+            IndexSizes = emptySizes.IndexSizes
+            TableStream =
+                {
+                    Bytes = Array.empty
+                    UnpaddedSize = 0
+                    PaddedSize = 0
+                }
+            GenerationId = encId
+            BaseGenerationId = encBaseId
+        }
     else
 
         if shouldTraceMetadata () then
@@ -186,17 +190,21 @@ let emitWithTypeDefinitions
                 moduleId
                 encId
                 encBaseId
+
         let tableMirror = DeltaMetadataTables(heapOffsets)
         tableMirror.AddModuleRow(moduleName, moduleNameOffset, generation, moduleId, encId, encBaseId)
 
-        let updatesByKey = Dictionary<MethodDefinitionKey, MethodMetadataUpdate>(HashIdentity.Structural)
+        let updatesByKey =
+            Dictionary<MethodDefinitionKey, MethodMetadataUpdate>(HashIdentity.Structural)
 
         for update in updates do
             updatesByKey[update.MethodKey] <- update
 
         // Build EncLog and EncMap entries using TableName for type safety.
         // EncLog records each modification; EncMap provides sorted token listing.
-        let mutable encLog = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let mutable encLog =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
         let mutable encMap = ResizeArray<struct (TableName * int)>()
 
         // Module row is always present in deltas
@@ -216,8 +224,11 @@ let emitWithTypeDefinitions
         //   AddProperty/AddEvent -> parent PropertyMap/EventMap row
         // Only the added member row (never the parent entry) appears in EncMap.
         // ---------------------------------------------------------------------------------
-        let methodEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
-        let methodRowsByKey = Dictionary<MethodDefinitionKey, MethodDefinitionRowInfo>(HashIdentity.Structural)
+        let methodEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
+        let methodRowsByKey =
+            Dictionary<MethodDefinitionKey, MethodDefinitionRowInfo>(HashIdentity.Structural)
 
         // Added TypeDef rows are logged as plain Default entries (the row content is
         // applied via ApplyTableDelta, like PropertyMap/EventMap rows) and MUST precede
@@ -225,14 +236,16 @@ let emitWithTypeDefinitions
         // (csharp_enc_reference, added capturing lambda -> new display class): the new
         // TypeDef row's Default entry comes immediately before its AddField/AddMethod
         // member pairs; the NestedClass row trails at the end of the log.
-        let typeDefEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let typeDefEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in typeDefinitionRows |> List.sortBy (fun row -> row.RowId) do
             tableMirror.AddTypeDefinitionRow row
             typeDefEncLogEntries.Add(struct (TableNames.TypeDef, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.TypeDef, row.RowId))
 
-        let nestedClassEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let nestedClassEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in nestedClassRows |> List.sortBy (fun row -> row.RowId) do
             tableMirror.AddNestedClassRow row
@@ -243,14 +256,16 @@ let emitWithTypeDefinitions
         // ApplyTableDelta. The C# 'new_class' reference template logs the InterfaceImpl
         // row trailing the generation-1 log; MethodImpl rows (F#'s explicit interface
         // implementations) follow the same shape.
-        let interfaceImplEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let interfaceImplEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in interfaceImplRows |> List.sortBy (fun row -> row.RowId) do
             tableMirror.AddInterfaceImplRow row
             interfaceImplEncLogEntries.Add(struct (TableNames.InterfaceImpl, row.RowId, EditAndContinueOperation.Default))
             encMap.Add(struct (TableNames.InterfaceImpl, row.RowId))
 
-        let methodImplEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let methodImplEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in methodImplRows |> List.sortBy (fun row -> row.RowId) do
             tableMirror.AddMethodImplRow row
@@ -260,7 +275,8 @@ let emitWithTypeDefinitions
         // Constant rows (literal values of ADDED fields) are plain Default adds trailing
         // the log: the C# 'new_enum' reference template logs the three Constant rows of
         // an added enum LAST, after the member pairs and the updated-method rows.
-        let constantEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let constantEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in constantRows |> List.sortBy (fun row -> row.RowId) do
             tableMirror.AddConstantRow row
@@ -272,6 +288,7 @@ let emitWithTypeDefinitions
             | true, update ->
                 tableMirror.AddMethodRow(row, update.Body)
                 methodRowsByKey[row.Key] <- row
+
                 if shouldTraceMethodRows () then
                     printfn
                         "[fsharp-hotreload][writer] method-row key=%s::%s rowId=%d isAdded=%b"
@@ -294,7 +311,8 @@ let emitWithTypeDefinitions
                 if shouldTraceMetadata () then
                     printfn "[fsharp-hotreload][metadata-writer] missing update payload for %A" row.Key
 
-        let parameterEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let parameterEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in parameterDefinitionRows do
             tableMirror.AddParameterRow row
@@ -320,8 +338,10 @@ let emitWithTypeDefinitions
             |> List.filter (fun row -> row.IsAdded)
             |> List.sortBy (fun row -> row.RowId)
             |> List.collect (fun row ->
-                [ struct (TableNames.TypeDef, row.ParentTypeDefRowId, EditAndContinueOperation.AddField)
-                  struct (TableNames.Field, row.RowId, EditAndContinueOperation.Default) ])
+                [
+                    struct (TableNames.TypeDef, row.ParentTypeDefRowId, EditAndContinueOperation.AddField)
+                    struct (TableNames.Field, row.RowId, EditAndContinueOperation.Default)
+                ])
 
         for row in typeReferenceRows do
             tableMirror.AddTypeReferenceRow row
@@ -355,7 +375,8 @@ let emitWithTypeDefinitions
         // 'GenericParam 0x2a000001 Default' trailing the AddMethod/AddParameter pairs and
         // lists the row in EncMap. Kept as a dedicated group appended after the parameter
         // pairs so the owning method rows are already logged.
-        let genericParamEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let genericParamEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in genericParamRows |> List.sortBy (fun row -> row.RowId) do
             tableMirror.AddGenericParamRow row
@@ -394,7 +415,9 @@ let emitWithTypeDefinitions
         // Newly created PropertyMap/EventMap rows are logged as plain Default entries (the
         // row content is applied via ApplyTableDelta) and MUST precede the AddProperty /
         // AddEvent entries that reference them as parents.
-        let propertyMapEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let propertyMapEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
         let propertyMapRowIdByType = Dictionary<string, int>(StringComparer.Ordinal)
 
         for row in propertyMapRows do
@@ -405,7 +428,9 @@ let emitWithTypeDefinitions
 
             propertyMapRowIdByType[row.DeclaringType] <- row.RowId
 
-        let eventMapEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let eventMapEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+
         let eventMapRowIdByType = Dictionary<string, int>(StringComparer.Ordinal)
 
         for row in eventMapRows do
@@ -416,7 +441,8 @@ let emitWithTypeDefinitions
 
             eventMapRowIdByType[row.DeclaringType] <- row.RowId
 
-        let propertyEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let propertyEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in propertyDefinitionRows do
             if row.IsAdded then
@@ -436,7 +462,8 @@ let emitWithTypeDefinitions
                 propertyEncLogEntries.Add(struct (TableNames.Property, row.RowId, EditAndContinueOperation.Default))
                 encMap.Add(struct (TableNames.Property, row.RowId))
 
-        let eventEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let eventEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in eventDefinitionRows do
             if row.IsAdded then
@@ -458,7 +485,8 @@ let emitWithTypeDefinitions
 
         // MethodSemantics rows are logged as plain Default entries (Roslyn parity); the CLR
         // applies them via ApplyTableDelta like any other appended row.
-        let methodSemanticsEncLogEntries = ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
+        let methodSemanticsEncLogEntries =
+            ResizeArray<struct (TableName * int * EditAndContinueOperation)>()
 
         for row in methodSemanticsRows do
             if row.IsAdded then
@@ -480,20 +508,25 @@ let emitWithTypeDefinitions
             let snapshot = encLog |> Seq.toArray
 
             let referenceTables =
-                [| TableNames.TypeRef
-                   TableNames.MemberRef
-                   TableNames.MethodSpec
-                   TableNames.TypeSpec
-                   TableNames.AssemblyRef
-                   TableNames.StandAloneSig
-                   TableNames.CustomAttribute |]
+                [|
+                    TableNames.TypeRef
+                    TableNames.MemberRef
+                    TableNames.MethodSpec
+                    TableNames.TypeSpec
+                    TableNames.AssemblyRef
+                    TableNames.StandAloneSig
+                    TableNames.CustomAttribute
+                |]
 
             let handledTables =
                 Set.ofList
-                    [ TableNames.Module.Index
-                      yield! referenceTables |> Seq.map (fun t -> t.Index) ]
+                    [
+                        TableNames.Module.Index
+                        yield! referenceTables |> Seq.map (fun t -> t.Index)
+                    ]
 
             let builder = ResizeArray()
+
             let appendEntries (table: TableName) =
                 snapshot
                 |> Seq.filter (fun struct (t, _, _) -> t.Index = table.Index)
@@ -533,8 +566,7 @@ let emitWithTypeDefinitions
             // Any tables not handled above are appended sorted by token.
             snapshot
             |> Seq.filter (fun struct (table, _, _) -> not (handledTables |> Set.contains table.Index))
-            |> Seq.sortBy (fun struct (table, rowId, _) ->
-                (table.Index <<< 24) ||| (rowId &&& 0x00FFFFFF))
+            |> Seq.sortBy (fun struct (table, rowId, _) -> (table.Index <<< 24) ||| (rowId &&& 0x00FFFFFF))
             |> Seq.iter builder.Add
 
             builder.ToArray()
@@ -542,8 +574,7 @@ let emitWithTypeDefinitions
         // Sort EncMap entries by token (table index << 24 | row ID)
         let encMapEntries =
             encMap
-            |> Seq.sortBy (fun struct (table, rowId) ->
-                (table.Index <<< 24) ||| (rowId &&& 0x00FFFFFF))
+            |> Seq.sortBy (fun struct (table, rowId) -> (table.Index <<< 24) ||| (rowId &&& 0x00FFFFFF))
             |> Seq.toArray
 
         // Write EncLog and EncMap rows to the mirror
@@ -553,24 +584,30 @@ let emitWithTypeDefinitions
         for struct (table, rowId) in encMapEntries do
             tableMirror.AddEncMapRow(table, rowId)
 
-        let metadataSizes = DeltaMetadataSerializer.computeMetadataSizes tableMirror normalizedExternalRowCounts
+        let metadataSizes =
+            DeltaMetadataSerializer.computeMetadataSizes tableMirror normalizedExternalRowCounts
+
         let tableRowCounts = metadataSizes.RowCounts
         let tableBitMasks = metadataSizes.BitMasks
         let indexSizes = metadataSizes.IndexSizes
 
         let tableStreamInput =
-            { DeltaMetadataSerializer.DeltaTableSerializerInput.Tables = tableMirror.TableRows
-              MetadataSizes = metadataSizes
-              StringHeap = tableMirror.StringHeapBytes
-              StringHeapOffsets = tableMirror.StringHeapOffsets
-              BlobHeap = tableMirror.BlobHeapBytes
-              BlobHeapOffsets = tableMirror.BlobHeapOffsets
-              GuidHeap = tableMirror.GuidHeapBytes
-              HeapOffsets = heapOffsets }
+            {
+                DeltaMetadataSerializer.DeltaTableSerializerInput.Tables = tableMirror.TableRows
+                MetadataSizes = metadataSizes
+                StringHeap = tableMirror.StringHeapBytes
+                StringHeapOffsets = tableMirror.StringHeapOffsets
+                BlobHeap = tableMirror.BlobHeapBytes
+                BlobHeapOffsets = tableMirror.BlobHeapOffsets
+                GuidHeap = tableMirror.GuidHeapBytes
+                HeapOffsets = heapOffsets
+            }
 
         let tableStream = DeltaMetadataSerializer.buildTableStream tableStreamInput
         let heapStreams = DeltaMetadataSerializer.buildHeapStreams tableMirror
-        let metadataBytes = DeltaMetadataSerializer.serializeMetadataRoot tableStreamInput heapStreams tableStream
+
+        let metadataBytes =
+            DeltaMetadataSerializer.serializeMetadataRoot tableStreamInput heapStreams tableStream
 
         if shouldTraceMetadata () then
             printfn
@@ -578,10 +615,12 @@ let emitWithTypeDefinitions
                 indexSizes.StringsBig
                 indexSizes.GuidsBig
                 indexSizes.BlobsBig
+
             let methodRows = tableRowCounts[TableNames.Method.Index]
             let paramRows = tableRowCounts[TableNames.Param.Index]
             let propertyRows = tableRowCounts[TableNames.Property.Index]
             let eventRows = tableRowCounts[TableNames.Event.Index]
+
             printfn
                 "[fsharp-hotreload][metadata-writer] rows method=%d param=%d property=%d event=%d stringHeap=%d blobHeap=%d guidHeap=%d"
                 methodRows
@@ -601,33 +640,38 @@ let emitWithTypeDefinitions
                 heapStreams.StringsLength
                 heapStreams.BlobsLength
                 heapStreams.GuidsLength
+
             printfn "[fsharp-hotreload][heap-bytes] blob-bytes=%A" heapStreams.Blobs
 
         // HeapSizes should match what SRM's GetHeapSize returns:
         // - StringHeap: SRM trims trailing zeros, so use unpadded size
         // - UserStringHeap, BlobHeap, GuidHeap: SRM does NOT trim, so use padded size (stream header size)
         // This is important for EnC offset calculations via MetadataAggregator
-        let heapSizes : MetadataHeapSizes =
-            { StringHeapSize = tableMirror.StringHeapBytes.Length  // unpadded - SRM trims trailing zeros
-              UserStringHeapSize = heapStreams.UserStringsLength   // padded - SRM does not trim
-              BlobHeapSize = heapStreams.BlobsLength               // padded - SRM does not trim
-              GuidHeapSize = heapStreams.GuidsLength }             // padded - SRM does not trim
+        let heapSizes: MetadataHeapSizes =
+            {
+                StringHeapSize = tableMirror.StringHeapBytes.Length // unpadded - SRM trims trailing zeros
+                UserStringHeapSize = heapStreams.UserStringsLength // padded - SRM does not trim
+                BlobHeapSize = heapStreams.BlobsLength // padded - SRM does not trim
+                GuidHeapSize = heapStreams.GuidsLength
+            } // padded - SRM does not trim
 
-        { Metadata = metadataBytes
-          StringHeap = heapStreams.Strings
-          BlobHeap = heapStreams.Blobs
-          GuidHeap = heapStreams.Guids
-          EncLog = encLogEntries |> Array.map (fun struct (a, b, c) -> (a, b, c))
-          EncMap = encMapEntries |> Array.map (fun struct (a, b) -> (a, b))
-          TableRowCounts = tableRowCounts
-          HeapSizes = heapSizes
-          HeapOffsets = heapOffsets
-          Tables = tableMirror.TableRows
-          TableBitMasks = tableBitMasks
-          IndexSizes = indexSizes
-          TableStream = tableStream
-          GenerationId = encId
-          BaseGenerationId = encBaseId }
+        {
+            Metadata = metadataBytes
+            StringHeap = heapStreams.Strings
+            BlobHeap = heapStreams.Blobs
+            GuidHeap = heapStreams.Guids
+            EncLog = encLogEntries |> Array.map (fun struct (a, b, c) -> (a, b, c))
+            EncMap = encMapEntries |> Array.map (fun struct (a, b) -> (a, b))
+            TableRowCounts = tableRowCounts
+            HeapSizes = heapSizes
+            HeapOffsets = heapOffsets
+            Tables = tableMirror.TableRows
+            TableBitMasks = tableBitMasks
+            IndexSizes = indexSizes
+            TableStream = tableStream
+            GenerationId = encId
+            BaseGenerationId = encBaseId
+        }
 
 /// Back-compat entry point without added TypeDef/NestedClass rows.
 let emitWithUserStrings
@@ -663,20 +707,20 @@ let emitWithUserStrings
         encId
         encBaseId
         moduleId
-        ([] : TypeDefinitionRowInfo list)
-        ([] : NestedClassRowInfo list)
-        ([] : InterfaceImplRowInfo list)
-        ([] : MethodImplRowInfo list)
-        ([] : ConstantRowInfo list)
+        ([]: TypeDefinitionRowInfo list)
+        ([]: NestedClassRowInfo list)
+        ([]: InterfaceImplRowInfo list)
+        ([]: MethodImplRowInfo list)
+        ([]: ConstantRowInfo list)
         methodDefinitionRows
         parameterDefinitionRows
         fieldDefinitionRows
         typeReferenceRows
         memberReferenceRows
         methodSpecificationRows
-        ([] : TypeSpecificationRowInfo list)
-        ([] : GenericParamRowInfo list)
-        ([] : GenericParamConstraintRowInfo list)
+        ([]: TypeSpecificationRowInfo list)
+        ([]: GenericParamRowInfo list)
+        ([]: GenericParamConstraintRowInfo list)
         assemblyReferenceRows
         propertyDefinitionRows
         eventDefinitionRows
@@ -771,7 +815,7 @@ let emit
         moduleId
         methodDefinitionRows
         parameterDefinitionRows
-        ([] : FieldDefinitionRowInfo list)
+        ([]: FieldDefinitionRowInfo list)
         []
         []
         []
@@ -783,7 +827,7 @@ let emit
         methodSemanticsRows
         standaloneSignatureRows
         customAttributeRows
-        ([] : (int * int * string) list)
+        ([]: (int * int * string) list)
         updates
         heapOffsets
         externalRowCounts

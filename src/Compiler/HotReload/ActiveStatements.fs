@@ -293,10 +293,7 @@ module internal ActiveStatementAnalysis =
                     let sequencePoints = methodDebugInfo.GetSequencePoints() |> List.ofSeq
 
                     let documentName =
-                        let documents =
-                            sequencePoints
-                            |> List.map (fun sp -> sp.Document)
-                            |> List.distinct
+                        let documents = sequencePoints |> List.map (fun sp -> sp.Document) |> List.distinct
 
                         match documents with
                         | [ single ] when not single.IsNil ->
@@ -320,7 +317,15 @@ module internal ActiveStatementAnalysis =
                                     })
 
                     let methodToken = 0x06000000 ||| rowId
-                    result <- Map.add methodToken { Document = documentName; Points = points } result
+
+                    result <-
+                        Map.add
+                            methodToken
+                            {
+                                Document = documentName
+                                Points = points
+                            }
+                            result
 
             result
         with :? BadImageFormatException ->
@@ -422,9 +427,7 @@ module internal ActiveStatementAnalysis =
     /// DIFFERENT delta cannot be expressed as line updates and are returned as method tokens to
     /// recompile instead (Roslyn recompiles the overlapping member for the same reason).
     /// </summary>
-    let mergeLineShiftSegments
-        (segments: LineShiftSegment list)
-        : FSharpSequencePointUpdates list * int list =
+    let mergeLineShiftSegments (segments: LineShiftSegment list) : FSharpSequencePointUpdates list * int list =
         match segments with
         | [] -> [], []
         | _ ->
@@ -432,7 +435,11 @@ module internal ActiveStatementAnalysis =
                 segments
                 |> List.sortWith (fun x y ->
                     let byFile = String.CompareOrdinal(x.FileName, y.FileName)
-                    if byFile <> 0 then byFile else compare x.OldStartLine y.OldStartLine)
+
+                    if byFile <> 0 then
+                        byFile
+                    else
+                        compare x.OldStartLine y.OldStartLine)
 
             let lineEdits = ResizeArray<FSharpSequencePointUpdates>()
             let documentLineEdits = ResizeArray<FSharpSourceLineUpdate>()
@@ -459,7 +466,10 @@ module internal ActiveStatementAnalysis =
                     currentDocumentPath <- segment.FileName
                     previousOldEndLine <- -1
                     previousLineDelta <- 0
-                elif segment.OldStartLine <= previousOldEndLine && segment.LineDelta <> previousLineDelta then
+                elif
+                    segment.OldStartLine <= previousOldEndLine
+                    && segment.LineDelta <> previousLineDelta
+                then
                     // The segment overlaps the previous one with a different line delta:
                     // the method must be recompiled (the debugger filters line deltas that
                     // correspond to recompiled methods).
@@ -537,7 +547,9 @@ module internal ActiveStatementAnalysis =
         (freshPoints: MethodSequencePoints option)
         : ActiveStatementRemapOutcome =
         let instruction = statement.ActiveInstruction
-        let describe = $"method 0x%08X{instruction.Method.Token} IL_%04X{instruction.ILOffset}"
+
+        let describe =
+            $"method 0x%08X{instruction.Method.Token} IL_%04X{instruction.ILOffset}"
 
         match freshPoints with
         | None -> ActiveStatementRemapOutcome.MethodUpToDate
@@ -624,7 +636,8 @@ module internal ActiveStatementAnalysis =
                 let methodToken = statement.ActiveInstruction.Method.Token
 
                 if not (Set.contains methodToken recompiledMethodTokens) then
-                    FSharpActiveStatementRemapResult.MethodUpToDate statement.ActiveInstruction :: results,
+                    FSharpActiveStatementRemapResult.MethodUpToDate statement.ActiveInstruction
+                    :: results,
                     rudeMessages
                 else
                     let committed = Map.tryFind methodToken committedSnapshots
@@ -647,7 +660,8 @@ module internal ActiveStatementAnalysis =
                         | ActiveStatementRemapOutcome.Update update ->
                             FSharpActiveStatementRemapResult.Remapped update :: results, rudeMessages
                         | ActiveStatementRemapOutcome.MethodUpToDate ->
-                            FSharpActiveStatementRemapResult.MethodUpToDate statement.ActiveInstruction :: results,
+                            FSharpActiveStatementRemapResult.MethodUpToDate statement.ActiveInstruction
+                            :: results,
                             rudeMessages
                         | ActiveStatementRemapOutcome.Rude message -> results, message :: rudeMessages)
 

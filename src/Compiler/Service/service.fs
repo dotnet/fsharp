@@ -194,8 +194,7 @@ type FSharpChecker
             invalidOp
                 "Hot reload APIs require the checker to be created with keepAssemblyContents=true. Pass keepAssemblyContents=true when calling FSharpChecker.Create."
 
-    let trimQuotes (text: string) =
-        text.Trim().Trim('"')
+    let trimQuotes (text: string) = text.Trim().Trim('"')
 
     let tryGetOutputPathFromCommandLineOptions (projectFileName: string) (otherOptions: string array) =
         let projectDirectory =
@@ -220,6 +219,7 @@ type FSharpChecker
 
         let resolveOutputPath (path: string) =
             let trimmed = trimQuotes path
+
             if Path.IsPathRooted(trimmed) then
                 Path.GetFullPath(trimmed)
             else
@@ -254,14 +254,11 @@ type FSharpChecker
                 otherOptions
                 |> Array.tryFindIndex (fun opt -> String.Equals(opt, "-o", StringComparison.OrdinalIgnoreCase))
             with
-            | Some idx when idx + 1 < otherOptions.Length ->
-                otherOptions[idx + 1] |> resolveOutputPath |> Some
+            | Some idx when idx + 1 < otherOptions.Length -> otherOptions[idx + 1] |> resolveOutputPath |> Some
             | _ -> None
 
     let tryGetOutputPathFromProjectSnapshot (projectSnapshot: FSharpProjectSnapshot) =
-        tryGetOutputPathFromCommandLineOptions
-            projectSnapshot.ProjectFileName
-            (projectSnapshot.OtherOptions |> List.toArray)
+        tryGetOutputPathFromCommandLineOptions projectSnapshot.ProjectFileName (projectSnapshot.OtherOptions |> List.toArray)
 
     [<Literal>]
     let HotReloadTraceOutputFlagName = "FSHARP_HOTRELOAD_TRACE_OUTPUT"
@@ -293,12 +290,17 @@ type FSharpChecker
         let mutable lastWrite = DateTime.MinValue
         let mutable lastSize = -1L
 
-        while totalWaited < StableFileMaxTotalWaitMs && stableCount < StableFileRequiredStableReads do
+        while totalWaited < StableFileMaxTotalWaitMs
+              && stableCount < StableFileRequiredStableReads do
             let exists = File.Exists path
+
             let currentWrite =
-                if exists then File.GetLastWriteTimeUtc path else DateTime.MinValue
-            let currentSize =
-                if exists then FileInfo(path).Length else -1L
+                if exists then
+                    File.GetLastWriteTimeUtc path
+                else
+                    DateTime.MinValue
+
+            let currentSize = if exists then FileInfo(path).Length else -1L
 
             if currentWrite = lastWrite && currentSize = lastSize then
                 stableCount <- stableCount + 1
@@ -318,7 +320,8 @@ type FSharpChecker
                 use stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
                 use sha = System.Security.Cryptography.SHA256.Create()
                 Some(sha.ComputeHash stream)
-            with _ -> None
+            with _ ->
+                None
         else
             None
 
@@ -355,33 +358,40 @@ type FSharpChecker
 
     let readIlModule path =
         waitForStableFile path
-        let options : ILReaderOptions =
-            { pdbDirPath = None
-              reduceMemoryUsage = ReduceMemoryFlag.Yes
-              metadataOnly = MetadataOnlyFlag.No
-              tryGetMetadataSnapshot = fun _ -> None }
+
+        let options: ILReaderOptions =
+            {
+                pdbDirPath = None
+                reduceMemoryUsage = ReduceMemoryFlag.Yes
+                metadataOnly = MetadataOnlyFlag.No
+                tryGetMetadataSnapshot = fun _ -> None
+            }
 
         use reader = OpenILModuleReader path options
         reader.ILModuleDef
 
     let toPublicDelta (delta: IlxDelta) : FSharpHotReloadDelta =
-        { Metadata = Array.copy delta.Metadata
-          IL = Array.copy delta.IL
-          Pdb = delta.Pdb |> Option.map Array.copy
-          UpdatedTypes = delta.UpdatedTypeTokens
-          UpdatedMethods = delta.UpdatedMethodTokens
-          AddedOrChangedMethods =
-              delta.AddedOrChangedMethods
-              |> List.map (fun info ->
-                  { MethodToken = info.MethodToken
-                    LocalSignatureToken = info.LocalSignatureToken
-                    CodeOffset = info.CodeOffset
-                    CodeLength = info.CodeLength })
-          UserStringUpdates = delta.UserStringUpdates |> List.map (fun (o, n, s) -> struct (o, n, s))
-          GenerationId = delta.GenerationId
-          BaseGenerationId = delta.BaseGenerationId
-          SequencePointUpdates = delta.SequencePointUpdates
-          ActiveStatementUpdates = delta.ActiveStatementUpdates }
+        {
+            Metadata = Array.copy delta.Metadata
+            IL = Array.copy delta.IL
+            Pdb = delta.Pdb |> Option.map Array.copy
+            UpdatedTypes = delta.UpdatedTypeTokens
+            UpdatedMethods = delta.UpdatedMethodTokens
+            AddedOrChangedMethods =
+                delta.AddedOrChangedMethods
+                |> List.map (fun info ->
+                    {
+                        MethodToken = info.MethodToken
+                        LocalSignatureToken = info.LocalSignatureToken
+                        CodeOffset = info.CodeOffset
+                        CodeLength = info.CodeLength
+                    })
+            UserStringUpdates = delta.UserStringUpdates |> List.map (fun (o, n, s) -> struct (o, n, s))
+            GenerationId = delta.GenerationId
+            BaseGenerationId = delta.BaseGenerationId
+            SequencePointUpdates = delta.SequencePointUpdates
+            ActiveStatementUpdates = delta.ActiveStatementUpdates
+        }
 
     let mapHotReloadError =
         function
@@ -397,29 +407,27 @@ type FSharpChecker
             |> Option.defaultValue (outputPath + ".pdb")
 
         let writerOptions: ILBinaryWriter.options =
-            { ilg = tcGlobals.ilg
-              outfile = outputPath
-              pdbfile =
-                if File.Exists(pdbPath) then
-                    Some pdbPath
-                else
-                    None
-              emitTailcalls = false
-              deterministic = true
-              portablePDB = true
-              embeddedPDB = false
-              embedAllSource = false
-              embedSourceList = []
-              allGivenSources = []
-              sourceLink = ""
-              checksumAlgorithm = HashAlgorithm.Sha256
-              signer = None
-              dumpDebugInfo = false
-              referenceAssemblyOnly = false
-              referenceAssemblyAttribOpt = None
-              referenceAssemblySignatureHash = None
-              pathMap = PathMap.empty
-              methodCustomDebugInfoRows = Map.empty }
+            {
+                ilg = tcGlobals.ilg
+                outfile = outputPath
+                pdbfile = if File.Exists(pdbPath) then Some pdbPath else None
+                emitTailcalls = false
+                deterministic = true
+                portablePDB = true
+                embeddedPDB = false
+                embedAllSource = false
+                embedSourceList = []
+                allGivenSources = []
+                sourceLink = ""
+                checksumAlgorithm = HashAlgorithm.Sha256
+                signer = None
+                dumpDebugInfo = false
+                referenceAssemblyOnly = false
+                referenceAssemblyAttribOpt = None
+                referenceAssemblySignatureHash = None
+                pathMap = PathMap.empty
+                methodCustomDebugInfoRows = Map.empty
+            }
 
         let _, pdbBytesOpt, tokenMappings, _ =
             ILBinaryWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, ilModule, id)
@@ -428,12 +436,7 @@ type FSharpChecker
         let assemblyBytes = File.ReadAllBytes(outputPath)
 
         let baseline =
-            HotReloadBaseline.createFromEmittedArtifacts
-                ilModule
-                tokenMappings
-                assemblyBytes
-                portablePdbSnapshot
-                None
+            HotReloadBaseline.createFromEmittedArtifacts ilModule tokenMappings assemblyBytes portablePdbSnapshot None
 
         // The in-memory rewrite above passes no EnC CDI side channel (methodCustomDebugInfoRows =
         // Map.empty), so its PDB never carries EnC rows. The on-disk PDB produced by the flag-on
@@ -444,8 +447,8 @@ type FSharpChecker
             if Map.isEmpty baseline.EncMethodDebugInfos && File.Exists(pdbPath) then
                 let baseline =
                     { baseline with
-                        EncMethodDebugInfos =
-                            EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath)) }
+                        EncMethodDebugInfos = EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath))
+                    }
 
                 // Closure mapping: the chain -> closure-name tables are a pure function
                 // of the occurrence keys just decoded (baseline names are occurrence-derived
@@ -454,7 +457,8 @@ type FSharpChecker
                 // tables the emitting compile installed. Fail closed for replay-named and
                 // mid-session baselines (see deriveEncClosureNamesFromEncDebugInfos).
                 { baseline with
-                    EncClosureNames = HotReloadBaseline.deriveEncClosureNames ilModule baseline }
+                    EncClosureNames = HotReloadBaseline.deriveEncClosureNames ilModule baseline
+                }
             else
                 baseline
 
@@ -464,18 +468,18 @@ type FSharpChecker
         // detection and active-statement remapping diff against.
         if Map.isEmpty baseline.SequencePointSnapshots && File.Exists(pdbPath) then
             { baseline with
-                SequencePointSnapshots =
-                    FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints (
-                        File.ReadAllBytes(pdbPath)
-                    ) }
+                SequencePointSnapshots = FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints (File.ReadAllBytes(pdbPath))
+            }
         else
             baseline
 
     let toHotReloadImplementationSnapshot (typedImplFiles: CheckedImplFile list) : CheckedAssemblyAfterOptimization =
         typedImplFiles
         |> List.map (fun implFile ->
-            { CheckedImplFileAfterOptimization.ImplFile = implFile
-              OptimizeDuringCodeGen = fun _ expr -> expr })
+            {
+                CheckedImplFileAfterOptimization.ImplFile = implFile
+                OptimizeDuringCodeGen = fun _ expr -> expr
+            })
         |> CheckedAssemblyAfterOptimization
 
     let getHotReloadDiffInputs (projectResults: FSharpCheckProjectResults) =
@@ -519,11 +523,7 @@ type FSharpChecker
     // this to resolve the scoped emission context — which session, and which project inside
     // it, a given in-process compile serves. Disposing a session removes its entries.
     let liveHotReloadEmissionTargets =
-        ResizeArray<
-            string *
-            FSharp.Compiler.HotReloadState.HotReloadSessionStore *
-            FSharp.Compiler.HotReloadState.HotReloadProjectKey
-         >()
+        ResizeArray<string * FSharp.Compiler.HotReloadState.HotReloadSessionStore * FSharp.Compiler.HotReloadState.HotReloadProjectKey>()
 
     let liveHotReloadEmissionTargetsGate = obj ()
 

@@ -26,7 +26,8 @@ let HotReloadGenerationSuffixedNameInfix = "@hotreload#g"
 /// (`{base}@hotreload#g{N}_o{chain}`), any generation.
 let IsHotReloadGenerationSuffixedName (name: string) =
     not (String.IsNullOrEmpty name)
-    && name.IndexOf(HotReloadGenerationSuffixedNameInfix, StringComparison.Ordinal) >= 0
+    && name.IndexOf(HotReloadGenerationSuffixedNameInfix, StringComparison.Ordinal)
+       >= 0
 
 /// Parses the generation of an occurrence-keyed closure class name:
 /// `f@hotreload#g2_o3` -> Some 2. None when the name is not generation-suffixed
@@ -47,4 +48,3 @@ let TryGetHotReloadNameGeneration (name: string) : int option =
                 match Int32.TryParse(name.Substring(digitsStart, digitsEnd - digitsStart)) with
                 | true, generation when generation >= 0 -> Some generation
                 | _ -> None
-
