@@ -199,7 +199,7 @@ let decodeOccurrenceKey (key: int) : int list =
 let private invalidData (blobName: string) (offset: int) =
     raise (InvalidDataException $"invalid EnC %s{blobName} blob: unexpected data at offset %d{offset}")
 
-let private isEmpty (blob: byte[]) = isNull blob || blob.Length = 0
+let private isEmpty (blob: byte[]) = blob.Length = 0
 
 // ---------------------------------------------------------------------------
 // EnC Local Slot Map

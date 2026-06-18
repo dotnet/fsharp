@@ -874,7 +874,6 @@ type FSharpChecker
                     | value -> value
 
             match projectFileName with
-            | null
             | "" -> Directory.GetCurrentDirectory()
             | fileName -> resolveDirectory fileName
 
@@ -917,9 +916,6 @@ type FSharpChecker
             | Some idx when idx + 1 < otherOptions.Length ->
                 otherOptions[idx + 1] |> resolveOutputPath |> Some
             | _ -> None
-
-    let tryGetOutputPathFromProjectOptions (options: FSharpProjectOptions) =
-        tryGetOutputPathFromCommandLineOptions options.ProjectFileName options.OtherOptions
 
     let tryGetOutputPathFromProjectSnapshot (projectSnapshot: FSharpProjectSnapshot) =
         tryGetOutputPathFromCommandLineOptions

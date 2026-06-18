@@ -49,17 +49,21 @@ type MetadataHeapOffsets =
 let private byteArrayComparer : IEqualityComparer<byte[]> =
     { new IEqualityComparer<byte[]> with
         member _.Equals(x, y) =
-            if obj.ReferenceEquals(x, y) then true
-            elif isNull (box x) || isNull (box y) then false
-            elif x.Length <> y.Length then false
-            else
-                let mutable idx = 0
-                let mutable equal = true
-                while equal && idx < x.Length do
-                    if x[idx] <> y[idx] then
-                        equal <- false
-                    idx <- idx + 1
-                equal
+            match x, y with
+            | null, null -> true
+            | null, _
+            | _, null -> false
+            | x, y ->
+                if obj.ReferenceEquals(x, y) then true
+                elif x.Length <> y.Length then false
+                else
+                    let mutable idx = 0
+                    let mutable equal = true
+                    while equal && idx < x.Length do
+                        if x[idx] <> y[idx] then
+                            equal <- false
+                        idx <- idx + 1
+                    equal
 
         member _.GetHashCode(array: byte[]) =
             if isNull (box array) then 0
@@ -152,13 +156,6 @@ type private ByteArrayHeapBuilder() =
     let lookup = Dictionary<byte[], int>(byteArrayComparer)
     let mutable bytesCache: byte[] option = None
     let mutable offsetsCache: int[] option = None
-
-    let encodeCompressedUnsigned value =
-        use ms = new MemoryStream()
-        use writer = new BinaryWriter(ms, Encoding.UTF8, leaveOpen = true)
-        writeCompressedUnsigned writer value
-        writer.Flush()
-        ms.ToArray()
 
     member _.AddSharedEntry(value: byte[]) : int =
         if isNull (box value) || value.Length = 0 then
@@ -339,7 +336,6 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
     let rowElementBlob value = rowElement Encoding.RowElementTags.Blob value
     let rowElementStringAbsolute value = rowElementAbsolute Encoding.RowElementTags.String value
     let rowElementBlobAbsolute value = rowElementAbsolute Encoding.RowElementTags.Blob value
-    let rowElementGuid value = rowElement Encoding.RowElementTags.Guid value
     let rowElementGuidAbsolute value = rowElementAbsolute Encoding.RowElementTags.Guid value
     let rowElementSimpleIndex table value = rowElement (Encoding.RowElementTags.SimpleIndex table) value
     let rowElementTypeDefOrRef tag value = rowElement (Encoding.RowElementTags.TypeDefOrRefOrSpec tag) value
@@ -411,13 +407,6 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
             | Some v when not (String.IsNullOrEmpty v) -> strings.AddSharedEntry v, false
             | _ -> 0, false
 
-    let addStringOption (value: string option) : int * bool =
-        match value with
-        | Some v when not (String.IsNullOrEmpty v) ->
-            let idx = strings.AddSharedEntry v
-            idx, false
-        | _ -> 0, false
-
     let addBlobBytes (bytes: byte[]) = if obj.ReferenceEquals(bytes, null) || bytes.Length = 0 then 0 else blobs.AddSharedEntry bytes
 
     let addExistingBlobOffset (offsetOpt: BlobOffset option) (value: byte[]) : int * bool =
@@ -426,13 +415,6 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         | None ->
             let idx = addBlobBytes value
             idx, false
-
-    let addGuidValue (value: Guid) =
-        if value = System.Guid.Empty then
-            0
-        else
-            let idx = guids.AddSharedEntry(value.ToByteArray())
-            idx
 
     /// Force-add a GUID to the heap, even if it's the nil GUID.
     /// Returns the 1-based index in the delta's GUID heap.

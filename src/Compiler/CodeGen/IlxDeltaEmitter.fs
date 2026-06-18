@@ -1047,7 +1047,7 @@ let private buildMethodUpdatesWithMetadata
                     referencedMethodSpecs
 
             // Convert SRM MethodDefinitionHandle to F# MethodDefHandle
-            let methodHandleEntity: EntityHandle = methodHandle
+            let methodHandleEntity: EntityHandle = MethodDefinitionHandle.op_Implicit methodHandle
             let methodRowId = MetadataTokens.GetRowNumber(methodHandleEntity)
             ({ MethodKey = key
                MethodToken = methodToken

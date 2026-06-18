@@ -43,7 +43,7 @@
 /// Occurrence chains are unique within a member and generations strictly increase
 /// within a session (with 0 minted only at baseline), so a (baseName, generation,
 /// chain) triple is allocated at most once. Chains are bounded by the CDI occurrence
-/// key encoding (depth <= 2, ordinals <= 0xFFFF — deeper chains fail closed before any
+/// key encoding (depth &lt;= 2, ordinals &lt;= 0xFFFF — deeper chains fail closed before any
 /// name is derived), so the rendered suffix is bounded too; names are never truncated.
 ///
 /// This is a pure data transformation: it consumes the per-method occurrence data the
