@@ -1,14 +1,5 @@
-/// PDB delta emission for hot reload.
-///
-/// SRM Boundary Note:
-/// - createSnapshot: Uses pure F# parsing via ILBaselineReader (SRM-free)
-/// - emitDelta: Uses SRM's MetadataBuilder and PortablePdbBuilder for PDB delta serialization
-///
-/// Full SRM removal from emitDelta would require implementing a pure F# Portable PDB
-/// delta writer. This is deferred as non-blocking work since:
-/// 1. Core metadata delta emission is fully SRM-free (DeltaMetadataTables, DeltaMetadataSerializer)
-/// 2. PDB deltas are a separate concern (debug info only)
-/// 3. The PDB read path is already SRM-free
+/// PDB delta emission for hot reload. createSnapshot reads the baseline via the SRM-free
+/// ILBaselineReader; emitDelta serializes the Portable PDB delta through SRM's PortablePdbBuilder.
 module internal FSharp.Compiler.HotReloadPdb
 
 open System
@@ -213,10 +204,8 @@ let emitDelta
                             emittedMethodRows.Add(baselineMethodRow)
                             emitted <- true
                         else if
-                            // Newly added methods may not have debug info in the updated PDB if their row
-                            // exceeds the MethodDebugInformation table count. This is a known limitation -
-                            // debuggers won't be able to step into newly added methods until a full rebuild.
-                            // TODO: Emit empty MethodDebugInformation entries for new methods to enable debugging.
+                            // A newly added method whose row exceeds the baseline
+                            // MethodDebugInformation count has no debug info to re-emit here.
                             shouldTracePdb ()
                         then
                             let rowCount = reader.MethodDebugInformation.Count

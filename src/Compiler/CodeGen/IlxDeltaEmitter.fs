@@ -850,17 +850,12 @@ let private tryBuildMethodUpdateInput
 
     match baselineMethodTokens |> Map.tryFind key with
     | Some methodToken ->
-        // The baseline token addresses the LOADED module's row space, which is not
-        // generally valid in the fresh compile's reader: methods ADDED by an earlier
-        // delta chain with tokens PAST the original baseline tables, while the fresh
-        // compile lays them out at their natural source positions, displacing every
-        // later fresh row. Read the fresh compile through its own token (recorded by
-        // collectTypeMappings whenever it differs from the baseline token) and emit at
-        // the baseline token. Reading at the baseline row produced another method's
-        // attributes/signature/body for the re-emitted rows - observed as
-        // InvalidProgramException in a generation-1-added closure's .cctor after a
-        // generation-2 body edit when the on-disk output was force-rebuilt between
-        // generations (the dotnet-watch topology).
+        // The baseline token addresses the LOADED module's row space, which is not generally
+        // valid in the fresh compile's reader: methods added by an earlier delta chain sit past
+        // the original baseline tables, while the fresh compile lays them out at their natural
+        // source positions, displacing later fresh rows. Read through the fresh token (recorded
+        // by collectTypeMappings when it differs from the baseline token) and emit at the
+        // baseline token.
         let readerToken =
             match freshMethodTokenByBaseline.TryGetValue methodToken with
             | true, freshToken -> freshToken
@@ -4148,7 +4143,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let mutable nextMethodSpecRowId = baselineMethodSpecRowCount
     let mutable nextTypeSpecRowId = baselineTableRowCounts.[TableNames.TypeSpec.Index]
 
-    for KeyValue(key, newToken) in addedMethodTokens do
+    for KeyValue(key, newToken) in addedMethodTokens |> Seq.sortBy (fun kvp -> kvp.Value) do
         if not (methodDefinitionIndex.IsAdded key) then
             let rowId = methodDefinitionIndex.Add key
             let deltaToken = 0x06000000 ||| rowId

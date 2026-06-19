@@ -2605,7 +2605,9 @@ let private compareEntities
     for KeyValue(key, baselineEntity) in baseline do
         match Map.tryFind key updated with
         | Some updatedEntity ->
-            if baselineEntity.RepresentationHash <> updatedEntity.RepresentationHash then
+            // Compare the full representation text rather than its 32-bit hash, so a hash
+            // collision can never mask a real layout change as "no change".
+            if baselineEntity.RepresentationText <> updatedEntity.RepresentationText then
                 let addTypeLayoutChange () =
                     rude.Add(
                         {

@@ -22,6 +22,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.EnvironmentHelpers
 
 [<RequireQualifiedAccess>]
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadError =
     | NoActiveSession
     | NoChanges
@@ -31,6 +32,7 @@ type FSharpHotReloadError =
     | DeltaEmissionFailed of string
 
 [<System.Flags>]
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadCapability =
     | None = 0
     | Il = 1
@@ -39,6 +41,7 @@ type FSharpHotReloadCapability =
     | MultipleGenerations = 8
     | RuntimeApply = 16
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadCapabilities internal (flags: FSharpHotReloadCapability) =
     member _.Flags = flags
     member _.SupportsIl = flags.HasFlag(FSharpHotReloadCapability.Il)
@@ -54,6 +57,7 @@ type FSharpHotReloadCapabilities internal (flags: FSharpHotReloadCapability) =
         let casted = enum<FSharpHotReloadCapability> (int flags)
         FSharpHotReloadCapabilities(casted)
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpAddedOrChangedMethodInfo =
     {
         MethodToken: int
@@ -62,6 +66,7 @@ type FSharpAddedOrChangedMethodInfo =
         CodeLength: int
     }
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadDelta =
     {
         Metadata: byte[]

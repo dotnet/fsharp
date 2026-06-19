@@ -185,7 +185,8 @@ type HasCustomAttribute =
         | HCA_ExportedType _ -> hca_ExportedType.Tag
         | HCA_ManifestResource _ -> hca_ManifestResource.Tag
         | HCA_GenericParam _ -> hca_GenericParam.Tag
-        // BinaryConstants does not expose these two HCA tags on main; keep the ECMA tag ids explicit here.
+        // HasCustomAttribute coded-index tags for GenericParamConstraint (0x14) and
+        // MethodSpec (0x15), per ECMA-335 II.24.2.6.
         | HCA_GenericParamConstraint _ -> 20
         | HCA_MethodSpec _ -> 21
 
