@@ -616,3 +616,117 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    // Feature: allow constructing an F# record by calling its (synthesized) all-fields
+    // constructor positionally, e.g. MyRecord(1, "a"), as is already possible from C#.
+    // These tests describe the target behaviour and currently FAIL (records expose no
+    // F#-callable constructor; only { Field = ... } record syntax is permitted).
+
+    [<Fact>]
+    let ``Record can be constructed positionally via its all-fields constructor`` () =
+        Fsx """
+type Person = { Name : string; Age : int }
+let p = Person("Isaac", 21)
+if p.Name <> "Isaac" then failwith "wrong Name"
+if p.Age <> 21 then failwith "wrong Age"
+if p <> { Name = "Isaac"; Age = 21 } then failwith "not equal to record-syntax value"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Record positional constructor evaluates arguments left-to-right`` () =
+        Fsx """
+type R = { A : int; B : int }
+let log = System.Collections.Generic.List<int>()
+let side n = log.Add n; n
+let r = R(side 1, side 2)
+if List.ofSeq log <> [1; 2] then failwith "arguments not evaluated left-to-right"
+if r.A <> 1 || r.B <> 2 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Record constructor supports named arguments matching field names`` () =
+        Fsx """
+type Person = { Name : string; Age : int }
+let p = Person(Age = 21, Name = "Isaac")
+if p.Name <> "Isaac" || p.Age <> 21 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Generic record can be constructed positionally`` () =
+        Fsx """
+type Boxed<'T> = { Value : 'T; Label : string }
+let b = Boxed(42, "answer")
+if b.Value <> 42 || b.Label <> "answer" then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Struct record can be constructed positionally with all fields`` () =
+        Fsx """
+[<Struct>]
+type Point = { X : int; Y : int }
+let pt = Point(3, 4)
+if pt.X <> 3 || pt.Y <> 4 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // FS-1073 scope precedence / backward compatibility: the type name is treated as a record
+    // constructor ONLY when there is no other binding with the same name in scope. Here a value
+    // binding 'Record' shadows the record type's synthesized constructor, so 'Record 0' must remain
+    // the function application (returning a string), NOT a record construction. Calling 'string' on
+    // it therefore yields the function's own result.
+    [<Fact>]
+    let ``Record constructor does not shadow an in-scope value binding of the same name`` () =
+        Fsx """
+let Record (x: int) : string = "function"   // value binding 'Record : int -> string'
+type Record = { N : int }                    // record whose all-fields ctor would be 'Record : int -> Record'
+let result : string = string (Record 0)      // 'Record 0' must be the function application, not the ctor
+if result <> "function" then failwith $"expected the in-scope function to be called, got '{result}'"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // FS-1073 accessibility gating: the synthesized constructor must be no more accessible than '{ ... }'
+    // construction. A record with 'private' representation can be constructed via the ctor only where the
+    // representation is accessible (i.e. inside the declaring module), never from outside - so F# does not
+    // inherit the C# behaviour where the IL constructor is public regardless of the record's accessibility.
+    [<Fact>]
+    let ``Private record can be constructed via its constructor inside the declaring scope`` () =
+        Fsx """
+type R = private { A : int; B : int }
+let r = R(1, 2)
+if r.A <> 1 || r.B <> 2 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Private record constructor is not accessible from outside the declaring module`` () =
+        FSharp """
+namespace Test
+
+module M =
+    type R = private { A : int; B : int }
+
+module N =
+    let bad = M.R(1, 2)
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 801, Line 8, Col 15, Line 8, Col 18, "This type has no accessible object constructors")

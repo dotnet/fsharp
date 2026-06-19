@@ -97,6 +97,7 @@ let rec computeMethInfoHash (minfo: MethInfo) : int =
     | FSMeth(_, _, vref, _) -> HashingPrimitives.combineHash (hash vref.Stamp) (hash vref.LogicalName)
     | ILMeth(_, ilMethInfo, _) -> HashingPrimitives.combineHash (hash ilMethInfo.ILName) (hash ilMethInfo.DeclaringTyconRef.Stamp)
     | DefaultStructCtor(_, _) -> hash "DefaultStructCtor"
+    | RecdAllFieldsCtor(_, _) -> hash "RecdAllFieldsCtor"
     | MethInfoWithModifiedReturnType(original, _) -> computeMethInfoHash original
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(_, mb, _, _) ->

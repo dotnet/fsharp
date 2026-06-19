@@ -592,6 +592,11 @@
         <target state="translated">모든 크기의 목록 리터럴</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRecordConstructorSyntax">
+        <source>Constructing a record via its all-fields constructor</source>
+        <target state="new">Constructing a record via its all-fields constructor</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">참조 셀과 관련된 정보 메시지</target>

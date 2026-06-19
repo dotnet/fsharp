@@ -813,6 +813,7 @@ module internal SymbolHelpers =
 
             | MethInfoWithModifiedReturnType(mi,_) -> getKeywordForMethInfo mi
             | DefaultStructCtor _  -> None
+            | RecdAllFieldsCtor _  -> None
 #if !NO_TYPEPROVIDERS
             | ProvidedMeth _ -> None
 #endif

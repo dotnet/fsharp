@@ -1785,10 +1785,13 @@ module InfoMemberPrinting =
         let amap = infoReader.amap
 
         match methInfo with 
-        | DefaultStructCtor _ -> 
-            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
+        | DefaultStructCtor _ ->
+            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst
             let resL = PrintTypes.layoutTyconRef denv methInfo.ApparentEnclosingTyconRef ^^ wordL punctuationUnit
             prettyTyparInst, resL
+        | RecdAllFieldsCtor _ ->
+            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst
+            prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
         | FSMeth(_, _, vref, _) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } infoReader typarInst vref
             prettyTyparInst, resL
