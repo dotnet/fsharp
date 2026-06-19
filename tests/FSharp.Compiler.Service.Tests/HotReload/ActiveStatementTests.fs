@@ -65,7 +65,7 @@ module ActiveStatementTests =
                        "--optimize-"
                        "--debug:portable"
                        "--deterministic"
-                       "--enable:hotreloaddeltas"
+                       "--test:HotReloadDeltas"
                        $"--out:{dllPath}" |] }
 
     let private compileProjectCore
@@ -80,7 +80,7 @@ module ActiveStatementTests =
                 // Rebuilds of EDITS must not recapture an in-process baseline.
                 projectOptions.OtherOptions
                 |> Array.filter (fun opt ->
-                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase)))
+                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase)))
 
         let argv =
             Array.concat [ [| "fsc.exe" |]; options; projectOptions.SourceFiles ]

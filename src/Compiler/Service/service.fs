@@ -756,18 +756,18 @@ type FSharpChecker
         let _userOpName = defaultArg userOpName "Unknown"
         use _ = Activity.start "FSharpChecker.Compile" [| Activity.Tags.userOpName, _userOpName |]
 
-        let hasEnableArgument (feature: string) (argv: string[]) =
+        let hasTestArgument (feature: string) (argv: string[]) =
             let inlineEnabled =
                 argv
                 |> Array.exists (fun arg ->
-                    arg.StartsWith("--enable:", StringComparison.OrdinalIgnoreCase)
-                    && arg.Substring("--enable:".Length).Equals(feature, StringComparison.OrdinalIgnoreCase))
+                    arg.StartsWith("--test:", StringComparison.OrdinalIgnoreCase)
+                    && arg.Substring("--test:".Length).Equals(feature, StringComparison.OrdinalIgnoreCase))
 
             let splitEnabled =
                 argv
                 |> Array.pairwise
                 |> Array.exists (fun (arg, value) ->
-                    arg.Equals("--enable", StringComparison.OrdinalIgnoreCase)
+                    arg.Equals("--test", StringComparison.OrdinalIgnoreCase)
                     && value.Equals(feature, StringComparison.OrdinalIgnoreCase))
 
             inlineEnabled || splitEnabled
@@ -777,20 +777,20 @@ type FSharpChecker
         // synthesized-name state into this compile. Capture compiles stay session-independent
         // (they publish to the process-local capture slot, never to a session's store).
         let emissionContext =
-            if hasEnableArgument "hotreloaddeltas" argv then
+            if hasTestArgument "HotReloadDeltas" argv then
                 None
             else
                 tryResolveHotReloadEmissionContext (tryGetOutputPathFromCommandLineOptions "" argv)
 
         let ensureHotReloadSessionHookArgument (argv: string[]) =
             // Keep synthesized-name replay active for checker-owned hot reload sessions even when
-            // callers intentionally compile updates without --enable:hotreloaddeltas.
+            // callers intentionally compile updates without --test:HotReloadDeltas.
             if
                 emissionContext.IsSome
-                && not (hasEnableArgument "hotreloaddeltas" argv)
-                && not (hasEnableArgument "hotreloadhook" argv)
+                && not (hasTestArgument "HotReloadDeltas" argv)
+                && not (hasTestArgument "HotReloadHook" argv)
             then
-                Array.append argv [| "--enable:hotreloadhook" |]
+                Array.append argv [| "--test:HotReloadHook" |]
             else
                 argv
 

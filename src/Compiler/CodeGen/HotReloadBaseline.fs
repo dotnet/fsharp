@@ -231,7 +231,7 @@ type FSharpEmitBaseline =
         /// keyed by MethodDef token (0x06xxxxxx). Decoded from the baseline portable PDB's EnC
         /// CustomDebugInformation rows when the baseline is captured, and refreshed in memory
         /// for updated/added methods as each delta is applied (see chainEncMethodDebugInfos).
-        /// A baseline compiled without --enable:hotreloaddeltas (or whose PDB carries no EnC rows) yields the
+        /// A baseline compiled without --test:HotReloadDeltas (or whose PDB carries no EnC rows) yields the
         /// empty map. NOTE: delta PDBs do not yet re-emit EnC CDI rows, so within a session
         /// this in-memory chain is the only generation-accurate source; baseline (gen-0)
         /// state fully survives process restarts via the on-disk PDB (occurrence-derived

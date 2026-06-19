@@ -1,7 +1,7 @@
 namespace FSharp.Compiler.ComponentTests.HotReload
 
 // Determinism pins for baseline capture (docs/hot-reload-architecture.md, "Determinism
-// pins for baseline capture"): --enable:hotreloaddeltas silently forces deterministic,
+// pins for baseline capture"): --test:HotReloadDeltas silently forces deterministic,
 // sequential codegen at config finalization in Driver/fsc.fs so a capture compile of
 // identical source is byte-reproducible. These tests pin:
 //   (a) byte-for-byte DLL and PDB reproducibility across two identical flag-on compiles
@@ -129,7 +129,7 @@ let pipeline (inputs: int list) =
                         "--langversion:preview"
                         "--optimize-"
                         "--debug:portable"
-                        "--enable:hotreloaddeltas"
+                        "--test:HotReloadDeltas"
                         $"--out:{dllPath}"
                     |]
                     Array.ofList extraFlags

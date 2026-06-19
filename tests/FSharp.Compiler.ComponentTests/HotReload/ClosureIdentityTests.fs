@@ -22,7 +22,7 @@ module ClosureIdentityTests =
 
     let private compileHotReloadLibrary source =
         FSharp source
-        |> withOptions [ "--langversion:preview"; "--debug+"; "--enable:hotreloaddeltas"; "--optimize-" ]
+        |> withOptions [ "--langversion:preview"; "--debug+"; "--test:HotReloadDeltas"; "--optimize-" ]
         |> asLibrary
         |> compile
         |> shouldSucceed

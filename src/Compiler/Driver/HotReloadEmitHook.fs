@@ -17,7 +17,7 @@ open FSharp.Compiler.HotReloadPdb
 open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.Text.Range
 
-/// Hot reload emit hook implementation used when --enable:hotreloaddeltas is active.
+/// Hot reload emit hook implementation used when --test:HotReloadDeltas is active.
 type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndContinueLanguageService) =
 
     // Scoped emission context: when the host compiles a session-tracked project in-process

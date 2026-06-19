@@ -12,7 +12,7 @@ open FSharp.Test.Compiler
 open FSharp.Compiler.EncMethodDebugInformation
 
 /// Tests for baseline-time EnC CustomDebugInformation emission: compiling
-/// with --enable:hotreloaddeltas must attach a decodable EnC Lambda and Closure Map CDI
+/// with --test:HotReloadDeltas must attach a decodable EnC Lambda and Closure Map CDI
 /// row to lambda-bearing methods in the portable PDB, and compiling without the flag
 /// must emit no EnC CDI rows at all.
 [<Collection(nameof NotThreadSafeResourceCollection)>]
@@ -103,7 +103,7 @@ let transform (values: int list) =
 
     [<Fact>]
     let ``Compile with hot reload flag emits decodable EnC lambda and closure map`` () =
-        let assemblyPath = compileSample [ "--enable:hotreloaddeltas" ]
+        let assemblyPath = compileSample [ "--test:HotReloadDeltas" ]
         let pdbPath = pdbPathFor assemblyPath
         let methodRowNumber = findMethodRowNumber assemblyPath "transform"
         let cdiRows = readMethodCdiRows pdbPath methodRowNumber
@@ -175,7 +175,7 @@ let transform (values: int list) =
         try
             let assemblyPath =
                 FSharp sampleSource
-                |> withOptions [ "--langversion:preview"; "--debug+"; "--optimize-"; "--enable:hotreloaddeltas" ]
+                |> withOptions [ "--langversion:preview"; "--debug+"; "--optimize-"; "--test:HotReloadDeltas" ]
                 |> asLibrary
                 |> compile
                 |> shouldSucceed
@@ -247,7 +247,7 @@ let computeAsync (input: int) =
 
     [<Fact>]
     let ``Compile with hot reload flag emits decodable EnC state machine state map for task members`` () =
-        let assemblyPath = compileSource taskSampleSource [ "--enable:hotreloaddeltas" ]
+        let assemblyPath = compileSource taskSampleSource [ "--test:HotReloadDeltas" ]
         let pdbPath = pdbPathFor assemblyPath
         let methodRowNumber = findMethodRowNumber assemblyPath "computeAsync"
         let cdiRows = readMethodCdiRows pdbPath methodRowNumber
@@ -299,7 +299,7 @@ let computeAsync (input: int) =
         // The baseline read side (readEncMethodDebugInfoFromPortablePdb, stored on the
         // session as EncMethodDebugInfos) must surface the persisted resume points for
         // disk-started sessions (the dotnet-watch topology).
-        let assemblyPath = compileSource taskSampleSource [ "--enable:hotreloaddeltas" ]
+        let assemblyPath = compileSource taskSampleSource [ "--test:HotReloadDeltas" ]
         let pdbPath = pdbPathFor assemblyPath
         let methodRowNumber = findMethodRowNumber assemblyPath "computeAsync"
 

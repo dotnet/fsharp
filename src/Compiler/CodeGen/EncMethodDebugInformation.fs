@@ -504,7 +504,7 @@ let deserialize (slotMapBlob: byte[]) (lambdaMapBlob: byte[]) (stateMachineState
 
 // ---------------------------------------------------------------------------
 // Baseline emission bridge: lambda occurrences -> CDI rows for the
-// portable PDB writer. Computed in the fsc emit path when --enable:hotreloaddeltas
+// portable PDB writer. Computed in the fsc emit path when --test:HotReloadDeltas
 // is on; the rows ride the IL writer options into ilwritepdb keyed by IL method name.
 // ---------------------------------------------------------------------------
 
@@ -687,7 +687,7 @@ let computeMethodCustomDebugInfoRows
 /// of the EnC rows is always a MethodDef handle, so token keying is unambiguous here — the
 /// name keying on the write side exists only because the PDB writer lacks tokens.
 /// Fail safe: a null/empty or non-PDB image yields the empty map (back-compat with
-/// baselines compiled without --enable:hotreloaddeltas or whose PDBs carry no EnC rows), and a method
+/// baselines compiled without --test:HotReloadDeltas or whose PDBs carry no EnC rows), and a method
 /// whose blobs do not decode is omitted rather than guessed.
 let readEncMethodDebugInfoFromPortablePdb (pdbBytes: byte[]) : Map<int, EncMethodDebugInformation> =
     if isEmpty pdbBytes then

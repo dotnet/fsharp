@@ -424,8 +424,8 @@ let getParallelReferenceResolutionFromEnvironment () =
                 Some ParallelReferenceResolution.Off
         | false, _ -> None)
 
-/// Hot reload determinism pins. Both the baseline capture (--enable:hotreloaddeltas) and
-/// the replay (--enable:hotreloadhook) compiles install the emit hook, and BOTH must produce
+/// Hot reload determinism pins. Both the baseline capture (--test:HotReloadDeltas) and
+/// the replay (--test:HotReloadHook) compiles install the emit hook, and BOTH must produce
 /// byte-reproducible codegen: a recapture or replay of identical source must lay out metadata
 /// rows, heaps and closure ordinals exactly like the running baseline, or every chained delta
 /// is built against the wrong tokens. Pin the determinism knobs for any compile that installs
@@ -958,7 +958,7 @@ let main3
 
 /// Inputs the hot reload emit hook consumes at binary-emit time, threaded from
 /// codegen (main4) to emit (main6) only when baseline capture is active
-/// (--enable:hotreloaddeltas). Ordinary compiles thread None so the optimized typed
+/// (--test:HotReloadDeltas). Ordinary compiles thread None so the optimized typed
 /// tree and the IlxGen environment are released after codegen, exactly as upstream.
 [<NoEquality; NoComparison>]
 type HotReloadCaptureInputs =
@@ -1250,7 +1250,7 @@ let main6
             | MetadataAssemblyGeneration.ReferenceOnly -> ()
             | _ ->
                 try
-                    // Hot reload baseline (--enable:hotreloaddeltas): compute the per-method
+                    // Hot reload baseline (--test:HotReloadDeltas): compute the per-method
                     // EnC lambda/closure CustomDebugInformation rows from the same optimized
                     // typed tree the baseline capture snapshots, so a later generation can map
                     // lambda occurrences back to this baseline. Flag-off builds threaded no

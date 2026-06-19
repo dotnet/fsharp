@@ -30,7 +30,7 @@ type options =
       pathMap: PathMap
       /// Hot reload baseline side channel: per-method EnC CustomDebugInformation rows for
       /// the portable PDB writer, keyed by IL method name. Empty unless the compilation
-      /// runs with --enable:hotreloaddeltas (flag-off output stays byte-identical).
+      /// runs with --test:HotReloadDeltas (flag-off output stays byte-identical).
       methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
 
 /// <summary>

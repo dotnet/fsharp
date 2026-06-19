@@ -111,7 +111,7 @@ module NewTypeDefinitionTests =
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -157,7 +157,7 @@ module NewTypeDefinitionTests =
                         OtherOptions =
                             projectOptions.OtherOptions
                             |> Array.filter (fun opt ->
-                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                 for updatedSource, verifyUpdated in generations do
                     File.WriteAllText(fsPath, updatedSource)
@@ -230,7 +230,7 @@ module NewTypeDefinitionTests =
                                "--optimize-"
                                "--debug:portable"
                                "--deterministic"
-                               "--enable:hotreloaddeltas"
+                               "--test:HotReloadDeltas"
                                $"--out:{dllPath}" |] }
 
             checker.InvalidateAll()
@@ -261,7 +261,7 @@ module NewTypeDefinitionTests =
                     OtherOptions =
                         projectOptions.OtherOptions
                         |> Array.filter (fun opt ->
-                            not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                            not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
             compileOnce "updated" updatedOptions
 

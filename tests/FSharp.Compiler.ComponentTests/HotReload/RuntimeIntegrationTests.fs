@@ -524,7 +524,7 @@ let transform (values: int list) =
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 // Compile baseline
@@ -567,7 +567,7 @@ let transform (values: int list) =
                         OtherOptions =
                             projectOptions.OtherOptions
                             |> Array.filter (fun opt ->
-                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -689,7 +689,7 @@ let extra () = 99
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -729,7 +729,7 @@ let extra () = 99
                         OtherOptions =
                             projectOptions.OtherOptions
                             |> Array.filter (fun opt ->
-                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -814,7 +814,7 @@ let extra () = 99
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -854,7 +854,7 @@ let extra () = 99
                         OtherOptions =
                             projectOptions.OtherOptions
                             |> Array.filter (fun opt ->
-                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -1036,7 +1036,7 @@ type Type =
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -1081,7 +1081,7 @@ type Type =
                         OtherOptions =
                             projectOptions.OtherOptions
                             |> Array.filter (fun opt ->
-                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                 let updateCompileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -1409,7 +1409,7 @@ type Type =
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 // Compile baseline
@@ -1455,7 +1455,7 @@ type Type =
                             OtherOptions =
                                 projectOptions.OtherOptions
                                 |> Array.filter (fun opt ->
-                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -1641,7 +1641,7 @@ type Type =
                                "--optimize-"
                                "--debug:portable"
                                "--deterministic"
-                               "--enable:hotreloaddeltas"
+                               "--test:HotReloadDeltas"
                                $"--out:{dllPath}" |] }
 
             checker.InvalidateAll()
@@ -1746,7 +1746,7 @@ type Type =
                     OtherOptions =
                         projectOptions.OtherOptions
                         |> Array.filter (fun opt ->
-                            not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                            not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
             let updateCompileDiagnostics, _ =
                 checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -1953,7 +1953,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 // Compile baseline
@@ -2002,7 +2002,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                             OtherOptions =
                                 projectOptions.OtherOptions
                                 |> Array.filter (fun opt ->
-                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -2190,7 +2190,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -2216,7 +2216,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         OtherOptions =
                             projectOptions.OtherOptions
                             |> Array.filter (fun opt ->
-                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -2335,7 +2335,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -2380,7 +2380,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                             OtherOptions =
                                 projectOptions.OtherOptions
                                 |> Array.filter (fun opt ->
-                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -2534,7 +2534,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 // Build the baseline through the command-line fsc path (flag-on, on-disk
@@ -2621,7 +2621,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                             OtherOptions =
                                 projectOptions.OtherOptions
                                 |> Array.filter (fun opt ->
-                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -2765,7 +2765,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -2820,7 +2820,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                             OtherOptions =
                                 projectOptions.OtherOptions
                                 |> Array.filter (fun opt ->
-                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -2931,7 +2931,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                                "--optimize-"
                                "--debug:portable"
                                "--deterministic"
-                               "--enable:hotreloaddeltas"
+                               "--test:HotReloadDeltas"
                                $"--out:{dllPath}" |] }
 
             checker.InvalidateAll()
@@ -3033,7 +3033,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -3071,7 +3071,7 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                         OtherOptions =
                             projectOptions.OtherOptions
                             |> Array.filter (fun opt ->
-                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -3198,7 +3198,7 @@ type Counter() =
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -3247,7 +3247,7 @@ type Counter() =
                             OtherOptions =
                                 projectOptions.OtherOptions
                                 |> Array.filter (fun opt ->
-                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -3413,7 +3413,7 @@ type Holder() =
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -3454,7 +3454,7 @@ type Holder() =
                             OtherOptions =
                                 projectOptions.OtherOptions
                                 |> Array.filter (fun opt ->
-                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -3526,7 +3526,7 @@ type Holder() =
     // -----------------------------------------------------------------------------
 
     /// Shared scaffold for the member-addition runtime tests: compiles the baseline with
-    /// --enable:hotreloaddeltas, starts a session with the given runtime capabilities,
+    /// --test:HotReloadDeltas, starts a session with the given runtime capabilities,
     /// loads the runtime copy, and hands the test an applyGeneration function that
     /// compiles updated source, emits the delta, applies it, and returns the delta.
     let private runMemberAdditionScenario
@@ -3580,7 +3580,7 @@ type Holder() =
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -3613,7 +3613,7 @@ type Holder() =
                             OtherOptions =
                                 projectOptions.OtherOptions
                                 |> Array.filter (fun opt ->
-                                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                     let compileDiagnostics, _ =
                         checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -4367,7 +4367,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 // Pre-build each generation's on-disk output exactly the way the watch
@@ -4572,7 +4572,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                                "--optimize-"
                                "--debug:portable"
                                "--deterministic"
-                               "--enable:hotreloaddeltas"
+                               "--test:HotReloadDeltas"
                                $"--out:{dllPath}" |] }
 
             checker.InvalidateAll()
@@ -4608,7 +4608,7 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
                     OtherOptions =
                         projectOptions.OtherOptions
                         |> Array.filter (fun opt ->
-                            not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                            not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
             let compileDiagnostics2, _ =
                 checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -4836,7 +4836,7 @@ type Type =
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -4895,7 +4895,7 @@ type Type =
                         OtherOptions =
                             projectOptions.OtherOptions
                             |> Array.filter (fun opt ->
-                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                 let compileDiagnostics2, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; updatedOptions.OtherOptions; updatedOptions.SourceFiles ])
@@ -5028,7 +5028,7 @@ type Type =
                                    "--optimize-"
                                    "--debug:portable"
                                    "--deterministic"
-                                   "--enable:hotreloaddeltas"
+                                   "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -5062,7 +5062,7 @@ type Type =
                         OtherOptions =
                             projectOptions.OtherOptions
                             |> Array.filter (fun opt ->
-                                not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase))) }
+                                not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
 
                 let applyGeneration gen (source: string) (expected: string) =
                     File.WriteAllText(fsPath, source)

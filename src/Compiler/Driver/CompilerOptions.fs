@@ -1289,23 +1289,6 @@ let advancedFlagsBoth tcConfigB =
             Some(FSComp.SR.optsSimpleresolution ())
         )
 
-        CompilerOption(
-            "enable",
-            tagString,
-            OptionString(fun arg ->
-                match arg.ToLowerInvariant() with
-                | "hotreloaddeltas" ->
-                    tcConfigB.emitCaptureArtifacts <- true
-                    configureHotReloadEmitHook tcConfigB
-                | "hotreloadhook" ->
-                    // Hook-only mode keeps synthesized-name replay active for hot reload sessions
-                    // without enabling baseline-capture emission for the current compilation.
-                    configureHotReloadEmitHook tcConfigB
-                | _ -> error (Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch arg, rangeCmdArgs))),
-            None,
-            Some "Enable experimental compiler features."
-        )
-
         CompilerOption("targetprofile", tagString, OptionString(SetTargetProfile tcConfigB), None, Some(FSComp.SR.optsTargetProfile ()))
     ]
 
@@ -1477,6 +1460,15 @@ let testFlag tcConfigB =
                     { tcConfigB.optSettings with
                         processingMode = OptimizationProcessingMode.Parallel
                     }
+            | "HotReloadDeltas" ->
+                // Experimental Edit-and-Continue baseline capture. Incubated behind --test:, like
+                // GraphBasedChecking et al., so it stays out of fsc help while the feature is experimental.
+                tcConfigB.emitCaptureArtifacts <- true
+                configureHotReloadEmitHook tcConfigB
+            | "HotReloadHook" ->
+                // Hook-only replay mode: keeps synthesized-name replay active for hot reload sessions
+                // without enabling baseline-capture emission for the current compilation.
+                configureHotReloadEmitHook tcConfigB
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif

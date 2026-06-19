@@ -20,10 +20,10 @@ Track each major review concern with objective status and evidence so follow-up 
 - Status: **Addressed**
 - Evidence:
   - `fsc` emit path routes through a generic emit hook abstraction rather than direct hot reload APIs: `src/Compiler/Driver/fsc.fs`.
-  - Hot reload hook bootstrap remains explicit-only (`--enable:hotreloaddeltas`) and wires hook behavior per compilation invocation: `src/Compiler/Driver/CompilerEmitHookBootstrap.fs`.
+  - Hot reload hook bootstrap remains explicit-only (`--test:HotReloadDeltas`) and wires hook behavior per compilation invocation: `src/Compiler/Driver/CompilerEmitHookBootstrap.fs`.
   - Ambient compiler emit-hook mutation has been removed; hook resolution is now explicit-config-only with no process-wide mutable fallback: `src/Compiler/Driver/CompilerEmitHookState.fs`.
   - Hot reload service no longer mutates compiler-wide hook state during session start/end: `src/Compiler/Service/service.fs`.
-- Checker compile now injects explicit hook-only enablement (`--enable:hotreloadhook`) while a session is active, preserving synthesized-name replay without ambient mutable hooks: `src/Compiler/Service/service.fs`, `src/Compiler/Driver/CompilerOptions.fs`.
+- Checker compile now injects explicit hook-only enablement (`--test:HotReloadHook`) while a session is active, preserving synthesized-name replay without ambient mutable hooks: `src/Compiler/Service/service.fs`, `src/Compiler/Driver/CompilerOptions.fs`.
   - `fsc` still does not import hot reload implementation modules directly and resolves hooks through the bootstrap boundary adapter: `src/Compiler/Driver/fsc.fs`, `src/Compiler/Driver/CompilerEmitHookBootstrap.fs`.
   - Architecture guards enforce explicit-only/no-ambient wiring boundaries: `tests/FSharp.Compiler.Service.Tests/HotReload/ArchitectureGuardTests.fs`.
   - Output parity regression proves non-hot-reload artifacts stay unchanged when the flag is toggled: `tests/FSharp.Compiler.Service.Tests/HotReload/HotReloadCheckerTests.fs` (`Compiler outputs stay byte-identical when hot reload capture flag is toggled`).

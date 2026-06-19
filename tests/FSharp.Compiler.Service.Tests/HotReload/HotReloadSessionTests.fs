@@ -64,7 +64,7 @@ module HotReloadSessionTests =
                        "--optimize-"
                        "--debug:portable"
                        "--deterministic"
-                       "--enable:hotreloaddeltas"
+                       "--test:HotReloadDeltas"
                        $"-o:{dllPath}" |] }
 
     let private compileProject
@@ -78,7 +78,7 @@ module HotReloadSessionTests =
             else
                 projectOptions.OtherOptions
                 |> Array.filter (fun opt ->
-                    not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase)))
+                    not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase)))
 
         let argv =
             Array.concat [ [| "fsc.exe" |]; options; projectOptions.SourceFiles ]

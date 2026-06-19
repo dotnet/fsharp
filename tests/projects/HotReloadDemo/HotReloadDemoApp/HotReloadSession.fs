@@ -108,7 +108,7 @@ module HotReloadSession =
                        "--optimize-"
                        "--deterministic"
                        "--define:HOT_RELOAD_DEMO"
-                       "--enable:hotreloaddeltas"
+                       "--test:HotReloadDeltas"
                        $"--out:{outputPath}" |]
 
             return
@@ -129,7 +129,7 @@ module HotReloadSession =
                 else
                     projectOptions.OtherOptions
                     |> Array.filter (fun opt ->
-                        not (opt.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase)))
+                        not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase)))
 
             let argv =
                 Array.concat

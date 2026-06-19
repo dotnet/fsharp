@@ -97,7 +97,7 @@ With no ambient registration, the fsc emit hook resolves its owner per compile:
 - **In-process DELTA compiles** (the host rebuilding a session-tracked project through
   `FSharpChecker.Compile`): each session registers the resolved output path of every project
   it baselines (`AddProject`) with its owning checker; `Compile` matches a non-capture
-  compile's output path against that registry, arms `--enable:hotreloadhook`, and sets a
+  compile's output path against that registry, arms `--test:HotReloadHook`, and sets a
   SCOPED EMISSION CONTEXT (`HotReloadState.setCurrentEmissionContext`: the session's store +
   the project key) around the compile. The hook prefers the scoped context, so the
   closure-name allocator and synthesized-name replay run against the EMITTING session's
@@ -127,7 +127,7 @@ syntactic, emission walks list-ordered typed trees, and the delta emitter hardco
 deterministic output — so the one real exposure is the BASELINE compile itself, where the
 compiler's default parallelism can permute output between runs.
 
-`--enable:hotreloaddeltas` therefore silently pins, at config finalization in
+`--test:HotReloadDeltas` therefore silently pins, at config finalization in
 `Driver/fsc.fs` (`main1`, after all flags are processed):
 
 - `deterministic <- true` — stable MVID/timestamp, deterministic PE emission (upstream MVID

@@ -8,14 +8,14 @@ open FSharp.Compiler.Service.Tests.TestDoubles
 
 [<Fact>]
 let ``hot reload replay compile pins sequential codegen`` () =
-    // The replay/hook compile (--enable:hotreloadhook) installs the emit hook and runs
+    // The replay/hook compile (--test:HotReloadHook) installs the emit hook and runs
     // IlxGen, so it must be pinned to sequential codegen exactly like the capture compile
-    // (--enable:hotreloaddeltas) — otherwise parallel IlxGen permutes the replayed
+    // (--test:HotReloadDeltas) — otherwise parallel IlxGen permutes the replayed
     // synthesized names relative to the sequential baseline and the delta points at the
     // wrong tokens. applyHotReloadDeterminismPins keys off compilerEmitHook (Some for both
     // capture and replay), not emitCaptureArtifacts (Some for capture only).
     let b = getArbitraryTcConfigBuilder ()
-    ParseCompilerOptions(ignore, GetCoreFscCompilerOptions b, [ "--enable:hotreloadhook" ])
+    ParseCompilerOptions(ignore, GetCoreFscCompilerOptions b, [ "--test:HotReloadHook" ])
     applyHotReloadDeterminismPins b
     Assert.False(b.parallelIlxGen)
     Assert.Equal(FSharp.Compiler.Optimizer.OptimizationProcessingMode.Sequential, b.optSettings.processingMode)
@@ -77,7 +77,7 @@ let ``hot reload service no longer mutates ambient emit-hook state`` () =
 let ``checker compile injects explicit hook-only argument for active hot reload sessions`` () =
     let source = readCompilerFile "src/Compiler/Service/service.fs"
 
-    Assert.Contains("--enable:hotreloadhook", source)
+    Assert.Contains("--test:HotReloadHook", source)
     Assert.Contains("ensureHotReloadSessionHookArgument", source)
 
 [<Fact>]

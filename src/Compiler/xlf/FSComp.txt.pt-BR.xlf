@@ -783,13 +783,13 @@
         <note />
       </trans-unit>
       <trans-unit id="fscHotReloadIncompatibleWithOptimization">
-        <source>Hot reload delta capture (--enable:hotreloaddeltas) is incompatible with optimizations (--optimize+). Add '--optimize-' or remove '--optimize+' from the compilation options.</source>
-        <target state="new">Hot reload delta capture (--enable:hotreloaddeltas) is incompatible with optimizations (--optimize+). Add '--optimize-' or remove '--optimize+' from the compilation options.</target>
+        <source>Hot reload delta capture (--test:HotReloadDeltas) is incompatible with optimizations (--optimize+). Add '--optimize-' or remove '--optimize+' from the compilation options.</source>
+        <target state="new">Hot reload delta capture (--test:HotReloadDeltas) is incompatible with optimizations (--optimize+). Add '--optimize-' or remove '--optimize+' from the compilation options.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscHotReloadRequiresDebugInfo">
-        <source>Hot reload delta capture (--enable:hotreloaddeltas) requires debug symbols (--debug+). Add '--debug+' or remove '--debug-' from the compilation options.</source>
-        <target state="new">Hot reload delta capture (--enable:hotreloaddeltas) requires debug symbols (--debug+). Add '--debug+' or remove '--debug-' from the compilation options.</target>
+        <source>Hot reload delta capture (--test:HotReloadDeltas) requires debug symbols (--debug+). Add '--debug+' or remove '--debug-' from the compilation options.</source>
+        <target state="new">Hot reload delta capture (--test:HotReloadDeltas) requires debug symbols (--debug+). Add '--debug+' or remove '--debug-' from the compilation options.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">

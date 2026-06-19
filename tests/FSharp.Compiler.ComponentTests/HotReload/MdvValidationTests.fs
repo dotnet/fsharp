@@ -446,10 +446,10 @@ module MdvValidationTests =
 
             result.ToArray()
 
-        if normalized |> Array.exists (fun arg -> arg.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase)) then
+        if normalized |> Array.exists (fun arg -> arg.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase)) then
             normalized
         else
-            Array.append normalized [| "--enable:hotreloaddeltas" |]
+            Array.append normalized [| "--test:HotReloadDeltas" |]
 
     let private sanitizeOptions (options: string[]) =
         options
@@ -1173,7 +1173,7 @@ module Target =
                     if includeHotReloadCapture then
                         args
                     else
-                        args |> Array.filter (fun arg -> not (arg.StartsWith("--enable:hotreloaddeltas", StringComparison.OrdinalIgnoreCase)))
+                        args |> Array.filter (fun arg -> not (arg.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase)))
 
                 let originalDirectory = Directory.GetCurrentDirectory()
                 let diagnostics, exnOpt =

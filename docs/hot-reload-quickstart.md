@@ -59,7 +59,7 @@ Open the `.fsproj` and add one line inside the `<PropertyGroup>` — this is the
 opt-in flag:
 
 ```xml
-<OtherFlags>$(OtherFlags) --enable:hotreloaddeltas</OtherFlags>
+<OtherFlags>$(OtherFlags) --test:HotReloadDeltas</OtherFlags>
 ```
 
 Replace `Program.fs` with something that loops, so you can see updates land:

@@ -145,7 +145,7 @@ re-encodes them byte-identically.
 
 ### Baseline CDI emission as implemented
 
-When `--enable:hotreloaddeltas` is on, the fsc emit path (`fsc.fs` `main6`, right where the
+When `--test:HotReloadDeltas` is on, the fsc emit path (`fsc.fs` `main6`, right where the
 baseline-capture hook already receives `optimizedImpls`) computes per-method occurrence data from
 the same optimized typed tree the baseline snapshot stores:
 
@@ -354,7 +354,7 @@ where fsc builds in a separate process from the FCS session — had empty `EncCl
 and the allocator failed closed on every lambda set change. Occurrence-derived baseline naming
 closes this the Roslyn way: **names are functions of identity and are never persisted.**
 
-- **The derivation function**: under `--enable:hotreloaddeltas` the BASELINE compile names
+- **The derivation function**: under `--test:HotReloadDeltas` the BASELINE compile names
   every mapped closure class `{memberCompiledName}@hotreload#g0_o{chain}` — the allocator's
   fresh-name format at generation 0, with the occurrence's root-first ordinal chain rendered
   underscore-separated (`ClosureNameAllocator.formatGenerationSuffixedClosureName`,

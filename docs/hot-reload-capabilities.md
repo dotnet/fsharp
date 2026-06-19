@@ -59,7 +59,7 @@ updates are never gated behind a missing `Baseline` word.
 - `EmitDeltaForCompilation`/`EmitHotReloadDelta` pass `session.Capabilities` into
   `computeSymbolChanges` → `TypedTreeDiff.diffImplementationFile`.
 
-The `fsc --enable:hotreloaddeltas` emit hook (`Driver/HotReloadEmitHook.fs`) does not
+The `fsc --test:HotReloadDeltas` emit hook (`Driver/HotReloadEmitHook.fs`) does not
 negotiate capabilities and therefore runs baseline-only.
 
 ## Classification gating
