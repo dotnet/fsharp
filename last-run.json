@@ -1,5 +1,6 @@
 {
-  "last_run": "2026-06-07T21:21:42Z",
-  "prs": {},
-  "note": "No open PRs with AI-Issue-Regression-PR label found."
+  "timestamp": "2026-06-19T13:58:29Z",
+  "result": "no_eligible_prs",
+  "prs_processed": 0,
+  "notes": "No open PRs with AI-Issue-Regression-PR label found."
 }
