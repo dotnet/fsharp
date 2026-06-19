@@ -2013,7 +2013,7 @@ module DeltaEmitterTests =
         // StandAloneSig table index is 0x11, token = (0x11 << 24) | rowId
         let expected = 0x11000000 ||| standalone.RowId
         Assert.Equal(expected, token)
-        Assert.Equal<byte[]>(signature, standalone.Blob)
+        Assert.Equal<byte>(signature, standalone.Blob)
 
     [<Fact>]
     let ``IMetadataHeaps.GetUserStringHeapIdx writes #US entries`` () =

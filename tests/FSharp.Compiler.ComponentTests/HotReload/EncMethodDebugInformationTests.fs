@@ -82,7 +82,7 @@ module EncMethodDebugInformationTests =
                 Closures = [ { SyntaxOffset = 0 } ]
                 Lambdas = [ { SyntaxOffset = 5; ClosureOrdinal = 0 } ] }
 
-        Assert.Equal<byte[]>([| 0x01uy; 0x01uy; 0x01uy; 0x01uy; 0x06uy; 0x02uy |], serializeLambdaMap info)
+        Assert.Equal<byte>([| 0x01uy; 0x01uy; 0x01uy; 0x01uy; 0x06uy; 0x02uy |], serializeLambdaMap info)
 
     [<Fact>]
     let ``Lambda map rejects closure ordinals outside the valid range`` () =
@@ -129,7 +129,7 @@ module EncMethodDebugInformationTests =
                       EncLocalSlotInfo.Slot(0, 0, 0)
                       EncLocalSlotInfo.Slot(1, 2, 3) ] }
 
-        Assert.Equal<byte[]>([| 0x00uy; 0x01uy; 0x01uy; 0x82uy; 0x03uy; 0x03uy |], serializeLocalSlots info)
+        Assert.Equal<byte>([| 0x00uy; 0x01uy; 0x01uy; 0x82uy; 0x03uy; 0x03uy |], serializeLocalSlots info)
 
     [<Fact>]
     let ``Slot map rejects kinds outside the serializable range`` () =
@@ -365,7 +365,7 @@ namespace Scratch
                             Closures = closures
                             Lambdas = lambdas }
 
-                Assert.Equal<byte[]>(blob, reencoded)
+                Assert.Equal<byte>(blob, reencoded)
 
             // The source has 6 lambdas (2 in MakeAdder, 3 in UseLinq, 1 in ComputeAsync)
             // and capturing closures in every method.
@@ -395,7 +395,7 @@ namespace Scratch
                         { EncMethodDebugInformation.Empty with
                             LocalSlots = slots }
 
-                Assert.Equal<byte[]>(blob, reencoded)
+                Assert.Equal<byte>(blob, reencoded)
 
             Assert.True(longLivedSlots > 0, "expected at least one long-lived local slot")
 
@@ -418,7 +418,7 @@ namespace Scratch
                         { EncMethodDebugInformation.Empty with
                             StateMachineStates = states }
 
-                Assert.Equal<byte[]>(blob, reencoded)
+                Assert.Equal<byte>(blob, reencoded)
         finally
             try
                 Directory.Delete(workDir, true)

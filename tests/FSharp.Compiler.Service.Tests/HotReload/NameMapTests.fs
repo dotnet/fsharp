@@ -80,7 +80,7 @@ module NameMapTests =
             [| "closure@hotreload"
                yield! [| for i in 1 .. 10 -> $"closure@hotreload-{i}" |] |]
 
-        Assert.Equal<string>(expected, replayed)
+        Assert.Equal<string[]>(expected, replayed)
         Assert.Equal("closure@hotreload-10", replayed[10])
 
     [<Fact>]
@@ -100,7 +100,7 @@ module NameMapTests =
         map.BeginSession()
 
         let replayed = [| for _ in 0 .. 2 -> map.GetOrAddName "f" |]
-        Assert.Equal<string>([| "f@hotreload"; "f@hotreload-1"; "f@hotreload-2" |], replayed)
+        Assert.Equal<string[]>([| "f@hotreload"; "f@hotreload-1"; "f@hotreload-2" |], replayed)
 
     [<Fact>]
     let ``LoadSnapshot validates name prefix`` () =
