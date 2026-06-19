@@ -286,7 +286,12 @@ type Type =
         let loadContext = new AssemblyLoadContext($"fcs-hotreload-{contextId}", isCollectible = true)
 
         try
-            let assembly = loadContext.LoadFromAssemblyPath(Path.GetFullPath(dllPath))
+            // Load from an in-memory copy, not the path: LoadFromAssemblyPath memory-maps and
+            // locks the DLL on Windows (collectible ALC unload is async), which blocks the
+            // subsequent recompile to the same Library.dll. Reading bytes releases the handle.
+            let assemblyBytes = File.ReadAllBytes(Path.GetFullPath(dllPath))
+            use stream = new MemoryStream(assemblyBytes)
+            let assembly = loadContext.LoadFromStream(stream)
 
             let declaringTypeInfo =
                 assembly.GetTypes()
@@ -350,7 +355,12 @@ type Type =
         let loadContext = new AssemblyLoadContext($"fcs-hotreload-sig-{contextId}", isCollectible = true)
 
         try
-            let assembly = loadContext.LoadFromAssemblyPath(Path.GetFullPath(dllPath))
+            // Load from an in-memory copy, not the path: LoadFromAssemblyPath memory-maps and
+            // locks the DLL on Windows (collectible ALC unload is async), which blocks the
+            // subsequent recompile to the same Library.dll. Reading bytes releases the handle.
+            let assemblyBytes = File.ReadAllBytes(Path.GetFullPath(dllPath))
+            use stream = new MemoryStream(assemblyBytes)
+            let assembly = loadContext.LoadFromStream(stream)
 
             let declaringTypeInfo =
                 assembly.GetTypes()
