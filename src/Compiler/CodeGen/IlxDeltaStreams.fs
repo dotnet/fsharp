@@ -35,7 +35,7 @@ type UserStringTokenCalculator(heapStartOffset: int) =
             elif blobLength <= 0x3FFF then 2
             else 4
 
-        let result = Array.zeroCreate<byte>(lengthBytes + utf16Bytes.Length + 1)
+        let result = Array.zeroCreate<byte> (lengthBytes + utf16Bytes.Length + 1)
         let mutable pos = 0
 
         // Write compressed length
@@ -98,8 +98,7 @@ type StandaloneSignatureTokenCalculator(baselineRowCount: int) =
                 token
 
     /// Get the list of (rowId, blob) tuples for serialization.
-    member _.GetSignatures() : (int * byte[]) list =
-        signatures |> Seq.toList
+    member _.GetSignatures() : (int * byte[]) list = signatures |> Seq.toList
 
 /// <summary>Represents a method body update captured for an Edit-and-Continue delta.</summary>
 type MethodBodyUpdate =
@@ -111,11 +110,7 @@ type MethodBodyUpdate =
     }
 
 /// <summary>Represents a standalone signature (e.g., local signature) emitted in the delta metadata.</summary>
-type StandaloneSignatureUpdate =
-    {
-        RowId: int
-        Blob: byte[]
-    }
+type StandaloneSignatureUpdate = { RowId: int; Blob: byte[] }
 
 /// <summary>The emitted metadata and IL payloads produced by <see cref="IlDeltaStreamBuilder"/>.</summary>
 type IlDeltaStreams =
@@ -134,13 +129,13 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
     // Initialize token calculators with baseline heap/table offsets
     let userStringHeapStart, standaloneSigRowCount =
         match baselineMetadata with
-        | Some snapshot ->
-            snapshot.HeapSizes.UserStringHeapSize,
-            snapshot.TableRowCounts.[TableNames.StandAloneSig.Index]
+        | Some snapshot -> snapshot.HeapSizes.UserStringHeapSize, snapshot.TableRowCounts.[TableNames.StandAloneSig.Index]
         | None -> 0, 0
 
     let userStringCalculator = UserStringTokenCalculator(userStringHeapStart)
-    let standaloneSigCalculator = StandaloneSignatureTokenCalculator(standaloneSigRowCount)
+
+    let standaloneSigCalculator =
+        StandaloneSignatureTokenCalculator(standaloneSigRowCount)
 
     let methodBodyStream = ByteBuffer.Create(256)
     let methodBodies = ResizeArray<MethodBodyUpdate>()
@@ -150,6 +145,7 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
         // Align to N-byte boundary by padding with zeros
         let pos = methodBodyStream.Position
         let padding = (alignment - (pos % alignment)) % alignment
+
         for _ = 1 to padding do
             methodBodyStream.EmitByte 0uy
 
@@ -165,21 +161,25 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
         |> List.map (fun (rowId, blob) -> { RowId = rowId; Blob = blob })
 
     /// <summary>Add a method body update for the supplied metadata token.</summary>
-    member _.AddMethodBody(
-        methodToken: int,
-        localSignatureToken: int,
-        ilBytes: byte[],
-        maxStack: int,
-        initLocals: bool,
-        exceptionRegions: IlExceptionRegion[],
-        remapEntityToken: int -> int
-    ) =
+    member _.AddMethodBody
+        (
+            methodToken: int,
+            localSignatureToken: int,
+            ilBytes: byte[],
+            maxStack: int,
+            initLocals: bool,
+            exceptionRegions: IlExceptionRegion[],
+            remapEntityToken: int -> int
+        ) =
         let ilLength = ilBytes.Length
         let hasExceptionRegions = exceptionRegions.Length > 0
 
         let flags =
             int e_CorILMethod_FatFormat
-            ||| (if hasExceptionRegions then int e_CorILMethod_MoreSects else 0)
+            ||| (if hasExceptionRegions then
+                     int e_CorILMethod_MoreSects
+                 else
+                     0)
             ||| (if initLocals then int e_CorILMethod_InitLocals else 0)
 
         alignStream 4
@@ -193,6 +193,7 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
         methodBodyStream.EmitBytes(ilBytes)
 
         let padding = (4 - (ilLength % 4)) &&& 0x3
+
         if padding > 0 then
             for _ = 1 to padding do
                 methodBodyStream.EmitByte 0uy
@@ -201,6 +202,7 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
             alignStream 4
             let regions = exceptionRegions
             let smallSize = regions.Length * 12 + 4
+
             let canUseSmall =
                 smallSize <= 0xFF
                 && regions
@@ -214,8 +216,11 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
                 match region.Kind with
                 | IlExceptionRegionKind.Catch ->
                     let token =
-                        if region.CatchTypeToken = 0 then 0
-                        else remapEntityToken region.CatchTypeToken
+                        if region.CatchTypeToken = 0 then
+                            0
+                        else
+                            remapEntityToken region.CatchTypeToken
+
                     e_COR_ILEXCEPTION_CLAUSE_EXCEPTION, token
                 | IlExceptionRegionKind.Filter -> e_COR_ILEXCEPTION_CLAUSE_FILTER, region.FilterOffset
                 | IlExceptionRegionKind.Finally -> e_COR_ILEXCEPTION_CLAUSE_FINALLY, 0
@@ -227,6 +232,7 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
                 methodBodyStream.EmitByte(byte smallSize)
                 methodBodyStream.EmitByte(0uy)
                 methodBodyStream.EmitByte(0uy)
+
                 for region in regions do
                     let kind, extra = encodeKind region
                     methodBodyStream.EmitUInt16(uint16 kind)
@@ -241,6 +247,7 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
                 methodBodyStream.EmitByte(byte bigSize)
                 methodBodyStream.EmitByte(byte (bigSize >>> 8))
                 methodBodyStream.EmitByte(byte (bigSize >>> 16))
+
                 for region in regions do
                     let kind, extra = encodeKind region
                     methodBodyStream.EmitInt32(kind)
@@ -270,7 +277,9 @@ type IlDeltaStreamBuilder(baselineMetadata: MetadataSnapshot option) =
     /// invocations throw to prevent mismatched Edit-and-Continue state.
     /// </summary>
     member this.Build() =
-        if isBuilt then invalidOp "IlDeltaStreamBuilder.Build may only be called once per builder instance."
+        if isBuilt then
+            invalidOp "IlDeltaStreamBuilder.Build may only be called once per builder instance."
+
         isBuilt <- true
 
         {

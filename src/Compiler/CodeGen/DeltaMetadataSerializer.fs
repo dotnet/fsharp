@@ -21,17 +21,18 @@ let private padTo4 (bytes: byte[]) =
         Array.Copy(bytes, padded, bytes.Length)
         padded
 
-
 /// Represents the aligned heap streams that will be written into the delta metadata.
 type DeltaHeapStreams =
-    { Strings: byte[]
-      StringsLength: int
-      Blobs: byte[]
-      BlobsLength: int
-      Guids: byte[]
-      GuidsLength: int
-      UserStrings: byte[]
-      UserStringsLength: int }
+    {
+        Strings: byte[]
+        StringsLength: int
+        Blobs: byte[]
+        BlobsLength: int
+        Guids: byte[]
+        GuidsLength: int
+        UserStrings: byte[]
+        UserStringsLength: int
+    }
 
 let buildHeapStreams (mirror: DeltaMetadataTables) : DeltaHeapStreams =
     let stringBytes = mirror.StringHeapBytes
@@ -50,28 +51,34 @@ let buildHeapStreams (mirror: DeltaMetadataTables) : DeltaHeapStreams =
     let paddedGuids = padTo4 guidBytes
     let paddedUserStrings = padTo4 userStringBytes
 
-    { Strings = paddedStrings
-      StringsLength = paddedStrings.Length  // Stream header uses padded size
-      Blobs = paddedBlobs
-      BlobsLength = paddedBlobs.Length      // Stream header uses padded size
-      Guids = paddedGuids
-      GuidsLength = paddedGuids.Length      // Stream header uses padded size
-      UserStrings = paddedUserStrings
-      UserStringsLength = paddedUserStrings.Length }  // Stream header uses padded size
+    {
+        Strings = paddedStrings
+        StringsLength = paddedStrings.Length // Stream header uses padded size
+        Blobs = paddedBlobs
+        BlobsLength = paddedBlobs.Length // Stream header uses padded size
+        Guids = paddedGuids
+        GuidsLength = paddedGuids.Length // Stream header uses padded size
+        UserStrings = paddedUserStrings
+        UserStringsLength = paddedUserStrings.Length
+    } // Stream header uses padded size
 
 /// Represents the serialized `#~` stream (metadata tables) including its padded bytes.
 type DeltaTableStream =
-    { Bytes: byte[]
-      UnpaddedSize: int
-      PaddedSize: int }
+    {
+        Bytes: byte[]
+        UnpaddedSize: int
+        PaddedSize: int
+    }
 
 /// Captures the sizing data needed to build delta metadata, mirroring Roslyn's MetadataSizes.
 type DeltaMetadataSizes =
-    { RowCounts: int[]
-      HeapSizes: MetadataHeapSizes
-      BitMasks: TableBitMasks
-      IndexSizes: DeltaIndexSizing.CodedIndexSizes
-      IsEncDelta: bool }
+    {
+        RowCounts: int[]
+        HeapSizes: MetadataHeapSizes
+        BitMasks: TableBitMasks
+        IndexSizes: DeltaIndexSizing.CodedIndexSizes
+        IsEncDelta: bool
+    }
 
 /// Compute sizing information needed for delta serialization.
 /// This determines index widths, heap sizes, and bit masks for the #~ stream header.
@@ -86,42 +93,50 @@ let computeMetadataSizes (tableMirror: DeltaMetadataTables) (externalRowCounts: 
     let heapSizes = tableMirror.HeapSizes
     // A delta is an EnC delta if it contains EncLog or EncMap entries
     let isEncDelta =
-        rowCounts[TableNames.ENCLog.Index] > 0
-        || rowCounts[TableNames.ENCMap.Index] > 0
+        rowCounts[TableNames.ENCLog.Index] > 0 || rowCounts[TableNames.ENCMap.Index] > 0
 
     let bitMasks = DeltaTableLayout.computeBitMasks rowCounts isEncDelta
 
     let indexSizes =
         DeltaIndexSizing.compute rowCounts normalizedExternal heapSizes isEncDelta
 
-    { RowCounts = rowCounts
-      HeapSizes = heapSizes
-      BitMasks = bitMasks
-      IndexSizes = indexSizes
-      IsEncDelta = isEncDelta }
+    {
+        RowCounts = rowCounts
+        HeapSizes = heapSizes
+        BitMasks = bitMasks
+        IndexSizes = indexSizes
+        IsEncDelta = isEncDelta
+    }
 
 type DeltaTableSerializerInput =
-    { Tables: TableRows
-      MetadataSizes: DeltaMetadataSizes
-      StringHeap: byte[]
-      StringHeapOffsets: int[]
-      BlobHeap: byte[]
-      BlobHeapOffsets: int[]
-      GuidHeap: byte[]
-      HeapOffsets: MetadataHeapOffsets }
+    {
+        Tables: TableRows
+        MetadataSizes: DeltaMetadataSizes
+        StringHeap: byte[]
+        StringHeapOffsets: int[]
+        BlobHeap: byte[]
+        BlobHeapOffsets: int[]
+        GuidHeap: byte[]
+        HeapOffsets: MetadataHeapOffsets
+    }
 
-let private writeUInt16 (writer: BinaryWriter) (value: int) =
-    writer.Write(uint16 value)
+let private writeUInt16 (writer: BinaryWriter) (value: int) = writer.Write(uint16 value)
 
-let private writeUInt32 (writer: BinaryWriter) (value: int) =
-    writer.Write(value)
+let private writeUInt32 (writer: BinaryWriter) (value: int) = writer.Write(value)
 
 let private writeHeapIndex (writer: BinaryWriter) (isBig: bool) (value: int) =
-    if isBig then writeUInt32 writer value else writeUInt16 writer value
+    if isBig then
+        writeUInt32 writer value
+    else
+        writeUInt16 writer value
 
 let private writeTaggedIndex (writer: BinaryWriter) (nbits: int) (isBig: bool) (tag: int) (value: int) =
     let encoded = (value <<< nbits) ||| tag
-    if isBig then writeUInt32 writer encoded else writeUInt16 writer encoded
+
+    if isBig then
+        writeUInt32 writer encoded
+    else
+        writeUInt16 writer encoded
 
 /// Maps TableRows to an array indexed by ECMA-335 table number.
 /// Uses TableNames from BinaryConstants for proper table indices.
@@ -160,7 +175,12 @@ let private isTablePresent (bitmaskLow: int) (bitmaskHigh: int) (index: int) =
     else
         ((bitmaskHigh >>> (index - 32)) &&& 1) <> 0
 
-let private writeRowElement (writer: BinaryWriter) (indexSizes: DeltaIndexSizing.CodedIndexSizes) (input: DeltaTableSerializerInput) (element: RowElementData) =
+let private writeRowElement
+    (writer: BinaryWriter)
+    (indexSizes: DeltaIndexSizing.CodedIndexSizes)
+    (input: DeltaTableSerializerInput)
+    (element: RowElementData)
+    =
     let tag = element.Tag
     let value = element.Value
 
@@ -178,6 +198,7 @@ let private writeRowElement (writer: BinaryWriter) (indexSizes: DeltaIndexSizing
                 invalidArg "element" $"String heap offset index out of range: {value} (offsetCount={input.StringHeapOffsets.Length})"
             else
                 input.HeapOffsets.StringHeapStart + input.StringHeapOffsets.[value]
+
         writeHeapIndex writer indexSizes.StringsBig offset
     elif tag = Encoding.RowElementTags.Blob then
         let offset =
@@ -189,6 +210,7 @@ let private writeRowElement (writer: BinaryWriter) (indexSizes: DeltaIndexSizing
                 invalidArg "element" $"Blob heap offset index out of range: {value} (offsetCount={input.BlobHeapOffsets.Length})"
             else
                 input.HeapOffsets.BlobHeapStart + input.BlobHeapOffsets.[value]
+
         writeHeapIndex writer indexSizes.BlobsBig offset
     elif tag = Encoding.RowElementTags.Guid then
         // Encode GUID columns as byte offsets into the *combined* Guid heap
@@ -203,49 +225,98 @@ let private writeRowElement (writer: BinaryWriter) (indexSizes: DeltaIndexSizing
                 // Guid heap indexes are entry counts (1-based), not byte offsets.
                 let baselineEntries = input.HeapOffsets.GuidHeapStart / 16
                 baselineEntries + value
+
         if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS") = "1" then
-            printfn "[fsharp-hotreload][guid-serialize] isAbsolute=%b value=%d adjusted=%d guidsBig=%b" element.IsAbsolute value adjusted indexSizes.GuidsBig
+            printfn
+                "[fsharp-hotreload][guid-serialize] isAbsolute=%b value=%d adjusted=%d guidsBig=%b"
+                element.IsAbsolute
+                value
+                adjusted
+                indexSizes.GuidsBig
+
         writeHeapIndex writer indexSizes.GuidsBig adjusted
-    elif tag >= Encoding.RowElementTags.SimpleIndexMin && tag <= Encoding.RowElementTags.SimpleIndexMax then
+    elif
+        tag >= Encoding.RowElementTags.SimpleIndexMin
+        && tag <= Encoding.RowElementTags.SimpleIndexMax
+    then
         let tableIndex = tag - Encoding.RowElementTags.SimpleIndexMin
         writeHeapIndex writer indexSizes.SimpleIndexBig.[tableIndex] value
-    elif tag >= Encoding.RowElementTags.TypeDefOrRefOrSpecMin && tag <= Encoding.RowElementTags.TypeDefOrRefOrSpecMax then
+    elif
+        tag >= Encoding.RowElementTags.TypeDefOrRefOrSpecMin
+        && tag <= Encoding.RowElementTags.TypeDefOrRefOrSpecMax
+    then
         let subTag = tag - Encoding.RowElementTags.TypeDefOrRefOrSpecMin
         writeTaggedIndex writer Encoding.CodedIndices.TypeDefOrRef.TagBits indexSizes.TypeDefOrRefBig subTag value
-    elif tag >= Encoding.RowElementTags.TypeOrMethodDefMin && tag <= Encoding.RowElementTags.TypeOrMethodDefMax then
+    elif
+        tag >= Encoding.RowElementTags.TypeOrMethodDefMin
+        && tag <= Encoding.RowElementTags.TypeOrMethodDefMax
+    then
         let subTag = tag - Encoding.RowElementTags.TypeOrMethodDefMin
         writeTaggedIndex writer Encoding.CodedIndices.TypeOrMethodDef.TagBits indexSizes.TypeOrMethodDefBig subTag value
-    elif tag >= Encoding.RowElementTags.HasConstantMin && tag <= Encoding.RowElementTags.HasConstantMax then
+    elif
+        tag >= Encoding.RowElementTags.HasConstantMin
+        && tag <= Encoding.RowElementTags.HasConstantMax
+    then
         let subTag = tag - Encoding.RowElementTags.HasConstantMin
         writeTaggedIndex writer Encoding.CodedIndices.HasConstant.TagBits indexSizes.HasConstantBig subTag value
-    elif tag >= Encoding.RowElementTags.HasCustomAttributeMin && tag <= Encoding.RowElementTags.HasCustomAttributeMax then
+    elif
+        tag >= Encoding.RowElementTags.HasCustomAttributeMin
+        && tag <= Encoding.RowElementTags.HasCustomAttributeMax
+    then
         let subTag = tag - Encoding.RowElementTags.HasCustomAttributeMin
         writeTaggedIndex writer Encoding.CodedIndices.HasCustomAttribute.TagBits indexSizes.HasCustomAttributeBig subTag value
-    elif tag >= Encoding.RowElementTags.HasFieldMarshalMin && tag <= Encoding.RowElementTags.HasFieldMarshalMax then
+    elif
+        tag >= Encoding.RowElementTags.HasFieldMarshalMin
+        && tag <= Encoding.RowElementTags.HasFieldMarshalMax
+    then
         let subTag = tag - Encoding.RowElementTags.HasFieldMarshalMin
         writeTaggedIndex writer Encoding.CodedIndices.HasFieldMarshal.TagBits indexSizes.HasFieldMarshalBig subTag value
-    elif tag >= Encoding.RowElementTags.HasDeclSecurityMin && tag <= Encoding.RowElementTags.HasDeclSecurityMax then
+    elif
+        tag >= Encoding.RowElementTags.HasDeclSecurityMin
+        && tag <= Encoding.RowElementTags.HasDeclSecurityMax
+    then
         let subTag = tag - Encoding.RowElementTags.HasDeclSecurityMin
         writeTaggedIndex writer Encoding.CodedIndices.HasDeclSecurity.TagBits indexSizes.HasDeclSecurityBig subTag value
-    elif tag >= Encoding.RowElementTags.MemberRefParentMin && tag <= Encoding.RowElementTags.MemberRefParentMax then
+    elif
+        tag >= Encoding.RowElementTags.MemberRefParentMin
+        && tag <= Encoding.RowElementTags.MemberRefParentMax
+    then
         let subTag = tag - Encoding.RowElementTags.MemberRefParentMin
         writeTaggedIndex writer Encoding.CodedIndices.MemberRefParent.TagBits indexSizes.MemberRefParentBig subTag value
-    elif tag >= Encoding.RowElementTags.HasSemanticsMin && tag <= Encoding.RowElementTags.HasSemanticsMax then
+    elif
+        tag >= Encoding.RowElementTags.HasSemanticsMin
+        && tag <= Encoding.RowElementTags.HasSemanticsMax
+    then
         let subTag = tag - Encoding.RowElementTags.HasSemanticsMin
         writeTaggedIndex writer Encoding.CodedIndices.HasSemantics.TagBits indexSizes.HasSemanticsBig subTag value
-    elif tag >= Encoding.RowElementTags.MethodDefOrRefMin && tag <= Encoding.RowElementTags.MethodDefOrRefMax then
+    elif
+        tag >= Encoding.RowElementTags.MethodDefOrRefMin
+        && tag <= Encoding.RowElementTags.MethodDefOrRefMax
+    then
         let subTag = tag - Encoding.RowElementTags.MethodDefOrRefMin
         writeTaggedIndex writer Encoding.CodedIndices.MethodDefOrRef.TagBits indexSizes.MethodDefOrRefBig subTag value
-    elif tag >= Encoding.RowElementTags.MemberForwardedMin && tag <= Encoding.RowElementTags.MemberForwardedMax then
+    elif
+        tag >= Encoding.RowElementTags.MemberForwardedMin
+        && tag <= Encoding.RowElementTags.MemberForwardedMax
+    then
         let subTag = tag - Encoding.RowElementTags.MemberForwardedMin
         writeTaggedIndex writer Encoding.CodedIndices.MemberForwarded.TagBits indexSizes.MemberForwardedBig subTag value
-    elif tag >= Encoding.RowElementTags.ImplementationMin && tag <= Encoding.RowElementTags.ImplementationMax then
+    elif
+        tag >= Encoding.RowElementTags.ImplementationMin
+        && tag <= Encoding.RowElementTags.ImplementationMax
+    then
         let subTag = tag - Encoding.RowElementTags.ImplementationMin
         writeTaggedIndex writer Encoding.CodedIndices.Implementation.TagBits indexSizes.ImplementationBig subTag value
-    elif tag >= Encoding.RowElementTags.CustomAttributeTypeMin && tag <= Encoding.RowElementTags.CustomAttributeTypeMax then
+    elif
+        tag >= Encoding.RowElementTags.CustomAttributeTypeMin
+        && tag <= Encoding.RowElementTags.CustomAttributeTypeMax
+    then
         let subTag = tag - Encoding.RowElementTags.CustomAttributeTypeMin
         writeTaggedIndex writer Encoding.CodedIndices.CustomAttributeType.TagBits indexSizes.CustomAttributeTypeBig subTag value
-    elif tag >= Encoding.RowElementTags.ResolutionScopeMin && tag <= Encoding.RowElementTags.ResolutionScopeMax then
+    elif
+        tag >= Encoding.RowElementTags.ResolutionScopeMin
+        && tag <= Encoding.RowElementTags.ResolutionScopeMax
+    then
         let subTag = tag - Encoding.RowElementTags.ResolutionScopeMin
         writeTaggedIndex writer Encoding.CodedIndices.ResolutionScope.TagBits indexSizes.ResolutionScopeBig subTag value
     else
@@ -269,6 +340,7 @@ let buildTableStream (input: DeltaTableSerializerInput) : DeltaTableStream =
             (if indexSizes.StringsBig then 0x01 else 0)
             ||| (if indexSizes.GuidsBig then 0x02 else 0)
             ||| (if indexSizes.BlobsBig then 0x04 else 0)
+
         let encFlags = if sizes.IsEncDelta then (0x20 ||| 0x80) else 0
         baseFlags ||| encFlags
 
@@ -287,6 +359,7 @@ let buildTableStream (input: DeltaTableSerializerInput) : DeltaTableStream =
 
     for tableIndex = 0 to DeltaTokens.TableCount - 1 do
         let rows = rowsByIndex.[tableIndex]
+
         if rows.Length > 0 then
             for row in rows do
                 for element in row do
@@ -296,22 +369,30 @@ let buildTableStream (input: DeltaTableSerializerInput) : DeltaTableStream =
     let unpaddedSize = int ms.Length
     let paddedSize = align4 unpaddedSize
     let bytes = ms.ToArray()
+
     if paddedSize = unpaddedSize then
-        { Bytes = bytes
-          UnpaddedSize = unpaddedSize
-          PaddedSize = paddedSize }
+        {
+            Bytes = bytes
+            UnpaddedSize = unpaddedSize
+            PaddedSize = paddedSize
+        }
     else
         let padded = Array.zeroCreate<byte> paddedSize
         Array.Copy(bytes, padded, bytes.Length)
-        { Bytes = padded
-          UnpaddedSize = unpaddedSize
-          PaddedSize = paddedSize }
+
+        {
+            Bytes = padded
+            UnpaddedSize = unpaddedSize
+            PaddedSize = paddedSize
+        }
 
 type private StreamDescriptor =
-    { Name: string
-      Offset: int
-      Size: int
-      Bytes: byte[] }
+    {
+        Name: string
+        Offset: int
+        Size: int
+        Bytes: byte[]
+    }
 
 let private versionString = "v4.0.30319"
 
@@ -319,6 +400,7 @@ let private encodeName (writer: BinaryWriter) (name: string) =
     let bytes = Text.Encoding.UTF8.GetBytes(name)
     writer.Write(bytes)
     writer.Write(byte 0)
+
     while writer.BaseStream.Position % 4L <> 0L do
         writer.Write(byte 0)
 
@@ -328,12 +410,16 @@ let private streamHeaderSize (name: string) =
 
 let serializeMetadataRoot (input: DeltaTableSerializerInput) (heaps: DeltaHeapStreams) (tableStream: DeltaTableStream) : byte[] =
     let includeJtd = input.MetadataSizes.IsEncDelta
+
     let baseStreams =
-        [ "#-", tableStream.UnpaddedSize, tableStream.Bytes
-          "#Strings", heaps.StringsLength, heaps.Strings
-          "#US", heaps.UserStringsLength, heaps.UserStrings
-          "#GUID", heaps.GuidsLength, heaps.Guids
-          "#Blob", heaps.BlobsLength, heaps.Blobs ]
+        [
+            "#-", tableStream.UnpaddedSize, tableStream.Bytes
+            "#Strings", heaps.StringsLength, heaps.Strings
+            "#US", heaps.UserStringsLength, heaps.UserStrings
+            "#GUID", heaps.GuidsLength, heaps.Guids
+            "#Blob", heaps.BlobsLength, heaps.Blobs
+        ]
+
     let streams =
         if includeJtd then
             baseStreams @ [ "#JTD", 0, Array.empty ]
@@ -345,14 +431,25 @@ let serializeMetadataRoot (input: DeltaTableSerializerInput) (heaps: DeltaHeapSt
     let versionLength = align4 versionStringLength
 
     let headerBaseSize = 4 + 2 + 2 + 4 + 4 + versionLength + 2 + 2
-    let streamsHeaderSize = streams |> List.sumBy (fun (name, _, _) -> streamHeaderSize name)
+
+    let streamsHeaderSize =
+        streams |> List.sumBy (fun (name, _, _) -> streamHeaderSize name)
+
     let headerSize = headerBaseSize + streamsHeaderSize
 
     let mutable offset = headerSize
+
     let descriptors =
         streams
         |> List.map (fun (name, size, bytes) ->
-            let descriptor = { Name = name; Offset = offset; Size = size; Bytes = bytes }
+            let descriptor =
+                {
+                    Name = name
+                    Offset = offset
+                    Size = size
+                    Bytes = bytes
+                }
+
             offset <- offset + bytes.Length
             descriptor)
 
@@ -367,8 +464,10 @@ let serializeMetadataRoot (input: DeltaTableSerializerInput) (heaps: DeltaHeapSt
     writer.Write(versionBytes)
     writer.Write(byte 0)
     let paddingBytes = versionLength - versionStringLength
+
     if paddingBytes > 0 then
         writer.Write(Array.zeroCreate<byte> paddingBytes)
+
     while ms.Position % 4L <> 0L do
         writer.Write(byte 0)
 

@@ -45,9 +45,7 @@ open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
-// Centralized naming wrappers used by both ILX generation and the naming-path guard script.
-// New direct calls to CompilerGlobalState name generators should be routed through
-// these helpers so hot reload naming replay stays enforceable.
+// Naming wrappers routed through here so hot reload naming replay stays enforceable.
 let private freshIlxName (g: TcGlobals) name m =
     g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName(name, m)
 
@@ -325,10 +323,8 @@ type cenv =
         mutable stackGuard: StackGuard
 
         /// Hot reload side-channel state (closure naming and state machine resume point
-        /// recording) installed on the compilation's CompilerGlobalState by the emit
-        /// hook, resolved once per GenerateCode run. None on compiles that never
-        /// installed any state (flag-off, no hook), so the per-closure and
-        /// per-state-machine call sites do no weak-table probes.
+        /// recording), resolved once per GenerateCode run. None when no hook installed any
+        /// state, so the per-closure/per-state-machine call sites skip weak-table probes.
         hotReloadNameState: ClosureNameAllocationState.ClosureNameStateHolder option
 
     }
@@ -2434,8 +2430,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
             "rawDataValueTypeGenerator",
             (fun (cloc, size) ->
 
-                let unique =
-                    nextIlxOrdinal g "@T" cloc.Range
+                let unique = nextIlxOrdinal g "@T" cloc.Range
 
                 let name = CompilerGeneratedName $"T{unique}_{size}Bytes" // Type names ending ...$T<unique>_37Bytes
 
@@ -2903,8 +2898,7 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (w
     else
         let vtspec = cgbuf.mgbuf.GenerateRawDataValueType(eenv.cloc, bytes.Length)
 
-        let unique =
-            nextIlxOrdinal g "@field" eenv.cloc.Range
+        let unique = nextIlxOrdinal g "@field" eenv.cloc.Range
 
         let ilFieldName = CompilerGeneratedName $"field{unique}"
         let fty = ILType.Value vtspec
@@ -6307,8 +6301,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     // compiles) -> strict no-op, byte-identical output, no weak-table probe.
     do
         match cenv.hotReloadNameState with
-        | Some hotReloadNameState ->
-            hotReloadNameState.RecordResumePoints(ilCloTypeRef.FullName, resumptionPoints |> List.map fst)
+        | Some hotReloadNameState -> hotReloadNameState.RecordResumePoints(ilCloTypeRef.FullName, resumptionPoints |> List.map fst)
         | None -> ()
 
     // The closure implements what ever interfaces the template implements.
@@ -12752,8 +12745,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
         { cenv with
             hotReloadNameState =
                 g.CompilerGlobalState
-                |> Option.bind (fun compilerGlobalState ->
-                    ClosureNameAllocationState.tryGetClosureNameState (compilerGlobalState :> obj))
+                |> Option.bind (fun compilerGlobalState -> ClosureNameAllocationState.tryGetClosureNameState (compilerGlobalState :> obj))
         }
 
     // Generate the implementations into the mgbuf

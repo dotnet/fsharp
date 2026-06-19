@@ -118,16 +118,9 @@ type PdbMethodData =
         DebugPoints: PdbDebugPoint array
     }
 
-/// A pre-serialized CustomDebugInformation row to attach to a method definition row in
-/// the portable PDB (kind GUID + blob). Supplied by the compiler as a side channel for
-/// hot reload baseline emission (--test:HotReloadDeltas): EnC lambda/closure map blobs
-/// computed from the typed tree, keyed by IL method name. The writer attaches the rows
-/// only when the name identifies exactly one method row (fail closed on ambiguity).
-type PdbMethodCustomDebugInfo =
-    {
-        KindGuid: Guid
-        Blob: byte[]
-    }
+/// A pre-serialized CustomDebugInformation row (kind GUID + blob) to attach to a method
+/// definition row in the portable PDB.
+type PdbMethodCustomDebugInfo = { KindGuid: Guid; Blob: byte[] }
 
 module SequencePoint =
     let orderBySource sp1 sp2 =
@@ -175,10 +168,8 @@ type HashAlgorithm =
     | Sha256
 
 // ============================================================================
-// Well-known PDB GUIDs
+// Well-known PDB GUIDs (Portable PDB metadata)
 // ============================================================================
-// These GUIDs are used for Portable PDB metadata and are shared between
-// the main compiler PDB writer and hot reload delta PDB emission.
 
 /// Document checksum algorithm: SHA-1 (Portable PDB spec)
 let guidSha1 = Guid("ff1816ec-aa5e-4d10-87f7-6f4963833460")
@@ -197,7 +188,6 @@ let embeddedSourceGuid =
 /// Source link custom debug information GUID
 let sourceLinkGuid =
     Guid(0xcc110556u, 0xa091us, 0x4d38us, 0x9fuy, 0xecuy, 0x25uy, 0xabuy, 0x9auy, 0x35uy, 0x1auy, 0x6auy)
-
 
 let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
     try
@@ -409,7 +399,6 @@ type PortablePdbGenerator
 
         metadata.GetOrAddBlob writer
 
-    // Use module-level GUIDs (shared with hot reload PDB delta emission)
     let corSymLanguageTypeId = corSymLanguageTypeFSharp
     let embeddedSourceId = embeddedSourceGuid
     let sourceLinkId = sourceLinkGuid
@@ -524,12 +513,9 @@ type PortablePdbGenerator
     let moduleImportScopeHandle = MetadataTokens.ImportScopeHandle(1)
     let importScopesTable = Dictionary<PdbImports, ImportScopeHandle>()
 
-    // Hot reload baseline side channel (--test:HotReloadDeltas): per-method EnC
-    // CustomDebugInformation rows keyed by IL method name. A row is attached only when
-    // the name identifies exactly ONE method row in this module — ambiguous names
-    // (overloads, same-named methods on different types) fail closed so a map can never
-    // attach to the wrong method. Flag-off builds pass the empty map, so this is a no-op
-    // and the emitted PDB stays byte-identical.
+    // Per-method CustomDebugInformation rows keyed by IL method name. Names that match
+    // more than one method row (overloads, same name on different types) fail closed and
+    // attach nothing, so a row can never land on the wrong method.
     let methodCustomDebugInfoByName =
         if Map.isEmpty methodCustomDebugInfoRows then
             methodCustomDebugInfoRows
@@ -837,14 +823,13 @@ type PortablePdbGenerator
 
         metadata.AddMethodDebugInformation(docHandle, sequencePointBlob) |> ignore
 
-        // Attach hot-reload EnC CustomDebugInformation rows (e.g. the EnC Lambda and
-        // Closure Map) when the side channel carries blobs for this (unambiguous) method.
         // MetadataBuilder sorts the CustomDebugInformation table by parent at serialize
         // time, so adding rows in method order here is safe.
         match Map.tryFind minfo.MethName methodCustomDebugInfoByName with
         | Some cdiRows ->
             // MethToken is the uncoded token (0x06 <<< 24 ||| rid); the handle needs the rid.
-            let methodHandle = MetadataTokens.MethodDefinitionHandle(minfo.MethToken &&& 0x00FFFFFF)
+            let methodHandle =
+                MetadataTokens.MethodDefinitionHandle(minfo.MethToken &&& 0x00FFFFFF)
 
             for cdiRow in cdiRows do
                 metadata.AddCustomDebugInformation(

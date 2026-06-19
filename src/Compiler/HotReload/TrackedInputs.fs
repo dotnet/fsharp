@@ -13,7 +13,8 @@ open FSharp.Compiler.IO
 
 /// One non-source on-disk input of a compilation, with the timestamp observed when the
 /// session captured or compared it.
-type TrackedInput = { Path: string; LastModified: DateTime }
+type TrackedInput =
+    { Path: string; LastModified: DateTime }
 
 let private trimEnclosingQuotes (value: string) =
     if String.IsNullOrWhiteSpace value then
@@ -28,12 +29,9 @@ let private tryNormalizeTrackedInputPath (projectDirectory: string) (path: strin
         let candidatePath =
             let path = trimEnclosingQuotes path
 
-            if Path.IsPathRooted path then
-                path
-            elif String.IsNullOrWhiteSpace projectDirectory then
-                path
-            else
-                Path.Combine(projectDirectory, path)
+            if Path.IsPathRooted path then path
+            elif String.IsNullOrWhiteSpace projectDirectory then path
+            else Path.Combine(projectDirectory, path)
 
         let fullPath =
             try
@@ -74,12 +72,16 @@ let private tryGetTrackedInputPath (projectDirectory: string) (option: string) =
 
     if String.IsNullOrWhiteSpace option then
         None
-    elif startsWith "-r:" || startsWith "--reference:" || startsWith "--out:" || startsWith "-o:" then
+    elif
+        startsWith "-r:"
+        || startsWith "--reference:"
+        || startsWith "--out:"
+        || startsWith "-o:"
+    then
         None
     elif option.StartsWith("-", StringComparison.Ordinal) then
         tryPathFromPrefixedOption [ "--resource:"; "-resource:"; "--res:"; "-res:" ] normalizeResourceOptionValue
-        |> Option.orElseWith (fun () ->
-            tryPathFromPrefixedOption [ "--win32res:"; "--keyfile:"; "--load:"; "--use:" ] trimEnclosingQuotes)
+        |> Option.orElseWith (fun () -> tryPathFromPrefixedOption [ "--win32res:"; "--keyfile:"; "--load:"; "--use:" ] trimEnclosingQuotes)
     else
         tryNormalizeTrackedInputPath projectDirectory option
 

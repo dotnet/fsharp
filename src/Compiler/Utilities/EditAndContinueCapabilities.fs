@@ -118,8 +118,7 @@ type internal EditAndContinueCapabilities private (capabilities: Set<EditAndCont
                 | "GenericAddMethodToExistingType" -> Set.add EditAndContinueCapability.GenericAddMethodToExistingType acc
                 | "GenericUpdateMethod" -> Set.add EditAndContinueCapability.GenericUpdateMethod acc
                 | "GenericAddFieldToExistingType" -> Set.add EditAndContinueCapability.GenericAddFieldToExistingType acc
-                | "AddExplicitInterfaceImplementation" ->
-                    Set.add EditAndContinueCapability.AddExplicitInterfaceImplementation acc
+                | "AddExplicitInterfaceImplementation" -> Set.add EditAndContinueCapability.AddExplicitInterfaceImplementation acc
                 | "AddFieldRva" -> Set.add EditAndContinueCapability.AddFieldRva acc
                 // Aggregate name accepted by Roslyn so runtimes can advertise broader capabilities with one word.
                 | "AddDefinitionToExistingType" ->

@@ -40,68 +40,73 @@ let private findMetadataRoot (bytes: byte[]) : int option =
     else
         // e_lfanew at offset 0x3C points to PE signature
         let peOffset = readInt32 bytes 0x3C
+
         if peOffset < 0 || peOffset + 24 > bytes.Length then
             None
-        else
+        else if
             // Check PE signature "PE\0\0"
-            if bytes.[peOffset] <> 0x50uy || bytes.[peOffset+1] <> 0x45uy
-               || bytes.[peOffset+2] <> 0uy || bytes.[peOffset+3] <> 0uy then
+            bytes.[peOffset] <> 0x50uy
+            || bytes.[peOffset + 1] <> 0x45uy
+            || bytes.[peOffset + 2] <> 0uy
+            || bytes.[peOffset + 3] <> 0uy
+        then
+            None
+        else
+            // COFF header at peOffset + 4
+            let coffHeader = peOffset + 4
+            let sizeOfOptionalHeader = int (readUInt16 bytes (coffHeader + 16))
+            let optionalHeader = coffHeader + 20
+
+            // PE32 vs PE32+ - check magic
+            let magic = readUInt16 bytes optionalHeader
+            let isPE32Plus = magic = 0x20Bus
+
+            // CLI header RVA is in data directory entry 14 (0-indexed)
+            // PE32: starts at optionalHeader + 96; PE32+: starts at optionalHeader + 112
+            let dataDirectoryStart =
+                if isPE32Plus then
+                    optionalHeader + 112
+                else
+                    optionalHeader + 96
+
+            let cliHeaderRVA = readInt32 bytes (dataDirectoryStart + 14 * 8)
+
+            if cliHeaderRVA = 0 then
                 None
             else
-                // COFF header at peOffset + 4
-                let coffHeader = peOffset + 4
-                let sizeOfOptionalHeader = int (readUInt16 bytes (coffHeader + 16))
-                let optionalHeader = coffHeader + 20
+                // Convert RVA to file offset using section headers
+                let numberOfSections = int (readUInt16 bytes (coffHeader + 2))
+                let sectionHeadersStart = optionalHeader + sizeOfOptionalHeader
 
-                // PE32 vs PE32+ - check magic
-                let magic = readUInt16 bytes optionalHeader
-                let isPE32Plus = magic = 0x20Bus
+                let rec findSection sectionIndex =
+                    if sectionIndex >= numberOfSections then
+                        None
+                    else
+                        let sectionOffset = sectionHeadersStart + sectionIndex * 40
+                        let virtualAddress = readInt32 bytes (sectionOffset + 12)
+                        let virtualSize = readInt32 bytes (sectionOffset + 8)
+                        let pointerToRawData = readInt32 bytes (sectionOffset + 20)
 
-                // CLI header RVA is in data directory entry 14 (0-indexed)
-                // PE32: starts at optionalHeader + 96; PE32+: starts at optionalHeader + 112
-                let dataDirectoryStart =
-                    if isPE32Plus then optionalHeader + 112
-                    else optionalHeader + 96
-
-                let cliHeaderRVA = readInt32 bytes (dataDirectoryStart + 14 * 8)
-
-                if cliHeaderRVA = 0 then
-                    None
-                else
-                    // Convert RVA to file offset using section headers
-                    let numberOfSections = int (readUInt16 bytes (coffHeader + 2))
-                    let sectionHeadersStart = optionalHeader + sizeOfOptionalHeader
-
-                    let rec findSection sectionIndex =
-                        if sectionIndex >= numberOfSections then
-                            None
+                        if cliHeaderRVA >= virtualAddress && cliHeaderRVA < virtualAddress + virtualSize then
+                            let cliHeaderOffset = cliHeaderRVA - virtualAddress + pointerToRawData
+                            // CLI header contains MetaData RVA at offset 8
+                            let metadataRVA = readInt32 bytes (cliHeaderOffset + 8)
+                            // Convert metadata RVA to file offset
+                            Some(metadataRVA - virtualAddress + pointerToRawData)
                         else
-                            let sectionOffset = sectionHeadersStart + sectionIndex * 40
-                            let virtualAddress = readInt32 bytes (sectionOffset + 12)
-                            let virtualSize = readInt32 bytes (sectionOffset + 8)
-                            let pointerToRawData = readInt32 bytes (sectionOffset + 20)
+                            findSection (sectionIndex + 1)
 
-                            if cliHeaderRVA >= virtualAddress && cliHeaderRVA < virtualAddress + virtualSize then
-                                let cliHeaderOffset = cliHeaderRVA - virtualAddress + pointerToRawData
-                                // CLI header contains MetaData RVA at offset 8
-                                let metadataRVA = readInt32 bytes (cliHeaderOffset + 8)
-                                // Convert metadata RVA to file offset
-                                Some (metadataRVA - virtualAddress + pointerToRawData)
-                            else
-                                findSection (sectionIndex + 1)
-
-                    findSection 0
+                findSection 0
 
 /// Stream header information.
 type private StreamHeader =
-    { Offset: int
-      Size: int
-      Name: string }
+    { Offset: int; Size: int; Name: string }
 
 /// Parse stream headers from metadata root.
 let private parseStreamHeaders (bytes: byte[]) (metadataRoot: int) : StreamHeader list =
     // Metadata root signature at offset 0
     let signature = readInt32 bytes metadataRoot
+
     if signature <> 0x424A5342 then // "BSJB"
         []
     else
@@ -123,12 +128,23 @@ let private parseStreamHeaders (bytes: byte[]) (metadataRoot: int) : StreamHeade
 
             // Read null-terminated stream name (padded to 4-byte boundary)
             let mutable nameEnd = currentOffset + 8
+
             while bytes.[nameEnd] <> 0uy do
                 nameEnd <- nameEnd + 1
-            let name = System.Text.Encoding.ASCII.GetString(bytes, currentOffset + 8, nameEnd - currentOffset - 8)
+
+            let name =
+                System.Text.Encoding.ASCII.GetString(bytes, currentOffset + 8, nameEnd - currentOffset - 8)
+
             let paddedNameLength = ((nameEnd - currentOffset - 8 + 1) + 3) &&& ~~~3
 
-            headers.Add({ Offset = metadataRoot + offset; Size = size; Name = name })
+            headers.Add(
+                {
+                    Offset = metadataRoot + offset
+                    Size = size
+                    Name = name
+                }
+            )
+
             currentOffset <- currentOffset + 8 + paddedNameLength
 
         headers |> Seq.toList
@@ -178,9 +194,9 @@ let metadataSnapshotFromBytes (bytes: byte[]) : MetadataSnapshot option =
         let userStringsStream = findStream streamHeaders "#US"
         let blobStream = findStream streamHeaders "#Blob"
         let guidStream = findStream streamHeaders "#GUID"
+
         let tablesStream =
-            findStream streamHeaders "#~"
-            |> Option.orElse (findStream streamHeaders "#-")
+            findStream streamHeaders "#~" |> Option.orElse (findStream streamHeaders "#-")
 
         match tablesStream with
         | None -> None
@@ -214,15 +230,19 @@ let metadataSnapshotFromBytes (bytes: byte[]) : MetadataSnapshot option =
                             i - stream.Offset + 2
 
             let heapSizeInfo =
-                { StringHeapSize = trimmedStringHeapSize
-                  UserStringHeapSize = userStringsStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0
-                  BlobHeapSize = blobStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0
-                  GuidHeapSize = guidStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0 }
+                {
+                    StringHeapSize = trimmedStringHeapSize
+                    UserStringHeapSize = userStringsStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0
+                    BlobHeapSize = blobStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0
+                    GuidHeapSize = guidStream |> Option.map (fun s -> s.Size) |> Option.defaultValue 0
+                }
 
             Some
-                { HeapSizes = heapSizeInfo
-                  TableRowCounts = rowCounts
-                  GuidHeapStart = heapSizeInfo.GuidHeapSize }
+                {
+                    HeapSizes = heapSizeInfo
+                    TableRowCounts = rowCounts
+                    GuidHeapStart = heapSizeInfo.GuidHeapSize
+                }
 
 /// Read GUID from #GUID stream at 1-based index.
 let readGuidFromBytes (bytes: byte[]) (guidIndex: int) : Guid option =
@@ -233,16 +253,18 @@ let readGuidFromBytes (bytes: byte[]) (guidIndex: int) : Guid option =
         | None -> None
         | Some metadataRoot ->
             let streamHeaders = parseStreamHeaders bytes metadataRoot
+
             match findStream streamHeaders "#GUID" with
             | None -> None
             | Some guidStream ->
                 // GUID indices are 1-based; each GUID is 16 bytes
                 let offset = guidStream.Offset + (guidIndex - 1) * 16
+
                 if offset + 16 > bytes.Length then
                     None
                 else
-                    let guidBytes = bytes.[offset..offset+15]
-                    Some (System.Guid(guidBytes))
+                    let guidBytes = bytes.[offset .. offset + 15]
+                    Some(System.Guid(guidBytes))
 
 // ============================================================================
 // Table row reading infrastructure
@@ -286,17 +308,18 @@ module private TableIndices =
     let GenericParamConstraint = 44
 
 /// Parsed metadata context for reading table rows.
-type private MetadataContext = {
-    Bytes: byte[]
-    HeapSizes: byte
-    RowCounts: int[]
-    TablesStart: int
-    StringIndexSize: int
-    GuidIndexSize: int
-    BlobIndexSize: int
-    StringsStreamOffset: int
-    BlobStreamOffset: int
-}
+type private MetadataContext =
+    {
+        Bytes: byte[]
+        HeapSizes: byte
+        RowCounts: int[]
+        TablesStart: int
+        StringIndexSize: int
+        GuidIndexSize: int
+        BlobIndexSize: int
+        StringsStreamOffset: int
+        BlobStreamOffset: int
+    }
 
 /// Calculate index size for a simple table reference (2 if <=65535 rows, else 4).
 let private tableIndexSize (rowCounts: int[]) (tableIndex: int) =
@@ -305,13 +328,25 @@ let private tableIndexSize (rowCounts: int[]) (tableIndex: int) =
 /// Calculate index size for a coded index (multiple possible tables).
 /// The tag takes some bits, so max row must fit in remaining bits.
 let private codedIndexSize (rowCounts: int[]) (tableIndices: int[]) (tagBits: int) =
-    let maxRows = tableIndices |> Array.map (fun i -> if i < 64 then rowCounts.[i] else 0) |> Array.max
+    let maxRows =
+        tableIndices
+        |> Array.map (fun i -> if i < 64 then rowCounts.[i] else 0)
+        |> Array.max
+
     let maxValue = (maxRows <<< tagBits) ||| ((1 <<< tagBits) - 1)
     if maxValue <= 65535 then 2 else 4
 
 /// ResolutionScope coded index: Module(0), ModuleRef(1), AssemblyRef(2), TypeRef(3) - 2 tag bits
 let private resolutionScopeSize (rowCounts: int[]) =
-    codedIndexSize rowCounts [| TableIndices.Module; TableIndices.ModuleRef; TableIndices.AssemblyRef; TableIndices.TypeRef |] 2
+    codedIndexSize
+        rowCounts
+        [|
+            TableIndices.Module
+            TableIndices.ModuleRef
+            TableIndices.AssemblyRef
+            TableIndices.TypeRef
+        |]
+        2
 
 /// TypeDefOrRef coded index: TypeDef(0), TypeRef(1), TypeSpec(2) - 2 tag bits
 let private typeDefOrRefSize (rowCounts: int[]) =
@@ -323,13 +358,32 @@ let private hasConstantSize (rowCounts: int[]) =
 
 /// HasCustomAttribute coded index - 5 tag bits (22 possible tables, ECMA-335 II.24.2.6)
 let private hasCustomAttributeSize (rowCounts: int[]) =
-    let tables = [| TableIndices.MethodDef; TableIndices.Field; TableIndices.TypeRef; TableIndices.TypeDef;
-                    TableIndices.Param; TableIndices.InterfaceImpl; TableIndices.MemberRef; TableIndices.Module;
-                    TableIndices.DeclSecurity; TableIndices.Property; TableIndices.Event;
-                    TableIndices.StandAloneSig; TableIndices.ModuleRef; TableIndices.TypeSpec;
-                    TableIndices.Assembly; TableIndices.AssemblyRef; TableIndices.File;
-                    TableIndices.ExportedType; TableIndices.ManifestResource; TableIndices.GenericParam;
-                    TableIndices.GenericParamConstraint; TableIndices.MethodSpec |]
+    let tables =
+        [|
+            TableIndices.MethodDef
+            TableIndices.Field
+            TableIndices.TypeRef
+            TableIndices.TypeDef
+            TableIndices.Param
+            TableIndices.InterfaceImpl
+            TableIndices.MemberRef
+            TableIndices.Module
+            TableIndices.DeclSecurity
+            TableIndices.Property
+            TableIndices.Event
+            TableIndices.StandAloneSig
+            TableIndices.ModuleRef
+            TableIndices.TypeSpec
+            TableIndices.Assembly
+            TableIndices.AssemblyRef
+            TableIndices.File
+            TableIndices.ExportedType
+            TableIndices.ManifestResource
+            TableIndices.GenericParam
+            TableIndices.GenericParamConstraint
+            TableIndices.MethodSpec
+        |]
+
     codedIndexSize rowCounts tables 5
 
 /// HasFieldMarshal coded index - 1 tag bit
@@ -342,8 +396,16 @@ let private hasDeclSecuritySize (rowCounts: int[]) =
 
 /// MemberRefParent coded index - 3 tag bits
 let private memberRefParentSize (rowCounts: int[]) =
-    codedIndexSize rowCounts [| TableIndices.TypeDef; TableIndices.TypeRef; TableIndices.ModuleRef;
-                                TableIndices.MethodDef; TableIndices.TypeSpec |] 3
+    codedIndexSize
+        rowCounts
+        [|
+            TableIndices.TypeDef
+            TableIndices.TypeRef
+            TableIndices.ModuleRef
+            TableIndices.MethodDef
+            TableIndices.TypeSpec
+        |]
+        3
 
 /// HasSemantics coded index - 1 tag bit
 let private hasSemanticsSize (rowCounts: int[]) =
@@ -386,7 +448,13 @@ let private calculateTableRowSizes (ctx: MetadataContext) : int[] =
     sizes.[1] <- resolutionScopeSize rc + strIdx + strIdx
 
     // TypeDef: Flags(4) + TypeName(str) + TypeNamespace(str) + Extends(TypeDefOrRef) + FieldList(Field) + MethodList(MethodDef)
-    sizes.[2] <- 4 + strIdx + strIdx + typeDefOrRefSize rc + tableIndexSize rc 4 + tableIndexSize rc 6
+    sizes.[2] <-
+        4
+        + strIdx
+        + strIdx
+        + typeDefOrRefSize rc
+        + tableIndexSize rc 4
+        + tableIndexSize rc 6
 
     // Field: Flags(2) + Name(str) + Signature(blob)
     sizes.[4] <- 2 + strIdx + blobIdx
@@ -492,7 +560,7 @@ let private calculateTableOffsets (ctx: MetadataContext) (rowSizes: int[]) : int
     let offsets = Array.zeroCreate tableCount
     let mutable currentOffset = ctx.TablesStart
 
-    for i in 0..tableCount-1 do
+    for i in 0 .. tableCount - 1 do
         offsets.[i] <- currentOffset
         currentOffset <- currentOffset + rowSizes.[i] * ctx.RowCounts.[i]
 
@@ -500,7 +568,10 @@ let private calculateTableOffsets (ctx: MetadataContext) (rowSizes: int[]) : int
 
 /// Read a heap index (2 or 4 bytes) from the given offset.
 let private readHeapIndex (bytes: byte[]) (offset: int) (indexSize: int) =
-    if indexSize = 2 then int (readUInt16 bytes offset) else readInt32 bytes offset
+    if indexSize = 2 then
+        int (readUInt16 bytes offset)
+    else
+        readInt32 bytes offset
 
 /// Create a metadata context for reading table rows.
 let private createMetadataContext (bytes: byte[]) : MetadataContext option =
@@ -508,9 +579,9 @@ let private createMetadataContext (bytes: byte[]) : MetadataContext option =
     | None -> None
     | Some metadataRoot ->
         let streamHeaders = parseStreamHeaders bytes metadataRoot
+
         let tablesStreamOpt =
-            findStream streamHeaders "#~"
-            |> Option.orElse (findStream streamHeaders "#-")
+            findStream streamHeaders "#~" |> Option.orElse (findStream streamHeaders "#-")
 
         match tablesStreamOpt with
         | None -> None
@@ -523,34 +594,49 @@ let private createMetadataContext (bytes: byte[]) : MetadataContext option =
 
             // Calculate where row data starts (after row count array)
             let mutable rowCountSize = 0
+
             for i in 0..63 do
                 if rowCounts.[i] > 0 then
                     rowCountSize <- rowCountSize + 4
+
             let tablesStart = tablesOffset + 24 + rowCountSize
 
-            let stringsOffset = streamHeaders |> List.tryFind (fun h -> h.Name = "#Strings") |> Option.map (fun h -> h.Offset) |> Option.defaultValue 0
-            let blobOffset = streamHeaders |> List.tryFind (fun h -> h.Name = "#Blob") |> Option.map (fun h -> h.Offset) |> Option.defaultValue 0
+            let stringsOffset =
+                streamHeaders
+                |> List.tryFind (fun h -> h.Name = "#Strings")
+                |> Option.map (fun h -> h.Offset)
+                |> Option.defaultValue 0
 
-            Some {
-                Bytes = bytes
-                HeapSizes = heapSizes
-                RowCounts = rowCounts
-                TablesStart = tablesStart
-                StringIndexSize = if stringsBig then 4 else 2
-                GuidIndexSize = if guidsBig then 4 else 2
-                BlobIndexSize = if blobsBig then 4 else 2
-                StringsStreamOffset = stringsOffset
-                BlobStreamOffset = blobOffset
-            }
+            let blobOffset =
+                streamHeaders
+                |> List.tryFind (fun h -> h.Name = "#Blob")
+                |> Option.map (fun h -> h.Offset)
+                |> Option.defaultValue 0
+
+            Some
+                {
+                    Bytes = bytes
+                    HeapSizes = heapSizes
+                    RowCounts = rowCounts
+                    TablesStart = tablesStart
+                    StringIndexSize = if stringsBig then 4 else 2
+                    GuidIndexSize = if guidsBig then 4 else 2
+                    BlobIndexSize = if blobsBig then 4 else 2
+                    StringsStreamOffset = stringsOffset
+                    BlobStreamOffset = blobOffset
+                }
 
 /// Read a null-terminated string from the #Strings heap.
 let private readStringFromHeap (ctx: MetadataContext) (offset: int) : string =
-    if offset = 0 then ""
+    if offset = 0 then
+        ""
     else
         let start = ctx.StringsStreamOffset + offset
         let mutable endPos = start
+
         while ctx.Bytes.[endPos] <> 0uy do
             endPos <- endPos + 1
+
         System.Text.Encoding.UTF8.GetString(ctx.Bytes, start, endPos - start)
 
 // ============================================================================
@@ -558,14 +644,15 @@ let private readStringFromHeap (ctx: MetadataContext) (offset: int) : string =
 // ============================================================================
 
 /// MethodDef row data needed for baseline cache.
-type MethodDefRowData = {
-    RVA: int
-    ImplFlags: int
-    Flags: int
-    NameOffset: int
-    SignatureOffset: int
-    ParamList: int  // First Param row ID (1-based)
-}
+type MethodDefRowData =
+    {
+        RVA: int
+        ImplFlags: int
+        Flags: int
+        NameOffset: int
+        SignatureOffset: int
+        ParamList: int // First Param row ID (1-based)
+    }
 
 /// Read a MethodDef row by 1-based row ID.
 let private readMethodDefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : MethodDefRowData option =
@@ -581,17 +668,30 @@ let private readMethodDefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffs
         let implFlags = int (readUInt16 bytes (offset + 4))
         let flags = int (readUInt16 bytes (offset + 6))
         let nameOffset = readHeapIndex bytes (offset + 8) ctx.StringIndexSize
-        let sigOffset = readHeapIndex bytes (offset + 8 + ctx.StringIndexSize) ctx.BlobIndexSize
-        let paramList = readHeapIndex bytes (offset + 8 + ctx.StringIndexSize + ctx.BlobIndexSize) (tableIndexSize ctx.RowCounts TableIndices.Param)
 
-        Some { RVA = rva; ImplFlags = implFlags; Flags = flags; NameOffset = nameOffset; SignatureOffset = sigOffset; ParamList = paramList }
+        let sigOffset =
+            readHeapIndex bytes (offset + 8 + ctx.StringIndexSize) ctx.BlobIndexSize
+
+        let paramList =
+            readHeapIndex bytes (offset + 8 + ctx.StringIndexSize + ctx.BlobIndexSize) (tableIndexSize ctx.RowCounts TableIndices.Param)
+
+        Some
+            {
+                RVA = rva
+                ImplFlags = implFlags
+                Flags = flags
+                NameOffset = nameOffset
+                SignatureOffset = sigOffset
+                ParamList = paramList
+            }
 
 /// Param row data.
-type ParamRowData = {
-    Flags: int
-    Sequence: int
-    NameOffset: int
-}
+type ParamRowData =
+    {
+        Flags: int
+        Sequence: int
+        NameOffset: int
+    }
 
 /// Read a Param row by 1-based row ID.
 let private readParamRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : ParamRowData option =
@@ -607,14 +707,20 @@ let private readParamRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets:
         let sequence = int (readUInt16 bytes (offset + 2))
         let nameOffset = readHeapIndex bytes (offset + 4) ctx.StringIndexSize
 
-        Some { Flags = flags; Sequence = sequence; NameOffset = nameOffset }
+        Some
+            {
+                Flags = flags
+                Sequence = sequence
+                NameOffset = nameOffset
+            }
 
 /// Property row data.
-type PropertyRowData = {
-    Flags: int
-    NameOffset: int
-    SignatureOffset: int
-}
+type PropertyRowData =
+    {
+        Flags: int
+        NameOffset: int
+        SignatureOffset: int
+    }
 
 /// Read a Property row by 1-based row ID.
 let private readPropertyRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : PropertyRowData option =
@@ -628,16 +734,24 @@ let private readPropertyRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffse
         // Property: Flags(2) + Name(str) + Type(blob)
         let flags = int (readUInt16 bytes offset)
         let nameOffset = readHeapIndex bytes (offset + 2) ctx.StringIndexSize
-        let sigOffset = readHeapIndex bytes (offset + 2 + ctx.StringIndexSize) ctx.BlobIndexSize
 
-        Some { Flags = flags; NameOffset = nameOffset; SignatureOffset = sigOffset }
+        let sigOffset =
+            readHeapIndex bytes (offset + 2 + ctx.StringIndexSize) ctx.BlobIndexSize
+
+        Some
+            {
+                Flags = flags
+                NameOffset = nameOffset
+                SignatureOffset = sigOffset
+            }
 
 /// Event row data.
-type EventRowData = {
-    Flags: int
-    NameOffset: int
-    EventType: int  // Coded index (TypeDefOrRef)
-}
+type EventRowData =
+    {
+        Flags: int
+        NameOffset: int
+        EventType: int // Coded index (TypeDefOrRef)
+    }
 
 /// Read an Event row by 1-based row ID.
 let private readEventRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : EventRowData option =
@@ -652,14 +766,20 @@ let private readEventRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets:
         let flags = int (readUInt16 bytes offset)
         let nameOffset = readHeapIndex bytes (offset + 2) ctx.StringIndexSize
 
-        Some { Flags = flags; NameOffset = nameOffset; EventType = 0 }
+        Some
+            {
+                Flags = flags
+                NameOffset = nameOffset
+                EventType = 0
+            }
 
 /// TypeRef row data.
-type TypeRefRowData = {
-    ResolutionScope: int  // Coded index
-    NameOffset: int
-    NamespaceOffset: int
-}
+type TypeRefRowData =
+    {
+        ResolutionScope: int // Coded index
+        NameOffset: int
+        NamespaceOffset: int
+    }
 
 /// Read a TypeRef row by 1-based row ID.
 let private readTypeRefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : TypeRefRowData option =
@@ -674,17 +794,25 @@ let private readTypeRefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffset
         // TypeRef: ResolutionScope(coded) + TypeName(str) + TypeNamespace(str)
         let resScope = readHeapIndex bytes offset resScopeSize
         let nameOffset = readHeapIndex bytes (offset + resScopeSize) ctx.StringIndexSize
-        let nsOffset = readHeapIndex bytes (offset + resScopeSize + ctx.StringIndexSize) ctx.StringIndexSize
 
-        Some { ResolutionScope = resScope; NameOffset = nameOffset; NamespaceOffset = nsOffset }
+        let nsOffset =
+            readHeapIndex bytes (offset + resScopeSize + ctx.StringIndexSize) ctx.StringIndexSize
+
+        Some
+            {
+                ResolutionScope = resScope
+                NameOffset = nameOffset
+                NamespaceOffset = nsOffset
+            }
 
 /// MemberRef row data.
-type MemberRefRowData = {
-    /// Raw MemberRefParent coded index value (tag bits 0-2, row id above).
-    Parent: int
-    NameOffset: int
-    SignatureOffset: int
-}
+type MemberRefRowData =
+    {
+        /// Raw MemberRefParent coded index value (tag bits 0-2, row id above).
+        Parent: int
+        NameOffset: int
+        SignatureOffset: int
+    }
 
 /// Read a MemberRef row by 1-based row ID.
 let private readMemberRefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : MemberRefRowData option =
@@ -699,21 +827,34 @@ let private readMemberRefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffs
         // MemberRef: Class(MemberRefParent) + Name(str) + Signature(blob)
         let parent = readHeapIndex bytes offset parentSize
         let nameOffset = readHeapIndex bytes (offset + parentSize) ctx.StringIndexSize
-        let sigOffset = readHeapIndex bytes (offset + parentSize + ctx.StringIndexSize) ctx.BlobIndexSize
 
-        Some { Parent = parent; NameOffset = nameOffset; SignatureOffset = sigOffset }
+        let sigOffset =
+            readHeapIndex bytes (offset + parentSize + ctx.StringIndexSize) ctx.BlobIndexSize
+
+        Some
+            {
+                Parent = parent
+                NameOffset = nameOffset
+                SignatureOffset = sigOffset
+            }
 
 /// CustomAttribute row data.
-type CustomAttributeRowData = {
-    /// Raw HasCustomAttribute coded index value (tag bits 0-4, row id above).
-    Parent: int
-    /// Raw CustomAttributeType coded index value (tag bits 0-2, row id above).
-    Constructor: int
-    ValueOffset: int
-}
+type CustomAttributeRowData =
+    {
+        /// Raw HasCustomAttribute coded index value (tag bits 0-4, row id above).
+        Parent: int
+        /// Raw CustomAttributeType coded index value (tag bits 0-2, row id above).
+        Constructor: int
+        ValueOffset: int
+    }
 
 /// Read a CustomAttribute row by 1-based row ID.
-let private readCustomAttributeRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : CustomAttributeRowData option =
+let private readCustomAttributeRow
+    (ctx: MetadataContext)
+    (rowSizes: int[])
+    (tableOffsets: int[])
+    (rowId: int)
+    : CustomAttributeRowData option =
     if rowId < 1 || rowId > ctx.RowCounts.[TableIndices.CustomAttribute] then
         None
     else
@@ -726,9 +867,16 @@ let private readCustomAttributeRow (ctx: MetadataContext) (rowSizes: int[]) (tab
         // CustomAttribute: Parent(HasCustomAttribute) + Type(CustomAttributeType) + Value(blob)
         let parent = readHeapIndex bytes offset parentSize
         let ctor = readHeapIndex bytes (offset + parentSize) ctorSize
-        let valueOffset = readHeapIndex bytes (offset + parentSize + ctorSize) ctx.BlobIndexSize
 
-        Some { Parent = parent; Constructor = ctor; ValueOffset = valueOffset }
+        let valueOffset =
+            readHeapIndex bytes (offset + parentSize + ctorSize) ctx.BlobIndexSize
+
+        Some
+            {
+                Parent = parent
+                Constructor = ctor
+                ValueOffset = valueOffset
+            }
 
 /// Read a TypeSpec row by 1-based row ID; the row is a single #Blob signature column.
 let private readTypeSpecRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : int option =
@@ -748,8 +896,10 @@ let private readBlobFromHeap (ctx: MetadataContext) (offset: int) : byte[] =
         let b0 = int ctx.Bytes.[start]
 
         let length, headerSize =
-            if b0 &&& 0x80 = 0 then b0, 1
-            elif b0 &&& 0xC0 = 0x80 then (((b0 &&& 0x3F) <<< 8) ||| int ctx.Bytes.[start + 1]), 2
+            if b0 &&& 0x80 = 0 then
+                b0, 1
+            elif b0 &&& 0xC0 = 0x80 then
+                (((b0 &&& 0x3F) <<< 8) ||| int ctx.Bytes.[start + 1]), 2
             else
                 (((b0 &&& 0x1F) <<< 24)
                  ||| (int ctx.Bytes.[start + 1] <<< 16)
@@ -763,17 +913,18 @@ let private readBlobFromHeap (ctx: MetadataContext) (offset: int) : byte[] =
             ctx.Bytes.[start + headerSize .. start + headerSize + length - 1]
 
 /// AssemblyRef row data.
-type AssemblyRefRowData = {
-    MajorVersion: int
-    MinorVersion: int
-    BuildNumber: int
-    RevisionNumber: int
-    Flags: int
-    PublicKeyOrToken: int  // Blob offset
-    NameOffset: int
-    Culture: int  // String offset
-    HashValue: int  // Blob offset
-}
+type AssemblyRefRowData =
+    {
+        MajorVersion: int
+        MinorVersion: int
+        BuildNumber: int
+        RevisionNumber: int
+        Flags: int
+        PublicKeyOrToken: int // Blob offset
+        NameOffset: int
+        Culture: int // String offset
+        HashValue: int // Blob offset
+    }
 
 /// Read an AssemblyRef row by 1-based row ID.
 let private readAssemblyRefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOffsets: int[]) (rowId: int) : AssemblyRefRowData option =
@@ -792,30 +943,38 @@ let private readAssemblyRefRow (ctx: MetadataContext) (rowSizes: int[]) (tableOf
         let rev = int (readUInt16 bytes (offset + 6))
         let flags = readInt32 bytes (offset + 8)
         let pkOffset = readHeapIndex bytes (offset + 12) ctx.BlobIndexSize
-        let nameOffset = readHeapIndex bytes (offset + 12 + ctx.BlobIndexSize) ctx.StringIndexSize
-        let cultureOffset = readHeapIndex bytes (offset + 12 + ctx.BlobIndexSize + ctx.StringIndexSize) ctx.StringIndexSize
-        let hashOffset = readHeapIndex bytes (offset + 12 + ctx.BlobIndexSize + ctx.StringIndexSize + ctx.StringIndexSize) ctx.BlobIndexSize
 
-        Some {
-            MajorVersion = major
-            MinorVersion = minor
-            BuildNumber = build
-            RevisionNumber = rev
-            Flags = flags
-            PublicKeyOrToken = pkOffset
-            NameOffset = nameOffset
-            Culture = cultureOffset
-            HashValue = hashOffset
-        }
+        let nameOffset =
+            readHeapIndex bytes (offset + 12 + ctx.BlobIndexSize) ctx.StringIndexSize
+
+        let cultureOffset =
+            readHeapIndex bytes (offset + 12 + ctx.BlobIndexSize + ctx.StringIndexSize) ctx.StringIndexSize
+
+        let hashOffset =
+            readHeapIndex bytes (offset + 12 + ctx.BlobIndexSize + ctx.StringIndexSize + ctx.StringIndexSize) ctx.BlobIndexSize
+
+        Some
+            {
+                MajorVersion = major
+                MinorVersion = minor
+                BuildNumber = build
+                RevisionNumber = rev
+                Flags = flags
+                PublicKeyOrToken = pkOffset
+                NameOffset = nameOffset
+                Culture = cultureOffset
+                HashValue = hashOffset
+            }
 
 /// Module row data (including name offset).
-type ModuleRowData = {
-    Generation: int
-    NameOffset: int
-    MvidIndex: int
-    EncIdIndex: int
-    EncBaseIdIndex: int
-}
+type ModuleRowData =
+    {
+        Generation: int
+        NameOffset: int
+        MvidIndex: int
+        EncIdIndex: int
+        EncBaseIdIndex: int
+    }
 
 /// Read the Module row (there's only one, row 1).
 let private readModuleRow (ctx: MetadataContext) (_rowSizes: int[]) (tableOffsets: int[]) : ModuleRowData option =
@@ -828,11 +987,24 @@ let private readModuleRow (ctx: MetadataContext) (_rowSizes: int[]) (tableOffset
         // Module: Generation(2) + Name(str) + Mvid(guid) + EncId(guid) + EncBaseId(guid)
         let generation = int (readUInt16 bytes offset)
         let nameOffset = readHeapIndex bytes (offset + 2) ctx.StringIndexSize
-        let mvidIndex = readHeapIndex bytes (offset + 2 + ctx.StringIndexSize) ctx.GuidIndexSize
-        let encIdIndex = readHeapIndex bytes (offset + 2 + ctx.StringIndexSize + ctx.GuidIndexSize) ctx.GuidIndexSize
-        let encBaseIdIndex = readHeapIndex bytes (offset + 2 + ctx.StringIndexSize + ctx.GuidIndexSize + ctx.GuidIndexSize) ctx.GuidIndexSize
 
-        Some { Generation = generation; NameOffset = nameOffset; MvidIndex = mvidIndex; EncIdIndex = encIdIndex; EncBaseIdIndex = encBaseIdIndex }
+        let mvidIndex =
+            readHeapIndex bytes (offset + 2 + ctx.StringIndexSize) ctx.GuidIndexSize
+
+        let encIdIndex =
+            readHeapIndex bytes (offset + 2 + ctx.StringIndexSize + ctx.GuidIndexSize) ctx.GuidIndexSize
+
+        let encBaseIdIndex =
+            readHeapIndex bytes (offset + 2 + ctx.StringIndexSize + ctx.GuidIndexSize + ctx.GuidIndexSize) ctx.GuidIndexSize
+
+        Some
+            {
+                Generation = generation
+                NameOffset = nameOffset
+                MvidIndex = mvidIndex
+                EncIdIndex = encIdIndex
+                EncBaseIdIndex = encBaseIdIndex
+            }
 
 // ============================================================================
 // Public API for baseline metadata extraction
@@ -848,16 +1020,18 @@ type BaselineMetadataReader private (ctx: MetadataContext, rowSizes: int[], tabl
         | Some ctx ->
             let rowSizes = calculateTableRowSizes ctx
             let tableOffsets = calculateTableOffsets ctx rowSizes
-            Some (BaselineMetadataReader(ctx, rowSizes, tableOffsets))
+            Some(BaselineMetadataReader(ctx, rowSizes, tableOffsets))
 
     /// Get the table row counts.
     member _.RowCounts = ctx.RowCounts
 
     /// Read a MethodDef row by 1-based row ID.
-    member _.GetMethodDef(rowId: int) = readMethodDefRow ctx rowSizes tableOffsets rowId
+    member _.GetMethodDef(rowId: int) =
+        readMethodDefRow ctx rowSizes tableOffsets rowId
 
     /// Read a Param row by 1-based row ID.
-    member _.GetParam(rowId: int) = readParamRow ctx rowSizes tableOffsets rowId
+    member _.GetParam(rowId: int) =
+        readParamRow ctx rowSizes tableOffsets rowId
 
     /// Get the last param row for a method (based on next method's ParamList or table end).
     member this.GetMethodParamRange(methodRowId: int) : (int * int) option =
@@ -865,6 +1039,7 @@ type BaselineMetadataReader private (ctx: MetadataContext, rowSizes: int[], tabl
         | None -> None
         | Some methodDef ->
             let firstParam = methodDef.ParamList
+
             let lastParam =
                 if methodRowId < ctx.RowCounts.[TableIndices.MethodDef] then
                     match this.GetMethodDef(methodRowId + 1) with
@@ -872,20 +1047,27 @@ type BaselineMetadataReader private (ctx: MetadataContext, rowSizes: int[], tabl
                     | None -> ctx.RowCounts.[TableIndices.Param]
                 else
                     ctx.RowCounts.[TableIndices.Param]
-            if firstParam > lastParam then None
-            else Some (firstParam, lastParam)
+
+            if firstParam > lastParam then
+                None
+            else
+                Some(firstParam, lastParam)
 
     /// Read a Property row by 1-based row ID.
-    member _.GetProperty(rowId: int) = readPropertyRow ctx rowSizes tableOffsets rowId
+    member _.GetProperty(rowId: int) =
+        readPropertyRow ctx rowSizes tableOffsets rowId
 
     /// Read an Event row by 1-based row ID.
-    member _.GetEvent(rowId: int) = readEventRow ctx rowSizes tableOffsets rowId
+    member _.GetEvent(rowId: int) =
+        readEventRow ctx rowSizes tableOffsets rowId
 
     /// Read a TypeRef row by 1-based row ID.
-    member _.GetTypeRef(rowId: int) = readTypeRefRow ctx rowSizes tableOffsets rowId
+    member _.GetTypeRef(rowId: int) =
+        readTypeRefRow ctx rowSizes tableOffsets rowId
 
     /// Read an AssemblyRef row by 1-based row ID.
-    member _.GetAssemblyRef(rowId: int) = readAssemblyRefRow ctx rowSizes tableOffsets rowId
+    member _.GetAssemblyRef(rowId: int) =
+        readAssemblyRefRow ctx rowSizes tableOffsets rowId
 
     /// Get the AssemblyRef row count.
     member _.AssemblyRefCount = ctx.RowCounts.[TableIndices.AssemblyRef]
@@ -900,13 +1082,15 @@ type BaselineMetadataReader private (ctx: MetadataContext, rowSizes: int[], tabl
     member _.GetString(offset: int) = readStringFromHeap ctx offset
 
     /// Read a MemberRef row by 1-based row ID.
-    member _.GetMemberRef(rowId: int) = readMemberRefRow ctx rowSizes tableOffsets rowId
+    member _.GetMemberRef(rowId: int) =
+        readMemberRefRow ctx rowSizes tableOffsets rowId
 
     /// Get the MemberRef row count.
     member _.MemberRefCount = ctx.RowCounts.[TableIndices.MemberRef]
 
     /// Read a TypeSpec row's signature blob offset by 1-based row ID.
-    member _.GetTypeSpecSignatureOffset(rowId: int) = readTypeSpecRow ctx rowSizes tableOffsets rowId
+    member _.GetTypeSpecSignatureOffset(rowId: int) =
+        readTypeSpecRow ctx rowSizes tableOffsets rowId
 
     /// Get the TypeSpec row count.
     member _.TypeSpecCount = ctx.RowCounts.[TableIndices.TypeSpec]
@@ -915,7 +1099,8 @@ type BaselineMetadataReader private (ctx: MetadataContext, rowSizes: int[], tabl
     member _.GetBlob(offset: int) = readBlobFromHeap ctx offset
 
     /// Read a CustomAttribute row by 1-based row ID.
-    member _.GetCustomAttributeRow(rowId: int) = readCustomAttributeRow ctx rowSizes tableOffsets rowId
+    member _.GetCustomAttributeRow(rowId: int) =
+        readCustomAttributeRow ctx rowSizes tableOffsets rowId
 
     /// Get the CustomAttribute row count.
     member _.CustomAttributeCount = ctx.RowCounts.[TableIndices.CustomAttribute]
@@ -988,6 +1173,7 @@ type BaselineMetadataReader private (ctx: MetadataContext, rowSizes: int[], tabl
     member _.DecodeResolutionScope(codedIndex: int) : (int * int) =
         let tag = codedIndex &&& 0x3
         let rowId = codedIndex >>> 2
+
         let tableIndex =
             match tag with
             | 0 -> TableIndices.Module
@@ -995,6 +1181,7 @@ type BaselineMetadataReader private (ctx: MetadataContext, rowSizes: int[], tabl
             | 2 -> TableIndices.AssemblyRef
             | 3 -> TableIndices.TypeRef
             | _ -> -1
+
         (tableIndex, rowId)
 
 /// Read Module.Mvid GUID from assembly bytes.
@@ -1004,9 +1191,9 @@ let readModuleMvidFromBytes (bytes: byte[]) : System.Guid option =
     | None -> None
     | Some metadataRoot ->
         let streamHeaders = parseStreamHeaders bytes metadataRoot
+
         let tablesStreamOpt =
-            findStream streamHeaders "#~"
-            |> Option.orElse (findStream streamHeaders "#-")
+            findStream streamHeaders "#~" |> Option.orElse (findStream streamHeaders "#-")
 
         match tablesStreamOpt with
         | None -> None
@@ -1026,6 +1213,7 @@ let readModuleMvidFromBytes (bytes: byte[]) : System.Guid option =
 
                 // Row counts end, then rows start
                 let mutable rowCountSize = 0
+
                 for i in 0..63 do
                     if rowCounts.[i] > 0 then
                         rowCountSize <- rowCountSize + 4
@@ -1061,13 +1249,14 @@ module private PdbTableIndices =
 
 /// Portable PDB metadata snapshot.
 /// Contains table row counts and entry point info for hot reload baseline.
-type PortablePdbMetadata = {
-    /// Row counts for PDB tables (indexed by PDB table index - 0x30)
-    /// Index 0 = Document, 1 = MethodDebugInformation, etc.
-    TableRowCounts: int[]
-    /// Entry point method token (if present)
-    EntryPointToken: int option
-}
+type PortablePdbMetadata =
+    {
+        /// Row counts for PDB tables (indexed by PDB table index - 0x30)
+        /// Index 0 = Document, 1 = MethodDebugInformation, etc.
+        TableRowCounts: int[]
+        /// Entry point method token (if present)
+        EntryPointToken: int option
+    }
 
 /// Parse the #Pdb stream to extract PDB-specific info.
 /// The #Pdb stream contains: PdbId (20 bytes), EntryPoint token (4 bytes), ReferencedTypeSystemTables (8 bytes), TypeSystemTableRows (var)
@@ -1099,6 +1288,7 @@ let private parsePdbTablesStream (bytes: byte[]) (tablesStream: StreamHeader) : 
             // Map table index to PDB array index
             if i >= 0x30 && i <= 0x37 then
                 pdbRowCounts.[i - 0x30] <- count
+
             rowCountOffset <- rowCountOffset + 4
 
     pdbRowCounts
@@ -1113,6 +1303,7 @@ let readPortablePdbMetadata (pdbBytes: byte[]) : PortablePdbMetadata option =
     else
         try
             let signature = readInt32 pdbBytes 0
+
             if signature <> 0x424A5342 then // "BSJB"
                 None
             else
@@ -1122,8 +1313,8 @@ let readPortablePdbMetadata (pdbBytes: byte[]) : PortablePdbMetadata option =
 
                 // Find required streams
                 let tablesStreamOpt =
-                    findStream streamHeaders "#~"
-                    |> Option.orElse (findStream streamHeaders "#-")
+                    findStream streamHeaders "#~" |> Option.orElse (findStream streamHeaders "#-")
+
                 let pdbStreamOpt = findStream streamHeaders "#Pdb"
 
                 match tablesStreamOpt with
@@ -1132,10 +1323,11 @@ let readPortablePdbMetadata (pdbBytes: byte[]) : PortablePdbMetadata option =
                     let rowCounts = parsePdbTablesStream pdbBytes tablesStream
                     let entryPoint = pdbStreamOpt |> Option.bind (fun s -> parsePdbStream pdbBytes s)
 
-                    Some {
-                        TableRowCounts = rowCounts
-                        EntryPointToken = entryPoint
-                    }
+                    Some
+                        {
+                            TableRowCounts = rowCounts
+                            EntryPointToken = entryPoint
+                        }
         with
         | :? System.IndexOutOfRangeException -> None
         | :? System.ArgumentOutOfRangeException -> None

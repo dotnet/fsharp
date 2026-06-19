@@ -12,18 +12,22 @@ type SymbolEditKind =
 [<RequireQualifiedAccess>]
 /// Captures the change metadata for a single symbol, including hashes for change detection.
 type SymbolChange =
-    { Symbol: SymbolId
-      EditKind: SymbolEditKind
-      BaselineHash: int option
-      UpdatedHash: int option
-      IsSynthesized: bool
-      ContainingEntity: string option }
+    {
+        Symbol: SymbolId
+        EditKind: SymbolEditKind
+        BaselineHash: int option
+        UpdatedHash: int option
+        IsSynthesized: bool
+        ContainingEntity: string option
+    }
 
 [<RequireQualifiedAccess>]
 /// Aggregates semantic edits and rude edits for the current compilation unit.
 type FSharpDefinitionMap =
-    { Changes: SymbolChange list
-      RudeEdits: RudeEdit list }
+    {
+        Changes: SymbolChange list
+        RudeEdits: RudeEdit list
+    }
 
 module FSharpDefinitionMap =
     /// Convert a typed-tree diff result into a definition map suitable for downstream delta emission.
@@ -38,14 +42,19 @@ module FSharpDefinitionMap =
                     | SemanticEditKind.TypeDefinition -> SymbolEditKind.Updated edit.Kind
                     | SemanticEditKind.Delete -> SymbolEditKind.Deleted
 
-                { Symbol = edit.Symbol
-                  EditKind = editKind
-                  BaselineHash = edit.BaselineHash
-                  UpdatedHash = edit.UpdatedHash
-                  IsSynthesized = edit.IsSynthesized
-                  ContainingEntity = edit.ContainingEntity })
+                {
+                    Symbol = edit.Symbol
+                    EditKind = editKind
+                    BaselineHash = edit.BaselineHash
+                    UpdatedHash = edit.UpdatedHash
+                    IsSynthesized = edit.IsSynthesized
+                    ContainingEntity = edit.ContainingEntity
+                })
 
-        { Changes = changes; RudeEdits = diff.RudeEdits }
+        {
+            Changes = changes
+            RudeEdits = diff.RudeEdits
+        }
 
     /// Retrieves all symbols newly added in the updated compilation.
     let added (map: FSharpDefinitionMap) : SymbolId list =

@@ -14,22 +14,19 @@ type FSharpSynthesizedTypeMaps() =
     let ordinals = ConcurrentDictionary<string, int>()
 
     let makeHotReloadName (baseName: string) ordinal =
-        let suffix =
-            if ordinal <= 0 then
-                "hotreload"
-            else
-                $"hotreload-{ordinal}"
+        let suffix = if ordinal <= 0 then "hotreload" else $"hotreload-{ordinal}"
 
         CompilerGeneratedNameSuffix baseName suffix
 
     let createBucket (names: string[]) =
         let bucket = ResizeArray<string>()
+
         for name in names do
             bucket.Add(name)
+
         bucket
 
-    let computeName basicName index =
-        makeHotReloadName basicName index
+    let computeName basicName index = makeHotReloadName basicName index
 
     let tryGetHotReloadOrdinal (basicName: string) (name: string) =
         let hotReloadPrefix = basicName + "@hotreload"
@@ -38,6 +35,7 @@ type FSharpSynthesizedTypeMaps() =
             Some 0
         elif name.StartsWith(hotReloadPrefix + "-", StringComparison.Ordinal) then
             let suffix = name.Substring(hotReloadPrefix.Length + 1)
+
             match Int32.TryParse suffix with
             | true, ordinal when ordinal > 0 -> Some ordinal
             | _ -> None
@@ -80,7 +78,9 @@ type FSharpSynthesizedTypeMaps() =
                     sorted |> Array.map (fun (_, _, ordinalOpt) -> ordinalOpt.Value) |> Array.max
 
                 let namesByOrdinal =
-                    sorted |> Array.map (fun (_, name, ordinalOpt) -> ordinalOpt.Value, name) |> Map.ofArray
+                    sorted
+                    |> Array.map (fun (_, name, ordinalOpt) -> ordinalOpt.Value, name)
+                    |> Map.ofArray
 
                 Array.init (maxOrdinal + 1) (fun slot ->
                     match Map.tryFind slot namesByOrdinal with
@@ -96,8 +96,16 @@ type FSharpSynthesizedTypeMaps() =
         // Snapshots can contain legacy/basic synthesized names (for example "@_instance")
         // alongside hot-reload-managed names. Accept both forms so existing sessions restore.
         let expectedPrefix = basicName + "@"
-        if not (name.Equals(basicName, StringComparison.Ordinal) || name.StartsWith(expectedPrefix, StringComparison.Ordinal)) then
-            invalidArg "snapshot" $"Name '{name}' at index {index} should equal '{basicName}' or start with '{expectedPrefix}' for basicName '{basicName}'"
+
+        if
+            not (
+                name.Equals(basicName, StringComparison.Ordinal)
+                || name.StartsWith(expectedPrefix, StringComparison.Ordinal)
+            )
+        then
+            invalidArg
+                "snapshot"
+                $"Name '{name}' at index {index} should equal '{basicName}' or start with '{expectedPrefix}' for basicName '{basicName}'"
 
     member _.GetOrAddName(basicName: string) =
         lock syncLock (fun () ->
@@ -131,7 +139,10 @@ type FSharpSynthesizedTypeMaps() =
     member _.Snapshot: seq<struct (string * string[])> =
         lock syncLock (fun () ->
             // Materialize the snapshot under the lock to avoid race conditions
-            [| for KeyValue(key, bucket) in buckets do yield struct (key, bucket.ToArray()) |]
+            [|
+                for KeyValue(key, bucket) in buckets do
+                    yield struct (key, bucket.ToArray())
+            |]
             :> seq<struct (string * string[])>)
 
     /// <summary>Loads a previously captured snapshot, replacing any existing allocation state.</summary>
@@ -157,5 +168,5 @@ type FSharpSynthesizedTypeMaps() =
 /// <summary>Retrieves a stable compiler-generated name or falls back to the provided generator.</summary>
 let nextName (mapOpt: ICompilerGeneratedNameMap option) basicName generate =
     match mapOpt with
-    | Some (map: ICompilerGeneratedNameMap) -> map.GetOrAddName(basicName)
+    | Some(map: ICompilerGeneratedNameMap) -> map.GetOrAddName(basicName)
     | None -> generate ()

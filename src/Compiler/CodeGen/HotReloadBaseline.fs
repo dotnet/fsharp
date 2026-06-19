@@ -15,6 +15,7 @@ open FSharp.Compiler.TypedTree
 
 module ILBaselineReader = FSharp.Compiler.AbstractIL.ILBaselineReader
 module ActiveStatementAnalysis = FSharp.Compiler.HotReload.ActiveStatementAnalysis
+
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.EnvironmentHelpers
 
@@ -49,7 +50,6 @@ type MethodDefinitionKey =
     }
 
 /// Baseline metadata handles reused to keep heap offsets stable across deltas.
-
 /// <summary>Stable identifier for a method parameter (sequence number within a method).</summary>
 type ParameterDefinitionKey =
     {
@@ -83,12 +83,14 @@ type EventDefinitionKey =
     }
 
 type MethodDefinitionMetadataHandles =
-    { NameOffset: StringOffset option
-      SignatureOffset: BlobOffset option
-      FirstParameterRowId: int option
-      Rva: int option
-      Attributes: MethodAttributes option
-      ImplAttributes: MethodImplAttributes option }
+    {
+        NameOffset: StringOffset option
+        SignatureOffset: BlobOffset option
+        FirstParameterRowId: int option
+        Rva: int option
+        Attributes: MethodAttributes option
+        ImplAttributes: MethodImplAttributes option
+    }
 
 /// <summary>
 /// Typed identity for a TypeRef resolution scope. Baseline TypeRef tables routinely contain
@@ -105,22 +107,28 @@ type TypeReferenceScope =
     | Nested of enclosing: TypeReferenceKey
 
 and TypeReferenceKey =
-    { Scope: TypeReferenceScope
-      Namespace: string
-      Name: string }
+    {
+        Scope: TypeReferenceScope
+        Namespace: string
+        Name: string
+    }
 
 type ParameterDefinitionMetadataHandles =
-    { NameOffset: StringOffset option
-      /// Baseline parameter name (resolved from the #Strings heap). Param row re-emission
-      /// reuses the baseline name offset only when the fresh compile's name matches;
-      /// a differing name (parameter rename under UpdateParameters) writes the fresh name
-      /// into the delta string heap instead.
-      Name: string option
-      RowId: int option }
+    {
+        NameOffset: StringOffset option
+        /// Baseline parameter name (resolved from the #Strings heap). Param row re-emission
+        /// reuses the baseline name offset only when the fresh compile's name matches;
+        /// a differing name (parameter rename under UpdateParameters) writes the fresh name
+        /// into the delta string heap instead.
+        Name: string option
+        RowId: int option
+    }
 
 type PropertyDefinitionMetadataHandles =
-    { NameOffset: StringOffset option
-      SignatureOffset: BlobOffset option }
+    {
+        NameOffset: StringOffset option
+        SignatureOffset: BlobOffset option
+    }
 
 type EventDefinitionMetadataHandles = { NameOffset: StringOffset option }
 
@@ -129,39 +137,47 @@ type EventDefinitionMetadataHandles = { NameOffset: StringOffset option }
 /// shift relative to the baseline — e.g. when an added lambda changes the order of first
 /// use — so a row id is only trusted when its content matches the baseline row).
 type BaselineMemberRefRow =
-    { Name: string
-      /// Decoded MemberRefParent as a metadata token (0x02/0x01/0x1A/0x06/0x1B tables).
-      ParentToken: int
-      /// Signature blob bytes (baseline coordinates).
-      Signature: byte[] }
+    {
+        Name: string
+        /// Decoded MemberRefParent as a metadata token (0x02/0x01/0x1A/0x06/0x1B tables).
+        ParentToken: int
+        /// Signature blob bytes (baseline coordinates).
+        Signature: byte[]
+    }
 
 /// Content snapshot of a baseline CustomAttribute row. Attribute edits on EXISTING members
 /// pair the fresh compile's attributes against these rows so changed attributes
 /// UPDATE the row in place and removed attributes ZERO it (Roslyn DeltaMetadataWriter
 /// parity, validated against the csharp_enc_reference attr_change/attr_remove templates).
 type BaselineCustomAttributeRow =
-    { /// Decoded HasCustomAttribute parent as a metadata token.
-      ParentToken: int
-      /// Decoded CustomAttributeType constructor as a metadata token (0x06/0x0A tables).
-      ConstructorToken: int
-      /// Value blob bytes (baseline coordinates).
-      Value: byte[] }
+    {
+        /// Decoded HasCustomAttribute parent as a metadata token.
+        ParentToken: int
+        /// Decoded CustomAttributeType constructor as a metadata token (0x06/0x0A tables).
+        ConstructorToken: int
+        /// Value blob bytes (baseline coordinates).
+        Value: byte[]
+    }
 
 type BaselineHandleCache =
-    { MethodHandles: Map<MethodDefinitionKey, MethodDefinitionMetadataHandles>
-      ParameterHandles: Map<ParameterDefinitionKey, ParameterDefinitionMetadataHandles>
-      PropertyHandles: Map<PropertyDefinitionKey, PropertyDefinitionMetadataHandles>
-      EventHandles: Map<EventDefinitionKey, EventDefinitionMetadataHandles> }
+    {
+        MethodHandles: Map<MethodDefinitionKey, MethodDefinitionMetadataHandles>
+        ParameterHandles: Map<ParameterDefinitionKey, ParameterDefinitionMetadataHandles>
+        PropertyHandles: Map<PropertyDefinitionKey, PropertyDefinitionMetadataHandles>
+        EventHandles: Map<EventDefinitionKey, EventDefinitionMetadataHandles>
+    }
 
     static member Empty =
-        { MethodHandles = Map.empty
-          ParameterHandles = Map.empty
-          PropertyHandles = Map.empty
-          EventHandles = Map.empty }
+        {
+            MethodHandles = Map.empty
+            ParameterHandles = Map.empty
+            PropertyHandles = Map.empty
+            EventHandles = Map.empty
+        }
 
 type MethodSemanticsAssociation =
-    | PropertyAssociation of PropertyDefinitionKey * rowId:int
-    | EventAssociation of EventDefinitionKey * rowId:int
+    | PropertyAssociation of PropertyDefinitionKey * rowId: int
+    | EventAssociation of EventDefinitionKey * rowId: int
 
 type MethodSemanticsEntry =
     {
@@ -231,12 +247,8 @@ type FSharpEmitBaseline =
         /// keyed by MethodDef token (0x06xxxxxx). Decoded from the baseline portable PDB's EnC
         /// CustomDebugInformation rows when the baseline is captured, and refreshed in memory
         /// for updated/added methods as each delta is applied (see chainEncMethodDebugInfos).
-        /// A baseline compiled without --test:HotReloadDeltas (or whose PDB carries no EnC rows) yields the
-        /// empty map. NOTE: delta PDBs do not yet re-emit EnC CDI rows, so within a session
-        /// this in-memory chain is the only generation-accurate source; baseline (gen-0)
-        /// state fully survives process restarts via the on-disk PDB (occurrence-derived
-        /// naming), while restoring
-        /// MID-SESSION state in a new process still needs delta-PDB CDI re-emission.
+        /// A baseline compiled without --test:HotReloadDeltas (or whose PDB carries no EnC rows)
+        /// yields the empty map.
         /// </summary>
         EncMethodDebugInfos: Map<int, EncMethodDebugInformation>
         /// <summary>
@@ -296,6 +308,7 @@ let private collectSynthesizedNameSnapshot (ilModule: ILModuleDef) =
     let recordName (name: string) =
         if not (String.IsNullOrWhiteSpace name) && IsCompilerGeneratedName name then
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
+
             if not (String.IsNullOrWhiteSpace basicName) then
                 let bucket =
                     match buckets.TryGetValue basicName with
@@ -311,8 +324,7 @@ let private collectSynthesizedNameSnapshot (ilModule: ILModuleDef) =
     let rec collectTypeDef (typeDef: ILTypeDef) =
         recordName typeDef.Name
 
-        typeDef.Fields.AsList()
-        |> List.iter (fun fieldDef -> recordName fieldDef.Name)
+        typeDef.Fields.AsList() |> List.iter (fun fieldDef -> recordName fieldDef.Name)
 
         typeDef.Methods.AsList()
         |> List.iter (fun methodDef -> recordName methodDef.Name)
@@ -320,14 +332,11 @@ let private collectSynthesizedNameSnapshot (ilModule: ILModuleDef) =
         typeDef.Properties.AsList()
         |> List.iter (fun propertyDef -> recordName propertyDef.Name)
 
-        typeDef.Events.AsList()
-        |> List.iter (fun eventDef -> recordName eventDef.Name)
+        typeDef.Events.AsList() |> List.iter (fun eventDef -> recordName eventDef.Name)
 
-        typeDef.NestedTypes.AsList()
-        |> List.iter collectTypeDef
+        typeDef.NestedTypes.AsList() |> List.iter collectTypeDef
 
-    ilModule.TypeDefs.AsList()
-    |> List.iter collectTypeDef
+    ilModule.TypeDefs.AsList() |> List.iter collectTypeDef
 
     buckets
     |> Seq.map (fun (KeyValue(key, bucket)) -> key, bucket.ToArray())
@@ -416,7 +425,10 @@ let rec private collectType
         | first :: _ ->
             let token = tokenMappings.PropertyTokenMap (enclosing, tdef) first
             let rowId = token &&& 0x00FFFFFF
-            { maps with PropertyMapEntries = maps.PropertyMapEntries |> Map.add typeName rowId }
+
+            { maps with
+                PropertyMapEntries = maps.PropertyMapEntries |> Map.add typeName rowId
+            }
         | [] -> maps
 
     let eventDefs = tdef.Events.AsList()
@@ -444,18 +456,23 @@ let rec private collectType
         | first :: _ ->
             let token = tokenMappings.EventTokenMap (enclosing, tdef) first
             let rowId = token &&& 0x00FFFFFF
-            { maps with EventMapEntries = maps.EventMapEntries |> Map.add typeName rowId }
+
+            { maps with
+                EventMapEntries = maps.EventMapEntries |> Map.add typeName rowId
+            }
         | [] -> maps
 
     tdef.NestedTypes.AsList()
     |> List.fold (collectType tokenMappings scope (enclosing @ [ tdef ])) maps
 
 let private methodKeyFromRef (methodRef: ILMethodRef) =
-    { MethodDefinitionKey.DeclaringType = methodRef.DeclaringTypeRef.FullName
-      Name = methodRef.Name
-      GenericArity = methodRef.GenericArity
-      ParameterTypes = methodRef.ArgTypes |> Seq.toList
-      ReturnType = methodRef.ReturnType }
+    {
+        MethodDefinitionKey.DeclaringType = methodRef.DeclaringTypeRef.FullName
+        Name = methodRef.Name
+        GenericArity = methodRef.GenericArity
+        ParameterTypes = methodRef.ArgTypes |> Seq.toList
+        ReturnType = methodRef.ReturnType
+    }
 
 let collectMethodSemanticsEntries
     (ilModule: ILModuleDef)
@@ -463,7 +480,9 @@ let collectMethodSemanticsEntries
     (propertyTokens: Map<PropertyDefinitionKey, int>)
     (eventTokens: Map<EventDefinitionKey, int>)
     =
-    let entries = Dictionary<MethodDefinitionKey, ResizeArray<MethodSemanticsEntry>>(HashIdentity.Structural)
+    let entries =
+        Dictionary<MethodDefinitionKey, ResizeArray<MethodSemanticsEntry>>(HashIdentity.Structural)
+
     let mutable nextRowId = 0
 
     let addEntry methodKey entry =
@@ -479,30 +498,40 @@ let collectMethodSemanticsEntries
         | None -> ()
         | Some methodRef ->
             let methodKey = methodKeyFromRef methodRef
+
             if methodTokens.ContainsKey methodKey then
                 nextRowId <- nextRowId + 1
-                addEntry methodKey
-                    { RowId = nextRowId
-                      Attributes = attributes
-                      Association = association }
+
+                addEntry
+                    methodKey
+                    {
+                        RowId = nextRowId
+                        Attributes = attributes
+                        Association = association
+                    }
 
     let rec visitType enclosing (typeDef: ILTypeDef) =
         let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
         let typeName = typeRef.FullName
 
         let buildPropertyKey (prop: ILPropertyDef) =
-            { PropertyDefinitionKey.DeclaringType = typeName
-              Name = prop.Name
-              PropertyType = prop.PropertyType
-              IndexParameterTypes = List.ofSeq prop.Args }
+            {
+                PropertyDefinitionKey.DeclaringType = typeName
+                Name = prop.Name
+                PropertyType = prop.PropertyType
+                IndexParameterTypes = List.ofSeq prop.Args
+            }
 
         let buildEventKey (eventDef: ILEventDef) =
-            { EventDefinitionKey.DeclaringType = typeName
-              Name = eventDef.Name
-              EventType = eventDef.EventType }
+            {
+                EventDefinitionKey.DeclaringType = typeName
+                Name = eventDef.Name
+                EventType = eventDef.EventType
+            }
 
         for prop in typeDef.Properties.AsList() do
             let propertyKey = buildPropertyKey prop
+
             match propertyTokens |> Map.tryFind propertyKey with
             | Some propertyToken ->
                 let rowId = propertyToken &&& 0x00FFFFFF
@@ -513,25 +542,27 @@ let collectMethodSemanticsEntries
 
         for eventDef in typeDef.Events.AsList() do
             let eventKey = buildEventKey eventDef
+
             match eventTokens |> Map.tryFind eventKey with
             | Some eventToken ->
                 let rowId = eventToken &&& 0x00FFFFFF
                 let association = MethodSemanticsAssociation.EventAssociation(eventKey, rowId)
                 tryAddSemantics association MethodSemanticsAttributes.Adder (Some eventDef.AddMethod)
                 tryAddSemantics association MethodSemanticsAttributes.Remover (Some eventDef.RemoveMethod)
-                eventDef.FireMethod |> Option.iter (fun fire -> tryAddSemantics association MethodSemanticsAttributes.Raiser (Some fire))
-                eventDef.OtherMethods |> List.iter (fun other -> tryAddSemantics association MethodSemanticsAttributes.Other (Some other))
+
+                eventDef.FireMethod
+                |> Option.iter (fun fire -> tryAddSemantics association MethodSemanticsAttributes.Raiser (Some fire))
+
+                eventDef.OtherMethods
+                |> List.iter (fun other -> tryAddSemantics association MethodSemanticsAttributes.Other (Some other))
             | None -> ()
 
         typeDef.NestedTypes.AsList()
         |> List.iter (fun nested -> visitType (enclosing @ [ typeDef ]) nested)
 
-    ilModule.TypeDefs.AsList()
-    |> List.iter (visitType [])
+    ilModule.TypeDefs.AsList() |> List.iter (visitType [])
 
-    entries
-    |> Seq.map (fun kvp -> kvp.Key, kvp.Value |> Seq.toList)
-    |> Map.ofSeq
+    entries |> Seq.map (fun kvp -> kvp.Key, kvp.Value |> Seq.toList) |> Map.ofSeq
 
 /// Same character cleanup IlxGen applies to closure base names before minting type
 /// names (IlxGen.CleanUpGeneratedTypeName, not exposed through IlxGen.fsi).
@@ -723,25 +754,34 @@ let internal applyDelta
         // Per Roslyn DeltaMetadataWriter.cs: Blob and UserString streams are concatenated
         // aligned to 4-byte boundaries; String stream is concatenated unaligned.
         let updatedHeapSizes =
-            { StringHeapSize = baseline.Metadata.HeapSizes.StringHeapSize + deltaHeapSizes.StringHeapSize
-              UserStringHeapSize = baseline.Metadata.HeapSizes.UserStringHeapSize + align4 deltaHeapSizes.UserStringHeapSize
-              BlobHeapSize = baseline.Metadata.HeapSizes.BlobHeapSize + align4 deltaHeapSizes.BlobHeapSize
-              GuidHeapSize = baseline.Metadata.HeapSizes.GuidHeapSize + deltaHeapSizes.GuidHeapSize }
+            {
+                StringHeapSize = baseline.Metadata.HeapSizes.StringHeapSize + deltaHeapSizes.StringHeapSize
+                UserStringHeapSize =
+                    baseline.Metadata.HeapSizes.UserStringHeapSize
+                    + align4 deltaHeapSizes.UserStringHeapSize
+                BlobHeapSize = baseline.Metadata.HeapSizes.BlobHeapSize + align4 deltaHeapSizes.BlobHeapSize
+                GuidHeapSize = baseline.Metadata.HeapSizes.GuidHeapSize + deltaHeapSizes.GuidHeapSize
+            }
 
         if traceHeapOffsets.Value then
             printfn "[fsharp-hotreload][heap-offsets] applyDelta: Updating baseline heap sizes"
             printfn "[fsharp-hotreload][heap-offsets]   Before: UserStringHeapSize = %d" baseline.Metadata.HeapSizes.UserStringHeapSize
-            printfn "[fsharp-hotreload][heap-offsets]   Delta:  UserStringHeapSize = %d (aligned = %d)" deltaHeapSizes.UserStringHeapSize (align4 deltaHeapSizes.UserStringHeapSize)
+
+            printfn
+                "[fsharp-hotreload][heap-offsets]   Delta:  UserStringHeapSize = %d (aligned = %d)"
+                deltaHeapSizes.UserStringHeapSize
+                (align4 deltaHeapSizes.UserStringHeapSize)
+
             printfn "[fsharp-hotreload][heap-offsets]   After:  UserStringHeapSize = %d" updatedHeapSizes.UserStringHeapSize
             printfn "[fsharp-hotreload][heap-offsets]   Generation: %d -> %d" baseline.NextGeneration (baseline.NextGeneration + 1)
 
         let updatedTableCountsAbsolute =
-            Array.init tableCount (fun i ->
-                baseline.Metadata.TableRowCounts.[i] + tableCounts.[i])
+            Array.init tableCount (fun i -> baseline.Metadata.TableRowCounts.[i] + tableCounts.[i])
 
         { baseline.Metadata with
             HeapSizes = updatedHeapSizes
-            TableRowCounts = updatedTableCountsAbsolute }
+            TableRowCounts = updatedTableCountsAbsolute
+        }
 
     { baseline with
         EncId = encId
@@ -774,9 +814,7 @@ let internal applyDelta
 /// method's entry is replaced by its occurrence data recomputed from the fresh compile, or
 /// dropped when the fresh compile produced none (fail closed — the method's lambdas must then
 /// be treated as unmappable rather than matched against stale data). Unchanged methods keep
-/// their baseline entries. NOTE: the delta PDB does not yet re-emit EnC CDI rows; this
-/// in-memory chain is what the generation-aware closure lowering consumes, and PDB
-/// persistence across session restarts is the remaining gap.
+/// their baseline entries.
 /// </summary>
 let chainEncMethodDebugInfos
     (baseline: FSharpEmitBaseline)
@@ -791,7 +829,8 @@ let chainEncMethodDebugInfos
             | None -> Map.remove methodToken acc)
 
     { baseline with
-        EncMethodDebugInfos = chainedInfos }
+        EncMethodDebugInfos = chainedInfos
+    }
 
 /// <summary>
 /// Recomputes the per-method EnC debug information from the fresh typed tree of an edited
@@ -912,10 +951,7 @@ let private memberOccurrencesByUniqueName
 /// or ordinals past the packing limits) — such members keep pure sequence-replay
 /// naming, exactly like flag-off behavior, and stay fail-closed for lambda set changes.
 /// </summary>
-let computeBaselineOccurrenceKeyedClosureNames
-    (g: TcGlobals)
-    (optimizedImpls: CheckedAssemblyAfterOptimization)
-    : Map<int64, string> =
+let computeBaselineOccurrenceKeyedClosureNames (g: TcGlobals) (optimizedImpls: CheckedAssemblyAfterOptimization) : Map<int64, string> =
     (Map.empty, memberOccurrencesByUniqueName g optimizedImpls)
     ||> Map.fold (fun acc methName occurrences ->
         let chains = occurrences |> List.map ClosureNameAllocator.occurrenceOrdinalChain
@@ -935,10 +971,7 @@ let computeBaselineOccurrenceKeyedClosureNames
                 if occurrence.RootExprStamp = 0L then
                     acc
                 else
-                    Map.add
-                        occurrence.RootExprStamp
-                        (ClosureNameAllocator.formatGenerationSuffixedClosureName nameBase 0 chain)
-                        acc))
+                    Map.add occurrence.RootExprStamp (ClosureNameAllocator.formatGenerationSuffixedClosureName nameBase 0 chain) acc))
 
 /// <summary>
 /// Runs the occurrence-keyed closure name allocator for a delta compile:
@@ -968,7 +1001,9 @@ let computeOccurrenceKeyedClosureNames
     if Map.isEmpty baseline.EncClosureNames then
         Map.empty, Map.empty
     else
-        let baselineOccurrencesByName = memberOccurrencesByUniqueName g baselineImplementation
+        let baselineOccurrencesByName =
+            memberOccurrencesByUniqueName g baselineImplementation
+
         let freshOccurrencesByName = memberOccurrencesByUniqueName g freshImplementation
         let tokensByUniqueName = tokensByUniqueMethodName baseline
 
@@ -1027,7 +1062,8 @@ let chainClosureNameRows
             | None -> Map.remove methodToken acc)
 
     { baseline with
-        EncClosureNames = chainedRows }
+        EncClosureNames = chainedRows
+    }
 
 /// <summary>Create an <see cref="FSharpEmitBaseline"/> without capturing the ILX environment snapshot.</summary>
 let create
@@ -1063,98 +1099,150 @@ let readModuleMvid (bytes: byte[]) : Guid option =
     ILBaselineReader.readModuleMvidFromBytes bytes
 
 /// Build method handles from baseline using ILBaselineReader.
-let private buildMethodHandlesFromBytes (reader: ILBaselineReader.BaselineMetadataReader) (methodTokens: Map<MethodDefinitionKey, int>) : Map<MethodDefinitionKey, MethodDefinitionMetadataHandles> =
+let private buildMethodHandlesFromBytes
+    (reader: ILBaselineReader.BaselineMetadataReader)
+    (methodTokens: Map<MethodDefinitionKey, int>)
+    : Map<MethodDefinitionKey, MethodDefinitionMetadataHandles> =
     methodTokens
     |> Seq.choose (fun kvp ->
         let key = kvp.Key
         let token = kvp.Value
         let rowId = token &&& 0x00FFFFFF
+
         match reader.GetMethodDef(rowId) with
         | None -> None
         | Some methodDef ->
             let firstParamRowId =
                 match reader.GetMethodParamRange(rowId) with
-                | Some (first, _) -> Some first
+                | Some(first, _) -> Some first
                 | None -> None
-            let result : MethodDefinitionMetadataHandles =
-                { NameOffset = if methodDef.NameOffset = 0 then None else Some (StringOffset methodDef.NameOffset)
-                  SignatureOffset = if methodDef.SignatureOffset = 0 then None else Some (BlobOffset methodDef.SignatureOffset)
-                  FirstParameterRowId = firstParamRowId
-                  Rva = Some methodDef.RVA
-                  Attributes = Some (LanguagePrimitives.EnumOfValue<int, MethodAttributes> methodDef.Flags)
-                  ImplAttributes = Some (LanguagePrimitives.EnumOfValue<int, MethodImplAttributes> methodDef.ImplFlags) }
-            Some(key, result)
-    )
+
+            let result: MethodDefinitionMetadataHandles =
+                {
+                    NameOffset =
+                        if methodDef.NameOffset = 0 then
+                            None
+                        else
+                            Some(StringOffset methodDef.NameOffset)
+                    SignatureOffset =
+                        if methodDef.SignatureOffset = 0 then
+                            None
+                        else
+                            Some(BlobOffset methodDef.SignatureOffset)
+                    FirstParameterRowId = firstParamRowId
+                    Rva = Some methodDef.RVA
+                    Attributes = Some(LanguagePrimitives.EnumOfValue<int, MethodAttributes> methodDef.Flags)
+                    ImplAttributes = Some(LanguagePrimitives.EnumOfValue<int, MethodImplAttributes> methodDef.ImplFlags)
+                }
+
+            Some(key, result))
     |> Map.ofSeq
 
 /// Build parameter handles from baseline using ILBaselineReader.
 let private buildParameterHandlesFromBytes
     (reader: ILBaselineReader.BaselineMetadataReader)
     (methodTokens: Map<MethodDefinitionKey, int>)
-    : Map<ParameterDefinitionKey, ParameterDefinitionMetadataHandles>
-    =
+    : Map<ParameterDefinitionKey, ParameterDefinitionMetadataHandles> =
     methodTokens
     |> Seq.collect (fun kvp ->
         let methodKey = kvp.Key
         let token = kvp.Value
         let methodRowId = token &&& 0x00FFFFFF
+
         match reader.GetMethodParamRange(methodRowId) with
         | None -> Seq.empty
-        | Some (firstParam, lastParam) ->
+        | Some(firstParam, lastParam) ->
             seq {
                 for paramRowId in firstParam..lastParam do
                     match reader.GetParam(paramRowId) with
                     | None -> ()
                     | Some param ->
                         let key =
-                            { ParameterDefinitionKey.Method = methodKey
-                              SequenceNumber = param.Sequence }
-                        let result : ParameterDefinitionMetadataHandles =
-                            { NameOffset = if param.NameOffset = 0 then None else Some (StringOffset param.NameOffset)
-                              Name = if param.NameOffset = 0 then None else Some (reader.GetString param.NameOffset)
-                              RowId = Some paramRowId }
+                            {
+                                ParameterDefinitionKey.Method = methodKey
+                                SequenceNumber = param.Sequence
+                            }
+
+                        let result: ParameterDefinitionMetadataHandles =
+                            {
+                                NameOffset =
+                                    if param.NameOffset = 0 then
+                                        None
+                                    else
+                                        Some(StringOffset param.NameOffset)
+                                Name =
+                                    if param.NameOffset = 0 then
+                                        None
+                                    else
+                                        Some(reader.GetString param.NameOffset)
+                                RowId = Some paramRowId
+                            }
+
                         yield key, result
-            }
-    )
+            })
     |> Map.ofSeq
 
 /// Build property handles from baseline using ILBaselineReader.
-let private buildPropertyHandlesFromBytes (reader: ILBaselineReader.BaselineMetadataReader) (propertyTokens: Map<PropertyDefinitionKey, int>) : Map<PropertyDefinitionKey, PropertyDefinitionMetadataHandles> =
+let private buildPropertyHandlesFromBytes
+    (reader: ILBaselineReader.BaselineMetadataReader)
+    (propertyTokens: Map<PropertyDefinitionKey, int>)
+    : Map<PropertyDefinitionKey, PropertyDefinitionMetadataHandles> =
     propertyTokens
     |> Seq.choose (fun kvp ->
         let key = kvp.Key
         let token = kvp.Value
         let rowId = token &&& 0x00FFFFFF
+
         match reader.GetProperty(rowId) with
         | None -> None
         | Some prop ->
-            let result : PropertyDefinitionMetadataHandles =
-                { NameOffset = if prop.NameOffset = 0 then None else Some (StringOffset prop.NameOffset)
-                  SignatureOffset = if prop.SignatureOffset = 0 then None else Some (BlobOffset prop.SignatureOffset) }
-            Some(key, result)
-    )
+            let result: PropertyDefinitionMetadataHandles =
+                {
+                    NameOffset =
+                        if prop.NameOffset = 0 then
+                            None
+                        else
+                            Some(StringOffset prop.NameOffset)
+                    SignatureOffset =
+                        if prop.SignatureOffset = 0 then
+                            None
+                        else
+                            Some(BlobOffset prop.SignatureOffset)
+                }
+
+            Some(key, result))
     |> Map.ofSeq
 
 /// Build event handles from baseline using ILBaselineReader.
-let private buildEventHandlesFromBytes (reader: ILBaselineReader.BaselineMetadataReader) (eventTokens: Map<EventDefinitionKey, int>) : Map<EventDefinitionKey, EventDefinitionMetadataHandles> =
+let private buildEventHandlesFromBytes
+    (reader: ILBaselineReader.BaselineMetadataReader)
+    (eventTokens: Map<EventDefinitionKey, int>)
+    : Map<EventDefinitionKey, EventDefinitionMetadataHandles> =
     eventTokens
     |> Seq.choose (fun kvp ->
         let key = kvp.Key
         let token = kvp.Value
         let rowId = token &&& 0x00FFFFFF
+
         match reader.GetEvent(rowId) with
         | None -> None
         | Some event ->
-            let result : EventDefinitionMetadataHandles =
-                { NameOffset = if event.NameOffset = 0 then None else Some (StringOffset event.NameOffset) }
-            Some(key, result)
-    )
+            let result: EventDefinitionMetadataHandles =
+                {
+                    NameOffset =
+                        if event.NameOffset = 0 then
+                            None
+                        else
+                            Some(StringOffset event.NameOffset)
+                }
+
+            Some(key, result))
     |> Map.ofSeq
 
 /// Build assembly reference tokens from baseline using ILBaselineReader.
 let private buildAssemblyReferenceTokensFromBytes (reader: ILBaselineReader.BaselineMetadataReader) : Map<string, int> =
     seq {
-        for rowId in 1..reader.AssemblyRefCount do
+        for rowId in 1 .. reader.AssemblyRefCount do
             match reader.GetAssemblyRef(rowId) with
             | Some assemblyRef ->
                 let name = reader.GetString(assemblyRef.NameOffset)
@@ -1189,8 +1277,7 @@ let private buildTypeReferenceTokensFromBytes (reader: ILBaselineReader.Baseline
                             // AssemblyRef scope (table 0x23 = 35)
                             if tableIndex = 35 then
                                 reader.GetAssemblyRef(scopeRowId)
-                                |> Option.map (fun assemblyRef ->
-                                    TypeReferenceScope.Assembly(reader.GetString(assemblyRef.NameOffset)))
+                                |> Option.map (fun assemblyRef -> TypeReferenceScope.Assembly(reader.GetString(assemblyRef.NameOffset)))
                             // Nested TypeRef scope (table 0x01 = 1)
                             elif tableIndex = 1 && scopeRowId <> rowId then
                                 tryKeyForRow scopeRowId (depth + 1) |> Option.map TypeReferenceScope.Nested
@@ -1200,15 +1287,17 @@ let private buildTypeReferenceTokensFromBytes (reader: ILBaselineReader.Baseline
 
                         scopeOpt
                         |> Option.map (fun scope ->
-                            { TypeReferenceKey.Scope = scope
-                              Namespace = reader.GetString(typeRef.NamespaceOffset)
-                              Name = reader.GetString(typeRef.NameOffset) })
+                            {
+                                TypeReferenceKey.Scope = scope
+                                Namespace = reader.GetString(typeRef.NamespaceOffset)
+                                Name = reader.GetString(typeRef.NameOffset)
+                            })
 
                 keyCache[rowId] <- result
                 result
 
     seq {
-        for rowId in 1..reader.TypeRefCount do
+        for rowId in 1 .. reader.TypeRefCount do
             match tryKeyForRow rowId 0 with
             | Some key ->
                 // TypeRef table index is 0x01, token = (0x01 << 24) | rowId
@@ -1220,7 +1309,7 @@ let private buildTypeReferenceTokensFromBytes (reader: ILBaselineReader.Baseline
 /// Attach metadata handles from PE bytes without using SRM MetadataReader.
 let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline) : FSharpEmitBaseline =
     match ILBaselineReader.BaselineMetadataReader.Create(bytes) with
-    | None -> baseline  // Return unchanged if we can't read the metadata
+    | None -> baseline // Return unchanged if we can't read the metadata
     | Some reader ->
         let methodHandles = buildMethodHandlesFromBytes reader baseline.MethodTokens
         let parameterHandles = buildParameterHandlesFromBytes reader baseline.MethodTokens
@@ -1236,9 +1325,11 @@ let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline
                     | Some row ->
                         yield
                             rowId,
-                            { BaselineMemberRefRow.Name = reader.GetString row.NameOffset
-                              ParentToken = reader.DecodeMemberRefParentToken row.Parent
-                              Signature = reader.GetBlob row.SignatureOffset }
+                            {
+                                BaselineMemberRefRow.Name = reader.GetString row.NameOffset
+                                ParentToken = reader.DecodeMemberRefParentToken row.Parent
+                                Signature = reader.GetBlob row.SignatureOffset
+                            }
                     | None -> ()
             }
             |> Map.ofSeq
@@ -1259,21 +1350,28 @@ let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline
                     | Some row ->
                         yield
                             rowId,
-                            { BaselineCustomAttributeRow.ParentToken = reader.DecodeHasCustomAttributeToken row.Parent
-                              ConstructorToken = reader.DecodeCustomAttributeTypeToken row.Constructor
-                              Value = reader.GetBlob row.ValueOffset }
+                            {
+                                BaselineCustomAttributeRow.ParentToken = reader.DecodeHasCustomAttributeToken row.Parent
+                                ConstructorToken = reader.DecodeCustomAttributeTypeToken row.Constructor
+                                Value = reader.GetBlob row.ValueOffset
+                            }
                     | None -> ()
             }
             |> Map.ofSeq
+
         let cache =
-            { MethodHandles = methodHandles
-              ParameterHandles = parameterHandles
-              PropertyHandles = propertyHandles
-              EventHandles = eventHandles }
+            {
+                MethodHandles = methodHandles
+                ParameterHandles = parameterHandles
+                PropertyHandles = propertyHandles
+                EventHandles = eventHandles
+            }
+
         let moduleNameOffset =
             match reader.GetModule() with
-            | Some m when m.NameOffset > 0 -> Some (StringOffset m.NameOffset)
+            | Some m when m.NameOffset > 0 -> Some(StringOffset m.NameOffset)
             | _ -> None
+
         { baseline with
             MetadataHandles = cache
             ModuleNameOffset = moduleNameOffset
@@ -1281,7 +1379,8 @@ let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline
             AssemblyReferenceTokens = assemblyReferenceTokens
             MemberReferenceRows = memberReferenceRows
             TypeSpecSignatures = typeSpecSignatures
-            CustomAttributeRows = customAttributeRows }
+            CustomAttributeRows = customAttributeRows
+        }
 
 /// <summary>
 /// Create a baseline directly from emitted assembly artifacts.
@@ -1293,29 +1392,17 @@ let createFromEmittedArtifacts
     (assemblyBytes: byte[])
     (portablePdbSnapshot: PortablePdbSnapshot option)
     (ilxGenEnvironment: IlxGenEnvSnapshot option)
-    : FSharpEmitBaseline
-    =
-    let moduleId = readModuleMvid assemblyBytes |> Option.defaultWith System.Guid.NewGuid
+    : FSharpEmitBaseline =
+    let moduleId =
+        readModuleMvid assemblyBytes |> Option.defaultWith System.Guid.NewGuid
+
     let metadataSnapshot =
         metadataSnapshotFromBytes assemblyBytes
         |> Option.defaultWith (fun () -> failwith "Failed to read metadata from assembly bytes")
 
     let baselineCore =
         match ilxGenEnvironment with
-        | Some snapshot ->
-            createWithEnvironment
-                ilModule
-                tokenMappings
-                metadataSnapshot
-                snapshot
-                moduleId
-                portablePdbSnapshot
-        | None ->
-            create
-                ilModule
-                tokenMappings
-                metadataSnapshot
-                moduleId
-                portablePdbSnapshot
+        | Some snapshot -> createWithEnvironment ilModule tokenMappings metadataSnapshot snapshot moduleId portablePdbSnapshot
+        | None -> create ilModule tokenMappings metadataSnapshot moduleId portablePdbSnapshot
 
     attachMetadataHandlesFromBytes assemblyBytes baselineCore

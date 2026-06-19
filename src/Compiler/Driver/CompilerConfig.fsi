@@ -225,23 +225,24 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
-
 /// Artifacts captured from a single baseline emit pass.
 ///
 /// These bytes/maps are reused to start or refresh a hot reload baseline without
 /// running a second IL writer pass that could diverge from what hit disk.
 type CompilerEmitArtifacts =
-    { IlxMainModule: ILModuleDef
-      TokenMappings: FSharp.Compiler.AbstractIL.ILBinaryWriter.ILTokenMappings
-      AssemblyBytes: byte[]
-      PortablePdbBytes: byte[] option
-      IlxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot option
-      OptimizedImpls: TypedTree.CheckedAssemblyAfterOptimization
-      /// Per-method closure-class name tables (occurrence-chain -> emitted closure type
-      /// name) keyed by IL method name, joined in the emit path from the IlxGen
-      /// stamp -> name recording and the typed-tree lambda occurrence extraction.
-      /// Empty for flag-off compiles.
-      ClosureNameRows: Map<string, Map<int list, string>> }
+    {
+        IlxMainModule: ILModuleDef
+        TokenMappings: FSharp.Compiler.AbstractIL.ILBinaryWriter.ILTokenMappings
+        AssemblyBytes: byte[]
+        PortablePdbBytes: byte[] option
+        IlxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot option
+        OptimizedImpls: TypedTree.CheckedAssemblyAfterOptimization
+        /// Per-method closure-class name tables (occurrence-chain -> emitted closure type
+        /// name) keyed by IL method name, joined in the emit path from the IlxGen
+        /// stamp -> name recording and the typed-tree lambda occurrence extraction.
+        /// Empty for flag-off compiles.
+        ClosureNameRows: Map<string, Map<int list, string>>
+    }
 
 /// Adapter interface that lets the core emit pipeline remain unaware of hot reload
 /// implementation details while still offering extension points for capture/fallback flows.
@@ -257,10 +258,12 @@ type ICompilerEmitHook =
     abstract PrepareForCodeGeneration:
         emitCaptureArtifacts: bool *
         tcGlobals: FSharp.Compiler.TcGlobals.TcGlobals *
-        optimizedImpls: TypedTree.CheckedAssemblyAfterOptimization -> unit
+        optimizedImpls: TypedTree.CheckedAssemblyAfterOptimization ->
+            unit
 
     abstract BeforeFileEmit:
-        emitCaptureArtifacts: bool * compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
+        emitCaptureArtifacts: bool * compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState ->
+            unit
 
     /// Attempts to perform the final emit phase and capture baseline artifacts in one pass.
     /// Returns true when the hook handled emission; false means caller must use normal emit.
@@ -274,15 +277,16 @@ type ICompilerEmitHook =
         ilxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot option *
         methodClosureNameRows: Map<string, Map<int list, string>> *
         outputFile: string *
-        pdbfile: string option -> bool
+        pdbfile: string option ->
+            bool
 
     /// Captures baseline artifacts after emission when emit happened outside TryEmitWithArtifacts.
     abstract CaptureArtifacts:
-        compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState * artifacts: CompilerEmitArtifacts -> unit
+        compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState * artifacts: CompilerEmitArtifacts ->
+            unit
 
     /// Resets hook-owned state when the compiler falls back to dynamic assembly emission.
-    abstract FallbackEmit:
-        compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
+    abstract FallbackEmit: compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
 
 val defaultCompilerEmitHook: ICompilerEmitHook
 

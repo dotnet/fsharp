@@ -44,7 +44,4 @@ type internal DeltaEmissionRequest =
     }
 
 /// <summary>Payload returned to tooling after a delta has been produced.</summary>
-type internal DeltaEmissionResult =
-    {
-        Delta: IlxDelta
-    }
+type internal DeltaEmissionResult = { Delta: IlxDelta }

@@ -20,103 +20,182 @@ open FSharp.Compiler.AbstractIL.BinaryConstants
 /// Used for EncLog and EncMap entries
 [<Struct>]
 type EntityToken =
-    { TableIndex: int
-      RowId: int }
+    {
+        TableIndex: int
+        RowId: int
+    }
 
     /// Creates a token from table index and row ID
-    static member Create(tableIndex: int, rowId: int) = { TableIndex = tableIndex; RowId = rowId }
+    static member Create(tableIndex: int, rowId: int) =
+        {
+            TableIndex = tableIndex
+            RowId = rowId
+        }
 
     /// Gets the full 32-bit token value (table << 24 | rowId)
     member this.Token = (this.TableIndex <<< 24) ||| (this.RowId &&& 0x00FFFFFF)
-
 
 // ============================================================================
 // Typed handles and coded indices used by delta metadata code
 // ============================================================================
 
 [<Struct>]
-type ModuleHandle = ModuleHandle of rowId: int with member this.RowId = let (ModuleHandle v) = this in v
+type ModuleHandle =
+    | ModuleHandle of rowId: int
+
+    member this.RowId = let (ModuleHandle v) = this in v
 
 [<Struct>]
-type TypeRefHandle = TypeRefHandle of rowId: int with member this.RowId = let (TypeRefHandle v) = this in v
+type TypeRefHandle =
+    | TypeRefHandle of rowId: int
+
+    member this.RowId = let (TypeRefHandle v) = this in v
 
 [<Struct>]
-type TypeDefHandle = TypeDefHandle of rowId: int with member this.RowId = let (TypeDefHandle v) = this in v
+type TypeDefHandle =
+    | TypeDefHandle of rowId: int
+
+    member this.RowId = let (TypeDefHandle v) = this in v
 
 [<Struct>]
-type FieldHandle = FieldHandle of rowId: int with member this.RowId = let (FieldHandle v) = this in v
+type FieldHandle =
+    | FieldHandle of rowId: int
+
+    member this.RowId = let (FieldHandle v) = this in v
 
 [<Struct>]
-type MethodDefHandle = MethodDefHandle of rowId: int with member this.RowId = let (MethodDefHandle v) = this in v
+type MethodDefHandle =
+    | MethodDefHandle of rowId: int
+
+    member this.RowId = let (MethodDefHandle v) = this in v
 
 [<Struct>]
-type ParamHandle = ParamHandle of rowId: int with member this.RowId = let (ParamHandle v) = this in v
+type ParamHandle =
+    | ParamHandle of rowId: int
+
+    member this.RowId = let (ParamHandle v) = this in v
 
 [<Struct>]
-type InterfaceImplHandle = InterfaceImplHandle of rowId: int with member this.RowId = let (InterfaceImplHandle v) = this in v
+type InterfaceImplHandle =
+    | InterfaceImplHandle of rowId: int
+
+    member this.RowId = let (InterfaceImplHandle v) = this in v
 
 [<Struct>]
-type MemberRefHandle = MemberRefHandle of rowId: int with member this.RowId = let (MemberRefHandle v) = this in v
+type MemberRefHandle =
+    | MemberRefHandle of rowId: int
+
+    member this.RowId = let (MemberRefHandle v) = this in v
 
 [<Struct>]
-type DeclSecurityHandle = DeclSecurityHandle of rowId: int with member this.RowId = let (DeclSecurityHandle v) = this in v
+type DeclSecurityHandle =
+    | DeclSecurityHandle of rowId: int
+
+    member this.RowId = let (DeclSecurityHandle v) = this in v
 
 [<Struct>]
-type StandAloneSigHandle = StandAloneSigHandle of rowId: int with member this.RowId = let (StandAloneSigHandle v) = this in v
+type StandAloneSigHandle =
+    | StandAloneSigHandle of rowId: int
+
+    member this.RowId = let (StandAloneSigHandle v) = this in v
 
 [<Struct>]
-type EventHandle = EventHandle of rowId: int with member this.RowId = let (EventHandle v) = this in v
+type EventHandle =
+    | EventHandle of rowId: int
+
+    member this.RowId = let (EventHandle v) = this in v
 
 [<Struct>]
-type PropertyHandle = PropertyHandle of rowId: int with member this.RowId = let (PropertyHandle v) = this in v
+type PropertyHandle =
+    | PropertyHandle of rowId: int
+
+    member this.RowId = let (PropertyHandle v) = this in v
 
 [<Struct>]
-type ModuleRefHandle = ModuleRefHandle of rowId: int with member this.RowId = let (ModuleRefHandle v) = this in v
+type ModuleRefHandle =
+    | ModuleRefHandle of rowId: int
+
+    member this.RowId = let (ModuleRefHandle v) = this in v
 
 [<Struct>]
-type TypeSpecHandle = TypeSpecHandle of rowId: int with member this.RowId = let (TypeSpecHandle v) = this in v
+type TypeSpecHandle =
+    | TypeSpecHandle of rowId: int
+
+    member this.RowId = let (TypeSpecHandle v) = this in v
 
 [<Struct>]
-type AssemblyHandle = AssemblyHandle of rowId: int with member this.RowId = let (AssemblyHandle v) = this in v
+type AssemblyHandle =
+    | AssemblyHandle of rowId: int
+
+    member this.RowId = let (AssemblyHandle v) = this in v
 
 [<Struct>]
-type AssemblyRefHandle = AssemblyRefHandle of rowId: int with member this.RowId = let (AssemblyRefHandle v) = this in v
+type AssemblyRefHandle =
+    | AssemblyRefHandle of rowId: int
+
+    member this.RowId = let (AssemblyRefHandle v) = this in v
 
 [<Struct>]
-type FileHandle = FileHandle of rowId: int with member this.RowId = let (FileHandle v) = this in v
+type FileHandle =
+    | FileHandle of rowId: int
+
+    member this.RowId = let (FileHandle v) = this in v
 
 [<Struct>]
-type ExportedTypeHandle = ExportedTypeHandle of rowId: int with member this.RowId = let (ExportedTypeHandle v) = this in v
+type ExportedTypeHandle =
+    | ExportedTypeHandle of rowId: int
+
+    member this.RowId = let (ExportedTypeHandle v) = this in v
 
 [<Struct>]
-type ManifestResourceHandle = ManifestResourceHandle of rowId: int with member this.RowId = let (ManifestResourceHandle v) = this in v
+type ManifestResourceHandle =
+    | ManifestResourceHandle of rowId: int
+
+    member this.RowId = let (ManifestResourceHandle v) = this in v
 
 [<Struct>]
-type GenericParamHandle = GenericParamHandle of rowId: int with member this.RowId = let (GenericParamHandle v) = this in v
+type GenericParamHandle =
+    | GenericParamHandle of rowId: int
+
+    member this.RowId = let (GenericParamHandle v) = this in v
 
 [<Struct>]
-type MethodSpecHandle = MethodSpecHandle of rowId: int with member this.RowId = let (MethodSpecHandle v) = this in v
+type MethodSpecHandle =
+    | MethodSpecHandle of rowId: int
+
+    member this.RowId = let (MethodSpecHandle v) = this in v
 
 [<Struct>]
-type GenericParamConstraintHandle = GenericParamConstraintHandle of rowId: int with member this.RowId = let (GenericParamConstraintHandle v) = this in v
+type GenericParamConstraintHandle =
+    | GenericParamConstraintHandle of rowId: int
+
+    member this.RowId = let (GenericParamConstraintHandle v) = this in v
 
 [<Struct>]
-type StringOffset = StringOffset of offset: int with
+type StringOffset =
+    | StringOffset of offset: int
+
     member this.Value = let (StringOffset v) = this in v
     static member Zero = StringOffset 0
 
 [<Struct>]
-type BlobOffset = BlobOffset of offset: int with
+type BlobOffset =
+    | BlobOffset of offset: int
+
     member this.Value = let (BlobOffset v) = this in v
     static member Zero = BlobOffset 0
 
 [<Struct>]
-type GuidIndex = GuidIndex of index: int with
+type GuidIndex =
+    | GuidIndex of index: int
+
     member this.Value = let (GuidIndex v) = this in v
     static member Zero = GuidIndex 0
 
 [<Struct>]
-type UserStringOffset = UserStringOffset of offset: int with
+type UserStringOffset =
+    | UserStringOffset of offset: int
+
     member this.Value = let (UserStringOffset v) = this in v
     static member Zero = UserStringOffset 0
 
@@ -480,8 +559,10 @@ module DeltaTokens =
 
     /// Create an EntityToken from a raw token value
     let toEntityToken (token: int) : EntityToken =
-        { TableIndex = getTableIndex token
-          RowId = getRowNumber token }
+        {
+            TableIndex = getTableIndex token
+            RowId = getRowNumber token
+        }
 
     /// Convert an EntityToken to a raw token value
     let fromEntityToken (entity: EntityToken) : int = entity.Token
@@ -601,6 +682,7 @@ type EditAndContinueOperation =
         | AddEvent -> 5
 
     override this.GetHashCode() = this.Value
+
     override this.Equals obj =
         match obj with
         | :? EditAndContinueOperation as other -> this.Value = other.Value

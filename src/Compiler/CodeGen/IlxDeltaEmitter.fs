@@ -122,7 +122,7 @@ type IlxDelta =
         ActiveStatementUpdates: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult list
     }
 
-/// Request payload used when producing a delta. This will accumulate more fields as the emitter is implemented.
+/// Request payload used when producing a delta.
 type IlxDeltaRequest =
     {
         Baseline: FSharpEmitBaseline

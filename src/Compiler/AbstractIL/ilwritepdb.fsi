@@ -72,9 +72,7 @@ type PdbMethodData =
 /// hot reload baseline emission (--test:HotReloadDeltas): EnC lambda/closure map blobs
 /// computed from the typed tree, keyed by IL method name. The writer attaches the rows
 /// only when the name identifies exactly one method row (fail closed on ambiguity).
-type PdbMethodCustomDebugInfo =
-    { KindGuid: System.Guid
-      Blob: byte[] }
+type PdbMethodCustomDebugInfo = { KindGuid: System.Guid; Blob: byte[] }
 
 [<NoEquality; NoComparison>]
 type PdbData =

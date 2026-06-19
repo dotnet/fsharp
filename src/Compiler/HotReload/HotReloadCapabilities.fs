@@ -15,29 +15,29 @@ type internal HotReloadCapabilityFlags =
     | MultipleGenerations = 8
     | RuntimeApply = 16
 
-type internal HotReloadCapabilities =
-    { Flags: HotReloadCapabilityFlags }
+type internal HotReloadCapabilities = { Flags: HotReloadCapabilityFlags }
 
 module internal HotReloadCapability =
 
     [<Literal>]
     let private RuntimeApplyFeatureFlagName = "FSHARP_HOTRELOAD_ENABLE_RUNTIME_APPLY"
 
-    let private runtimeApplySupported : bool =
+    let private runtimeApplySupported: bool =
 #if NET5_0_OR_GREATER
         try
             MetadataUpdater.IsSupported
-        with _ -> false
+        with _ ->
+            false
 #else
         false
 #endif
 
-    let private runtimeApplyFeatureFlag : bool =
+    let private runtimeApplyFeatureFlag: bool =
         isEnvVarTruthy RuntimeApplyFeatureFlagName
 
     let private runtimeApplyEnabled = runtimeApplySupported && runtimeApplyFeatureFlag
 
-    let current : HotReloadCapabilities =
+    let current: HotReloadCapabilities =
         let baseFlags =
             HotReloadCapabilityFlags.Il
             ||| HotReloadCapabilityFlags.Metadata

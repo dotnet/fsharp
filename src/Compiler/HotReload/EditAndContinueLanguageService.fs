@@ -21,10 +21,9 @@ open FSharp.Compiler.EnvironmentHelpers
 type internal FSharpEditAndContinueLanguageService private (getSessionStore: unit -> HotReloadState.HotReloadSessionStore) =
 
     static let lazyInstance =
-        lazy
-            FSharpEditAndContinueLanguageService(fun () -> FSharp.Compiler.HotReloadState.getSessionStore ())
+        lazy FSharpEditAndContinueLanguageService(fun () -> FSharp.Compiler.HotReloadState.getSessionStore ())
 
-    let sessionStore () = getSessionStore()
+    let sessionStore () = getSessionStore ()
     static let traceMetadataFlagName = "FSHARP_HOTRELOAD_TRACE_METADATA"
 
     static let traceMethodsFlagName = "FSHARP_HOTRELOAD_TRACE_METHODS"
@@ -40,6 +39,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
     static let dedupeMethodKeys (keys: MethodDefinitionKey list) =
         let seen = Collections.Generic.HashSet<MethodDefinitionKey>(HashIdentity.Structural)
+
         keys
         |> List.fold (fun acc key -> if seen.Add key then key :: acc else acc) []
         |> List.rev
@@ -52,20 +52,18 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         else
             let prefix = declaringType.Substring(0, markerIndex)
             let lastDot = prefix.LastIndexOf('.')
-            if lastDot > 0 then Some(prefix.Substring(0, lastDot)) else None
+
+            if lastDot > 0 then
+                Some(prefix.Substring(0, lastDot))
+            else
+                None
 
     // Roslyn parity intent: preserve user-authored method identity first, then include
     // compiler-generated companion methods tied to the same startup scope so transformed
     // CE/async output shapes apply in place.
-    static let augmentWithCompilerGeneratedCompanions
-        (baseline: FSharpEmitBaseline)
-        (updatedMethods: MethodDefinitionKey list)
-        =
+    static let augmentWithCompilerGeneratedCompanions (baseline: FSharpEmitBaseline) (updatedMethods: MethodDefinitionKey list) =
         let baselineMethods =
-            baseline.MethodTokens
-            |> Map.toSeq
-            |> Seq.map fst
-            |> Seq.toArray
+            baseline.MethodTokens |> Map.toSeq |> Seq.map fst |> Seq.toArray
 
         let globalStartupRoots =
             baselineMethods
@@ -76,14 +74,14 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
             updatedMethods
             |> List.collect (fun updatedMethod ->
                 let marker = updatedMethod.Name + "@hotreload"
+
                 let directMatches =
                     baselineMethods
                     |> Array.choose (fun candidate ->
                         let matchesDeclaringType =
                             candidate.DeclaringType.IndexOf(marker, StringComparison.Ordinal) >= 0
 
-                        let matchesMethodName =
-                            candidate.Name.StartsWith(marker, StringComparison.Ordinal)
+                        let matchesMethodName = candidate.Name.StartsWith(marker, StringComparison.Ordinal)
 
                         if matchesDeclaringType || matchesMethodName then
                             Some candidate
@@ -108,8 +106,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
                     let inTransitiveScope =
                         startupRoots
-                        |> Array.exists (fun root ->
-                            candidate.DeclaringType.StartsWith(root + ".", StringComparison.Ordinal))
+                        |> Array.exists (fun root -> candidate.DeclaringType.StartsWith(root + ".", StringComparison.Ordinal))
 
                     if isCompilerGeneratedCompanion && inTransitiveScope then
                         Some candidate
@@ -124,6 +121,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                 companions
                 |> List.map (fun key -> $"{key.DeclaringType}::{key.Name}")
                 |> String.concat ", "
+
             printfn "[fsharp-hotreload][service] compiler-generated companion methods selected: %s" names
 
         augmented
@@ -134,8 +132,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         map.BeginSession()
         map
 
-    new (sessionStore: HotReloadState.HotReloadSessionStore) =
-        FSharpEditAndContinueLanguageService(fun () -> sessionStore)
+    new(sessionStore: HotReloadState.HotReloadSessionStore) = FSharpEditAndContinueLanguageService(fun () -> sessionStore)
 
     /// <summary>Singleton instance consumed by CLI and IDE hosts.</summary>
     static member Instance = lazyInstance.Value
@@ -148,16 +145,15 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     /// record the project identity the new session is keyed by.
     /// </summary>
     member _.StartSession
-        (
-            baseline: FSharpEmitBaseline,
-            ?capabilities: EditAndContinueCapabilities,
-            ?projectKey: HotReloadState.HotReloadProjectKey
-        ) : HotReloadState.HotReloadSessionStart =
+        (baseline: FSharpEmitBaseline, ?capabilities: EditAndContinueCapabilities, ?projectKey: HotReloadState.HotReloadProjectKey)
+        : HotReloadState.HotReloadSessionStart =
         use _ =
-            Activity.start "HotReload.StartSession" [|
-                Activity.Tags.project, baseline.ModuleId.ToString()
-                activityTagHotReloadAction, "baseline"
-            |]
+            Activity.start
+                "HotReload.StartSession"
+                [|
+                    Activity.Tags.project, baseline.ModuleId.ToString()
+                    activityTagHotReloadAction, "baseline"
+                |]
 
         sessionStore().SetBaseline(baseline, CheckedAssemblyAfterOptimization [], ?capabilities = capabilities, ?key = projectKey)
 
@@ -170,10 +166,12 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
             ?projectKey: HotReloadState.HotReloadProjectKey
         ) : HotReloadState.HotReloadSessionStart =
         use _ =
-            Activity.start "HotReload.StartSession" [|
-                Activity.Tags.project, baseline.ModuleId.ToString()
-                activityTagHotReloadAction, "baseline+impl"
-            |]
+            Activity.start
+                "HotReload.StartSession"
+                [|
+                    Activity.Tags.project, baseline.ModuleId.ToString()
+                    activityTagHotReloadAction, "baseline+impl"
+                |]
 
         sessionStore().SetBaseline(baseline, implementationFiles, ?capabilities = capabilities, ?key = projectKey)
 
@@ -183,22 +181,19 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     /// semantic; Roslyn analog: one more per-module <c>EmitBaseline</c> in a DebuggingSession).
     /// </summary>
     member _.AddProject
-        (
-            projectKey: HotReloadState.HotReloadProjectKey,
-            baseline: FSharpEmitBaseline,
-            implementationFiles: CheckedAssemblyAfterOptimization
-        ) : HotReloadState.HotReloadSessionStart =
+        (projectKey: HotReloadState.HotReloadProjectKey, baseline: FSharpEmitBaseline, implementationFiles: CheckedAssemblyAfterOptimization) : HotReloadState.HotReloadSessionStart =
         use _ =
-            Activity.start "HotReload.AddProject" [|
-                Activity.Tags.project, baseline.ModuleId.ToString()
-                activityTagHotReloadAction, "baseline+impl"
-            |]
+            Activity.start
+                "HotReload.AddProject"
+                [|
+                    Activity.Tags.project, baseline.ModuleId.ToString()
+                    activityTagHotReloadAction, "baseline+impl"
+                |]
 
         sessionStore().AddProject(projectKey, baseline, implementationFiles)
 
     /// <summary>Attempts to fetch the current baseline.</summary>
-    member _.TryGetBaseline() =
-        sessionStore().TryGetBaseline()
+    member _.TryGetBaseline() = sessionStore().TryGetBaseline()
 
     /// <summary>Attempts to fetch the current session (baseline + generation metadata).</summary>
     member _.TryGetSession(?projectKey: HotReloadState.HotReloadProjectKey) =
@@ -231,12 +226,10 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         sessionStore().UpdateActiveStatements(activeStatements)
 
     /// <summary>Clears the session, typically when hot reload is disabled or the build finishes.</summary>
-    member _.EndSession() =
-        sessionStore().ClearBaseline()
+    member _.EndSession() = sessionStore().ClearBaseline()
 
     /// <summary>Clears both active and restorable session state.</summary>
-    member _.ResetSessionState() =
-        sessionStore().ClearSessionState()
+    member _.ResetSessionState() = sessionStore().ClearSessionState()
 
     /// <summary>
     /// Emits a delta for the supplied request; callers may commit the delta by invoking <see cref="OnDeltaApplied"/>.
@@ -247,23 +240,32 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     /// </summary>
     member _.EmitDelta(request: DeltaEmissionRequest, ?freshDebugPdb: byte[], ?projectKey: HotReloadState.HotReloadProjectKey) =
         let trace = shouldTraceMetadata ()
+
         if trace then
             let asm = typeof<FSharpEditAndContinueLanguageService>.Assembly
-            let message = $"[fsharp-hotreload][service] EmitDelta invoked (assembly={asm.Location})\n"
+
+            let message =
+                $"[fsharp-hotreload][service] EmitDelta invoked (assembly={asm.Location})\n"
+
             printf "%s" message
+
             try
                 let path = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-service.log")
                 File.AppendAllText(path, message)
             with :? IOException as ex ->
                 eprintfn "[fsharp-hotreload][service] Failed to write trace log: %s" ex.Message
+
         match sessionStore().TryGetSession(?key = projectKey) with
         | ValueNone -> Error HotReloadError.NoActiveSession
         | ValueSome session ->
             use _ =
-                Activity.start "HotReload.EmitDelta" [|
-                    activityTagGeneration, string session.CurrentGeneration
-                    Activity.Tags.project, session.Baseline.ModuleId.ToString()
-                |]
+                Activity.start
+                    "HotReload.EmitDelta"
+                    [|
+                        activityTagGeneration, string session.CurrentGeneration
+                        Activity.Tags.project, session.Baseline.ModuleId.ToString()
+                    |]
+
             try
                 if trace then
                     printfn
@@ -271,23 +273,29 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         session.PreviousGenerationId
                         session.Baseline.EncId
 
-                let synthesizedMap = createSynthesizedMapFromSnapshot session.Baseline.SynthesizedNameSnapshot
+                let synthesizedMap =
+                    createSynthesizedMapFromSnapshot session.Baseline.SynthesizedNameSnapshot
 
                 let deltaRequest =
-                    { IlxDeltaRequest.Baseline = session.Baseline
-                      UpdatedTypes = request.UpdatedTypes
-                      UpdatedMethods = request.UpdatedMethods
-                      UpdatedAccessors = request.UpdatedAccessors
-                      Module = request.IlModule
-                      SymbolChanges = request.SymbolChanges
-                      CurrentGeneration = session.CurrentGeneration
-                      PreviousGenerationId = session.PreviousGenerationId
-                      SynthesizedNames = Some synthesizedMap }
+                    {
+                        IlxDeltaRequest.Baseline = session.Baseline
+                        UpdatedTypes = request.UpdatedTypes
+                        UpdatedMethods = request.UpdatedMethods
+                        UpdatedAccessors = request.UpdatedAccessors
+                        Module = request.IlModule
+                        SymbolChanges = request.SymbolChanges
+                        CurrentGeneration = session.CurrentGeneration
+                        PreviousGenerationId = session.PreviousGenerationId
+                        SynthesizedNames = Some synthesizedMap
+                    }
 
-                let delta = FSharp.Compiler.IlxDeltaEmitter.emitDeltaWithDebugData freshDebugPdb deltaRequest
+                let delta =
+                    FSharp.Compiler.IlxDeltaEmitter.emitDeltaWithDebugData freshDebugPdb deltaRequest
+
                 if trace then
                     let line = $"[fsharp-hotreload][service] EmitDelta produced encLog={delta.EncLog}\n"
                     printf "%s" line
+
                     try
                         let path = Path.Combine(Path.GetTempPath(), "fsharp-hotreload-service.log")
                         File.AppendAllText(path, line)
@@ -321,53 +329,53 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     )
                 | Ok activeStatementResults ->
 
-                let delta =
-                    { delta with
-                        ActiveStatementUpdates = activeStatementResults }
-
-                let delta =
-                    match delta.UpdatedBaseline with
-                    | Some updatedBaseline ->
-                        // Generation chaining: replace the updated methods' EnC debug
-                        // information with the data recomputed from the fresh typed tree. The
-                        // delta PDB does not yet re-emit EnC CDI rows, so this in-memory chain
-                        // is what the closure mapping consumes; PDB persistence across
-                        // session restarts is the remaining gap.
-                        let updatedMethodTokens =
-                            delta.AddedOrChangedMethods |> List.map (fun info -> info.MethodToken)
-
-                        let chainedBaseline =
-                            chainEncMethodDebugInfos updatedBaseline request.RefreshedEncDebugInfos updatedMethodTokens
-
-                        // Closure mapping: chain the refreshed occurrence-chain ->
-                        // closure-name tables forward with the same replace-or-drop
-                        // semantics, so the NEXT delta compile's allocator sees this
-                        // generation's names for the updated methods.
-                        let chainedBaseline =
-                            chainClosureNameRows chainedBaseline request.RefreshedClosureNameRows updatedMethodTokens
-
-                        if trace then
-                            printfn
-                                "[fsharp-hotreload][service] staging pending baseline encId=%O baseId=%O newBaselineEncId=%O"
-                                delta.GenerationId
-                                delta.BaseGenerationId
-                                chainedBaseline.EncId
-                        sessionStore().UpdateBaseline(chainedBaseline, ?key = projectKey)
-
+                    let delta =
                         { delta with
-                            UpdatedBaseline = Some chainedBaseline }
-                    | None -> delta
+                            ActiveStatementUpdates = activeStatementResults
+                        }
 
-                Ok { Delta = delta }
+                    let delta =
+                        match delta.UpdatedBaseline with
+                        | Some updatedBaseline ->
+                            // Generation chaining: replace the updated methods' EnC debug
+                            // information with the data recomputed from the fresh typed tree. The
+                            // delta PDB does not yet re-emit EnC CDI rows, so this in-memory chain
+                            // is what the closure mapping consumes; PDB persistence across
+                            // session restarts is the remaining gap.
+                            let updatedMethodTokens =
+                                delta.AddedOrChangedMethods |> List.map (fun info -> info.MethodToken)
+
+                            let chainedBaseline =
+                                chainEncMethodDebugInfos updatedBaseline request.RefreshedEncDebugInfos updatedMethodTokens
+
+                            // Closure mapping: chain the refreshed occurrence-chain ->
+                            // closure-name tables forward with the same replace-or-drop
+                            // semantics, so the NEXT delta compile's allocator sees this
+                            // generation's names for the updated methods.
+                            let chainedBaseline =
+                                chainClosureNameRows chainedBaseline request.RefreshedClosureNameRows updatedMethodTokens
+
+                            if trace then
+                                printfn
+                                    "[fsharp-hotreload][service] staging pending baseline encId=%O baseId=%O newBaselineEncId=%O"
+                                    delta.GenerationId
+                                    delta.BaseGenerationId
+                                    chainedBaseline.EncId
+
+                            sessionStore().UpdateBaseline(chainedBaseline, ?key = projectKey)
+
+                            { delta with
+                                UpdatedBaseline = Some chainedBaseline
+                            }
+                        | None -> delta
+
+                    Ok { Delta = delta }
             with
-            | HotReloadUnsupportedEditException message ->
-                Error(HotReloadError.UnsupportedEdit message)
-            | ex ->
-                Error(HotReloadError.DeltaEmissionException ex)
+            | HotReloadUnsupportedEditException message -> Error(HotReloadError.UnsupportedEdit message)
+            | ex -> Error(HotReloadError.DeltaEmissionException ex)
 
     /// <summary>Returns <c>true</c> if a hot reload session is active.</summary>
-    member _.IsSessionActive =
-        sessionStore().TryGetSession().IsSome
+    member _.IsSessionActive = sessionStore().TryGetSession().IsSome
 
     /// <summary>Convenience helper that both emits and commits a delta when the request succeeds.</summary>
     member this.EmitAndCommitDelta(request: DeltaEmissionRequest) =
@@ -377,14 +385,15 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
             Ok result
         | Error error -> Error error
 
-    member this.EmitDeltaForCompilation(
-        tcGlobals: TcGlobals,
-        updatedImplementation: CheckedAssemblyAfterOptimization,
-        ilModule: ILModuleDef,
-        ?freshDebugPdb: byte[],
-        ?projectKey: HotReloadState.HotReloadProjectKey,
-        ?deferCommit: bool
-    ) : Result<DeltaEmissionResult, HotReloadError> =
+    member this.EmitDeltaForCompilation
+        (
+            tcGlobals: TcGlobals,
+            updatedImplementation: CheckedAssemblyAfterOptimization,
+            ilModule: ILModuleDef,
+            ?freshDebugPdb: byte[],
+            ?projectKey: HotReloadState.HotReloadProjectKey,
+            ?deferCommit: bool
+        ) : Result<DeltaEmissionResult, HotReloadError> =
         // Deferred commit (the session-entity flow): stage everything as the project's pending
         // update and let the host commit/discard all projects together (Roslyn's
         // EmitSolutionUpdate/CommitSolutionUpdate split). The legacy flow commits immediately.
@@ -398,10 +407,13 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         | ValueNone -> Error HotReloadError.NoActiveSession
         | ValueSome session ->
             use _ =
-                Activity.start "HotReload.EmitDeltaForCompilation" [|
-                    activityTagGeneration, string session.CurrentGeneration
-                    Activity.Tags.project, session.Baseline.ModuleId.ToString()
-                |]
+                Activity.start
+                    "HotReload.EmitDeltaForCompilation"
+                    [|
+                        activityTagGeneration, string session.CurrentGeneration
+                        Activity.Tags.project, session.Baseline.ModuleId.ToString()
+                    |]
+
             let symbolChanges =
                 computeSymbolChanges tcGlobals session.Capabilities session.ImplementationFiles updatedImplementation
 
@@ -414,11 +426,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     |> List.map (fun diagnostic -> $"{diagnostic.Id}: {diagnostic.Message}")
                     |> String.concat Environment.NewLine
 
-                Error(
-                    HotReloadError.UnsupportedEdit(
-                        $"Rude edits detected; full rebuild required.{Environment.NewLine}{details}"
-                    )
-                )
+                Error(HotReloadError.UnsupportedEdit($"Rude edits detected; full rebuild required.{Environment.NewLine}{details}"))
             elif not (List.isEmpty symbolChanges.Deleted) then
                 Error(HotReloadError.UnsupportedEdit "Deleted symbols detected; full rebuild required.")
             else
@@ -427,7 +435,8 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     let details = String.concat Environment.NewLine mappingErrors
                     Error(HotReloadError.UnsupportedEdit details)
                 | Ok(updatedTypes, updatedMethods, accessorUpdates) ->
-                    let updatedMethods = augmentWithCompilerGeneratedCompanions session.Baseline updatedMethods
+                    let updatedMethods =
+                        augmentWithCompilerGeneratedCompanions session.Baseline updatedMethods
 
                     // Insert-only edits (for example, adding an allowed non-virtual method) may not produce
                     // method-body updates, but still need to flow to IlxDeltaEmitter so new MethodDef rows are emitted.
@@ -443,28 +452,29 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     // detects those by diffing sequence points against the committed snapshot, so
                     // emission proceeds and "no changes" is decided from the emitted artifacts
                     // (Roslyn parity: line-only document changes are significant valid changes).
-                    let request : DeltaEmissionRequest =
-                        { IlModule = ilModule
-                          UpdatedTypes = updatedTypes
-                          UpdatedMethods = updatedMethods
-                          UpdatedAccessors = accessorUpdates
-                          SymbolChanges = Some symbolChanges
-                          // Recomputed occurrence data from the fresh typed tree; EmitDelta
-                          // chains it into the next-generation baseline for the updated methods.
-                          RefreshedEncDebugInfos =
-                            computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation
-                          // Closure mapping: the same allocator run the emit hook used
-                          // when the delta compile was lowered (deterministic over identical
-                          // session state + fresh tree), keeping the chained tables in sync
-                          // with the closure names the compile actually emitted.
-                          RefreshedClosureNameRows =
-                            computeOccurrenceKeyedClosureNames
-                                tcGlobals
-                                session.Baseline
-                                session.ImplementationFiles
-                                updatedImplementation
-                                session.CurrentGeneration
-                            |> snd }
+                    let request: DeltaEmissionRequest =
+                        {
+                            IlModule = ilModule
+                            UpdatedTypes = updatedTypes
+                            UpdatedMethods = updatedMethods
+                            UpdatedAccessors = accessorUpdates
+                            SymbolChanges = Some symbolChanges
+                            // Recomputed occurrence data from the fresh typed tree; EmitDelta
+                            // chains it into the next-generation baseline for the updated methods.
+                            RefreshedEncDebugInfos = computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation
+                            // Closure mapping: the same allocator run the emit hook used
+                            // when the delta compile was lowered (deterministic over identical
+                            // session state + fresh tree), keeping the chained tables in sync
+                            // with the closure names the compile actually emitted.
+                            RefreshedClosureNameRows =
+                                computeOccurrenceKeyedClosureNames
+                                    tcGlobals
+                                    session.Baseline
+                                    session.ImplementationFiles
+                                    updatedImplementation
+                                    session.CurrentGeneration
+                                |> snd
+                        }
 
                     match this.EmitDelta(request, ?freshDebugPdb = freshDebugPdb, ?projectKey = projectKey) with
                     | Ok result ->
@@ -487,8 +497,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                             // (Committed immediately in both modes: there is no generation to
                             // stage and nothing to pass to MetadataUpdater.ApplyUpdate.)
                             delta.ChainedSequencePoints
-                            |> Option.iter (fun snapshots ->
-                                sessionStore().UpdateCommittedSequencePoints(snapshots, ?key = projectKey))
+                            |> Option.iter (fun snapshots -> sessionStore().UpdateCommittedSequencePoints(snapshots, ?key = projectKey))
 
                             sessionStore().UpdateImplementationFiles(updatedImplementation, ?key = projectKey)
                             Ok result
@@ -502,24 +511,20 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     | Error error -> Error error
 
     /// <summary>Explicit commit hook mirroring Roslyn's service contract.</summary>
-    member this.CommitPendingUpdate(generationId: Guid) =
-        this.OnDeltaApplied(generationId)
+    member this.CommitPendingUpdate(generationId: Guid) = this.OnDeltaApplied(generationId)
 
     /// <summary>
     /// Commits ALL pending project updates atomically without generation-id validation —
     /// the session entity's solution-wide commit (Roslyn's <c>CommitSolutionUpdate</c>).
     /// Returns the committed generation ids (empty when nothing was pending).
     /// </summary>
-    member _.CommitAllPendingUpdates() =
-        sessionStore().CommitAllPending()
+    member _.CommitAllPendingUpdates() = sessionStore().CommitAllPending()
 
     /// <summary>Explicit discard hook mirroring Roslyn's pending-update semantics (solution-wide).</summary>
-    member _.DiscardPendingUpdate() =
-        sessionStore().DiscardPendingUpdate()
+    member _.DiscardPendingUpdate() = sessionStore().DiscardPendingUpdate()
 
     /// <summary>Keys of the projects currently active in the session.</summary>
-    member _.ProjectKeys =
-        sessionStore().ProjectKeys
+    member _.ProjectKeys = sessionStore().ProjectKeys
 
     /// <summary>Unconditionally sets the session-wide capability set (session-entity creation path).</summary>
     member _.SetCapabilities(capabilities: EditAndContinueCapabilities) =

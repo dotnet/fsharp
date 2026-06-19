@@ -18,61 +18,48 @@ type MetadataHeapSizes = FSharp.Compiler.AbstractIL.ILBinaryWriter.MetadataHeapS
 /// Holds computed "bigness" flags for all coded index types.
 /// When true, the index requires 4 bytes; when false, 2 bytes suffice.
 type CodedIndexSizes =
-    { StringsBig: bool
-      GuidsBig: bool
-      BlobsBig: bool
-      SimpleIndexBig: bool[]
-      TypeDefOrRefBig: bool
-      TypeOrMethodDefBig: bool
-      HasConstantBig: bool
-      HasCustomAttributeBig: bool
-      HasFieldMarshalBig: bool
-      HasDeclSecurityBig: bool
-      MemberRefParentBig: bool
-      HasSemanticsBig: bool
-      MethodDefOrRefBig: bool
-      MemberForwardedBig: bool
-      ImplementationBig: bool
-      CustomAttributeTypeBig: bool
-      ResolutionScopeBig: bool }
+    {
+        StringsBig: bool
+        GuidsBig: bool
+        BlobsBig: bool
+        SimpleIndexBig: bool[]
+        TypeDefOrRefBig: bool
+        TypeOrMethodDefBig: bool
+        HasConstantBig: bool
+        HasCustomAttributeBig: bool
+        HasFieldMarshalBig: bool
+        HasDeclSecurityBig: bool
+        MemberRefParentBig: bool
+        HasSemanticsBig: bool
+        MethodDefOrRefBig: bool
+        MemberForwardedBig: bool
+        ImplementationBig: bool
+        CustomAttributeTypeBig: bool
+        ResolutionScopeBig: bool
+    }
 
-let private tableSize (tableRowCounts: int[]) (table: int) =
-    tableRowCounts.[table]
+let private tableSize (tableRowCounts: int[]) (table: int) = tableRowCounts.[table]
 
-let private totalRowCount
-    (tableRowCounts: int[])
-    (externalRowCounts: int[])
-    (table: int)
-    =
+let private totalRowCount (tableRowCounts: int[]) (externalRowCounts: int[]) (table: int) =
     let index = table
+
     let external =
         if externalRowCounts.Length = tableRowCounts.Length then
             externalRowCounts.[index]
         else
             0
+
     tableRowCounts.[index] + external
 
-let private referenceExceedsLimit
-    (tableRowCounts: int[])
-    (externalRowCounts: int[])
-    (maxValueExclusive: int)
-    (tables: int[])
-    =
+let private referenceExceedsLimit (tableRowCounts: int[]) (externalRowCounts: int[]) (maxValueExclusive: int) (tables: int[]) =
     tables
-    |> Array.exists (fun table ->
-        totalRowCount tableRowCounts externalRowCounts table >= maxValueExclusive)
+    |> Array.exists (fun table -> totalRowCount tableRowCounts externalRowCounts table >= maxValueExclusive)
 
 /// Determines if a coded index requires 4 bytes (big) or 2 bytes (small).
 /// For EnC deltas (uncompressed), all indices are 4 bytes.
 /// For compressed metadata, size depends on whether any referenced table
 /// has enough rows to overflow the available bits after the tag.
-let private codedBigness
-    (tagBits: int)
-    (tableRowCounts: int[])
-    (externalRowCounts: int[])
-    (isCompressed: bool)
-    (tables: int[])
-    =
+let private codedBigness (tagBits: int) (tableRowCounts: int[]) (externalRowCounts: int[]) (isCompressed: bool) (tables: int[]) =
     if not isCompressed then
         // EnC deltas always use 4-byte indices
         true
@@ -80,29 +67,27 @@ let private codedBigness
         let limit = pown 2 (16 - tagBits)
         referenceExceedsLimit tableRowCounts externalRowCounts limit tables
 
-let private isSimpleIndexBig
-    (tableRowCounts: int[])
-    (externalRowCounts: int[])
-    (isCompressed: bool)
-    (tableIndex: int)
-    =
+let private isSimpleIndexBig (tableRowCounts: int[]) (externalRowCounts: int[]) (isCompressed: bool) (tableIndex: int) =
     if not isCompressed then
         true
     else
         let local =
-            if tableIndex < tableRowCounts.Length then tableRowCounts.[tableIndex] else 0
+            if tableIndex < tableRowCounts.Length then
+                tableRowCounts.[tableIndex]
+            else
+                0
+
         let external =
-            if tableIndex < externalRowCounts.Length then externalRowCounts.[tableIndex] else 0
+            if tableIndex < externalRowCounts.Length then
+                externalRowCounts.[tableIndex]
+            else
+                0
+
         local + external >= 0x10000
 
 /// Compute coded index sizes for all index types.
 /// This determines the byte width of each reference type in the metadata tables.
-let compute
-    (tableRowCounts: int[])
-    (externalRowCounts: int[])
-    (heapSizes: MetadataHeapSizes)
-    (isEncDelta: bool)
-    : CodedIndexSizes =
+let compute (tableRowCounts: int[]) (externalRowCounts: int[]) (heapSizes: MetadataHeapSizes) (isEncDelta: bool) : CodedIndexSizes =
 
     let isCompressed = not isEncDelta
 
@@ -113,8 +98,7 @@ let compute
 
     // Simple table indices
     let simpleIndexBig =
-        Array.init DeltaTokens.TableCount (fun i ->
-            isSimpleIndexBig tableRowCounts externalRowCounts isCompressed i)
+        Array.init DeltaTokens.TableCount (fun i -> isSimpleIndexBig tableRowCounts externalRowCounts isCompressed i)
 
     // Helper to compute coded index bigness for a set of tables
     let coded tag tables =
@@ -181,20 +165,22 @@ let compute
     let resolutionScopeBig =
         coded CodedIndices.ResolutionScope.TagBits CodedIndices.ResolutionScope.Tables
 
-    { StringsBig = stringsBig
-      GuidsBig = guidsBig
-      BlobsBig = blobsBig
-      SimpleIndexBig = simpleIndexBig
-      TypeDefOrRefBig = typeDefOrRefBig
-      TypeOrMethodDefBig = typeOrMethodDefBig
-      HasConstantBig = hasConstantBig
-      HasCustomAttributeBig = hasCustomAttributeBig
-      HasFieldMarshalBig = hasFieldMarshalBig
-      HasDeclSecurityBig = hasDeclSecurityBig
-      MemberRefParentBig = memberRefParentBig
-      HasSemanticsBig = hasSemanticsBig
-      MethodDefOrRefBig = methodDefOrRefBig
-      MemberForwardedBig = memberForwardedBig
-      ImplementationBig = implementationBig
-      CustomAttributeTypeBig = customAttributeTypeBig
-      ResolutionScopeBig = resolutionScopeBig }
+    {
+        StringsBig = stringsBig
+        GuidsBig = guidsBig
+        BlobsBig = blobsBig
+        SimpleIndexBig = simpleIndexBig
+        TypeDefOrRefBig = typeDefOrRefBig
+        TypeOrMethodDefBig = typeOrMethodDefBig
+        HasConstantBig = hasConstantBig
+        HasCustomAttributeBig = hasCustomAttributeBig
+        HasFieldMarshalBig = hasFieldMarshalBig
+        HasDeclSecurityBig = hasDeclSecurityBig
+        MemberRefParentBig = memberRefParentBig
+        HasSemanticsBig = hasSemanticsBig
+        MethodDefOrRefBig = methodDefOrRefBig
+        MemberForwardedBig = memberForwardedBig
+        ImplementationBig = implementationBig
+        CustomAttributeTypeBig = customAttributeTypeBig
+        ResolutionScopeBig = resolutionScopeBig
+    }

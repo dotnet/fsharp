@@ -169,15 +169,10 @@ let emitDelta
                         if shouldTracePdb () then
                             printfn "[hotreload-pdb] source handle nil for delta token 0x%08x (source token=0x%08x)" token sourceToken
                     else
-                        // The fresh PDB's MethodDebugInformation table is indexed by FRESH
-                        // rows, so read at sourceHandle (fresh) and bounds-check the FRESH row
-                        // against the fresh table count. The EncMap, however, must address the
-                        // BASELINE MethodDef row (token is the baseline-coordinate loop
-                        // variable) to match the metadata delta, which re-emits the method at
-                        // its baseline row — see FSharpDeltaMetadataWriter.fs, where the method
-                        // EncMap entry uses the baseline row.RowId. Recording the fresh row here
-                        // (the prior bug) made the PDB EncMap disagree with the metadata EncMap
-                        // once an earlier edit ADDED a method and shifted the fresh rows.
+                        // Read at sourceHandle (fresh) and bounds-check against the fresh table
+                        // count, but record the BASELINE MethodDef row in the EncMap: the metadata
+                        // delta re-emits the method at its baseline row (FSharpDeltaMetadataWriter.fs),
+                        // and the two EncMaps must agree even after an earlier edit shifts fresh rows.
                         let methodRow = MetadataTokens.GetRowNumber sourceHandle
 
                         let baselineMethodRow =
@@ -220,14 +215,10 @@ let emitDelta
             // to EntityHandle, so we construct the EntityHandle from the table/row token directly.
             // Token format: (table_index << 24) | row_number, where MethodDebugInformation = 0x31
             //
-            // ORDERING INVARIANT: emittedMethodRows holds BASELINE MethodDef rows recorded in the
-            // order AddMethodDebugInformation was called above — and that order is baseline-row
-            // ascending because distinctTokens was sorted by baseline row. Sorting the EncMap by
-            // baseline row here therefore yields the SAME order as the appended
-            // MethodDebugInformation rows, and matches the metadata writer, which emits its method
-            // EncMap entries at the baseline row.RowId and sorts the EncMap ascending by token
-            // (FSharpDeltaMetadataWriter.fs). The Nth MethodDebugInformation row thus lines up with
-            // the Nth PDB EncMap entry, so ApplyUpdate binds each method's sequence points correctly.
+            // ORDERING INVARIANT: the EncMap must be sorted by baseline row to match both the
+            // appended MethodDebugInformation rows and the metadata writer's method EncMap
+            // (FSharpDeltaMetadataWriter.fs), so the Nth row lines up with the Nth EncMap entry
+            // and ApplyUpdate binds each method's sequence points correctly.
             for methodRow in emittedMethodRows |> Seq.distinct |> Seq.sort do
                 let token = (DeltaTokens.tableMethodDebugInformation <<< 24) ||| methodRow
                 let entityHandle = MetadataTokens.EntityHandle token

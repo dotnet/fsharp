@@ -9,28 +9,30 @@ open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.StrongNameSign
 
 type options =
-    { ilg: ILGlobals
-      outfile: string
-      pdbfile: string option
-      portablePDB: bool
-      embeddedPDB: bool
-      embedAllSource: bool
-      embedSourceList: string list
-      allGivenSources: ILSourceDocument list
-      sourceLink: string
-      checksumAlgorithm: HashAlgorithm
-      signer: ILStrongNameSigner option
-      emitTailcalls: bool
-      deterministic: bool
-      dumpDebugInfo: bool
-      referenceAssemblyOnly: bool
-      referenceAssemblyAttribOpt: ILAttribute option
-      referenceAssemblySignatureHash: int option
-      pathMap: PathMap
-      /// Hot reload baseline side channel: per-method EnC CustomDebugInformation rows for
-      /// the portable PDB writer, keyed by IL method name. Empty unless the compilation
-      /// runs with --test:HotReloadDeltas (flag-off output stays byte-identical).
-      methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
+    {
+        ilg: ILGlobals
+        outfile: string
+        pdbfile: string option
+        portablePDB: bool
+        embeddedPDB: bool
+        embedAllSource: bool
+        embedSourceList: string list
+        allGivenSources: ILSourceDocument list
+        sourceLink: string
+        checksumAlgorithm: HashAlgorithm
+        signer: ILStrongNameSigner option
+        emitTailcalls: bool
+        deterministic: bool
+        dumpDebugInfo: bool
+        referenceAssemblyOnly: bool
+        referenceAssemblyAttribOpt: ILAttribute option
+        referenceAssemblySignatureHash: int option
+        pathMap: PathMap
+        /// Hot reload baseline side channel: per-method EnC CustomDebugInformation rows for
+        /// the portable PDB writer, keyed by IL method name. Empty unless the compilation
+        /// runs with --test:HotReloadDeltas (flag-off output stays byte-identical).
+        methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>
+    }
 
 /// <summary>
 /// Captures the various metadata token mapping functions produced by the IL writer.
@@ -76,7 +78,5 @@ val WriteILBinaryInMemory:
 
 /// Write a binary to an array of bytes and capture token and metadata artifacts.
 val WriteILBinaryInMemoryWithArtifacts:
-    options: options *
-    inputModule: ILModuleDef *
-    (ILAssemblyRef -> ILAssemblyRef) ->
+    options: options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) ->
         byte[] * byte[] option * ILTokenMappings * MetadataSnapshot

@@ -10,6 +10,9 @@ module internal DotnetWatchBridge =
 
 module internal IdeBridge =
 
-    let emitDeltaAsync (request: DeltaEmissionRequest) (cancellationToken: CancellationToken) : Task<Result<DeltaEmissionResult, HotReloadError>> =
+    let emitDeltaAsync
+        (request: DeltaEmissionRequest)
+        (cancellationToken: CancellationToken)
+        : Task<Result<DeltaEmissionResult, HotReloadError>> =
         cancellationToken.ThrowIfCancellationRequested()
         Task.FromResult(FSharpEditAndContinueLanguageService.Instance.EmitDelta request)

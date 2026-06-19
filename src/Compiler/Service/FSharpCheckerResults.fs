@@ -3898,7 +3898,6 @@ type FSharpCheckProjectResults
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
-
     // Not, this does not have to be a SyncOp, it can be called from any thread
     // TODO: this should be async
     member _.GetUsesOfSymbol(symbol: FSharpSymbol, ?cancellationToken: CancellationToken) =

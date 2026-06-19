@@ -8,13 +8,17 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SynthesizedTypeMaps
 
 type internal TypeMatch =
-    { EnclosingTypes: ILTypeDef list
-      TypeDef: ILTypeDef }
+    {
+        EnclosingTypes: ILTypeDef list
+        TypeDef: ILTypeDef
+    }
 
 type internal MethodMatch =
-    { EnclosingTypes: ILTypeDef list
-      TypeDef: ILTypeDef
-      MethodDef: ILMethodDef }
+    {
+        EnclosingTypes: ILTypeDef list
+        TypeDef: ILTypeDef
+        MethodDef: ILMethodDef
+    }
 
 type FSharpSymbolMatcher =
     {
@@ -32,16 +36,20 @@ module FSharpSymbolMatcher =
         (destination: Dictionary<MethodDefinitionKey, MethodMatch>)
         =
         let key =
-            { DeclaringType = typeRef.FullName
-              Name = methodDef.Name
-              GenericArity = methodDef.GenericParams.Length
-              ParameterTypes = methodDef.ParameterTypes
-              ReturnType = methodDef.Return.Type }
+            {
+                DeclaringType = typeRef.FullName
+                Name = methodDef.Name
+                GenericArity = methodDef.GenericParams.Length
+                ParameterTypes = methodDef.ParameterTypes
+                ReturnType = methodDef.Return.Type
+            }
 
         destination[key] <-
-            { EnclosingTypes = enclosing
-              TypeDef = typeDef
-              MethodDef = methodDef }
+            {
+                EnclosingTypes = enclosing
+                TypeDef = typeDef
+                MethodDef = methodDef
+            }
 
     [<Literal>]
     let private MaxNestedTypeDepth = 100
@@ -55,15 +63,21 @@ module FSharpSymbolMatcher =
         (typeDef: ILTypeDef)
         =
         if depth > MaxNestedTypeDepth then
-            failwith $"Exceeded maximum nested type depth ({MaxNestedTypeDepth}) while processing type '{typeDef.Name}'. Possible malformed IL."
+            failwith
+                $"Exceeded maximum nested type depth ({MaxNestedTypeDepth}) while processing type '{typeDef.Name}'. Possible malformed IL."
+
         let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+
         types[typeRef.FullName] <-
-            { EnclosingTypes = enclosing
-              TypeDef = typeDef }
+            {
+                EnclosingTypes = enclosing
+                TypeDef = typeDef
+            }
 
         match synthesizedBuckets with
         | Some buckets when IsCompilerGeneratedName typeDef.Name ->
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName typeDef.Name
+
             match buckets.TryGetValue basicName with
             | true, aliases when aliases.Length > 0 ->
                 // Compute prefix directly from typeRef structure rather than string manipulation
@@ -82,16 +96,18 @@ module FSharpSymbolMatcher =
                 for alias in aliases do
                     if alias <> typeDef.Name then
                         let aliasFullName = prefix + alias
+
                         if not (types.ContainsKey aliasFullName) then
                             types[aliasFullName] <-
-                                { EnclosingTypes = enclosing
-                                  TypeDef = typeDef }
+                                {
+                                    EnclosingTypes = enclosing
+                                    TypeDef = typeDef
+                                }
             | _ -> ()
         | _ -> ()
 
         typeDef.Methods.AsList()
-        |> List.iter (fun methodDef ->
-            addMethodMatch typeRef enclosing typeDef methodDef methods)
+        |> List.iter (fun methodDef -> addMethodMatch typeRef enclosing typeDef methodDef methods)
 
         typeDef.NestedTypes.AsList()
         |> List.iter (fun nested -> addTypeMatches synthesizedBuckets (enclosing @ [ typeDef ]) types methods (depth + 1) nested)
@@ -103,14 +119,16 @@ module FSharpSymbolMatcher =
         moduleDef.TypeDefs.AsList()
         |> List.iter (addTypeMatches synthesized [] typeMatches methodMatches 0)
 
-        { TypeMatches = typeMatches :> IReadOnlyDictionary<string, TypeMatch>
-          MethodMatches = methodMatches :> IReadOnlyDictionary<MethodDefinitionKey, MethodMatch> }
+        {
+            TypeMatches = typeMatches :> IReadOnlyDictionary<string, TypeMatch>
+            MethodMatches = methodMatches :> IReadOnlyDictionary<MethodDefinitionKey, MethodMatch>
+        }
 
-    let create (moduleDef: ILModuleDef) : FSharpSymbolMatcher =
-        createInternal moduleDef None
+    let create (moduleDef: ILModuleDef) : FSharpSymbolMatcher = createInternal moduleDef None
 
     let createWithSynthesizedNames (moduleDef: ILModuleDef) (synthesizedMap: FSharpSynthesizedTypeMaps) : FSharpSymbolMatcher =
         let buckets = Dictionary<string, string[]>(StringComparer.Ordinal)
+
         for struct (basic, names) in synthesizedMap.Snapshot do
             buckets[basic] <- names
 

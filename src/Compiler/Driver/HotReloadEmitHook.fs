@@ -40,11 +40,9 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
     // never read it — they reconstruct baselines from the on-disk dll + pdb. The slot serves
     // capture-to-capture name chaining within one host, standalone fsc validation and
     // unit-level tooling/tests; checker creation resets it (the host boundary).
-    let captureArtifacts
-        (compilerGlobalState: CompilerGlobalState)
-        (artifacts: CompilerEmitArtifacts)
-        =
-        let portablePdbSnapshot = artifacts.PortablePdbBytes |> Option.map HotReloadPdb.createSnapshot
+    let captureArtifacts (compilerGlobalState: CompilerGlobalState) (artifacts: CompilerEmitArtifacts) =
+        let portablePdbSnapshot =
+            artifacts.PortablePdbBytes |> Option.map HotReloadPdb.createSnapshot
 
         let ilxGenEnvironment = artifacts.IlxGenEnvSnapshot
 
@@ -74,15 +72,16 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
         let baseline =
             match editAndContinueService.TryGetSession() with
             | ValueSome session when not (Map.isEmpty session.Baseline.EncClosureNames) ->
-                { baseline with EncClosureNames = recordedRows }
+                { baseline with
+                    EncClosureNames = recordedRows
+                }
             | _ ->
                 let mismatches =
                     baseline.EncClosureNames
                     |> Map.toList
                     |> List.choose (fun (methodToken, derivedTable) ->
                         match Map.tryFind methodToken recordedRows with
-                        | Some recordedTable when recordedTable <> derivedTable ->
-                            Some(methodToken, derivedTable, recordedTable)
+                        | Some recordedTable when recordedTable <> derivedTable -> Some(methodToken, derivedTable, recordedTable)
                         | _ -> None)
 
                 if not mismatches.IsEmpty then
@@ -98,7 +97,8 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
 
                 baseline
 
-        editAndContinueService.StartSession(baseline, artifacts.OptimizedImpls) |> ignore
+        editAndContinueService.StartSession(baseline, artifacts.OptimizedImpls)
+        |> ignore
 
         match tryGetCompilerGeneratedNameMap (compilerGlobalState :> obj) with
         | Some map -> map.BeginSession()
@@ -119,7 +119,9 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
             // Resolve the session this compile serves: the scoped emission context when the
             // host set one (a session entity's tracked project), the ambient service otherwise.
             let sessionService, scopedProjectKey = resolveSessionAccess ()
-            let tryGetActiveSession () = sessionService.TryGetSession(?projectKey = scopedProjectKey)
+
+            let tryGetActiveSession () =
+                sessionService.TryGetSession(?projectKey = scopedProjectKey)
 
             // Closure mapping, the codegen-time hook step: when a session with
             // baseline closure-name tables is active, run the occurrence-keyed allocator
@@ -225,8 +227,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                 | Some map ->
                     map.BeginSession()
                     setCompilerGeneratedNameMap (compilerGlobalState :> obj) map
-                | None ->
-                    clearCompilerGeneratedNameMap (compilerGlobalState :> obj)
+                | None -> clearCompilerGeneratedNameMap (compilerGlobalState :> obj)
             else
                 clearCompilerGeneratedNameMap (compilerGlobalState :> obj)
 
@@ -246,18 +247,19 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
 
         // Emit through the in-memory writer first so disk bytes and baseline capture share
         // identical inputs; this avoids subtle drift from a second writer invocation.
-        member _.TryEmitWithArtifacts(
-            emitCaptureArtifacts,
-            compilerGlobalState,
-            ilWriteOptions,
-            ilxMainModule,
-            normalizeAssemblyRefs,
-            optimizedImpls,
-            ilxGenEnvSnapshot,
-            methodClosureNameRows,
-            outputFile,
-            pdbfile
-        ) =
+        member _.TryEmitWithArtifacts
+            (
+                emitCaptureArtifacts,
+                compilerGlobalState,
+                ilWriteOptions,
+                ilxMainModule,
+                normalizeAssemblyRefs,
+                optimizedImpls,
+                ilxGenEnvSnapshot,
+                methodClosureNameRows,
+                outputFile,
+                pdbfile
+            ) =
             if not emitCaptureArtifacts then
                 false
             else
@@ -274,13 +276,15 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
 
                 captureArtifacts
                     compilerGlobalState
-                    { IlxMainModule = ilxMainModule
-                      TokenMappings = tokenMappings
-                      AssemblyBytes = assemblyBytes
-                      PortablePdbBytes = pdbBytesOpt
-                      IlxGenEnvSnapshot = ilxGenEnvSnapshot
-                      OptimizedImpls = optimizedImpls
-                      ClosureNameRows = methodClosureNameRows }
+                    {
+                        IlxMainModule = ilxMainModule
+                        TokenMappings = tokenMappings
+                        AssemblyBytes = assemblyBytes
+                        PortablePdbBytes = pdbBytesOpt
+                        IlxGenEnvSnapshot = ilxGenEnvSnapshot
+                        OptimizedImpls = optimizedImpls
+                        ClosureNameRows = methodClosureNameRows
+                    }
 
                 true
 
@@ -299,5 +303,5 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
 let createHotReloadCompilerEmitHook (editAndContinueService: FSharpEditAndContinueLanguageService) : ICompilerEmitHook =
     DefaultHotReloadEmitHook(editAndContinueService) :> ICompilerEmitHook
 
-let hotReloadCompilerEmitHook : ICompilerEmitHook =
+let hotReloadCompilerEmitHook: ICompilerEmitHook =
     createHotReloadCompilerEmitHook FSharpEditAndContinueLanguageService.Instance

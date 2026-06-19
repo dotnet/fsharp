@@ -5,24 +5,30 @@ open FSharp.Compiler.TypedTreeDiff
 
 /// Represents a single synthesized member edit along with hash metadata.
 type SynthesizedMemberChange =
-    { Symbol: SymbolId
-      EditKind: SymbolEditKind
-      BaselineHash: int option
-      UpdatedHash: int option
-      ContainingEntity: string option }
+    {
+        Symbol: SymbolId
+        EditKind: SymbolEditKind
+        BaselineHash: int option
+        UpdatedHash: int option
+        ContainingEntity: string option
+    }
 
 type UpdatedSymbolChange =
-    { Symbol: SymbolId
-      Kind: SemanticEditKind
-      ContainingEntity: string option }
+    {
+        Symbol: SymbolId
+        Kind: SemanticEditKind
+        ContainingEntity: string option
+    }
 
 /// Aggregated symbol changes derived from the typed-tree diff and definition map.
 type FSharpSymbolChanges =
-    { Added: SymbolId list
-      Updated: UpdatedSymbolChange list
-      Deleted: SymbolId list
-      Synthesized: SynthesizedMemberChange list
-      RudeEdits: RudeEdit list }
+    {
+        Added: SymbolId list
+        Updated: UpdatedSymbolChange list
+        Deleted: SymbolId list
+        Synthesized: SynthesizedMemberChange list
+        RudeEdits: RudeEdit list
+    }
 
 module FSharpSymbolChanges =
     /// Builds `FSharpSymbolChanges` from a definition map, mirroring Roslyn's `SymbolChanges`.
@@ -31,43 +37,55 @@ module FSharpSymbolChanges =
             definitionMap
             |> FSharpDefinitionMap.synthesized
             |> List.map (fun change ->
-                { Symbol = change.Symbol
-                  EditKind = change.EditKind
-                  BaselineHash = change.BaselineHash
-                  UpdatedHash = change.UpdatedHash
-                  ContainingEntity = change.ContainingEntity })
+                {
+                    Symbol = change.Symbol
+                    EditKind = change.EditKind
+                    BaselineHash = change.BaselineHash
+                    UpdatedHash = change.UpdatedHash
+                    ContainingEntity = change.ContainingEntity
+                })
 
         let updated =
             definitionMap
             |> FSharpDefinitionMap.updated
             |> List.map (fun (change, kind) ->
-                { Symbol = change.Symbol
-                  Kind = kind
-                  ContainingEntity = change.ContainingEntity })
+                {
+                    Symbol = change.Symbol
+                    Kind = kind
+                    ContainingEntity = change.ContainingEntity
+                })
 
-        { Added = FSharpDefinitionMap.added definitionMap
-          Updated = updated
-          Deleted = FSharpDefinitionMap.deleted definitionMap
-          Synthesized = synthesized
-          RudeEdits = definitionMap.RudeEdits }
+        {
+            Added = FSharpDefinitionMap.added definitionMap
+            Updated = updated
+            Deleted = FSharpDefinitionMap.deleted definitionMap
+            Synthesized = synthesized
+            RudeEdits = definitionMap.RudeEdits
+        }
 
     /// Collects entity symbols (types/modules) impacted by adds/updates/deletes, including synthesized members promoted to entities.
     let entitySymbolsWithChanges (changes: FSharpSymbolChanges) : SymbolId list =
         let updatedEntities =
             changes.Updated
-            |> Seq.choose (fun change -> if change.Symbol.Kind = SymbolKind.Entity then Some change.Symbol else None)
+            |> Seq.choose (fun change ->
+                if change.Symbol.Kind = SymbolKind.Entity then
+                    Some change.Symbol
+                else
+                    None)
 
         let addedEntities =
-            changes.Added
-            |> Seq.filter (fun symbol -> symbol.Kind = SymbolKind.Entity)
+            changes.Added |> Seq.filter (fun symbol -> symbol.Kind = SymbolKind.Entity)
 
         let deletedEntities =
-            changes.Deleted
-            |> Seq.filter (fun symbol -> symbol.Kind = SymbolKind.Entity)
+            changes.Deleted |> Seq.filter (fun symbol -> symbol.Kind = SymbolKind.Entity)
 
         let synthesizedEntities =
             changes.Synthesized
-            |> Seq.choose (fun change -> if change.Symbol.Kind = SymbolKind.Entity then Some change.Symbol else None)
+            |> Seq.choose (fun change ->
+                if change.Symbol.Kind = SymbolKind.Entity then
+                    Some change.Symbol
+                else
+                    None)
 
         seq {
             yield! updatedEntities
@@ -77,6 +95,7 @@ module FSharpSymbolChanges =
         }
         |> Seq.distinctBy (fun symbol -> struct (symbol.Path, symbol.LogicalName, symbol.Stamp))
         |> Seq.toList
+
     /// Entity symbols classified as ADDED (new type definitions). Their symbol paths
     /// mirror the IL type name (the diff projects CompiledFullName segments), so the
     /// delta emitter can match them against fresh-compile TypeDefs; they must NOT be
@@ -110,15 +129,15 @@ module FSharpSymbolChanges =
 
     let private isPropertySymbol symbol =
         match symbol.MemberKind with
-        | Some (SymbolMemberKind.PropertyGet _)
-        | Some (SymbolMemberKind.PropertySet _) -> true
+        | Some(SymbolMemberKind.PropertyGet _)
+        | Some(SymbolMemberKind.PropertySet _) -> true
         | _ -> false
 
     let private isEventSymbol symbol =
         match symbol.MemberKind with
-        | Some (SymbolMemberKind.EventAdd _)
-        | Some (SymbolMemberKind.EventRemove _)
-        | Some (SymbolMemberKind.EventInvoke _) -> true
+        | Some(SymbolMemberKind.EventAdd _)
+        | Some(SymbolMemberKind.EventRemove _)
+        | Some(SymbolMemberKind.EventInvoke _) -> true
         | _ -> false
 
     let propertyAccessorsAdded (changes: FSharpSymbolChanges) : SymbolId list =
