@@ -11,7 +11,9 @@ open FSharp.Compiler.ComponentTests.HotReload.ApplyUpdateShared
 
 // This is a minimal console-style entry point that can be launched via `dotnet test --filter ...`
 // to isolate hosting from vstest. It returns success if ApplyUpdate succeeds, otherwise throws.
-[<Fact>]
+// Skipped in automated runs: it is a manual host that requires DOTNET_MODIFIABLE_ASSEMBLIES=debug
+// (not honored by the MTP test host); runtime-apply coverage lives in RuntimeIntegrationTests.
+[<Fact(Skip = "Manual console-style host; run explicitly via --filter with DOTNET_MODIFIABLE_ASSEMBLIES=debug")>]
 let ``ApplyUpdate runner`` () =
     let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
 

@@ -11,7 +11,8 @@ open FSharp.Compiler.ComponentTests.HotReload.ApplyUpdateShared
 let private DotnetModifiableAssembliesEnvVar = "DOTNET_MODIFIABLE_ASSEMBLIES"
 
 /// Not a real test; used via `dotnet test --filter ...` as a console-style host to avoid vstest reuse.
-[<Fact>]
+/// Skipped in automated runs: requires DOTNET_MODIFIABLE_ASSEMBLIES=debug (not honored by the MTP host).
+[<Fact(Skip = "Manual console-style host; run explicitly via --filter with DOTNET_MODIFIABLE_ASSEMBLIES=debug")>]
 let ``ApplyUpdate console host`` () =
     if not (String.Equals(Environment.GetEnvironmentVariable(DotnetModifiableAssembliesEnvVar), "debug", StringComparison.OrdinalIgnoreCase)) then
         failwith $"{DotnetModifiableAssembliesEnvVar} must be 'debug' for this host."

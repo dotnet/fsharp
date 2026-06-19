@@ -47,7 +47,7 @@ module RoslynBaselineComparisons =
     type RoslynBaselines = Map<string, Map<string, int>>
 
     let private loadRoslynTables () : RoslynBaselines =
-        let path = Path.Combine(__SOURCE_DIRECTORY__, "../../../../tools/baselines/roslyn_tables.json") |> Path.GetFullPath
+        let path = Path.Combine(__SOURCE_DIRECTORY__, "../../../tools/baselines/roslyn_tables.json") |> Path.GetFullPath
         if not (File.Exists path) then
             failwithf "Roslyn baseline table snapshot not found: %s" path
         let options = JsonSerializerOptions(PropertyNameCaseInsensitive = true)

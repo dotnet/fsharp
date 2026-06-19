@@ -83,7 +83,7 @@ module MdvValidationTests =
             LanguagePrimitives.EnumOfValue<byte, TableIndex>(byte table.Index)
 
         let private baselines : Lazy<Map<string, Map<string, int>>> = lazy (
-            let path = Path.Combine(__SOURCE_DIRECTORY__, "../../../../tools/baselines/roslyn_tables.json") |> Path.GetFullPath
+            let path = Path.Combine(__SOURCE_DIRECTORY__, "../../../tools/baselines/roslyn_tables.json") |> Path.GetFullPath
             if not (File.Exists path) then
                 failwithf "Roslyn baseline table snapshot not found: %s" path
 
@@ -634,22 +634,26 @@ module MdvValidationTests =
         psi.ArgumentList.Add(baselinePath)
         for (metaPath, ilPath) in deltaPairs do
             psi.ArgumentList.Add($"/g:{metaPath};{ilPath}")
-        use proc = new Process()
-        proc.StartInfo <- psi
-        if not (proc.Start()) then failwith "Failed to start mdv."
-        let output = proc.StandardOutput.ReadToEnd()
-        let errors = proc.StandardError.ReadToEnd()
-        proc.WaitForExit()
-        if proc.ExitCode <> 0 then
-            if
-                proc.ExitCode = 150
-                && errors.IndexOf("install or update .NET", StringComparison.OrdinalIgnoreCase) >= 0
-            then
-                None
+        try
+            use proc = new Process()
+            proc.StartInfo <- psi
+            proc.Start() |> ignore
+            let output = proc.StandardOutput.ReadToEnd()
+            let errors = proc.StandardError.ReadToEnd()
+            proc.WaitForExit()
+            if proc.ExitCode <> 0 then
+                if
+                    proc.ExitCode = 150
+                    && errors.IndexOf("install or update .NET", StringComparison.OrdinalIgnoreCase) >= 0
+                then
+                    None
+                else
+                    failwithf "mdv exited with %d. stdout:%s stderr:%s" proc.ExitCode output errors
             else
-                failwithf "mdv exited with %d. stdout:%s stderr:%s" proc.ExitCode output errors
-        else
-            Some output
+                Some output
+        with :? System.ComponentModel.Win32Exception ->
+            // mdv CLI not installed / not on PATH in this environment — treat as unavailable.
+            None
 
     let private runMdv baselinePath deltaMeta deltaIl =
         runMdvInternal baselinePath [ deltaMeta, deltaIl ]
