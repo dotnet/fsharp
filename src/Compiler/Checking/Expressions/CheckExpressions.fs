@@ -7587,11 +7587,11 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
         mkSynApp1 (mkSynLidGet mSynth [ "System"; "String" ] "Format") args mSynth
 
     // Build one string expression per part, consuming one 'holeIsString' flag per fill expression.
-    let rec build acc parts (holeIsString: bool list) =
+    let rec build (acc: SynExpr list, parts: SynInterpolatedStringPart list, holeIsString: bool list) =
         match parts with
         | [] -> List.rev acc
-        | SynInterpolatedStringPart.String ("", _) :: rest -> build acc rest holeIsString
-        | SynInterpolatedStringPart.String (s, _) :: rest -> build (strLit (s.Replace("%%", "%")) :: acc) rest holeIsString
+        | SynInterpolatedStringPart.String ("", _) :: rest -> build (acc, rest, holeIsString)
+        | SynInterpolatedStringPart.String (s, _) :: rest -> build (strLit (s.Replace("%%", "%")) :: acc, rest, holeIsString)
         | SynInterpolatedStringPart.FillExpr (e, formatting) :: rest ->
             let isStr, rest' = match holeIsString with b :: bs -> b, bs | [] -> false, []
             let argExpr =
@@ -7600,9 +7600,9 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
                 | SynInterpolationFormatting.DotNet (None, None) -> if isStr then e else stringOp e
                 | SynInterpolationFormatting.DotNet (alignment, format) -> stringFormatOp (alignment, format, e)
                 | SynInterpolationFormatting.Printf (spec, _) -> sprintfOp (spec, e)
-            build (argExpr :: acc) rest rest'
+            build (argExpr :: acc, rest, rest')
 
-    let argExprs = build [] parts holeIsString
+    let argExprs = build ([], parts, holeIsString)
 
     let concatLid = mkSynLidGet mSynth [ "System"; "String" ] "Concat"
 
