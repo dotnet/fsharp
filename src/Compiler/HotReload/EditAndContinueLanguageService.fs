@@ -338,10 +338,9 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         match delta.UpdatedBaseline with
                         | Some updatedBaseline ->
                             // Generation chaining: replace the updated methods' EnC debug
-                            // information with the data recomputed from the fresh typed tree. The
-                            // delta PDB does not yet re-emit EnC CDI rows, so this in-memory chain
-                            // is what the closure mapping consumes; PDB persistence across
-                            // session restarts is the remaining gap.
+                            // information with the data recomputed from the fresh typed tree.
+                            // The delta PDB does not carry EnC CDI rows, so this in-memory chain
+                            // is what the closure mapping consumes.
                             let updatedMethodTokens =
                                 delta.AddedOrChangedMethods |> List.map (fun info -> info.MethodToken)
 

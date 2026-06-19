@@ -336,6 +336,8 @@ let buildTableStream (input: DeltaTableSerializerInput) : DeltaTableStream =
     writer.Write(byte 0)
 
     let heapFlags =
+        // #~ stream header HeapSizes byte (ECMA-335 II.24.2.6): low bits mark wide heaps;
+        // EnC deltas additionally set 0x20|0x80, mirroring Roslyn MetadataSizes for EmitDifference.
         let baseFlags =
             (if indexSizes.StringsBig then 0x01 else 0)
             ||| (if indexSizes.GuidsBig then 0x02 else 0)

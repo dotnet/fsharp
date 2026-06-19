@@ -52,7 +52,7 @@ let computeSymbolChanges
                 let map = FSharpDefinitionMap.ofTypedTreeDiff diff
                 mergeDefinitionMaps acc map
             | None ->
-                // For now treat unmatched files as unsupported edits by generating a rude edit placeholder.
+                // No matching baseline file: surface a rude edit rather than silently dropping the change.
                 let rudeEdit =
                     {
                         Symbol = None

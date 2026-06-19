@@ -49,8 +49,7 @@
 /// This is a pure data transformation: it consumes the per-method occurrence data the
 /// session already chains (baseline EnC CDI occurrence keys + the occurrence extraction of the
 /// fresh compile) and produces name assignments plus the refreshed occurrence→name
-/// table to chain into the next generation. It performs no IO and touches no IlxGen
-/// state, so it is fully unit-testable in isolation.
+/// table to chain into the next generation.
 /// </summary>
 module internal FSharp.Compiler.ClosureNameAllocator
 

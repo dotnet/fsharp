@@ -1212,9 +1212,7 @@ let private buildMethodDefinitionRowsSnapshot
             // EARLIER delta and re-emitted now (the handle cache only covers the on-disk
             // baseline) - must write their name/signature into THIS delta's heaps (offset
             // None). Offsets captured from the fresh compile's heaps are meaningless
-            // against the baseline+delta heap layout and produce garbage references
-            // (observed as "Bad binary signature" when a generation-2 body edit re-emitted
-            // a generation-1 closure's method row with fresh-compile offsets).
+            // against the baseline+delta heap layout and produce garbage references.
             let resolvedNameOffset =
                 baselineHandles |> Option.bind (fun info -> info.NameOffset)
 
