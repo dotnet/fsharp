@@ -10,6 +10,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <WarningsAsErrors>false</WarningsAsErrors>
+    <!-- The sample intentionally consumes the experimental hot reload FCS API. -->
+    <NoWarn>$(NoWarn);57</NoWarn>
     <Nullable>enable</Nullable>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
