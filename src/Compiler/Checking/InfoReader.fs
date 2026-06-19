@@ -966,7 +966,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
                     // callable from C# as 'new MyRecord(f1, f2, ...)'. Under the RecordConstructorSyntax feature we
                     // surface that same constructor to F# too (it elaborates to a record allocation - see BuildMethodCall).
                     if g.langVersion.SupportsFeature LanguageFeature.RecordConstructorSyntax && tcref.IsRecordTycon then
-                        declaredCtors @ [ RecdAllFieldsCtor(g, origTy) ]
+                        declaredCtors @ [ RecdCtor(g, origTy) ]
                     else
                         declaredCtors
       )    
@@ -1272,7 +1272,7 @@ let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         | ValueSome tcref ->
             Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
         | _ -> None
-    | RecdAllFieldsCtor(g, ty) ->
+    | RecdCtor(g, ty) ->
         match tryTcrefOfAppTy g ty with
         | ValueSome tcref ->
             Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")

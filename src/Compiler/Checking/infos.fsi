@@ -321,7 +321,7 @@ type MethInfo =
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
 
     /// Describes a use of the compiler-synthesized all-fields constructor of an F# record type
-    | RecdAllFieldsCtor of tcGlobals: TcGlobals * recdTy: TType
+    | RecdCtor of tcGlobals: TcGlobals * recdTy: TType
 
 #if !NO_TYPEPROVIDERS
     /// Describes a use of a method backed by provided metadata

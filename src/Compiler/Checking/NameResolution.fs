@@ -706,7 +706,7 @@ let rec TrySelectExtensionMethInfoOfILExtMem m amap apparentTy (actualParent, mi
 #endif
     | DefaultStructCtor _ ->
         None
-    | RecdAllFieldsCtor _ ->
+    | RecdCtor _ ->
         None
 
 /// Select from a list of extension methods

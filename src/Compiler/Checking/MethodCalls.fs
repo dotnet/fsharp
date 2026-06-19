@@ -1123,7 +1123,7 @@ let rec MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args static
     | DefaultStructCtor(_, ty) ->
        mkDefault (m, ty)
 
-    | RecdAllFieldsCtor(g, ty) ->
+    | RecdCtor(g, ty) ->
         let tcref = tcrefOfAppTy g ty
         let tinst = argsOfAppTy g ty
         mkRecordExpr g (RecdExpr, tcref, tinst, tcref.TrueInstanceFieldsAsRefList, args, m)
@@ -1274,7 +1274,7 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
             mkDefault (m, ty), ty
 
         // Build a record allocation from a call to the synthesized all-fields constructor of an F# record.
-        | RecdAllFieldsCtor (g, ty) ->
+        | RecdCtor (g, ty) ->
             let tcref = tcrefOfAppTy g ty
             let tinst = argsOfAppTy g ty
             mkRecordExpr g (RecdExpr, tcref, tinst, tcref.TrueInstanceFieldsAsRefList, allArgs, m), ty)

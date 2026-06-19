@@ -2188,7 +2188,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst staticTyOpt =
     | MethInfo.DefaultStructCtor _ ->
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
 
-    | MethInfo.RecdAllFieldsCtor _ ->
+    | MethInfo.RecdCtor _ ->
        error(InternalError("the record all-fields constructor was the unexpected solution to a trait constraint", m))
 
 #if !NO_TYPEPROVIDERS

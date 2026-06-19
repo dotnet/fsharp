@@ -356,7 +356,7 @@ let rec IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
     | FSMeth (_, _, vref, _) -> IsValAccessible ad vref
     | MethInfoWithModifiedReturnType(mi,_) -> IsTypeAndMethInfoAccessible amap m accessDomainTy ad mi
     | DefaultStructCtor(g, ty) -> IsTypeAccessible g amap m ad ty
-    | RecdAllFieldsCtor(g, ty) ->
+    | RecdCtor(g, ty) ->
         // The synthesized all-fields constructor must be no more accessible than constructing the record
         // with '{ ... }' syntax: require the type, its representation and every field to be accessible.
         // This stops F# inheriting the C# behaviour where the IL constructor is public regardless of the

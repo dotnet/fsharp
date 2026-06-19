@@ -1789,7 +1789,7 @@ module InfoMemberPrinting =
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst
             let resL = PrintTypes.layoutTyconRef denv methInfo.ApparentEnclosingTyconRef ^^ wordL punctuationUnit
             prettyTyparInst, resL
-        | RecdAllFieldsCtor _ ->
+        | RecdCtor _ ->
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst
             prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
         | FSMeth(_, _, vref, _) -> 
