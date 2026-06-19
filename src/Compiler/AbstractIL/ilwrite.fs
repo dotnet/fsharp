@@ -12,7 +12,6 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.Support
 open FSharp.Compiler.AbstractIL.ILMetadataHeaps
-open FSharp.Compiler.AbstractIL.ILEncLogWriter
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.StrongNameSign
 open FSharp.Compiler.AbstractIL.ILPdbWriter
@@ -698,16 +697,6 @@ let GetTypeNameAsElemPair cenv n =
     let n1, n2 = splitTypeNameRight n
     StringE (GetStringHeapIdxOption cenv n1),
     StringE (GetStringHeapIdx cenv n2)
-
-//=====================================================================
-// Interface adapters
-// These allow delta emission code to work with the same abstractions
-//=====================================================================
-
-/// Creates an IEncLogWriter for full assembly emission (no-op).
-/// Delta emission uses a different implementation that records entries.
-let createNullEncLogWriter () : ILEncLogWriter.IEncLogWriter =
-    ILEncLogWriter.NullEncLogWriter() :> ILEncLogWriter.IEncLogWriter
 
 //=====================================================================
 // Pass 1 - allocate indexes for types

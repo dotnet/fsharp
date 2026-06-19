@@ -74,10 +74,6 @@ type UserStringTokenCalculator(heapStartOffset: int) =
             currentOffset <- currentOffset + encoded.Length
             token
 
-    /// Get the list of (originalToken, newToken, value) tuples for all added strings.
-    member _.GetUpdates() : (int * string) list =
-        cache |> Seq.map (fun kvp -> (kvp.Value, kvp.Key)) |> Seq.toList
-
 /// Standalone signature token calculator.
 /// Tracks signatures added during delta emission and computes tokens.
 /// Token format: 0x11000000 | row_id (StandaloneSig table = 0x11)

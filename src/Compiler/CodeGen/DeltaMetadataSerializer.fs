@@ -21,7 +21,6 @@ let private padTo4 (bytes: byte[]) =
         Array.Copy(bytes, padded, bytes.Length)
         padded
 
-let private emptyUserStringHeap = padTo4 [| 0uy |]
 
 /// Represents the aligned heap streams that will be written into the delta metadata.
 type DeltaHeapStreams =
@@ -33,16 +32,6 @@ type DeltaHeapStreams =
       GuidsLength: int
       UserStrings: byte[]
       UserStringsLength: int }
-
-    static member Empty =
-        { Strings = padTo4 [||]
-          StringsLength = 0
-          Blobs = padTo4 [||]
-          BlobsLength = 0
-          Guids = padTo4 [||]
-          GuidsLength = 0
-          UserStrings = emptyUserStringHeap
-          UserStringsLength = 1 }
 
 let buildHeapStreams (mirror: DeltaMetadataTables) : DeltaHeapStreams =
     let stringBytes = mirror.StringHeapBytes

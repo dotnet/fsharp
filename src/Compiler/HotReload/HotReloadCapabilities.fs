@@ -51,5 +51,3 @@ module internal HotReloadCapability =
                 baseFlags
 
         { Flags = flags }
-
-    let supportsRuntimeApply = runtimeApplyEnabled

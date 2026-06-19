@@ -12691,25 +12691,6 @@ let snapshotIlxGenEnv eenv : IlxGenEnvSnapshot =
         DelayedFileGenReverse = eenv.delayedFileGenReverse
     }
 
-let restoreIlxGenEnv snapshot eenv : IlxGenEnv =
-    { eenv with
-        tyenv = snapshot.Tyenv
-        sigToImplRemapInfo = snapshot.SigToImplRemapInfo
-        imports = snapshot.Imports
-        valsInScope = snapshot.ValsInScope
-        witnessesInScope = snapshot.WitnessesInScope
-        suppressWitnesses = snapshot.SuppressWitnesses
-        innerVals = snapshot.InnerVals
-        letBoundVars = snapshot.LetBoundVars
-        liveLocals = snapshot.LiveLocals
-        withinSEH = snapshot.WithinSeh
-        isInLoop = snapshot.IsInLoop
-        initLocals = snapshot.InitLocals
-        delayCodeGen = snapshot.DelayCodeGen
-        exitSequel = snapshot.ExitSequel
-        delayedFileGenReverse = snapshot.DelayedFileGenReverse
-    }
-
 type IlxGenResults =
     {
         ilTypeDefs: ILTypeDef list

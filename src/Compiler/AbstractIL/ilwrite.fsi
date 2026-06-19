@@ -7,7 +7,6 @@ open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.StrongNameSign
-open FSharp.Compiler.AbstractIL.ILEncLogWriter
 
 type options =
     { ilg: ILGlobals
@@ -81,7 +80,3 @@ val WriteILBinaryInMemoryWithArtifacts:
     inputModule: ILModuleDef *
     (ILAssemblyRef -> ILAssemblyRef) ->
         byte[] * byte[] option * ILTokenMappings * MetadataSnapshot
-
-/// Creates an IEncLogWriter for full assembly emission (no-op).
-/// Delta emission uses a different implementation that records entries.
-val createNullEncLogWriter: unit -> IEncLogWriter

@@ -9,7 +9,6 @@ open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
 open FSharp.Compiler.AbstractIL.ILMetadataHeaps
-open FSharp.Compiler.AbstractIL.ILEncLogWriter
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.IlxDeltaStreams
 open FSharp.Compiler.CodeGen.DeltaMetadataTypes
@@ -1044,21 +1043,4 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
             member _.GetBlobHeapIdx bytes = addBlobBytes bytes
             member _.GetGuidIdx info = guids.AddSharedEntry info
             member _.GetUserStringHeapIdx s = addUserStringValue s
-        }
-
-    // =========================================================================
-    // IEncLogWriter interface implementation
-    // Provides unified EncLog recording for delta emission.
-    // =========================================================================
-
-    /// Get an IEncLogWriter that records to this table's EncLog/EncMap.
-    member this.AsEncLogWriter() : IEncLogWriter =
-        { new IEncLogWriter with
-            member _.RecordAddition(table, rowId, operation) =
-                this.AddEncLogRow(table, rowId, operation)
-
-            member _.RecordUpdate(table, rowId) =
-                this.AddEncLogRow(table, rowId, EditAndContinueOperation.Default)
-
-            member _.RecordEncMapEntry(table, rowId) = this.AddEncMapRow(table, rowId)
         }

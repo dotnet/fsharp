@@ -238,8 +238,6 @@
     <Compile Include="AbstractIL\ilbinary.fs" />
     <Compile Include="AbstractIL\ILDeltaHandles.fs" />
     <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
-    <Compile Include="AbstractIL\ILRowIndexing.fs" />
-    <Compile Include="AbstractIL\ILEncLogWriter.fs" />
     <Compile Include="AbstractIL\ilread.fsi" />
     <Compile Include="AbstractIL\ilread.fs" />
     <Compile Include="AbstractIL\ilwritepdb.fsi" />

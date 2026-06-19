@@ -72,9 +72,6 @@ type IlxGenEnvSnapshot
 /// Capture the relevant parts of an ILX code generation environment for later reuse.
 val snapshotIlxGenEnv: IlxGenEnv -> IlxGenEnvSnapshot
 
-/// Restore a previously captured ILX code generation environment onto an existing environment skeleton.
-val restoreIlxGenEnv: IlxGenEnvSnapshot -> IlxGenEnv -> IlxGenEnv
-
 /// The results of the ILX compilation of one fragment of an assembly
 type public IlxGenResults =
     {
