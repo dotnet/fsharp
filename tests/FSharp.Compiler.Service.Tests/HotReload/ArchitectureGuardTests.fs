@@ -24,7 +24,8 @@ let private repoRoot =
     Path.Combine(__SOURCE_DIRECTORY__, "../../..") |> Path.GetFullPath
 
 let private readCompilerFile relativePath =
-    Path.Combine(repoRoot, relativePath) |> File.ReadAllText
+    // Normalize CRLF to LF so the '\n'-anchored substring assertions below match on Windows checkouts.
+    (Path.Combine(repoRoot, relativePath) |> File.ReadAllText).Replace("\r\n", "\n")
 
 [<Fact>]
 let ``fsc does not directly depend on hot reload implementation modules`` () =
@@ -166,7 +167,7 @@ let ``driver hot reload implementation references stay behind boundary files`` (
         let fileName = Path.GetFileName(path)
 
         if not (allowlist.Contains fileName) then
-            let source = File.ReadAllText(path)
+            let source = (File.ReadAllText path).Replace("\r\n", "\n")
 
             for pattern in forbiddenPatterns do
                 Assert.DoesNotContain(pattern, source)
