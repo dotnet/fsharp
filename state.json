@@ -225,6 +225,14 @@
         "Affects-Compiler-Output",
         "Affects-Test-Tooling"
       ]
+    },
+    "19973": {
+      "sha": "38e677a69666848a890d8dd73071868ed603a1fa",
+      "cats": []
+    },
+    "19972": {
+      "sha": "af20a716ea7278f7899a0c153bef408ddd7a4f24",
+      "cats": []
     }
   }
 }
