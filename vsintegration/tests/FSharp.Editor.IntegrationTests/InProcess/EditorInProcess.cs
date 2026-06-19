@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FSharp.Editor.IntegrationTests.Extensions;
@@ -130,13 +131,48 @@ internal partial class EditorInProcess
         }
         catch (InvalidOperationException ex)
         {
-            // Report the error-list contents and tracking state so a failure is self-explaining.
+            // Report the error-list contents, tracking state, and a producer-agnostic probe of what the broker
+            // sees at the caret (distinguishes "fix not offered" from "fix offered but no session").
             var entries = await TestServices.ErrorList.GetAllEntriesAsync(cancellationToken);
+            var categoryRegistry = componentModel.GetService<ISuggestedActionCategoryRegistryService>();
+            var probe = await ProbeAvailableActionsAsync(broker, view, categoryRegistry.Any, cancellationToken);
             throw new InvalidOperationException(
                 $"{ex.Message}{Environment.NewLine}trackingEnabled={AsyncOperationWaiter.IsTrackingEnabled()}{Environment.NewLine}" +
+                $"probe: {probe}{Environment.NewLine}" +
                 $"--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
                 string.Join(Environment.NewLine, entries),
                 ex);
         }
+    }
+
+    // Asks the lightbulb broker (producer-agnostic) whether any suggested actions exist at the caret and which
+    // categories, without creating a session - so a failure tells us if the fix was simply never offered.
+    private async Task<string> ProbeAvailableActionsAsync(ILightBulbBroker broker, IWpfTextView view, ISuggestedActionCategorySet requested, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var result = "";
+        try
+        {
+            var has = await broker.HasSuggestedActionsAsync(requested, view, cancellationToken);
+            result += $"HasSuggestedActions={has}";
+        }
+        catch (Exception ex)
+        {
+            result += $"HasSuggestedActions threw {ex.GetType().Name}: {ex.Message}";
+        }
+
+        try
+        {
+            var categories = await ((ILightBulbBroker2)broker).GetSuggestedActionCategoriesAsync(requested, view, cancellationToken);
+            var names = categories is null ? Array.Empty<string>() : ((IEnumerable<string>)categories).ToArray();
+            result += $"; categories=[{string.Join(",", names)}]";
+        }
+        catch (Exception ex)
+        {
+            result += $"; categories threw {ex.GetType().Name}: {ex.Message}";
+        }
+
+        return result;
     }
 }
