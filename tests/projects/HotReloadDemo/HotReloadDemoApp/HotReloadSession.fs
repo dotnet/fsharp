@@ -313,10 +313,10 @@ module HotReloadSession =
                                     psi.ArgumentList.Add($"/g:{metaPath};{ilPath}")
 
                                 try
-                                    let procInstance = Process.Start(psi)
-                                    if isNull procInstance then
+                                    match Process.Start psi with
+                                    | null ->
                                         printfn "[hotreload-mdv] failed to start mdv (Process.Start returned null)"
-                                    else
+                                    | procInstance ->
                                         use proc = procInstance
                                         let stdOutTask = proc.StandardOutput.ReadToEndAsync()
                                         let stdErrTask = proc.StandardError.ReadToEndAsync()
