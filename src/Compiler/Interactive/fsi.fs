@@ -1809,7 +1809,7 @@ type internal FsiDynamicCompiler
             with _ ->
                 path
 
-        createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{System.Guid.NewGuid():n}".Replace(':', '-')))
+        createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
 
     let deleteScriptingSymbols () =
         try
