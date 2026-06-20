@@ -7583,21 +7583,32 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
         let args = paren (SynExpr.Tuple(false, [ invariant; strLit netFormat; e ], [ range0; range0 ], mSynth))
         mkSynApp1 (mkSynLidGet mSynth [ "System"; "String" ] "Format") args mSynth
 
-    // Type-check one hole and convert it to a string. A printf hole goes straight to 'sprintf'; a plain
-    // or formatted hole is checked here first, so a function value can be warned about.
+    // Type-check one hole and convert it to a (string expression, may-be-null) pair.
     let convertHole (synFill: SynExpr, formatting: SynInterpolationFormatting, tpenv: UnscopedTyparEnv) =
         match formatting with
-        | SynInterpolationFormatting.Printf (spec, _) -> TcExpr cenv (MustEqual g.string_ty) env tpenv (sprintfOp (spec, synFill))
+        | SynInterpolationFormatting.Printf (spec, _) ->
+            match spec with
+            // A bare '%s' requires a string; pass it through (it may be null) instead of formatting via 'sprintf'.
+            | "%s" ->
+                let fill, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv synFill
+                (fill, true), tpenv
+            | _ ->
+                let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv (sprintfOp (spec, synFill))
+                (arg, false), tpenv
         | SynInterpolationFormatting.DotNet (alignment, format) ->
+            // Type-checking the hole here is also where a function value gets warned about.
             let fill, tpenv = TcExprFlex2 cenv (NewInferenceType g) env false tpenv synFill
             let fillTy = tyOfExpr g fill
             if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg && (isFunTy g fillTy || isDelegateTy g fillTy) then
                 warning (Error(FSComp.SR.tcFunctionValueUsedAsInterpolatedStringArg (), synFill.Range))
             match alignment, format with
-            | None, None -> (if isStringTy g fillTy then fill else mkCallStringOperator g m fillTy fill), tpenv
-            | _ -> TcExpr cenv (MustEqual g.string_ty) env tpenv (stringFormatOp (alignment, format, synFill))
+            | None, None -> (if isStringTy g fillTy then (fill, true) else (mkCallStringOperator g m fillTy fill, false)), tpenv
+            | _ ->
+                let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv (stringFormatOp (alignment, format, synFill))
+                (arg, false), tpenv
 
-    // One string expression per non-empty part; a builder (not map) since 'tpenv' threads through the holes.
+    // One (string expression, may-be-null) per non-empty part; a builder (not map) since 'tpenv' threads
+    // through the holes. Literals and conversions are never null; only a raw string passthrough may be.
     let argExprs, tpenv =
         let ra = ResizeArray()
         let mutable tpenvAcc = tpenv
@@ -7605,7 +7616,7 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
             match part with
             | SynInterpolatedStringPart.String (s, _) ->
                 if s <> "" then
-                    ra.Add(mkString g m (s.Replace("%%", "%")))
+                    ra.Add((mkString g m (s.Replace("%%", "%")), false))
             | SynInterpolatedStringPart.FillExpr (synFill, formatting) ->
                 let argExpr, tpenvAfter = convertHole (synFill, formatting, tpenvAcc)
                 ra.Add argExpr
@@ -7615,11 +7626,16 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
     let resultExpr =
         match argExprs with
         | [] -> mkString g m ""
-        | [ single ] -> single
-        | [ a; b ] -> mkStaticCall_String_Concat2 g m a b
-        | [ a; b; c ] -> mkStaticCall_String_Concat3 g m a b c
-        | [ a; b; c; d ] -> mkStaticCall_String_Concat4 g m a b c d
-        | args -> mkStaticCall_String_Concat_Array g m (mkArray (g.string_ty, args, m))
+        // A lone arg has no Concat to map its null to ""; a possibly-null one coalesces via 'string'.
+        | [ (single, mustCallStringOp) ]->
+            if mustCallStringOp then mkCallStringOperator g m g.string_ty single
+            else single
+        | [ (a, _); (b, _) ] -> mkStaticCall_String_Concat2 g m a b
+        | [ (a, _); (b, _); (c, _) ] -> mkStaticCall_String_Concat3 g m a b c
+        | [ (a, _); (b, _); (c, _); (d, _) ] -> mkStaticCall_String_Concat4 g m a b c d
+        | _ ->
+            let exprs = argExprs |> List.map fst
+            mkStaticCall_String_Concat_Array g m (mkArray (g.string_ty, exprs, m))
 
     TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> resultExpr, tpenv)
 
