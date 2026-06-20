@@ -939,6 +939,8 @@ type internal TcGlobals =
 
     member sbyte_operator_info: IntrinsicValRef
 
+    member string_operator_info: IntrinsicValRef
+
     member sbyte_tcr: TypedTree.EntityRef
 
     member sbyte_ty: TypedTree.TType
