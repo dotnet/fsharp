@@ -7604,8 +7604,16 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
             match alignment, format with
             | None, None -> (if isStringTy g fillTy then (fill, true) else (mkCallStringOperator g m fillTy fill, false)), tpenv
             | _ ->
-                let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv (stringFormatOp (alignment, format, synFill))
-                (arg, false), tpenv
+                // Format the already-checked hole via a synthesized 'String.Format', binding its boxed value
+                // to a temporary so the hole is not type-checked a second time. Re-checking 'synFill' would
+                // duplicate any error in it; boxing to 'obj' keeps the 'Format' overload unambiguous (so a
+                // hole that already failed to check doesn't also leak a confusing 'Format' overload error).
+                let boxedFill = mkCallBox g m fillTy fill
+                let tmpVal, _ = mkLocal mSynth "interpHole" (tyOfExpr g boxedFill)
+                let envInner = AddLocalVal g cenv.tcSink mSynth tmpVal env
+                let tmpRef = SynExpr.Ident(mkSynId mSynth tmpVal.LogicalName)
+                let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) envInner tpenv (stringFormatOp (alignment, format, tmpRef))
+                (mkCompGenLet mSynth tmpVal boxedFill arg, false), tpenv
 
     // One (string expression, may-be-null) per non-empty part; a builder (not map) since 'tpenv' threads
     // through the holes. Literals and conversions are never null; only a raw string passthrough may be.
