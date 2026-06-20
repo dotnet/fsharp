@@ -171,7 +171,7 @@ type DataItem<'data> =
     Data: 'data
   }
 
-  static member inline Create: item: ^input -> DataItem<^input> when ^input: (member get_StringValue: unit -> string) and ^input: (member get_FriendlyStringValue: unit -> string)
+  static member inline Create<^input when ^input: (member get_StringValue: unit -> string) and ^input: (member get_FriendlyStringValue: unit -> string)> : item: ^input -> DataItem<^input>
 
   static member Create<'data> : identifier: string * label: string * data: 'data -> DataItem<'data>"""
 
@@ -344,7 +344,7 @@ type GenericType<'X> with
 
     one |> withAdditionalSourceFiles [ two; three ]
     |> compile
-    |> verifyILContains [ ".Print<ActualType>" ]
+    |> verifyILPresent [ ".Print<ActualType>" ]
 
 // https://github.com/dotnet/fsharp/issues/14310
 [<Fact>]
@@ -683,3 +683,325 @@ type A private () =
     |> compile
     |> shouldSucceed
     |> ignore
+
+// =========================================================================
+// Corpus-wide roundtrip sweep failures (1483 standalone .fs files swept).
+// Each test below is a REAL sig-gen bug found in POSITIVE (legit) test code.
+// Negative tests (intentionally broken code) are excluded.
+// =========================================================================
+
+// Sweep: single-case struct DU gets spurious bar (FS0300)
+// Source: tests/fsharp/core/fsfromfsviacs/lib.fs — #19597
+[<Fact>]
+let ``Sweep - single-case struct DU roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+[<Struct>]
+type U0 = U0
+"""
+
+// Sweep: backticked active pattern case names (FS0010) — #19592
+[<Fact>]
+let ``Sweep - backticked active pattern roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+let (|``A B``|) (x:int) = x * 2
+"""
+
+// Sweep: type param with special chars needs backtick escaping (FS0010) — #19595
+[<Fact>]
+let ``Sweep - type param with angle brackets roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+type Foo<'a, 'b>() =
+    member _.Bar<'``c<d>``> (x: '``c<d>``) = x
+"""
+
+// Sweep: SRTP multi-witness constraint lost in generated sig (FS0340)
+// Source: tests/fsharp/typecheck/sigs/pos36-srtp-lib.fs
+[<Fact>]
+let ``Sweep - SRTP multi-witness constraint roundtrips`` () =
+    assertSignatureRoundtrip """
+module Lib
+
+let inline RequireM< ^Witnesses, ^T when (^Witnesses or ^T): (static member M : ^T -> string) > (x: ^T) : string = 
+    ((^Witnesses or ^T): (static member M : ^T -> string) x)
+
+type C(p:int) = 
+    member x.P = p
+
+type Witnesses() =
+    static member M (x: C) : string = sprintf "M(C), x = %d"  x.P
+    static member M (x: int64) : string = sprintf "M(int64), x = %d"  x
+
+type StaticMethods =
+    static member inline M< ^T when (Witnesses or  ^T): (static member M: ^T -> string)>  (x: ^T) : string =
+        RequireM< Witnesses, ^T> (x)
+"""
+
+// Sweep: type application syntax — fixed by SRTP explicit type param change
+// Source: tests/fsharp/typecheck/sigs/pos34.fs
+[<Fact>]
+let ``Sweep - type application in member sig roundtrips`` () =
+    assertSignatureRoundtrip """
+module Pos34
+
+[<Sealed>]
+type Foo<'bar>() =
+    member inline _.Baz<'a> (x: 'a) = x
+"""
+
+// Sweep: multi-case active pattern — fixed by backtick escaping change
+// Source: tests/fsharp/typecheck/sigs/pos16.fs
+[<Fact>]
+let ``Sweep - active pattern in sig roundtrips`` () =
+    assertSignatureRoundtrip """
+module Pos16
+
+let (|A|B|) (x: int) = if x > 0 then A else B
+"""
+
+// Sweep: overloaded member with unit parameter (FS0193) — #19596
+// Testing both directions and consumer access to understand conformance boundaries.
+
+// Direction 1: handwritten sig says "member M: unit -> unit", impl has "member M(()) = ()"
+[<Fact>]
+let ``Unit param overload - sig with consumer compiles`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M(())
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Direction 2: impl without explicit unit parens "member x.M() = ()"
+[<Fact>]
+let ``Unit param overload - non-paren impl with sig and consumer`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M() = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Roundtrip: generated sig from impl, then compile sig+impl+consumer
+[<Fact>]
+let ``Sweep - overloaded member with unit param roundtrips`` () =
+    assertSignatureRoundtrip """
+module Repro
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""
+
+// Inverse direction 1: impl M(()) but consumer calls d.M() (no parens) — must fail with FS0503
+[<Fact>]
+let ``Unit param overload - consumer cannot call M() when impl is M(()) with overloads`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M(()) = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldFail
+    |> withErrorCode 503
+    |> ignore
+
+// Inverse direction 2: impl M() (no explicit unit), sig M: unit -> unit, consumer calls d.M()
+[<Fact>]
+let ``Unit param overload - consumer calls M() with normal impl and sig`` () =
+    let sigSource = """
+module Lib
+
+type R1 =
+  { f1: int }
+
+type D =
+  new: unit -> D
+  member M: unit -> unit
+  member M: y: R1 -> unit
+  member N: unit
+"""
+    let implSource = """
+module Lib
+type R1 = { f1 : int }
+type D() =
+    member x.N = x.M { f1 = 3 }
+    member x.M((y: R1)) = ()
+    member x.M() = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+    d.M { f1 = 42 }
+    d.N
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Non-overloaded: member M(()) with sig member M: unit -> unit (no other overloads)
+[<Fact>]
+let ``Unit param - non-overloaded member M(()) conforms to sig member M: unit -> unit`` () =
+    let sigSource = """
+module Lib
+
+type D =
+    new: unit -> D
+    member M: unit -> unit
+"""
+    let implSource = """
+module Lib
+type D() =
+    member _.M(()) = ()
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Non-overloaded: member M(()) with sig member M: unit -> unit, consumer calls d.M()
+// Verifies that synthesized ArgReprInfo from sig allows consumer access
+[<Fact>]
+let ``Unit param - non-overloaded member M(()) consumer can call M()`` () =
+    let sigSource = """
+module Lib
+
+type D =
+    new: unit -> D
+    member M: unit -> unit
+"""
+    let implSource = """
+module Lib
+type D() =
+    member _.M(()) = ()
+"""
+    let consumerSource = """
+module Consumer
+open Lib
+let test() =
+    let d = D()
+    d.M()
+"""
+    Fsi sigSource
+    |> withAdditionalSourceFile (FsSourceWithFileName "Lib.fs" implSource)
+    |> withAdditionalSourceFile (FsSourceWithFileName "Consumer.fs" consumerSource)
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+// Regression for #19615: M(()) emits explicit Unit argument, distinct from a no-arg M().
+[<Fact>]
+let ``Unit param - M(()) emits Unit argument distinct from M(int)`` () =
+    FSharp """
+module Test
+type D() =
+    member x.M(()) = 1
+    member x.M(y: int) = y
+"""
+    |> compile
+    |> shouldSucceed
+    |> verifyILPresent [
+        ".method public hidebysig instance int32 M(class [FSharp.Core]Microsoft.FSharp.Core.Unit _arg1) cil managed"
+        ".method public hidebysig instance int32 M(int32 y) cil managed"
+    ]

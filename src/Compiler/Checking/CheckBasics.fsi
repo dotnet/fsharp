@@ -133,6 +133,11 @@ type TcEnv =
         // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
         // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
         eCachedImplicitYieldExpressions: HashMultiMap<range, SynExpr * TType * Expr>
+
+        /// Stamps of local values introduced by `use` bindings currently in scope.
+        /// Used to suppress duplicate Dispose calls when a `use` binding's
+        /// right-hand side is a reference to an already-use-bound value (issue #12300).
+        eUseBoundValStamps: Set<Stamp>
     }
 
     member DisplayEnv: DisplayEnv

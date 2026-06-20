@@ -689,6 +689,9 @@ val internal AllMethInfosOfTypeInScope:
     ty: TType ->
         MethInfo list
 
+/// Check whether the 'this' argument of an extension method is compatible with the target type
+val internal IsExtensionMethCompatibleWithTy: infoReader: InfoReader -> m: range -> ty: TType -> minfo: MethInfo -> bool
+
 /// Used to report an error condition where name resolution failed due to an indeterminate type
 exception internal IndeterminateType of range
 
@@ -875,6 +878,7 @@ val internal ResolvePartialLongIdentToClassOrRecdFields:
 val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
 /// Resolve a long identifier occurring in an expression position.
+/// Returns the terminal identifier range (#14284).
 val internal ResolveLongIdentAsExprAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
@@ -884,9 +888,10 @@ val internal ResolveLongIdentAsExprAndComputeRange:
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
     maybeAppliedArgExpr: SynExpr option ->
-        ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
+        ResultOrException<EnclosingTypeInst * Item * range * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
+/// Returns the terminal identifier range (#14284).
 val internal ResolveExprDotLongIdentAndComputeRange:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
@@ -899,7 +904,7 @@ val internal ResolveExprDotLongIdentAndComputeRange:
     findFlag: FindMemberFlag ->
     staticOnly: bool ->
     maybeAppliedArgExpr: SynExpr option ->
-        Item * range * Ident list * AfterResolution
+        Item * range * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
 val FakeInstantiationGenerator: range -> Typar list -> TType list

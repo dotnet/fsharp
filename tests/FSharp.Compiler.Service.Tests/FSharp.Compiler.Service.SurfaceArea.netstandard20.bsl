@@ -2086,8 +2086,10 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Int32 GetHashCode(System.Col
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Int32 Tag
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean HasErrors
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean HasFullTypeCheckInfo
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean IsRelativeNameResolvableFromSymbol(FSharp.Compiler.Text.Position, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Symbols.FSharpSymbol)
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean get_HasErrors()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean get_HasFullTypeCheckInfo()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext ProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext get_ProjectContext()
@@ -5298,6 +5300,8 @@ FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Collections.FSharpList`1[
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_AllCompilationPaths()
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpEntity] DeclaringEntity
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpEntity] get_DeclaringEntity()
+FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo] ObsoleteDiagnosticInfo
+FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo] get_ObsoleteDiagnosticInfo()
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] BaseType
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] get_BaseType()
 FSharp.Compiler.Symbols.FSharpEntity: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText] TryGetMetadataText()
@@ -5434,6 +5438,8 @@ FSharp.Compiler.Symbols.FSharpField: FSharp.Compiler.Text.Range get_DeclarationL
 FSharp.Compiler.Symbols.FSharpField: Int32 GetHashCode()
 FSharp.Compiler.Symbols.FSharpField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpEntity] DeclaringEntity
 FSharp.Compiler.Symbols.FSharpField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpEntity] get_DeclaringEntity()
+FSharp.Compiler.Symbols.FSharpField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo] ObsoleteDiagnosticInfo
+FSharp.Compiler.Symbols.FSharpField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo] get_ObsoleteDiagnosticInfo()
 FSharp.Compiler.Symbols.FSharpField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpUnionCase] DeclaringUnionCase
 FSharp.Compiler.Symbols.FSharpField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpUnionCase] get_DeclaringUnionCase()
 FSharp.Compiler.Symbols.FSharpField: Microsoft.FSharp.Core.FSharpOption`1[System.Object] LiteralValue
@@ -5715,6 +5721,8 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSh
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpEntity] get_DeclaringEntity()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue] EventForFSharpProperty
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue] get_EventForFSharpProperty()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo] ObsoleteDiagnosticInfo
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo] get_ObsoleteDiagnosticInfo()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] FullTypeSafe
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpType] get_FullTypeSafe()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.TaggedText[]] GetReturnTypeLayout(FSharp.Compiler.Symbols.FSharpDisplayContext)
@@ -5750,6 +5758,25 @@ FSharp.Compiler.Symbols.FSharpObjectExprOverride: Microsoft.FSharp.Collections.F
 FSharp.Compiler.Symbols.FSharpObjectExprOverride: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpGenericParameter] get_GenericParameters()
 FSharp.Compiler.Symbols.FSharpObjectExprOverride: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue]] CurriedParameterGroups
 FSharp.Compiler.Symbols.FSharpObjectExprOverride: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue]] get_CurriedParameterGroups()
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Boolean Equals(FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo)
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Boolean Equals(FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo, System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Boolean Equals(System.Object)
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Boolean IsError
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Boolean get_IsError()
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Int32 CompareTo(FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo)
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Int32 CompareTo(System.Object)
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Int32 GetHashCode()
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Microsoft.FSharp.Core.FSharpOption`1[System.String] DiagnosticId
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Microsoft.FSharp.Core.FSharpOption`1[System.String] Message
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Microsoft.FSharp.Core.FSharpOption`1[System.String] UrlFormat
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_DiagnosticId()
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_Message()
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_UrlFormat()
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: System.String ToString()
+FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo: Void .ctor(Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.Symbols.FSharpOpenDeclaration: Boolean IsOwnNamespace
 FSharp.Compiler.Symbols.FSharpOpenDeclaration: Boolean get_IsOwnNamespace()
 FSharp.Compiler.Symbols.FSharpOpenDeclaration: FSharp.Compiler.Syntax.SynOpenDeclTarget Target
@@ -5813,6 +5840,8 @@ FSharp.Compiler.Symbols.FSharpSymbol: FSharp.Compiler.Symbols.FSharpAssembly get
 FSharp.Compiler.Symbols.FSharpSymbol: Int32 GetEffectivelySameAsHash()
 FSharp.Compiler.Symbols.FSharpSymbol: Int32 GetHashCode()
 FSharp.Compiler.Symbols.FSharpSymbol: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpAttribute] TryGetAttribute[T]()
+FSharp.Compiler.Symbols.FSharpSymbol: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo] ObsoleteDiagnosticInfo
+FSharp.Compiler.Symbols.FSharpSymbol: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpObsoleteDiagnosticInfo] get_ObsoleteDiagnosticInfo()
 FSharp.Compiler.Symbols.FSharpSymbol: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] DeclarationLocation
 FSharp.Compiler.Symbols.FSharpSymbol: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] ImplementationLocation
 FSharp.Compiler.Symbols.FSharpSymbol: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] SignatureLocation
@@ -6106,9 +6135,11 @@ FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Synt
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtLeafExpr, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Syntax.DebugPointAtLeafExpr NewYes(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range Item
-FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range get_Item()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean get_isHidden()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean isHidden
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Syntax.DebugPointAtLeafExpr NewYes(Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 GetHashCode()
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 Tag
@@ -12460,6 +12491,7 @@ FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Create(System.String[], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Empty
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Merge(FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Xml.PreXmlDoc)
+FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc WithExtraParamsForCheck(FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc get_Empty()
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.XmlDoc ToXmlDoc(Boolean, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.Xml.PreXmlDoc: Int32 GetHashCode()

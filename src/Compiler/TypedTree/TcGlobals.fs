@@ -1928,7 +1928,7 @@ type TcGlobals(
         Some (g.array_get_info, [retTy], argExprs)
     | "set_Item", [arrTy; _; elemTy], _, [_; _; _] when isArrayTy g arrTy ->
         Some (g.array_set_info, [elemTy], argExprs)
-    | "get_Item", [stringTy; _; _], _, [_; _] when isStringTy g stringTy ->
+    | "get_Item", [stringTy; _], _, [_; _] when isStringTy g stringTy ->
         Some (g.getstring_info, [], argExprs)
     | "op_UnaryPlus", [aty], _, [_] ->
         // Call Operators.id

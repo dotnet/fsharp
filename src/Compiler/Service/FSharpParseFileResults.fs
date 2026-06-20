@@ -568,7 +568,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                             | SynInterpolatedStringPart.FillExpr(fillExpr, _) -> yield fillExpr
                                     ]
 
-                        | SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, isControlFlow, innerExpr) ->
+                        | SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(_, m), isControlFlow, innerExpr) ->
                             yield! checkRange m
                             yield! walkExpr isControlFlow innerExpr
 

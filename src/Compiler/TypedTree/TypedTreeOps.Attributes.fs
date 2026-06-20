@@ -2089,7 +2089,7 @@ module internal DebugPrint =
 
             | Expr.Link rX -> exprL rX.Value |> wrap
 
-            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, rX) ->
+            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(_, m), rX) ->
                 aboveListL [ wordL (tagText "__debugPoint(") ^^ rangeL m ^^ wordL (tagText ")"); exprL rX ]
                 |> wrap
 

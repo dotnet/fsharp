@@ -2089,10 +2089,12 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
 
     let env = { env with external = env.external || ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute v }
 
-    // Check that active patterns don't have free type variables in their result
+    // Check active pattern shape/type constraints
     match TryGetActivePatternInfo vref with
-    | Some _apinfo when _apinfo.ActiveTags.Length > 1 ->
-        if doesActivePatternHaveFreeTypars g vref then
+    | Some apinfo ->
+        let hasFreeTypars = doesActivePatternHaveFreeTypars g vref
+
+        if apinfo.ActiveTags.Length > 1 && hasFreeTypars then
            errorR(Error(FSComp.SR.activePatternChoiceHasFreeTypars(v.LogicalName), v.Range))
     | _ -> ()
 

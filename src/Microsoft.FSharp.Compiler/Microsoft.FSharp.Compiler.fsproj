@@ -11,12 +11,15 @@
     <NoDefaultExcludes>true</NoDefaultExcludes>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.NuGetRepack.Tasks" Version="$(MicrosoftDotNetNuGetRepackTasksVersion)" />
+  </ItemGroup>
+  <!-- TODO: Remove UsingTask when upgrading to Arcade 11: https://github.com/dotnet/fsharp/issues/19557 -->
   <PropertyGroup>
-    <_ArcadeSdkMSBuildProjectDir>$([System.IO.Path]::GetDirectoryName('$(ArcadeSdkBuildTasksAssembly)'))\..\</_ArcadeSdkMSBuildProjectDir>
-    <_BuildReleasePackagesTargets>$(_ArcadeSdkMSBuildProjectDir)BuildReleasePackages.targets</_BuildReleasePackagesTargets>
+    <MicrosoftDotNetNuGetRepackTaskAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'">$(NuGetPackageRoot)microsoft.dotnet.nugetrepack.tasks\$(MicrosoftDotNetNuGetRepackTasksVersion)\tools\netframework\Microsoft.DotNet.NuGetRepack.Tasks.dll</MicrosoftDotNetNuGetRepackTaskAssembly>
+    <MicrosoftDotNetNuGetRepackTaskAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(NuGetPackageRoot)microsoft.dotnet.nugetrepack.tasks\$(MicrosoftDotNetNuGetRepackTasksVersion)\tools\net\Microsoft.DotNet.NuGetRepack.Tasks.dll</MicrosoftDotNetNuGetRepackTaskAssembly>
   </PropertyGroup>
-
-  <Import Project="$(_BuildReleasePackagesTargets)" />
+  <UsingTask TaskName="Microsoft.DotNet.Tools.UpdatePackageVersionTask" AssemblyFile="$(MicrosoftDotNetNuGetRepackTaskAssembly)" />
 
   <ItemGroup>
     <NuspecProperty Include="fSharpCorePreviewPackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" />
@@ -85,11 +88,6 @@
     <!-- Rewrite the version ranges of per-build pre-release packages (see https://github.com/NuGet/Home/issues/7213) -->
     <Microsoft.DotNet.Tools.UpdatePackageVersionTask Packages="@(_BuiltPackages)" OutputDirectory="$(DependentPackagesDir)Shipping" ExactVersions="true"/>
   </Target>
-
-  <Target Name="PackageReleasePackages" AfterTargets="Pack" Condition="'$(DotNetFinalVersionKind)' == ''">
-    <!-- override sdk PackageReleasePackages to do nothing. -->
-  </Target>
-
 
   <Target Name="PackDependentProjectsCore">
     <PropertyGroup>

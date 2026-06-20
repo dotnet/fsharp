@@ -39,7 +39,7 @@ Math.Max(a,)
     dumpDiagnosticNumbers checkResults |> shouldEqual [
         "(4,10--4,11)", 3100
         "(4,9--4,10)", 39
-        "(4,0--4,12)", 41
+        "(4,5--4,8)", 41
     ]
 
     assertHasSymbolUsages ["Max"] checkResults
@@ -118,4 +118,77 @@ if true then
 let o: obj = null
 if true then
     o.GetHashCode{caret}
+"""
+
+module Patterns =
+    [<Fact>]
+    let ``Enum - Type 01`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}.A -> ()
+"""
+
+    [<Fact>]
+    let ``Enum - Type 02`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret} -> ()
+"""
+
+    [<Fact>]
+    let ``Enum - Type 03`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}
+"""
+
+    [<Fact>]
+    let ``Enum - Type 04`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}.
+"""
+        
+    [<Fact>]
+    let ``Enum - Type 05`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}. -> ()
+"""
+
+    [<Fact(Skip = "Improve name resolution recovery")>]
+    let ``Enum - Type 06`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}.B
+"""
+
+    [<Fact>]
+    let ``Enum - Type 07`` () =
+        assertHasSymbolUsageAtCaret "E" """
+type E =
+    | A = 1
+
+match E.A with
+| E{caret}.
+
+()
 """

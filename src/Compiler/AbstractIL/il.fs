@@ -3376,6 +3376,8 @@ let mkILSimpleTypar nm =
         MetadataIndex = NoMetadataIdx
     }
 
+/// Returns gp with all constraint state cleared. CustomAttrsStored is also reset because
+/// some constraints (notably IsUnmanagedAttribute) are encoded there.
 let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
     { gp with
         Constraints = []
@@ -3383,6 +3385,7 @@ let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
         HasNotNullableValueTypeConstraint = false
         HasDefaultConstructorConstraint = false
         HasAllowsRefStruct = false
+        CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
     }
 
 let genericParamOfGenericActual (_ga: ILType) = mkILSimpleTypar "T"
@@ -4979,6 +4982,7 @@ let rec decodeCustomAttrElemType bytes sigptr x =
         let elemTy, sigptr = decodeCustomAttrElemType bytes sigptr et
         mkILArr1DTy elemTy, sigptr
     | x when x = 0x50uy -> PrimaryAssemblyILGlobals.typ_Type, sigptr
+    | x when x = 0x51uy -> PrimaryAssemblyILGlobals.typ_Object, sigptr // SERIALIZATION_TYPE_TAGGED_OBJECT (ECMA-335 II.23.3)
     | _ -> failwithf "decodeCustomAttrElemType ilg: unrecognized custom element type: %A" x
 
 /// Given a custom attribute element, encode it to a binary representation according to the rules in Ecma 335 Partition II.

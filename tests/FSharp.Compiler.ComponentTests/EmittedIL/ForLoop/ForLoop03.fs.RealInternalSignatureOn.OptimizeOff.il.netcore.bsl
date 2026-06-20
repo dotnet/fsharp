@@ -5,11 +5,6 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern System.Collections
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 9:0:0:0
-}
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -38,13 +33,13 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .field static assembly class [System.Collections]System.Collections.Generic.List`1<int32> ra@5
+  .field static assembly class [runtime]System.Collections.Generic.List`1<int32> ra@5
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .method public specialname static class [System.Collections]System.Collections.Generic.List`1<int32> get_ra() cil managed
+  .method public specialname static class [runtime]System.Collections.Generic.List`1<int32> get_ra() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class [System.Collections]System.Collections.Generic.List`1<int32> assembly::ra@5
+    IL_0000:  ldsfld     class [runtime]System.Collections.Generic.List`1<int32> assembly::ra@5
     IL_0005:  ret
   } 
 
@@ -54,8 +49,8 @@
     .maxstack  5
     .locals init (int32 V_0,
              int32 V_1,
-             class [System.Collections]System.Collections.Generic.List`1<int32> V_2,
-             valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<int32> V_3,
+             class [runtime]System.Collections.Generic.List`1<int32> V_2,
+             valuetype [runtime]System.Collections.Generic.List`1/Enumerator<int32> V_3,
              int32 V_4)
     IL_0000:  ldc.i4.0
     IL_0001:  stloc.0
@@ -63,24 +58,24 @@
     IL_0003:  stloc.1
     IL_0004:  br.s       IL_003f
 
-    IL_0006:  call       class [System.Collections]System.Collections.Generic.List`1<int32> assembly::get_ra()
+    IL_0006:  call       class [runtime]System.Collections.Generic.List`1<int32> assembly::get_ra()
     IL_000b:  stloc.2
     IL_000c:  ldloc.2
-    IL_000d:  callvirt   instance valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!0> class [System.Collections]System.Collections.Generic.List`1<int32>::GetEnumerator()
+    IL_000d:  callvirt   instance valuetype [runtime]System.Collections.Generic.List`1/Enumerator<!0> class [runtime]System.Collections.Generic.List`1<int32>::GetEnumerator()
     IL_0012:  stloc.3
     .try
     {
       IL_0013:  br.s       IL_0022
 
       IL_0015:  ldloca.s   V_3
-      IL_0017:  call       instance !0 valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<int32>::get_Current()
+      IL_0017:  call       instance !0 valuetype [runtime]System.Collections.Generic.List`1/Enumerator<int32>::get_Current()
       IL_001c:  stloc.s    V_4
       IL_001e:  ldloc.0
       IL_001f:  ldc.i4.1
       IL_0020:  add
       IL_0021:  stloc.0
       IL_0022:  ldloca.s   V_3
-      IL_0024:  call       instance bool valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<int32>::MoveNext()
+      IL_0024:  call       instance bool valuetype [runtime]System.Collections.Generic.List`1/Enumerator<int32>::MoveNext()
       IL_0029:  brtrue.s   IL_0015
 
       IL_002b:  leave.s    IL_003b
@@ -89,7 +84,7 @@
     finally
     {
       IL_002d:  ldloca.s   V_3
-      IL_002f:  constrained. valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<int32>
+      IL_002f:  constrained. valuetype [runtime]System.Collections.Generic.List`1/Enumerator<int32>
       IL_0035:  callvirt   instance void [runtime]System.IDisposable::Dispose()
       IL_003a:  endfinally
     }  
@@ -129,15 +124,15 @@
     .maxstack  5
     .locals init (int32 V_0)
     IL_0000:  ldc.i4.s   100
-    IL_0002:  newobj     instance void class [System.Collections]System.Collections.Generic.List`1<int32>::.ctor(int32)
-    IL_0007:  stsfld     class [System.Collections]System.Collections.Generic.List`1<int32> assembly::ra@5
+    IL_0002:  newobj     instance void class [runtime]System.Collections.Generic.List`1<int32>::.ctor(int32)
+    IL_0007:  stsfld     class [runtime]System.Collections.Generic.List`1<int32> assembly::ra@5
     IL_000c:  ldc.i4.0
     IL_000d:  stloc.0
     IL_000e:  br.s       IL_001f
 
-    IL_0010:  call       class [System.Collections]System.Collections.Generic.List`1<int32> assembly::get_ra()
+    IL_0010:  call       class [runtime]System.Collections.Generic.List`1<int32> assembly::get_ra()
     IL_0015:  ldloc.0
-    IL_0016:  callvirt   instance void class [System.Collections]System.Collections.Generic.List`1<int32>::Add(!0)
+    IL_0016:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<int32>::Add(!0)
     IL_001b:  ldloc.0
     IL_001c:  ldc.i4.1
     IL_001d:  add
@@ -151,11 +146,11 @@
     IL_0026:  ret
   } 
 
-  .property class [System.Collections]System.Collections.Generic.List`1<int32>
+  .property class [runtime]System.Collections.Generic.List`1<int32>
           ra()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class [System.Collections]System.Collections.Generic.List`1<int32> assembly::get_ra()
+    .get class [runtime]System.Collections.Generic.List`1<int32> assembly::get_ra()
   } 
 } 
 
@@ -176,6 +171,7 @@
   } 
 
 } 
+
 
 
 
