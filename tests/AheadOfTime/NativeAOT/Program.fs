@@ -12,10 +12,10 @@ let printInterpolated() =
     print $"hello {name}"
     print $"pi ~ {pi:F2}"
     print $"padded:{x,6}"
+    print $"greeting %s{name}"
 
     // The following use printf specifiers and will generate AOT IL2026/IL2070/IL3050 warnings.
     // print $"answer = %d{x}"
-    // print $"hello %s{name}"
     // print $"pi ~ %.2f{pi}"
     // print $"value = %A{x}"
 
