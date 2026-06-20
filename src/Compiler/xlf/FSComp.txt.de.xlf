@@ -1493,8 +1493,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcCallerArgumentExpressionWillNotBeApplied">
-        <source>This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3888\"' or '--nowarn:3888'.</source>
-        <target state="new">This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3888\"' or '--nowarn:3888'.</target>
+        <source>This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3892\"' or '--nowarn:3892'.</source>
+        <target state="new">This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3892\"' or '--nowarn:3892'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
