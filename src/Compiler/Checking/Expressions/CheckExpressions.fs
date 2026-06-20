@@ -7561,10 +7561,7 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
         )
 
 /// Lower a string-typed interpolated string to a reflection-free System.String.Concat of its parts,
-/// type-checking each part in place. A literal becomes its text; a plain '{x}' hole is built straight in
-/// the typed tree (passed through if already a string, else converted with the 'string' operator); an
-/// aligned/formatted or printf hole is checked from a small synthesized 'String.Format'/'sprintf' so name
-/// resolution applies.
+/// type-checking each part in place.
 and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv, m: range, tpenv: UnscopedTyparEnv, parts: SynInterpolatedStringPart list) =
     let g = cenv.g
     let mSynth = m.MakeSynthetic()
@@ -7586,9 +7583,8 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
         let args = paren (SynExpr.Tuple(false, [ invariant; strLit netFormat; e ], [ range0; range0 ], mSynth))
         mkSynApp1 (mkSynLidGet mSynth [ "System"; "String" ] "Format") args mSynth
 
-    // Type-check one hole and convert it to a typed string expression. A '%spec' hole is constrained by
-    // its specifier (a function there is a type error), so it goes straight to 'sprintf'. A plain or
-    // aligned/formatted hole is checked here first, so its value can be warned about if it is a function.
+    // Type-check one hole and convert it to a string. A printf hole goes straight to 'sprintf'; a plain
+    // or formatted hole is checked here first, so a function value can be warned about.
     let convertHole (synFill: SynExpr, formatting: SynInterpolationFormatting, tpenv: UnscopedTyparEnv) =
         match formatting with
         | SynInterpolationFormatting.Printf (spec, _) -> TcExpr cenv (MustEqual g.string_ty) env tpenv (sprintfOp (spec, synFill))
@@ -7598,24 +7594,23 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
             if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg && (isFunTy g fillTy || isDelegateTy g fillTy) then
                 warning (Error(FSComp.SR.tcFunctionValueUsedAsInterpolatedStringArg (), synFill.Range))
             match alignment, format with
-            // A plain hole reuses the checked expression; an aligned or formatted hole goes via String.Format.
             | None, None -> (if isStringTy g fillTy then fill else mkCallStringOperator g m fillTy fill), tpenv
             | _ -> TcExpr cenv (MustEqual g.string_ty) env tpenv (stringFormatOp (alignment, format, synFill))
 
-    // Build one string expression per part, type-checking each hole in place.
-    let rec build (parts: SynInterpolatedStringPart list, tpenv: UnscopedTyparEnv) =
-        match parts with
-        | [] -> [], tpenv
-        | SynInterpolatedStringPart.String ("", _) :: rest -> build (rest, tpenv)
-        | SynInterpolatedStringPart.String (s, _) :: rest ->
-            let args, tpenv = build (rest, tpenv)
-            mkString g m (s.Replace("%%", "%")) :: args, tpenv
-        | SynInterpolatedStringPart.FillExpr (synFill, formatting) :: rest ->
-            let argExpr, tpenv = convertHole (synFill, formatting, tpenv)
-            let args, tpenv = build (rest, tpenv)
-            argExpr :: args, tpenv
-
-    let argExprs, tpenv = build (parts, tpenv)
+    // One string expression per non-empty part; a builder (not map) since 'tpenv' threads through the holes.
+    let argExprs, tpenv =
+        let ra = ResizeArray()
+        let mutable tpenvAcc = tpenv
+        for part in parts do
+            match part with
+            | SynInterpolatedStringPart.String (s, _) ->
+                if s <> "" then
+                    ra.Add(mkString g m (s.Replace("%%", "%")))
+            | SynInterpolatedStringPart.FillExpr (synFill, formatting) ->
+                let argExpr, tpenvAfter = convertHole (synFill, formatting, tpenvAcc)
+                ra.Add argExpr
+                tpenvAcc <- tpenvAfter
+        List.ofSeq ra, tpenvAcc
 
     let resultExpr =
         match argExprs with
