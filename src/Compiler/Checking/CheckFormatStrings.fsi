@@ -12,6 +12,12 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
+/// A flexible type variable constrained to the integer types accepted by the '%d'/'%i'/'%u' specifiers.
+val mkFlexibleIntFormatTypar: g: TcGlobals -> m: range -> TType
+
+/// A flexible type variable constrained to 'decimal', as accepted by the '%M' specifier.
+val mkFlexibleDecimalFormatTypar: g: TcGlobals -> m: range -> TType
+
 val ParseFormatString:
     m: range ->
     fragmentRanges: range list ->

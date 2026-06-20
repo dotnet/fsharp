@@ -7585,6 +7585,13 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
 
     // Type-check one hole and convert it to a (string expression, may-be-null) pair.
     let convertHole (synFill: SynExpr, formatting: SynInterpolationFormatting, tpenv: UnscopedTyparEnv) =
+        // Constrain the hole to 'constraintTy', then render it with 'string' as for a plain '{x}' hole. Used for
+        // bare specifiers (no flags/width/precision) that act only as a type annotation: the value renders the
+        // same through 'string' as through the specifier. ('%u' is not one of these: it reinterprets a signed
+        // value as unsigned, so it does not match 'string' - e.g. '%u' of -1 is "4294967295".)
+        let convertViaString constraintTy =
+            let fill, tpenv = TcExpr cenv (MustEqual constraintTy) env tpenv synFill
+            (mkCallStringOperator g m (tyOfExpr g fill) fill, false), tpenv
         match formatting with
         | SynInterpolationFormatting.Printf (spec, _) ->
             match spec with
@@ -7592,6 +7599,9 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
             | "%s" ->
                 let fill, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv synFill
                 (fill, true), tpenv
+            | "%c" -> convertViaString g.char_ty
+            | "%d" | "%i" -> convertViaString (CheckFormatStrings.mkFlexibleIntFormatTypar g m)
+            | "%M" -> convertViaString (CheckFormatStrings.mkFlexibleDecimalFormatTypar g m)
             | _ ->
                 let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv (sprintfOp (spec, synFill))
                 (arg, false), tpenv
