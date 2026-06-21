@@ -3709,34 +3709,60 @@ namespace Microsoft.FSharp.Core
 
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`2")>]
-    type Choice<'T1,'T2> = 
-        | Choice1Of2 of 'T1 
+    type Choice<'T1,'T2> =
+        | Choice1Of2 of 'T1
         | Choice2Of2 of 'T2
-    
+
+        override x.ToString() =
+            match x with
+            | Choice1Of2 v -> String.Concat("Choice1Of2(", anyToStringShowingNull v, ")")
+            | Choice2Of2 v -> String.Concat("Choice2Of2(", anyToStringShowingNull v, ")")
+
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`3")>]
     type Choice<'T1,'T2,'T3> = 
-        | Choice1Of3 of 'T1 
+        | Choice1Of3 of 'T1
         | Choice2Of3 of 'T2
         | Choice3Of3 of 'T3
-    
+
+        override x.ToString() =
+            match x with
+            | Choice1Of3 v -> String.Concat("Choice1Of3(", anyToStringShowingNull v, ")")
+            | Choice2Of3 v -> String.Concat("Choice2Of3(", anyToStringShowingNull v, ")")
+            | Choice3Of3 v -> String.Concat("Choice3Of3(", anyToStringShowingNull v, ")")
+
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`4")>]
     type Choice<'T1,'T2,'T3,'T4> = 
-        | Choice1Of4 of 'T1 
+        | Choice1Of4 of 'T1
         | Choice2Of4 of 'T2
         | Choice3Of4 of 'T3
         | Choice4Of4 of 'T4
-    
+
+        override x.ToString() =
+            match x with
+            | Choice1Of4 v -> String.Concat("Choice1Of4(", anyToStringShowingNull v, ")")
+            | Choice2Of4 v -> String.Concat("Choice2Of4(", anyToStringShowingNull v, ")")
+            | Choice3Of4 v -> String.Concat("Choice3Of4(", anyToStringShowingNull v, ")")
+            | Choice4Of4 v -> String.Concat("Choice4Of4(", anyToStringShowingNull v, ")")
+
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`5")>]
     type Choice<'T1,'T2,'T3,'T4,'T5> = 
-        | Choice1Of5 of 'T1 
+        | Choice1Of5 of 'T1
         | Choice2Of5 of 'T2
         | Choice3Of5 of 'T3
         | Choice4Of5 of 'T4
         | Choice5Of5 of 'T5
-    
+
+        override x.ToString() =
+            match x with
+            | Choice1Of5 v -> String.Concat("Choice1Of5(", anyToStringShowingNull v, ")")
+            | Choice2Of5 v -> String.Concat("Choice2Of5(", anyToStringShowingNull v, ")")
+            | Choice3Of5 v -> String.Concat("Choice3Of5(", anyToStringShowingNull v, ")")
+            | Choice4Of5 v -> String.Concat("Choice4Of5(", anyToStringShowingNull v, ")")
+            | Choice5Of5 v -> String.Concat("Choice5Of5(", anyToStringShowingNull v, ")")
+
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`6")>]
     type Choice<'T1,'T2,'T3,'T4,'T5,'T6> = 
@@ -3746,7 +3772,16 @@ namespace Microsoft.FSharp.Core
         | Choice4Of6 of 'T4
         | Choice5Of6 of 'T5
         | Choice6Of6 of 'T6
-    
+
+        override x.ToString() =
+            match x with
+            | Choice1Of6 v -> String.Concat("Choice1Of6(", anyToStringShowingNull v, ")")
+            | Choice2Of6 v -> String.Concat("Choice2Of6(", anyToStringShowingNull v, ")")
+            | Choice3Of6 v -> String.Concat("Choice3Of6(", anyToStringShowingNull v, ")")
+            | Choice4Of6 v -> String.Concat("Choice4Of6(", anyToStringShowingNull v, ")")
+            | Choice5Of6 v -> String.Concat("Choice5Of6(", anyToStringShowingNull v, ")")
+            | Choice6Of6 v -> String.Concat("Choice6Of6(", anyToStringShowingNull v, ")")
+
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`7")>]
     type Choice<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
@@ -3757,7 +3792,17 @@ namespace Microsoft.FSharp.Core
         | Choice5Of7 of 'T5
         | Choice6Of7 of 'T6
         | Choice7Of7 of 'T7
-          
+
+        override x.ToString() =
+            match x with
+            | Choice1Of7 v -> String.Concat("Choice1Of7(", anyToStringShowingNull v, ")")
+            | Choice2Of7 v -> String.Concat("Choice2Of7(", anyToStringShowingNull v, ")")
+            | Choice3Of7 v -> String.Concat("Choice3Of7(", anyToStringShowingNull v, ")")
+            | Choice4Of7 v -> String.Concat("Choice4Of7(", anyToStringShowingNull v, ")")
+            | Choice5Of7 v -> String.Concat("Choice5Of7(", anyToStringShowingNull v, ")")
+            | Choice6Of7 v -> String.Concat("Choice6Of7(", anyToStringShowingNull v, ")")
+            | Choice7Of7 v -> String.Concat("Choice7Of7(", anyToStringShowingNull v, ")")
+
     [<StructuralEquality; NoComparison>]
     exception MatchFailureException of string * int * int with 
         override x.Message  = SR.GetString(SR.matchCasesIncomplete)
@@ -4054,9 +4099,14 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
     [<Struct>]
-    type Result<'T,'TError> = 
-      | Ok of ResultValue:'T 
+    type Result<'T,'TError> =
+      | Ok of ResultValue:'T
       | Error of ErrorValue:'TError
+
+        override x.ToString() =
+            match x with
+            | Ok v -> String.Concat("Ok(", anyToStringShowingNull v, ")")
+            | Error e -> String.Concat("Error(", anyToStringShowingNull e, ")")
 
     [<StructuralEquality; StructuralComparison>]
     [<Struct>]
