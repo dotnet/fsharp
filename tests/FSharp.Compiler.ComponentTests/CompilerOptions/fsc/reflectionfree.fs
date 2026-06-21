@@ -35,13 +35,32 @@ let someCode =
     """
 
 [<Fact>]
-let ``Records and classes don't have generated ToString`` () =
+let ``Classes don't have a generated ToString`` () =
     someCode
     |> withOptions [ "--reflectionfree" ]
     |> compileExeAndRun
     |> shouldSucceed
-    |> withStdOutContains "Thing says: Test+MyRecord"
     |> withStdOutContains "Thing says: Test+MyClass"
+
+[<Fact>]
+let ``Records get a generated single-line ToString`` () =
+    FSharp """
+module Test
+type Point = { X: int; Y: int }
+type Nested = { P: Point; S: string }
+
+[<EntryPoint>]
+let main _ =
+    { X = 1; Y = 2 } |> string |> System.Console.WriteLine
+    { P = { X = 1; Y = 2 }; S = null } |> string |> System.Console.WriteLine // nested record + null field
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "{ X = 1; Y = 2 }"
+    |> withStdOutContains "{ P = { X = 1; Y = 2 }; S = null }"
 
 [<Fact>]
 let ``Unions have a generated ToString that matches on the case`` () =

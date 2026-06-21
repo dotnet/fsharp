@@ -11282,16 +11282,46 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
 /// Generate the 'ToString' method for a union type. Normally this calls 'sprintf "%+A"' (see
 /// GenPrintingMethod). Under reflection-free code generation 'sprintf' is unavailable, so instead emit a
 /// match over the cases that builds "CaseName(f0, f1, ...)" using the 'string' operator on each field.
+/// Format one field value the same way option/list do (LanguagePrimitives.anyToStringShowingNull):
+/// render null as "null", otherwise via the 'string' operator.
+and GenFieldToString (cenv: cenv, m: range, fe: Expr) =
+    let g = cenv.g
+    let fieldTy = tyOfExpr g fe
+    let v, ve = mkCompGenLocal m "field" fieldTy
+    mkCompGenLet m v fe (mkNonNullCond g m g.string_ty (mkCallBox g m fieldTy ve) (mkCallStringOperator g m fieldTy ve) (mkString g m "null"))
+
+/// Emit a [<CompilerGenerated>] virtual ToString override whose body is the given string-typed expression.
+/// 'thisv' is the 'this' value (stored at arg 0) referenced by bodyExpr.
+and GenToStringMethodFromExpr (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, thisv: Val, bodyExpr: Expr) =
+    let g = cenv.g
+    let eenvForMeth = AddStorageForLocalVals g [ (thisv, Arg 0) ] eenv
+    let ilMethodBody = CodeGenMethodForExpr cenv mgbuf ([], "ToString", eenvForMeth, 0, Some thisv, bodyExpr, Return)
+
+    let mdef =
+        mkILNonGenericVirtualInstanceMethod (
+            "ToString",
+            ILMemberAccess.Public,
+            [],
+            mkILReturn g.ilg.typ_String,
+            MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
+        )
+
+    [ mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ]) ]
+
+/// Build the 'this' local for a generated ToString (a byref for struct types) and the type instantiation.
+and GenToStringThis (cenv: cenv, tcref: TyconRef, m: range) =
+    let g = cenv.g
+    let tinst, ty = generalizeTyconRef g tcref
+    let thisv, thise = mkCompGenLocal m "this" (if isStructTy g ty then mkByrefTy g ty else ty)
+    tinst, thisv, thise
+
 and GenUnionToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, ilThisTy: ILType, tcref: TyconRef, m: range) =
     let g = cenv.g
 
     if not g.useReflectionFreeCodeGen then
         GenPrintingMethod cenv eenv "ToString" ilThisTy m
     else
-        let tinst, thisv, thise =
-            let tinst, ty = generalizeTyconRef g tcref
-            let thisv, thise = mkCompGenLocal m "this" (if isStructTy g ty then mkByrefTy g ty else ty)
-            tinst, thisv, thise
+        let tinst, thisv, thise = GenToStringThis (cenv, tcref, m)
 
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
 
@@ -11302,23 +11332,12 @@ and GenUnionToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv,
             if isNil rfields then
                 mkString g m ucase.DisplayName
             else
-                // provene is an expression that has been proven to be of this case (the value itself for
-                // struct unions, otherwise a 'UnionCaseProof'), from which fields can be read.
+                // provene is an expression proven to be of this case (the value itself for struct unions,
+                // otherwise a 'UnionCaseProof'), from which fields can be read.
                 let mkBody (provene: Expr) =
-                    // Format each field the same way option/list do (LanguagePrimitives.anyToStringShowingNull):
-                    // render null as "null", otherwise via the 'string' operator.
                     let fieldStrs =
                         rfields
-                        |> List.mapi (fun j _ ->
-                            let fe = mkUnionCaseFieldGetProvenViaExprAddr (provene, cref, tinst, j, m)
-                            let fieldTy = tyOfExpr g fe
-                            let v, ve = mkCompGenLocal m "field" fieldTy
-
-                            mkCompGenLet
-                                m
-                                v
-                                fe
-                                (mkNonNullCond g m g.string_ty (mkCallBox g m fieldTy ve) (mkCallStringOperator g m fieldTy ve) (mkString g m "null")))
+                        |> List.mapi (fun j _ -> GenFieldToString (cenv, m, mkUnionCaseFieldGetProvenViaExprAddr (provene, cref, tinst, j, m)))
 
                     let sep = mkString g m ", "
 
@@ -11343,20 +11362,29 @@ and GenUnionToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv,
         let dtree = TDSwitch(thise, cases, None, m)
         let matchExpr = mbuilder.Close(dtree, m, g.string_ty)
 
-        let eenvForMeth = AddStorageForLocalVals g [ (thisv, Arg 0) ] eenv
-        let ilMethodBody = CodeGenMethodForExpr cenv mgbuf ([], "ToString", eenvForMeth, 0, Some thisv, matchExpr, Return)
+        GenToStringMethodFromExpr (cenv, mgbuf, eenv, thisv, matchExpr)
 
-        let mdef =
-            mkILNonGenericVirtualInstanceMethod (
-                "ToString",
-                ILMemberAccess.Public,
-                [],
-                mkILReturn g.ilg.typ_String,
-                MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
-            )
+/// Generate a record's ToString as a single line "{ F1 = v1; F2 = v2 }" (no line breaks, unlike "%+A"),
+/// fields formatted like union fields. Under non-reflection-free codegen, falls back to sprintf "%+A".
+and GenRecordToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, ilThisTy: ILType, tcref: TyconRef, m: range) =
+    let g = cenv.g
 
-        let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
-        [ mdef ]
+    if not g.useReflectionFreeCodeGen then
+        GenPrintingMethod cenv eenv "ToString" ilThisTy m
+    else
+        let tinst, thisv, thise = GenToStringThis (cenv, tcref, m)
+
+        let fieldParts =
+            tcref.AllInstanceFieldsAsList
+            |> List.mapi (fun i fspec ->
+                let fref = tcref.MakeNestedRecdFieldRef fspec
+                let value = GenFieldToString (cenv, m, mkRecdFieldGetViaExprAddr (thise, fref, tinst, m))
+                let nameEq = mkString g m (fspec.DisplayName + " = ")
+                if i = 0 then [ nameEq; value ] else [ mkString g m "; "; nameEq; value ])
+            |> List.concat
+
+        let parts = mkString g m "{ " :: fieldParts @ [ mkString g m " }" ]
+        GenToStringMethodFromExpr (cenv, mgbuf, eenv, thisv, mkStringConcat (g, m, parts))
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option =
     let g = cenv.g
@@ -11942,7 +11970,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             yield mkILSimpleStorageCtor (Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess, None, eenv.imports)
 
                         if not (tycon.HasMember g "ToString" []) then
-                            yield! GenToStringMethod cenv eenv ilThisTy m
+                            yield! GenRecordToStringMethod(cenv, mgbuf, eenvinner, ilThisTy, tcref, m)
 
                     | TFSharpTyconRepr r when tycon.IsFSharpDelegateTycon ->
 
