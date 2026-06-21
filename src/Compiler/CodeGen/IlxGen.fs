@@ -10322,6 +10322,19 @@ and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
         let tynm = ilArgTy.TypeSpec.Name
         let isobj = (tynm = "System.Object")
 
+        // An enum value stored into an 'object'-typed argument must keep its enum type in the
+        // custom-attribute blob (ECMA-335 II.23.3), otherwise it round-trips as the underlying
+        // integer (e.g. 'Prop = MyEnum.B' surfaces as boxed int32). See
+        // https://github.com/dotnet/fsharp/issues/995. The enum type is carried alongside the
+        // underlying integer value, which is computed by recursing with the underlying IL type.
+        if isobj && isEnumTy g ty then
+            let enumIlTy = GenType amap m eenv.tyenv ty
+            let underlyingTy = underlyingTypeOfEnumTy g ty
+            let underlyingIlTy = GenType amap m eenv.tyenv underlyingTy
+            let underlyingElem = GenAttribArg amap g eenv (Expr.Const(c, m, underlyingTy)) underlyingIlTy
+            ILAttribElem.Enum(enumIlTy, underlyingElem)
+        else
+
         match c with
         | Const.Bool b -> ILAttribElem.Bool b
         | Const.Int32 i when isobj || tynm = "System.Int32" -> ILAttribElem.Int32 i

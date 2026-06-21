@@ -34,6 +34,13 @@ module CustomAttributes_Basic =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    // Regression for https://github.com/dotnet/fsharp/issues/995
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EnumValueAsObjectArg01.fs"|])>]
+    let ``EnumValueAsObjectArg01_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // SOURCE=E_AttributeApplication01.fs					# E_AttributeApplication01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeApplication01.fs"|])>]
     let ``E_AttributeApplication01_fs`` compilation =

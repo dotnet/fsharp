@@ -644,11 +644,12 @@ module PrintTypes =
         | ILAttribElem.Type (Some ty) -> 
             LeftL.keywordTypeof ^^ SepL.leftAngle ^^ PrintIL.layoutILType denv [] ty ^^ RightL.rightAngle
         | ILAttribElem.Type None -> wordL (tagText "")
-        | ILAttribElem.TypeRef (Some ty) -> 
+        | ILAttribElem.TypeRef (Some ty) ->
             LeftL.keywordTypedefof ^^ SepL.leftAngle ^^ PrintIL.layoutILTypeRef denv ty ^^ RightL.rightAngle
         | ILAttribElem.TypeRef None -> emptyL
+        | ILAttribElem.Enum (_, value) -> layoutILAttribElement denv value
 
-    and layoutILAttrib denv (ty, args) = 
+    and layoutILAttrib denv (ty, args) =
         let argsL = bracketL (sepListL RightL.comma (List.map (layoutILAttribElement denv) args))
         PrintIL.layoutILType denv [] ty ++ argsL
 

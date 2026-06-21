@@ -1192,6 +1192,7 @@ type ILAttribElem =
     | Type of ILType option
     | TypeRef of ILTypeRef option
     | Array of ILType * ILAttribElem list
+    | Enum of enumType: ILType * value: ILAttribElem
 
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
@@ -4882,6 +4883,8 @@ let rec encodeCustomAttrElemTypeForObject x =
     | ILAttribElem.Single _ -> [| et_R4 |]
     | ILAttribElem.Double _ -> [| et_R8 |]
     | ILAttribElem.Array(elemTy, _) -> [| yield et_SZARRAY; yield! encodeCustomAttrElemType elemTy |]
+    // An enum boxed in 'object' is encoded as 0x55 followed by the enum type's qualified name.
+    | ILAttribElem.Enum(enumTy, _) -> encodeCustomAttrElemType enumTy
 
 let parseILVersion (vstr: string) =
     // matches "v1.2.3.4" or "1.2.3.4". Note, if numbers are missing, returns -1 (not 0).
@@ -4979,6 +4982,25 @@ let rec decodeCustomAttrElemType bytes sigptr x =
         mkILArr1DTy elemTy, sigptr
     | x when x = 0x50uy -> PrimaryAssemblyILGlobals.typ_Type, sigptr
     | x when x = 0x51uy -> PrimaryAssemblyILGlobals.typ_Object, sigptr // SERIALIZATION_TYPE_TAGGED_OBJECT (ECMA-335 II.23.3)
+    | x when x = 0x55uy ->
+        // SERIALIZATION_TYPE_ENUM (ECMA-335 II.23.3): the enum type's qualified name follows.
+        // Occurs e.g. when an enum is boxed into an 'object'-typed argument.
+        let qualifiedName, sigptr = sigptr_get_serstring bytes sigptr
+
+        let unqualifiedName, rest =
+            let pieces = qualifiedName.Split ','
+
+            if pieces.Length > 1 then
+                pieces[0], Some(String.concat "," pieces[1..])
+            else
+                pieces[0], None
+
+        let scoref =
+            match rest with
+            | Some aname -> ILScopeRef.Assembly(ILAssemblyRef.FromAssemblyName(AssemblyName aname))
+            | None -> PrimaryAssemblyILGlobals.primaryAssemblyScopeRef
+
+        ILType.Value(mkILNonGenericTySpec (mkILTyRef (scoref, unqualifiedName))), sigptr
     | _ -> failwithf "decodeCustomAttrElemType ilg: unrecognized custom element type: %A" x
 
 /// Given a custom attribute element, encode it to a binary representation according to the rules in Ecma 335 Partition II.
@@ -5009,6 +5031,8 @@ let rec encodeCustomAttrPrimValue c =
             for elem in elems do
                 yield! encodeCustomAttrPrimValue elem
         |]
+    // The enum type is captured separately (in the type tag); the value is the underlying integer.
+    | ILAttribElem.Enum(_, value) -> encodeCustomAttrPrimValue value
 
 and encodeCustomAttrValue ty c =
     match ty, c with
@@ -5355,7 +5379,13 @@ let decodeILAttribData (ca: ILAttribute) =
                     ILAttribElem.Null, sigptr
                 else
                     let ty, sigptr = decodeCustomAttrElemType bytes sigptr et
-                    parseVal ty sigptr
+                    let v, sigptr = parseVal ty sigptr
+                    // Preserve the enum type of a boxed enum so it re-encodes with its 0x55 enum tag
+                    // (rather than the bare underlying integer) when the attribute is round-tripped,
+                    // e.g. during static linking. See https://github.com/dotnet/fsharp/issues/995.
+                    match ty with
+                    | ILType.Value _ -> ILAttribElem.Enum(ty, v), sigptr
+                    | _ -> v, sigptr
             | ILType.Array(shape, elemTy) when shape = ILArrayShape.SingleDimensional ->
                 let n, sigptr = sigptr_get_i32 bytes sigptr
 
@@ -5371,7 +5401,11 @@ let decodeILAttribData (ca: ILAttribute) =
 
                     let elems, sigptr = parseElems [] n sigptr
                     ILAttribElem.Array(elemTy, elems), sigptr
-            | ILType.Value _ -> (* assume it is an enumeration *)
+            | ILType.Value _ ->
+                // Assume an enumeration. Note: the underlying integer width is not present in the
+                // blob, so this reads it as int32. Enums with a non-int32 underlying type (byte,
+                // int16, int64, ...) are therefore not read correctly here; resolving that would
+                // require materializing the enum type, which this blob parser does not do.
                 let n, sigptr = sigptr_get_i32 bytes sigptr
                 ILAttribElem.Int32 n, sigptr
             | _ -> failwith "decodeILAttribData: attribute data involves an enum or System.Type value"
@@ -5394,29 +5428,9 @@ let decodeILAttribData (ca: ILAttribute) =
                 let isPropByte, sigptr = sigptr_get_u8 bytes sigptr
                 let isProp = (int isPropByte = 0x54)
                 let et, sigptr = sigptr_get_u8 bytes sigptr
-                // We have a named value
-                let ty, sigptr =
-                    if ( (* 0x50 = (int et) || *) 0x55 = (int et)) then
-                        let qualified_tname, sigptr = sigptr_get_serstring bytes sigptr
-
-                        let unqualified_tname, rest =
-                            let pieces = qualified_tname.Split ','
-
-                            if pieces.Length > 1 then
-                                pieces[0], Some(String.concat "," pieces[1..])
-                            else
-                                pieces[0], None
-
-                        let scoref =
-                            match rest with
-                            | Some aname -> ILScopeRef.Assembly(ILAssemblyRef.FromAssemblyName(AssemblyName aname))
-                            | None -> PrimaryAssemblyILGlobals.primaryAssemblyScopeRef
-
-                        let tref = mkILTyRef (scoref, unqualified_tname)
-                        let tspec = mkILNonGenericTySpec tref
-                        ILType.Value tspec, sigptr
-                    else
-                        decodeCustomAttrElemType bytes sigptr et
+                // We have a named value. The type tag (including the 0x55 enum form) is decoded by
+                // decodeCustomAttrElemType.
+                let ty, sigptr = decodeCustomAttrElemType bytes sigptr et
 
                 let nm, sigptr = sigptr_get_serstring bytes sigptr
                 let v, sigptr = parseVal ty sigptr
