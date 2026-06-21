@@ -52,6 +52,30 @@ let ``Unions have a generated ToString that matches on the case`` () =
     |> withStdOutContains "Thing says: B(foo)"
 
 [<Fact>]
+let ``Generic unions get a correct generated ToString`` () =
+    FSharp """
+module Test
+type Box<'T> = Box of 'T | Empty            // single nullary case -> UseNullAsTrueValue representation
+type Single<'T> = Just of 'T
+
+[<EntryPoint>]
+let main _ =
+    Box 42 |> string |> printfn "%s"
+    Box (Box 7) |> string |> printfn "%s"   // nested generic
+    (Empty: Box<int>) |> string |> printfn "%s"
+    Just 5 |> string |> printfn "%s"         // single-case generic union
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "Box(42)"
+    |> withStdOutContains "Box(Box(7))"
+    |> withStdOutContains "Empty"
+    |> withStdOutContains "Just(5)"
+
+[<Fact>]
 let ``No debug display attribute`` () =
     someCode
     |> withOptions [ "--reflectionfree" ]

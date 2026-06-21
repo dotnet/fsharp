@@ -11957,7 +11957,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         | _ -> ()
 
                     | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } when not (tycon.HasMember g "ToString" []) ->
-                        yield! GenUnionToStringMethod(cenv, mgbuf, eenv, ilThisTy, tcref, m)
+                        yield! GenUnionToStringMethod(cenv, mgbuf, eenvinner, ilThisTy, tcref, m)
                     | _ -> ()
                 ]
 
