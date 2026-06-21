@@ -2222,7 +2222,6 @@ type AnonTypeGenerationTable() =
 
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, ILAttributes.Empty, attrs)
                         |> g.AddMethodGeneratedAttributes
-                    yield! genToStringMethod ilTy
                 ]
 
             let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
@@ -2325,6 +2324,10 @@ type AnonTypeGenerationTable() =
                 Some(mkLocalValRef augmentation.EqualsExactWithComparer)
             )
 
+            // Generate ToString through the synthetic record tycon (renders "{| Name = value; ... |}" under
+            // --reflectionfree, otherwise sprintf "%+A"). Done here, not in ilMethods above, because it needs the tycon.
+            let ilToStringMethodDefs = genToStringMethod (ilTy, tycon)
+
             // Build the ILTypeDef. We don't rely on the normal record generation process because we want very specific field names
 
             let ilTypeDefAttribs =
@@ -2347,7 +2350,7 @@ type AnonTypeGenerationTable() =
                     ilGenericParams,
                     ilBaseTy,
                     ilInterfaceTys,
-                    mkILMethods (ilCtorDef :: ilMethods),
+                    mkILMethods (ilCtorDef :: ilMethods @ ilToStringMethodDefs),
                     ilFieldDefs,
                     emptyILTypeDefs,
                     ilProperties,
@@ -3803,7 +3806,7 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref, argTys, args, m) sequel =
 
 and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, m) sequel =
     let anonCtor, _anonMethods, anonType =
-        cgbuf.mgbuf.LookupAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
+        cgbuf.mgbuf.LookupAnonType((fun (ilThisTy, tycon) -> GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")), anonInfo)
 
     let boxity = anonType.Boxity
     GenExprs cenv cgbuf eenv args
@@ -3817,7 +3820,7 @@ and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, 
 
 and GenGetAnonRecdField cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, e, tyargs, n, m) sequel =
     let _anonCtor, anonMethods, anonType =
-        cgbuf.mgbuf.LookupAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
+        cgbuf.mgbuf.LookupAnonType((fun (ilThisTy, tycon) -> GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")), anonInfo)
 
     let boxity = anonType.Boxity
     let ilTypeArgs = GenTypeArgs cenv m eenv.tyenv tyargs
@@ -10842,7 +10845,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
 
     // Generate all the anonymous record types mentioned anywhere in this module
     for anonInfo in anonRecdTypes.Values do
-        mgbuf.GenerateAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
+        mgbuf.GenerateAnonType((fun (ilThisTy, tycon) -> GenRecordToStringMethod(cenv, mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")), anonInfo)
 
     let withQName (loc: CompileLocation) =
         { loc with
@@ -11210,9 +11213,6 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
     else
         [], [], []
 
-and GenToStringMethod cenv eenv ilThisTy m =
-    GenPrintingMethod cenv eenv "ToString" ilThisTy m
-
 /// Generate a ToString/get_Message method that calls 'sprintf "%A"'
 and GenPrintingMethod cenv eenv methName ilThisTy m =
     let g = cenv.g
@@ -11365,8 +11365,9 @@ and GenUnionToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv,
         GenToStringMethodFromExpr (cenv, mgbuf, eenv, thisv, matchExpr)
 
 /// Generate a record's ToString as a single line "{ F1 = v1; F2 = v2 }" (no line breaks, unlike "%+A"),
-/// fields formatted like union fields. Under non-reflection-free codegen, falls back to sprintf "%+A".
-and GenRecordToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, ilThisTy: ILType, tcref: TyconRef, m: range) =
+/// fields formatted like union fields. openBrace/closeBrace are "{ "/" }" for records and "{| "/" |}" for
+/// anonymous records. Under non-reflection-free codegen, falls back to sprintf "%+A".
+and GenRecordToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, ilThisTy: ILType, tcref: TyconRef, m: range, openBrace: string, closeBrace: string) =
     let g = cenv.g
 
     if not g.useReflectionFreeCodeGen then
@@ -11383,7 +11384,7 @@ and GenRecordToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv
                 if i = 0 then [ nameEq; value ] else [ mkString g m "; "; nameEq; value ])
             |> List.concat
 
-        let parts = mkString g m "{ " :: fieldParts @ [ mkString g m " }" ]
+        let parts = mkString g m openBrace :: fieldParts @ [ mkString g m closeBrace ]
         GenToStringMethodFromExpr (cenv, mgbuf, eenv, thisv, mkStringConcat (g, m, parts))
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option =
@@ -11970,7 +11971,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             yield mkILSimpleStorageCtor (Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess, None, eenv.imports)
 
                         if not (tycon.HasMember g "ToString" []) then
-                            yield! GenRecordToStringMethod(cenv, mgbuf, eenvinner, ilThisTy, tcref, m)
+                            yield! GenRecordToStringMethod(cenv, mgbuf, eenvinner, ilThisTy, tcref, m, "{ ", " }")
 
                     | TFSharpTyconRepr r when tycon.IsFSharpDelegateTycon ->
 
