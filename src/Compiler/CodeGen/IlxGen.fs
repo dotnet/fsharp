@@ -11279,6 +11279,76 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
             | _ -> ()
     ]
 
+/// Generate the 'ToString' method for a union type. Normally this calls 'sprintf "%+A"' (see
+/// GenPrintingMethod). Under reflection-free code generation 'sprintf' is unavailable, so instead emit a
+/// match over the cases that builds "CaseName(f0, f1, ...)" using the 'string' operator on each field.
+and GenUnionToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, ilThisTy: ILType, tcref: TyconRef, m: range) =
+    let g = cenv.g
+
+    if not g.useReflectionFreeCodeGen then
+        GenPrintingMethod cenv eenv "ToString" ilThisTy m
+    else
+        let tinst, thisv, thise =
+            let tinst, ty = generalizeTyconRef g tcref
+            let thisv, thise = mkCompGenLocal m "this" (if isStructTy g ty then mkByrefTy g ty else ty)
+            tinst, thisv, thise
+
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
+
+        let mkResult (ucase: UnionCase) =
+            let cref = tcref.MakeNestedUnionCaseRef ucase
+            let rfields = ucase.RecdFields
+
+            if isNil rfields then
+                mkString g m ucase.DisplayName
+            else
+                // provene is an expression that has been proven to be of this case (the value itself for
+                // struct unions, otherwise a 'UnionCaseProof'), from which fields can be read.
+                let mkBody (provene: Expr) =
+                    let fieldStrs =
+                        rfields
+                        |> List.mapi (fun j _ ->
+                            let fe = mkUnionCaseFieldGetProvenViaExprAddr (provene, cref, tinst, j, m)
+                            mkCallStringOperator g m (tyOfExpr g fe) fe)
+
+                    let sep = mkString g m ", "
+
+                    let fieldsWithSeps =
+                        fieldStrs |> List.mapi (fun i fe -> if i = 0 then [ fe ] else [ sep; fe ]) |> List.concat
+
+                    let parts = mkString g m (ucase.DisplayName + "(") :: fieldsWithSeps @ [ mkString g m ")" ]
+                    mkStaticCall_String_Concat_Array g m (mkArray (g.string_ty, parts, m))
+
+                if cref.Tycon.IsStructOrEnumTycon then
+                    mkBody thise
+                else
+                    let ucv, ucve = mkCompGenLocal m "thisCast" (mkProvenUnionCaseTy cref tinst)
+                    mkCompGenLet m ucv (mkUnionCaseProof (thise, cref, tinst, m)) (mkBody ucve)
+
+        let cases =
+            tcref.UnionCasesAsList
+            |> List.map (fun ucase ->
+                let cref = tcref.MakeNestedUnionCaseRef ucase
+                mkCase (DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget(mkResult ucase)))
+
+        let dtree = TDSwitch(thise, cases, None, m)
+        let matchExpr = mbuilder.Close(dtree, m, g.string_ty)
+
+        let eenvForMeth = AddStorageForLocalVals g [ (thisv, Arg 0) ] eenv
+        let ilMethodBody = CodeGenMethodForExpr cenv mgbuf ([], "ToString", eenvForMeth, 0, Some thisv, matchExpr, Return)
+
+        let mdef =
+            mkILNonGenericVirtualInstanceMethod (
+                "ToString",
+                ILMemberAccess.Public,
+                [],
+                mkILReturn g.ilg.typ_String,
+                MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
+            )
+
+        let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
+        [ mdef ]
+
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option =
     let g = cenv.g
     let tcref = mkLocalTyconRef tycon
@@ -11887,7 +11957,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         | _ -> ()
 
                     | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } when not (tycon.HasMember g "ToString" []) ->
-                        yield! GenToStringMethod cenv eenv ilThisTy m
+                        yield! GenUnionToStringMethod(cenv, mgbuf, eenv, ilThisTy, tcref, m)
                     | _ -> ()
                 ]
 

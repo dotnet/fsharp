@@ -35,14 +35,21 @@ let someCode =
     """
 
 [<Fact>]
-let ``Records and DUs don't have generated ToString`` () =
+let ``Records and classes don't have generated ToString`` () =
     someCode
     |> withOptions [ "--reflectionfree" ]
     |> compileExeAndRun
     |> shouldSucceed
     |> withStdOutContains "Thing says: Test+MyRecord"
-    |> withStdOutContains "Thing says: Test+MyUnion+B"
     |> withStdOutContains "Thing says: Test+MyClass"
+
+[<Fact>]
+let ``Unions have a generated ToString that matches on the case`` () =
+    someCode
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "Thing says: B(foo)"
 
 [<Fact>]
 let ``No debug display attribute`` () =
