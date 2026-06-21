@@ -18,11 +18,11 @@ let csNotNullLib =
 using System.Diagnostics.CodeAnalysis;
 namespace NotNullLib {
     public class C {
-        [return: NotNullIfNotNull(nameof(input))]
+        [return: NotNullIfNotNull("input")]
         public static string? Echo(string? input) => input;
 
         // The result is non-null when the SECOND parameter is non-null.
-        [return: NotNullIfNotNull(nameof(second))]
+        [return: NotNullIfNotNull("second")]
         public static string? DependsOnSecond(string? first, string? second) => second;
     }
 }""" |> withName "csNotNullLib"
