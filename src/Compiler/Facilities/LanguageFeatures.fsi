@@ -101,6 +101,7 @@ type LanguageFeature =
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | NotNullIfNotNull
 
 /// LanguageVersion management
 type LanguageVersion =

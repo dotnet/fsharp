@@ -1,0 +1,221 @@
+module Language.NotNullIfNotNull
+
+open FSharp.Test
+open FSharp.Test.Compiler
+
+
+let typeCheckWithStrictNullness cu =
+    cu
+    |> withCheckNulls
+    |> withLangVersionPreview
+    |> withWarnOn 3261
+    |> withOptions ["--warnaserror+"]
+    |> typecheck
+
+let csNotNullLib =
+    CSharp """
+#nullable enable
+using System.Diagnostics.CodeAnalysis;
+namespace NotNullLib {
+    public class C {
+        [return: NotNullIfNotNull(nameof(input))]
+        public static string? Echo(string? input) => input;
+
+        // The result is non-null when the SECOND parameter is non-null.
+        [return: NotNullIfNotNull(nameof(second))]
+        public static string? DependsOnSecond(string? first, string? second) => second;
+    }
+}""" |> withName "csNotNullLib"
+
+let private nullableExpected = "was expected but this expression is nullable"
+
+[<FactForNETCOREAPP>]
+let ``BCL Path.GetExtension - non-null input yields non-null result`` () =
+    FSharp """module MyLibrary
+open System.IO
+
+let nonNull : string = "file.txt"
+let ext : string = Path.GetExtension(nonNull)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``BCL Path.GetExtension - nullable input yields nullable result`` () =
+    FSharp """module MyLibrary
+open System.IO
+
+let maybeNull : string | null = "file.txt"
+let ext : string = Path.GetExtension(maybeNull)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Multiple NotNullIfNotNull attributes are not supported - Delegate.Combine stays nullable`` () =
+    // Delegate.Combine carries two [return: NotNullIfNotNull] attributes. Making the result depend on more than one
+    // parameter (logical OR) is not supported, so the declared nullable return type is kept even though an argument
+    // is non-null.
+    FSharp """module MyLibrary
+open System
+
+let d1 : Delegate = Action(fun () -> ()) :> Delegate
+let dMaybe : Delegate | null = null
+
+let combined : Delegate = Delegate.Combine(d1, dMaybe)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - non-null propagation works positionally`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+let maybeNull : string | null = "y"
+
+// Single referenced parameter, passed positionally
+let r1 : string = C.Echo(notNull)
+
+// Referenced parameter is the second one; nullable first, non-null second -> non-null.
+// Arguments are positional (no named arguments), so this proves the parameter is identified by name.
+let r2 : string = C.DependsOnSecond(maybeNull, notNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - non-null propagation works with named arguments`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+let maybeNull : string | null = "y"
+
+let r : string = C.DependsOnSecond(second = notNull, first = maybeNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - Echo stays nullable for nullable input`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let maybeNull : string | null = "y"
+let r : string = C.Echo(maybeNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - depends on second parameter, not the first`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+let maybeNull : string | null = "y"
+
+// Non-null first but nullable referenced (second) parameter -> result stays nullable
+let r : string = C.DependsOnSecond(notNull, maybeNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Local F# method with NotNullIfNotNull - non-null propagation`` () =
+    FSharp """module MyLibrary
+open System.Diagnostics.CodeAnalysis
+
+type C =
+    [<return: NotNullIfNotNull("x")>]
+    static member Echo(x: string | null) : string | null = x
+
+let notNull : string = "a"
+let ok : string = C.Echo(notNull)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Local F# method with NotNullIfNotNull - stays nullable for nullable input`` () =
+    FSharp """module MyLibrary
+open System.Diagnostics.CodeAnalysis
+
+type C =
+    [<return: NotNullIfNotNull("x")>]
+    static member Echo(x: string | null) : string | null = x
+
+let maybeNull : string | null = "a"
+let bad : string = C.Echo(maybeNull)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Referenced F# method with NotNullIfNotNull - non-null propagation`` () =
+    let fsharpLib =
+        FSharp """module NotNullFSharpLib
+open System.Diagnostics.CodeAnalysis
+
+type C =
+    [<return: NotNullIfNotNull("x")>]
+    static member Echo(x: string | null) : string | null = x
+"""
+        |> withCheckNulls
+        |> withName "NotNullFSharpLib"
+
+    FSharp """module MyLibrary
+open NotNullFSharpLib
+
+let notNull : string = "a"
+let ok : string = C.Echo(notNull)
+"""
+    |> asLibrary
+    |> withReferences [fsharpLib]
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Referenced F# method with NotNullIfNotNull - stays nullable for nullable input`` () =
+    let fsharpLib =
+        FSharp """module NotNullFSharpLib
+open System.Diagnostics.CodeAnalysis
+
+type C =
+    [<return: NotNullIfNotNull("x")>]
+    static member Echo(x: string | null) : string | null = x
+"""
+        |> withCheckNulls
+        |> withName "NotNullFSharpLib"
+
+    FSharp """module MyLibrary
+open NotNullFSharpLib
+
+let maybeNull : string | null = "a"
+let bad : string = C.Echo(maybeNull)
+"""
+    |> asLibrary
+    |> withReferences [fsharpLib]
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected

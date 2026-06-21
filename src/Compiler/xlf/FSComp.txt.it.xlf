@@ -527,6 +527,11 @@
         <target state="translated">modelli non variabili a destra dei modelli 'as'</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNotNullIfNotNull">
+        <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
+        <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">Interop facoltativo nullable</target>

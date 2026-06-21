@@ -3330,6 +3330,41 @@ let GetMethodArgs arg =
 
     unnamedCallerArgs, namedCallerArgs
 
+let NotNullIfNotNullParamNames g (minfo: MethInfo) =
+    match minfo with
+    | ILMeth(ilMethInfo = ilminfo) when ilminfo.RawMetadata.Return.CustomAttrsStored.HasWellKnownAttribute (g, WellKnownILAttributes.NotNullIfNotNullAttribute) ->
+        ilminfo.RawMetadata.Return.CustomAttrs.AsArray()
+        |> Array.toList
+        |> List.choose (fun attr ->
+            if classifyILAttrib attr &&& WellKnownILAttributes.NotNullIfNotNullAttribute <> WellKnownILAttributes.None then
+                match decodeILAttribData attr with
+                | [ ILAttribElem.String (Some paramName) ], _ -> Some paramName
+                | _ -> None
+            else
+                None)
+    | FSMeth(valRef = vref) ->
+        match vref.ValReprInfo with
+        | Some (ValReprInfo(result = retInfo)) when ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.NotNullIfNotNullAttribute retInfo ->
+            retInfo.Attribs.AsList()
+            |> List.choose (fun attrib ->
+                if classifyValAttrib g attrib &&& WellKnownValAttributes.NotNullIfNotNullAttribute <> WellKnownValAttributes.None then
+                    match attrib with
+                    | Attrib(unnamedArgs = [ AttribStringArg paramName ]) -> Some paramName
+                    | _ -> None
+                else
+                    None)
+        | _ -> []
+    | _ -> []
+
+// Resolve the caller argument bound to 'paramName' (named arguments first, then by position) and return the type of its type-checked expression.
+let TryGetCallerArgType g (minfo: MethInfo) (callerArgs: CallerArgs<_>) paramName =
+    match callerArgs.Named |> List.tryPick (List.tryPick (fun (CallerNamedArg(id, arg)) -> if id.idText = paramName then Some (tyOfExpr g arg.Expr) else None)) with
+    | None ->
+        match minfo.GetParamNames() |> List.tryPick (List.tryFindIndex (fun nm -> match nm with Some nm -> nm = paramName | _ -> false)) with
+        | Some idx -> callerArgs.Unnamed |> List.tryPick (List.tryItem idx) |> Option.map (fun arg -> tyOfExpr g arg.Expr)
+        | None -> None
+    | x -> x
+
 //-------------------------------------------------------------------------
 // Helpers dealing with sequence expressions
 //-------------------------------------------------------------------------
@@ -10270,12 +10305,26 @@ and TcMethodApplication_UniqueOverloadInference
 
     let arityFilteredCandidates = candidateMethsAndProps
 
-    let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
+    let makeOneCalledMeth (minfo: MethInfo, pinfoOpt, usesParamArrayConversion) =
         let minst = FreshenMethInfo mItem minfo
         let callerTyArgs =
             match tyArgsOpt with
             | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
             | None -> minst
+
+        // If the return value is [<NotNullIfNotNull>], give the return a fresh nullness inference variable here so that
+        // unique-overload inference does not prematurely commit the result to the declared (nullable) nullness. The real
+        // nullness is resolved post argument type-checking (see below), once the argument types are known.
+        let minfo =
+            if not minfo.IsConstructor && g.checkNullness && g.langVersion.SupportsFeature LanguageFeature.NotNullIfNotNull then
+                match NotNullIfNotNullParamNames g minfo with
+                | [ _ ] ->
+                    let retTy = minfo.GetFSharpReturnType(cenv.amap, mMethExpr, callerTyArgs)
+                    MethInfoWithModifiedReturnType(minfo, replaceNullnessOfTy (NewNullnessVar()) retTy)
+                | _ -> minfo
+            else
+                minfo
+    
         CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt)
 
     let preArgumentTypeCheckingCalledMethGroup =
@@ -10505,6 +10554,23 @@ and TcMethodApplication
                     match tyArgsOpt with
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
                     | None -> minst
+
+                let minfo =
+                    if not minfo.IsConstructor && g.checkNullness && g.langVersion.SupportsFeature LanguageFeature.NotNullIfNotNull then
+                        // 'minfo' may already carry a placeholder return nullness from unique-overload inference (phase 1);
+                        // strip it back to the base method before applying the real (argument-derived) nullness.
+                        let baseMinfo = match minfo with MethInfoWithModifiedReturnType(inner, _) -> inner | _ -> minfo
+                        match NotNullIfNotNullParamNames g baseMinfo with
+                        | [ paramName ] ->
+                            match TryGetCallerArgType g baseMinfo callerArgs paramName with
+                            | Some callerArgTy ->
+                                let retTy = baseMinfo.GetFSharpReturnType(cenv.amap, mMethExpr, callerTyArgs)
+                                MethInfoWithModifiedReturnType(baseMinfo, replaceNullnessOfTy (nullnessOfTy g callerArgTy) retTy)
+                            | None -> baseMinfo
+                        | _ -> baseMinfo
+                    else
+                        minfo
+
                 CalledMeth<Expr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt))
 
         // Commit unassociated constraints prior to member overload resolution where there is ambiguity

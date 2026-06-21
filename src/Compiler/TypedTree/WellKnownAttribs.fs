@@ -116,6 +116,7 @@ type internal WellKnownValAttributes =
     | NoEagerConstraintApplicationAttribute = (1uL <<< 38)
     | ValueAsStaticPropertyAttribute = (1uL <<< 39)
     | TailCallAttribute = (1uL <<< 40)
+    | NotNullIfNotNullAttribute = (1uL <<< 41)
     | NotComputed = (1uL <<< 63)
 
 module internal Flags =
