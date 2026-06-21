@@ -1106,6 +1106,7 @@ Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Microsoft.FSharp.Core.FSharpChoice`
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Microsoft.FSharp.Core.FSharpChoice`2+Tags[T1,T2]
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Microsoft.FSharp.Core.FSharpChoice`2[T1,T2] NewChoice1Of2(T1)
 Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: Microsoft.FSharp.Core.FSharpChoice`2[T1,T2] NewChoice2Of2(T2)
+Microsoft.FSharp.Core.FSharpChoice`2[T1,T2]: System.String ToString()
 Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`3+Choice1Of3[T1,T2,T3]: T1 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`3+Choice2Of3[T1,T2,T3]: T2 Item
@@ -1139,6 +1140,7 @@ Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Microsoft.FSharp.Core.FSharpChoi
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3] NewChoice1Of3(T1)
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3] NewChoice2Of3(T2)
 Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3] NewChoice3Of3(T3)
+Microsoft.FSharp.Core.FSharpChoice`3[T1,T2,T3]: System.String ToString()
 Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`4+Choice1Of4[T1,T2,T3,T4]: T1 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`4+Choice2Of4[T1,T2,T3,T4]: T2 Item
@@ -1179,6 +1181,7 @@ Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Microsoft.FSharp.Core.FSharpC
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4] NewChoice2Of4(T2)
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4] NewChoice3Of4(T3)
 Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4] NewChoice4Of4(T4)
+Microsoft.FSharp.Core.FSharpChoice`4[T1,T2,T3,T4]: System.String ToString()
 Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`5+Choice1Of5[T1,T2,T3,T4,T5]: T1 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`5+Choice2Of5[T1,T2,T3,T4,T5]: T2 Item
@@ -1226,6 +1229,7 @@ Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Microsoft.FSharp.Core.FSha
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5] NewChoice3Of5(T3)
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5] NewChoice4Of5(T4)
 Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5] NewChoice5Of5(T5)
+Microsoft.FSharp.Core.FSharpChoice`5[T1,T2,T3,T4,T5]: System.String ToString()
 Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`6+Choice1Of6[T1,T2,T3,T4,T5,T6]: T1 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`6+Choice2Of6[T1,T2,T3,T4,T5,T6]: T2 Item
@@ -1280,6 +1284,7 @@ Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Microsoft.FSharp.Core.F
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6] NewChoice4Of6(T4)
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6] NewChoice5Of6(T5)
 Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6] NewChoice6Of6(T6)
+Microsoft.FSharp.Core.FSharpChoice`6[T1,T2,T3,T4,T5,T6]: System.String ToString()
 Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`7+Choice1Of7[T1,T2,T3,T4,T5,T6,T7]: T1 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`7+Choice2Of7[T1,T2,T3,T4,T5,T6,T7]: T2 Item
@@ -1341,6 +1346,7 @@ Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Microsoft.FSharp.Cor
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7] NewChoice5Of7(T5)
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7] NewChoice6Of7(T6)
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7] NewChoice7Of7(T7)
+Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: System.String ToString()
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: Microsoft.FSharp.Core.FSharpFunc`2[T,TResult] FromConverter(System.Converter`2[T,TResult])
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: Microsoft.FSharp.Core.FSharpFunc`2[T,TResult] op_Implicit(System.Converter`2[T,TResult])
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: System.Converter`2[T,TResult] ToConverter(Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
@@ -1420,6 +1426,7 @@ Microsoft.FSharp.Core.FSharpResult`2[T,TError]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: Microsoft.FSharp.Core.FSharpResult`2+Tags[T,TError]
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: Microsoft.FSharp.Core.FSharpResult`2[T,TError] NewError(TError)
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: Microsoft.FSharp.Core.FSharpResult`2[T,TError] NewOk(T)
+Microsoft.FSharp.Core.FSharpResult`2[T,TError]: System.String ToString()
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: T ResultValue
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: T get_ResultValue()
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: TError ErrorValue
