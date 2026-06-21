@@ -1366,6 +1366,9 @@ module internal Makers =
     let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety formatStringExpr =
         mkApps g (typedExprForIntrinsic g m g.new_format_info, [ [ aty; bty; cty; dty; ety ] ], [ formatStringExpr ], m)
 
+    let mkCallStringOperator (g: TcGlobals) m argTy e =
+        mkApps g (typedExprForIntrinsic g m g.string_operator_info, [ [ argTy ] ], [ e ], m)
+
     let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
         let info, tinst = g.MakeBuiltInWitnessInfo traitInfo
         let vref = ValRefForIntrinsic info
