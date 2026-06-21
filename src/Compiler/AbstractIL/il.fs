@@ -3376,6 +3376,8 @@ let mkILSimpleTypar nm =
         MetadataIndex = NoMetadataIdx
     }
 
+/// Returns gp with all constraint state cleared. CustomAttrsStored is also reset because
+/// some constraints (notably IsUnmanagedAttribute) are encoded there.
 let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
     { gp with
         Constraints = []
@@ -3383,6 +3385,7 @@ let stripILGenericParamConstraints (gp: ILGenericParameterDef) =
         HasNotNullableValueTypeConstraint = false
         HasDefaultConstructorConstraint = false
         HasAllowsRefStruct = false
+        CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
     }
 
 let genericParamOfGenericActual (_ga: ILType) = mkILSimpleTypar "T"

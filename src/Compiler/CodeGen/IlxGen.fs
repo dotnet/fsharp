@@ -1207,6 +1207,9 @@ and IlxGenEnv =
         /// Indicates the default "place" for stuff we're currently generating
         cloc: CompileLocation
 
+        /// Non-generic enclosing module (never narrowed by AddEnclosingToEnv). Routing target for TLR lifts.
+        moduleCloc: CompileLocation
+
         /// Indicates the default "place" for initialization stuff we're currently generating
         initClassCompLoc: CompileLocation option
 
@@ -2588,6 +2591,10 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
 
     let mutable hasStackAllocatedLocals = false
 
+    // An uninitialized reference-type 'this', pending for a chained base/self '.ctor', must not be
+    // spilled for a debug point: that produces unverifiable IL.
+    let mutable uninitializedThisOnStackCount = 0
+
     let codeLabelToPC: Dictionary<ILCodeLabel, int> = Dictionary<_, _>(10)
 
     let codeLabelToCodeLabel: Dictionary<ILCodeLabel, ILCodeLabel> =
@@ -2628,6 +2635,12 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
                 nstack <- nstack - 1
 
     member _.GetCurrentStack() = stack
+
+    member _.StartUninitializedThisOnStack() =
+        uninitializedThisOnStackCount <- uninitializedThisOnStackCount + 1
+
+    member _.EndUninitializedThisOnStack() =
+        uninitializedThisOnStackCount <- uninitializedThisOnStackCount - 1
 
     member _.AssertEmptyStack() =
         if not (isNil stack) then
@@ -2676,6 +2689,21 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     member cgbuf.EmitDebugPoint(m: range) =
         if mgbuf.cenv.options.generateDebugSymbols then
 
+            // A debug point must be at an empty stack position for the debugger to bind a breakpoint there,
+            // so spill anything still pending (e.g. a call argument) to temporaries and reload it afterwards.
+            // An uninitialized reference-type 'this' (pending for a chained '.ctor') can't be spilled, so
+            // leave the stack as-is in that case.
+            let spilled =
+                if uninitializedThisOnStackCount > 0 then
+                    []
+                else
+                    [
+                        for ty in stack ->
+                            let idx = cgbuf.AllocLocal([], ty, false, true)
+                            cgbuf.EmitInstr(pop 1, Push0, mkStloc (uint16 idx))
+                            idx, ty
+                    ]
+
             let attr = GenILSourceMarker g m
             let i = I_seqpoint attr
             hasDebugPoints <- true
@@ -2695,6 +2723,9 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
                 codebuf.Add i
 
             anyDocument <- Some attr.Document
+
+            for idx, ty in List.rev spilled do
+                cgbuf.EmitInstr(pop 0, Push [ ty ], mkLdloc (uint16 idx))
 
     // Emit FeeFee breakpoints for hidden code, see https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/
     member cgbuf.EmitStartOfHiddenCode() =
@@ -3052,7 +3083,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
             let others =
                 [
                     for k in cenv.namedDebugPointsForInlinedCode.Keys do
-                        if equals m k.Range then
+                        if Range.equals m k.Range then
                             yield k.Name
                 ]
                 |> String.concat ","
@@ -3143,8 +3174,12 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
         | LinearOpExpr _
         | Expr.Match _ -> GenLinearExpr cenv cgbuf eenv expr sequel false id |> ignore<FakeUnit>
 
-        | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-            CG.EmitDebugPoint cgbuf m
+        | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden, m), innerExpr) ->
+            if isHidden then
+                cgbuf.EmitStartOfHiddenCode()
+            else
+                CG.EmitDebugPoint cgbuf m
+
             GenExpr cenv cgbuf eenv innerExpr sequel
 
         | Expr.Const(c, m, ty) -> GenConstant cenv cgbuf eenv (c, m, ty) sequel
@@ -3688,24 +3723,15 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
 
                          //assert(cgbuf.GetCurrentStack() = stackAfterJoin)  // REVIEW: Since gen_dtree* now sets stack, stack should be stackAfterJoin at this point...
                          CG.SetStack cgbuf stackAfterJoin
-                         // If any values are left on the stack after the join then we're certainly going to do something with them
-                         // For example, we may be about to execute a 'stloc' for
-                         //
-                         //   let y2 = if System.DateTime.Now.Year < 2000 then 1 else 2
-                         //
-                         // or a 'stelem' for
-                         //
-                         //   arr.[0] <- if System.DateTime.Now.Year > 2000 then 1 else 2
-                         //
-                         // In both cases, any instructions that come after this point will be falsely associated with the last branch of the control
-                         // prior to the join point. This is base, e.g. see FSharp 1.0 bug 5155
-                         cgbuf.EmitStartOfHiddenCode()
-
                          GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
                          Fake))
 
-    | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-        CG.EmitDebugPoint cgbuf m
+    | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden, m), innerExpr) ->
+        if isHidden then
+            cgbuf.EmitStartOfHiddenCode()
+        else
+            CG.EmitDebugPoint cgbuf m
+
         GenLinearExpr cenv cgbuf eenv innerExpr sequel true contf
 
     | LinearOpExpr(TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
@@ -4505,6 +4531,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 List.splitAt numEnclILTypeArgs ilTyArgs
 
             let boxity = mspec.DeclaringType.Boxity
+            let valu = boxity = AsValue
             let mspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
 
             // "Unit" return types on static methods become "void"
@@ -4560,8 +4587,20 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                         I_call(isTailCall, mspec, None)
 
             // ok, now we're ready to generate
+            // For a value type the constructor 'this' is a managed pointer, so track it as a byref.
+            let thisTy =
+                if valu then
+                    ILType.Byref mspec.DeclaringType
+                else
+                    mspec.DeclaringType
+
             if isSuperInit || isSelfInit then
-                CG.EmitInstr cgbuf (pop 0) (Push [ mspec.DeclaringType ]) mkLdarg0
+                CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
+
+            let pendingUninitializedThis = (isSuperInit || isSelfInit) && not valu
+
+            if pendingUninitializedThis then
+                cgbuf.StartUninitializedThisOnStack()
 
             if not cenv.g.generateWitnesses || witnessInfos.IsEmpty then
                 () // no witness args
@@ -4602,9 +4641,12 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
                 CG.EmitInstr cgbuf (pop (nargs + (if mspec.CallingConv.IsStatic || newobj then 0 else 1))) pushes callInstr
 
+                if pendingUninitializedThis then
+                    cgbuf.EndUninitializedThisOnStack()
+
                 // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation. It will be popped again in most cases
                 if isSuperInit then
-                    CG.EmitInstr cgbuf (pop 0) (Push [ mspec.DeclaringType ]) mkLdarg0
+                    CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
 
                 // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
                 // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
@@ -5236,6 +5278,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
     GenExpr cenv cgbuf eenvinner loopBody discard
 
     //    v++ or v--
+    cgbuf.EmitStartOfHiddenCode()
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
     CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 1)
@@ -5629,10 +5672,21 @@ and GenILCall
         (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
         && ilMethRef.CallingConv.IsInstance
 
+    let thisTy =
+        if valu then
+            ILType.Byref ilMethSpec.DeclaringType
+        else
+            ilMethSpec.DeclaringType
+
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
     if isSuperInit then
-        CG.EmitInstr cgbuf (pop 0) (Push [ ilMethSpec.DeclaringType ]) mkLdarg0
+        CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
+
+    let pendingUninitializedThis = isSuperInit && not valu
+
+    if pendingUninitializedThis then
+        cgbuf.StartUninitializedThisOnStack()
 
     GenExprs cenv cgbuf eenv argExprs
 
@@ -5652,10 +5706,13 @@ and GenILCall
 
     CG.EmitInstr cgbuf (pop (argExprs.Length + (if isSuperInit then 1 else 0))) (if isSuperInit then Push0 else Push ilReturnTys) il
 
+    if pendingUninitializedThis then
+        cgbuf.EndUninitializedThisOnStack()
+
     // Load the 'this' pointer as the pretend 'result' of the isSuperInit operation.
     // It will be immediately popped in most cases, but may also be used as the target of some "property set" operations.
     if isSuperInit then
-        CG.EmitInstr cgbuf (pop 0) (Push [ ilMethSpec.DeclaringType ]) mkLdarg0
+        CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
 
     CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel
 
@@ -7881,8 +7938,6 @@ and GenDecisionTreeSwitch
     let g = cenv.g
     let m = e.Range
     cgbuf.SetMarkToHereIfNecessary inplabOpt
-
-    cgbuf.EmitStartOfHiddenCode()
 
     match cases with
     // optimize a test against a boolean value, i.e. the all-important if-then-else
@@ -10269,7 +10324,22 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
         else
             NoShadowLocal, eenv
 
-    ComputeAndAddStorageForLocalValWithValReprInfo (cenv, eenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal) cloc v eenv
+    // TLR lifts avoid generic enclosing scopes (#17607); namespace-root lifts use the per-file
+    // init class to avoid generated-name collisions in the shared <PrivateImplementationDetails$Asm>.
+    let effectiveCloc =
+        if v.IsCompiledAsTopLevel && not v.IsMemberOrModuleBinding then
+            if eenv.moduleCloc.Enclosing.IsEmpty then
+                CompLocForInitClass eenv.moduleCloc
+            else
+                eenv.moduleCloc
+        else
+            cloc
+
+    ComputeAndAddStorageForLocalValWithValReprInfo
+        (cenv, eenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal)
+        effectiveCloc
+        v
+        eenv
 
 //--------------------------------------------------------------------------
 // Generate stack save/restore and assertions - pulled into letrec by alloc*
@@ -10587,10 +10657,21 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
     let _, body =
         CodeGenMethod cenv cgbuf.mgbuf ([], eenv.staticInitializationName, eenv, 0, None, codeGenInitFunc, m)
 
-    if CheckCodeDoesSomething body.Code then
+    let codeDoesSomething = CheckCodeDoesSomething body.Code
+
+    // Keep the init method if it carries a visible debug point, so steppable bindings like 'let i = ()' survive.
+    let hasVisibleDebugPoint =
+        not cenv.options.localOptimizationsEnabled
+        && body.Code.Instrs
+           |> Array.exists (function
+               | I_seqpoint sp -> sp.Line <> FeeFee cenv
+               | _ -> false)
+
+    if codeDoesSomething || hasVisibleDebugPoint then
         // We are here because the module we just grabbed has an interesting static initializer
         let feefee, seqpt =
-            if body.Code.Instrs.Length > 0 then
+            // Without real init code, the .cctor's FeeFee marker would just add a stray hidden sequence point.
+            if codeDoesSomething && body.Code.Instrs.Length > 0 then
                 match body.Code.Instrs[0] with
                 | I_seqpoint sp as i -> [ FeeFeeInstr cenv sp.Document ], [ i ]
                 | _ -> [], []
@@ -10705,9 +10786,12 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
         // Evaluate bindings for module
         let hidden = IsHiddenTycon eenv.sigToImplRemapInfo mspec
 
+        let moduleLoc = CompLocForFixedModule cenv.options.fragName qname.Text mspec
+
         let eenvinner =
             { eenv with
-                cloc = CompLocForFixedModule cenv.options.fragName qname.Text mspec
+                cloc = moduleLoc
+                moduleCloc = moduleLoc
                 initLocals =
                     eenv.initLocals
                     && not (EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.SkipLocalsInitAttribute mspec)
@@ -10773,13 +10857,16 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
     for anonInfo in anonRecdTypes.Values do
         mgbuf.GenerateAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
 
+    let withQName (loc: CompileLocation) =
+        { loc with
+            TopImplQualifiedName = qname.Text
+            Range = m
+        }
+
     let eenv =
         { eenv with
-            cloc =
-                { eenv.cloc with
-                    TopImplQualifiedName = qname.Text
-                    Range = m
-                }
+            cloc = withQName eenv.cloc
+            moduleCloc = withQName eenv.moduleCloc
         }
 
     cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
@@ -12284,11 +12371,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                 []
 
         let serializationRelatedMembers =
-            // do not emit serialization related members if target framework lacks SerializationInfo or StreamingContext
             match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
             | Some serializationInfoType, Some streamingContextType ->
 
-                let emitSerializationFieldIL emitPerField =
+                let emitFieldSerializationIL emitPerField =
                     [
                         for (_, ilFieldName, ilPropType, _) in fieldNamesAndTypes do
                             yield! emitPerField ilFieldName ilPropType
@@ -12298,7 +12384,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     ty.IsNominal && ty.Boxity = ILBoxity.AsValue
 
                 let ilInstrsToRestoreFields =
-                    emitSerializationFieldIL (fun ilFieldName ilPropType ->
+                    emitFieldSerializationIL (fun ilFieldName ilPropType ->
                         [
                             mkLdarg0
                             mkLdarg 1us
@@ -12331,10 +12417,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                             mkNormalStfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
                         ])
 
-                // FSharp.Core is SecurityTransparent and cannot override SecurityCritical
-                // Exception.GetObjectData, so field restoration would be unbalanced — skip it.
-                let shouldRestoreFields =
-                    not g.compilingFSharpCore && not fieldNamesAndTypes.IsEmpty
+                let emitFieldSerialization =
+                    cenv.g.langVersion.SupportsFeature(LanguageFeature.ExceptionFieldSerializationSupport)
+                    && not g.compilingFSharpCore
+                    && not fieldNamesAndTypes.IsEmpty
 
                 let ilInstrsForSerialization =
                     [
@@ -12343,7 +12429,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                         mkLdarg 2us
                         mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [ serializationInfoType; streamingContextType ]))
                     ]
-                    @ (if shouldRestoreFields then ilInstrsToRestoreFields else [])
+                    @ (if emitFieldSerialization then
+                           ilInstrsToRestoreFields
+                       else
+                           [])
                     |> nonBranchingInstrsToCode
 
                 let ilCtorDefForSerialization =
@@ -12357,73 +12446,66 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     )
                     |> AddNonUserCompilerGeneratedAttribs g
 
-                let ilInstrsToSaveFields =
-                    emitSerializationFieldIL (fun ilFieldName ilPropType ->
+                if not emitFieldSerialization then
+                    [ ilCtorDefForSerialization ]
+                else
+                    let ilInstrsToSaveFields =
+                        emitFieldSerializationIL (fun ilFieldName ilPropType ->
+                            [
+                                mkLdarg 1us
+                                I_ldstr ilFieldName
+                                mkLdarg0
+                                mkNormalLdfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
+
+                                if isILValueType ilPropType then
+                                    I_box ilPropType
+
+                                mkNormalCallvirt (
+                                    mkILNonGenericInstanceMethSpecInTy (
+                                        serializationInfoType,
+                                        "AddValue",
+                                        [ g.ilg.typ_String; g.ilg.typ_Object ],
+                                        ILType.Void
+                                    )
+                                )
+                            ])
+
+                    let ilInstrsForGetObjectData =
                         [
-                            mkLdarg 1us
-                            I_ldstr ilFieldName
                             mkLdarg0
-                            mkNormalLdfld (mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType))
-
-                            if isILValueType ilPropType then
-                                I_box ilPropType
-
-                            mkNormalCallvirt (
+                            mkLdarg 1us
+                            mkLdarg 2us
+                            mkNormalCall (
                                 mkILNonGenericInstanceMethSpecInTy (
-                                    serializationInfoType,
-                                    "AddValue",
-                                    [ g.ilg.typ_String; g.ilg.typ_Object ],
+                                    g.iltyp_Exception,
+                                    "GetObjectData",
+                                    [ serializationInfoType; streamingContextType ],
                                     ILType.Void
                                 )
                             )
-                        ])
+                        ]
+                        @ ilInstrsToSaveFields
+                        |> nonBranchingInstrsToCode
 
-                let ilInstrsForGetObjectData =
-                    [
-                        mkLdarg0
-                        mkLdarg 1us
-                        mkLdarg 2us
-                        mkNormalCall (
-                            mkILNonGenericInstanceMethSpecInTy (
-                                g.iltyp_Exception,
+                    let ilGetObjectDataDef =
+                        let securityCriticalAttr =
+                            mkILCustomAttribute (g.attrib_SecurityCriticalAttribute.TypeRef, [], [], [])
+
+                        let mdef =
+                            mkILNonGenericVirtualInstanceMethod (
                                 "GetObjectData",
-                                [ serializationInfoType; streamingContextType ],
-                                ILType.Void
+                                ILMemberAccess.Public,
+                                [
+                                    mkILParamNamed ("info", serializationInfoType)
+                                    mkILParamNamed ("context", streamingContextType)
+                                ],
+                                mkILReturn ILType.Void,
+                                mkMethodBody (false, [], 8, ilInstrsForGetObjectData, None, eenv.imports)
                             )
-                        )
-                    ]
-                    @ ilInstrsToSaveFields
-                    |> nonBranchingInstrsToCode
 
-                let ilGetObjectDataDef =
-                    let mdef =
-                        mkILNonGenericVirtualInstanceMethod (
-                            "GetObjectData",
-                            ILMemberAccess.Public,
-                            [
-                                mkILParamNamed ("info", serializationInfoType)
-                                mkILParamNamed ("context", streamingContextType)
-                            ],
-                            mkILReturn ILType.Void,
-                            mkMethodBody (false, [], 8, ilInstrsForGetObjectData, None, eenv.imports)
-                        )
+                        mdef.With(customAttrs = mkILCustomAttrs [ securityCriticalAttr ])
+                        |> AddNonUserCompilerGeneratedAttribs g
 
-                    // SecurityCritical is required for .NET Framework where Exception.GetObjectData is security-critical
-                    let securityCriticalAttr =
-                        mkILCustomAttribute (g.attrib_SecurityCriticalAttribute.TypeRef, [], [], [])
-
-                    mdef.With(customAttrs = mkILCustomAttrs [ securityCriticalAttr ])
-                    |> AddNonUserCompilerGeneratedAttribs g
-
-                // FSharp.Core has [assembly: SecurityTransparent], making all code transparent.
-                // On .NET Framework, transparent code cannot override SecurityCritical virtual
-                // methods like Exception.GetObjectData. Without GetObjectData to write the fields,
-                // the field-restoring deserialization constructor would crash (fields not in
-                // SerializationInfo). So for FSharp.Core: emit only the base-call ctor (status quo).
-                // For user exceptions: emit both GetObjectData and the field-restoring ctor.
-                if g.compilingFSharpCore || fieldNamesAndTypes.IsEmpty then
-                    [ ilCtorDefForSerialization ]
-                else
                     [ ilCtorDefForSerialization; ilGetObjectDataDef ]
             | _ -> []
 
@@ -12520,9 +12602,12 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
 //-------------------------------------------------------------------------
 
 let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
+    let ccuLoc = CompLocForCcu ccu
+
     {
         tyenv = TypeReprEnv.Empty
-        cloc = CompLocForCcu ccu
+        cloc = ccuLoc
+        moduleCloc = ccuLoc
         initClassCompLoc = None
         initFieldName = CompilerGeneratedName "init"
         staticInitializationName = CompilerGeneratedName "staticInitialization"
@@ -12605,8 +12690,11 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let mgbuf = AssemblyBuilder(cenv, anonTypeTable)
 
     let eenv =
+        let fragLoc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+
         { eenv with
-            cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+            cloc = fragLoc
+            moduleCloc = fragLoc
             delayCodeGen = cenv.options.parallelIlxGenEnabled
         }
 

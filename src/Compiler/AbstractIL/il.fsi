@@ -859,6 +859,7 @@ type ILAttribElem =
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
 /// Custom attribute.
+[<RequireQualifiedAccess>]
 type ILAttribute =
     /// Attribute with args encoded to a binary blob according to ECMA-335 II.21 and II.23.3.
     /// 'decodeILAttribData' is used to parse the byte[] blob to ILAttribElem's as best as possible.
@@ -978,6 +979,7 @@ type internal ILSecurityAction =
     | InheritanceDemandChoice
     | DemandChoice
 
+[<RequireQualifiedAccess>]
 type internal ILSecurityDecl = ILSecurityDecl of ILSecurityAction * byte[]
 
 /// Abstract type equivalent to ILSecurityDecl list - use helpers
@@ -1046,6 +1048,7 @@ type MethodBody =
     | NotAvailable
 
 /// Generic parameters.  Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
+[<NoEquality; NoComparison>]
 type ILGenericParameterDef =
     {
         Name: string
@@ -2475,6 +2478,17 @@ val internal ecmaPublicKey: PublicKey
 
 /// Strips ILType.Modified from the ILType.
 val internal stripILModifiedFromTy: ILType -> ILType
+
+// Built-in type names exposed for `mref.DeclaringTypeRef.Name = tname_X` matchers outside il.fs.
+
+[<Literal>]
+val internal tname_String: string = "System.String"
+
+[<Literal>]
+val internal tname_Type: string = "System.Type"
+
+[<Literal>]
+val internal tname_Bool: string = "System.Boolean"
 
 /// Discriminating different important built-in types.
 val internal isILObjectTy: ILGlobals -> ILType -> bool
