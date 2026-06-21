@@ -11305,11 +11305,20 @@ and GenUnionToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv,
                 // provene is an expression that has been proven to be of this case (the value itself for
                 // struct unions, otherwise a 'UnionCaseProof'), from which fields can be read.
                 let mkBody (provene: Expr) =
+                    // Format each field the same way option/list do (LanguagePrimitives.anyToStringShowingNull):
+                    // render null as "null", otherwise via the 'string' operator.
                     let fieldStrs =
                         rfields
                         |> List.mapi (fun j _ ->
                             let fe = mkUnionCaseFieldGetProvenViaExprAddr (provene, cref, tinst, j, m)
-                            mkCallStringOperator g m (tyOfExpr g fe) fe)
+                            let fieldTy = tyOfExpr g fe
+                            let v, ve = mkCompGenLocal m "field" fieldTy
+
+                            mkCompGenLet
+                                m
+                                v
+                                fe
+                                (mkNonNullCond g m g.string_ty (mkCallBox g m fieldTy ve) (mkCallStringOperator g m fieldTy ve) (mkString g m "null")))
 
                     let sep = mkString g m ", "
 

@@ -76,6 +76,25 @@ let main _ =
     |> withStdOutContains "Just(5)"
 
 [<Fact>]
+let ``Generated ToString renders a null field as "null" like option does`` () =
+    FSharp """
+module Test
+type W = W of string
+
+[<EntryPoint>]
+let main _ =
+    W null |> string |> printfn "%s"                 // null field -> "null"
+    (Some (null: string)).ToString() |> printfn "%s" // option renders it the same way
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "W(null)"
+    |> withStdOutContains "Some(null)"
+
+[<Fact>]
 let ``No debug display attribute`` () =
     someCode
     |> withOptions [ "--reflectionfree" ]
