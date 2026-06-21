@@ -449,6 +449,10 @@ module internal Makers =
 
     val mkStaticCall_String_Concat_Array: TcGlobals -> range -> Expr -> Expr
 
+    /// Concatenate string-valued expressions, choosing the cheapest String.Concat overload by arity.
+    /// An empty list yields "" and a singleton yields itself.
+    val mkStringConcat: TcGlobals * range * Expr list -> Expr
+
     val mkDecr: TcGlobals -> range -> Expr -> Expr
 
     val mkIncr: TcGlobals -> range -> Expr -> Expr

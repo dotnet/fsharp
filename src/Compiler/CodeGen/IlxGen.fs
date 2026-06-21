@@ -11317,7 +11317,7 @@ and GenUnionToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv,
                         fieldStrs |> List.mapi (fun i fe -> if i = 0 then [ fe ] else [ sep; fe ]) |> List.concat
 
                     let parts = mkString g m (ucase.DisplayName + "(") :: fieldsWithSeps @ [ mkString g m ")" ]
-                    mkStaticCall_String_Concat_Array g m (mkArray (g.string_ty, parts, m))
+                    mkStringConcat (g, m, parts)
 
                 if cref.Tycon.IsStructOrEnumTycon then
                     mkBody thise

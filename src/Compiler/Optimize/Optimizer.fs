@@ -2524,19 +2524,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
     let args = optimizeArgs args []
 
-    let expr =
-        match args with
-        | [ arg ] ->
-            arg
-        | [ arg1; arg2 ] -> 
-            mkStaticCall_String_Concat2 g m arg1 arg2
-        | [ arg1; arg2; arg3 ] ->
-            mkStaticCall_String_Concat3 g m arg1 arg2 arg3
-        | [ arg1; arg2; arg3; arg4 ] ->
-            mkStaticCall_String_Concat4 g m arg1 arg2 arg3 arg4
-        | args ->
-            let arg = mkArray (g.string_ty, args, m)
-            mkStaticCall_String_Concat_Array g m arg
+    let expr = mkStringConcat (g, m, args)
 
     match expr with
     | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _) as op, tyargs, args, m) 
