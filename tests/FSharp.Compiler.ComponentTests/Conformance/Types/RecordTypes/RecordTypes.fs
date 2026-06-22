@@ -731,11 +731,10 @@ module N =
         |> shouldFail
         |> withSingleDiagnostic (Error 801, Line 8, Col 15, Line 8, Col 18, "This type has no accessible object constructors")
 
-    // The feature exposes ONLY the all-fields constructor, never a parameterless one. A struct record
-    // has a zero-init default and a [<CLIMutable>] record emits a parameterless .ctor in IL, but neither
-    // is made callable from F# - 'Point()' / 'R()' must still be rejected (only the all-fields ctor exists).
+    // Only the all-fields constructor is exposed: a struct record's default (zero) initialization and a
+    // [<CLIMutable>] record's IL parameterless .ctor both stay unavailable from F#.
     [<Fact>]
-    let ``Struct record does not expose a parameterless constructor`` () =
+    let ``Struct record does not expose parameterless default initialization`` () =
         Fsx """
 [<Struct>]
 type Point = { X : int; Y : int }
@@ -747,7 +746,7 @@ let p = Point()
         |> withSingleDiagnostic (Error 501, Line 4, Col 9, Line 4, Col 16, "The object constructor 'Point' takes 2 argument(s) but is here given 0. The required signature is 'Point(X: int, Y: int) : Point'.")
 
     [<Fact>]
-    let ``CLIMutable record does not expose a parameterless constructor`` () =
+    let ``CLIMutable record does not expose its parameterless constructor`` () =
         Fsx """
 [<CLIMutable>]
 type R = { A : int; B : int }
