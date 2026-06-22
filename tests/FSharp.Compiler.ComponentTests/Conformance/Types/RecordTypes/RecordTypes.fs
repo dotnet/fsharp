@@ -770,3 +770,47 @@ if r.A <> 1 || r.B <> 2 then failwith "wrong field values"
         |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
+
+    // Signature-file interplay: the constructor is not a declared member, so it is never written in a
+    // .fsi - it rides on the visibility of the record's representation, exactly like { } construction.
+    [<Fact>]
+    let ``Record constructor is available when the signature exposes the record representation`` () =
+        Fsi """
+module Lib
+type R = { A: int; B: int }
+"""
+        |> withAdditionalSourceFiles [
+            FsSource """
+module Lib
+type R = { A: int; B: int }
+"""
+            FsSourceWithFileName "Consumer.fs" """
+module Consumer
+let r = Lib.R(1, 2)
+if r.A <> 1 || r.B <> 2 then failwith "wrong field values"
+"""
+        ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Record constructor is unavailable when the signature hides the record representation`` () =
+        Fsi """
+module Lib
+type R
+"""
+        |> withAdditionalSourceFiles [
+            FsSource """
+module Lib
+type R = { A: int; B: int }
+"""
+            FsSourceWithFileName "Consumer.fs" """
+module Consumer
+let _ = Lib.R(1, 2)
+"""
+        ]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1133
