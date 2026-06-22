@@ -487,7 +487,7 @@ module ReflectUtils =
         | Value
         | Reference
 
-    // Enum (not a union) to keep generated/trimmed FSharp.Core codegen minimal; only pattern-matched, never compared.
+    // Enum (not a union) to minimize trimmed code size.
     [<RequireQualifiedAccess>]
     type RecordKind =
         | Nominal = 0
