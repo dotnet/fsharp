@@ -2103,3 +2103,104 @@ type Container<'T>(value: 'T) =
                 rude.Kind = RudeEditKind.NotSupportedByRuntime
                 && rude.Message.Contains "GenericAddFieldToExistingType"
         )
+
+    // --- Parity characterization: structural edits to NON-struct-state-machine CEs ---
+    // task {} lowers to a struct resumable state machine, so adding/removing a step is a
+    // StateMachineShapeChange rude edit (see the task tests above). async/seq/inner functions do
+    // NOT use struct resumable code, so the same structural edit should classify differently (and,
+    // we expect, more permissively, matching C#). These tests pin that distinction. The positive
+    // (Empty rude edits) assertions encode the expected C#-parity outcome; if F# is stricter than
+    // predicted, the failure documents exactly where.
+
+    [<Fact>]
+    let ``async let-bang addition is not a struct state machine rude edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let runAsync () =
+    async {
+        let! value = async { return 1 }
+        return value + 1
+    }
+"""
+        let updated_source = """
+module Library
+let runAsync () =
+    async {
+        let! value = async { return 1 }
+        let! extra = async { return 2 }
+        return value + extra
+    }
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        // async lowers to continuation closures, not a struct resumable state machine: adding a
+        // let! adds a continuation lambda (allowed with NewTypeDefinition/AddMethodToExistingType)
+        // and edits the prior continuation body. Unlike task, this should NOT be rude.
+        Assert.DoesNotContain(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.StateMachineShapeChange)
+        Assert.Empty(result.RudeEdits)
+
+    [<Fact>]
+    let ``seq yield addition is not a struct state machine rude edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let numbers () =
+    seq {
+        yield 1
+        yield 2
+    }
+"""
+        let updated_source = """
+module Library
+let numbers () =
+    seq {
+        yield 1
+        yield 2
+        yield 3
+    }
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        // seq {} lowers via the sequence-expression -> generated IEnumerable object path
+        // (ConvertSequenceExprToObject), not resumable struct code. Adding a yield must not be a
+        // StateMachineShapeChange; characterizing whether it lands as an allowed body update or a
+        // synthesized-declaration change is the point of this test.
+        Assert.DoesNotContain(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.StateMachineShapeChange)
+
+    [<Fact>]
+    let ``adding an inner function is not a struct state machine rude edit`` () =
+        use harness = new DiffTestHarness()
+        let baseline_source = """
+module Library
+let compute (x: int) =
+    x + 1
+"""
+        let updated_source = """
+module Library
+let compute (x: int) =
+    let helper y = y * 2
+    helper x + 1
+"""
+        harness.Rewrite(baseline_source)
+        let baseline = harness.Compile()
+        harness.Rewrite(updated_source)
+        let updated = harness.Compile()
+
+        let result = harness.DiffWith allCapabilities baseline updated
+
+        // An inner function lowers to a closure/local method, the same family as a lambda: adding
+        // one should be an additive (allowed) edit with full capabilities, never a state machine
+        // shape change.
+        Assert.DoesNotContain(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.StateMachineShapeChange)
+        Assert.Empty(result.RudeEdits)
