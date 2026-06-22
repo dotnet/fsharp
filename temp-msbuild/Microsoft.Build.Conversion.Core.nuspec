@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Microsoft.Build.Conversion.Core</id>
+    <version>15.8.166</version>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <projectUrl>http://go.microsoft.com/fwlink/?LinkId=624683</projectUrl>
+    <iconUrl>https://go.microsoft.com/fwlink/?linkid=825694</iconUrl>
+    <description>This package contains the Microsoft.Build.Conversion assembly which contains logic for converting projects.  NOTE: This assembly is deprecated.</description>
+    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
+    <tags>MSBuild</tags>
+    <serviceable>true</serviceable>
+    <repository url="https://github.com/microsoft/msbuild" />
+    <dependencies>
+      <group targetFramework=".NETFramework4.6">
+        <dependency id="Microsoft.Build" version="15.8.166" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Build.Engine" version="15.8.166" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System.Configuration" targetFramework=".NETFramework4.6" />
+    </frameworkAssemblies>
+  </metadata>
+</package>

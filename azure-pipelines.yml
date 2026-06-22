@@ -28,8 +28,6 @@ variables:
     value: FSharp
   - name: _BuildConfig
     value: Release
-  - name: SignType
-    value: Test
   - name: Codeql.Enabled
     value: 'false'
 
@@ -76,8 +74,6 @@ extends:
                 clean: true
                 fetchDepth: 1
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (restore + build; sign/insert deferred to EPIC I/VSIX)'
+                displayName: 'Build (product + vsintegration IDE)'
                 env:
                   DisableLocalization: true
-                  SignType: $(SignType)
-                  TeamName: $(_TeamName)

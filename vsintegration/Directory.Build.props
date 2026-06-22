@@ -4,11 +4,8 @@
 
   <PropertyGroup>
     <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
-    <!-- Block 9p (EPIC V): the 15.9 proto fsc rejects SemVer build metadata (+<sha>) in the
-         AssemblyInformationalVersion that the .NET SDK adds to these SDK-style projects (FS2003,
-         warn-as-error). Suppress it - the product embeds the hash by design too (see
-         build/targets/GenerateAssemblyAttributes.targets). -->
-    <NoWarn>$(NoWarn);2003</NoWarn>
+    <!-- Don't append +<sha> to AssemblyInformationalVersion; the 15.9 fsc rejects it (FS2003). -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
 </Project>
