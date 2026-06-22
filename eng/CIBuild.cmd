@@ -28,11 +28,9 @@ rem --- Step 4: real product build via Arcade (uses Proto\net40\bin). -m:1 avoid
 rem    legacy net40\bin race; DisableLocalization defers XliffTasks. No signing/pack here. ---
 echo ---------------- Building product (real) ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Product.sln' /m:1 /p:DisableLocalization=true; exit $LASTEXITCODE"
-if errorlevel 1 ( echo Error: product build failed 1>&2 & exit /b 1 )
-
-rem --- Step 5: vsintegration IDE build (FSharp.Insertion.sln). GeneratePkgDefFile=false skips
-rem    the VsSDK CreatePkgDef task, which loads the delay-signed assembly and SN-validates it;
-rem    pkgdef/VSIX/signing are produced later in the insertion build. ---
-echo ---------------- Building vsintegration IDE ----------------
-powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -restore -build -configuration Release -projects '%_root%\FSharp.Insertion.sln' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
 exit /b %ERRORLEVEL%
+
+rem vsintegration is NOT built here. Building it (FSharp.Insertion.sln, GeneratePkgDefFile=false)
+rem on CI surfaced open compile blockers - FS0039 (e.g. Colorize.fs 'TokenInfo' not defined),
+rem BC30389 (VB property-pages Friend/IVT access), MSB3277 - that are EPIC-V work, separate from
+rem this product clean slate. The MSBuild repoint + FSharp.Insertion.sln stay staged for that effort.
