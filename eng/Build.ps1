@@ -437,6 +437,55 @@ function TestUsingXUnitConsole([string] $testProject, [string] $targetFramework)
     Exec-Console $xunitConsole $xunit_args
 }
 
+# Sets up the CI machine for running our VS integration tests, mirroring dotnet/roslyn's
+# Setup-IntegrationTestRun (eng\build.ps1). The VS editor's view-driven diagnostic producers
+# (e.g. the error-squiggle tagger) only run reliably with a realized, visible desktop, so we
+# ensure devenv runs on an interactive session: probe by taking a screenshot, and if that fails
+# reconnect the session to the physical console via tscon, then re-capture (fail-fast otherwise).
+function Setup-IntegrationTestRun() {
+    # Ensure leftover devenv instances are cleaned up on exit (honored when -ci -prepareMachine).
+    $script:processesToStopOnExit += "devenv"
+
+    $screenshotPath = (Join-Path $LogDir "StartingBuild.png")
+    try {
+        Capture-Screenshot $screenshotPath
+    }
+    catch {
+        Write-Host "Screenshot failed; attempting to connect to the console"
+
+        # Keep the session open so we have a UI to interact with
+        $quserItems = ((quser $env:USERNAME | Select-Object -Skip 1) -split '\s+')
+        $sessionid = $quserItems[2]
+        if ($sessionid -eq 'Disc') {
+            # When the session isn't connected, the third value is 'Disc' instead of the ID
+            $sessionid = $quserItems[1]
+        }
+
+        if ($quserItems[1] -eq 'console') {
+            Write-Host "Disconnecting from console before attempting reconnection"
+            try {
+                tsdiscon
+            } catch {
+                # ignore
+            }
+
+            # Disconnection is asynchronous, so wait a few seconds for it to complete
+            Start-Sleep -Seconds 3
+            query user
+        }
+
+        Write-Host "tscon $sessionid /dest:console"
+        tscon $sessionid /dest:console
+
+        # Connection is asynchronous, so wait a few seconds for it to complete
+        Start-Sleep 3
+        query user
+
+        # Make sure we can capture a screenshot. An exception at this point will fail-fast the build.
+        Capture-Screenshot $screenshotPath
+    }
+}
+
 function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.props") $TempDir
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
@@ -564,6 +613,7 @@ try {
     Process-Arguments
 
     . (Join-Path $PSScriptRoot "build-utils.ps1")
+    . (Join-Path $PSScriptRoot "build-utils-win.ps1")
 
     Update-Arguments
 
@@ -579,6 +629,15 @@ try {
     if ($ci) {
         Prepare-TempDir
         EnablePreviewSdks
+
+        if ($testIntegration -and -not $noVisualStudio) {
+            # Minimize all windows to avoid interference during integration test runs, then ensure
+            # devenv has an interactive desktop session (see Setup-IntegrationTestRun).
+            $shell = New-Object -ComObject "Shell.Application"
+            $shell.MinimizeAll()
+
+            Setup-IntegrationTestRun
+        }
     }
 
     $buildTool = InitializeBuildTool

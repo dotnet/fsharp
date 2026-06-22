@@ -11,7 +11,7 @@ namespace FSharp.Editor.IntegrationTests;
 
 public class CodeActionTests : AbstractIntegrationTest
 {
-    [IdeFact(Skip = "Unused-opens is a Hidden, background solution-crawler diagnostic that is not reliably produced for a freshly-opened document in the headless test VS, so the fix is never offered. Tracked separately.")]
+    [IdeFact]
     public async Task UnusedOpenDeclarations()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
