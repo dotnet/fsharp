@@ -121,6 +121,31 @@ let main _ =
     |> withStdOutContains "fields-render-alike"
 
 [<Fact>]
+let ``A hand-written ToString override is kept, not replaced by the generated one`` () =
+    FSharp """
+module Test
+type MyDU =
+    | A of int
+    override _.ToString() = "custom-du"
+
+type MyRecord =
+    { X: int }
+    override _.ToString() = "custom-record"
+
+[<EntryPoint>]
+let main _ =
+    A 1 |> string |> System.Console.WriteLine
+    { X = 1 } |> string |> System.Console.WriteLine
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "custom-du"
+    |> withStdOutContains "custom-record"
+
+[<Fact>]
 let ``No debug display attribute`` () =
     someCode
     |> withOptions [ "--reflectionfree" ]
