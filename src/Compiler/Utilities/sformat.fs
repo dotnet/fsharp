@@ -487,11 +487,12 @@ module ReflectUtils =
         | Value
         | Reference
 
-    [<RequireQualifiedAccess; StructuralComparison; StructuralEquality>]
+    // Enum (not a union) to keep generated/trimmed FSharp.Core codegen minimal; only pattern-matched, never compared.
+    [<RequireQualifiedAccess>]
     type RecordKind =
-        | Nominal
-        | AnonReference
-        | AnonStruct
+        | Nominal = 0
+        | AnonReference = 1
+        | AnonStruct = 2
 
     [<NoEquality; NoComparison>]
     type ValueInfo =
@@ -884,7 +885,7 @@ module Display =
             match kind with
             | RecordKind.AnonReference
             | RecordKind.AnonStruct -> (wordL leftBraceBar) ^^ xs ^^ (wordL rightBraceBar)
-            | RecordKind.Nominal -> (wordL leftBrace) ^^ xs ^^ (wordL rightBrace)
+            | _ -> (wordL leftBrace) ^^ xs ^^ (wordL rightBrace)
 
         let itemLayouts = nameXs |> List.map itemL
 
@@ -1230,8 +1231,7 @@ module Display =
 
             match kind with
             | RecordKind.AnonStruct -> structL -- body
-            | RecordKind.AnonReference
-            | RecordKind.Nominal -> body
+            | _ -> body
 
         and listValueL depthLim constr recd =
             match constr with
