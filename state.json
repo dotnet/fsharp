@@ -1,7 +1,7 @@
 {
   "prs": {
     "19974": {
-      "sha": "402baa2b8efde75327301c096040445feb5adbe7",
+      "sha": "f56706b37ef3d4711f9a4f58339626d9be76fbf8",
       "cats": []
     },
     "19973": {
@@ -39,7 +39,7 @@
       ]
     },
     "19964": {
-      "sha": "658a05b15e40309cc286fa4e3d49c74760489050",
+      "sha": "356a6d0ec53bd5327629a23265219a5604a49e9b",
       "cats": []
     },
     "19960": {
@@ -79,7 +79,7 @@
       "cats": []
     },
     "19930": {
-      "sha": "2f3b887431e2a4216eec635f756240802f8647c0",
+      "sha": "06bd617b0eecf901cf073ef9fd044741212d859e",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Restore",
@@ -111,7 +111,7 @@
       "cats": []
     },
     "19919": {
-      "sha": "2d43dbc8de32f9367269230a9c0012148e58ebbe",
+      "sha": "33563ed5b478e1c2a910e1645154a9b28de12579",
       "cats": []
     },
     "19918": {
@@ -250,6 +250,13 @@
       "sha": "6daa50ae57688ab771d572bcda7b967323a372e3",
       "cats": [
         "Affects-Compiler-Output"
+      ]
+    },
+    "19979": {
+      "sha": "df6cb940d8c239c51075163a493cd1f76702402c",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Design-Time"
       ]
     }
   }
