@@ -106,6 +106,10 @@ internal partial class EditorInProcess
         // posted ShowQuickFixes command routes to the wrong target.
         await ActivateAsync(cancellationToken);
 
+        // Force F# to (re)compute diagnostics for the now fully-loaded document: the initial SetText analysis can
+        // race project load and leave no diagnostic, so the fix is never offered. A net-zero edit bumps the version.
+        await TriggerDiagnosticsAsync(view, cancellationToken);
+
         // Best-effort deterministic wait for the analyzer/diagnostic work that produces the fixes (focus-independent).
         await AsyncOperationWaiter.WaitForFeaturesAsync(
             componentModel,
@@ -143,6 +147,21 @@ internal partial class EditorInProcess
                 string.Join(Environment.NewLine, entries),
                 ex);
         }
+    }
+
+    // Bumps the document version with a net-zero edit (insert+delete a space at EOF) to force F# to recompute
+    // diagnostics on the now fully-loaded project, restoring the caret afterward.
+    private async Task TriggerDiagnosticsAsync(IWpfTextView view, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var caret = view.Caret.Position.BufferPosition.Position;
+        var buffer = view.TextBuffer;
+        buffer.Insert(buffer.CurrentSnapshot.Length, " ");
+        buffer.Delete(new Span(buffer.CurrentSnapshot.Length - 1, 1));
+
+        var snapshot = buffer.CurrentSnapshot;
+        view.Caret.MoveTo(new SnapshotPoint(snapshot, Math.Min(caret, snapshot.Length)));
     }
 
     // Asks the lightbulb broker (producer-agnostic) whether any suggested actions exist at the caret and which
