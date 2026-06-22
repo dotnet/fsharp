@@ -138,3 +138,7 @@ msbuild.binlog
 evidence/
 .dotnet/
 .tools/
+
+# local scratch (nupkg extraction, etc.)
+temp-msbuild/
+temp_*/

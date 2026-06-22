@@ -1,31 +1,20 @@
 @echo off
 setlocal enabledelayedexpansion
 rem ============================================================================
-rem  F# 15.9 servicing CI build entry point (Block 9j: .NET 9 SDK proto, no nuget.org).
-rem
-rem  The 15.9 build is 2-phase (LKG proto compiler -> real compiler). We build the
-rem  proto with the .NET 9 SDK's bundled F# toolset (see eng\build-proto-net9.ps1),
-rem  needing none of the nuget.org-only seeds. Every remaining dependency resolves
-rem  directly from dotnet-public (the network-isolated agents cannot reach nuget.org,
-rem  and the dotnet-public upstream is NOT fetched on demand there, so packages.config
-rem  must list only packages that are published directly to dotnet-public).
+rem  F# 15.9 CI entry point. Restores from dotnet-public only (agents can't reach
+rem  nuget.org), then builds: net9-SDK proto compiler -> product -> vsintegration IDE.
 rem ============================================================================
 
 set "_root=%~dp0.."
 
-rem --- Step 1: restore packages.config (HintPath deps) into .\packages FIRST ---
-rem    NuGet.exe is standalone (no SDK needed). This must precede the Arcade restore:
-rem    the legacy projects import packages\MicroBuild.Core\...\MicroBuild.Core.props at
-rem    evaluation time, so .\packages has to be populated before MSBuild loads them.
+rem --- Step 1: restore packages.config into .\packages first - the legacy projects import
+rem    packages\MicroBuild.Core props at evaluation time, before the Arcade restore. ---
 echo ---------------- Restoring packages.config (dotnet-public) ----------------
 "%~dp0..\.nuget\NuGet.exe" restore "%~dp0..\packages.config" -PackagesDirectory "%~dp0..\packages" -ConfigFile "%~dp0..\NuGet.config" -NonInteractive -Verbosity quiet
 if errorlevel 1 ( echo Error: packages.config restore failed 1>&2 & exit /b 1 )
 
-rem --- Step 2: install the .NET SDK (global.json tools.dotnet) + Arcade toolset ---
-rem    We point -projects at eng\sdk-init.proj (a trivial SDK-style project) rather than
-rem    FSharp.sln: the all-packages.config solution has nothing for the SDK to restore and
-rem    surfaces a "no project to restore" error. sdk-init.proj restores cleanly while still
-rem    making build.ps1 acquire the SDK + Arcade toolset that Step 3/Step 4 need.
+rem --- Step 2: Arcade restore via eng\sdk-init.proj (a trivial project, since the all-
+rem    packages.config FSharp.sln has nothing to restore) to acquire the SDK + toolset. ---
 echo ---------------- Arcade restore + SDK acquisition ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -restore -configuration Release -projects '%~dp0sdk-init.proj' /p:DisableLocalization=true; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: Arcade restore / SDK acquisition failed 1>&2 & exit /b 1 )

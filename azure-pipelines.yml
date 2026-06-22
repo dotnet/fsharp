@@ -1,19 +1,6 @@
-# F# 15.9 servicing pipeline 499 — 1ESPT-compliant build.
-#
-# Block 8.0: extends 1ESPipelineTemplates/MicroBuildTemplate (1ES PT policy).
-# Block 8.1: CFS feed compliance (dotnet-public only; no MyGet/nuget.org).
-# Block 9a: replaces the no-op ack stage with a REAL product build stage that
-#   runs eng\CIBuild.cmd (Arcade engine, restore + build) on a 1ES VS image.
-#   This validates that the 15.9 product (FSharp.Core, compiler, FSharp.Build,
-#   vsintegration) builds end-to-end on CI after the Block 5.x restore/build
-#   fixes. Signing / packing / publishing / VS insertion deliberately remain
-#   OFF and land in subsequent Block 9 increments once the build is proven
-#   green — keeping each slow CI iteration single-variable.
-#
-# Build/sign/insert logic is modeled on dev16.11 @ 874517c0e (Kevin Ransom's
-# 2025-05 proven-green F# servicing revival) re-wrapped in main's current
-# 1ESPT skeleton, because dev16.11's own YAML predates the mandatory 1ES PT
-# template.
+# F# 15.9 servicing pipeline (definition 499): 1ES-PT official build.
+# Extends MicroBuild.1ES.Official and runs eng\CIBuild.cmd on a Windows VS2022 image.
+# Signing and VS insertion are added later in the insertion build.
 
 trigger:
   branches:
