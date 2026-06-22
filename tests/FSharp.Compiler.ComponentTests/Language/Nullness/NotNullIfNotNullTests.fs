@@ -146,6 +146,21 @@ let r : string = C.DependsOnSecond(notNull, maybeNull)
     |> withDiagnosticMessageMatches nullableExpected
 
 [<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - unannotated parameter with non-null return annotation fails`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let f x : string = C.Echo(x)
+let _ : string = f null
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches "Nullness warning: The type 'string' does not support 'null'."
+
+[<FactForNETCOREAPP>]
 let ``Local F# method with NotNullIfNotNull - non-null propagation`` () =
     FSharp """module MyLibrary
 open System.Diagnostics.CodeAnalysis
@@ -228,3 +243,39 @@ let bad : string = C.Echo(maybeNull)
     |> compile
     |> shouldFail
     |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``BCL Path.GetExtension - null literal input yields nullable result`` () =
+    FSharp """module MyLibrary
+open System.IO
+
+let ext : string = Path.GetExtension(null)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``BCL Path.GetExtension - null-bound variable input yields nullable result`` () =
+    FSharp """module MyLibrary
+open System.IO
+
+let maybeNull = null
+let ext : string = Path.GetExtension(maybeNull)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``BCL Path.GetExtension - explicit non-null parameter annotation yields non-null result`` () =
+    FSharp """module MyLibrary
+open System.IO
+
+let f (x: string) : string = Path.GetExtension x
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed

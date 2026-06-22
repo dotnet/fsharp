@@ -10570,7 +10570,11 @@ and TcMethodApplication
                             match TryGetCallerArgType g baseMinfo callerArgs paramName with
                             | Some callerArgTy ->
                                 let retTy = baseMinfo.GetFSharpReturnType(cenv.amap, mMethExpr, callerTyArgs)
-                                MethInfoWithModifiedReturnType(baseMinfo, replaceNullnessOfTy (nullnessOfTy g callerArgTy) retTy)
+                                let argNullness =
+                                    match GetTyparTyIfSupportsNull g callerArgTy with
+                                    | ValueSome _ -> g.knownWithNull
+                                    | ValueNone -> nullnessOfTy g callerArgTy
+                                MethInfoWithModifiedReturnType(baseMinfo, replaceNullnessOfTy argNullness retTy)
                             | None -> baseMinfo
                         | _ -> baseMinfo
                     else
