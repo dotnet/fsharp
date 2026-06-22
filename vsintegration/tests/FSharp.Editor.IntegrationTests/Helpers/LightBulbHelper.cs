@@ -40,6 +40,7 @@ namespace FSharp.Editor.IntegrationTests.Helpers
             JoinableTaskFactory joinableTaskFactory,
             Func<Task> showLightBulbAsync,
             Func<CancellationToken, Task> drainLightBulbOperationsAsync,
+            Func<CancellationToken, Task> triggerReanalysisAsync,
             CancellationToken cancellationToken)
         {
             var start = DateTime.UtcNow;
@@ -57,6 +58,14 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 }
 
                 attempt++;
+
+                // The fresh project's F# checker may not have options ready when analysis first runs, leaving no
+                // diagnostic. Re-force analysis on odd attempts so even attempts can harvest once the checker is ready.
+                if (attempt % 2 == 1)
+                {
+                    await triggerReanalysisAsync(cancellationToken);
+                }
+
                 var (sets, detail) = await TryGetFromRealSessionAsync(
                     broker, view, joinableTaskFactory, showLightBulbAsync, drainLightBulbOperationsAsync, cancellationToken);
                 lastDetail = $"attempt {attempt}, elapsed {(DateTime.UtcNow - start).TotalSeconds:F1}s: {detail}";

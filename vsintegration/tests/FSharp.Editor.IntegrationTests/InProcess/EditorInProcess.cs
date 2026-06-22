@@ -106,10 +106,6 @@ internal partial class EditorInProcess
         // posted ShowQuickFixes command routes to the wrong target.
         await ActivateAsync(cancellationToken);
 
-        // Force F# to (re)compute diagnostics for the now fully-loaded document: the initial SetText analysis can
-        // race project load and leave no diagnostic, so the fix is never offered. A net-zero edit bumps the version.
-        await TriggerDiagnosticsAsync(view, cancellationToken);
-
         // Best-effort deterministic wait for the analyzer/diagnostic work that produces the fixes (focus-independent).
         await AsyncOperationWaiter.WaitForFeaturesAsync(
             componentModel,
@@ -129,9 +125,12 @@ internal partial class EditorInProcess
         Task DrainLightBulbAsync(CancellationToken token)
             => AsyncOperationWaiter.WaitForFeaturesAsync(componentModel, new[] { AsyncOperationWaiter.LightBulb }, token);
 
+        Task TriggerReanalysisAsync(CancellationToken token)
+            => TriggerDiagnosticsAsync(view, token);
+
         try
         {
-            return await LightBulbHelper.GetCodeActionsAsync(broker, view, JoinableTaskFactory, ShowLightBulbAsync, DrainLightBulbAsync, cancellationToken);
+            return await LightBulbHelper.GetCodeActionsAsync(broker, view, JoinableTaskFactory, ShowLightBulbAsync, DrainLightBulbAsync, TriggerReanalysisAsync, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
