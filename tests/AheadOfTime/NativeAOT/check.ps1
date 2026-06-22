@@ -21,12 +21,17 @@ if (-not ($LASTEXITCODE -eq 0)) {
 }
 
 $exe = Join-Path $PSScriptRoot "bin/release/$tfm/win-x64/publish/$root.exe"
-& $exe | Out-Null
+$output = (& $exe) -join "`n"
 $exitCode = $LASTEXITCODE
 Set-Location $cwd
 
+# The app prints a "FAILED" line per mismatch and "Finished" last, so its output is exactly "Finished" only if all checks passed.
 if (-not ($exitCode -eq 0)) {
-    Write-Error "NativeAOT app failed with exit code $exitCode" -ErrorAction Stop
+    Write-Error "NativeAOT app crashed with exit code $exitCode.`nOutput:`n$output" -ErrorAction Stop
+}
+
+if ($output.Trim() -ne "Finished") {
+    Write-Error "NativeAOT interpolation checks failed.`nOutput:`n$output" -ErrorAction Stop
 }
 
 Write-Host "NativeAOT interpolated-string test passed."
