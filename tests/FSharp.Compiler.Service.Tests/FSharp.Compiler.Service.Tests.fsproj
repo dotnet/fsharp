@@ -34,6 +34,7 @@
     <Compile Include="ModuleReaderCancellationTests.fs" />
     <Compile Include="EditorTests.fs" />
     <Compile Include="Symbols.fs" />
+    <Compile Include="RecordConstructorTests.fs" />
     <Compile Include="TestDoubles.fs" />
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
