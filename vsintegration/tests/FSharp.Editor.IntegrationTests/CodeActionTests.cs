@@ -42,7 +42,7 @@ let x = 42
         Assert.Equal("Remove unused open declarations", codeFix.DisplayText);
     }
 
-    [IdeFact(MaxAttempts = 3)]
+    [IdeFact]
     public async Task AddMissingFunKeyword()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
@@ -72,7 +72,7 @@ let transformed = original |> List.map (x -> x)
         Assert.Equal("Add missing 'fun' keyword", errorFix.DisplayText);
     }
 
-    [IdeFact(MaxAttempts = 3)]
+    [IdeFact]
     public async Task AddNewKeywordToDisposables()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
