@@ -756,3 +756,17 @@ let r = R()
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 501, Line 4, Col 9, Line 4, Col 12, "The object constructor 'R' takes 2 argument(s) but is here given 0. The required signature is 'R(A: int, B: int) : R'.")
+
+    // A [<RequireQualifiedAccess>] record forces field *labels* to be qualified in { } construction;
+    // the positional constructor has no labels, so it must work without any spurious RQA diagnostic.
+    [<Fact>]
+    let ``Record constructor works on a RequireQualifiedAccess record`` () =
+        Fsx """
+[<RequireQualifiedAccess>]
+type R = { A : int; B : int }
+let r = R(1, 2)
+if r.A <> 1 || r.B <> 2 then failwith "wrong field values"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
