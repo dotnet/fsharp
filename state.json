@@ -1,8 +1,10 @@
 {
   "prs": {
     "19974": {
-      "sha": "f56706b37ef3d4711f9a4f58339626d9be76fbf8",
-      "cats": []
+      "sha": "249c623abfb28269410eca6573d7987c65e8e654",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     },
     "19973": {
       "sha": "54e9cb9a1dc6dad2d3ec0c47191a14e466ef6b82",
@@ -79,7 +81,7 @@
       "cats": []
     },
     "19930": {
-      "sha": "06bd617b0eecf901cf073ef9fd044741212d859e",
+      "sha": "e34305eb5ffe53a40e9956ed47de8c08986c29ed",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Restore",
@@ -247,13 +249,13 @@
       ]
     },
     "19977": {
-      "sha": "6daa50ae57688ab771d572bcda7b967323a372e3",
+      "sha": "b65a49bcf7dc84859d6a30889519eaca6e2c3894",
       "cats": [
         "Affects-Compiler-Output"
       ]
     },
     "19979": {
-      "sha": "df6cb940d8c239c51075163a493cd1f76702402c",
+      "sha": "9e93c70ef0b0ac23fa85131104553327e8124ea8",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Design-Time"
