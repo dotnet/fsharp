@@ -85,7 +85,11 @@ Run it:
 dotnet watch run --non-interactive
 ```
 
-You should see `⌚ F# hot reload session prestarted`, then the counter ticking once a second.
+After the build, the counter starts ticking once a second. The
+`F# hot reload session prestarted` confirmation is only printed when you set
+`DOTNET_WATCH_TRACE_FSHARP_HOTRELOAD=1` first, so on a normal run you won't see it. The real
+signal that reloads are landing is the counter in step 5: it keeps climbing across edits instead
+of resetting to 1.
 
 ## 5. Edit and save — the counter is your proof
 
