@@ -3,13 +3,16 @@ module Language.NotNullIfNotNull
 open FSharp.Test
 open FSharp.Test.Compiler
 
+let withStrictNullness cu =
+    cu
+    |> withLangVersionPreview
+    |> withCheckNulls
+    |> withWarnOn 3261
+    |> withOptions ["--warnaserror+"]
 
 let typeCheckWithStrictNullness cu =
     cu
-    |> withCheckNulls
-    |> withLangVersionPreview
-    |> withWarnOn 3261
-    |> withOptions ["--warnaserror+"]
+    |> withStrictNullness
     |> typecheck
 
 let csNotNullLib =
@@ -89,7 +92,8 @@ let r2 : string = C.DependsOnSecond(maybeNull, notNull)
 """
     |> asLibrary
     |> withReferences [csNotNullLib]
-    |> typeCheckWithStrictNullness
+    |> withStrictNullness
+    |> compile
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
@@ -104,7 +108,8 @@ let r : string = C.DependsOnSecond(second = notNull, first = maybeNull)
 """
     |> asLibrary
     |> withReferences [csNotNullLib]
-    |> typeCheckWithStrictNullness
+    |> withStrictNullness
+    |> compile
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
@@ -117,7 +122,8 @@ let r : string = C.Echo(maybeNull)
 """
     |> asLibrary
     |> withReferences [csNotNullLib]
-    |> typeCheckWithStrictNullness
+    |> withStrictNullness
+    |> compile
     |> shouldFail
     |> withDiagnosticMessageMatches nullableExpected
 
@@ -134,7 +140,8 @@ let r : string = C.DependsOnSecond(notNull, maybeNull)
 """
     |> asLibrary
     |> withReferences [csNotNullLib]
-    |> typeCheckWithStrictNullness
+    |> withStrictNullness
+    |> compile
     |> shouldFail
     |> withDiagnosticMessageMatches nullableExpected
 
@@ -192,7 +199,8 @@ let ok : string = C.Echo(notNull)
 """
     |> asLibrary
     |> withReferences [fsharpLib]
-    |> typeCheckWithStrictNullness
+    |> withStrictNullness
+    |> compile
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
@@ -216,6 +224,7 @@ let bad : string = C.Echo(maybeNull)
 """
     |> asLibrary
     |> withReferences [fsharpLib]
-    |> typeCheckWithStrictNullness
+    |> withStrictNullness
+    |> compile
     |> shouldFail
     |> withDiagnosticMessageMatches nullableExpected
