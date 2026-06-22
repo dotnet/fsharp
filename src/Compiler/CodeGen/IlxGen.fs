@@ -11214,7 +11214,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         [], [], []
 
 /// Generate a ToString/get_Message method that calls 'sprintf "%A"'
-and GenPrintingMethod cenv eenv methName ilThisTy m =
+and GenSprintfPrintingMethod cenv eenv methName ilThisTy m =
     let g = cenv.g
 
     [
@@ -11280,7 +11280,7 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
     ]
 
 /// Generate the 'ToString' method for a union type. Normally this calls 'sprintf "%+A"' (see
-/// GenPrintingMethod). Under reflection-free code generation 'sprintf' is unavailable, so instead emit a
+/// GenSprintfPrintingMethod). Under reflection-free code generation 'sprintf' is unavailable, so instead emit a
 /// match over the cases that builds "CaseName(f0, f1, ...)" using the 'string' operator on each field.
 /// Format one field value the same way option/list do (LanguagePrimitives.anyToStringShowingNull):
 /// render null as "null", otherwise via the 'string' operator.
@@ -11292,7 +11292,7 @@ and GenFieldToString (cenv: cenv, m: range, fe: Expr) =
 
 /// Emit a [<CompilerGenerated>] virtual ToString override whose body is the given string-typed expression.
 /// 'thisv' is the 'this' value (stored at arg 0) referenced by bodyExpr.
-and GenToStringMethodFromExpr (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, thisv: Val, bodyExpr: Expr) =
+and EmitToStringMethodDef (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, thisv: Val, bodyExpr: Expr) =
     let g = cenv.g
     let eenvForMeth = AddStorageForLocalVals g [ (thisv, Arg 0) ] eenv
     let ilMethodBody = CodeGenMethodForExpr cenv mgbuf ([], "ToString", eenvForMeth, 0, Some thisv, bodyExpr, Return)
@@ -11319,7 +11319,7 @@ and GenUnionToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv,
     let g = cenv.g
 
     if not g.useReflectionFreeCodeGen then
-        GenPrintingMethod cenv eenv "ToString" ilThisTy m
+        GenSprintfPrintingMethod cenv eenv "ToString" ilThisTy m
     else
         let tinst, thisv, thise = GenToStringThis (cenv, tcref, m)
 
@@ -11362,7 +11362,7 @@ and GenUnionToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv,
         let dtree = TDSwitch(thise, cases, None, m)
         let matchExpr = mbuilder.Close(dtree, m, g.string_ty)
 
-        GenToStringMethodFromExpr (cenv, mgbuf, eenv, thisv, matchExpr)
+        EmitToStringMethodDef (cenv, mgbuf, eenv, thisv, matchExpr)
 
 /// Generate a record's ToString as a single line "{ F1 = v1; F2 = v2 }" (no line breaks, unlike "%+A"),
 /// fields formatted like union fields. openBrace/closeBrace are "{ "/" }" for records and "{| "/" |}" for
@@ -11371,7 +11371,7 @@ and GenRecordToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv
     let g = cenv.g
 
     if not g.useReflectionFreeCodeGen then
-        GenPrintingMethod cenv eenv "ToString" ilThisTy m
+        GenSprintfPrintingMethod cenv eenv "ToString" ilThisTy m
     else
         let tinst, thisv, thise = GenToStringThis (cenv, tcref, m)
 
@@ -11385,7 +11385,7 @@ and GenRecordToStringMethod (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv
             |> List.concat
 
         let parts = mkString g m openBrace :: fieldParts @ [ mkString g m closeBrace ]
-        GenToStringMethodFromExpr (cenv, mgbuf, eenv, thisv, mkStringConcat (g, m, parts))
+        EmitToStringMethodDef (cenv, mgbuf, eenv, thisv, mkStringConcat (g, m, parts))
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option =
     let g = cenv.g
@@ -12619,7 +12619,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     && not (exnc.HasMember g "Message" [])
                     && not (fspecs |> List.exists (fun rf -> rf.DisplayNameCore = "Message"))
                 then
-                    yield! GenPrintingMethod cenv eenv "get_Message" ilThisTy m
+                    yield! GenSprintfPrintingMethod cenv eenv "get_Message" ilThisTy m
             ]
 
         let interfaces =
