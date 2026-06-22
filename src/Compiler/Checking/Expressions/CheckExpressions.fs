@@ -3356,14 +3356,19 @@ let NotNullIfNotNullParamNames g (minfo: MethInfo) =
         | _ -> []
     | _ -> []
 
-// Resolve the caller argument bound to 'paramName' (named arguments first, then by position) and return the type of its type-checked expression.
+// Resolve the caller argument bound to 'paramName' and return the type of its type-checked expression.
 let TryGetCallerArgType g (minfo: MethInfo) (callerArgs: CallerArgs<_>) paramName =
-    match callerArgs.Named |> List.tryPick (List.tryPick (fun (CallerNamedArg(id, arg)) -> if id.idText = paramName then Some (tyOfExpr g arg.Expr) else None)) with
-    | None ->
-        match minfo.GetParamNames() |> List.tryPick (List.tryFindIndex (fun nm -> match nm with Some nm -> nm = paramName | _ -> false)) with
-        | Some idx -> callerArgs.Unnamed |> List.tryPick (List.tryItem idx) |> Option.map (fun arg -> tyOfExpr g arg.Expr)
-        | None -> None
-    | x -> x
+    // First try to find a named argument with the given name
+    callerArgs.Named
+    |> List.tryPick (List.tryPick (fun (CallerNamedArg(id, arg)) -> if id.idText = paramName then Some arg else None))
+    |> Option.orElseWith (fun () ->
+        // If there is no matching named argument, find the argument in the same position as the parameter with the given name
+        minfo.GetParamNames()
+        |> Seq.concat
+        |> Seq.tryFindIndex (fun nm -> match nm with Some nm -> nm = paramName | _ -> false)
+        |> Option.bind (fun idx -> Seq.concat callerArgs.Unnamed |> Seq.tryItem idx)
+    )
+    |> Option.map (fun arg -> tyOfExpr g arg.Expr)
 
 //-------------------------------------------------------------------------
 // Helpers dealing with sequence expressions
