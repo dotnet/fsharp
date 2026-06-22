@@ -100,17 +100,14 @@ module AccessibilityAnnotations_OnTypeMembers =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // Regression for https://github.com/dotnet/fsharp/issues/19963: the optimizer must not relocate
-    // a protected base-field load into a method outside the family. A trivial member returning a C#
-    // protected field gets inlined into module/startup code under --optimize+; before the fix the
-    // relocated `ldfld` threw System.FieldAccessException at runtime. Protected *method* access was
-    // already safe (it sets UsesMethodLocalConstructs); this locks the *field* path to the same.
+    // C# base class with protected instance/static fields, shared by the issue 19963 regressions below.
+    let baseClassLib =
+        CSharpFromPath (__SOURCE_DIRECTORY__ ++ "BaseClass.cs") |> withName "BaseClassLib"
+
+    // #19963: the optimizer must not relocate a protected base-field read out of its family
+    // (it inlined a trivial member into startup code under --optimize+ → FieldAccessException).
     [<Fact>]
     let ``Protected base field read via optimized member does not crash (issue 19963)`` () =
-        let lib =
-            CSharpFromPath (__SOURCE_DIRECTORY__ ++ "BaseClass.cs")
-            |> withName "BaseClassLib"
-
         FSharp """
 open TestBaseClass
 
@@ -122,20 +119,15 @@ type DerivedClass() =
 let main _ =
     if DerivedClass().GetField() = "protected-field" then 0 else 1
 """
-        |> withReferences [lib]
+        |> withReferences [baseClassLib]
         |> withOptimize
         |> asExe
         |> compileAndRun
         |> shouldSucceed
 
-    // Companion to the above exercising a protected *static* field (the I_ldsfld branch of the
-    // optimizer relocation guard) for issue https://github.com/dotnet/fsharp/issues/19963.
+    // #19963, static-field (I_ldsfld) variant of the above.
     [<Fact>]
     let ``Protected static base field read via optimized member does not crash (issue 19963)`` () =
-        let lib =
-            CSharpFromPath (__SOURCE_DIRECTORY__ ++ "BaseClass.cs")
-            |> withName "BaseClassLib"
-
         FSharp """
 open TestBaseClass
 
@@ -147,17 +139,14 @@ type DerivedClass() =
 let main _ =
     if DerivedClass().GetStaticField() = "protected-static-field" then 0 else 1
 """
-        |> withReferences [lib]
+        |> withReferences [baseClassLib]
         |> withOptimize
         |> asExe
         |> compileAndRun
         |> shouldSucceed
 
-    // Positive companion to the issue 19963 regressions above: the relocation barrier must fire ONLY
-    // for protected (family) fields. A PUBLIC IL field (System.String.Empty, an I_ldsfld) inside an
-    // `inline` value must still be inlined under --optimize+. The over-broad form pinned every IL
-    // field, so this failed with FS1118 while bootstrapping FSharp.Core (whose `inline GetStringSlice`
-    // reads String.Empty). FS1118 is escalated to an error so the test actually guards the regression.
+    // #19963 positive: a PUBLIC IL field (String.Empty) in an inline value must still inline under
+    // --optimize+; the over-broad form FS1118'd FSharp.Core's GetStringSlice. FS1118→error guards it.
     [<Fact>]
     let ``Public IL field access inside an inline value is still optimized away (issue 19963)`` () =
         FSharp """
