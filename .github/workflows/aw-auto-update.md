@@ -12,7 +12,11 @@ description: |
   identity (COPILOT_GITHUB_TOKEN) and can write workflow files.
 
 on:
-  schedule: every 24h
+  # Schedule disabled: `create-agent-session` needs a Copilot-licensed token, which
+  # the default GITHUB_TOKEN lacks, so every scheduled detection that finds an update
+  # fails the safe_outputs job and spams `[aw] … failed` issues. Re-enable the
+  # `schedule:` trigger once a Copilot-licensed token (e.g. GH_AW_AGENT_TOKEN) is
+  # provisioned for create-agent-session. Until then it is manual-dispatch only.
   workflow_dispatch:
 
 timeout-minutes: 15

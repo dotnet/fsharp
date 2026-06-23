@@ -1207,6 +1207,9 @@ and IlxGenEnv =
         /// Indicates the default "place" for stuff we're currently generating
         cloc: CompileLocation
 
+        /// Non-generic enclosing module (never narrowed by AddEnclosingToEnv). Routing target for TLR lifts.
+        moduleCloc: CompileLocation
+
         /// Indicates the default "place" for initialization stuff we're currently generating
         initClassCompLoc: CompileLocation option
 
@@ -3080,7 +3083,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
             let others =
                 [
                     for k in cenv.namedDebugPointsForInlinedCode.Keys do
-                        if equals m k.Range then
+                        if Range.equals m k.Range then
                             yield k.Name
                 ]
                 |> String.concat ","
@@ -3171,8 +3174,8 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
         | LinearOpExpr _
         | Expr.Match _ -> GenLinearExpr cenv cgbuf eenv expr sequel false id |> ignore<FakeUnit>
 
-        | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-            if equals m range0 then
+        | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden, m), innerExpr) ->
+            if isHidden then
                 cgbuf.EmitStartOfHiddenCode()
             else
                 CG.EmitDebugPoint cgbuf m
@@ -3720,24 +3723,11 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
 
                          //assert(cgbuf.GetCurrentStack() = stackAfterJoin)  // REVIEW: Since gen_dtree* now sets stack, stack should be stackAfterJoin at this point...
                          CG.SetStack cgbuf stackAfterJoin
-                         // If any values are left on the stack after the join then we're certainly going to do something with them
-                         // For example, we may be about to execute a 'stloc' for
-                         //
-                         //   let y2 = if System.DateTime.Now.Year < 2000 then 1 else 2
-                         //
-                         // or a 'stelem' for
-                         //
-                         //   arr.[0] <- if System.DateTime.Now.Year > 2000 then 1 else 2
-                         //
-                         // In both cases, any instructions that come after this point will be falsely associated with the last branch of the control
-                         // prior to the join point. This is base, e.g. see FSharp 1.0 bug 5155
-                         cgbuf.EmitStartOfHiddenCode()
-
                          GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
                          Fake))
 
-    | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
-        if equals m range0 then
+    | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden, m), innerExpr) ->
+        if isHidden then
             cgbuf.EmitStartOfHiddenCode()
         else
             CG.EmitDebugPoint cgbuf m
@@ -7949,8 +7939,6 @@ and GenDecisionTreeSwitch
     let m = e.Range
     cgbuf.SetMarkToHereIfNecessary inplabOpt
 
-    cgbuf.EmitStartOfHiddenCode()
-
     match cases with
     // optimize a test against a boolean value, i.e. the all-important if-then-else
     | TCase(DecisionTreeTest.Const(Const.Bool b), successTree) :: _ ->
@@ -10336,7 +10324,22 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
         else
             NoShadowLocal, eenv
 
-    ComputeAndAddStorageForLocalValWithValReprInfo (cenv, eenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal) cloc v eenv
+    // TLR lifts avoid generic enclosing scopes (#17607); namespace-root lifts use the per-file
+    // init class to avoid generated-name collisions in the shared <PrivateImplementationDetails$Asm>.
+    let effectiveCloc =
+        if v.IsCompiledAsTopLevel && not v.IsMemberOrModuleBinding then
+            if eenv.moduleCloc.Enclosing.IsEmpty then
+                CompLocForInitClass eenv.moduleCloc
+            else
+                eenv.moduleCloc
+        else
+            cloc
+
+    ComputeAndAddStorageForLocalValWithValReprInfo
+        (cenv, eenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal)
+        effectiveCloc
+        v
+        eenv
 
 //--------------------------------------------------------------------------
 // Generate stack save/restore and assertions - pulled into letrec by alloc*
@@ -10641,10 +10644,21 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
     let _, body =
         CodeGenMethod cenv cgbuf.mgbuf ([], eenv.staticInitializationName, eenv, 0, None, codeGenInitFunc, m)
 
-    if CheckCodeDoesSomething body.Code then
+    let codeDoesSomething = CheckCodeDoesSomething body.Code
+
+    // Keep the init method if it carries a visible debug point, so steppable bindings like 'let i = ()' survive.
+    let hasVisibleDebugPoint =
+        not cenv.options.localOptimizationsEnabled
+        && body.Code.Instrs
+           |> Array.exists (function
+               | I_seqpoint sp -> sp.Line <> FeeFee cenv
+               | _ -> false)
+
+    if codeDoesSomething || hasVisibleDebugPoint then
         // We are here because the module we just grabbed has an interesting static initializer
         let feefee, seqpt =
-            if body.Code.Instrs.Length > 0 then
+            // Without real init code, the .cctor's FeeFee marker would just add a stray hidden sequence point.
+            if codeDoesSomething && body.Code.Instrs.Length > 0 then
                 match body.Code.Instrs[0] with
                 | I_seqpoint sp as i -> [ FeeFeeInstr cenv sp.Document ], [ i ]
                 | _ -> [], []
@@ -10759,9 +10773,12 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
         // Evaluate bindings for module
         let hidden = IsHiddenTycon eenv.sigToImplRemapInfo mspec
 
+        let moduleLoc = CompLocForFixedModule cenv.options.fragName qname.Text mspec
+
         let eenvinner =
             { eenv with
-                cloc = CompLocForFixedModule cenv.options.fragName qname.Text mspec
+                cloc = moduleLoc
+                moduleCloc = moduleLoc
                 initLocals =
                     eenv.initLocals
                     && not (EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.SkipLocalsInitAttribute mspec)
@@ -10827,13 +10844,16 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
     for anonInfo in anonRecdTypes.Values do
         mgbuf.GenerateAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
 
+    let withQName (loc: CompileLocation) =
+        { loc with
+            TopImplQualifiedName = qname.Text
+            Range = m
+        }
+
     let eenv =
         { eenv with
-            cloc =
-                { eenv.cloc with
-                    TopImplQualifiedName = qname.Text
-                    Range = m
-                }
+            cloc = withQName eenv.cloc
+            moduleCloc = withQName eenv.moduleCloc
         }
 
     cenv.optimizeDuringCodeGen <- optimizeDuringCodeGen
@@ -12569,9 +12589,12 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
 //-------------------------------------------------------------------------
 
 let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
+    let ccuLoc = CompLocForCcu ccu
+
     {
         tyenv = TypeReprEnv.Empty
-        cloc = CompLocForCcu ccu
+        cloc = ccuLoc
+        moduleCloc = ccuLoc
         initClassCompLoc = None
         initFieldName = CompilerGeneratedName "init"
         staticInitializationName = CompilerGeneratedName "staticInitialization"
@@ -12654,8 +12677,11 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let mgbuf = AssemblyBuilder(cenv, anonTypeTable)
 
     let eenv =
+        let fragLoc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+
         { eenv with
-            cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+            cloc = fragLoc
+            moduleCloc = fragLoc
             delayCodeGen = cenv.options.parallelIlxGenEnabled
         }
 
