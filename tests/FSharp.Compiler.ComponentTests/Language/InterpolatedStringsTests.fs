@@ -418,8 +418,14 @@ if c.Name <> "42" || r.Name <> "42" then failwith "expected 42"
         |> compileExeAndRun
         |> shouldSucceed
 
-    // (The extended multi-dollar form '=$$"""..."""' is covered by the SyntaxTree baseline
-    // SynExprInterpolatedStringAdjacentEqualsExtendedMultiDollar.fs.)
+    // The extended multi-dollar ($$) form, also adjacent to '='. Note that a $$ string uses double
+    // braces for holes ({{n}}), so {n} would be literal text. Uses an escaped string literal because
+    // the source contains """, which cannot be embedded in an F# """...""" string.
+    [<Fact>]
+    let ``Issue 16696 - '=' adjacent to an extended multi-dollar interpolated string binds it`` () =
+        Fsx "let n = 42\nlet x =$$\"\"\"{{n}}\"\"\"\nif x <> \"42\" then failwith \"expected 42\""
+        |> compileExeAndRun
+        |> shouldSucceed
 
     // Operator lexing is unchanged: a '$' anywhere in an operator is still reserved (FS0035).
     // The only thing the fix changes is '=' directly before an interpolated-string opener;
