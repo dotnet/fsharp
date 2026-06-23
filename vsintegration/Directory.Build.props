@@ -8,4 +8,27 @@
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
+  <!--
+       The SDK-style vsintegration projects must compile with the in-repo proto F# compiler
+       (Proto\net40\bin\fsc.exe), exactly like the legacy-style product projects do via
+       src/FSharpSource.targets (which sets FscToolPath=Proto\<flavour>\bin and FscToolExe=fsc.exe).
+
+       Because these projects do NOT import FSharpSource.targets, they instead pick up the
+       VS-bundled Microsoft.FSharp.NetSdk.props (imported through Microsoft.Managed.Before.targets).
+       That file auto-wires the Fsc task to the .NET host: FscToolExe=dotnet.exe and
+       DotnetFscCompilerPath points at a VS-bundled FSharp\Tools\fsc.dll, a path that does not exist
+       on this machine. The Fsc task then runs that fsc.dll under dotnet.exe, which exits 1 with
+       no compiler diagnostic, surfacing only as Microsoft.FSharp.Targets(265,9): error MSB6006.
+
+       The VS auto-wiring block is gated by '$(DisableAutoSetFscCompilerPath)' != 'true', so setting
+       that property suppresses it (leaving DotnetFscCompilerPath empty). We then point the desktop
+       Fsc task directly at the proto fsc.exe, mirroring the product projects. Gated to non-Proto
+       configurations (vsintegration never builds in Proto) and to the proto fsc.exe actually existing.
+  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and Exists('$(ProtoOutputPath)\fsc.exe')">
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+    <FscToolPath>$(ProtoOutputPath)</FscToolPath>
+    <FscToolExe>fsc.exe</FscToolExe>
+  </PropertyGroup>
+
 </Project>
