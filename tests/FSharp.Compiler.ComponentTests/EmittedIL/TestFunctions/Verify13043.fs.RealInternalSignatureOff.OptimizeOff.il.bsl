@@ -148,22 +148,21 @@
       IL_001b:  ldloc.1
       IL_001c:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
       IL_0021:  stloc.3
-      IL_0022:  nop
-      IL_0023:  ldarg.0
-      IL_0024:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> assembly/f@8::condition
-      IL_0029:  ldloc.3
-      IL_002a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
-      IL_002f:  brfalse.s  IL_0036
+      IL_0022:  ldarg.0
+      IL_0023:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> assembly/f@8::condition
+      IL_0028:  ldloc.3
+      IL_0029:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
+      IL_002e:  brfalse.s  IL_0035
 
-      IL_0031:  ldloc.2
-      IL_0032:  starg.s    l
-      IL_0034:  br.s       IL_0000
+      IL_0030:  ldloc.2
+      IL_0031:  starg.s    l
+      IL_0033:  br.s       IL_0000
 
-      IL_0036:  ldloc.3
-      IL_0037:  ldloc.2
-      IL_0038:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+      IL_0035:  ldloc.3
+      IL_0036:  ldloc.2
+      IL_0037:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_003d:  ret
+      IL_003c:  ret
     } 
 
   } 
@@ -213,22 +212,21 @@
       IL_001b:  ldloc.1
       IL_001c:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
       IL_0021:  stloc.3
-      IL_0022:  nop
-      IL_0023:  ldarg.0
-      IL_0024:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> assembly/'f@27-1'::condition
-      IL_0029:  ldloc.3
-      IL_002a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
-      IL_002f:  brfalse.s  IL_0036
+      IL_0022:  ldarg.0
+      IL_0023:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> assembly/'f@27-1'::condition
+      IL_0028:  ldloc.3
+      IL_0029:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
+      IL_002e:  brfalse.s  IL_0035
 
-      IL_0031:  ldloc.2
-      IL_0032:  starg.s    _arg1
-      IL_0034:  br.s       IL_0000
+      IL_0030:  ldloc.2
+      IL_0031:  starg.s    _arg1
+      IL_0033:  br.s       IL_0000
 
-      IL_0036:  ldloc.3
-      IL_0037:  ldloc.2
-      IL_0038:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+      IL_0035:  ldloc.3
+      IL_0036:  ldloc.2
+      IL_0037:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_003d:  ret
+      IL_003c:  ret
     } 
 
   } 
@@ -383,7 +381,6 @@
   } 
 
 } 
-
 
 
 

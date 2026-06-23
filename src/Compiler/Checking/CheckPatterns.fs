@@ -286,7 +286,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     match synPat with
     | SynPat.As (_, SynPat.Named _, _) -> ()
-    | SynPat.As (_, _, m) -> checkLanguageFeatureError g.langVersion LanguageFeature.NonVariablePatternsToRightOfAsPatterns m
+    | SynPat.As (_, _, m) -> checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonVariablePatternsToRightOfAsPatterns m
     | _ -> ()
 
     match synPat with

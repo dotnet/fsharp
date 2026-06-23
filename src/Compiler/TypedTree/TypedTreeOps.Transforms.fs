@@ -2230,7 +2230,7 @@ module internal TupleCompilation =
                             (mkValSet mIn (mkLocalValRef nextVar) tailOrNullExpr)
 
                     let bodyAndStep =
-                        mkSequential mIn bodyExpr (Expr.DebugPoint(DebugPointAtLeafExpr.Yes range0, loopStep))
+                        mkSequential mIn bodyExpr (Expr.DebugPoint(DebugPointAtLeafExpr.Yes(true, mIn), loopStep))
 
                     let bodyExpr = mkLet spElem mFor elemVar headOrDefaultExpr bodyAndStep
 
