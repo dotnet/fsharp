@@ -10,8 +10,8 @@ let a =
 Module::.cctor
   <hidden>
     IL_0000:  ldc.i4.0
-    IL_0001:  stsfld init@
-    IL_0006:  ldsfld init@
+    IL_0001:  stsfld $Module::init@
+    IL_0006:  ldsfld $Module::init@
     IL_000b:  pop
     IL_000c:  ret
 
@@ -52,5 +52,5 @@ Module::staticInitialization@
     IL_0023:  blt.un.s IL_0007
     IL_0025:  ldloca.s 0
     IL_0027:  call Close
-    IL_002c:  stsfld a@3
+    IL_002c:  stsfld Module::a@3
     IL_0031:  ret

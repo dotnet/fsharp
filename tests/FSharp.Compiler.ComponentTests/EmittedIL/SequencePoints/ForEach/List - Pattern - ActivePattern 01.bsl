@@ -26,7 +26,7 @@ Module::f
     IL_000c:  call get_HeadOrDefault
     IL_0011:  stloc.2
     IL_0012:  ldloc.2
-    IL_0013:  call |Id|
+    IL_0013:  call Module::|Id|
     IL_0018:  stloc.3
     IL_0019:  ldloc.3
     IL_001a:  stloc.s 4

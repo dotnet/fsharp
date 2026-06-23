@@ -12,7 +12,7 @@ Module::f
     IL_0002:  ldc.i4.0
     IL_0003:  stloc.2
     IL_0004:  ldloc.0
-    IL_0005:  callvirt get_Length
+    IL_0005:  callvirt String::get_Length
     IL_000a:  ldc.i4.1
     IL_000b:  sub
     IL_000c:  stloc.1
@@ -23,12 +23,12 @@ Module::f
   (4,5-4,10)  for c
     IL_0011:  ldloc.0
     IL_0012:  ldloc.2
-    IL_0013:  callvirt get_Chars
+    IL_0013:  callvirt String::get_Chars
     IL_0018:  stloc.3
 
   (5,9-5,35)  System.Console.WriteLine c
     IL_0019:  ldloc.3
-    IL_001a:  call WriteLine
+    IL_001a:  call Console::WriteLine
 
   <hidden>
     IL_001f:  ldloc.2
