@@ -5274,7 +5274,7 @@ type Expr =
         | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
-        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
+        | DebugPoint (DebugPointAtLeafExpr.Yes(_, m), e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
 
     /// Get the mark/range/position information from an expression
     member expr.Range =
@@ -6085,6 +6085,10 @@ type FreeVars =
       /// Indicates if the expression contains a call to rethrow that is not bound under a (try-)with branch. 
       /// Rethrow may only occur in such locations. 
       UsesUnboundRethrow: bool 
+
+      /// Indicates if the expression contains a direct IL field load/store — a cheap over-approximate
+      /// gate the optimizer refines to protected (family) fields (issue #19963). Never read by escape checks.
+      ContainsILFieldAccess: bool 
 
       /// The summary of locally defined tycon representations used in the expression. These may be made private by a signature 
       /// or marked 'internal' or 'private' and we have to check various conditions associated with that. 

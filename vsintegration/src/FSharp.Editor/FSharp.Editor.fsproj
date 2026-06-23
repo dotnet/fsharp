@@ -121,6 +121,8 @@
     <Compile Include="CodeFixes\MakeDeclarationMutable.fs" />
     <Compile Include="CodeFixes\ChangeToUpcast.fs" />
     <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinition.fs" />
+    <Compile Include="CodeFixes\AddMissingAttributeToSignature.fs" />
+    <Compile Include="CodeFixes\RemoveExtraAttributeFromImplementation.fs" />
     <Compile Include="CodeFixes\ConvertToNotEqualsEqualityExpression.fs" />
     <Compile Include="CodeFixes\ConvertToSingleEqualsEqualityExpression.fs" />
     <Compile Include="CodeFixes\ChangeRefCellDerefToNotExpression.fs" />

@@ -255,6 +255,7 @@ module internal MemberRepresentation =
         /// for example, `seq<int list>` instead of `int list seq`
         | TopLevelPrefix of nested: GenericParameterStyle
 
+    [<NoEquality; NoComparison>]
     type DisplayEnv =
         {
             includeStaticParametersInTypeNames: bool
