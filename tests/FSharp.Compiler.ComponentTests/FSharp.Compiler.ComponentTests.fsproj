@@ -247,6 +247,7 @@
     <Compile Include="EmittedIL\RealInternalSignature\RealInternalSignature.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
+    <Compile Include="EmittedIL\ReflectionFreeToString.fs" />
     <!--<Compile Include="EmittedIL\StructGettersReadOnly.fs" />-->
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
