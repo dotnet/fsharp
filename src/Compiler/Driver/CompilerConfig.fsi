@@ -590,6 +590,8 @@ type TcConfigBuilder =
 
         mutable realsig: bool
 
+        mutable emitHotReloadClassStateMachines: bool
+
         mutable compilationMode: TcGlobals.CompilationMode
     }
 
@@ -964,6 +966,8 @@ type TcConfig =
     member dumpSignatureData: bool
 
     member realsig: bool
+
+    member emitHotReloadClassStateMachines: bool
 
     member compilationMode: TcGlobals.CompilationMode
 

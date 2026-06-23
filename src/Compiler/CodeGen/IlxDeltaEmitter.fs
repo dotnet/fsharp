@@ -3773,6 +3773,23 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         $"Edit adds instance field '{fieldDisplay}' to a struct; struct layouts cannot change under hot reload. Please rebuild."
 
                 raise (HotReloadUnsupportedEditException message)
+            | None when
+                not fieldDef.IsStatic
+                && not typeDef.IsStructOrEnum
+                && request.Baseline.TypeTokens |> Map.containsKey baselineDeclaringType
+                ->
+                // A fresh instance field on an EXISTING compiler-generated CLASS: a class-form
+                // resumable state machine (hot reload) that gained a hoisted local / awaiter
+                // when a let!/do!/yield was added. Unlike a struct, a reference type CAN grow at
+                // runtime (AddInstanceFieldToExistingType), so the field must be emitted rather
+                // than dropped by the synthesized-name skip below - the patched MoveNext
+                // references it, and dropping it crashes at runtime with an invalid field token.
+                // (Must run before the synthesized-name skip and after the struct-layout gate.)
+                if not (addedFieldTokens.ContainsKey fieldKey) then
+                    let newFieldToken =
+                        emittedTokenMappings.FieldDefTokenMap (enclosing, typeDef) fieldDef
+
+                    addedFieldTokens[fieldKey] <- newFieldToken
             | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
             | None when
                 (fieldDef.IsStatic || not typeDef.IsStructOrEnum)

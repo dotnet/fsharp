@@ -1469,6 +1469,13 @@ let testFlag tcConfigB =
                 // Hook-only replay mode: keeps synthesized-name replay active for hot reload sessions
                 // without enabling baseline-capture emission for the current compilation.
                 configureHotReloadEmitHook tcConfigB
+            | "HotReloadClassStateMachines" ->
+                // Emit resumable (task/taskSeq/user CE) state machines as reference types
+                // (classes) so adding/removing a let!/do!/yield is an
+                // AddInstanceFieldToExistingType + method update (Roslyn parity) rather than a
+                // forbidden struct re-layout. Must be set on BOTH the baseline and the delta
+                // compile so they agree on the state machine shape.
+                tcConfigB.emitHotReloadClassStateMachines <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif

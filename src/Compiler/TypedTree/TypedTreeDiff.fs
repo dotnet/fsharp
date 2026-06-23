@@ -10,6 +10,7 @@ open Internal.Utilities.Collections
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.EditAndContinue
+open FSharp.Compiler.EnvironmentHelpers
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -111,6 +112,15 @@ let capabilityForAddition (kind: AdditionKind) : EditAndContinueCapability =
     | AdditionKind.Method -> EditAndContinueCapability.AddMethodToExistingType
     | AdditionKind.InstanceField -> EditAndContinueCapability.AddInstanceFieldToExistingType
     | AdditionKind.StaticField -> EditAndContinueCapability.AddStaticFieldToExistingType
+
+/// Hot reload: when set, resumable computation expressions (task/taskSeq/user CEs) lower to
+/// reference-type (class) state machines, so adding/removing/reordering a let!/do!/yield is an
+/// AddInstanceFieldToExistingType + method update (Roslyn parity) rather than a forbidden
+/// struct re-layout. Must match the codegen gate (FSHARP_HOTRELOAD_CLASS_STATEMACHINES in
+/// IlxGen) so the classifier and the emitted state machine agree.
+let classStateMachines (g: TcGlobals) =
+    g.emitHotReloadClassStateMachines
+    || isEnvVarTruthy "FSHARP_HOTRELOAD_CLASS_STATEMACHINES"
 
 type SemanticEdit =
     {
@@ -2035,6 +2045,7 @@ let private attributeRowsAreMethodParented (snapshot: BindingSnapshot) =
         | _ -> false
 
 let private compareBindings
+    (g: TcGlobals)
     (capabilities: EditAndContinueCapabilities)
     (addedEntityCompiledNames: Set<string>)
     (baseline: Map<string, BindingSnapshot>)
@@ -2173,13 +2184,16 @@ let private compareBindings
         elif
             baselineBinding.StateMachineShapeDigest
             <> updatedBinding.StateMachineShapeDigest
+            && not (classStateMachines g)
         then
             // The resumable-code call sequence changed: the lowering assigns resume-point
             // state numbers positionally, and the state machine struct's hoisted/awaiter
             // field layout follows the sequence, so adding, removing, or reordering steps
             // changes the state machine shape (C# parity: ChangingStateMachineShape; F#
             // task state machines are structs, so even append-only new awaits would
-            // change the immutable struct layout).
+            // change the immutable struct layout). Under class state machines (hot reload)
+            // this becomes an AddInstanceFieldToExistingType + method update and is handled
+            // below.
             rude.Add(
                 {
                     Symbol = Some baselineBinding.Symbol
@@ -2238,7 +2252,33 @@ let private compareBindings
                             | LambdaEdit.CaptureSetChanged _ -> true
                             | _ -> false)
 
-                    if isResumableMember && hasStructuralLambdaEdit then
+                    if isResumableMember && classStateMachines g then
+                        // Class state machine (hot reload): adding/removing/reordering CE steps
+                        // (or churning their continuations/captures) grows or shrinks the state
+                        // machine's hoisted instance fields and updates MoveNext - an
+                        // AddInstanceFieldToExistingType + method update, not a forbidden struct
+                        // re-layout (Roslyn parity: editing an existing state machine requires
+                        // AddInstanceFieldToExistingType). The CE continuations are inlined into
+                        // MoveNext, so the emitter applies the SM class's field/body changes
+                        // directly rather than emitting per-continuation closure classes.
+                        let requiredCapabilities =
+                            [
+                                EditAndContinueCapability.AddInstanceFieldToExistingType
+                                EditAndContinueCapability.NewTypeDefinition
+                                EditAndContinueCapability.AddMethodToExistingType
+                            ]
+
+                        match requiredCapabilities |> List.tryFind (capabilities.Supports >> not) with
+                        | None -> None
+                        | Some missing ->
+                            Some(
+                                RudeEditKind.NotSupportedByRuntime,
+                                FSComp.SR.hotReloadAdditionNotSupportedByRuntime (
+                                    $"resumable state-machine edit for '{baselineBinding.Symbol.QualifiedName}'",
+                                    missing.Name
+                                )
+                            )
+                    elif isResumableMember && hasStructuralLambdaEdit then
                         // Even with an unchanged step sequence, structural lambda churn
                         // inside a resumable member (a CE continuation gained or lost, or
                         // its captures changed) re-lays-out the state machine struct's
@@ -2821,7 +2861,7 @@ let diffImplementationFile (g: TcGlobals) (capabilities: EditAndContinueCapabili
         |> Set.ofSeq
 
     let semanticEdits, bindingRudeEdits, lambdaEdits =
-        compareBindings capabilities addedEntityCompiledNames baselineBindings updatedBindings
+        compareBindings g capabilities addedEntityCompiledNames baselineBindings updatedBindings
 
     let entityEdits, entityRudeEdits =
         compareEntities capabilities baselineEntities updatedEntities

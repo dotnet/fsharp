@@ -984,6 +984,7 @@ type Type =
 
     let private applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
         (capabilities: string list option)
+        (extraOtherOptions: string list)
         (testLabel: string)
         (baselineSource: string)
         (updatedSource: string)
@@ -1037,6 +1038,7 @@ type Type =
                                    "--debug:portable"
                                    "--deterministic"
                                    "--test:HotReloadDeltas"
+                                   yield! extraOtherOptions
                                    $"--out:{dllPath}" |] }
 
                 checker.InvalidateAll()
@@ -1118,11 +1120,167 @@ type Type =
     let private applySingleStringUpdateAndAssertRuntimeResult testLabel baselineSource updatedSource baselineExpected updatedExpected =
         applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
             None
+            []
             testLabel
             baselineSource
             updatedSource
             baselineExpected
             updatedExpected
+
+    /// Runs an apply-update assertion with class-form resumable state machines enabled via the
+    /// --test:HotReloadClassStateMachines compile flag (threaded through TcGlobals so the
+    /// baseline and delta compiles agree on the state machine shape), so that adding/removing a
+    /// let!/do! is an AddInstanceFieldToExistingType + method update rather than a struct re-layout.
+    let private applyClassStateMachineUpdateAndAssertRuntimeResult testLabel baselineSource updatedSource baselineExpected updatedExpected =
+        applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
+            (Some
+                [ "Baseline"
+                  "AddMethodToExistingType"
+                  "AddStaticFieldToExistingType"
+                  "AddInstanceFieldToExistingType"
+                  "NewTypeDefinition"
+                  "GenericUpdateMethod"
+                  "GenericAddMethodToExistingType"
+                  "GenericAddFieldToExistingType" ])
+            [ "--test:HotReloadClassStateMachines" ]
+            testLabel
+            baselineSource
+            updatedSource
+            baselineExpected
+            updatedExpected
+
+    let private taskClassSmBaselineSource =
+        """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        (task { return "Hello, watch" }).GetAwaiter().GetResult()
+"""
+
+    let private taskClassSmAddBindSource =
+        """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        (task {
+            let! extra = Task.FromResult "!"
+            return "Hello, watch" + extra
+        }).GetAwaiter().GetResult()
+"""
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for task let-bang addition under class state machines`` () =
+        // Roslyn parity: adding an await/let! to an existing state machine away from an
+        // active statement is an allowed Update (AddInstanceFieldToExistingType). With F#
+        // class-form resumable state machines this becomes feasible (struct SMs cannot
+        // re-layout). Requires DOTNET_MODIFIABLE_ASSEMBLIES=debug COMPlus_ForceEnc=1.
+        applyClassStateMachineUpdateAndAssertRuntimeResult
+            "task let-bang addition under class state machines"
+            taskClassSmBaselineSource
+            taskClassSmAddBindSource
+            "Hello, watch"
+            "Hello, watch!"
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for task let-bang removal under class state machines`` () =
+        // Roslyn parity: removing an await/let! away from an active statement is an allowed
+        // Update (Yield_Delete). The baseline hoisted field simply becomes unused on the
+        // class state machine (reference types keep removed fields, like C#).
+        applyClassStateMachineUpdateAndAssertRuntimeResult
+            "task let-bang removal under class state machines"
+            taskClassSmAddBindSource
+            taskClassSmBaselineSource
+            "Hello, watch!"
+            "Hello, watch"
+
+    let private taskClassSmLoopBaselineSource =
+        """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        (task {
+            let mutable acc = ""
+            for _ in 1 .. 2 do
+                acc <- acc + "x"
+            return "Hello, watch:" + acc
+        }).GetAwaiter().GetResult()
+"""
+
+    let private taskClassSmLoopAddBindSource =
+        """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        (task {
+            let mutable acc = ""
+            for _ in 1 .. 2 do
+                let! piece = Task.FromResult "y"
+                acc <- acc + piece
+            return "Hello, watch:" + acc
+        }).GetAwaiter().GetResult()
+"""
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for task let-bang addition inside a loop under class state machines`` () =
+        // Roslyn parity: inserting an await inside control flow (a loop body) adds hoisted
+        // state plus a resume point; allowed for class state machines.
+        applyClassStateMachineUpdateAndAssertRuntimeResult
+            "task let-bang addition inside a loop under class state machines"
+            taskClassSmLoopBaselineSource
+            taskClassSmLoopAddBindSource
+            "Hello, watch:xx"
+            "Hello, watch:yy"
+
+    let private backgroundTaskClassSmBaselineSource =
+        """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        (backgroundTask { return "Hello, watch" }).GetAwaiter().GetResult()
+"""
+
+    let private backgroundTaskClassSmAddBindSource =
+        """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        (backgroundTask {
+            let! extra = Task.FromResult "!"
+            return "Hello, watch" + extra
+        }).GetAwaiter().GetResult()
+"""
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for backgroundTask let-bang addition under class state machines`` () =
+        // Generality: backgroundTask is a second resumable computation expression that lowers
+        // through the same GenStructStateMachine path as task, so the class-state-machine
+        // codegen + classifier + emitter apply uniformly. taskSeq and user-defined resumable
+        // CEs inherit the same behavior via the same lowering (the gate lives in the shared
+        // GenStructStateMachine / TcGlobals flag, not in any per-builder code).
+        applyClassStateMachineUpdateAndAssertRuntimeResult
+            "backgroundTask let-bang addition under class state machines"
+            backgroundTaskClassSmBaselineSource
+            backgroundTaskClassSmAddBindSource
+            "Hello, watch"
+            "Hello, watch!"
 
     [<Fact>]
     let ``Computation-expression output shape is preserved across desugaring variants`` () =
@@ -4959,6 +5117,7 @@ type Type =
         // (the seq desugaring's closure chain), so the added-lambda capability set is required.
         applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
             (Some [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ])
+            []
             "seq-added-yield"
             baseline
             updated

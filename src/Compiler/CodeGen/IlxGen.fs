@@ -523,15 +523,19 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden (accessibility: Accessibility) re
 /// Indicates how type parameters are mapped to IL type variables
 [<NoEquality; NoComparison>]
 type TypeReprEnv
-    (reprs: Map<Stamp, uint16 * Typar>, count: int, templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInstantiation) option) =
+    (
+        reprs: Map<Stamp, uint16 * Typar>,
+        count: int,
+        templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInstantiation * ILBoxity) option
+    ) =
 
     static let empty = TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = None)
 
     /// Get the template replacement information used when using struct types for state machines based on a "template" struct
     member _.TemplateReplacement = templateReplacement
 
-    member _.WithTemplateReplacement(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst) =
-        TypeReprEnv(reprs, count, Some(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst))
+    member _.WithTemplateReplacement(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst, boxity) =
+        TypeReprEnv(reprs, count, Some(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst, boxity))
 
     member _.WithoutTemplateReplacement() = TypeReprEnv(reprs, count, None)
 
@@ -665,10 +669,10 @@ and GenNamedTyAppAux (cenv: cenv) m (tyenv: TypeReprEnv) ptrsOK tcref tinst =
     let g = cenv.g
 
     match tyenv.TemplateReplacement with
-    | Some(tcref2, ilCloTyRef, cloFreeTyvars, _) when tyconRefEq g tcref tcref2 ->
+    | Some(tcref2, ilCloTyRef, cloFreeTyvars, _, boxity) when tyconRefEq g tcref tcref2 ->
         let cloInst = List.map mkTyparTy cloFreeTyvars
         let ilTypeInst = GenTypeArgsAux cenv m tyenv cloInst
-        mkILValueTy ilCloTyRef ilTypeInst
+        mkILNamedTy boxity ilCloTyRef ilTypeInst
     | _ ->
         let tinst = DropErasedTyargs tinst
         // See above note on ptrsOK
@@ -901,7 +905,7 @@ let GenFieldSpecForStaticField (isInteractive, g: TcGlobals, ilContainerTy, vspe
 
 let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
     match tyenv.TemplateReplacement with
-    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when tyconRefEq cenv.g rfref.TyconRef tcref2 ->
+    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst, boxity) when tyconRefEq cenv.g rfref.TyconRef tcref2 ->
         // Fixup references to the fields of a struct machine template
         //     templateStructTy = ResumableStateMachine<TaskStateMachineData<SomeType['FreeTyVars]>
         //     templateTyconRef = ResumableStateMachine<'Data>
@@ -914,7 +918,7 @@ let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
         let ilCloTy =
             let cloInst = List.map mkTyparTy cloFreeTyvars
             let ilTypeInst = GenTypeArgsAux cenv m tyenv cloInst
-            mkILValueTy ilCloTyRef ilTypeInst
+            mkILNamedTy boxity ilCloTyRef ilTypeInst
 
         let tyenvinner = TypeReprEnv.Empty.ForTypars cloFreeTyvars
 
@@ -1374,9 +1378,9 @@ let RemoveTemplateReplacement eenv =
         tyenv = eenv.tyenv.WithoutTemplateReplacement()
     }
 
-let AddTemplateReplacement eenv (tcref, ftyvs, ilTy, inst) =
+let AddTemplateReplacement eenv (tcref, ftyvs, ilTy, inst, boxity) =
     { eenv with
-        tyenv = eenv.tyenv.WithTemplateReplacement(tcref, ftyvs, ilTy, inst)
+        tyenv = eenv.tyenv.WithTemplateReplacement(tcref, ftyvs, ilTy, inst, boxity)
     }
 
 let AddStorageForLocalWitness eenv (w, s) =
@@ -4138,8 +4142,27 @@ and GenSetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, e2, m) sequel =
     CG.EmitInstr cgbuf (pop 2) Push0 (mkStData (cuspec, idx, n))
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
+// Hot reload: a class state machine threads its 'this' as the original
+// byref<ResumableStateMachine<_>> value, but the emitted state-machine type is a reference
+// type. The receiver therefore evaluates to a byref to a slot holding the object reference,
+// so the object reference must be loaded before the field is accessed. This is a no-op for
+// struct state machines and for all ordinary field accesses (only fires when an AsObject
+// template replacement is active and the receiver is itself a byref).
+and GenStateMachineByrefThisDeref cenv cgbuf eenv (e, f, tyargs, m) =
+    match eenv.tyenv.TemplateReplacement with
+    | Some(_, _, _, _, ILBoxity.AsObject) ->
+        let fspec = GenRecdFieldRef m cenv eenv.tyenv f tyargs
+
+        if
+            fspec.DeclaringType.Boxity = ILBoxity.AsObject
+            && isByrefTy cenv.g (tyOfExpr cenv.g e)
+        then
+            CG.EmitInstr cgbuf (pop 1) (Push [ fspec.DeclaringType ]) (mkNormalLdobj fspec.DeclaringType)
+    | _ -> ()
+
 and GenGetRecdFieldAddr cenv cgbuf eenv (e, f, tyargs, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
+    GenStateMachineByrefThisDeref cenv cgbuf eenv (e, f, tyargs, m)
     let fref = GenRecdFieldRef m cenv eenv.tyenv f tyargs
     CG.EmitInstr cgbuf (pop 1) (Push [ ILType.Byref fref.ActualType ]) (I_ldflda fref)
     GenSequel cenv eenv.cloc cgbuf sequel
@@ -4151,11 +4174,13 @@ and GenGetStaticFieldAddr cenv cgbuf eenv (f, tyargs, m) sequel =
 
 and GenGetRecdField cenv cgbuf eenv (e, f, tyargs, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
+    GenStateMachineByrefThisDeref cenv cgbuf eenv (e, f, tyargs, m)
     GenFieldGet false cenv cgbuf eenv (f, tyargs, m)
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenSetRecdField cenv cgbuf eenv (e1, f, tyargs, e2, m) sequel =
     GenExpr cenv cgbuf eenv e1 Continue
+    GenStateMachineByrefThisDeref cenv cgbuf eenv (e1, f, tyargs, m)
     GenExpr cenv cgbuf eenv e2 Continue
     GenFieldStore false cenv cgbuf eenv (f, tyargs, m) sequel
 
@@ -6261,6 +6286,22 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let g = cenv.g
     let amap = cenv.amap
 
+    // Hot reload: optionally emit the resumable state machine as a reference type (class)
+    // instead of a struct, so that adding a suspension point becomes an
+    // AddInstanceFieldToExistingType runtime edit rather than a forbidden value-type
+    // re-layout. This generalizes Roslyn's struct->class flip under EnC to the
+    // resumable-code substrate (task / taskSeq / user resumable CEs). Gated for now by an
+    // env var; wired to the hot-reload codegen flag once the class path is validated.
+    let emitStateMachineAsClass =
+        g.emitHotReloadClassStateMachines
+        || FSharp.Compiler.EnvironmentHelpers.isEnvVarTruthy "FSHARP_HOTRELOAD_CLASS_STATEMACHINES"
+
+    let stateMachineBoxity =
+        if emitStateMachineAsClass then
+            ILBoxity.AsObject
+        else
+            ILBoxity.AsValue
+
     let stateVarsSet =
         stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
 
@@ -6285,7 +6326,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             eenvouter
             |> AddStorageForLocalVals g [ (moveNextThisVar, Local(0, false, None)) ]
 
-        GetIlxClosureInfo cenv m ILBoxity.AsValue false false (mkLocalValRef moveNextThisVar :: thisVars) eenvouter moveNextBody
+        GetIlxClosureInfo cenv m stateMachineBoxity false false (mkLocalValRef moveNextThisVar :: thisVars) eenvouter moveNextBody
 
     let cloFreeVars = cloinfo.cloFreeVars
 
@@ -6293,7 +6334,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let ilCloGenericFormals = cloinfo.cloILGenericParams
     let ilCloGenericActuals = cloinfo.cloSpec.GenericArgs
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
-    let ilCloTy = mkILValueTy ilCloTypeRef ilCloGenericActuals
+    let ilCloTy = mkILNamedTy stateMachineBoxity ilCloTypeRef ilCloGenericActuals
 
     // Hot reload: record the state machine's resume points against the
     // emitted struct type name so the fsc emit path can persist them as the EnC State
@@ -6311,13 +6352,17 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let ilInterfaceTys =
         List.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create) interfaceTys
 
-    let super = g.iltyp_ValueType
+    let super =
+        if emitStateMachineAsClass then
+            g.ilg.typ_Object
+        else
+            g.iltyp_ValueType
 
     let templateTyconRef, templateTypeArgs = destAppTy g templateStructTy
     let templateTypeInst = mkTyconRefInst templateTyconRef templateTypeArgs
 
     let eenvinner =
-        AddTemplateReplacement eenvinner (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
+        AddTemplateReplacement eenvinner (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst, stateMachineBoxity)
 
     // In MoveNext we're relying on default initialization of locals, so force it in spite of the presence of any SkipLocalsInit
     let eenvinner = ForceInitLocals eenvinner
@@ -6422,7 +6467,46 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 let sequel = if retTy.IsNone then discardAndReturnVoid else Return
 
                 let ilCode =
-                    CodeGenMethodForExpr cenv cgbuf.mgbuf ([], imethName, eenvinner, 1 + argVals.Length, None, bodyR, sequel)
+                    if emitStateMachineAsClass then
+                        // Class state machine: spill the object-reference 'this' (arg 0) into a
+                        // byref local so the byref-typed state-machine 'this' loads consistently
+                        // as byref<class>. Field access through it is dereferenced by
+                        // GenStateMachineByrefThisDeref; '&sm' loads the byref directly.
+                        let _, code =
+                            CodeGenMethod
+                                cenv
+                                cgbuf.mgbuf
+                                ([],
+                                 imethName,
+                                 { eenvinner with exitSequel = sequel },
+                                 1 + argVals.Length,
+                                 None,
+                                 (fun cgbuf eenv ->
+                                     LocalScope "smref" cgbuf (fun scopeMarks ->
+                                         let smRefIdx, _, _ =
+                                             AllocLocal
+                                                 cenv
+                                                 cgbuf
+                                                 eenv
+                                                 true
+                                                 (freshIlxName g "smref" m, ILType.Byref ilCloTy, false)
+                                                 scopeMarks
+
+                                         CG.EmitInstr cgbuf (pop 0) (Push [ ILType.Byref ilCloTy ]) (I_ldarga 0us)
+                                         CG.EmitInstr cgbuf (pop 1) (Push []) (I_stloc(uint16 smRefIdx))
+
+                                         let eenv =
+                                             eenv
+                                             |> AddStorageForLocalVals
+                                                 g
+                                                 (thisVals |> List.map (fun v -> (v.Deref, Local(smRefIdx, false, None))))
+
+                                         GenExpr cenv cgbuf eenv bodyR sequel)),
+                                 bodyR.Range)
+
+                        code
+                    else
+                        CodeGenMethodForExpr cenv cgbuf.mgbuf ([], imethName, eenvinner, 1 + argVals.Length, None, bodyR, sequel)
 
                 let ilParams =
                     (ilArgTys, argVals)
@@ -6527,6 +6611,13 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         |> mkILCustomAttrs
         |> storeILCustomAttrs
 
+    // A class state machine needs a parameterless constructor for 'newobj'; a struct does not.
+    let ctorDefs =
+        if emitStateMachineAsClass then
+            [ mkILNonGenericEmptyCtor (g.ilg.typ_Object, None, None) ]
+        else
+            []
+
     let cloTypeDef =
         ILTypeDef(
             name = ilCloTypeRef.Name,
@@ -6537,7 +6628,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             fields = mkILFields fdefs,
             events = emptyILEvents,
             properties = emptyILProperties,
-            methods = mkILMethods mdefs,
+            methods = mkILMethods (ctorDefs @ mdefs),
             methodImpls = mkILMethodImpls mimpls,
             nestedTypes = emptyILTypeDefs,
             implements = ilInterfaceTys,
@@ -6557,7 +6648,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
     LocalScope "machine" cgbuf (fun scopeMarks ->
         let eenvouter =
-            AddTemplateReplacement eenvouter (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
+            AddTemplateReplacement eenvouter (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst, stateMachineBoxity)
 
         let ilMachineAddrTy = ILType.Byref ilCloTy
 
@@ -6569,37 +6660,58 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         let locIdx2, _realloc2, _ =
             AllocLocal cenv cgbuf eenvouter true (freshIlxName g afterCodeThisVar.DisplayName m, ilMachineAddrTy, false) scopeMarks
 
+        // Bind the AfterCode 'this' to the machine's byref address local (locIdx2). For a
+        // struct this is a byref to the value; for a class it is a byref to the slot holding
+        // the object reference. Field access through it is dereferenced by
+        // GenStateMachineByrefThisDeref under class mode; '&sm' (e.g. MethodBuilder.Start)
+        // loads the byref directly.
         let eenvouter =
             eenvouter
             |> AddStorageForLocalVals g [ (afterCodeThisVar, Local(locIdx2, realloc, None)) ]
 
-        // Zero-initialize the machine
-        EmitInitLocal cgbuf ilCloTy locIdx
+        // Allocate the machine: a struct is zero-initialized in place; a class state
+        // machine (hot reload) is allocated with newobj. The address-of-machine local
+        // then carries a byref to the machine in both cases (used by the AfterCode body).
+        if emitStateMachineAsClass then
+            let ctorSpec = mkILCtorMethSpecForTy (ilCloTy, [])
+            CG.EmitInstr cgbuf (pop 0) (Push [ ilCloTy ]) (I_newobj(ctorSpec, None))
+            CG.EmitInstr cgbuf (pop 1) (Push []) (I_stloc(uint16 locIdx))
+        else
+            EmitInitLocal cgbuf ilCloTy locIdx
 
         // Initialize the address-of-machine local
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca(uint16 locIdx))
         CG.EmitInstr cgbuf (pop 1) (Push []) (I_stloc(uint16 locIdx2))
+
+        // Push the receiver for a captured-variable field store. A class stores into the
+        // object reference directly; a struct stores via the machine's byref address.
+        let emitMachineFieldStoreReceiver () =
+            if emitStateMachineAsClass then
+                CG.EmitInstr cgbuf (pop 0) (Push [ ilCloTy ]) (I_ldloc(uint16 locIdx))
+            else
+                CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
 
         // Initialize witness closure variables (these come first in ilCloAllFreeVars)
         let nWitnesses = cloinfo.cloWitnessInfos.Length
 
         for i in 0 .. nWitnesses - 1 do
             let ilv = cloinfo.ilCloAllFreeVars.[i]
-            CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
+            emitMachineFieldStoreReceiver ()
             GenWitnessArgFromWitnessInfo cenv cgbuf eenvouter m cloinfo.cloWitnessInfos.[i]
             CG.EmitInstr cgbuf (pop 2) (Push []) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
 
         // Initialize the regular closure variables (skip witness entries in ilCloAllFreeVars)
         for fv, ilv in Seq.zip cloFreeVars (cloinfo.ilCloAllFreeVars |> Seq.skip nWitnesses) do
             if stateVarsSet.Contains fv then
-                // zero-initialize the state var
-                if realloc then
-                    CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
+                // zero-initialize the state var (only needed for a reused struct local; a
+                // freshly newobj'd class already has zeroed fields)
+                if realloc && not emitStateMachineAsClass then
+                    emitMachineFieldStoreReceiver ()
                     GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
                     CG.EmitInstr cgbuf (pop 2) (Push []) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
             else
                 // initialize the captured var
-                CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
+                emitMachineFieldStoreReceiver ()
                 GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
                 CG.EmitInstr cgbuf (pop 2) (Push []) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
 
@@ -7250,7 +7362,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let opts =
             match eenv.tyenv.TemplateReplacement with
             | None -> opts
-            | Some(tcref, _, typars, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
+            | Some(tcref, _, typars, _, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
 
         accFreeInExpr
             opts
