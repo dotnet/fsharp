@@ -301,14 +301,14 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEventInfo (denv: DisplayEnv) (infoReader: InfoReader) (einfo: EventInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEvent infoReader Range.range0 einfo
+            GetXmlDocSigOfEvent infoReader einfo
             |> layoutXmlDocFromSig denv infoReader true einfo.XmlDoc restL             
         else
             restL
 
     let layoutXmlDocOfILFieldInfo (denv: DisplayEnv) (infoReader: InfoReader) (finfo: ILFieldInfo) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfILFieldInfo infoReader Range.range0 finfo
+            GetXmlDocSigOfILFieldInfo infoReader finfo
             |> layoutXmlDocFromSig denv infoReader true XmlDoc.Empty restL
         else
             restL
@@ -329,7 +329,7 @@ module internal PrintUtilities =
 
     let layoutXmlDocOfEntity (denv: DisplayEnv) (infoReader: InfoReader) (eref: EntityRef) restL =
         if denv.showDocumentation then
-            GetXmlDocSigOfEntityRef infoReader Range.range0 eref
+            GetXmlDocSigOfEntityRef infoReader eref
             |> layoutXmlDocFromSig denv infoReader true eref.XmlDoc restL             
         else
             restL
@@ -1357,7 +1357,7 @@ module PrintTastMemberOrVals =
 
         let memberHasSameTyparNameAsParentTypeTypars =
             let parentTyparNames =
-                vref.DeclaringEntity.TyparsNoRange
+                vref.DeclaringEntity.Typars
                 |> Seq.choose (fun tp -> if tp.typar_id.idText = unassignedTyparName then None else Some tp.typar_id.idText)
                 |> set
             niceMethodTypars
@@ -2082,7 +2082,7 @@ module TastDefinitionPrinting =
         let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayNameCore
 
         let lhsL =
-            let tps = tycon.TyparsNoRange
+            let tps = tycon.Typars
             let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
             let tpsL = layoutAccessibility denv tycon.Accessibility tpsL
             typewordL ^^ tpsL

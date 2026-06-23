@@ -2792,7 +2792,7 @@ and p_rfield_table x st =
     p_array p_recdfield_spec x.FieldsByIndex st
 
 and p_entity_spec_data (x: Entity) st =
-    p_tyar_specs (x.entity_typars.Force(x.entity_range)) st
+    p_tyar_specs x.Typars st
     p_string x.entity_logical_name st
     p_option p_string x.EntityCompiledName st
     p_range x.entity_range st
