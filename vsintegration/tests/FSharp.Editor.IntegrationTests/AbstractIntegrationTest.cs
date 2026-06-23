@@ -5,6 +5,7 @@
 using FSharp.Editor.IntegrationTests.Helpers;
 using Microsoft.CodeAnalysis.Testing.InProcess;
 using Microsoft.VisualStudio.Extensibility.Testing;
+using System.Diagnostics;
 using System.Threading;
 using Xunit;
 
@@ -16,7 +17,18 @@ namespace Microsoft.CodeAnalysis.Testing
         EnvironmentVariables = new[] { "RoslynWaiterEnabled=1", "RoslynWaiterDiagnosticTokenEnabled=1" })]
     public abstract class AbstractIntegrationTest : AbstractIdeIntegrationTest
     {
-        protected AbstractIntegrationTest() => AsyncOperationWaiter.EnableTracking();
+        private static int s_traceListenerAdded;
+
+        protected AbstractIntegrationTest()
+        {
+            AsyncOperationWaiter.EnableTracking();
+
+            // Ensure Trace output is forwarded to the console (captured by xunit runner in the test log).
+            if (System.Threading.Interlocked.Exchange(ref s_traceListenerAdded, 1) == 0)
+            {
+                Trace.Listeners.Add(new ConsoleTraceListener());
+            }
+        }
 
         protected CancellationToken TestToken => HangMitigatingCancellationToken;
 

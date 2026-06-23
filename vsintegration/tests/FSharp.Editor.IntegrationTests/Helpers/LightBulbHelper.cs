@@ -48,6 +48,8 @@ namespace FSharp.Editor.IntegrationTests.Helpers
             var attempt = 0;
             var lastDetail = "no attempt completed";
 
+            System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] GetCodeActionsAsync starting, timeout={0}s", s_timeout.TotalSeconds);
+
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -59,10 +61,9 @@ namespace FSharp.Editor.IntegrationTests.Helpers
 
                 attempt++;
 
-                // The fresh project's F# checker may not have options ready when analysis first runs, leaving no
-                // diagnostic. Re-force analysis on odd attempts so even attempts can harvest once the checker is ready.
                 if (attempt % 2 == 1)
                 {
+                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Attempt {0}: triggering reanalysis", attempt);
                     await triggerReanalysisAsync(cancellationToken);
                 }
 
@@ -70,8 +71,11 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                     broker, view, joinableTaskFactory, showLightBulbAsync, drainLightBulbOperationsAsync, cancellationToken);
                 lastDetail = $"attempt {attempt}, elapsed {(DateTime.UtcNow - start).TotalSeconds:F1}s: {detail}";
 
+                System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Attempt {0}: sets={1}, detail={2}", attempt, sets.Count, detail);
+
                 if (sets.Count > 0)
                 {
+                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Success on attempt {0} with {1} action sets", attempt, sets.Count);
                     return sets;
                 }
 
@@ -89,8 +93,8 @@ namespace FSharp.Editor.IntegrationTests.Helpers
         {
             await joinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-            // Clean slate then trigger the editor's own lightbulb (Ctrl+.). Dismissing first avoids ShowQuickFixes
-            // toggling/collapsing an already-expanded session from a previous attempt.
+            System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] TryGetFromRealSession: isSessionActive={0}", broker.IsLightBulbSessionActive(view));
+
             if (broker.IsLightBulbSessionActive(view))
             {
                 broker.DismissSession(view);
@@ -98,20 +102,23 @@ namespace FSharp.Editor.IntegrationTests.Helpers
 
             await showLightBulbAsync();
 
-            // Push-model diagnostics (e.g. background unused-opens) can lag, so the session may not appear at once.
             var activeDeadline = DateTime.UtcNow + s_activeWait;
             while (!broker.IsLightBulbSessionActive(view))
             {
                 if (DateTime.UtcNow > activeDeadline)
                 {
+                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] TryGetFromRealSession: no session became active within {0}s", s_activeWait.TotalSeconds);
                     return (Array.Empty<SuggestedActionSet>(), "no active lightbulb session");
                 }
 
                 await Task.Delay(100, cancellationToken);
             }
 
+            System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] TryGetFromRealSession: session is active");
+
             if (broker.GetSession(view) is not IAsyncLightBulbSession session)
             {
+                System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] TryGetFromRealSession: GetSession returned non-async session");
                 return (Array.Empty<SuggestedActionSet>(), "session active but GetSession not IAsyncLightBulbSession");
             }
 

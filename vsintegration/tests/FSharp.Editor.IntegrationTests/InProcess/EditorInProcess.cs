@@ -102,18 +102,24 @@ internal partial class EditorInProcess
         var broker = componentModel.GetService<ILightBulbBroker>();
         var shell = await GetRequiredGlobalServiceAsync<SVsUIShell, IVsUIShell>(cancellationToken);
 
-        // PlaceCaretAsync leaves the active command target on the Find feature, so re-activate the document or the
-        // posted ShowQuickFixes command routes to the wrong target.
+        // Trace document state
+        var caretPos = view.Caret.Position.BufferPosition.Position;
+        var docText = view.TextSnapshot.GetText();
+        System.Diagnostics.Trace.TraceInformation(
+            "[EditorInProcess] InvokeCodeActionListAsync: caretPos={0}, docLength={1}, docText=<<<{2}>>>",
+            caretPos, docText.Length, docText.Length <= 500 ? docText : docText.Substring(0, 500));
+
         await ActivateAsync(cancellationToken);
 
-        // Best-effort deterministic wait for the analyzer/diagnostic work that produces the fixes (focus-independent).
+        System.Diagnostics.Trace.TraceInformation("[EditorInProcess] InvokeCodeActionListAsync: waiting for features (Workspace, SolutionCrawlerLegacy, DiagnosticService)");
+
         await AsyncOperationWaiter.WaitForFeaturesAsync(
             componentModel,
             new[] { AsyncOperationWaiter.Workspace, AsyncOperationWaiter.SolutionCrawlerLegacy, AsyncOperationWaiter.DiagnosticService },
             cancellationToken);
 
-        // Invoke the editor's real lightbulb (Ctrl+. / VSStd14CmdID.ShowQuickFixes) so we read the editor-owned
-        // session, which is not superseded the way a broker.CreateSession session is. Caller is on the main thread.
+        System.Diagnostics.Trace.TraceInformation("[EditorInProcess] InvokeCodeActionListAsync: features drained, invoking lightbulb");
+
         Task ShowLightBulbAsync()
         {
             var cmdGroup = s_vsStd14CmdSet;
@@ -134,8 +140,6 @@ internal partial class EditorInProcess
         }
         catch (InvalidOperationException ex)
         {
-            // Report the error-list contents, tracking state, and a producer-agnostic probe of what the broker
-            // sees at the caret (distinguishes "fix not offered" from "fix offered but no session").
             var entries = await TestServices.ErrorList.GetAllEntriesAsync(cancellationToken);
             var categoryRegistry = componentModel.GetService<ISuggestedActionCategoryRegistryService>();
             var probe = await ProbeAvailableActionsAsync(broker, view, categoryRegistry.Any, cancellationToken);

@@ -62,24 +62,35 @@ namespace FSharp.Editor.IntegrationTests.Helpers
         // deterministic, unlike polling the lightbulb UI session.
         public static async Task WaitForFeaturesAsync(IComponentModel componentModel, string[] featureNames, CancellationToken cancellationToken)
         {
+            System.Diagnostics.Trace.TraceInformation(
+                "[AsyncOperationWaiter] WaitForFeaturesAsync: features=[{0}], trackingEnabled={1}",
+                string.Join(", ", featureNames), IsTrackingEnabled());
+
             var providerType = TryGetProviderType();
             if (providerType is null)
             {
+                System.Diagnostics.Trace.TraceInformation("[AsyncOperationWaiter] WaitForFeaturesAsync: providerType is null, returning");
                 return;
             }
 
             var provider = TryGetService(componentModel, providerType);
             if (provider is null)
             {
+                System.Diagnostics.Trace.TraceInformation("[AsyncOperationWaiter] WaitForFeaturesAsync: provider is null, returning");
                 return;
             }
 
             var workspaceType = TryGetWorkspaceType();
             var workspace = workspaceType is null ? null : TryGetService(componentModel, workspaceType);
 
+            System.Diagnostics.Trace.TraceInformation(
+                "[AsyncOperationWaiter] WaitForFeaturesAsync: workspace={0}",
+                workspace is null ? "null" : workspace.GetType().Name);
+
             var waitAll = providerType.GetMethod("WaitAllAsync");
             if (waitAll is null)
             {
+                System.Diagnostics.Trace.TraceInformation("[AsyncOperationWaiter] WaitForFeaturesAsync: WaitAllAsync method not found, returning");
                 return;
             }
 
@@ -95,9 +106,14 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                     ex.InnerException ?? ex);
             }
 
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 await task.WithCancellation(cancellationToken);
+                sw.Stop();
+                System.Diagnostics.Trace.TraceInformation(
+                    "[AsyncOperationWaiter] WaitForFeaturesAsync: features=[{0}] drained in {1:F1}ms",
+                    string.Join(", ", featureNames), sw.Elapsed.TotalMilliseconds);
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {

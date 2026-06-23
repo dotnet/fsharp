@@ -304,19 +304,52 @@ module UnusedOpens =
         async {
             use! _holder = Cancellable.UseToken()
 
+            System.Diagnostics.Trace.TraceInformation(
+                "[UnusedOpens] getUnusedOpens called. OpenDeclarations.Length={0}",
+                checkFileResults.OpenDeclarations.Length
+            )
+
             if checkFileResults.OpenDeclarations.Length = 0 then
+                System.Diagnostics.Trace.TraceInformation("[UnusedOpens] No open declarations, returning empty")
                 return []
             else
                 let! ct = Async.CancellationToken
-                let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
-                let symbolUses = filterSymbolUses getSourceLineStr symbolUses
-                let symbolUses = splitSymbolUses symbolUses
+                let allSymbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+
+                let filteredSymbolUses = filterSymbolUses getSourceLineStr allSymbolUses
+                let symbolUses1, symbolUses2 = splitSymbolUses filteredSymbolUses
                 let openStatements = getOpenStatements checkFileResults.OpenDeclarations
 
+                System.Diagnostics.Trace.TraceInformation(
+                    "[UnusedOpens] filteredSymbolUses={0}, symbolUses1={1}, symbolUses2={2}, openStatements={3}",
+                    filteredSymbolUses.Length,
+                    symbolUses1.Length,
+                    symbolUses2.Length,
+                    openStatements.Length
+                )
+
+                for os in openStatements do
+                    System.Diagnostics.Trace.TraceInformation(
+                        "[UnusedOpens]   openStatement range={0}, openedGroups={1}",
+                        os.Range,
+                        os.OpenedGroups.Length
+                    )
+
                 if openStatements.Length = 0 then
+                    System.Diagnostics.Trace.TraceInformation("[UnusedOpens] No open statements, returning empty")
                     return []
                 else
-                    return! filterOpenStatements symbolUses openStatements
+                    let! result = filterOpenStatements (symbolUses1, symbolUses2) openStatements
+
+                    System.Diagnostics.Trace.TraceInformation(
+                        "[UnusedOpens] Result: {0} unused opens",
+                        result.Length
+                    )
+
+                    for r in result do
+                        System.Diagnostics.Trace.TraceInformation("[UnusedOpens]   unused: {0}", r)
+
+                    return result
         }
 
 module SimplifyNames =
