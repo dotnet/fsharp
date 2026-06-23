@@ -110,6 +110,7 @@ type LanguageFeature =
     | PreprocessorElif
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
+    | SupportCallerArgumentExpression
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -263,6 +264,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.MethodOverloadsCache, previewVersion // Performance optimization for overload resolution
                 LanguageFeature.ImplicitDIMCoverage, languageVersion110
                 LanguageFeature.ErrorOnMissingSignatureAttribute, previewVersion // Opt-in: turn FS3888 from warning into error
+                LanguageFeature.SupportCallerArgumentExpression, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -459,6 +461,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.PreprocessorElif -> FSComp.SR.featurePreprocessorElif ()
         | LanguageFeature.ExceptionFieldSerializationSupport -> FSComp.SR.featureExceptionFieldSerializationSupport ()
         | LanguageFeature.ErrorOnMissingSignatureAttribute -> FSComp.SR.featureErrorOnMissingSignatureAttribute ()
+        | LanguageFeature.SupportCallerArgumentExpression -> FSComp.SR.featureSupportCallerArgumentExpression ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

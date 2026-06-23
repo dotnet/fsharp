@@ -39,6 +39,7 @@
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\CallerArgumentExpression\CallerArgumentExpression.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeResolutionInRecursiveScopes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
@@ -87,6 +88,7 @@
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\Ctor.fs" />
+    <Compile Include="Conformance\Expressions\ApplicationExpressions\AssertExpression.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ComputationExpressions\ComputationExpressions.fs" />
 	<Compile Include="Conformance\Expressions\ComputationExpressions\CEExtensionMethodCapture.fs" />
@@ -521,6 +523,7 @@
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
+    <None Remove="Conformance\BasicGrammarElements\CustomAttributes\CallerArgumentExpression.fs" />
     <None Remove="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <None Remove="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
   </ItemGroup>
