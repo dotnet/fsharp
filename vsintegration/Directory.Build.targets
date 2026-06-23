@@ -2,6 +2,17 @@
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
 
+  <!-- The SDK-style vsintegration projects set GenerateAssemblyInfo=false AND do not import
+       src/FSharpSource.targets (the only file that imports the custom GenerateInternalsVisibleTo.targets).
+       So neither the SDK-native nor the custom path emits their <InternalsVisibleTo> items -> the built
+       assemblies carry ZERO IVT grants -> their signed consumers fail with BC30389 (VB) / FS0039 (F#).
+       Import the custom target here so the existing <InternalsVisibleTo> items are emitted with the msft
+       delay-sign PublicKey (every vsint assembly is delay-signed with src/fsharp/msft.pubkey). The
+       condition guards against the MSB4011 "imported again" error for any project that also reaches
+       FSharpSource.targets (which sets GeneratedFSharpInternalsVisibleToFile at import time). -->
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildThisFileDirectory)', 'global.json'))\build\targets\GenerateInternalsVisibleTo.targets"
+          Condition="'$(GeneratedFSharpInternalsVisibleToFile)' == ''" />
+
   <PropertyGroup Condition="'$(UsePackageTargetFallbackHack)' == 'true'">
     <!--
     HACK: Necessary because FSharp.Compiler.Private has an incomplete project.json that claims to only support
