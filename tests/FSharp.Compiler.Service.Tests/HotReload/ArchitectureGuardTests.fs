@@ -126,7 +126,7 @@ let ``typed tree diff uses structural lowered-shape evidence only`` () =
     // ResumableCode<_, _>), not member-name lists or plain control-flow operators.
     Assert.Contains("isReturnsResumableCodeAppTy g vref.TauType", source)
     Assert.Contains("formatResumableShapeDigest", source)
-    Assert.Contains("traitConstraintShapeDigest denv traitInfo", source)
+    Assert.Contains("traitConstraintShapeDigest g typarOrdinals denv traitInfo", source)
     Assert.Contains("formatLoweredShapeDigest", source)
     Assert.Contains("hasLoweredShapeDigestSegmentValues", source)
     Assert.DoesNotContain("isLikelyQueryOperationName", source)

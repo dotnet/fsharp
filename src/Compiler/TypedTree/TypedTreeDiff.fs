@@ -474,6 +474,37 @@ let rec private tryTypeIdentityFromTType (g: TcGlobals) (typarOrdinals: Map<Stam
         |> Option.map RuntimeTypeIdentity.TypeVariable
     | TType_measure _ -> None
 
+/// Renders a RuntimeTypeIdentity into a stable, injective string for shape digests.
+let rec private formatRuntimeTypeIdentity (identity: RuntimeTypeIdentity) =
+    match identity with
+    | RuntimeTypeIdentity.NamedType(fullName, []) -> fullName
+    | RuntimeTypeIdentity.NamedType(fullName, args) ->
+        let argText = args |> List.map formatRuntimeTypeIdentity |> String.concat ","
+        $"{fullName}<{argText}>"
+    | RuntimeTypeIdentity.ArrayType(rank, elementType) ->
+        let commas = String.replicate (max 0 (rank - 1)) ","
+        $"{formatRuntimeTypeIdentity elementType}[{commas}]"
+    | RuntimeTypeIdentity.ByRefType elementType -> $"{formatRuntimeTypeIdentity elementType}&"
+    | RuntimeTypeIdentity.PointerType elementType -> $"{formatRuntimeTypeIdentity elementType}*"
+    | RuntimeTypeIdentity.FunctionPointerType(returnType, argumentTypes) ->
+        let argText =
+            argumentTypes |> List.map formatRuntimeTypeIdentity |> String.concat ","
+
+        $"fnptr({argText})->{formatRuntimeTypeIdentity returnType}"
+    | RuntimeTypeIdentity.TypeVariable ordinal -> $"!{ordinal}"
+    | RuntimeTypeIdentity.VoidType -> "System.Void"
+
+/// Renders a type for the state-machine / trait shape digests using the injective runtime-identity
+/// encoder (the same one the capture path stores), falling back to the display string only for the
+/// types the encoder cannot represent (measures, free non-method typars). This deliberately avoids
+/// the non-injective debug ToString() behind tyToString, whose depth-limited rendering collapses a
+/// deeply-solved typar to the literal "True" (TType.LimitedToString) and produced false-positive
+/// StateMachineShapeChange (FSHRDL013) rude edits — e.g. hoisting a mutable local inside a `task`.
+let private renderTypeForShapeDigest (g: TcGlobals) (typarOrdinals: Map<Stamp, int>) (denv: DisplayEnv) (ty: TType) =
+    match tryTypeIdentityFromTType g typarOrdinals ty with
+    | Some identity -> formatRuntimeTypeIdentity identity
+    | None -> tyToString denv ty
+
 let private tryGetMethodTyparOrdinalsAndGenericArity (g: TcGlobals) (var: Val) =
     match var.ValReprInfo with
     | None -> None
@@ -688,21 +719,20 @@ type private LoweredShapeCollector =
         QueryStructuralOperations: ResizeArray<string>
     }
 
-let private traitConstraintShapeDigest (denv: DisplayEnv) (traitInfo: TraitConstraintInfo) =
+let private traitConstraintShapeDigest (g: TcGlobals) (typarOrdinals: Map<Stamp, int>) (denv: DisplayEnv) (traitInfo: TraitConstraintInfo) =
     // Capture a structural trait-call fingerprint for lowered-shape classification.
     // This tracks new builder operations without depending solely on member-name
     // heuristic lists that are brittle across compiler/runtime changes.
-    let supportTypes =
-        traitInfo.SupportTypes |> List.map (tyToString denv) |> String.concat ","
+    let render = renderTypeForShapeDigest g typarOrdinals denv
+
+    let supportTypes = traitInfo.SupportTypes |> List.map render |> String.concat ","
 
     let argumentTypes =
-        traitInfo.GetCompiledArgumentTypes()
-        |> List.map (tyToString denv)
-        |> String.concat ","
+        traitInfo.GetCompiledArgumentTypes() |> List.map render |> String.concat ","
 
     let returnType =
         traitInfo.CompiledReturnType
-        |> Option.map (tyToString denv)
+        |> Option.map render
         |> Option.defaultValue "System.Void"
 
     $"member={traitInfo.MemberLogicalName}|kind={traitInfo.MemberFlags.MemberKind}|instance={traitInfo.MemberFlags.IsInstance}|support=[{supportTypes}]|args=[{argumentTypes}]|ret={returnType}"
@@ -747,7 +777,7 @@ let rec private isReturnsResumableCodeAppTy g ty =
     else
         isResumableCodeAppTy g ty
 
-let private collectLoweredShapeInfo (g: TcGlobals) (denv: DisplayEnv) (expr: Expr) =
+let private collectLoweredShapeInfo (g: TcGlobals) (typarOrdinals: Map<Stamp, int>) (denv: DisplayEnv) (expr: Expr) =
     let collector =
         {
             LambdaArities = ResizeArray()
@@ -775,7 +805,10 @@ let private collectLoweredShapeInfo (g: TcGlobals) (denv: DisplayEnv) (expr: Exp
             // resume-point structure the lowering will produce.
             (match stripAppliedFunction funcExpr with
              | Expr.Val(vref, _, _) when isReturnsResumableCodeAppTy g vref.TauType ->
-                 let instantiation = tyargs |> List.map (tyToString denv) |> String.concat ","
+                 let instantiation =
+                     tyargs
+                     |> List.map (renderTypeForShapeDigest g typarOrdinals denv)
+                     |> String.concat ","
 
                  collector.ResumableCodeCalls.Add $"{vref.LogicalName}<{instantiation}>({args.Length})"
              | _ -> ())
@@ -813,9 +846,9 @@ let private collectLoweredShapeInfo (g: TcGlobals) (denv: DisplayEnv) (expr: Exp
                     | None -> false
 
                 if isResumableTrait then
-                    collector.ResumableCodeCalls.Add $"trait:{traitConstraintShapeDigest denv traitInfo}"
+                    collector.ResumableCodeCalls.Add $"trait:{traitConstraintShapeDigest g typarOrdinals denv traitInfo}"
                 else
-                    let traitDigest = traitConstraintShapeDigest denv traitInfo
+                    let traitDigest = traitConstraintShapeDigest g typarOrdinals denv traitInfo
                     addDistinct collector.QueryStructuralOperations traitDigest
             | _ -> ()
 
@@ -837,7 +870,7 @@ let private collectLoweredShapeInfo (g: TcGlobals) (denv: DisplayEnv) (expr: Exp
         | Expr.Link eref -> walk eref.Value
         | Expr.TyChoose(_, bodyExpr, _) -> walk bodyExpr
         | Expr.WitnessArg(traitInfo, _) ->
-            let traitDigest = traitConstraintShapeDigest denv traitInfo
+            let traitDigest = traitConstraintShapeDigest g typarOrdinals denv traitInfo
             addDistinct collector.QueryStructuralOperations traitDigest
         | Expr.StaticOptimization(_, onExpr, elseExpr, _) ->
             walk onExpr
@@ -1681,8 +1714,18 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
     let constraints = typarConstraintsDigest denv var.Typars
     let bodyHash = exprDigest denv expr
 
+    let methodTypeInfo = tryGetMethodTyparOrdinalsAndGenericArity g var
+
+    // Method typar -> IL ordinal map, needed before the shape digest so resumable-code /
+    // trait type instantiations encode through the injective runtime-identity path rather
+    // than the non-injective debug ToString() (see renderTypeForShapeDigest, FSHRDL013 fix).
+    let typarOrdinals =
+        methodTypeInfo
+        |> Option.map (fun (ordinals, _, _) -> ordinals)
+        |> Option.defaultValue Map.empty
+
     let lambdaShapeDigest, stateMachineShapeDigest, queryShapeDigest =
-        collectLoweredShapeInfo g denv expr
+        collectLoweredShapeInfo g typarOrdinals denv expr
 
     let containingEntity = tryGetContainingEntityFullName var
     let memberKind = memberKindOfVal var
@@ -1727,13 +1770,6 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
             argGroups
             |> List.collect (List.map (fun (argInfo: ArgReprInfo) -> argInfo.Name |> Option.map (fun ident -> ident.idText)))
         | None -> []
-
-    let methodTypeInfo = tryGetMethodTyparOrdinalsAndGenericArity g var
-
-    let typarOrdinals =
-        methodTypeInfo
-        |> Option.map (fun (ordinals, _, _) -> ordinals)
-        |> Option.defaultValue Map.empty
 
     let genericArity = methodTypeInfo |> Option.map (fun (_, arity, _) -> arity)
 
