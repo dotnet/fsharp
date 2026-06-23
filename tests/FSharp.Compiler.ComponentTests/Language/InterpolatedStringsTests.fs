@@ -393,6 +393,34 @@ if c.Name <> "42" || r.Name <> "42" then failwith "expected 42"
         |> compileExeAndRun
         |> shouldSucceed
 
+    // The verbatim ($@" / @$") forms, also adjacent to '='.
+    [<Fact>]
+    let ``Issue 16696 - '=' adjacent to a verbatim interpolated string binds it`` () =
+        Fsx """
+let n = 42
+let a =$@"{n}"
+let b =@$"{n}"
+if a <> "42" || b <> "42" then failwith "expected 42"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 16696 - '=' adjacent to a verbatim interpolated string in named-argument and record contexts`` () =
+        Fsx """
+type C() = member val Name = "" with get, set
+type R = { Name: string }
+let n = 42
+let c = C(Name=$@"{n}")
+let r = { Name=@$"{n}" }
+if c.Name <> "42" || r.Name <> "42" then failwith "expected 42"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // (The extended multi-dollar form '=$$"""..."""' is covered by the SyntaxTree baseline
+    // SynExprInterpolatedStringAdjacentEqualsExtendedMultiDollar.fs.)
+
     // Operator lexing is unchanged: a '$' anywhere in an operator is still reserved (FS0035).
     // The only thing the fix changes is '=' directly before an interpolated-string opener;
     // everything below still lexes as an operator exactly as before.
