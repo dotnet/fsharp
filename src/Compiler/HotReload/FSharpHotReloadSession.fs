@@ -21,15 +21,39 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.EnvironmentHelpers
 
+/// A single structured rude-edit diagnostic surfaced when an edit cannot be applied.
+/// Carried (rather than flattened to a string) so the host can report the reason and act on
+/// severity. The Id is the F#-owned FSHRDL* code from RudeEditDiagnostics.diagnosticId.
+[<Experimental("This FCS API is experimental and subject to change.")>]
+type FSharpHotReloadRudeEdit =
+    {
+        Id: string
+        Severity: FSharpDiagnosticSeverity
+        Message: string
+        SymbolName: string option
+    }
+
 [<RequireQualifiedAccess>]
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadError =
     | NoActiveSession
     | NoChanges
     | MissingOutputPath
-    | UnsupportedEdit of string
+    | UnsupportedEdit of FSharpHotReloadRudeEdit list
     | CompilationFailed of FSharpDiagnostic[]
     | DeltaEmissionFailed of string
+
+/// Projects the internal structured rude-edit diagnostics onto the public surface.
+module internal FSharpHotReloadRudeEditMapping =
+    let ofDiagnostic (d: RudeEditDiagnostic) : FSharpHotReloadRudeEdit =
+        {
+            Id = d.Id
+            Severity = d.Severity
+            Message = d.Message
+            SymbolName = d.SymbolName
+        }
+
+    let ofDiagnostics (diagnostics: RudeEditDiagnostic list) = diagnostics |> List.map ofDiagnostic
 
 [<System.Flags>]
 [<Experimental("This FCS API is experimental and subject to change.")>]
@@ -320,7 +344,14 @@ type internal FSharpHotReloadService
 
                                     match mapSymbolChangesToDelta session.Baseline symbolChanges with
                                     | Error mappingErrors ->
-                                        Some(FSharpHotReloadError.UnsupportedEdit(String.concat Environment.NewLine mappingErrors))
+                                        Some(
+                                            FSharpHotReloadError.UnsupportedEdit(
+                                                mappingErrors
+                                                |> List.map (
+                                                    RudeEditDiagnostics.unsupported >> FSharpHotReloadRudeEditMapping.ofDiagnostic
+                                                )
+                                            )
+                                        )
                                     | Ok(updatedTypes, updatedMethods, accessorUpdates) ->
                                         let hasUpdates =
                                             not (List.isEmpty updatedTypes)

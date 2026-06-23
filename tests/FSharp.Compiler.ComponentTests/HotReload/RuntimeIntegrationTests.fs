@@ -2448,7 +2448,8 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
                 | Ok _ -> failwith "Expected the added lambda to be rejected without the NewTypeDefinition capability."
-                | Error (FSharpHotReloadError.UnsupportedEdit message) ->
+                | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
+                    let message = edits |> List.map (fun e -> $"{e.Id}: {e.Message}") |> String.concat System.Environment.NewLine
                     Assert.Contains("NewTypeDefinition", message)
                     // FSHRDL016 = RudeEditKind.NotSupportedByRuntime
                     Assert.Contains("FSHRDL016", message)
@@ -4841,7 +4842,8 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
 
             match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
             | Ok _ -> failwithf "[%s] expected the edit to be rejected, but a delta was emitted." testLabel
-            | Error (FSharpHotReloadError.UnsupportedEdit message) -> assertMessage message
+            | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
+                edits |> List.map (fun e -> $"{e.Id}: {e.Message}") |> String.concat System.Environment.NewLine |> assertMessage
             | Error other -> failwithf "[%s] expected UnsupportedEdit, got %A" testLabel other
 
         finally

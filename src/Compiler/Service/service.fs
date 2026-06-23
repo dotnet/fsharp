@@ -397,7 +397,7 @@ type FSharpChecker
         function
         | HotReloadError.NoActiveSession -> FSharpHotReloadError.NoActiveSession
         | HotReloadError.NoChanges -> FSharpHotReloadError.NoChanges
-        | HotReloadError.UnsupportedEdit message -> FSharpHotReloadError.UnsupportedEdit message
+        | HotReloadError.UnsupportedEdit diagnostics -> FSharpHotReloadError.UnsupportedEdit(FSharpHotReloadRudeEditMapping.ofDiagnostics diagnostics)
         | HotReloadError.DeltaEmissionException ex -> FSharpHotReloadError.DeltaEmissionFailed ex.Message
 
     let createBaseline (tcGlobals: TcGlobals) (ilModule: ILModuleDef) (outputPath: string) =

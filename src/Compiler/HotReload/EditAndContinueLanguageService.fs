@@ -313,9 +313,12 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     let details = String.concat Environment.NewLine rudeMessages
 
                     Error(
-                        HotReloadError.UnsupportedEdit(
-                            $"Updating an active statement requires restarting the application.{Environment.NewLine}{details}"
-                        )
+                        HotReloadError.UnsupportedEdit
+                            [
+                                RudeEditDiagnostics.unsupported (
+                                    $"Updating an active statement requires restarting the application.{Environment.NewLine}{details}"
+                                )
+                            ]
                     )
                 | Ok activeStatementResults ->
 
@@ -360,7 +363,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
                     Ok { Delta = delta }
             with
-            | HotReloadUnsupportedEditException message -> Error(HotReloadError.UnsupportedEdit message)
+            | HotReloadUnsupportedEditException message -> Error(HotReloadError.UnsupportedEdit [ RudeEditDiagnostics.unsupported message ])
             | ex -> Error(HotReloadError.DeltaEmissionException ex)
 
     /// <summary>Returns <c>true</c> if a hot reload session is active.</summary>
@@ -407,22 +410,20 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                 computeSymbolChanges tcGlobals session.Capabilities session.ImplementationFiles updatedImplementation
 
             if not (List.isEmpty symbolChanges.RudeEdits) then
-                // Surface the per-edit diagnostics (including which runtime capability is missing
-                // for RudeEditKind.NotSupportedByRuntime) so hosts can report an actionable reason.
-                let details =
-                    symbolChanges.RudeEdits
-                    |> RudeEditDiagnostics.ofRudeEdits
-                    |> List.map (fun diagnostic -> $"{diagnostic.Id}: {diagnostic.Message}")
-                    |> String.concat Environment.NewLine
-
-                Error(HotReloadError.UnsupportedEdit($"Rude edits detected; full rebuild required.{Environment.NewLine}{details}"))
+                // Carry the per-edit structured diagnostics (Id + Severity + Message, including
+                // which runtime capability is missing for RudeEditKind.NotSupportedByRuntime) so
+                // hosts can report an actionable reason instead of a pre-flattened string.
+                Error(HotReloadError.UnsupportedEdit(RudeEditDiagnostics.ofRudeEdits symbolChanges.RudeEdits))
             elif not (List.isEmpty symbolChanges.Deleted) then
-                Error(HotReloadError.UnsupportedEdit "Deleted symbols detected; full rebuild required.")
+                Error(
+                    HotReloadError.UnsupportedEdit
+                        [
+                            RudeEditDiagnostics.unsupported "Deleted symbols detected; full rebuild required."
+                        ]
+                )
             else
                 match mapSymbolChangesToDelta session.Baseline symbolChanges with
-                | Error mappingErrors ->
-                    let details = String.concat Environment.NewLine mappingErrors
-                    Error(HotReloadError.UnsupportedEdit details)
+                | Error mappingErrors -> Error(HotReloadError.UnsupportedEdit(mappingErrors |> List.map RudeEditDiagnostics.unsupported))
                 | Ok(updatedTypes, updatedMethods, accessorUpdates) ->
                     let updatedMethods =
                         augmentWithCompilerGeneratedCompanions session.Baseline updatedMethods

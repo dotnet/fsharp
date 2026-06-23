@@ -1942,8 +1942,8 @@ type Type =
 
         match emitResult with
         | Ok _ -> failwith "Expected signature change to be rejected"
-        | Error (FSharpHotReloadError.UnsupportedEdit msg) ->
-            Assert.Contains("Rude edits", msg, StringComparison.OrdinalIgnoreCase)
+        | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
+            Assert.NotEmpty(edits)
         | Error other -> failwithf "Expected UnsupportedEdit error, got: %A" other
         try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -1998,12 +1998,10 @@ module Helpers =
 
         match emitResult with
         | Ok _ -> failwith "Expected record field addition to be rejected"
-        | Error (FSharpHotReloadError.UnsupportedEdit msg) ->
-            // Should mention rude edits or structural edits
-            Assert.True(
-                msg.Contains("Rude", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("Structural", StringComparison.OrdinalIgnoreCase),
-                $"Expected rude/structural edit message, got: {msg}")
+        | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
+            // A non-empty structured rude-edit list is the rejection signal now that the
+            // reason is carried structurally rather than as a pre-flattened string.
+            Assert.NotEmpty(edits)
         | Error other -> failwithf "Expected UnsupportedEdit error, got: %A" other
         try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2055,12 +2053,10 @@ module Helpers =
 
         match emitResult with
         | Ok _ -> failwith "Expected new function addition to be rejected"
-        | Error (FSharpHotReloadError.UnsupportedEdit msg) ->
-            // Should mention rude edits or structural edits
-            Assert.True(
-                msg.Contains("Rude", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("Structural", StringComparison.OrdinalIgnoreCase),
-                $"Expected rude/structural edit message, got: {msg}")
+        | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
+            // A non-empty structured rude-edit list is the rejection signal now that the
+            // reason is carried structurally rather than as a pre-flattened string.
+            Assert.NotEmpty(edits)
         | Error other -> failwithf "Expected UnsupportedEdit error, got: %A" other
         try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2127,12 +2123,10 @@ module Shapes =
 
         match emitResult with
         | Ok _ -> failwith "Expected union case addition to be rejected"
-        | Error (FSharpHotReloadError.UnsupportedEdit msg) ->
-            // Should mention rude edits or structural edits
-            Assert.True(
-                msg.Contains("Rude", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("Structural", StringComparison.OrdinalIgnoreCase),
-                $"Expected rude/structural edit message, got: {msg}")
+        | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
+            // A non-empty structured rude-edit list is the rejection signal now that the
+            // reason is carried structurally rather than as a pre-flattened string.
+            Assert.NotEmpty(edits)
         | Error other -> failwithf "Expected UnsupportedEdit error, got: %A" other
         try Directory.Delete(projectDir, true) with _ -> ()
 
@@ -2300,7 +2294,8 @@ let transform (values: int list) =
         // post-update emission does not require TypeSpec row emission (a separate gap).
         match session.EmitDelta(createProjectSnapshot projectOptions) |> Async.RunImmediate with
         | Ok _ -> failwith "Expected the added lambda to be rejected under baseline-only capabilities"
-        | Error (FSharpHotReloadError.UnsupportedEdit msg) ->
+        | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
+            let msg = edits |> List.map (fun e -> $"{e.Id}: {e.Message}") |> String.concat System.Environment.NewLine
             Assert.Contains("NewTypeDefinition", msg)
         | Error other -> failwithf "Expected UnsupportedEdit, got: %A" other
 

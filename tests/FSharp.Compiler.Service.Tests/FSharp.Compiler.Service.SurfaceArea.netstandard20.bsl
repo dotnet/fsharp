@@ -2376,8 +2376,8 @@ FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 MissingOutputPath
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 NoActiveSession
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 NoChanges
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+Tags: Int32 UnsupportedEdit
-FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+UnsupportedEdit: System.String Item
-FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+UnsupportedEdit: System.String get_Item()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+UnsupportedEdit: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit] Item
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError+UnsupportedEdit: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit] get_Item()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpHotReloadError)
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpHotReloadError, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean Equals(System.Object)
@@ -2397,7 +2397,7 @@ FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Boolean get_IsUnsupportedEdit
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError MissingOutputPath
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NewCompilationFailed(FSharp.Compiler.Diagnostics.FSharpDiagnostic[])
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NewDeltaEmissionFailed(System.String)
-FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NewUnsupportedEdit(System.String)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NewUnsupportedEdit(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit])
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NoActiveSession
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError NoChanges
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: FSharp.Compiler.CodeAnalysis.FSharpHotReloadError get_MissingOutputPath()
@@ -2412,6 +2412,25 @@ FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 GetHashCode(System.Coll
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 Tag
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadError: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity Severity
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity get_Severity()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Microsoft.FSharp.Core.FSharpOption`1[System.String] SymbolName
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_SymbolName()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: System.String Id
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: System.String Message
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: System.String get_Id()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: System.String get_Message()
+FSharp.Compiler.CodeAnalysis.FSharpHotReloadRudeEdit: Void .ctor(System.String, FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity, System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier] ProjectIdentifiers
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier] get_ProjectIdentifiers()
 FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpResult`2[FSharp.Compiler.CodeAnalysis.FSharpHotReloadDelta,FSharp.Compiler.CodeAnalysis.FSharpHotReloadError]] EmitDelta(FSharpProjectSnapshot, Microsoft.FSharp.Core.FSharpOption`1[System.String])

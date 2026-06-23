@@ -1,11 +1,20 @@
 namespace FSharp.Compiler.HotReload
 
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.TypedTreeDiff
 
 /// Represents a user-facing diagnostic generated for a rude edit.
+///
+/// The structured shape (Id + Severity + Message + SymbolName) is carried through the
+/// hot reload error channel rather than being flattened to a single string, so the host
+/// (dotnet-watch) can report the reason and distinguish warning-vs-error severity. The
+/// Id namespace is owned by `RudeEditDiagnostics.diagnosticId` alone; nothing else in the
+/// channel depends on its spelling, so aligning FSHRDL* with Roslyn's ENC* codes later is
+/// a change to that one function.
 type internal RudeEditDiagnostic =
     {
         Id: string
+        Severity: FSharpDiagnosticSeverity
         Message: string
         Kind: RudeEditKind
         SymbolName: string option
@@ -66,11 +75,17 @@ module internal RudeEditDiagnostics =
         | RudeEditKind.NotSupportedByRuntime -> "FSHRDL016"
         | RudeEditKind.Unsupported -> "FSHRDL099"
 
+    /// Severity of a rude-edit kind. Every kind is blocking (Error) today; this is the single
+    /// place to mark a kind as a non-blocking Warning (e.g. a future "might not take effect"
+    /// edit that applies but needs a restart to be observed), mirroring Roslyn's ENC severities.
+    let private severityOf (_kind: RudeEditKind) = FSharpDiagnosticSeverity.Error
+
     let ofRudeEdit (edit: RudeEdit) : RudeEditDiagnostic =
         let symbolName = symbolDisplayName edit.Symbol
 
         {
             Id = diagnosticId edit.Kind
+            Severity = severityOf edit.Kind
             Message = formatMessage edit.Kind symbolName edit.Message
             Kind = edit.Kind
             SymbolName = symbolName
@@ -78,3 +93,28 @@ module internal RudeEditDiagnostics =
 
     let ofRudeEdits edits =
         edits |> Seq.map ofRudeEdit |> Seq.toList
+
+    /// Builds a single structured diagnostic from a kind and an already-formatted message,
+    /// for the rude-edit paths that surface an ad-hoc reason (active statements, deleted
+    /// symbols, mapping errors, emit-time HotReloadUnsupportedEditException) rather than a
+    /// kind-derived message.
+    let ofKindMessage (kind: RudeEditKind) (message: string) : RudeEditDiagnostic =
+        {
+            Id = diagnosticId kind
+            Severity = severityOf kind
+            Message = message
+            Kind = kind
+            SymbolName = None
+        }
+
+    /// A single generic "this edit is unsupported" diagnostic (FSHRDL099) carrying an ad-hoc
+    /// message, for reasons that do not map to a specific RudeEditKind.
+    let unsupported (message: string) : RudeEditDiagnostic =
+        ofKindMessage RudeEditKind.Unsupported message
+
+    /// Renders a structured rude-edit list to the historical one-line-per-edit text
+    /// ("{Id}: {Message}"), for logs and callers that still want a flat string.
+    let format (diagnostics: RudeEditDiagnostic list) =
+        diagnostics
+        |> List.map (fun d -> $"{d.Id}: {d.Message}")
+        |> String.concat System.Environment.NewLine

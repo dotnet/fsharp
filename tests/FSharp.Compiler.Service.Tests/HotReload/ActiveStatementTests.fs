@@ -433,7 +433,8 @@ type Type =
 
             match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
             | Ok _ -> failwith "Expected a rude edit for an edit deleting the active statement"
-            | Error(FSharpHotReloadError.UnsupportedEdit message) ->
+            | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
+                let message = edits |> List.map (fun e -> $"{e.Id}: {e.Message}") |> String.concat System.Environment.NewLine
                 Assert.Contains("active statement", message, StringComparison.OrdinalIgnoreCase)
             | Error error -> failwithf "Expected UnsupportedEdit, got: %A" error
 
@@ -476,6 +477,7 @@ type Type =
 
             match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
             | Ok _ -> failwith "Expected a rude edit for editing a non-leaf frame's active statement"
-            | Error(FSharpHotReloadError.UnsupportedEdit message) ->
+            | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
+                let message = edits |> List.map (fun e -> $"{e.Id}: {e.Message}") |> String.concat System.Environment.NewLine
                 Assert.Contains("non-leaf", message, StringComparison.OrdinalIgnoreCase)
             | Error error -> failwithf "Expected UnsupportedEdit, got: %A" error)
