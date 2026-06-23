@@ -100,6 +100,7 @@ internal partial class EditorInProcess
         var view = await GetActiveTextViewAsync(cancellationToken);
         var componentModel = await GetRequiredGlobalServiceAsync<SComponentModel, IComponentModel>(cancellationToken);
         var broker = componentModel.GetService<ILightBulbBroker>();
+        var categoryRegistry = componentModel.GetService<ISuggestedActionCategoryRegistryService>();
         var shell = await GetRequiredGlobalServiceAsync<SVsUIShell, IVsUIShell>(cancellationToken);
 
         // Trace document state
@@ -128,20 +129,25 @@ internal partial class EditorInProcess
             return Task.CompletedTask;
         }
 
-        Task DrainLightBulbAsync(CancellationToken token)
-            => AsyncOperationWaiter.WaitForFeaturesAsync(componentModel, new[] { AsyncOperationWaiter.LightBulb }, token);
+        // Producer-agnostic "is a fix offered at the caret yet?" gate - the broker aggregates Roslyn today and the
+        // VS LSP CodeActionSource tomorrow. Querying it does not create/dismiss a session, so it doesn't cancel a
+        // slow in-flight analysis the way repeatedly invoking the lightbulb would.
+        async Task<bool> HasSuggestedActionsAsync(CancellationToken token)
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync(token);
+            return await broker.HasSuggestedActionsAsync(categoryRegistry.Any, view, token);
+        }
 
         Task TriggerReanalysisAsync(CancellationToken token)
             => TriggerDiagnosticsAsync(view, token);
 
         try
         {
-            return await LightBulbHelper.GetCodeActionsAsync(broker, view, JoinableTaskFactory, ShowLightBulbAsync, DrainLightBulbAsync, TriggerReanalysisAsync, cancellationToken);
+            return await LightBulbHelper.GetCodeActionsAsync(broker, view, JoinableTaskFactory, ShowLightBulbAsync, HasSuggestedActionsAsync, TriggerReanalysisAsync, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
             var entries = await TestServices.ErrorList.GetAllEntriesAsync(cancellationToken);
-            var categoryRegistry = componentModel.GetService<ISuggestedActionCategoryRegistryService>();
             var probe = await ProbeAvailableActionsAsync(broker, view, categoryRegistry.Any, cancellationToken);
             throw new InvalidOperationException(
                 $"{ex.Message}{Environment.NewLine}trackingEnabled={AsyncOperationWaiter.IsTrackingEnabled()}{Environment.NewLine}" +

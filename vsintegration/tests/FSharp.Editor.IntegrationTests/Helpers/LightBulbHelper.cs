@@ -21,9 +21,17 @@ namespace FSharp.Editor.IntegrationTests.Helpers
     // session is producer-agnostic (aggregates Roslyn today, the VS LSP CodeActionSource tomorrow).
     internal static class LightBulbHelper
     {
-        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(120);
+        // Overall budget for the whole "wait for fix, then read it" flow.
+        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(150);
+        // Once a fix is known to be offered, how long we keep (re-)invoking the lightbulb to read it.
+        private static readonly TimeSpan s_readBudget = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan s_perAttemptTimeout = TimeSpan.FromSeconds(15);
         private static readonly TimeSpan s_activeWait = TimeSpan.FromSeconds(5);
+        // Produce-gate polling: gently ask the broker whether a fix exists yet (no session churn).
+        private static readonly TimeSpan s_produceGatePoll = TimeSpan.FromSeconds(1.5);
+        // If the gate stays false this long, re-touch the buffer once (covers a touch that fired before
+        // the project's checker was ready). Long enough not to cancel a slow in-flight analysis.
+        private static readonly TimeSpan s_reTouchInterval = TimeSpan.FromSeconds(45);
 
         // PopulateWithDataAsync returns Task<ImmutableArray<...>> and ActionSets is ImmutableArray;
         // System.Collections.Immutable skews between the NuGet ref and the in-proc VS runtime, so we invoke/read
@@ -34,52 +42,100 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 new[] { typeof(ISuggestedActionCategorySet), typeof(IUIThreadOperationContext) })
             ?? throw new InvalidOperationException("IAsyncLightBulbSession.PopulateWithDataAsync not found.");
 
+        // Separates PRODUCE from READ. First wait (deterministically, without churning the lightbulb) until the
+        // broker reports a fix is offered at the caret - this gives slow background analyzers (F# unused-opens needs
+        // the project's IncrementalBuilder + a full check) an uninterrupted window. Only THEN invoke the real
+        // lightbulb to read the action sets; repeatedly dismissing/re-posting a session cancels the slow query, so
+        // we never do that until the fix is known to exist.
         public static async Task<IReadOnlyList<SuggestedActionSet>> GetCodeActionsAsync(
             ILightBulbBroker broker,
             IWpfTextView view,
             JoinableTaskFactory joinableTaskFactory,
             Func<Task> showLightBulbAsync,
-            Func<CancellationToken, Task> drainLightBulbOperationsAsync,
+            Func<CancellationToken, Task<bool>> hasSuggestedActionsAsync,
             Func<CancellationToken, Task> triggerReanalysisAsync,
             CancellationToken cancellationToken)
         {
             var start = DateTime.UtcNow;
             var deadline = start + s_timeout;
-            var attempt = 0;
-            var lastDetail = "no attempt completed";
 
             System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] GetCodeActionsAsync starting, timeout={0}s", s_timeout.TotalSeconds);
 
+            // Kick analysis once, then leave the buffer quiet so the (possibly slow) analyzer can complete.
+            await triggerReanalysisAsync(cancellationToken);
+            var lastTouch = DateTime.UtcNow;
+            var touches = 1;
+
+            // PRODUCE-GATE: poll the broker (no session create/dismiss, no re-touch) until a fix is offered.
+            var pollCount = 0;
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
+                bool offered;
+                try
+                {
+                    offered = await hasSuggestedActionsAsync(cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    offered = false;
+                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] HasSuggestedActions threw {0}: {1}", ex.GetType().Name, ex.Message);
+                }
+
+                pollCount++;
+                if (offered)
+                {
+                    System.Diagnostics.Trace.TraceInformation(
+                        "[LightBulbHelper] Fix offered after {0:F1}s ({1} polls, {2} touches); invoking lightbulb",
+                        (DateTime.UtcNow - start).TotalSeconds, pollCount, touches);
+                    break;
+                }
+
                 if (DateTime.UtcNow > deadline)
                 {
                     throw new InvalidOperationException(
-                        $"No code actions found after {s_timeout.TotalSeconds:F0}s ({attempt} attempts). Last: {lastDetail}");
+                        $"No code actions offered after {s_timeout.TotalSeconds:F0}s " +
+                        $"(HasSuggestedActions stayed false; {pollCount} polls, {touches} touches).");
+                }
+
+                // Bounded fallback: if the gate is stuck, the first touch may have fired before the checker was
+                // ready - re-touch once, then keep the buffer quiet again for another full interval.
+                if (DateTime.UtcNow - lastTouch > s_reTouchInterval)
+                {
+                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Gate stuck; re-touching (touch #{0})", touches + 1);
+                    await triggerReanalysisAsync(cancellationToken);
+                    lastTouch = DateTime.UtcNow;
+                    touches++;
+                }
+
+                await Task.Delay(s_produceGatePoll, cancellationToken);
+            }
+
+            // READ: the fix is confirmed offered, so the slow analysis is done - now it's safe to (re-)invoke the
+            // real lightbulb and read its session. Any session churn here can no longer cancel the producer.
+            var readDeadline = DateTime.UtcNow + s_readBudget;
+            var attempt = 0;
+            var lastDetail = "no read attempt completed";
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (DateTime.UtcNow > readDeadline)
+                {
+                    throw new InvalidOperationException(
+                        $"A fix was offered at the caret but the lightbulb session could not be read within " +
+                        $"{s_readBudget.TotalSeconds:F0}s ({attempt} attempts). Last: {lastDetail}");
                 }
 
                 attempt++;
-
-                // Trigger reanalysis ONCE, on the first attempt only. Re-triggering on every cycle
-                // dirties the buffer and cancels slow background analyzers (e.g. F# unused-opens, which
-                // needs the project's IncrementalBuilder + a full check) before they can finish - so we
-                // kick analysis once, then leave the buffer quiet so it can complete uninterrupted.
-                if (attempt == 1)
-                {
-                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Attempt {0}: triggering reanalysis", attempt);
-                    await triggerReanalysisAsync(cancellationToken);
-                }
-
                 var (sets, detail) = await TryGetFromRealSessionAsync(
-                    broker, view, joinableTaskFactory, showLightBulbAsync, drainLightBulbOperationsAsync, cancellationToken);
-                lastDetail = $"attempt {attempt}, elapsed {(DateTime.UtcNow - start).TotalSeconds:F1}s: {detail}";
+                    broker, view, joinableTaskFactory, showLightBulbAsync, cancellationToken);
+                lastDetail = $"read attempt {attempt}: {detail}";
 
-                System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Attempt {0}: sets={1}, detail={2}", attempt, sets.Count, detail);
+                System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Read attempt {0}: sets={1}, detail={2}", attempt, sets.Count, detail);
 
                 if (sets.Count > 0)
                 {
-                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Success on attempt {0} with {1} action sets", attempt, sets.Count);
                     return sets;
                 }
 
@@ -92,7 +148,6 @@ namespace FSharp.Editor.IntegrationTests.Helpers
             IWpfTextView view,
             JoinableTaskFactory joinableTaskFactory,
             Func<Task> showLightBulbAsync,
-            Func<CancellationToken, Task> drainLightBulbOperationsAsync,
             CancellationToken cancellationToken)
         {
             await joinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
@@ -161,16 +216,6 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 catch (Exception ex)
                 {
                     populateStatus = $"populate-invoke-failed {ex.GetType().Name}: {ex.Message}";
-                }
-
-                // Best-effort deterministic drain (no-op if F# work isn't tracked by Roslyn's LightBulb listener).
-                try
-                {
-                    await drainLightBulbOperationsAsync(cancellationToken);
-                }
-                catch
-                {
-                    // ignore - the terminal event below is the source of truth
                 }
 
                 using var perAttempt = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
