@@ -1,5 +1,42 @@
 {
   "prs": {
+    "19984": {
+      "sha": "b99f3e77c8340727328973401fdb22071666a654",
+      "cats": []
+    },
+    "19983": {
+      "sha": "a7df0b9fd79e221b831cf382160cea238eda560f",
+      "cats": []
+    },
+    "19982": {
+      "sha": "e5abf8e84a122e2ff727a468196f0c9303b91fb2",
+      "cats": []
+    },
+    "19979": {
+      "sha": "d3c65ef85685fb209208084982c57c92cdce7b59",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Design-Time"
+      ]
+    },
+    "19977": {
+      "sha": "5e1d0ad38f547b454dc79dff48ae16ac499448d6",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "19976": {
+      "sha": "6a2199cbd904b98f11e0661dded31e5cca35a723",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "19975": {
+      "sha": "3ee95993008800ad8dffe86b72774c9e2770b7a6",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
     "19974": {
       "sha": "0797866c511228021f1ef73918fe09a1a5b2bc59",
       "cats": [
@@ -7,7 +44,7 @@
       ]
     },
     "19971": {
-      "sha": "e87b12fdb7cd",
+      "sha": "e87b12fdb7cdd05b7dec01adcf7f029d2b459636",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Bootstrap",
@@ -97,7 +134,7 @@
       "cats": []
     },
     "19919": {
-      "sha": "72cf8db1dbde",
+      "sha": "72cf8db1dbdecafdb8f26694012f745f5dae29ec",
       "cats": []
     },
     "19918": {
@@ -153,7 +190,7 @@
       "cats": []
     },
     "19865": {
-      "sha": "7e0710e49f168a6d2e6f8752b80f253cd185bf18",
+      "sha": "67bc84f76494c7b482efe1701e91cf26f449fcec",
       "cats": []
     },
     "19862": {
@@ -185,7 +222,7 @@
       "cats": []
     },
     "19809": {
-      "sha": "298dba9c543490c930978e2c02472993c6f67015",
+      "sha": "80c93122a94b271f2524912bfcc84db8fd4db02d",
       "cats": []
     },
     "19804": {
@@ -218,39 +255,6 @@
     },
     "19758": {
       "sha": "4a9364ebfca65b11c9d6966d80bf45711fc75bd0",
-      "cats": []
-    },
-    "19975": {
-      "sha": "3ee95993008800ad8dffe86b72774c9e2770b7a6",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
-    },
-    "19976": {
-      "sha": "6a2199cbd904b98f11e0661dded31e5cca35a723",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
-    },
-    "19977": {
-      "sha": "5e1d0ad38f547b454dc79dff48ae16ac499448d6",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
-    },
-    "19979": {
-      "sha": "4b67d9b32d88b64e4284f4f6f157502cb5fa2304",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Design-Time"
-      ]
-    },
-    "19983": {
-      "sha": "a7df0b9fd79e",
-      "cats": []
-    },
-    "19982": {
-      "sha": "e5abf8e84a12",
       "cats": []
     }
   }
