@@ -1132,16 +1132,15 @@ type Type =
     /// baseline and delta compiles agree on the state machine shape), so that adding/removing a
     /// let!/do! is an AddInstanceFieldToExistingType + method update rather than a struct re-layout.
     let private applyClassStateMachineUpdateAndAssertRuntimeResult testLabel baselineSource updatedSource baselineExpected updatedExpected =
+        // The exact capabilities the class-state-machine shape edit requires (TypedTreeDiff's
+        // requiredCapabilities for that path): an added hoisted field, plus the new/updated
+        // methods. Kept in step with the classifier rather than padded to the full runtime set.
         applySingleStringUpdateWithCapabilitiesAndAssertRuntimeResult
             (Some
                 [ "Baseline"
-                  "AddMethodToExistingType"
-                  "AddStaticFieldToExistingType"
                   "AddInstanceFieldToExistingType"
                   "NewTypeDefinition"
-                  "GenericUpdateMethod"
-                  "GenericAddMethodToExistingType"
-                  "GenericAddFieldToExistingType" ])
+                  "AddMethodToExistingType" ])
             [ "--test:HotReloadClassStateMachines" ]
             testLabel
             baselineSource
@@ -1281,6 +1280,70 @@ type Type =
             backgroundTaskClassSmAddBindSource
             "Hello, watch"
             "Hello, watch!"
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for task do-bang addition under class state machines`` () =
+        applyClassStateMachineUpdateAndAssertRuntimeResult
+            "task-do-bang-addition"
+            """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        (task {
+            do! Task.Yield()
+            return "one"
+        }).GetAwaiter().GetResult()
+"""
+            """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        (task {
+            do! Task.Yield()
+            do! Task.Yield()
+            return "two"
+        }).GetAwaiter().GetResult()
+"""
+            "one"
+            "two"
+
+    [<Fact>]
+    let ``ApplyUpdate succeeds for a method-body edit around an unchanged task state machine`` () =
+        applySingleStringUpdateAndAssertRuntimeResult
+            "method-edit-around-task"
+            """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        let mutable n = 0
+        n <- n + 5
+        let r = (task { do! Task.Yield()
+                        return "x" }).GetAwaiter().GetResult()
+        sprintf "%s:%d" r n
+"""
+            """
+namespace Sample
+
+open System.Threading.Tasks
+
+type Type =
+    static member GetMessage() =
+        let mutable n = 0
+        let r = (task { do! Task.Yield()
+                        return "x" }).GetAwaiter().GetResult()
+        sprintf "%s:%d" r n
+"""
+            "x:5"
+            "x:0"
 
     [<Fact>]
     let ``Computation-expression output shape is preserved across desugaring variants`` () =
@@ -3875,7 +3938,7 @@ type Widget() =
         runMemberAdditionScenario
             "fsharp-hotreload-propadd"
             "PropertyAddLibrary"
-            [ "Baseline"; "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
+            [ "Baseline"; "AddMethodToExistingType" ]
             baselineSource
             (fun assembly applyGeneration ->
                 let widgetType = assembly.GetType("Sample.Props+Widget", throwOnError = true)

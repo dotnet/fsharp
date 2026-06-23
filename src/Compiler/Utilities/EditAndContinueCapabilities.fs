@@ -62,6 +62,31 @@ type internal EditAndContinueCapabilities private (capabilities: Set<EditAndCont
     static let baselineOnly =
         EditAndContinueCapabilities(Set.singleton EditAndContinueCapability.Baseline)
 
+    // The full set, listed once here next to the cases. This is the single source of truth that
+    // replaces the capability lists previously hand-copied across the hot reload test suites; keep
+    // it in step with the EditAndContinueCapability cases above (the .Name match and Parse below
+    // are the other two places a new case must be added).
+    static let all =
+        EditAndContinueCapabilities(
+            Set.ofList
+                [
+                    EditAndContinueCapability.Baseline
+                    EditAndContinueCapability.AddMethodToExistingType
+                    EditAndContinueCapability.AddStaticFieldToExistingType
+                    EditAndContinueCapability.AddInstanceFieldToExistingType
+                    EditAndContinueCapability.NewTypeDefinition
+                    EditAndContinueCapability.ChangeCustomAttributes
+                    EditAndContinueCapability.UpdateParameters
+                    EditAndContinueCapability.GenericAddMethodToExistingType
+                    EditAndContinueCapability.GenericUpdateMethod
+                    EditAndContinueCapability.GenericAddFieldToExistingType
+                    EditAndContinueCapability.AddExplicitInterfaceImplementation
+                    EditAndContinueCapability.AddFieldRva
+                ]
+        )
+
+    static let allNames = all.CapabilityNames
+
     /// <summary>Returns <c>true</c> when the runtime advertised the given capability.</summary>
     member _.Supports(capability: EditAndContinueCapability) = Set.contains capability capabilities
 
@@ -95,6 +120,15 @@ type internal EditAndContinueCapabilities private (capabilities: Set<EditAndCont
     /// only baseline edit-and-continue (method-body updates) is assumed to be supported.
     /// </summary>
     static member BaselineOnly = baselineOnly
+
+    /// <summary>Every capability a maximally-capable runtime can advertise (all
+    /// <see cref="EditAndContinueCapability"/> cases). Single source of truth (listed once above,
+    /// kept in step with the cases); intended for tests and tooling that assume full runtime support.</summary>
+    static member All = all
+
+    /// <summary>The capability name strings of <see cref="All"/>, for hosts and tests that negotiate
+    /// capabilities as strings (for example <c>CreateHotReloadSession</c>).</summary>
+    static member AllNames: string list = allNames
 
     /// <summary>
     /// Parses runtime-provided capability names into the typed model. Each input string is a single

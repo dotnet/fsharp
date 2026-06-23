@@ -712,23 +712,9 @@ let run () =
     // Following Roslyn patterns for Edit and Continue restrictions
     // =========================================================================
 
-    /// The full capability set advertised by a modern CoreCLR runtime; addition tests pass it
+    /// The full capability set a maximally-capable runtime advertises; addition tests pass it
     /// explicitly because the diff defaults to the conservative baseline-only set.
-    let private allCapabilities =
-        EditAndContinueCapabilities.Parse [
-            "Baseline"
-            "AddMethodToExistingType"
-            "AddStaticFieldToExistingType"
-            "AddInstanceFieldToExistingType"
-            "NewTypeDefinition"
-            "ChangeCustomAttributes"
-            "UpdateParameters"
-            "GenericAddMethodToExistingType"
-            "GenericUpdateMethod"
-            "GenericAddFieldToExistingType"
-            "AddExplicitInterfaceImplementation"
-            "AddFieldRva"
-        ]
+    let private allCapabilities = EditAndContinueCapabilities.All
 
     [<Fact>]
     let ``adding instance method to class produces semantic edit`` () =
@@ -749,7 +735,8 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddMethodToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         // Adding a non-virtual instance method should produce an Insert semantic edit
         Assert.Empty(result.RudeEdits)
@@ -775,7 +762,8 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddMethodToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         // Adding a static method should produce an Insert semantic edit
         Assert.Empty(result.RudeEdits)
@@ -981,7 +969,8 @@ let newValue = 42
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddStaticFieldToExistingType"; "AddMethodToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         // Module-level values lower to static field + accessor on the module type; with the
         // static-field and method capabilities the addition is an Insert edit (the
@@ -1013,7 +1002,8 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         // An auto-property lowers to get_/set_ accessor methods plus a backing instance
         // field initialized in the primary constructor. With the method and instance-field
@@ -1084,7 +1074,8 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddMethodToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         // Adding a readonly property should produce an Insert semantic edit
         Assert.Empty(result.RudeEdits)
@@ -1156,7 +1147,8 @@ let mutable newCounter = 0
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddStaticFieldToExistingType"; "AddMethodToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits |> List.filter (fun e -> e.Symbol.LogicalName = "newCounter"))
@@ -1206,7 +1198,8 @@ let newValue = System.DateTime.Now.Ticks
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddStaticFieldToExistingType"; "AddMethodToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits |> List.filter (fun e -> e.Symbol.LogicalName = "newValue"))
@@ -1284,7 +1277,8 @@ type MyClass() =
         // val mutable produces no binding/constructor change, so the addition surfaces as
         // a single TypeDefinition edit (the emitter discovers the new Field row from the
         // fresh compile); the symbol path mirrors the IL type name.
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddInstanceFieldToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits)
@@ -1339,7 +1333,8 @@ type MyClass() =
         // A `let mutable` class field folds its initializer into the primary constructor:
         // the diff pairs the constructor (and any member reading the field) as MethodBody
         // updates plus the TypeDefinition edit for the grown field table.
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         Assert.Empty(result.RudeEdits)
 
@@ -1472,7 +1467,8 @@ let evaluate () =
 
         // With the new-type and method capabilities the same edit is allowed: the member
         // body update covers it (the delta emitter emits the new closure TypeDef).
-        let allowed = harness.DiffWith allCapabilities baseline updated
+        let allowedCapabilities = EditAndContinueCapabilities.Parse [ "NewTypeDefinition"; "AddMethodToExistingType" ]
+        let allowed = harness.DiffWith allowedCapabilities baseline updated
 
         Assert.Empty(allowed.RudeEdits)
         Assert.Single(allowed.SemanticEdits) |> ignore
@@ -1873,7 +1869,8 @@ type MyClass() =
         harness.Rewrite(updated_source)
         let updated = harness.Compile()
 
-        let result = harness.DiffWith allCapabilities baseline updated
+        let capabilities = EditAndContinueCapabilities.Parse [ "AddMethodToExistingType"; "AddInstanceFieldToExistingType" ]
+        let result = harness.DiffWith capabilities baseline updated
 
         Assert.Empty(result.RudeEdits)
 

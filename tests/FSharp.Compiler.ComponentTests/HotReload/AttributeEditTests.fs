@@ -29,6 +29,7 @@ open Xunit
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
 open FSharp.Compiler.Text
 open Internal.Utilities
@@ -44,18 +45,13 @@ module AttributeEditTests =
         FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
         |> Async.RunImmediate
 
-    /// The full capability set advertised by current CoreCLR runtimes.
-    let private fullCapabilities =
-        [ "Baseline"
-          "AddMethodToExistingType"
-          "AddStaticFieldToExistingType"
-          "AddInstanceFieldToExistingType"
-          "NewTypeDefinition"
-          "ChangeCustomAttributes"
-          "UpdateParameters"
-          "GenericUpdateMethod"
-          "GenericAddMethodToExistingType"
-          "GenericAddFieldToExistingType" ]
+    /// The full capability set advertised by current CoreCLR runtimes, taken from the
+    /// single source of truth so it cannot drift from the typed capability model.
+    let private fullCapabilities = EditAndContinueCapabilities.AllNames
+
+    /// Minimal set for an attribute add/change/remove on an EXISTING member (no new
+    /// member is introduced, so only the in-place CustomAttribute row update is needed).
+    let private attributeChangeCapabilities = [ "Baseline"; "ChangeCustomAttributes" ]
 
     let private applyGenerationsAndVerifyCore
         (diskStartedSession: bool)
@@ -340,7 +336,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            [ "Baseline"; "AddMethodToExistingType"; "ChangeCustomAttributes" ]
             "added-method-with-attribute"
             moduleBaseline
             (fun assembly ->
@@ -377,7 +373,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            [ "Baseline"; "AddStaticFieldToExistingType"; "AddMethodToExistingType"; "ChangeCustomAttributes" ]
             "added-module-value-attributes"
             moduleBaseline
             (fun assembly ->
@@ -417,7 +413,7 @@ type Holder() =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            [ "Baseline"; "AddInstanceFieldToExistingType"; "AddMethodToExistingType"; "ChangeCustomAttributes" ]
             "added-auto-property-attributes"
             classBaseline
             (fun assembly ->
@@ -459,7 +455,7 @@ module Library =
 """
 
         emitDeltaAndInspect
-            fullCapabilities
+            [ "Baseline"; "AddStaticFieldToExistingType"; "AddMethodToExistingType"; "ChangeCustomAttributes" ]
             "added-module-value-attribute-template"
             moduleBaseline
             updated
@@ -536,7 +532,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            attributeChangeCapabilities
             "attr-add-existing-method"
             moduleBaseline
             (fun assembly ->
@@ -564,7 +560,7 @@ module Library =
         let updated = attributedBaseline.Replace("\"a\"", "\"b\"")
 
         applyGenerationsAndVerify
-            fullCapabilities
+            attributeChangeCapabilities
             "attr-change-existing-method"
             attributedBaseline
             (fun assembly ->
@@ -595,7 +591,7 @@ module Library =
         // all-nil columns (raw row bytes 00000000-03000000-00000000); reflection then
         // reports no attribute.
         applyGenerationsAndVerify
-            fullCapabilities
+            attributeChangeCapabilities
             "attr-remove-existing-method"
             attributedBaseline
             (fun assembly ->
@@ -616,7 +612,7 @@ module Library =
         let updated = attributedBaseline.Replace("\"a\"", "\"b\"")
 
         emitDeltaAndInspect
-            fullCapabilities
+            attributeChangeCapabilities
             "attr-change-template"
             attributedBaseline
             updated
@@ -646,7 +642,7 @@ module Library =
     [<Fact>]
     let ``Attribute removal delta zeroes parent and constructor columns`` () =
         emitDeltaAndInspect
-            fullCapabilities
+            attributeChangeCapabilities
             "attr-remove-template"
             attributedBaseline
             moduleBaseline
@@ -715,7 +711,7 @@ module Library =
         let gen2 = gen1.Replace("\"a\"", "\"b\"")
 
         applyGenerationsAndVerify
-            fullCapabilities
+            attributeChangeCapabilities
             "attr-add-then-change"
             moduleBaseline
             (fun assembly ->
@@ -754,7 +750,7 @@ module Library =
 
         applyGenerationsAndVerifyCore
             true
-            fullCapabilities
+            attributeChangeCapabilities
             "disk-started-attr-change"
             attributedBaseline
             (fun assembly ->

@@ -27,6 +27,7 @@ open Xunit
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
 open FSharp.Compiler.Text
 open Internal.Utilities
@@ -43,18 +44,19 @@ module GenericEditTests =
         |> Async.RunImmediate
 
     /// The full capability set advertised by current CoreCLR runtimes, including the
-    /// generic-edit capabilities (MetadataUpdater.GetCapabilities()).
-    let private fullCapabilities =
-        [ "Baseline"
-          "AddMethodToExistingType"
-          "AddStaticFieldToExistingType"
-          "AddInstanceFieldToExistingType"
-          "NewTypeDefinition"
-          "ChangeCustomAttributes"
-          "UpdateParameters"
-          "GenericUpdateMethod"
-          "GenericAddMethodToExistingType"
-          "GenericAddFieldToExistingType" ]
+    /// generic-edit capabilities (MetadataUpdater.GetCapabilities()). Sourced from the
+    /// compiler's single source of truth so it can never drift from the enum.
+    let private fullCapabilities = EditAndContinueCapabilities.AllNames
+
+    /// Minimal set for a method-body edit of a generic function or a member of a generic
+    /// type (no member added): updating in a generic context needs GenericUpdateMethod.
+    let private genericBodyUpdateCapabilities = [ "Baseline"; "GenericUpdateMethod" ]
+
+    /// Minimal set for ADDING a generic method/function (or a method to a generic class):
+    /// the addition needs AddMethodToExistingType for the method itself plus
+    /// GenericAddMethodToExistingType for the generic context.
+    let private genericAddMethodCapabilities =
+        [ "Baseline"; "AddMethodToExistingType"; "GenericAddMethodToExistingType" ]
 
     /// Compiles `baselineSource`, starts a hot reload session with the given
     /// capabilities, loads the baseline assembly, asserts via `verify` (generation 0),
@@ -362,7 +364,7 @@ type Container<'T>(value: 'T) =
         let updated = genericFunctionBaseline.Replace("Hello ", "Welcome ")
 
         applyGenerationsAndVerify
-            fullCapabilities
+            genericBodyUpdateCapabilities
             "generic-function-body-edit"
             genericFunctionBaseline
             (fun assembly -> invokeDescribe assembly "Hello ")
@@ -373,7 +375,7 @@ type Container<'T>(value: 'T) =
         let updated = genericClassBaseline.Replace("Hello ", "Welcome ")
 
         applyGenerationsAndVerify
-            fullCapabilities
+            genericBodyUpdateCapabilities
             "generic-class-member-body-edit"
             genericClassBaseline
             (fun assembly -> invokeContainerDescribe assembly "Hello ")
@@ -398,7 +400,7 @@ module Lib =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            genericBodyUpdateCapabilities
             "generic-function-multi-generation"
             genericFunctionBaseline
             (fun assembly -> invokeDescribe assembly "Hello ")
@@ -421,7 +423,7 @@ module Lib =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            genericAddMethodCapabilities
             "added-generic-function"
             genericFunctionBaseline
             (fun assembly -> invokeDescribe assembly "Hello ")
@@ -462,7 +464,7 @@ type Container<'T>(value: 'T) =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            genericAddMethodCapabilities
             "added-method-on-generic-class"
             genericClassBaseline
             (fun assembly -> invokeContainerDescribe assembly "Hello ")
@@ -508,7 +510,7 @@ module Lib =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            [ "Baseline"; "AddMethodToExistingType"; "GenericUpdateMethod"; "NewTypeDefinition" ]
             "added-generic-closure-class"
             baseline
             (fun assembly -> invokeDescribe assembly "Hello ")
@@ -540,7 +542,7 @@ module Lib =
 """
 
         emitDeltaAndInspect
-            fullCapabilities
+            genericAddMethodCapabilities
             "added-generic-function-template"
             genericFunctionBaseline
             updated
@@ -586,7 +588,7 @@ module Lib =
         let updated = genericFunctionBaseline.Replace("Hello ", "Welcome ")
 
         emitDeltaAndInspect
-            fullCapabilities
+            genericBodyUpdateCapabilities
             "generic-body-update-template"
             genericFunctionBaseline
             updated
@@ -633,7 +635,7 @@ module Lib =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            genericAddMethodCapabilities
             "added-constrained-generic-function"
             genericFunctionBaseline
             (fun assembly -> invokeDescribe assembly "Hello ")
@@ -675,7 +677,7 @@ module Lib =
 
         applyGenerationsAndVerifyCore
             true
-            fullCapabilities
+            genericBodyUpdateCapabilities
             "disk-started-generic-body-edit"
             genericFunctionBaseline
             (fun assembly -> invokeDescribe assembly "Hello ")
@@ -694,7 +696,7 @@ module Lib =
 
         applyGenerationsAndVerifyCore
             true
-            fullCapabilities
+            genericAddMethodCapabilities
             "disk-started-added-generic-function"
             genericFunctionBaseline
             (fun assembly -> invokeDescribe assembly "Hello ")

@@ -18,6 +18,7 @@ namespace FSharp.Compiler.ComponentTests.HotReload
 // of the generation-1 row: no TypeDef/Field/InterfaceImpl rows.
 
 open System
+open FSharp.Compiler.EditAndContinue
 open System.Collections.Immutable
 open System.IO
 open System.Reflection
@@ -44,17 +45,18 @@ module NewTypeDefinitionTests =
         |> Async.RunImmediate
 
     /// The full capability set advertised by current CoreCLR runtimes.
-    let private fullCapabilities =
-        [ "Baseline"
-          "AddMethodToExistingType"
-          "AddStaticFieldToExistingType"
-          "AddInstanceFieldToExistingType"
-          "NewTypeDefinition"
-          "ChangeCustomAttributes"
-          "UpdateParameters"
-          "GenericUpdateMethod"
-          "GenericAddMethodToExistingType"
-          "GenericAddFieldToExistingType" ]
+    let private fullCapabilities = EditAndContinueCapabilities.AllNames
+
+    /// Minimal set for adding a new type definition that is used from an edited
+    /// method (the edited body's IL is a MethodDef update on an existing type).
+    let private newTypeCapabilities =
+        [ "Baseline"; "NewTypeDefinition"; "AddMethodToExistingType" ]
+
+    /// Minimal set for adding a new module that carries functions and/or mutable
+    /// values: the new TypeDef plus member additions on the BASELINE startup type
+    /// (a backing field + startup constructor -> AddStaticFieldToExistingType).
+    let private moduleCapabilities =
+        [ "Baseline"; "NewTypeDefinition"; "AddMethodToExistingType"; "AddStaticFieldToExistingType" ]
 
     let private applyGenerationsAndVerifyCore
         (diskStartedSession: bool)
@@ -397,7 +399,7 @@ module Library =
         // body-edits the added class's member: a plain MethodDef update of the
         // generation-1 row (C# 'new_class' gen-2 parity).
         applyGenerationsAndVerify
-            fullCapabilities
+            newTypeCapabilities
             "added-class-with-interface"
             baseline
             (fun assembly ->
@@ -432,7 +434,7 @@ module Library =
         // IStructuralEquatable, IComparable, ...). The delta must carry the complete
         // fresh-compile shape — additions never emit partially.
         applyGenerationsAndVerify
-            fullCapabilities
+            newTypeCapabilities
             "added-record"
             baseline
             (fun assembly ->
@@ -480,7 +482,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            newTypeCapabilities
             "added-union"
             baseline
             (fun assembly ->
@@ -512,7 +514,7 @@ module Library =
         // its value in a Constant row (C# 'new_enum' reference template — the writer's
         // Constant table support). The edited method consumes the enum value.
         applyGenerationsAndVerify
-            fullCapabilities
+            newTypeCapabilities
             "added-enum"
             baseline
             (fun assembly ->
@@ -555,7 +557,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            [ "Baseline"; "AddStaticFieldToExistingType"; "AddMethodToExistingType" ]
             "added-literal-value"
             baseline
             (fun assembly ->
@@ -601,7 +603,7 @@ module Library =
     [<Fact>]
     let ``Added enum delta matches the C# new_enum template shape`` () =
         emitDeltaAndInspect
-            fullCapabilities
+            [ "Baseline"; "NewTypeDefinition" ]
             "added-enum-template"
             baseline
             enumAdded
@@ -685,7 +687,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            newTypeCapabilities
             "added-interface"
             baseline
             (fun assembly ->
@@ -738,7 +740,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            moduleCapabilities
             "added-delegate"
             baseline
             (fun assembly ->
@@ -773,7 +775,7 @@ module Library =
         // addition spans a new TypeDef and existing-type member additions in one delta.
         // Generation 2 body-edits the added module's function in place.
         applyGenerationsAndVerify
-            fullCapabilities
+            moduleCapabilities
             "added-module"
             baseline
             (fun assembly ->
@@ -835,7 +837,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            moduleCapabilities
             "added-nested-module"
             baseline
             (fun assembly ->
@@ -870,7 +872,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            moduleCapabilities
             "module-added-inside-module"
             baseline
             (fun assembly ->
@@ -894,7 +896,7 @@ module Library =
     [<Fact>]
     let ``Added class delta matches the C# new_class template shape`` () =
         emitDeltaAndInspect
-            fullCapabilities
+            newTypeCapabilities
             "added-class-template"
             baseline
             classAdded
@@ -949,7 +951,7 @@ module Library =
         // the mutable value's backing field and the startup constructor land as
         // AddField/AddMethod pairs on the BASELINE startup TypeDef in the same log.
         emitDeltaAndInspect
-            fullCapabilities
+            moduleCapabilities
             "added-module-template"
             baseline
             moduleAdded
@@ -1008,7 +1010,7 @@ module Library =
         // still applies.
         applyGenerationsAndVerifyCore
             true
-            fullCapabilities
+            moduleCapabilities
             "disk-started-added-module"
             baseline
             (fun assembly ->
@@ -1032,7 +1034,7 @@ module Library =
         // rows) still applies.
         applyGenerationsAndVerifyCore
             true
-            fullCapabilities
+            newTypeCapabilities
             "disk-started-added-class"
             baseline
             (fun assembly ->
@@ -1133,7 +1135,7 @@ module Library =
 """
 
         applyGenerationsAndVerify
-            fullCapabilities
+            newTypeCapabilities
             "added-measure"
             baseline
             (fun assembly ->

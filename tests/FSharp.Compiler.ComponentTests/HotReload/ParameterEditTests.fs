@@ -22,6 +22,7 @@ open Xunit
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
 open FSharp.Compiler.Text
 open Internal.Utilities
@@ -38,17 +39,7 @@ module ParameterEditTests =
         |> Async.RunImmediate
 
     /// The full capability set advertised by current CoreCLR runtimes.
-    let private fullCapabilities =
-        [ "Baseline"
-          "AddMethodToExistingType"
-          "AddStaticFieldToExistingType"
-          "AddInstanceFieldToExistingType"
-          "NewTypeDefinition"
-          "ChangeCustomAttributes"
-          "UpdateParameters"
-          "GenericUpdateMethod"
-          "GenericAddMethodToExistingType"
-          "GenericAddFieldToExistingType" ]
+    let private fullCapabilities = EditAndContinueCapabilities.AllNames
 
     let private applyGenerationsAndVerify
         (capabilities: string list)
@@ -300,7 +291,7 @@ module Library =
         // reflection invalidation is not guaranteed). Reading the name for the first time
         // AFTER the update observes the updated Param row.
         applyGenerationsAndVerify
-            fullCapabilities
+            [ "Baseline"; "UpdateParameters" ]
             "param-rename"
             baseline
             (fun assembly ->
@@ -318,7 +309,7 @@ module Library =
         // C# 'param_rename' template: MethodDef 1 update + Param 1 update (EncMap update
         // entries, no Param adds); the Param row's name column carries the new name.
         emitDeltaAndInspect
-            fullCapabilities
+            [ "Baseline"; "UpdateParameters" ]
             "param-rename-template"
             baseline
             renamed
