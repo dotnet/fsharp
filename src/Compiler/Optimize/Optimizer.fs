@@ -1415,8 +1415,43 @@ let AbstractOptimizationInfoToEssentials =
       
     abstractLazyModulInfo
 
+/// True if the IL field has protected (family) accessibility.
+let private isProtectedILFieldSpec cenv m (fspec: ILFieldSpec) =
+    match fspec.DeclaringTypeRef with
+    | Import.TryImportILTypeRef cenv.amap m (ILTyconRawMetadata tdef) ->
+        tdef.Fields.LookupByName fspec.Name
+        |> List.exists (fun fdef -> fdef.Access = ILMemberAccess.Family || fdef.Access = ILMemberAccess.FamilyOrAssembly)
+    | _ -> false
+
+/// True if the expression loads or stores a protected (family) IL field anywhere in its body.
+let private exprReferencesProtectedILField cenv expr =
+    let mutable found = false
+
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF z e ->
+                    if not found then
+                        match e with
+                        | Expr.Op(TOp.ILAsm(instrs, _), _, _, m) ->
+                            if instrs |> List.exists (function ILFieldInstr fspec -> isProtectedILFieldSpec cenv m fspec | _ -> false) then
+                                found <- true
+                        | _ -> ()
+
+                    noInterceptF z e }
+
+    FoldExpr folder () expr |> ignore
+    found
+
+/// True if the expression references constructs that are only valid within their defining method or
+/// family, and so must not be relocated by inlining or method-splitting: a protected/base call
+/// (UsesMethodLocalConstructs) or a protected (family) IL field access (issue #19963).
+let usesMethodLocalConstructsOrProtectedField cenv (fvs: FreeVars) expr =
+    fvs.UsesMethodLocalConstructs
+    || (fvs.ContainsILFieldAccess && exprReferencesProtectedILField cenv expr)
+
 /// Hide information because of a "let ... in ..." or "let rec ... in ... "
-let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
+let AbstractExprInfoByVars cenv (boundVars: Val list, boundTyVars) ivalue =
     // Module and member bindings can be skipped when checking abstraction, since abstraction of these values has already been done when 
     // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadratically retraversing  
     // the inferred optimization data, i.e. at each binding all the way up a sequences of 'lets' in a module. 
@@ -1447,7 +1482,7 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
             (let fvs = freeInExpr (if isNil boundTyVars then CollectLocalsWithStackGuard() else CollectTyparsAndLocals) expr
              (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
              (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
-             fvs.UsesMethodLocalConstructs) ->
+             usesMethodLocalConstructsOrProtectedField cenv fvs expr) ->
               
               // Trimming lambda
               UnknownValue
@@ -2873,7 +2908,7 @@ and OptimizeLetRec cenv env (binds, bodyExpr, m) =
         let fvs = List.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 bindsR
         SplitValuesByIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) bindsR
     // Trim out any optimization info that involves escaping values 
-    let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
+    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info 
     // REVIEW: size of constructing new closures - should probably add #freevars + #recfixups here 
     let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, Construct.NewFreeVarsCache()) 
     let info = CombineValueInfos (einfo :: bindinfos) evalueR 
@@ -2948,7 +2983,7 @@ and OptimizeLinearExpr cenv env expr contf =
               Info = UnknownValue }
         else 
             // On the way back up: Trim out any optimization info that involves escaping values on the way back up
-            let evalueR = AbstractExprInfoByVars ([bindR.Var], []) bodyInfo.Info 
+            let evalueR = AbstractExprInfoByVars cenv ([bindR.Var], []) bodyInfo.Info 
 
             // Preserve the debug points for eliminated bindings that have debug points. 
             let bodyR =
@@ -3116,8 +3151,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
 
     | CurriedLambdaValue (_, _, _, expr, _) when shouldInline || inlineIfLambda ->
         let fvs = freeInExpr CollectLocals expr
-        if fvs.UsesMethodLocalConstructs then
-            // Discarding lambda for binding because uses protected members --- TBD: Should we warn or error here
+        if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
             None
         else
             let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
@@ -3915,7 +3949,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy) 
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals bodyR
-              if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
+              if usesMethodLocalConstructsOrProtectedField cenv fvs bodyR || fvs.FreeLocals.Contains baseVal then 
                   UnknownValue
               else 
                   let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyTy)
@@ -3997,7 +4031,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
     let m = e.Range
     (let fvs = freeInExpr (CollectLocalsWithStackGuard()) e
      not fvs.UsesUnboundRethrow &&
-     not fvs.UsesMethodLocalConstructs &&
+     not (usesMethodLocalConstructsOrProtectedField cenv fvs e) &&
      fvs.FreeLocals |> Zset.forall (fun v -> 
           // no direct-self-recursive references
           not (env.dontSplitVars.ContainsVal v) &&
@@ -4059,7 +4093,7 @@ and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, flags)) =
     let env = BindInternalValsToUnknown cenv vs env 
     let exprR, einfo = OptimizeExpr cenv env expr 
     let exprR, einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (exprR, einfo) 
-    let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
+    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info 
     TTarget(vs, exprR, flags), 
     { TotalSize=einfo.TotalSize 
       FunctionSize=einfo.FunctionSize
@@ -4190,8 +4224,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     UnknownValue 
                 else
                     let fvs = freeInExpr CollectLocals body
-                    if fvs.UsesMethodLocalConstructs then
-                        // Discarding lambda for binding because uses protected members
+                    if usesMethodLocalConstructsOrProtectedField cenv fvs body then
                         UnknownValue
                     elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
                         // Discarding lambda for binding because uses private members
