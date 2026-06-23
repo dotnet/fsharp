@@ -146,6 +146,106 @@ let main _ =
     |> withStdOutContains "custom-record"
 
 [<Fact>]
+let ``Union field shapes: multiple fields versus a single tuple field`` () =
+    FSharp """
+module Test
+type TwoFields = | Two of int * int
+type OneTupleField = | OneTup of (int * int)
+type NamedFields = | Named of x: int * y: int
+
+[<EntryPoint>]
+let main _ =
+    Two (1, 2) |> string |> System.Console.WriteLine
+    OneTup (1, 2) |> string |> System.Console.WriteLine // a single tuple field keeps its own parens
+    Named (1, 2) |> string |> System.Console.WriteLine // named fields render positionally, names are not shown
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "Two(1, 2)"
+    |> withStdOutContains "OneTup((1, 2))"
+    |> withStdOutContains "Named(1, 2)"
+
+[<Fact>]
+let ``Explicit field names do not change the rendering`` () =
+    FSharp """
+module Test
+type Labelled = | WithNames of first: int * second: string
+type Plain = | WithoutNames of int * string
+
+[<EntryPoint>]
+let main _ =
+    WithNames (1, "a") |> string |> System.Console.WriteLine
+    WithoutNames (1, "a") |> string |> System.Console.WriteLine // unnamed fields render the same way as named ones
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "WithNames(1, a)"
+    |> withStdOutContains "WithoutNames(1, a)"
+
+[<Fact>]
+let ``Struct unions and struct records get a generated ToString`` () =
+    FSharp """
+module Test
+[<Struct>] type StructUnion = | SA of a: int
+[<Struct>] type StructRecord = { SX: int; SY: int }
+
+[<EntryPoint>]
+let main _ =
+    SA 7 |> string |> System.Console.WriteLine
+    { SX = 1; SY = 2 } |> string |> System.Console.WriteLine
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "SA(7)"
+    |> withStdOutContains "{ SX = 1; SY = 2 }"
+
+[<Fact>]
+let ``Anonymous records get a generated single-line ToString`` () =
+    FSharp """
+module Test
+[<EntryPoint>]
+let main _ =
+    {| A = 1; B = "hi" |} |> string |> System.Console.WriteLine
+    (struct {| A = 1; B = "hi" |}) |> string |> System.Console.WriteLine // a struct anonymous record renders identically
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "{| A = 1; B = hi |}"
+
+[<Fact>]
+let ``Recursively defined types render when the data is finite`` () =
+    FSharp """
+module Test
+type Tree = | Leaf | Node of Tree * int * Tree
+type TreeNode = { Value: int; Parent: TreeNode option } // an upward-only parent pointer stays finite
+
+[<EntryPoint>]
+let main _ =
+    Node (Node (Leaf, 1, Leaf), 2, Leaf) |> string |> System.Console.WriteLine
+    let root = { Value = 0; Parent = None }
+    { Value = 1; Parent = Some root } |> string |> System.Console.WriteLine
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "Node(Node(Leaf, 1, Leaf), 2, Leaf)"
+    |> withStdOutContains "{ Value = 1; Parent = Some({ Value = 0; Parent = null }) }"
+
+[<Fact>]
 let ``No debug display attribute`` () =
     someCode
     |> withOptions [ "--reflectionfree" ]
