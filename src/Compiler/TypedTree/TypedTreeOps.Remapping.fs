@@ -622,8 +622,11 @@ module internal SignatureOps =
 
             match entity1.IsNamespace, entity2.IsNamespace, entity1.IsModule, entity2.IsModule with
             | true, true, _, _ -> ()
+            | true, _, _, true
+            | _, true, true, _ -> errorR (Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly (textOfPath path2), entity2.Range))
             | true, _, _, _
-            | _, true, _, _ -> errorR (Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly (textOfPath path2), entity2.Range))
+            | _, true, _, _ ->
+                errorR (Error(FSComp.SR.tastNamespaceAndTypeWithSameNameInAssembly (textOfPath path2, entity2.LogicalName), entity2.Range))
             | false, false, false, false ->
                 errorR (Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly (entity2.LogicalName, textOfPath path), entity2.Range))
             | false, false, true, true -> errorR (Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly (textOfPath path2), entity2.Range))
@@ -798,6 +801,7 @@ module internal ExprFreeVars =
         {
             UsesMethodLocalConstructs = false
             UsesUnboundRethrow = false
+            ContainsILFieldAccess = false
             FreeLocalTyconReprs = emptyFreeTycons
             FreeLocals = emptyFreeLocals
             FreeTyvars = emptyFreeTyvars
@@ -816,6 +820,7 @@ module internal ExprFreeVars =
                 FreeTyvars = unionFreeTyvars fvs1.FreeTyvars fvs2.FreeTyvars
                 UsesMethodLocalConstructs = fvs1.UsesMethodLocalConstructs || fvs2.UsesMethodLocalConstructs
                 UsesUnboundRethrow = fvs1.UsesUnboundRethrow || fvs2.UsesUnboundRethrow
+                ContainsILFieldAccess = fvs1.ContainsILFieldAccess || fvs2.ContainsILFieldAccess
                 FreeLocalTyconReprs = unionFreeTycons fvs1.FreeLocalTyconReprs fvs2.FreeLocalTyconReprs
                 FreeRecdFields = unionFreeRecdFields fvs1.FreeRecdFields fvs2.FreeRecdFields
                 FreeUnionCases = unionFreeUnionCases fvs1.FreeUnionCases fvs2.FreeUnionCases
@@ -866,9 +871,10 @@ module internal ExprFreeVars =
                 }
 
     let boundProtect fvs =
-        if fvs.UsesMethodLocalConstructs then
+        if fvs.UsesMethodLocalConstructs || fvs.ContainsILFieldAccess then
             { fvs with
                 UsesMethodLocalConstructs = false
+                ContainsILFieldAccess = false
             }
         else
             fvs
@@ -880,6 +886,14 @@ module internal ExprFreeVars =
             }
         else
             fvs
+
+    let accContainsILFieldAccess fvs =
+        if fvs.ContainsILFieldAccess then
+            fvs
+        else
+            { fvs with
+                ContainsILFieldAccess = true
+            }
 
     let bound_rethrow fvs =
         if fvs.UsesUnboundRethrow then
@@ -1199,7 +1213,20 @@ module internal ExprFreeVars =
             let acc = accUsesFunctionLocalConstructs (kind = RecdExprIsObjInit) acc
             (accUsedRecdOrUnionTyconRepr opts tcref.Deref (accFreeTyvars opts accFreeTycon tcref acc))
 
-        | TOp.ILAsm(_, retTypes) -> accFreeVarsInTys opts retTypes acc
+        | TOp.ILAsm(instrs, retTypes) ->
+            // Cheap over-approximate gate; the optimizer refines this to protected (family) fields (issue #19963).
+            let acc =
+                if
+                    instrs
+                    |> List.exists (function
+                        | ILFieldInstr _ -> true
+                        | _ -> false)
+                then
+                    accContainsILFieldAccess acc
+                else
+                    acc
+
+            accFreeVarsInTys opts retTypes acc
 
         | TOp.Reraise -> accUsesRethrow true acc
 
