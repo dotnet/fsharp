@@ -21,7 +21,7 @@ namespace FSharp.Editor.IntegrationTests.Helpers
     // session is producer-agnostic (aggregates Roslyn today, the VS LSP CodeActionSource tomorrow).
     internal static class LightBulbHelper
     {
-        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(60);
+        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(120);
         private static readonly TimeSpan s_perAttemptTimeout = TimeSpan.FromSeconds(15);
         private static readonly TimeSpan s_activeWait = TimeSpan.FromSeconds(5);
 
@@ -61,7 +61,11 @@ namespace FSharp.Editor.IntegrationTests.Helpers
 
                 attempt++;
 
-                if (attempt % 2 == 1)
+                // Trigger reanalysis ONCE, on the first attempt only. Re-triggering on every cycle
+                // dirties the buffer and cancels slow background analyzers (e.g. F# unused-opens, which
+                // needs the project's IncrementalBuilder + a full check) before they can finish - so we
+                // kick analysis once, then leave the buffer quiet so it can complete uninterrupted.
+                if (attempt == 1)
                 {
                     System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Attempt {0}: triggering reanalysis", attempt);
                     await triggerReanalysisAsync(cancellationToken);
