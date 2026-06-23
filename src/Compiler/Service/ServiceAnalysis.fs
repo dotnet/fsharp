@@ -341,10 +341,7 @@ module UnusedOpens =
                 else
                     let! result = filterOpenStatements (symbolUses1, symbolUses2) openStatements
 
-                    System.Diagnostics.Trace.TraceInformation(
-                        "[UnusedOpens] Result: {0} unused opens",
-                        result.Length
-                    )
+                    System.Diagnostics.Trace.TraceInformation("[UnusedOpens] Result: {0} unused opens", result.Length)
 
                     for r in result do
                         System.Diagnostics.Trace.TraceInformation("[UnusedOpens]   unused: {0}", r)
