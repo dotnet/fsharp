@@ -28,6 +28,23 @@ namespace NotNullLib {
         [return: NotNullIfNotNull("second")]
         public static string? DependsOnSecond(string? first, string? second) => second;
     }
+
+    public static class Extensions {
+        // Degenerate case: the return depends on the 'this' parameter of a C#-style extension method.
+        // When called instance-style the receiver is an object argument, not an unnamed caller argument.
+        [return: NotNullIfNotNull("self")]
+        public static string? PreferSelf(this string? self, string? other) => self ?? other;
+    }
+
+    public static class Variadic {
+        // The result depends on an optional parameter ('b') that is not in the first position.
+        [return: NotNullIfNotNull("b")]
+        public static string? PickB(string? a = null, string? b = null) => b ?? a;
+
+        // The result depends on the first parameter, which precedes a params array.
+        [return: NotNullIfNotNull("first")]
+        public static string? JoinRest(string? first, params string?[] rest) => first;
+    }
 }""" |> withName "csNotNullLib"
 
 let private nullableExpected = "was expected but this expression is nullable"
@@ -59,9 +76,8 @@ let ext : string = Path.GetExtension(maybeNull)
 
 [<FactForNETCOREAPP>]
 let ``Multiple NotNullIfNotNull attributes are not supported - Delegate.Combine stays nullable`` () =
-    // Delegate.Combine carries two [return: NotNullIfNotNull] attributes. Making the result depend on more than one
-    // parameter (logical OR) is not supported, so the declared nullable return type is kept even though an argument
-    // is non-null.
+    // Delegate.Combine carries two [return: NotNullIfNotNull] attributes. We cannot currently represent nullness linking
+    // to multiple types (logical OR), so the declared nullable return type is kept even though an argument is non-null.
     FSharp """module MyLibrary
 open System
 
@@ -137,6 +153,109 @@ let maybeNull : string | null = "y"
 
 // Non-null first but nullable referenced (second) parameter -> result stays nullable
 let r : string = C.DependsOnSecond(notNull, maybeNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - extension this-parameter must be identified, not the explicit argument`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+let maybeNull : string | null = "y"
+
+// Result depends on 'self' (the receiver), which is nullable -> result must stay nullable and warn.
+let r : string = maybeNull.PreferSelf(notNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - optional parameter referenced positionally`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+let maybeNull : string | null = "y"
+
+// 'b' is the referenced (second, optional) parameter, passed positionally and non-null -> result non-null.
+let r : string = Variadic.PickB(maybeNull, notNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - optional parameter referenced by name`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+
+// Only the referenced optional parameter is supplied, by name and non-null -> result non-null.
+let r : string = Variadic.PickB(b = notNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - optional parameter omitted stays nullable`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+
+// The referenced optional parameter 'b' is omitted (defaults to null) -> result stays nullable.
+let r : string = Variadic.PickB(notNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - parameter before params array, non-null propagation`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+let maybeNull : string | null = "y"
+
+// Referenced parameter 'first' precedes the params array; non-null first -> result non-null.
+let r : string = Variadic.JoinRest(notNull, maybeNull, maybeNull)
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - parameter before params array, stays nullable`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+let maybeNull : string | null = "y"
+
+// Referenced parameter 'first' is nullable -> result stays nullable regardless of params args.
+let r : string = Variadic.JoinRest(maybeNull, notNull, notNull)
 """
     |> asLibrary
     |> withReferences [csNotNullLib]
