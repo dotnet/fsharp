@@ -2260,7 +2260,7 @@ module internal ExprRemapping =
             let lookupTycon tycon = lookupTycon tycon
 
             let tpsR, tmenvinner2 =
-                tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenvinner) tmenvinner (tcd.entity_typars.Force(tcd.entity_range))
+                tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenvinner) tmenvinner tcd.Typars
 
             tcdR.entity_typars <- LazyWithContext.NotLazy tpsR
             tcdR.entity_attribs <- WellKnownEntityAttribs.Create(tcd.entity_attribs.AsList() |> remapAttribs ctxt tmenvinner2)
