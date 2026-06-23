@@ -249,22 +249,6 @@ type internal HotReloadSessionStore() =
     member _.SetCapabilities(value: EditAndContinueCapabilities) =
         lock sessionLock (fun () -> sessionCapabilities <- value)
 
-    /// <summary>
-    /// Replaces the debugger-supplied active statements consulted by the next emit.
-    /// Hosts call this whenever the debugger reports a break state (Roslyn analog: the
-    /// DebuggingSession fetching <c>ManagedActiveStatementDebugInfo</c> from the debugger per
-    /// edit session). Passing an empty list clears the set (no statements are active, e.g.
-    /// updates applied while the process runs free). Session-wide. Returns false when no
-    /// project is active.
-    /// </summary>
-    member _.UpdateActiveStatements(value: FSharpManagedActiveStatementDebugInfo list) =
-        lock sessionLock (fun () ->
-            if Map.isEmpty projects then
-                false
-            else
-                sessionActiveStatements <- value
-                true)
-
     /// Unconditionally sets the session-wide active statements; used by the session entity.
     member _.SetActiveStatements(value: FSharpManagedActiveStatementDebugInfo list) =
         lock sessionLock (fun () -> sessionActiveStatements <- value)

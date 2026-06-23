@@ -215,16 +215,6 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     member _.UpdateCapabilities(capabilities: EditAndContinueCapabilities) =
         sessionStore().UpdateCapabilities(capabilities)
 
-    /// <summary>
-    /// Replaces the debugger-supplied active statements consulted by the next emit.
-    /// Mirrors Roslyn's per-edit-session active-statement fetch from the debugger
-    /// (<c>IManagedHotReloadService.GetActiveStatementsAsync</c>), inverted to a push: FCS has no
-    /// callback seam into the host, so the host reports the break state before emitting.
-    /// Returns false when no session is active.
-    /// </summary>
-    member _.UpdateActiveStatements(activeStatements: FSharp.Compiler.CodeAnalysis.FSharpManagedActiveStatementDebugInfo list) =
-        sessionStore().UpdateActiveStatements(activeStatements)
-
     /// <summary>Clears the session, typically when hot reload is disabled or the build finishes.</summary>
     member _.EndSession() = sessionStore().ClearBaseline()
 
