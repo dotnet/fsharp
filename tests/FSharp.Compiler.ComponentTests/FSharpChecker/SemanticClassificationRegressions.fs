@@ -294,23 +294,27 @@ type MyClass() =
         sprintf "Expected IDisposable to be classified as Interface, got: %A"
             (idisposableOnLine4 |> Array.map (fun c -> c.Type)))
 
-/// (#16268) Negative: a concrete disposable class (MemoryStream) must NOT be
-/// classified as Interface - the fix must not regress non-interface disposables.
+/// (#16268) Negative: a concrete disposable class (MemoryStream) in a type-occurrence
+/// position must still be classified as DisposableType - the reorder of isInterfaceTy
+/// before isDisposableTy must not regress non-interface disposables.
+/// A type annotation is used (not `new MemoryStream()`, which is Item.CtorGroup) so the
+/// occurrence actually flows through the modified Item.Types/LegitTypeOccurrence arm.
 [<Fact>]
-let ``Concrete disposable class not classified as interface`` () =
+let ``Concrete disposable class classified as disposable type`` () =
     let source = """
 open System.IO
-let s = new MemoryStream()
+let length (s: MemoryStream) = s.Length
 """
     let classifications = getClassifications source
     let memStream =
         classifications
-        |> Array.filter (fun c -> substringOfRange source c.Range = "MemoryStream")
+        |> Array.filter (fun c ->
+            substringOfRange source c.Range = "MemoryStream" && c.Range.StartLine = 3)
     Assert.True(memStream.Length > 0, "Expected at least one classification covering MemoryStream")
     Assert.True(
         memStream
-        |> Array.forall (fun c -> c.Type <> SemanticClassificationType.Interface),
-        sprintf "MemoryStream must not be classified as Interface, got: %A"
+        |> Array.forall (fun c -> c.Type = SemanticClassificationType.DisposableType),
+        sprintf "MemoryStream type occurrence must be classified as DisposableType, got: %A"
             (memStream |> Array.map (fun c -> c.Type)))
 
 /// (#16268) IDisposable used as a type constraint should be Interface.
