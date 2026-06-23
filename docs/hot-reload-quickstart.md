@@ -8,6 +8,21 @@ You need: git, bash (macOS/Linux; Windows works with the `.cmd` equivalents), an
 disk for the two builds. You do **not** need any .NET SDK preinstalled — both repos bootstrap
 their own.
 
+## Fast path (one command)
+
+Clone this repo and run the setup script. It does steps 1-3 below (build the compiler, clone +
+build the SDK, sync them) in one go:
+
+```bash
+git clone --branch hot-reload-v2 --single-branch https://github.com/NatElkins/fsharp fsharp-hotreload
+cd fsharp-hotreload
+./docs/hot-reload-setup.sh
+```
+
+When it finishes (~30-45 min, almost all of it the two builds), jump to **step 4** to start a
+session. The manual steps 1-3 are spelled out next if you'd rather run them yourself, are on
+Windows, or want to understand what the script does.
+
 ## 1. Build the compiler (this repo, branch `hot-reload-v2`)
 
 ```bash
@@ -22,7 +37,10 @@ cd ..
 ```bash
 git clone --branch fsharp-hotreload-watch-v2 --single-branch https://github.com/NatElkins/sdk sdk-hotreload
 cd sdk-hotreload
-./build.sh                   # ~10-20 min first time
+# Build just the runnable SDK layout (this pulls in dotnet-watch and the rest of the product
+# without compiling the repo's large test projects, so it is faster and side-steps unrelated
+# test-only build breaks):
+./build.sh --projects "$PWD/src/Layout/redist/redist.csproj"   # ~10-20 min first time
 cd ..
 ```
 
@@ -31,27 +49,29 @@ This produces a complete, runnable .NET CLI at `sdk-hotreload/artifacts/bin/redi
 ## 3. Point the SDK at the hot-reload compiler
 
 The SDK ships a stock F# compiler; replace its `FSharp.Compiler.Service` (and the matching
-`FSharp.Core`) with the ones you just built:
+`FSharp.Core`) with the ones you just built. From the directory holding both clones:
 
 ```bash
-REDIST="$PWD/sdk-hotreload/artifacts/bin/redist/Debug/dotnet"
-FCS="$PWD/fsharp-hotreload/artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
-
-cp "$FCS/FSharp.Compiler.Service.dll" "$REDIST"/sdk/*/FSharp/
-cp "$FCS/FSharp.Core.dll"             "$REDIST"/sdk/*/FSharp/
+./fsharp-hotreload/docs/hot-reload-sync-fcs.sh
 ```
+
+That copies the two DLLs into `sdk-hotreload/artifacts/bin/redist/Debug/dotnet/sdk/*/FSharp/`.
+Re-run it any time you rebuild the compiler. (To do it by hand instead, copy
+`FSharp.Compiler.Service.dll` and `FSharp.Core.dll` from
+`fsharp-hotreload/artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0/` into that
+`FSharp/` folder.)
 
 ## 4. Create a demo app and start watching
 
+Put the freshly built CLI on your `PATH` by sourcing the SDK repo's `dogfood` script. It sets
+`DOTNET_ROOT` and the SDK resolver for you, which is the supported way to run a locally built
+SDK:
+
 ```bash
-mkdir HotReloadDemo && cd HotReloadDemo
+source sdk-hotreload/eng/dogfood.sh        # Windows: sdk-hotreload\eng\dogfood.cmd
 
-# Environment for the locally built CLI (paste as-is; $REDIST from step 3)
-export DOTNET_ROOT="$REDIST"
-export DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR="$REDIST"
-export DOTNET_MULTILEVEL_LOOKUP=0
-export PATH="$REDIST:$PATH"
-
+# dogfood.sh leaves you in the SDK's test folder, so move somewhere you want the demo:
+mkdir -p ~/hot-reload-demo && cd ~/hot-reload-demo
 dotnet new console -lang F#
 ```
 
@@ -125,7 +145,8 @@ and why — generally the same set as C#.
 
 - **Everything restarts instead of applying**: confirm the `OtherFlags` line is in the
   `.fsproj` (the on-disk build and the in-memory compiles must both carry the flag), and that
-  step 3's copy actually overwrote the SDK's `FSharp/FSharp.Compiler.Service.dll`.
+  step 3's sync (`hot-reload-sync-fcs.sh`) actually overwrote the SDK's
+  `FSharp/FSharp.Compiler.Service.dll`.
 - **Want to see why a specific edit restarted**: `export DOTNET_WATCH_TRACE_FSHARP_HOTRELOAD=1`
   before `dotnet watch run` — the F# service logs its classification (e.g. which rude edit or
   missing runtime capability) for every emit.
