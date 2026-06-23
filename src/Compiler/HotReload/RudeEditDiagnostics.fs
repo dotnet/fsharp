@@ -55,6 +55,17 @@ module internal RudeEditDiagnostics =
             fallback
         | RudeEditKind.Unsupported -> fallback
 
+    // F#-owned FSHRDL* id namespace (deliberately NOT Roslyn's ENC*). This function is the single
+    // place the namespace is decided: the rude-edit channel carries whatever string this returns
+    // opaquely, so aligning with Roslyn's ENC codes later is a change to THIS function alone, with
+    // its callers untouched. Kept as FSHRDL because at the dotnet-watch seam F# rude edits flow
+    // through the F# bridge result, not Roslyn's diagnostic channel (F# projects are not in the
+    // Roslyn Solution), so the host neither special-cases nor displays these id strings and no
+    // external tooling consumes them; ENC is a Roslyn-owned, RudeEditKind-bound namespace, so
+    // reusing its numbers would be squatting with no offsetting UX or tooling benefit. Closest
+    // Roslyn analogs if ENC alignment is ever wanted: TypeLayoutChange ~ ENC0013/0014/0015 (enum
+    // underlying type / base type or interface / type kind), and a future non-blocking "might not
+    // take effect" edit ~ ENC0118 (Warning).
     let private diagnosticId kind =
         match kind with
         | RudeEditKind.SignatureChange -> "FSHRDL001"
