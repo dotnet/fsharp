@@ -24,7 +24,13 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 open type System.MemoryExtensions
 
+/// Exception raised when a pattern match is incomplete.
+/// Fields: isComputationExpression * (counterExample * isShownAsFieldPattern) option * range
 exception MatchIncomplete of bool * (string * bool) option * range
+
+/// Wrapper that adds a for-loop hint to an existing MatchIncomplete diagnostic.
+exception MatchIncompleteForLoopHint of exn
+
 exception RuleNeverMatched of range
 exception EnumMatchIncomplete of bool * (string * bool) option * range
 
@@ -802,13 +808,6 @@ let rec BuildSwitch inpExprOpt g isNullFiltered expr edges dflt m =
                         let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
                         // Skip null check if we're in a null-filtered context
                         let test = mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)
-                        let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
-                        mkLetBind m bind finalTest
-                    | DecisionTreeTest.Const (Const.String "")  ->
-                        // Optimize empty string check to use null-safe length check
-                        let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
-                        let test = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
-                        // Skip null check if we're in a null-filtered context
                         let finalTest = if isNullFiltered then test else mkLazyAnd g m (mkNonNullTest g m vExpr) test
                         mkLetBind m bind finalTest
                     | DecisionTreeTest.Const (Const.String _ as c)  ->

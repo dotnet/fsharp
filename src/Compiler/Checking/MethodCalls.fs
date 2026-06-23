@@ -658,19 +658,21 @@ type CalledMeth<'T>
 
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
+                // x.Item(i, value = v) — named arg removes 'i' from unnamed, leaving < 2 unnamed called args.
+                let useIndexerSetterShape = isIndexerSetter && nUnnamedCalledArgs >= 2
                 let supportsParamArgs = 
                     allowParamArgs && 
                     nUnnamedCalledArgs >= 1 && 
                     nUnnamedCallerArgs >= nUnnamedCalledArgs-1 &&
                     let possibleParamArg =
-                        if isIndexerSetter then
+                        if useIndexerSetterShape then
                             unnamedCalledArgs[nUnnamedCalledArgs-2]
                         else
                             unnamedCalledArgs[nUnnamedCalledArgs-1]
                     possibleParamArg.IsParamArray && isArray1DTy g possibleParamArg.CalledArgumentType
 
                 if supportsParamArgs then
-                    if isIndexerSetter then
+                    if useIndexerSetterShape then
                         // Note, for an indexer setter nUnnamedCalledArgs will be at least two, and normally exactly 2
                         let unnamedCalledArgs2 =
                             unnamedCalledArgs[0..unnamedCalledArgs.Length-3] @
@@ -807,6 +809,8 @@ type CalledMeth<'T>
     member x.UsesParamArrayConversion = x.ArgSets |> List.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
 
     member x.IsIndexParamArraySetter = isIndexerSetter && x.UsesParamArrayConversion
+
+    member x.IsIndexerSetter = isIndexerSetter
 
     member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
 
@@ -2242,9 +2246,13 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             | Some r -> r :: convertedArgs
             | None -> convertedArgs
 
-        // Fix bug 1281: If we resolve to an instance method on a struct and we haven't yet taken 
-        // the address of the object then go do that 
-        if minfo.IsStruct && minfo.IsInstance then 
+        // Fix bug 1281 / issue #8098: If the receiver needs its address taken for a
+        // constrained call, go do that and re-resolve via TraitCall with the byref receiver.
+        let needsAddrTaken =
+            minfo.IsInstance &&
+            (minfo.IsStruct || (ComputeConstrainedCallInfo g amap m staticTyOpt argExprs minfo).IsSome)
+
+        if needsAddrTaken then 
             match argExprs with
             | h :: t when not (isByrefTy g (tyOfExpr g h)) ->
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 

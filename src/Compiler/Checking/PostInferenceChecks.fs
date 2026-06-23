@@ -2036,8 +2036,19 @@ and CheckAttribs cenv env (attribs: Attribs) =
         |> Seq.filter (fun (_, count) -> count > 1)
         |> Seq.map fst
         |> Seq.toList
-        // Filter for allowMultiple = false
-        |> List.filter (fun (tcref, _, m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some true)
+        // Filter for allowMultiple = false, walking the inheritance chain to find AttributeUsage
+        |> List.filter (fun (tcref, _, m) ->
+            let rec allowsMultiple (tcref: TyconRef) =
+                match TryFindAttributeUsageAttribute cenv.g m tcref with
+                | Some res -> res
+                | None ->
+                    generalizedTyconRef cenv.g tcref
+                    |> GetSuperTypeOfType cenv.g cenv.amap m
+                    |> Option.bind (tryTcrefOfAppTy cenv.g >> ValueOption.toOption)
+                    |> Option.map allowsMultiple
+                    |> Option.defaultValue false
+
+            not (allowsMultiple tcref))
 
     if cenv.reportErrors then
        for tcref, _, m in duplicates do
@@ -2078,10 +2089,12 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
 
     let env = { env with external = env.external || ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute v }
 
-    // Check that active patterns don't have free type variables in their result
+    // Check active pattern shape/type constraints
     match TryGetActivePatternInfo vref with
-    | Some _apinfo when _apinfo.ActiveTags.Length > 1 ->
-        if doesActivePatternHaveFreeTypars g vref then
+    | Some apinfo ->
+        let hasFreeTypars = doesActivePatternHaveFreeTypars g vref
+
+        if apinfo.ActiveTags.Length > 1 && hasFreeTypars then
            errorR(Error(FSComp.SR.activePatternChoiceHasFreeTypars(v.LogicalName), v.Range))
     | _ -> ()
 

@@ -83,7 +83,7 @@ Finding the logs in the online CI results can be tricky, a small video can be fo
 
 ## Prerequisites
 
-The prerequisites are the same as for building the `FSharp.sln`, plus:
+The prerequisites are the same as for building the `FSharp.slnx`, plus:
 
 * Run `git clean -xdf -e .vs` before running tests when:
   * Making changes to the lexer or parser
@@ -149,9 +149,9 @@ fsi tests\scripts\update-baselines.fsx -n
 
 This section contains general tips, for solving errors see [next section](#solving-common-errors).
 
-### Close any open VisualFSharp.sln
+### Close any open VisualFSharp.slnx
 
-If you have the `VisualFSharp.sln` open, or if you recently debugged it through `VisualFSharpFull` as start-up project, certain tests may fail because files will be in use. It's best to close Visual Studio and any debugging sessions during a test run. It is fine to have VS open on a different solution, or to have it open from a different F# repo folder.
+If you have the `VisualFSharp.slnx` open, or if you recently debugged it through `VisualFSharpFull` as start-up project, certain tests may fail because files will be in use. It's best to close Visual Studio and any debugging sessions during a test run. It is fine to have VS open on a different solution, or to have it open from a different F# repo folder.
 
 ### Finding the logs on CI
 

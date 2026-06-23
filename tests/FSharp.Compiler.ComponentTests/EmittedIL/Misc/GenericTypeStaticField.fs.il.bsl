@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -49,8 +39,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly class assembly/Foo`1<!a> theInstance
     .field static assembly int32 init@2
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -61,8 +50,7 @@
       IL_0008:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  8
@@ -74,25 +62,23 @@
       IL_0012:  ret
     } 
 
-    .method public specialname static class assembly/Foo`1<!a> 
-            get_Instance() cil managed
+    .method public specialname static class assembly/Foo`1<!a> get_Instance() cil managed
     {
       
       .maxstack  8
-      IL_0000:  nop
-      IL_0001:  volatile.
-      IL_0003:  ldsfld     int32 class assembly/Foo`1<!a>::init@2
-      IL_0008:  ldc.i4.1
-      IL_0009:  bge.s      IL_0014
+      IL_0000:  volatile.
+      IL_0002:  ldsfld     int32 class assembly/Foo`1<!a>::init@2
+      IL_0007:  ldc.i4.1
+      IL_0008:  bge.s      IL_0013
 
-      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000f:  nop
       IL_0010:  nop
-      IL_0011:  nop
-      IL_0012:  br.s       IL_0015
+      IL_0011:  br.s       IL_0014
 
-      IL_0014:  nop
-      IL_0015:  ldsfld     class assembly/Foo`1<!0> class assembly/Foo`1<!a>::theInstance
-      IL_001a:  ret
+      IL_0013:  nop
+      IL_0014:  ldsfld     class assembly/Foo`1<!0> class assembly/Foo`1<!a>::theInstance
+      IL_0019:  ret
     } 
 
     .property class assembly/Foo`1<!a>
@@ -108,8 +94,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly class assembly/Bar`2<!a,!b> theInstance
     .field static assembly int32 'init@6-1'
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -120,8 +105,7 @@
       IL_0008:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  8
@@ -133,25 +117,23 @@
       IL_0012:  ret
     } 
 
-    .method public specialname static class assembly/Bar`2<!a,!b> 
-            get_Instance() cil managed
+    .method public specialname static class assembly/Bar`2<!a,!b> get_Instance() cil managed
     {
       
       .maxstack  8
-      IL_0000:  nop
-      IL_0001:  volatile.
-      IL_0003:  ldsfld     int32 class assembly/Bar`2<!a,!b>::'init@6-1'
-      IL_0008:  ldc.i4.1
-      IL_0009:  bge.s      IL_0014
+      IL_0000:  volatile.
+      IL_0002:  ldsfld     int32 class assembly/Bar`2<!a,!b>::'init@6-1'
+      IL_0007:  ldc.i4.1
+      IL_0008:  bge.s      IL_0013
 
-      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000f:  nop
       IL_0010:  nop
-      IL_0011:  nop
-      IL_0012:  br.s       IL_0015
+      IL_0011:  br.s       IL_0014
 
-      IL_0014:  nop
-      IL_0015:  ldsfld     class assembly/Bar`2<!0,!1> class assembly/Bar`2<!a,!b>::theInstance
-      IL_001a:  ret
+      IL_0013:  nop
+      IL_0014:  ldsfld     class assembly/Bar`2<!0,!1> class assembly/Bar`2<!a,!b>::theInstance
+      IL_0019:  ret
     } 
 
     .property class assembly/Bar`2<!a,!b>
@@ -175,7 +157,6 @@
   } 
 
 } 
-
 
 
 

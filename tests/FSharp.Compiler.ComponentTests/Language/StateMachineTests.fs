@@ -6,38 +6,6 @@ open Xunit
 open FSharp.Test.Assert
 open FSharp.Test.Compiler
 
-
-// Inlined helper containing a "if __useResumableCode ..." construct failed to expand correctly,
-// executing the dynmamic branch at runtime even when the state machine was compiled statically.
-// see https://github.com/dotnet/fsharp/issues/19296
-module FailingInlinedHelper =
-    open FSharp.Core.CompilerServices
-    open FSharp.Core.CompilerServices.StateMachineHelpers
-    open System.Runtime.CompilerServices
-
-    let inline MoveOnce(x: byref<'T> when 'T :> IAsyncStateMachine and 'T :> IResumableStateMachine<'Data>) =
-        x.MoveNext()
-        x.Data
-
-    let inline helper x =
-        ResumableCode<int, int>(fun sm ->
-            if __useResumableCode then
-                sm.Data <- x
-                true
-            else
-                failwith "unexpected dynamic branch at runtime")
-
-    #nowarn 3513 // Resumable code invocation.
-    let inline repro x =
-        if __useResumableCode then
-            __stateMachine<int, int>
-                (MoveNextMethodImpl<_>(fun sm -> (helper x).Invoke(&sm) |> ignore))
-                (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
-                (AfterCode<_, _>(fun sm -> MoveOnce(&sm)))
-        else
-            failwith "dynamic state machine"
-    #warnon 3513
-
 module StateMachineTests =
 
     let verify3511AndRun code = 
@@ -53,10 +21,44 @@ module StateMachineTests =
         |> withOptions ["--nowarn:3511"]
         |> compileExeAndRun
 
+    // Inlined helper containing a "if __useResumableCode ..." construct failed to expand correctly,
+    // executing the dynmamic branch at runtime even when the state machine was compiled statically.
+    // see https://github.com/dotnet/fsharp/issues/19296
     [<Fact>]
     let ``Nested __useResumableCode is expanded correctly`` () =
-        FailingInlinedHelper.repro 42
-        |> shouldEqual 42
+        Fsx """
+open FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices.StateMachineHelpers
+open System.Runtime.CompilerServices
+
+module FailingInlinedHelper =
+    let inline MoveOnce(x: byref<'T> when 'T :> IAsyncStateMachine and 'T :> IResumableStateMachine<'Data>) =
+        x.MoveNext()
+        x.Data
+
+    let inline helper x =
+        ResumableCode<int, int>(fun sm ->
+            if __useResumableCode then
+                sm.Data <- x
+                true
+            else
+                failwith "unexpected dynamic branch at runtime")
+
+    #nowarn 3513
+    let inline repro x =
+        if __useResumableCode then
+            __stateMachine<int, int>
+                (MoveNextMethodImpl<_>(fun sm -> (helper x).Invoke(&sm) |> ignore))
+                (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+                (AfterCode<_, _>(fun sm -> MoveOnce(&sm)))
+        else
+            failwith "dynamic state machine"
+    #warnon 3513
+
+if FailingInlinedHelper.repro 42 <> 42 then failwith "unexpected result"
+"""
+        |> compileExeAndRun
+        |> shouldSucceed
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/13067
     let ``Local function with a flexible type``() = 
@@ -243,6 +245,7 @@ let test = task {
         ()
 }
     """
+        |> withOptions [ "--nowarn:3886" ]
         |> compile
         |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
 
@@ -425,5 +428,75 @@ if (four [ ("", 10) ]).Result <> 6 then
         |> compileExeAndRun
         |> shouldSucceed
 
+    // https://github.com/dotnet/fsharp/issues/16154
+    // VerificationException still occurs on .NET Framework due to stricter IL verification;
+    // fixed on .NET Core where the upcast-to-obj in the task state machine is handled correctly.
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Issue 16154 - task CE with IQueryable filter functions should compile and run without VerificationException`` () =
+        FSharp """
+open System.Linq
 
+type Shape = {x: int; y: int}
 
+let returnFilter condition =
+    task {
+        if condition = "a" then
+            let filter1 : IQueryable<Shape> -> IQueryable<Shape> =
+                fun data -> data.Where(fun a -> a.x = 1)
+            return Some filter1
+        elif condition = "b" then
+            let filter2 : IQueryable<Shape> -> IQueryable<Shape> =
+                fun data -> data.Where(fun a -> a.y <> 2)
+            return Some filter2
+        else
+            return None
+    }
+
+let data = [{x = 1; y = 1}; {x = 2; y = 2}].AsQueryable()
+let result =
+    task {
+        let! f1 = returnFilter "a"
+        let! f2 = returnFilter "b"
+        match f1, f2 with
+        | Some filter1, Some filter2 ->
+            return data |> filter2 |> filter1 |> Seq.toList
+        | _ -> return []
+    } |> (fun t -> t.GetAwaiter().GetResult())
+
+if result.Length <> 1 then failwith $"unexpected result length {result.Length}"
+if result[0].x <> 1 then failwith $"unexpected result {result[0]}"
+        """
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Debug-mode: mixing resumable and standard computation expressions compiles``() =
+        FSharp """
+module ReproMixedBuilders
+open System.Threading.Tasks
+
+type TaskMaybeBuilder() =
+
+    member inline _.Zero() = Task.FromResult None
+
+    member inline _.Delay([<InlineIfLambda>] f) = task { return! f () }
+
+    member inline _.Bind(value, [<InlineIfLambda>] f) =
+        task {
+            match value with
+            | None -> return None
+            | Some result -> return! f result
+        }
+
+let taskMaybe = TaskMaybeBuilder()
+
+let trigger() =
+    taskMaybe {
+        do! None
+    }
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> compile
+        |> shouldSucceed

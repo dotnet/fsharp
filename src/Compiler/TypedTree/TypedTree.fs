@@ -2631,6 +2631,10 @@ type TraitConstraintInfo =
         with get() = (let (TTrait(solution = sln)) = x in sln.Value)
         and set v = (let (TTrait(solution = sln)) = x in sln.Value <- v)
 
+    member x.CloneWithFreshSolution() =
+        let (TTrait(a, b, c, d, e, f, sln)) = x
+        TTrait(a, b, c, d, e, f, ref sln.Value)
+
     member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
 
     member x.WithSupportTypes(tys) = (let (TTrait(_, b, c, d, e, f, g)) = x in TTrait(tys, b, c, d, e, f, g))
@@ -5270,7 +5274,7 @@ type Expr =
         | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
-        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
+        | DebugPoint (DebugPointAtLeafExpr.Yes(_, m), e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
 
     /// Get the mark/range/position information from an expression
     member expr.Range =
@@ -6081,6 +6085,10 @@ type FreeVars =
       /// Indicates if the expression contains a call to rethrow that is not bound under a (try-)with branch. 
       /// Rethrow may only occur in such locations. 
       UsesUnboundRethrow: bool 
+
+      /// Indicates if the expression contains a direct IL field load/store — a cheap over-approximate
+      /// gate the optimizer refines to protected (family) fields (issue #19963). Never read by escape checks.
+      ContainsILFieldAccess: bool 
 
       /// The summary of locally defined tycon representations used in the expression. These may be made private by a signature 
       /// or marked 'internal' or 'private' and we have to check various conditions associated with that. 

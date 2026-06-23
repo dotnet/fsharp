@@ -126,6 +126,7 @@ type Exception with
         | InterfaceNotRevealed(_, _, m)
         | WrappedError(_, m)
         | PatternMatchCompilation.MatchIncomplete(_, _, m)
+        | PatternMatchCompilation.MatchIncompleteForLoopHint(PatternMatchCompilation.MatchIncomplete(_, _, m))
         | PatternMatchCompilation.EnumMatchIncomplete(_, _, m)
         | PatternMatchCompilation.RuleNeverMatched m
         | ValNotMutable(_, _, m)
@@ -238,6 +239,7 @@ type Exception with
         | NameClash _ -> 23
         // 24 cannot be reused
         | PatternMatchCompilation.MatchIncomplete _ -> 25
+        | PatternMatchCompilation.MatchIncompleteForLoopHint _ -> 25
         | PatternMatchCompilation.RuleNeverMatched _ -> 26
 
         | ValNotMutable _ -> 27
@@ -449,7 +451,9 @@ module OldStyleMessages =
     let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
     let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
     let ErrorFromAddingTypeEquation1E () = Message("ErrorFromAddingTypeEquation1", "%s%s%s")
+    let ErrorFromAddingTypeEquation1TupleE () = Message("ErrorFromAddingTypeEquation1Tuple", "%s%s%s")
     let ErrorFromAddingTypeEquation2E () = Message("ErrorFromAddingTypeEquation2", "%s%s%s")
+    let ErrorFromAddingTypeEquation2TupleE () = Message("ErrorFromAddingTypeEquation2Tuple", "%s%s%s")
     let ErrorFromAddingTypeEquationTuplesE () = Message("ErrorFromAddingTypeEquationTuples", "%d%s%d%s%s")
     let ErrorFromApplyingDefault1E () = Message("ErrorFromApplyingDefault1", "%s")
     let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
@@ -493,6 +497,8 @@ module OldStyleMessages =
     let NONTERM_classDefnMemberE () = Message("NONTERM.classDefnMember", "")
     let NONTERM_defnBindingsE () = Message("NONTERM.defnBindings", "")
     let NONTERM_classMemberSpfnE () = Message("NONTERM.classMemberSpfn", "")
+    let NONTERM_classMemberSpfnGetSetElementsE () = Message("NONTERM.classMemberSpfnGetSetElements", "")
+    let NONTERM_autoPropsDefnDeclE () = Message("NONTERM.autoPropsDefnDecl", "")
     let NONTERM_valSpfnE () = Message("NONTERM.valSpfn", "")
     let NONTERM_tyconSpfnE () = Message("NONTERM.tyconSpfn", "")
     let NONTERM_anonLambdaExprE () = Message("NONTERM.anonLambdaExpr", "")
@@ -564,6 +570,7 @@ module OldStyleMessages =
     let MatchIncomplete2E () = Message("MatchIncomplete2", "%s")
     let MatchIncomplete3E () = Message("MatchIncomplete3", "%s")
     let MatchIncomplete4E () = Message("MatchIncomplete4", "")
+    let MatchIncompleteForLoopE () = Message("MatchIncompleteForLoop", "")
     let RuleNeverMatchedE () = Message("RuleNeverMatched", "")
     let EnumMatchIncomplete1E () = Message("EnumMatchIncomplete1", "")
     let ValNotMutableE () = Message("ValNotMutable", "%s")
@@ -656,6 +663,8 @@ let OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m (os: Strin
 type Exception with
 
     member exn.Output(os: StringBuilder, suggestNames) =
+
+        let typeEquationMessage g ty2 normalE tupleE = if isAnyTupleTy g ty2 then tupleE else normalE
 
         match exn with
         // TODO: this is now unused...?
@@ -764,17 +773,20 @@ type Exception with
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, ConstraintSolverTypesNotInEqualityRelation(_, ty1b, ty2b, m, _, contextInfo), _) when
             typeEquiv g ty1 ty1b && typeEquiv g ty2 ty2b
             ->
+            let typeEquation1E =
+                typeEquationMessage g ty2 ErrorFromAddingTypeEquation1E ErrorFromAddingTypeEquation1TupleE
+
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
             OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m os (fun contextInfo ->
                 match contextInfo with
                 | ContextInfo.TupleInRecordFields ->
-                    os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs)
+                    os.AppendString(typeEquation1E().Format ty2 ty1 tpcs)
                     os.AppendString(Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord ())
                 | _ when ty2 = "bool" && ty1.EndsWithOrdinal(" ref") ->
-                    os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs)
+                    os.AppendString(typeEquation1E().Format ty2 ty1 tpcs)
                     os.AppendString(Environment.NewLine + FSComp.SR.derefInsteadOfNot ())
-                | _ -> os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs))
+                | _ -> os.AppendString(typeEquation1E().Format ty2 ty1 tpcs))
 
         | ErrorFromAddingTypeEquation(_, _, _, _, (ConstraintSolverTypesNotInEqualityRelation(_, _, _, _, _, contextInfo) as e), _) when
             (match contextInfo with
@@ -812,12 +824,15 @@ type Exception with
                     os.AppendString(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
+            let typeEquation2E =
+                typeEquationMessage g ty2 ErrorFromAddingTypeEquation2E ErrorFromAddingTypeEquation2TupleE
+
             let e =
                 if not (typeEquiv g ty1 ty2) then
                     let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
                     if ty1 <> ty2 + tpcs then
-                        os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
+                        os.AppendString(typeEquation2E().Format ty1 ty2 tpcs)
 
                     e
 
@@ -1009,11 +1024,13 @@ type Exception with
                 | Some name -> os.AppendString(FSComp.SR.notAFunctionButMaybeIndexerWithName2 name)
                 | _ -> os.AppendString(FSComp.SR.notAFunctionButMaybeIndexer2 ())
 
-        | NotAFunction(_, _, _, marg) ->
+        | NotAFunction(denv, ty, _, marg) ->
             if marg.StartColumn = 0 then
                 os.AppendString(FSComp.SR.notAFunctionButMaybeDeclaration ())
-            else
+            elif isTyparTy denv.g ty then
                 os.AppendString(FSComp.SR.notAFunction ())
+            else
+                os.AppendString(FSComp.SR.notAFunctionWithType (NicePrint.prettyStringOfTy denv ty))
 
         | TyconBadArgs(_, tcref, d, _) ->
             let exp = tcref.TyparsNoRange.Length
@@ -1455,6 +1472,12 @@ type Exception with
                         | [ Parser.NONTERM_classMemberSpfn ] ->
                             os.AppendString(NONTERM_classMemberSpfnE().Format)
                             true
+                        | [ Parser.NONTERM_classMemberSpfnGetSetElements ] ->
+                            os.AppendString(NONTERM_classMemberSpfnGetSetElementsE().Format)
+                            true
+                        | [ Parser.NONTERM_autoPropsDefnDecl ] ->
+                            os.AppendString(NONTERM_autoPropsDefnDeclE().Format)
+                            true
                         | [ Parser.NONTERM_valSpfn ] ->
                             os.AppendString(NONTERM_valSpfnE().Format)
                             true
@@ -1789,6 +1812,19 @@ type Exception with
             if isComp then
                 os.AppendString(MatchIncomplete4E().Format)
 
+        | PatternMatchCompilation.MatchIncompleteForLoopHint(PatternMatchCompilation.MatchIncomplete(isComp, cexOpt, _)) ->
+            os.AppendString(MatchIncomplete1E().Format)
+
+            match cexOpt with
+            | None -> ()
+            | Some(cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
+            | Some(cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
+
+            os.AppendString(MatchIncompleteForLoopE().Format)
+
+            if isComp then
+                os.AppendString(MatchIncomplete4E().Format)
+
         | PatternMatchCompilation.EnumMatchIncomplete(isComp, cexOpt, _) ->
             os.AppendString(EnumMatchIncomplete1E().Format)
 
@@ -2064,7 +2100,7 @@ type FormattedDiagnostic =
     | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
 let FormatDiagnosticLocation (tcConfig: TcConfig) (m: Range) : FormattedDiagnosticLocation =
-    if equals m rangeStartup || equals m rangeCmdArgs then
+    if Range.equals m rangeStartup || Range.equals m rangeCmdArgs then
         {
             Range = m
             TextRepresentation = ""

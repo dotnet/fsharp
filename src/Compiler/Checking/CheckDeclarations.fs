@@ -2735,6 +2735,23 @@ module EstablishTypeDefinitionCores =
                | _ -> () ]
             |> set
 
+    /// Pre-process open declarations from a list of mutually recursive shapes so that
+    /// opened namespaces are available during Phase1A attribute checking.
+    /// In recursive scopes, opens are normally processed in Phase1AB (after Phase1A builds
+    /// module/type entities), but attributes on modules need the opened namespaces.
+    /// Errors are suppressed because some opens may refer to modules being defined in the
+    /// current recursive scope, which don't exist yet during Phase1A. Those opens will be
+    /// properly processed (with full error reporting) during Phase1AB.
+    let private preProcessOpensForPhase1A (cenv: cenv) (env: TcEnv) (shapes: MutRecShapes<_, _, _>) =
+        suppressErrorReporting (fun () ->
+            use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+            (env, shapes) ||> List.fold (fun env shape ->
+                match shape with
+                | MutRecShape.Open(MutRecDataForOpen(SynOpenDeclTarget.ModuleOrNamespace _ as target, openm, moduleRange, _)) ->
+                    let env, _ = TcOpenDecl cenv openm moduleRange env target
+                    env
+                | _ -> env))
+
     let TcTyconDefnCore_Phase1A_BuildInitialModule (cenv: cenv) envInitial parent typeNames compInfo decls =
         let g = cenv.g
         let (SynComponentInfo(Attributes attribs, _, _, longPath, xml, _, vis, im)) = compInfo 
@@ -2750,7 +2767,11 @@ module EstablishTypeDefinitionCores =
         CheckForDuplicateConcreteType envInitial id.idText im
         CheckNamespaceModuleOrTypeName g id
 
-        let envForDecls, moduleTyAcc = MakeInnerEnv true envInitial id moduleKind    
+        let envForDecls, moduleTyAcc = MakeInnerEnv true envInitial id moduleKind
+
+        // Pre-process opens from children so nested modules can see opened namespaces during attribute checking
+        let envForDecls = preProcessOpensForPhase1A cenv envForDecls decls
+
         let moduleTy = Construct.NewEmptyModuleOrNamespaceType moduleKind
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
@@ -4039,12 +4060,18 @@ module EstablishTypeDefinitionCores =
 
 
     let TcMutRecDefns_Phase1 mkLetInfo (cenv: cenv) envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
+        // Pre-process top-level opens so they are available during attribute checking in Phase1A.
+        // In recursive scopes (namespace rec / module rec), opens are normally processed in Phase1AB
+        // after module entities are built, but module attributes need access to opened namespaces.
+        // See https://github.com/dotnet/fsharp/issues/7931
+        let envWithOpens = preProcessOpensForPhase1A cenv envInitial mutRecDefns
+
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these. Augmentations are skipped in this phase.
         let withEntities = 
             mutRecDefns 
             |> MutRecShapes.mapWithParent 
-                 (parent, typeNames, envInitial)
+                 (parent, typeNames, envWithOpens)
                  // Build the initial entity for each module definition
                  (fun (innerParent, typeNames, envForDecls) compInfo decls -> 
                      TcTyconDefnCore_Phase1A_BuildInitialModule cenv envForDecls innerParent typeNames compInfo decls) 
@@ -4418,7 +4445,7 @@ module TcDeclarations =
                 // Only the keep the field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
                 let mLetPortion = synExpr.Range
-                let fldId = ident (CompilerGeneratedName id.idText, mLetPortion)
+                let fldId = ident (CompilerGeneratedName id.idText, mLetPortion.MakeSynthetic())
                 let headPat = SynPat.LongIdent (SynLongIdent([fldId], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [], None, mLetPortion)
                 let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                 let isMutable = 
@@ -4446,7 +4473,7 @@ module TcDeclarations =
                 let mMemberPortion = id.idRange
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
-                let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
+                let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion.MakeSynthetic())
                 let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
                 let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                 let memberFlags = { memberFlags with GetterOrSetterIsCompilerGenerated = true }
@@ -4475,7 +4502,7 @@ module TcDeclarations =
                     | SynMemberKind.PropertySet 
                     | SynMemberKind.PropertyGetSet -> 
                         let setter = 
-                            let vId = ident("v", mMemberPortion)
+                            let vId = ident("v", mMemberPortion.MakeSynthetic())
                             let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                             let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                             let binding = mkSynBinding (xmlDoc, headPat) (setterAccess, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
@@ -5627,7 +5654,8 @@ let emptyTcEnv g =
       eCallerMemberName = None 
       eLambdaArgInfos = []
       eIsControlFlow = false
-      eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true) }
+      eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)
+      eUseBoundValStamps = Set.empty }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 
@@ -5900,7 +5928,7 @@ let CheckOneImplFile
 
         // Warn on version attributes.
         topAttrs.assemblyAttrs |> List.iter (function
-           | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String version, range, _), _) ], _, _, _, _) ->
+           | Attrib(tref, _, [ AttribExpr(_, Expr.Const (Const.String version, range, _)) ], _, _, _, _) ->
                 let attrName = tref.CompiledRepresentationForNamedType.FullName
                 let isValid() =
                     try parseILVersion version |> ignore; true

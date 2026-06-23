@@ -127,7 +127,7 @@ module SignatureConformance =
 
     // Regression for Dev11:137942 - structs used to not give errors when member names conflicted with interface members
     // SOURCE="E_StructWithNameConflict02.fsi E_StructWithNameConflict02.fs" SCFLAGS="--test:ErrorRanges --flaterrors"
-    // <Expects status="error" span="(18,13-18,26)" id="FS0039">The type 'Foo<_>' does not define the field, constructor or member 'GetEnumerator'</Expects>
+    // <Expects status="error" span="(18,13-18,26)" id="FS0039">The type 'Foo<_>' does not define a field, constructor, or member named 'GetEnumerator'</Expects>
     // <Expects status="notin" span="(14,21-14,34)" id="FS0034">...</Expects>
     [<Fact>]
     let ``E_StructWithNameConflict02 - struct undefined member from signature`` () =

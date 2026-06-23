@@ -16,6 +16,7 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -40,6 +41,124 @@ exception FieldNotContained of kind:TypeMismatchSource * DisplayEnv * InfoReader
 exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
+
+type private V = WellKnownValAttributes
+type private E = WellKnownEntityAttributes
+
+module private AttributeConformance =
+
+    // Runtime-only attributes (DllImport, ReflectedDefinition, SkipLocalsInit, ...) deliberately not listed.
+    let private enforcedVals : V list = [
+        V.NoDynamicInvocationAttribute_True ||| V.NoDynamicInvocationAttribute_False
+        V.RequiresExplicitTypeArgumentsAttribute
+        V.ConditionalAttribute
+        V.NoEagerConstraintApplicationAttribute
+        V.GeneralizableValueAttribute
+        V.WarnOnWithoutNullArgumentAttribute
+        V.CLIEventAttribute
+        V.ExtensionAttribute
+        V.ParamArrayAttribute
+        V.LiteralAttribute
+    ]
+
+    let private enforcedEntities : E list = [
+        E.RequireQualifiedAccessAttribute
+        // AutoOpen on .fs alone is a no-op for F# consumers (.fsi wins).
+        E.NoComparisonAttribute
+        E.NoEqualityAttribute
+        // StructuralEquality / StructuralComparison are documentary on .fsi; F# default already generates them.
+        E.CustomEqualityAttribute
+        E.CustomComparisonAttribute
+        E.ReferenceEqualityAttribute
+        E.AbstractClassAttribute
+        E.SealedAttribute_True ||| E.SealedAttribute_False
+        E.CLIMutableAttribute
+        E.AllowNullLiteralAttribute_True ||| E.AllowNullLiteralAttribute_False
+        E.DefaultAugmentationAttribute_True ||| E.DefaultAugmentationAttribute_False
+        E.ObsoleteAttribute
+        E.CompilerMessageAttribute
+        E.ExperimentalAttribute
+        E.UnverifiableAttribute
+        E.EditorBrowsableAttribute
+        E.AttributeUsageAttribute
+        E.IsByRefLikeAttribute
+        E.IsReadOnlyAttribute
+        E.ExtensionAttribute
+        E.MeasureAttribute
+        E.StructAttribute
+        E.ClassAttribute
+        E.InterfaceAttribute
+    ]
+
+    let private enforcedValsMask     : V = List.reduce Flags.union enforcedVals
+    let private enforcedEntitiesMask : E = List.reduce Flags.union enforcedEntities
+
+    let inline private displayName< ^T when ^T : enum<uint64> > (flag: ^T) : string =
+        let v = LanguagePrimitives.EnumToValue flag
+        let lsb : ^T = LanguagePrimitives.EnumOfValue (v &&& (0uL - v))
+        let s = string lsb
+        let s = if s.EndsWith "_True"  then s.Substring(0, s.Length - 5)
+                elif s.EndsWith "_False" then s.Substring(0, s.Length - 6)
+                else s
+        if s.EndsWith "Attribute" then s.Substring(0, s.Length - 9) else s
+
+    // Squiggle the impl attribute, not the value/type identifier.
+    let inline private rangeOfMissing
+        (classify: Attrib -> 'F)
+        (attribs: Attrib list)
+        (bits: 'F)
+        (fallback: range)
+        : range =
+        match attribs |> List.tryFind (fun a -> classify a |> Flags.intersects bits) with
+        | Some a -> a.Range
+        | None -> fallback
+
+    let inline private checkEnforced
+        (emit: exn -> unit)
+        (enforcedFlagsOn: 'Subject -> 'F)
+        (policy: 'F list)
+        (attribsOf: 'Subject -> Attrib list)
+        (classify: Attrib -> 'F)
+        (displayNameOf: 'Subject -> string)
+        (impl: 'Subject) (sig': 'Subject) (fallback: range) =
+        let presentOnImplAndRequiredFromSig = enforcedFlagsOn impl
+        if not (Flags.isEmpty presentOnImplAndRequiredFromSig) then
+            let actuallyPresentInSig = enforcedFlagsOn sig'
+            if not (presentOnImplAndRequiredFromSig |> Flags.isSubsetOf actuallyPresentInSig) then
+                let missing = presentOnImplAndRequiredFromSig |> Flags.except actuallyPresentInSig
+                let implAttribs = attribsOf impl
+                for flag in policy do
+                    if flag |> Flags.intersects missing then
+                        let m = rangeOfMissing classify implAttribs flag fallback
+                        emit(Error (FSComp.SR.implAttributeMissingFromSignature(displayName flag, displayNameOf impl), m))
+
+    let private emitter (g: TcGlobals) : exn -> unit =
+        if g.langVersion.SupportsFeature LanguageFeature.ErrorOnMissingSignatureAttribute then
+            errorR
+        else
+            warning
+
+    let checkVal (g: TcGlobals) (implVal: Val) (sigVal: Val) (fallback: range) =
+        let enforcedFlagsOnVal (v: Val) =
+            ValHasWellKnownAttribute g enforcedValsMask v |> ignore // forceload
+            v.ValAttribs.Flags |> Flags.intersect enforcedValsMask
+        checkEnforced (emitter g) enforcedFlagsOnVal enforcedVals
+            (fun (v: Val)    -> v.Attribs)
+            (classifyValAttrib g)
+            (fun (v: Val)    -> v.DisplayName)
+            implVal sigVal fallback
+
+    let checkEntity (g: TcGlobals) (implEntity: Entity) (sigEntity: Entity) (fallback: range) =
+        // Opaque type in .fsi can't carry structural-equality / NoEquality. Modules pass: IsHiddenReprTycon=true but accept RQA.
+        if sigEntity.IsModuleOrNamespace || not sigEntity.IsHiddenReprTycon then
+            let enforcedFlagsOnEntity (e: Entity) =
+                EntityHasWellKnownAttribute g enforcedEntitiesMask e |> ignore // forceload
+                e.EntityAttribs.Flags |> Flags.intersect enforcedEntitiesMask
+            checkEnforced (emitter g) enforcedFlagsOnEntity enforcedEntities
+                (fun (e: Entity) -> e.Attribs)
+                (classifyEntityAttrib g)
+                (fun (e: Entity) -> e.DisplayName)
+                implEntity sigEntity fallback
 
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
@@ -126,6 +245,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             fixup (sigAttribs @ keptImplAttribs)
             true
 
+        let checkEnforcedEntityAttribs implEntity sigEntity m =
+            AttributeConformance.checkEntity g implEntity sigEntity m
+
+        let checkEnforcedValAttribs implVal sigVal m =
+            AttributeConformance.checkVal g implVal sigVal m
+
         let rec checkTypars m (aenv: TypeEquivEnv) (implTypars: Typars) (sigTypars: Typars) = 
             if implTypars.Length <> sigTypars.Length then 
                 errorR (Error(FSComp.SR.typrelSigImplNotCompatibleParamCountsDiffer(), m)) 
@@ -185,6 +310,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // Propagate defn location information from implementation to signature . 
             sigTycon.SetOtherRange (implTycon.Range, true)
             implTycon.SetOtherRange (sigTycon.Range, false)
+
+            checkEnforcedEntityAttribs implTycon sigTycon m
             
             if implTycon.LogicalName <> sigTycon.LogicalName then 
                 errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleNamesDiffer(implTycon.TypeOrMeasureKind.ToString(), sigTycon.LogicalName, implTycon.LogicalName), m))
@@ -295,11 +422,32 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityGenericParametersDiffer(x, y, z, string mtps, string ntps))
                 elif implValInfo.KindsOfTypars <> sigValInfo.KindsOfTypars then
                   err(FSComp.SR.ValueNotContainedMutabilityGenericParametersAreDifferentKinds)
-                elif not (nSigArgInfos <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.splitAt nSigArgInfos implArgInfos))) then 
+                else
+                // Check arg group arities. An empty impl group [] is compatible with
+                // a singleton sig group [_] when the member takes unit (e.g. member M(()) vs member M: unit -> unit)
+                let argGroupsCompatible =
+                    nSigArgInfos <= implArgInfos.Length &&
+                    List.forall2
+                        (fun (sigGroup: ArgReprInfo list) (implGroup: ArgReprInfo list) ->
+                            List.length sigGroup <= List.length implGroup
+                            || (implGroup.IsEmpty && sigGroup.Length = 1))
+                        sigArgInfos
+                        (fst (List.splitAt nSigArgInfos implArgInfos))
+
+                if not argGroupsCompatible then
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string nSigArgInfos, id.idText, id.idText))
                 else 
                   let implArgInfos = implArgInfos |> List.truncate nSigArgInfos
-                  let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.take l2.Length)
+                  // When impl has empty group [] (unit param like member M(())), synthesize
+                  // ArgReprInfo from the sig so SetValReprInfo reflects the signature contract.
+                  let implArgInfos =
+                      (implArgInfos, sigArgInfos)
+                      ||> List.map2 (fun implGroup sigGroup ->
+                          if implGroup.IsEmpty && sigGroup.Length = 1 then
+                              sigGroup |> List.map (fun sigArg ->
+                                  ({ Attribs = sigArg.Attribs; Name = sigArg.Name; OtherRange = None }: ArgReprInfo))
+                          else
+                              implGroup |> List.take (min implGroup.Length sigGroup.Length))
                   // Propagate some information signature to implementation. 
 
                   // Check the attributes on each argument, and update the ValReprInfo for
@@ -307,7 +455,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   // This ensures that the compiled form of the value matches the signature rather than 
                   // the implementation. This also propagates argument names from signature to implementation
                   let res = 
-                      (implArgInfos, sigArgInfos) ||> List.forall2 (List.forall2 (fun implArgInfo sigArgInfo -> 
+                      (implArgInfos, sigArgInfos) ||> List.forall2 (fun (implGroup: ArgReprInfo list) (sigGroup: ArgReprInfo list) ->
+                          (implGroup, sigGroup) ||> List.forall2 (fun implArgInfo sigArgInfo -> 
                           checkAttribs aenv (implArgInfo.Attribs.AsList()) (sigArgInfo.Attribs.AsList()) (fun attribs -> 
                               match implArgInfo.Name, sigArgInfo.Name with 
                               | Some iname, Some sname when sname.idText <> iname.idText ->
@@ -346,6 +495,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let mk_err kind denv f = ValueNotContained(kind,denv, infoReader, implModRef, implVal, sigVal, f)
             let err denv f = errorR(mk_err RegularMismatch denv f); false
             let m = implVal.Range
+
+            checkEnforcedValAttribs implVal sigVal m
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
             elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
@@ -661,7 +812,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let fkey = fv.GetLinkagePartialKey()
                 (akey.MemberParentMangledName = fkey.MemberParentMangledName) &&
                 (akey.LogicalName = fkey.LogicalName) &&
-                (akey.TotalArgCount = fkey.TotalArgCount)    
+                (akey.TotalArgCount = fkey.TotalArgCount)
                                        
             (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached)
               ||> NameMap.suball2 
@@ -671,6 +822,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                         | [], _ | _, [] -> failwith "unreachable"
                         | [av], [fv] -> 
                             if valuesPartiallyMatch av fv then
+                                checkVal implModRef aenv infoReader av fv
+                            elif av.IsMember && fv.IsMember
+                                 && av.LogicalName <> ".ctor"
+                                 && typeAEquivAux EraseAll g aenv av.Type fv.Type then
                                 checkVal implModRef aenv infoReader av fv
                             else
                                 sigValHadNoMatchingImplementation fv None
@@ -683,9 +838,31 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                       | None -> None
                                       | Some av -> Some(fv, av))
                              
+                             // For unmatched sig vals, try relaxed matching for unit-parameter equivalence:
+                             // member M(()) has TotalArgCount 1, sig member M: unit -> unit has TotalArgCount 2,
+                             // but their types are both unit -> unit.
+                             let matchedAvs = matchingPairs |> List.map snd
+                             let matchedFvs = matchingPairs |> List.map fst
+                             let unmatchedFvs = fvs |> List.filter (fun fv -> not (List.exists (fun fv2 -> obj.ReferenceEquals(fv, fv2)) matchedFvs))
+                             let unmatchedAvs = avs |> List.filter (fun av -> not (List.exists (fun av2 -> obj.ReferenceEquals(av, av2)) matchedAvs))
+                             let relaxedPairs, _ =
+                                 (([], unmatchedAvs), unmatchedFvs)
+                                 ||> List.fold (fun (pairs, remainingAvs) fv ->
+                                     let fkey = fv.GetLinkagePartialKey()
+                                     match remainingAvs |> List.tryFind (fun av ->
+                                         let akey = av.GetLinkagePartialKey()
+                                         akey.MemberParentMangledName = fkey.MemberParentMangledName &&
+                                         akey.LogicalName = fkey.LogicalName &&
+                                         av.IsMember && fv.IsMember &&
+                                         av.LogicalName <> ".ctor" &&
+                                         typeAEquivAux EraseAll g aenv av.Type fv.Type) with
+                                     | None -> (pairs, remainingAvs)
+                                     | Some av -> ((fv, av) :: pairs, remainingAvs |> List.filter (fun a -> not (obj.ReferenceEquals(a, av)))))
+                             let allMatchingPairs = matchingPairs @ relaxedPairs
+
                              // Check the ones with matching linkage
-                             let allPairsOk = matchingPairs |> List.map (fun (fv, av) -> checkVal implModRef aenv infoReader av fv) |> List.forall id
-                             let someNotOk = matchingPairs.Length < fvs.Length
+                             let allPairsOk = allMatchingPairs |> List.map (fun (fv, av) -> checkVal implModRef aenv infoReader av fv) |> List.forall id
+                             let someNotOk = allMatchingPairs.Length < fvs.Length
                              // Report an error for those that don't. Try pairing up by enclosing-type/name
                              if someNotOk then 
                                  let noMatches, partialMatchingPairs = 
@@ -705,6 +882,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // Propagate defn location information from implementation to signature . 
             sigModRef.SetOtherRange (implModRef.Range, true)
             implModRef.Deref.SetOtherRange (sigModRef.Range, false)
+            checkEnforcedEntityAttribs implModRef.Deref sigModRef implModRef.Range
             checkModuleOrNamespaceContents implModRef.Range aenv infoReader implModRef sigModRef.ModuleOrNamespaceType &&
             checkAttribs aenv implModRef.Attribs sigModRef.Attribs implModRef.Deref.SetAttribs
 

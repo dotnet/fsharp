@@ -1791,6 +1791,8 @@ type TraitConstraintInfo =
     /// Get or set the solution of the member constraint during inference
     member Solution: TraitConstraintSln option with get, set
 
+    member CloneWithFreshSolution: unit -> TraitConstraintInfo
+
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
     /// the extension property MemberDisplayNameCore
     member WithMemberKind: SynMemberKind -> TraitConstraintInfo
@@ -4408,6 +4410,10 @@ type FreeVars =
         /// Indicates if the expression contains a call to rethrow that is not bound under a (try-)with branch.
         /// Rethrow may only occur in such locations.
         UsesUnboundRethrow: bool
+
+        /// Indicates if the expression contains a direct IL field load/store — a cheap over-approximate
+        /// gate the optimizer refines to protected (family) fields (issue #19963). Never read by escape checks.
+        ContainsILFieldAccess: bool
 
         /// The summary of locally defined tycon representations used in the expression. These may be made private by a signature
         /// or marked 'internal' or 'private' type we have to check various conditions associated with that.
