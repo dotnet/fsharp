@@ -910,6 +910,18 @@ module AddAugmentationDeclarations =
             else []
         else []
 
+    // Under --reflectionfree the structural ToString is generated here (rather than in IlxGen) so the 'string'
+    // operator calls in its body flow through the optimizer and get specialised. Like the Equals override, this
+    // runs late so tycon.HasMember gives correct results for a user-written ToString.
+    let AddReflectionFreeToStringBindings (cenv: cenv, env: TcEnv, tycon: Tycon) =
+        let g = cenv.g
+        if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithToString(g, tycon) && not (tycon.HasMember g "ToString" []) then
+            let tcref = mkLocalTyconRef tycon
+            let toStringVal = AugmentTypeDefinitions.MakeValsForToStringAugmentation(g, tcref)
+            PublishValueDefn cenv env ModuleOrMemberBinding toStringVal
+            AugmentTypeDefinitions.MakeBindingsForToStringAugmentation(g, tycon, toStringVal)
+        else []
+
     let ShouldAugmentUnion (g: TcGlobals) (tycon: Tycon) =
         g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible &&
         HasDefaultAugmentationAttribute g (mkLocalTyconRef tycon) &&
@@ -4728,8 +4740,9 @@ module TcDeclarations =
                     // We put the hash/compare bindings before the type definitions and the
                     // equality bindings after because tha is the order they've always been generated
                     // in, and there are code generation tests to check that.
-                    let binds = AddAugmentationDeclarations.AddGenericHashAndComparisonBindings cenv tycon 
+                    let binds = AddAugmentationDeclarations.AddGenericHashAndComparisonBindings cenv tycon
                     let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv envForDecls tycon
+                    let binds5 = AddAugmentationDeclarations.AddReflectionFreeToStringBindings(cenv, envForDecls, tycon)
                     let binds4 =
                         if tycon.IsUnionTycon && AddAugmentationDeclarations.ShouldAugmentUnion g tycon then
                             let unionVals =
@@ -4739,7 +4752,7 @@ module TcDeclarations =
                             AugmentTypeDefinitions.MakeBindingsForUnionAugmentation g tycon (List.map mkLocalValRef unionVals)
                         else
                             []
-                    binds@binds4, binds3)
+                    binds@binds4, binds3@binds5)
 
         // Check for cyclic structs and inheritance all over again, since we may have added some fields to the struct when generating the implicit construction syntax 
         EstablishTypeDefinitionCores.TcTyconDefnCore_CheckForCyclicStructsAndInheritance cenv tycons
