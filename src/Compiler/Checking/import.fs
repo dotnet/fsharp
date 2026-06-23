@@ -159,6 +159,14 @@ let ImportILTypeRef (env: ImportMap) m (tref: ILTypeRef) =
 let CanImportILTypeRef (env: ImportMap) m (tref: ILTypeRef) =
     env.ILTypeRefToTyconRefCache.ContainsKey(tref) || CanImportILScopeRef env m tref.Scope
 
+/// Imports a reference to a type definition (ILTypeRef) as a TyconRef when it can be imported.
+[<return: Struct>]
+let (|TryImportILTypeRef|_|) (env: ImportMap) m (tref: ILTypeRef) =
+    if CanImportILTypeRef env m tref then
+        ValueSome(ImportILTypeRef env m tref)
+    else
+        ValueNone
+
 /// Import a type, given an AbstractIL ILTypeRef and an F# type instantiation.
 ///
 /// Prefer the F# abbreviation for some built-in types, e.g. 'string' rather than

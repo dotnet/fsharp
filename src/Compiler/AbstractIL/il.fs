@@ -3981,6 +3981,18 @@ let mkNormalLdfld fspec = I_ldfld(Aligned, Nonvolatile, fspec)
 
 let mkNormalLdflda fspec = I_ldflda fspec
 
+/// Matches an IL instruction that loads or stores a field, returning the referenced field spec.
+[<return: Struct>]
+let (|ILFieldInstr|_|) instr =
+    match instr with
+    | I_ldsfld(_, fspec)
+    | I_ldfld(_, _, fspec)
+    | I_ldsflda fspec
+    | I_ldflda fspec
+    | I_stsfld(_, fspec)
+    | I_stfld(_, _, fspec) -> ValueSome fspec
+    | _ -> ValueNone
+
 let mkNormalLdobj dt = I_ldobj(Aligned, Nonvolatile, dt)
 
 let mkNormalStobj dt = I_stobj(Aligned, Nonvolatile, dt)

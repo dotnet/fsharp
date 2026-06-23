@@ -396,6 +396,7 @@
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
     <Compile Include="Scripting\PreferredUiLangTests.fs" />
     <Compile Include="InteractiveSession\Misc.fs" />
+    <Compile Include="InteractiveSession\AnonRecordPrinting.fs" />
     <Compile Include="TypeChecks\TypeRelations.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />

@@ -2145,6 +2145,11 @@ val internal mkNormalStsfld: ILFieldSpec -> ILInstr
 val internal mkNormalLdsfld: ILFieldSpec -> ILInstr
 val internal mkNormalLdfld: ILFieldSpec -> ILInstr
 val internal mkNormalLdflda: ILFieldSpec -> ILInstr
+
+/// Matches an IL instruction that loads or stores a field, returning the referenced field spec.
+[<return: Struct>]
+val internal (|ILFieldInstr|_|): instr: ILInstr -> ILFieldSpec voption
+
 val internal mkNormalLdobj: ILType -> ILInstr
 val internal mkNormalStobj: ILType -> ILInstr
 val internal mkLdcInt32: int32 -> ILInstr
