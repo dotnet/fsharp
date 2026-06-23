@@ -1395,17 +1395,19 @@ module internal MemberRepresentation =
     let fullNameOfParentOfValRef vref =
         match vref with
         | VRefLocal x ->
-            match x.PublicPath with
-            | None -> ValueNone
-            | Some(ValPubPath(pp, _)) -> ValueSome(fullNameOfPubPath pp)
+            match x.PublicPath, x.TryDeclaringEntity with
+            | None, _ -> ValueNone
+            | Some _, Parent eref -> ValueSome(fullNameOfEntityRef (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
+            | Some(ValPubPath(pp, _)), ParentNone -> ValueSome(fullNameOfPubPath pp)
         | VRefNonLocal nlr -> ValueSome(fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
     let fullNameOfParentOfValRefAsLayout vref =
         match vref with
         | VRefLocal x ->
-            match x.PublicPath with
-            | None -> ValueNone
-            | Some(ValPubPath(pp, _)) -> ValueSome(fullNameOfPubPathAsLayout pp)
+            match x.PublicPath, x.TryDeclaringEntity with
+            | None, _ -> ValueNone
+            | Some _, Parent eref -> ValueSome(fullNameOfEntityRefAsLayout (fun (e: EntityRef) -> e.DemangledModuleOrNamespaceName) eref)
+            | Some(ValPubPath(pp, _)), ParentNone -> ValueSome(fullNameOfPubPathAsLayout pp)
         | VRefNonLocal nlr ->
             ValueSome(fullNameOfEntityRefAsLayout (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 

@@ -1,9 +1,9 @@
 
 neg15.fs(102,17,102,31): typecheck error FS1094: The value 'privateValue' is not accessible from this code location
 
-neg15.fs(103,18,103,43): typecheck error FS1092: The type 'PrivateUnionType' is not accessible from this code location
+neg15.fs(103,20,103,43): typecheck error FS1092: The type 'PrivateUnionType' is not accessible from this code location
 
-neg15.fs(106,18,106,66): typecheck error FS1093: The union cases or fields of the type 'UnionTypeWithPrivateRepresentation' are not accessible from this code location
+neg15.fs(106,20,106,66): typecheck error FS1093: The union cases or fields of the type 'UnionTypeWithPrivateRepresentation' are not accessible from this code location
 
 neg15.fs(107,17,107,41): typecheck error FS0491: The member or object constructor 'PrivateProperty' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.
 
@@ -49,7 +49,7 @@ neg15.fs(185,1,185,5): typecheck error FS0491: The member or object constructor 
 
 neg15.fs(186,1,186,7): typecheck error FS0491: The member or object constructor 'SM' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.
 
-neg15.fs(187,1,187,6): typecheck error FS1096: The record, struct or class field 'f' is not accessible from this code location
+neg15.fs(187,5,187,6): typecheck error FS1096: The record, struct or class field 'f' is not accessible from this code location
 
 neg15.fs(188,1,188,6): typecheck error FS0491: The member or object constructor 'P' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.
 

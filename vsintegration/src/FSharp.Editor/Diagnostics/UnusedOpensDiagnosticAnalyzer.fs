@@ -43,19 +43,24 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
                 let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof UnusedOpensDiagnosticAnalyzer)
 
                 Trace.TraceInformation(
-                    "[UnusedOpensAnalyzer] GetUnusedOpenRanges: parse/check complete, calling getUnusedOpens. Diagnostics={0}",
+                    "[UnusedOpensAnalyzer] GetUnusedOpenRanges: parse/check complete. HasErrors={0} Diagnostics={1}",
+                    checkResults.HasErrors,
                     checkResults.Diagnostics.Length
                 )
 
-                let! unusedOpens =
-                    UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines[Line.toZ lineNumber].ToString()))
+                if checkResults.HasErrors then
+                    Trace.TraceInformation("[UnusedOpensAnalyzer] GetUnusedOpenRanges: SKIPPED (checkResults.HasErrors=true)")
+                    return ValueNone
+                else
+                    let! unusedOpens =
+                        UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines[Line.toZ lineNumber].ToString()))
 
-                Trace.TraceInformation(
-                    "[UnusedOpensAnalyzer] GetUnusedOpenRanges: getUnusedOpens returned {0} ranges",
-                    unusedOpens.Length
-                )
+                    Trace.TraceInformation(
+                        "[UnusedOpensAnalyzer] GetUnusedOpenRanges: getUnusedOpens returned {0} ranges",
+                        unusedOpens.Length
+                    )
 
-                return (ValueSome unusedOpens)
+                    return (ValueSome unusedOpens)
         }
 
     interface IFSharpUnusedOpensDiagnosticAnalyzer with

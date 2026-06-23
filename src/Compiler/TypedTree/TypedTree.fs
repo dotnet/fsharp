@@ -5274,7 +5274,7 @@ type Expr =
         | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
-        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
+        | DebugPoint (DebugPointAtLeafExpr.Yes(_, m), e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
 
     /// Get the mark/range/position information from an expression
     member expr.Range =
