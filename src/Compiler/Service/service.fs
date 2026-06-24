@@ -525,6 +525,12 @@ type FSharpChecker
         with _ ->
             path
 
+    let outputPathComparison =
+        if Path.DirectorySeparatorChar = '\\' then
+            StringComparison.OrdinalIgnoreCase
+        else
+            StringComparison.Ordinal
+
     let registerHotReloadEmissionTarget
         (store: FSharp.Compiler.HotReloadState.HotReloadSessionStore)
         (outputPath: string)
@@ -557,7 +563,7 @@ type FSharpChecker
             lock liveHotReloadEmissionTargetsGate (fun () ->
                 liveHotReloadEmissionTargets
                 |> Seq.tryPick (fun (registeredPath, store, projectKey) ->
-                    if String.Equals(registeredPath, target, StringComparison.OrdinalIgnoreCase) then
+                    if String.Equals(registeredPath, target, outputPathComparison) then
                         Some(
                             {
                                 FSharp.Compiler.HotReloadState.HotReloadEmissionContext.Store = store
