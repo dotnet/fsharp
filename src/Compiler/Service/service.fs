@@ -252,7 +252,9 @@ type FSharpChecker
         | None ->
             match
                 otherOptions
-                |> Array.tryFindIndex (fun opt -> String.Equals(opt, "-o", StringComparison.OrdinalIgnoreCase))
+                |> Array.tryFindIndex (fun opt ->
+                    String.Equals(opt, "-o", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(opt, "--out", StringComparison.OrdinalIgnoreCase))
             with
             | Some idx when idx + 1 < otherOptions.Length -> otherOptions[idx + 1] |> resolveOutputPath |> Some
             | _ -> None
