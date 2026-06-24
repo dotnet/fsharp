@@ -459,7 +459,7 @@ let ApplyAllOptimizations
         : PhaseRes =
         let file =
             file
-            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
+            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions importMap ccu tcGlobals
 
         file, prevPhase
 

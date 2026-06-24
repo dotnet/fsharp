@@ -2,7 +2,9 @@
 
 module internal FSharp.Compiler.InnerLambdasToTopLevelFuncs
 
+open FSharp.Compiler.Import
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
-val MakeTopLevelRepresentationDecisions: CcuThunk -> TcGlobals -> CheckedImplFile -> CheckedImplFile
+val MakeTopLevelRepresentationDecisions:
+    amap: ImportMap -> ccu: CcuThunk -> g: TcGlobals -> expr: CheckedImplFile -> CheckedImplFile
