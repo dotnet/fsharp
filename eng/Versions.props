@@ -161,8 +161,8 @@
     <NewtonsoftJsonVersion>13.0.4</NewtonsoftJsonVersion>
     <XunitVersion>3.2.2</XunitVersion>
     <XunitRunnerConsoleVersion>3.2.2</XunitRunnerConsoleVersion>
-    <!-- xUnit v2 runner, only consumed by FSharp.Editor.IntegrationTests (VS-hive harness is xUnit-v2-locked). -->
-    <XunitRunnerConsoleV2Version>2.9.3</XunitRunnerConsoleV2Version>
+    <!-- xUnit v2 VSTest adapter, only consumed by FSharp.Editor.IntegrationTests (vstest.console runner; xUnit-v2-locked). -->
+    <XunitRunnerVisualStudioV2Version>2.8.2</XunitRunnerVisualStudioV2Version>
     <XunitXmlTestLoggerVersion>8.0.0</XunitXmlTestLoggerVersion>
     <!-- -->
   </PropertyGroup>

@@ -402,26 +402,29 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     Exec-Console $dotnetExe $test_args
 }
 
-# Runs a test assembly via the xUnit v2 console runner, bypassing `dotnet test` (and therefore
-# the repo-wide Microsoft.Testing.Platform gate declared in global.json). Used only for projects
-# whose harness cannot run under MTP -- today that is FSharp.Editor.IntegrationTests, which
+# Runs a test assembly via VSTest (vstest.console.dll from the SDK) with the xUnit v2 VSTest adapter
+# (xunit.runner.visualstudio), bypassing `dotnet test` (and therefore the repo-wide
+# Microsoft.Testing.Platform gate in global.json). Used ONLY for FSharp.Editor.IntegrationTests, which
 # depends on Microsoft.VisualStudio.Extensibility.Testing.Xunit (VS-hive launcher, xUnit-v2-locked).
-# The runner is restored via a <PackageDownload Include="xunit.runner.console" .../> on the
-# test project, so it is present in the NuGet global packages folder after a normal slnx restore.
-function TestUsingXUnitConsole([string] $testProject, [string] $targetFramework) {
+# We use VSTest rather than xunit.console because xunit.console's -xml writer crashes ("Duplicate
+# attribute") on the harness's MaxAttempts retry reporting, whereas VSTest tolerates it. /Logger:xunit
+# keeps the results in XUnit format so the shared ADO publish step is unchanged. The adapter + logger
+# are restored as PackageReferences on the test project and copied to its output dir (TestAdapterPath).
+function TestUsingVSTestConsole([string] $testProject, [string] $targetFramework) {
 
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
-    $assemblyPath = "$ArtifactsDir\bin\$projectName\$configuration\$targetFramework\$projectName.dll"
+    $assemblyDir = "$ArtifactsDir\bin\$projectName\$configuration\$targetFramework"
+    $assemblyPath = Join-Path $assemblyDir "$projectName.dll"
     if (-not (Test-Path $assemblyPath)) {
         throw "Test assembly not found at $assemblyPath. Was $projectName built before -testIntegration was invoked?"
     }
 
-    # Get-PackageVersion (eng\build-utils.ps1) reads <XunitRunnerConsoleV2Version> from eng\Versions.props,
-    # and Get-PackageDir resolves the NuGet cache path. Defensive Trim() covers accidental whitespace in the value.
-    $runnerVersion = (Get-PackageVersion "XunitRunnerConsoleV2").Trim()
-    $xunitConsole = Join-Path (Get-PackageDir "xunit.runner.console" $runnerVersion) "tools\net472\xunit.console.exe"
-    if (-not (Test-Path $xunitConsole)) {
-        throw "xunit.console.exe not found at $xunitConsole. Ensure restore of $projectName ran first (PackageDownload of xunit.runner.console v$runnerVersion)."
+    $dotnetPath = InitializeDotNetCli
+    $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+    $vstestConsole = Get-ChildItem (Join-Path $dotnetPath "sdk") -Recurse -Filter "vstest.console.dll" -ErrorAction SilentlyContinue |
+        Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+    if (-not $vstestConsole) {
+        throw "vstest.console.dll not found under $dotnetPath\sdk. Was the .NET SDK provisioned?"
     }
 
     $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
@@ -429,12 +432,13 @@ function TestUsingXUnitConsole([string] $testProject, [string] $targetFramework)
     $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
     $resultsXml = Join-Path $testResultsDir "$projectName.$targetFramework.$jobName.xml"
 
-    # -parallel none / -noshadow mirror the project's xunit.runner.json (parallelizeTestCollections=false, shadowCopy=false).
-    $xunit_args = """$assemblyPath"" -xml ""$resultsXml"" -parallel none -noshadow -nologo"
+    # Tests run sequentially (the project's xunit.runner.json sets parallelizeTestCollections=false).
+    # /Platform:x64 matches the 64-bit VS the harness drives; /Logger:xunit writes XUnit-format results.
+    $vstest_args = "exec ""$vstestConsole"" ""$assemblyPath"" /Platform:x64 /Framework:.NETFramework,Version=v4.7.2 /TestAdapterPath:""$assemblyDir"" /Logger:""xunit;LogFilePath=$resultsXml"""
 
-    Write-Host("$xunitConsole $xunit_args")
+    Write-Host("$dotnetExe $vstest_args")
 
-    Exec-Console $xunitConsole $xunit_args
+    Exec-Console $dotnetExe $vstest_args
 }
 
 # Sets up the CI machine for running our VS integration tests, mirroring dotnet/roslyn's
@@ -760,7 +764,7 @@ try {
     }
 
     if ($testIntegration -and -not $noVisualStudio) {
-        TestUsingXUnitConsole -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework
+        TestUsingVSTestConsole -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework
     }
 
     if ($testAOT) {
