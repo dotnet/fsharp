@@ -104,9 +104,10 @@
       "cats": []
     },
     "19930": {
-      "sha": "1afa66abfd5c70848fb96cbc26a9ab367ef6e953",
+      "sha": "ad5c347107d37cdc88d427fb6d8faf40fe5396fe",
       "cats": [
         "Affects-Build-Infra",
+        "Affects-Design-Time",
         "Affects-Restore",
         "Affects-Test-Tooling"
       ]
