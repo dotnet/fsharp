@@ -30,7 +30,7 @@ Module::f
     IL_0012:  stloc.3
     IL_0013:  ldloca.s 0
     IL_0015:  ldloc.3
-    IL_0016:  call |Id|
+    IL_0016:  call Module::|Id|
     IL_001b:  stloc.s 4
     IL_001d:  ldloc.s 4
     IL_001f:  stloc.s 5
