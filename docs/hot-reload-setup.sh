@@ -32,10 +32,11 @@ echo "        $sdk_root ($sdk_branch)"
 if [[ ! -d "$sdk_root/.git" ]]; then
   git clone --branch "$sdk_branch" --single-branch "$sdk_remote" "$sdk_root"
 fi
-# Build only the redist (the runnable SDK layout). This pulls in dotnet-watch and the rest of
-# the product without compiling the repo's large test projects, so it is faster and avoids
-# unrelated test-only build breaks.
-( cd "$sdk_root" && ./build.sh --projects "$sdk_root/src/Layout/redist/redist.csproj" -c Debug )
+# Two steps: (1) a full build to restore the whole repo -- it stops with errors from a few
+# unrelated test projects on this merged branch, which is expected and harmless; (2) build only
+# the redist (the runnable SDK layout), which compiles no test projects and reuses the restore.
+( cd "$sdk_root" && ./build.sh -c Debug /p:RunAnalyzers=false || true )
+( cd "$sdk_root" && ./build.sh --build --projects "$sdk_root/src/Layout/redist/redist.csproj" -c Debug /p:RunAnalyzers=false )
 
 echo "==> [3/3] Syncing the hot-reload compiler into the SDK redist"
 "$script_dir/hot-reload-sync-fcs.sh" "$fsharp_root" "$sdk_root"

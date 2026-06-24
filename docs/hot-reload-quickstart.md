@@ -1,7 +1,7 @@
 # Trying F# Hot Reload
 
 Edit a **running** F# app and watch the change apply in place — no restart, state preserved.
-This guide takes you from two `git clone`s to a live hot-reload session. Budget ~30–45
+This guide takes you from two `git clone`s to a live hot-reload session. Budget ~45–60
 minutes, most of it waiting on the two builds.
 
 You need: git, bash (macOS/Linux; Windows works with the `.cmd` equivalents), and ~10 GB of
@@ -19,7 +19,7 @@ cd fsharp-hotreload
 ./docs/hot-reload-setup.sh
 ```
 
-When it finishes (~30-45 min, almost all of it the two builds), jump to **step 4** to start a
+When it finishes (~45-60 min, almost all of it the two builds), jump to **step 4** to start a
 session. The manual steps 1-3 are spelled out next if you'd rather run them yourself, are on
 Windows, or want to understand what the script does.
 
@@ -37,10 +37,11 @@ cd ..
 ```bash
 git clone --branch fsharp-hotreload-watch-v2 --single-branch https://github.com/NatElkins/sdk sdk-hotreload
 cd sdk-hotreload
-# Build just the runnable SDK layout (this pulls in dotnet-watch and the rest of the product
-# without compiling the repo's large test projects, so it is faster and side-steps unrelated
-# test-only build breaks):
-./build.sh --projects "$PWD/src/Layout/redist/redist.csproj"   # ~10-20 min first time
+# Two steps: (1) a full build to restore the whole repo -- it will stop with errors from a few
+# unrelated test projects, which is expected and harmless; (2) build only the runnable SDK
+# layout, which compiles no test projects and reuses the restore from step 1:
+./build.sh -c Debug /p:RunAnalyzers=false || true                                          # ~15-25 min first time
+./build.sh --build --projects "$PWD/src/Layout/redist/redist.csproj" -c Debug /p:RunAnalyzers=false
 cd ..
 ```
 
