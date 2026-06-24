@@ -54,7 +54,7 @@ let createSnapshot (pdbBytes: byte[]) : PortablePdbSnapshot =
         counts.[DeltaTokens.tableLocalVariable] <- pdbMeta.TableRowCounts.[3]
         counts.[DeltaTokens.tableLocalConstant] <- pdbMeta.TableRowCounts.[4]
         counts.[DeltaTokens.tableImportScope] <- pdbMeta.TableRowCounts.[5]
-        // Index 6 = StateMachineMethod (0x36), not commonly used
+        counts.[DeltaTokens.tableStateMachineMethod] <- pdbMeta.TableRowCounts.[6]
         counts.[DeltaTokens.tableCustomDebugInformation] <- pdbMeta.TableRowCounts.[7]
 
         {
@@ -76,7 +76,7 @@ let emitDelta
     : byte[] option =
     match baseline.PortablePdb with
     | None -> None
-    | Some snapshot ->
+    | Some _ ->
         // info.MethodToken values are BASELINE-coordinate MethodDef tokens (the row the
         // metadata delta re-emits the method at), NOT the fresh compile's tokens. Sort the
         // distinct tokens by their BASELINE MethodDef row so the PDB MethodDebugInformation
@@ -230,10 +230,7 @@ let emitDelta
 
                 None
             else
-                let entryPointHandle =
-                    match snapshot.EntryPointToken with
-                    | Some token -> MetadataTokens.MethodDefinitionHandle token
-                    | None -> MethodDefinitionHandle()
+                let entryPointHandle = MethodDefinitionHandle()
 
                 // Use shared content ID provider from ILPdbWriter
                 let idProvider = createPortablePdbContentIdProvider HashAlgorithm.Sha256
