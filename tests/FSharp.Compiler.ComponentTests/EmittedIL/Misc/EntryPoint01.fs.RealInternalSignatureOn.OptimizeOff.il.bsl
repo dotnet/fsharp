@@ -65,20 +65,19 @@
     IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
     IL_000b:  pop
     IL_000c:  nop
-    IL_000d:  nop
-    IL_000e:  call       int32 assembly::get_static_initializer()
-    IL_0013:  ldc.i4.s   10
-    IL_0015:  bne.un.s   IL_001b
+    IL_000d:  call       int32 assembly::get_static_initializer()
+    IL_0012:  ldc.i4.s   10
+    IL_0014:  bne.un.s   IL_001a
 
-    IL_0017:  ldc.i4.0
-    IL_0018:  nop
-    IL_0019:  br.s       IL_001d
+    IL_0016:  ldc.i4.0
+    IL_0017:  nop
+    IL_0018:  br.s       IL_001c
 
-    IL_001b:  ldc.i4.1
-    IL_001c:  nop
-    IL_001d:  tail.
-    IL_001f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<int32>(int32)
-    IL_0024:  ret
+    IL_001a:  ldc.i4.1
+    IL_001b:  nop
+    IL_001c:  tail.
+    IL_001e:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<int32>(int32)
+    IL_0023:  ret
   } 
 
   .method assembly static void  staticInitialization@() cil managed

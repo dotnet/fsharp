@@ -61,35 +61,33 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brtrue.s   IL_0007
+    IL_0000:  ldarg.0
+    IL_0001:  brtrue.s   IL_0006
 
-    IL_0004:  ldc.i4.s   100
-    IL_0006:  ret
+    IL_0003:  ldc.i4.s   100
+    IL_0005:  ret
 
-    IL_0007:  nop
-    IL_0008:  ldarg.0
-    IL_0009:  ldc.i4.2
-    IL_000a:  rem
-    IL_000b:  brtrue.s   IL_0019
+    IL_0006:  ldarg.0
+    IL_0007:  ldc.i4.2
+    IL_0008:  rem
+    IL_0009:  brtrue.s   IL_0017
 
-    IL_000d:  ldarg.0
-    IL_000e:  ldc.i4.1
-    IL_000f:  sub
-    IL_0010:  ldarg.1
-    IL_0011:  tail.
-    IL_0013:  call       int32 assembly::fifthMethodSecondCallee@8(int32,
+    IL_000b:  ldarg.0
+    IL_000c:  ldc.i4.1
+    IL_000d:  sub
+    IL_000e:  ldarg.1
+    IL_000f:  tail.
+    IL_0011:  call       int32 assembly::fifthMethodSecondCallee@8(int32,
                                                                                         int32)
-    IL_0018:  ret
+    IL_0016:  ret
 
-    IL_0019:  ldarg.0
-    IL_001a:  ldc.i4.1
-    IL_001b:  sub
-    IL_001c:  ldarg.1
-    IL_001d:  starg.s    firstArg
-    IL_001f:  starg.s    iterationCount
-    IL_0021:  br.s       IL_0000
+    IL_0017:  ldarg.0
+    IL_0018:  ldc.i4.1
+    IL_0019:  sub
+    IL_001a:  ldarg.1
+    IL_001b:  starg.s    firstArg
+    IL_001d:  starg.s    iterationCount
+    IL_001f:  br.s       IL_0000
   } 
 
   .method assembly static int32  fifthMethodSecondCallee@8(int32 iterationCount,
@@ -97,35 +95,33 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brtrue.s   IL_0007
+    IL_0000:  ldarg.0
+    IL_0001:  brtrue.s   IL_0006
 
-    IL_0004:  ldc.i4.s   101
-    IL_0006:  ret
+    IL_0003:  ldc.i4.s   101
+    IL_0005:  ret
 
-    IL_0007:  nop
-    IL_0008:  ldarg.0
-    IL_0009:  ldc.i4.2
-    IL_000a:  rem
-    IL_000b:  brtrue.s   IL_0017
+    IL_0006:  ldarg.0
+    IL_0007:  ldc.i4.2
+    IL_0008:  rem
+    IL_0009:  brtrue.s   IL_0015
 
-    IL_000d:  ldarg.0
-    IL_000e:  ldc.i4.1
-    IL_000f:  sub
-    IL_0010:  ldarg.1
-    IL_0011:  starg.s    firstArg
-    IL_0013:  starg.s    iterationCount
-    IL_0015:  br.s       IL_0000
+    IL_000b:  ldarg.0
+    IL_000c:  ldc.i4.1
+    IL_000d:  sub
+    IL_000e:  ldarg.1
+    IL_000f:  starg.s    firstArg
+    IL_0011:  starg.s    iterationCount
+    IL_0013:  br.s       IL_0000
 
-    IL_0017:  ldarg.0
-    IL_0018:  ldc.i4.1
-    IL_0019:  sub
-    IL_001a:  ldarg.1
-    IL_001b:  tail.
-    IL_001d:  call       int32 assembly::fifthMethodFirstCallee@4(int32,
+    IL_0015:  ldarg.0
+    IL_0016:  ldc.i4.1
+    IL_0017:  sub
+    IL_0018:  ldarg.1
+    IL_0019:  tail.
+    IL_001b:  call       int32 assembly::fifthMethodFirstCallee@4(int32,
                                                                                        int32)
-    IL_0022:  ret
+    IL_0020:  ret
   } 
 
 } 

@@ -112,16 +112,15 @@
         IL_0000:  ldarg.0
         IL_0001:  ldfld      class assembly/M/f5@5 class assembly/M/f5@5T<!a>::self0@
         IL_0006:  stloc.0
-        IL_0007:  nop
-        IL_0008:  ldarg.1
-        IL_0009:  ldarg.2
-        IL_000a:  ble.s      IL_000e
+        IL_0007:  ldarg.1
+        IL_0008:  ldarg.2
+        IL_0009:  ble.s      IL_000d
 
-        IL_000c:  ldarg.3
-        IL_000d:  ret
+        IL_000b:  ldarg.3
+        IL_000c:  ret
 
-        IL_000e:  ldarg.s    w
-        IL_0010:  ret
+        IL_000d:  ldarg.s    w
+        IL_000f:  ret
       } 
 
     } 

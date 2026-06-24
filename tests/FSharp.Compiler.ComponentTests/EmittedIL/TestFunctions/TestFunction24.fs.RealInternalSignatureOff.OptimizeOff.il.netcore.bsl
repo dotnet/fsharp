@@ -757,46 +757,45 @@
              int32 V_6)
     IL_0000:  ldstr      "Hello World"
     IL_0005:  stloc.0
-    IL_0006:  nop
-    IL_0007:  ldloc.0
-    IL_0008:  brfalse.s  IL_0016
+    IL_0006:  ldloc.0
+    IL_0007:  brfalse.s  IL_0015
 
-    IL_000a:  ldloc.0
-    IL_000b:  callvirt   instance char& modreq([runtime]System.Runtime.InteropServices.InAttribute) [runtime]System.String::GetPinnableReference()
-    IL_0010:  stloc.2
-    IL_0011:  ldloc.2
-    IL_0012:  conv.i
-    IL_0013:  nop
-    IL_0014:  br.s       IL_0018
+    IL_0009:  ldloc.0
+    IL_000a:  callvirt   instance char& modreq([runtime]System.Runtime.InteropServices.InAttribute) [runtime]System.String::GetPinnableReference()
+    IL_000f:  stloc.2
+    IL_0010:  ldloc.2
+    IL_0011:  conv.i
+    IL_0012:  nop
+    IL_0013:  br.s       IL_0017
 
-    IL_0016:  ldloc.0
-    IL_0017:  nop
-    IL_0018:  stloc.1
-    IL_0019:  ldloc.1
-    IL_001a:  stloc.3
-    IL_001b:  ldc.i4.0
-    IL_001c:  stloc.s    V_4
-    IL_001e:  ldloc.3
-    IL_001f:  ldloc.s    V_4
-    IL_0021:  conv.i
-    IL_0022:  sizeof     [runtime]System.Char
-    IL_0028:  mul
-    IL_0029:  add
-    IL_002a:  ldobj      [runtime]System.Char
-    IL_002f:  ldloc.1
-    IL_0030:  stloc.s    V_5
-    IL_0032:  ldc.i4.1
-    IL_0033:  stloc.s    V_6
-    IL_0035:  ldloc.s    V_5
-    IL_0037:  ldloc.s    V_6
-    IL_0039:  conv.i
-    IL_003a:  sizeof     [runtime]System.Char
-    IL_0040:  mul
-    IL_0041:  add
-    IL_0042:  ldobj      [runtime]System.Char
-    IL_0047:  newobj     instance void class [runtime]System.Tuple`2<char,char>::.ctor(!0,
+    IL_0015:  ldloc.0
+    IL_0016:  nop
+    IL_0017:  stloc.1
+    IL_0018:  ldloc.1
+    IL_0019:  stloc.3
+    IL_001a:  ldc.i4.0
+    IL_001b:  stloc.s    V_4
+    IL_001d:  ldloc.3
+    IL_001e:  ldloc.s    V_4
+    IL_0020:  conv.i
+    IL_0021:  sizeof     [runtime]System.Char
+    IL_0027:  mul
+    IL_0028:  add
+    IL_0029:  ldobj      [runtime]System.Char
+    IL_002e:  ldloc.1
+    IL_002f:  stloc.s    V_5
+    IL_0031:  ldc.i4.1
+    IL_0032:  stloc.s    V_6
+    IL_0034:  ldloc.s    V_5
+    IL_0036:  ldloc.s    V_6
+    IL_0038:  conv.i
+    IL_0039:  sizeof     [runtime]System.Char
+    IL_003f:  mul
+    IL_0040:  add
+    IL_0041:  ldobj      [runtime]System.Char
+    IL_0046:  newobj     instance void class [runtime]System.Tuple`2<char,char>::.ctor(!0,
                                                                                               !1)
-    IL_004c:  ret
+    IL_004b:  ret
   } 
 
 } 

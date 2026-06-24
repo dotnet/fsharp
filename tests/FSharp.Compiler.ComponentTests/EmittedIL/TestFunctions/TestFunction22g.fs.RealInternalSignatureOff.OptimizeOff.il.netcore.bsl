@@ -48,17 +48,16 @@
     .entrypoint
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldc.i4.1
-    IL_0002:  brfalse.s  IL_000c
+    IL_0000:  ldc.i4.1
+    IL_0001:  brfalse.s  IL_000b
 
-    IL_0004:  call       void [runtime]System.Console::WriteLine()
-    IL_0009:  nop
-    IL_000a:  br.s       IL_0012
+    IL_0003:  call       void [runtime]System.Console::WriteLine()
+    IL_0008:  nop
+    IL_0009:  br.s       IL_0011
 
-    IL_000c:  call       void [runtime]System.Console::WriteLine()
-    IL_0011:  nop
-    IL_0012:  ret
+    IL_000b:  call       void [runtime]System.Console::WriteLine()
+    IL_0010:  nop
+    IL_0011:  ret
   } 
 
 } 
