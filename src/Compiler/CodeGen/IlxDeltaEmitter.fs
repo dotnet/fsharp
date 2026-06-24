@@ -4685,7 +4685,13 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         orderedMethodInputs
         |> List.map (fun struct (_, methodToken, _, _, _) -> methodToken)
 
-    if List.isEmpty methodUpdateInputs && List.isEmpty updatedTypeTokens then
+    let hasAllocatedAddedRows =
+        addedFieldDeltaTokens.Count > 0
+        || addedPropertyDeltaTokens.Count > 0
+        || addedEventDeltaTokens.Count > 0
+        || addedTypeDeltaTokens.Count > 0
+
+    if List.isEmpty methodUpdateInputs && List.isEmpty updatedTypeTokens && not hasAllocatedAddedRows then
         // No metadata/IL to emit. Line-shift-only edits land here: the delta carries only
         // SequencePointUpdates (plus the next committed sequence-point view) and consumes no
         // generation — there is nothing for the runtime to apply, the host just rebinds the
