@@ -883,7 +883,7 @@ module DispatchSlotChecking =
             let overridden = 
                 if isFakeEventProperty then 
                     let slotsigs = overrideBy.MemberInfo.Value.ImplementedSlotSigs 
-                    slotsigs |> List.map (ReparentSlotSigToUseMethodTypars g overrideBy.Range overrideBy)
+                    slotsigs |> List.map (ReparentSlotSigToUseMethodTypars g overrideBy)
                 else
                     [ for (reqdTy, m), SlotImplSet(_dispatchSlots, dispatchSlotsKeyed, _, _) in allImpls do
                           let overrideByInfo = GetTypeMemberOverrideInfo g reqdTy overrideBy
@@ -907,7 +907,7 @@ module DispatchSlotChecking =
 
                                         // The slotsig from the overridden method is in terms of the type parameters on the parent type of the overriding method,
                                         // Modify map the slotsig so it is in terms of the type parameters for the overriding method 
-                                        let slotsig = ReparentSlotSigToUseMethodTypars g m overrideBy slotsig
+                                        let slotsig = ReparentSlotSigToUseMethodTypars g overrideBy slotsig
                  
                                         // Record the slotsig via mutation
                                         yield slotsig ]

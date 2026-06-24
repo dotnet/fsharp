@@ -1615,7 +1615,8 @@ let rec TryTranslateComputationExpression
                     error (Error(FSComp.SR.tcEmptyBodyRequiresBuilderZeroMethod (), ceenv.mWhole))
                 | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod "Zero", m))
 
-            Some(translatedCtxt (mkSynCall "Zero" m [] ceenv.builderValName))
+            let mCall = if equals m range0 then ceenv.mWhole else m
+            Some(translatedCtxt (mkSynCall "Zero" mCall [] ceenv.builderValName))
 
         | OptionalSequential(JoinOrGroupJoinOrZipClause ceenv (_, _, _, _, _, mClause), _) when firstTry = CompExprTranslationPass.Initial ->
 
