@@ -495,7 +495,7 @@ module internal ActiveStatementAnalysis =
                                 NewLine = segment.OldStartLine + segment.LineDelta
                             }
 
-                    previousOldEndLine <- segment.OldEndLine
+                    previousOldEndLine <- max previousOldEndLine segment.OldEndLine
                     previousLineDelta <- segment.LineDelta
 
             if documentLineEdits.Count > 0 then
