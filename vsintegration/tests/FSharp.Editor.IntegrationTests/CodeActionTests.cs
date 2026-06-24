@@ -12,7 +12,14 @@ namespace FSharp.Editor.IntegrationTests;
 
 public class CodeActionTests : AbstractIntegrationTest
 {
-    [IdeFact]
+    // Quarantined: unlike the on-demand compiler-diagnostic fixes (AddNew/AddMissingFun), "Remove unused open
+    // declarations" comes from F#'s unused-opens analyzer - a background SemanticDocumentAnalysis that needs the
+    // project's IncrementalBuilder + a full check. Its production is non-deterministic for a freshly-opened
+    // single-file project in the headless CI VS (the fix is offered in <1s on some runs, never within 150s on
+    // others), and MaxAttempts=2 retries don't reliably absorb the low per-attempt success rate. Roslyn's C#
+    // "Remove unnecessary usings" diagnostic is produced reliably so they need no such handling; the durable fix
+    // here is on the F# editor's analyzer scheduling, tracked separately. Re-enable once that is deterministic.
+    [IdeFact(Skip = "Flaky: F# unused-opens diagnostic production is non-deterministic in headless CI; tracked separately.")]
     public async Task UnusedOpenDeclarations()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
