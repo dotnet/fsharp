@@ -1712,7 +1712,7 @@ and private snapshotModuleContents g denv path (map, entities) contents =
         let entitiesWithTypes =
             (entities, tycons)
             ||> List.fold (fun acc tycon ->
-                let snapshot = snapshotTycon denv path tycon
+                let snapshot = snapshotTycon g denv path tycon
                 Map.add (entityKey snapshot) snapshot acc)
 
         List.fold (snapshotModuleBinding g denv path) (map, entitiesWithTypes) bindings
@@ -1890,13 +1890,20 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
     }
     : BindingSnapshot
 
-and private snapshotTycon denv path (tycon: Tycon) =
+and private snapshotTycon g denv path (tycon: Tycon) =
     // The field segment of class-like representations is kept separate so a pure field
     // addition (non-field digest unchanged, baseline fields preserved) can be classified
     // against the runtime field-addition capabilities instead of as a layout change.
     let mutable fields: Map<string, EntityFieldDigest> = Map.empty
     let mutable isFSharpClass = false
     let fieldSegment = StringBuilder()
+    let typarOrdinals =
+        tycon.Typars
+        |> List.filter (fun typar -> not typar.IsErased)
+        |> List.mapi (fun ordinal typar -> typar.Stamp, ordinal)
+        |> Map.ofList
+
+    let renderEntityType = renderTypeForShapeDigest g typarOrdinals denv
 
     let nonFieldText =
         let sb = StringBuilder()
@@ -1918,7 +1925,7 @@ and private snapshotTycon denv path (tycon: Tycon) =
                         sb.Append(":") |> ignore
                         sb.Append(field.LogicalName) |> ignore
                         sb.Append("=") |> ignore
-                        sb.Append(tyToString denv field.FormalType) |> ignore))
+                        sb.Append(renderEntityType field.FormalType) |> ignore))
             | FSharpTyconKind.TFSharpRecord
             | FSharpTyconKind.TFSharpStruct
             | FSharpTyconKind.TFSharpClass
@@ -1938,11 +1945,11 @@ and private snapshotTycon denv path (tycon: Tycon) =
                         fieldSegment.Append("[mutable]") |> ignore
 
                     fieldSegment.Append("=") |> ignore
-                    fieldSegment.Append(tyToString denv field.FormalType) |> ignore
+                    fieldSegment.Append(renderEntityType field.FormalType) |> ignore
 
                     let digest =
                         let mutability = if field.IsMutable then "[mutable]" else ""
-                        $"{mutability}={tyToString denv field.FormalType}"
+                        $"{mutability}={renderEntityType field.FormalType}"
 
                     fields <-
                         fields.Add(
@@ -1980,14 +1987,14 @@ and private snapshotTycon denv path (tycon: Tycon) =
         // and would be silently dropped. Both must surface as a TypeLayoutChange rude edit.
         let superText =
             match tycon.TypeContents.tcaug_super with
-            | Some t -> tyToString denv t
+            | Some t -> renderEntityType t
             | None -> ""
 
         sb.Append("|super:").Append(superText) |> ignore
 
         for intf in
             tycon.ImmediateInterfaceTypesOfFSharpTycon
-            |> List.map (tyToString denv)
+            |> List.map renderEntityType
             |> List.sort do
             sb.Append("|intf:").Append(intf) |> ignore
 
