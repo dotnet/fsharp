@@ -27,6 +27,15 @@ namespace NotNullLib {
         // The result is non-null when the SECOND parameter is non-null.
         [return: NotNullIfNotNull("second")]
         public static string? DependsOnSecond(string? first, string? second) => second;
+
+        // Generic echo: 'T' is inferred to the F# argument type with no coercion, so the
+        // argument's own nullness (including runtime representations like option/unit) is preserved.
+        [return: NotNullIfNotNull("input")]
+        public static T EchoGeneric<T>(T input) => input;
+
+        // Object echo: the argument is coerced to 'object', but a 'with null' nullness rides along.
+        [return: NotNullIfNotNull("input")]
+        public static object? EchoObj(object? input) => input;
     }
 
     public static class Extensions {
@@ -263,6 +272,84 @@ let r : string = Variadic.JoinRest(maybeNull, notNull, notNull)
     |> compile
     |> shouldFail
     |> withDiagnosticMessageMatches nullableExpected
+
+// F# <-> runtime interop: a value can be 'null' at runtime even when its F# type is statically non-null.
+// 'option' (None) is represented as null via UseNullAsTrueValue, so EchoGeneric of a None must keep the
+// result nullable. This case is the one that exercises the TypeNullIsTrueValue branch of the derivation.
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - generic echo of None stays nullable`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let none : int option = None
+let r : int option = C.EchoGeneric none
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+// Control: a genuinely non-null reference value yields a non-null result through the generic echo.
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - generic echo of non-null reference is non-null`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "x"
+let r : string = C.EchoGeneric notNull
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldSucceed
+
+// A 'T | null typar argument coming from a generic function keeps the result nullable.
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - generic echo of nullable typar stays nullable`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let wrap (x: 'T | null) : 'T = C.EchoGeneric x
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+// The object-accepting echo coerces the argument to 'object', but a 'with null' nullness rides along.
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - object echo of nullable reference stays nullable`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let maybeNull : string | null = "y"
+let r : obj = C.EchoObj maybeNull
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - object echo of non-null reference is non-null`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let notNull : string = "y"
+let r : obj = C.EchoObj notNull
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldSucceed
 
 [<FactForNETCOREAPP>]
 let ``Csharp NotNullIfNotNull - unannotated parameter with non-null return annotation fails`` () =
