@@ -56,18 +56,17 @@
       {
         
         .maxstack  8
-        IL_0000:  nop
-        IL_0001:  ldarg.1
-        IL_0002:  brtrue.s   IL_000a
+        IL_0000:  ldarg.1
+        IL_0001:  brtrue.s   IL_0009
 
-        IL_0004:  call       int32 Sample/C::Secret()
-        IL_0009:  ret
+        IL_0003:  call       int32 Sample/C::Secret()
+        IL_0008:  ret
 
-        IL_000a:  ldarg.1
-        IL_000b:  ldc.i4.1
-        IL_000c:  sub
-        IL_000d:  starg.s    n
-        IL_000f:  br.s       IL_0000
+        IL_0009:  ldarg.1
+        IL_000a:  ldc.i4.1
+        IL_000b:  sub
+        IL_000c:  starg.s    n
+        IL_000e:  br.s       IL_0000
       } 
 
       .method private specialname rtspecialname static void  .cctor() cil managed
@@ -98,21 +97,20 @@
     {
       
       .maxstack  8
-      IL_0000:  nop
-      IL_0001:  volatile.
-      IL_0003:  ldsfld     int32 Sample/C::init@2
-      IL_0008:  ldc.i4.1
-      IL_0009:  bge.s      IL_0014
+      IL_0000:  volatile.
+      IL_0002:  ldsfld     int32 Sample/C::init@2
+      IL_0007:  ldc.i4.1
+      IL_0008:  bge.s      IL_0013
 
-      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000f:  nop
       IL_0010:  nop
-      IL_0011:  nop
-      IL_0012:  br.s       IL_0015
+      IL_0011:  br.s       IL_0014
 
-      IL_0014:  nop
-      IL_0015:  ldarg.0
-      IL_0016:  stsfld     int32 Sample/C::backing
-      IL_001b:  ret
+      IL_0013:  nop
+      IL_0014:  ldarg.0
+      IL_0015:  stsfld     int32 Sample/C::backing
+      IL_001a:  ret
     } 
 
     .method private static int32  Secret() cil managed
@@ -120,22 +118,21 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  nop
-      IL_0001:  volatile.
-      IL_0003:  ldsfld     int32 Sample/C::init@2
-      IL_0008:  ldc.i4.1
-      IL_0009:  bge.s      IL_0014
+      IL_0000:  volatile.
+      IL_0002:  ldsfld     int32 Sample/C::init@2
+      IL_0007:  ldc.i4.1
+      IL_0008:  bge.s      IL_0013
 
-      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000f:  nop
       IL_0010:  nop
-      IL_0011:  nop
-      IL_0012:  br.s       IL_0015
+      IL_0011:  br.s       IL_0014
 
-      IL_0014:  nop
-      IL_0015:  ldsfld     int32 Sample/C::backing
-      IL_001a:  ldc.i4.1
-      IL_001b:  add
-      IL_001c:  ret
+      IL_0013:  nop
+      IL_0014:  ldsfld     int32 Sample/C::backing
+      IL_0019:  ldc.i4.1
+      IL_001a:  add
+      IL_001b:  ret
     } 
 
     .method private specialname rtspecialname static void  .cctor() cil managed
@@ -190,17 +187,16 @@
     IL_000c:  ldc.i4.s   41
     IL_000e:  call       void Sample/C::Set(int32)
     IL_0013:  nop
-    IL_0014:  nop
-    IL_0015:  newobj     instance void Sample/C::.ctor()
-    IL_001a:  callvirt   instance int32 Sample/C::Run()
-    IL_001f:  ldc.i4.s   42
-    IL_0021:  bne.un.s   IL_0025
+    IL_0014:  newobj     instance void Sample/C::.ctor()
+    IL_0019:  callvirt   instance int32 Sample/C::Run()
+    IL_001e:  ldc.i4.s   42
+    IL_0020:  bne.un.s   IL_0024
 
-    IL_0023:  ldc.i4.0
-    IL_0024:  ret
+    IL_0022:  ldc.i4.0
+    IL_0023:  ret
 
-    IL_0025:  ldc.i4.1
-    IL_0026:  ret
+    IL_0024:  ldc.i4.1
+    IL_0025:  ret
   } 
 
   .method private specialname rtspecialname static void  .cctor() cil managed
