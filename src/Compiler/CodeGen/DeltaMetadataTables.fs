@@ -777,14 +777,14 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
         let hashToken = addExistingBlobOffset row.HashValueOffset row.HashValue
 
         let versionComponent value =
-            if value >= 0s then uint16 value else 0us
+            if value >= 0 && value <= 0xFFFF then uint16 value else 0us
 
         let rowElements =
             [|
-                rowElementUShort (versionComponent (int16 row.Version.Major))
-                rowElementUShort (versionComponent (int16 row.Version.Minor))
-                rowElementUShort (versionComponent (int16 row.Version.Build))
-                rowElementUShort (versionComponent (int16 row.Version.Revision))
+                rowElementUShort (versionComponent row.Version.Major)
+                rowElementUShort (versionComponent row.Version.Minor)
+                rowElementUShort (versionComponent row.Version.Build)
+                rowElementUShort (versionComponent row.Version.Revision)
                 rowElementULong (int row.Flags)
                 blobElement publicKeyToken
                 stringElement nameToken
