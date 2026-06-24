@@ -356,6 +356,7 @@
     <Compile Include="Language\CodeQuotationTests.fs" />
     <Compile Include="Language\InterpolatedStringsTests.fs" />
     <Compile Include="Language\ComputationExpressionTests.fs" />
+    <Compile Include="Language\CE_PipelineRange19550.fs" />
     <Compile Include="Language\StateMachineTests.fs" />
     <Compile Include="Language\DynamicAssignmentOperatorTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
@@ -396,6 +397,7 @@
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
     <Compile Include="Scripting\PreferredUiLangTests.fs" />
     <Compile Include="InteractiveSession\Misc.fs" />
+    <Compile Include="InteractiveSession\AnonRecordPrinting.fs" />
     <Compile Include="TypeChecks\TypeRelations.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />

@@ -1872,7 +1872,7 @@ module ProvidedMethodCalls =
                 else
                     if isGeneric then 
                         let genericArgs = st.PApplyArray((fun st -> st.GetGenericArguments()), "GetGenericArguments", m) 
-                        let typars = headTypeAsFSharpType.Typars(m)
+                        let typars = headTypeAsFSharpType.Typars
                         // Drop the generic arguments that don't correspond to type arguments, i.e. are units-of-measure
                         let genericArgs = 
                             [| for genericArg, tp in Seq.zip genericArgs typars do
