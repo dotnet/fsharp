@@ -36,26 +36,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- VSTest path for FSharp.Editor.IntegrationTests (eng\Build.ps1 TestUsingXUnitConsole runs
-         vstest.console.dll). This project is excluded from the repo-wide Microsoft.Testing.Platform gate
-         (ExcludeFromTestPackageReferences above) because the VS-hive harness is xUnit-v2-locked.
-         - xunit.runner.visualstudio: the VSTest adapter that hosts xUnit v2 discovery/execution and
-           honors the source-generated IdeTestFramework. Copies to output for /TestAdapterPath discovery.
-         - XunitXml.TestLogger: emits XUnit-format results (/Logger:xunit) so the shared ADO publish
-           step (testResultsFormat: XUnit) is unchanged.
-         - Microsoft.TestPlatform.ObjectModel: required at runtime by XunitXml.TestLogger (matches the
-           pattern in tests\Directory.Build.props).
-         VSTest (unlike xunit.console -xml) tolerates the harness's MaxAttempts retry reporting. -->
-    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioV2Version)" />
-    <PackageReference Include="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
+    <!-- xUnit v2 console runner: this project is excluded from the repo-wide Microsoft.Testing.Platform
+         gate (ExcludeFromTestPackageReferences above) because Microsoft.VisualStudio.Extensibility.Testing.Xunit
+         is locked to xUnit v2. PackageDownload restores the runner to the NuGet global packages folder
+         so eng\Build.ps1's TestUsingXUnitConsole can locate it, without adding it to this project's
+         compile/runtime closure. PackageDownload requires the bracketed exact-pin syntax. -->
+    <PackageDownload Include="xunit.runner.console" Version="[$(XunitRunnerConsoleV2Version)]" />
   </ItemGroup>
 
   <Target Name="SyncXunitDesktopDll" AfterTargets="Build" Condition="'$(OutputType)' == 'Exe'">
     <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)$(AssemblyName).dll" SkipUnchangedFiles="true" />
-    <!-- vstest.console runs the test <dll> (not the <exe>) and loads <dll>.config for the test-AppDomain's
-         binding redirects. Without this copy, the IdeTestFramework's heavy VS-interop dependency graph fails
-         to bind and the custom xUnit test framework silently reports 0 discovered tests. -->
+    <!-- xunit.console.exe loads <dll>.config (not <exe>.config) for the test-AppDomain's binding redirects.
+         Without this copy, the IdeTestFramework's heavy VS-interop dependency graph fails to bind and the
+         custom xUnit test framework silently reports 0 discovered tests. -->
     <Copy SourceFiles="$(TargetPath).config" DestinationFiles="$(TargetDir)$(AssemblyName).dll.config" SkipUnchangedFiles="true" Condition="Exists('$(TargetPath).config')" />
   </Target>
 
