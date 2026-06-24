@@ -707,7 +707,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
             // with unconstrained generics (like List<ITest> or Dictionary<K, ITest>) is fine.
             // See: https://github.com/dotnet/fsharp/issues/19184
             if tcref.CanDeref then
-                let typars = tcref.Typars m
+                let typars = tcref.Typars
                 if typars.Length = tinst.Length then
                     (typars, tinst) ||> List.iter2 (CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m)
 
@@ -2364,7 +2364,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     let ty = generalizedTyconRef g tcref
 
     let env = { env with reflect = env.reflect || EntityHasWellKnownAttribute g WellKnownEntityAttributes.ReflectedDefinitionAttribute tycon }
-    let env = BindTypars g env (tycon.Typars m)
+    let env = BindTypars g env (tycon.Typars)
 
     CheckAttribs cenv env tycon.Attribs
 

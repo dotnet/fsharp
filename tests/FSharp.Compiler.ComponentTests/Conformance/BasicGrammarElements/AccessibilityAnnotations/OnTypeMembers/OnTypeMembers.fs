@@ -67,12 +67,12 @@ module AccessibilityAnnotations_OnTypeMembers =
             (Error 491, Line 42, Col 19, Line 42, Col 26, "The member or object constructor 'test2' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
             (Error 491, Line 42, Col 29, Line 42, Col 36, "The member or object constructor 'test5' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
             (Error 491, Line 42, Col 40, Line 42, Col 47, "The member or object constructor 'test6' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (Error 807, Line 42, Col 60, Line 42, Col 67, "Property 'test8' is not readable")
+            (Error 807, Line 42, Col 62, Line 42, Col 67, "Property 'test8' is not readable")
             (Error 491, Line 43, Col 1, Line 43, Col 13, "The member or object constructor 'test3' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
             (Error 491, Line 44, Col 1, Line 44, Col 13, "The member or object constructor 'test4' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
             (Error 491, Line 45, Col 1, Line 45, Col 13, "The member or object constructor 'test5' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
             (Error 491, Line 46, Col 1, Line 46, Col 13, "The member or object constructor 'test6' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (Error 810, Line 47, Col 1, Line 47, Col 8, "Property 'test7' cannot be set")
+            (Error 810, Line 47, Col 3, Line 47, Col 8, "Property 'test7' cannot be set")
             (Error 257, Line 47, Col 1, Line 47, Col 8, "Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.")
         ]
 
@@ -98,4 +98,67 @@ module AccessibilityAnnotations_OnTypeMembers =
     let ``OnProperty01_fs`` compilation =
         compilation
         |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // C# base class with protected instance/static fields, shared by the issue 19963 regressions below.
+    let baseClassLib =
+        CSharpFromPath (__SOURCE_DIRECTORY__ ++ "BaseClass.cs") |> withName "BaseClassLib"
+
+    // #19963: the optimizer must not relocate a protected base-field read out of its family
+    // (it inlined a trivial member into startup code under --optimize+ → FieldAccessException).
+    [<Fact>]
+    let ``Protected base field read via optimized member does not crash (issue 19963)`` () =
+        FSharp """
+open TestBaseClass
+
+type DerivedClass() =
+    inherit BaseClass()
+    member x.GetField() = x.ProtectedField
+
+[<EntryPoint>]
+let main _ =
+    if DerivedClass().GetField() = "protected-field" then 0 else 1
+"""
+        |> withReferences [baseClassLib]
+        |> withOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    // #19963, static-field (I_ldsfld) variant of the above.
+    [<Fact>]
+    let ``Protected static base field read via optimized member does not crash (issue 19963)`` () =
+        FSharp """
+open TestBaseClass
+
+type DerivedClass() =
+    inherit BaseClass()
+    member x.GetStaticField() = BaseClass.ProtectedStaticField
+
+[<EntryPoint>]
+let main _ =
+    if DerivedClass().GetStaticField() = "protected-static-field" then 0 else 1
+"""
+        |> withReferences [baseClassLib]
+        |> withOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    // #19963 positive: a PUBLIC IL field (String.Empty) in an inline value must still inline under
+    // --optimize+; the over-broad form FS1118'd FSharp.Core's GetStringSlice. FS1118→error guards it.
+    [<Fact>]
+    let ``Public IL field access inside an inline value is still optimized away (issue 19963)`` () =
+        FSharp """
+module Test
+let inline emptyOr (s: string) = if s.Length = 0 then System.String.Empty else s
+
+[<EntryPoint>]
+let main _ =
+    if emptyOr "" = "" && emptyOr "x" = "x" then 0 else 1
+"""
+        |> withOptimize
+        |> withOptions ["--warnaserror:1118"]
+        |> asExe
+        |> compileAndRun
         |> shouldSucceed

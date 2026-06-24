@@ -22,7 +22,7 @@ Module::f
 
   (6,9-6,36)  System.Console.WriteLine ""
     IL_0012:  ldstr ""
-    IL_0017:  call WriteLine
+    IL_0017:  call Console::WriteLine
 
   <hidden>
     IL_001c:  ldloc.1

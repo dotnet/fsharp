@@ -975,8 +975,17 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | ignored_op_char* ('@'|'^')                  op_char* { checkExprOp lexbuf; INFIX_AT_HAT_OP(lexeme lexbuf) }
 
+ // For '=$"' (property/named-arg initialization with an interpolated string, e.g. C(Name=$"123")):
+ // match the 3 chars, but consume only the '=' and rewind so the next scan begins at '$"',
+ // letting the regular interpolated-string lexer process it (including any '{...}' holes).
+ // See https://github.com/dotnet/fsharp/issues/16696.
+ | '=' '$' '"' {
+       lexbuf.LexemeLength <- 1
+       lexbuf.EndPos <- lexbuf.StartPos.ShiftColumnBy(1)
+       EQUALS }
+
  | ignored_op_char* ('=' | "!=" | '<' | '$')  op_char* { checkExprOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
- 
+
  | ignored_op_char* ('>')  op_char* { checkExprGreaterColonOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
 
  | ignored_op_char* ('&')                      op_char* { checkExprOp lexbuf; INFIX_AMP_OP(lexeme lexbuf) }

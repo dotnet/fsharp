@@ -21,24 +21,22 @@ Module::f
 
   (5,9-5,35)  System.Console.WriteLine i
     IL_0012:  ldloc.2
-    IL_0013:  call WriteLine
+    IL_0013:  call Console::WriteLine
 
   (4,11-4,13)  in
     IL_0018:  ldloc.1
-    IL_0019:  callvirt MoveNext
+    IL_0019:  callvirt IEnumerator::MoveNext
     IL_001e:  brtrue.s IL_000b
     IL_0020:  leave.s IL_0034
     IL_0022:  ldloc.1
     IL_0023:  isinst IDisposable
     IL_0028:  stloc.3
-
-  <hidden>
     IL_0029:  ldloc.3
     IL_002a:  brfalse.s IL_0033
 
   <hidden>
     IL_002c:  ldloc.3
-    IL_002d:  callvirt Dispose
+    IL_002d:  callvirt IDisposable::Dispose
     IL_0032:  endfinally
 
   <hidden>
