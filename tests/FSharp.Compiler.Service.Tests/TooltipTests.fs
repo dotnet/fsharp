@@ -399,6 +399,9 @@ let assertNameTagInTooltip expectedTag expectedName (tooltip: ToolTipText) =
     let desc = tags |> Array.map (fun t -> sprintf "(%A, %s)" t.Tag t.Text) |> String.concat ", "
     Assert.True(found, sprintf "Expected tag %A with text '%s' in tooltip, but found: %s" expectedTag expectedName desc)
 
+let assertToolTipIsEmpty (ToolTipText(items)) =
+    Assert.Empty items
+
 let normalize (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 
 [<Fact>]
@@ -593,6 +596,43 @@ let y = normaliz{caret}e' 5
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo "val normalize': x: int -> int"
+
+[<Fact>]
+let ``Wildcard lambda parameter inside member with underscore instance identifier has no tooltip`` () =
+    Checker.getTooltip """
+type T () =
+    member _.M () =
+        fun _{caret} -> ()
+"""
+    |> assertToolTipIsEmpty
+
+[<Fact>]
+let ``Wildcard let binding inside member with underscore instance identifier has no tooltip`` () =
+    Checker.getTooltip """
+type T () =
+    member _.N () =
+        let _{caret} = () in ()
+"""
+    |> assertToolTipIsEmpty
+
+[<Fact>]
+let ``Wildcard match pattern inside member with underscore instance identifier has no tooltip`` () =
+    Checker.getTooltip """
+type T () =
+    member _.M (x: int) =
+        match x with
+        | _{caret} -> ()
+"""
+    |> assertToolTipIsEmpty
+
+[<Fact>]
+let ``Named self-identifier is not affected by wildcard discard fix`` () =
+    Checker.getTooltip """
+type T () =
+    member thi{caret}s.M () = ()
+"""
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldContain "T"
 
 // https://github.com/dotnet/fsharp/issues/13194
 [<Fact>]
@@ -852,3 +892,70 @@ let inline fo{caret}o< ^T> (x: ^T) = x
     |> fun text ->
         // Type param appears in tooltip
         Assert.Contains("'T", text)
+
+let private getFullNameRemarks (source: string) =
+    let _mainDesc, _xml, remarks =
+        Checker.getTooltip source
+        |> assertAndExtractTooltip
+    match remarks with
+    | Some r -> r
+    | None -> failwith "Expected tooltip remarks containing 'Full name:'"
+
+[<Fact>]
+let ``Companion module tooltip shows demangled name`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+type MyType = { F: int }
+module MyType =
+    let func1{caret}23 x = x
+"""
+    Assert.Contains("MyType.func123", remarks)
+    Assert.DoesNotContain("MyTypeModule", remarks)
+
+[<Fact>]
+let ``Non-companion module keeps literal name`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+module HelperModule =
+    let doSt{caret}uff () = ()
+"""
+    Assert.Contains("HelperModule.doStuff", remarks)
+
+[<Fact>]
+let ``ModuleSuffix attribute without companion type demangles`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Foo =
+    let x{caret} = 1
+"""
+    Assert.Contains("Foo.x", remarks)
+    Assert.DoesNotContain("FooModule", remarks)
+
+[<Fact>]
+let ``Nested companion module demangled`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+module Outer =
+    type Inner = { v: int }
+    module Inner =
+        let hel{caret}per x = x
+"""
+    Assert.Contains("Outer.Inner.helper", remarks)
+    Assert.DoesNotContain("InnerModule", remarks)
+
+[<Fact>]
+let ``List dot map tooltip shows List not ListModule`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+let _ = List.m{caret}ap id [1]
+"""
+    Assert.Contains("List.map", remarks)
+    Assert.DoesNotContain("ListModule", remarks)
+
+

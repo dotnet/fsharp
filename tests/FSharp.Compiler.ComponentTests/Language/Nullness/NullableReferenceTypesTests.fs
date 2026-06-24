@@ -1,6 +1,7 @@
 module Language.NullableReferenceTypes
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
 
 let withNullnessOptions cu =
@@ -295,7 +296,7 @@ let getLength (x: string | null) = x.Length
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 37, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string | null'."]
 
 [<Fact>]
 let ``Does report warning on obj to static member`` () =
@@ -2513,3 +2514,255 @@ let main _ = 0
     |> compile
     |> run
     |> verifyOutputContains [|"-1"|]
+
+[<Theory>]
+// (source, line, col1, col2, memberName, bindingName, typeName)
+[<InlineData("module MyLib\nlet f (x: string | null) = x.PadLeft(1)",
+             2, 28, 29, "PadLeft", "x", "string | null")>]
+[<InlineData("module MyLib\nlet f (x: string | null) = x.Length",
+             2, 28, 29, "Length", "x", "string | null")>]
+[<InlineData("module MyLib\nlet f (x: string | null) = x.Trim().Length",
+             2, 28, 29, "Trim", "x", "string | null")>]
+[<InlineData("module MyLib\nlet f (x: string | null) = x.Split(',')",
+             2, 28, 29, "Split", "x", "string | null")>]
+[<InlineData("module MyLib\nlet f (xs: System.Collections.Generic.List<int> | null) = xs.Contains(1)",
+             2, 59, 61, "Contains", "xs", "System.Collections.Generic.List<int> | null")>]
+[<InlineData("module MyLib\nlet f (xs: System.Collections.Generic.IEnumerable<int> | null) = xs.GetEnumerator()",
+             2, 66, 68, "GetEnumerator", "xs", "System.Collections.Generic.IEnumerable<int> | null")>]
+[<InlineData("module MyLib\nopen System.Text\nlet f (sb: StringBuilder | null) = sb.Length <- 0",
+             3, 36, 38, "Length", "sb", "StringBuilder | null")>]
+let ``Issue 19658 - dot-access on nullable receiver names the binding and member``
+        (source: string, line: int, col1: int, col2: int,
+         memberName: string, bindingName: string, typeName: string) =
+    FSharp source
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line line, Col col1, Line line, Col col2,
+            $"Nullness warning: Possible dereference of a null value when accessing member '{memberName}' on the nullable value '{bindingName}' of type '{typeName}'."
+    ]
+
+// LINQ extension methods: on net472, BCL lacks NullableAttribute so the
+// extension-method parameter is ambivalent and no FS3261 fires.
+[<FactForNETCOREAPP>]
+let ``Issue 19658 - LINQ extension method dot-access on nullable receiver`` () =
+    FSharp """module MyLib
+open System.Linq
+let f (xs: System.Collections.Generic.List<int> | null) = xs.First()"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 59, Line 3, Col 61,
+            "Nullness warning: Possible dereference of a null value when accessing member 'First' on the nullable value 'xs' of type 'int seq | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - nullness warning on complex receiver omits binding name`` () =
+    FSharp """module MyLib
+let getStr () : string | null = ""
+let f () = (getStr()).Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 13, Line 3, Col 21,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - mutable receiver shows binding name`` () =
+    FSharp """module MyLib
+let f () =
+    let mutable s: string | null = null
+    s.Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 5, Line 4, Col 6,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - nested nullable generic receiver does not produce misleading inner-type-arg message`` () =
+    FSharp """module MyLib
+let f (xs: System.Collections.Generic.List<string | null> | null) =
+    xs.Count"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 5, Line 3, Col 7,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Count' on the nullable value 'xs' of type 'System.Collections.Generic.List<string | null> | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - static call still uses generic nullness warning`` () =
+    FSharp """module MyLib
+type C() =
+    static member Do(x: string) = ()
+let x: string | null = ""
+C.Do(x)"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 5, Col 6, Line 5, Col 7,
+            "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - no FS3261 when nullness checking is off`` () =
+    // Without strict nullness, x.PadLeft compiles clean - the new context
+    // must not introduce diagnostics when --checknulls is not enabled.
+    FSharp """module MyLib
+let f (x: string) = x.PadLeft(1)"""
+    |> asLibrary
+    |> compile
+    |> shouldSucceed
+
+[<Fact>]
+let ``Issue 19658 - multi-line receiver emits SeeAlso pointing at member call site`` () =
+    FSharp """module MyLib
+let f (x: string | null) =
+    x
+        .Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 5, Line 3, Col 6,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string | null'. See also test.fs(3,4)-(4,15)."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - implicit 'this' receiver does not leak name`` () =
+    // 'this.Get()' is an Expr.App, not an Expr.Val, so tryGetBindingName
+    // returns None and the "expression" form fires - documents the contract
+    // that complex expressions get the "expression" wording.
+    FSharp """module MyLib
+type C() =
+    member _.Get () : string | null = null
+    member this.Use () = this.Get().Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 26, Line 4, Col 36,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string | null'."
+    ]
+
+// -------- Coverage tests (positive: new dot-access message is used) --------
+
+[<Fact>]
+let ``Issue 19658 - piped lambda receiver uses new message`` () =
+    FSharp """module MyLib
+let f () =
+    let x: string | null = ""
+    x |> fun s -> s.Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 19, Line 4, Col 20,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - inref receiver shows binding name`` () =
+    FSharp """module MyLib
+let useIt (s: inref<string | null>) = s.Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 2, Col 39, Line 2, Col 40,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
+    ]
+
+// -------- Out-of-scope-path tests (positive: old generic message still used) --------
+// These pin the current behavior of paths intentionally NOT routed through
+// TcMethodApplication. Widening coverage to these paths is tracked separately
+// under #17409. If a future change starts emitting the new dot-access message
+// for any of these, that change must update these tests deliberately.
+
+[<Fact>]
+let ``Issue 19658 - indexer access falls back to generic nullness warning`` () =
+    FSharp """module MyLib
+let f (x: string | null) = x.[0]"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 2, Col 28, Line 2, Col 33,
+            "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - F# record field access falls back to generic nullness warning`` () =
+    FSharp """module MyLib
+type R = { Field: int }
+let f (r: R | null) = r.Field"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 23, Line 3, Col 30,
+            "Nullness warning: The types 'R' and 'R | null' do not have compatible nullability."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - anonymous record type cannot be marked nullable`` () =
+    // Anonymous record types do not support a `| null` qualification at all,
+    // so the dot-access nullness path cannot fire on them. This pins the
+    // current behavior: instead of FS3261, the language rejects the type.
+    FSharp """module MyLib
+let f (r: {| Field: int |} | null) = r.Field"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3260, Line 2, Col 11, Line 2, Col 34,
+            "The type '{| Field: int |}' does not support a nullness qualification."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - SRTP member call uses generic nullness warning`` () =
+    // SRTP-constrained members do not go through TcMethodApplication's
+    // overload resolution path; objArgInfo is None. The generic FS3261
+    // message fires. If/when SRTP gets routed through the same path, this
+    // test should be updated.
+    FSharp """module MyLib
+let inline f (x: ^T when ^T: (member Length: int)) : int = x.Length
+let g (s: string | null) = f s"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 30, Line 3, Col 31,
+            "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+    ]
+
+// https://github.com/dotnet/fsharp/issues/19646
+// After `| null -> … | s -> …`, `s` must keep its type alias, not the BCL type.
+[<Theory>]
+[<InlineData("", "string", "'string'")>]
+[<InlineData("type MyStr = string", "MyStr", "'MyStr'")>]
+[<InlineData("open System\ntype MyUri = Uri", "MyUri", "'MyUri'")>]
+let ``Issue 19646 - type alias is preserved after null pattern``
+    (typeDef: string, paramTypeName: string, expectedSubstring: string) =
+    FSharp $"""module Test
+
+{typeDef}
+
+let test (x: {paramTypeName} | null) : int =
+    match x with
+    | null -> 0
+    | s -> s
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches expectedSubstring

@@ -1103,27 +1103,26 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  call       instance int32 assembly/Test1::get_Tag()
-    IL_0007:  switch     ( 
-                          IL_001c,
-                          IL_0028,
-                          IL_002a,
-                          IL_002c)
-    IL_001c:  ldarg.0
-    IL_001d:  castclass  assembly/Test1/X11
-    IL_0022:  ldfld      int32 assembly/Test1/X11::item
-    IL_0027:  ret
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance int32 assembly/Test1::get_Tag()
+    IL_0006:  switch     ( 
+                          IL_001b,
+                          IL_0027,
+                          IL_0029,
+                          IL_002b)
+    IL_001b:  ldarg.0
+    IL_001c:  castclass  assembly/Test1/X11
+    IL_0021:  ldfld      int32 assembly/Test1/X11::item
+    IL_0026:  ret
 
-    IL_0028:  ldc.i4.2
-    IL_0029:  ret
+    IL_0027:  ldc.i4.2
+    IL_0028:  ret
 
-    IL_002a:  ldc.i4.3
-    IL_002b:  ret
+    IL_0029:  ldc.i4.3
+    IL_002a:  ret
 
-    IL_002c:  ldc.i4.4
-    IL_002d:  ret
+    IL_002b:  ldc.i4.4
+    IL_002c:  ret
   } 
 
   .method public static int32  fm(class assembly/Test1 y) cil managed

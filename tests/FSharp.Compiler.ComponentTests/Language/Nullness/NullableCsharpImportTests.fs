@@ -123,7 +123,7 @@ let s : string = d.Name // should warn here!!
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 6, Col 18, Line 6, Col 24, "Nullness warning: The types 'DirectoryInfo' and 'DirectoryInfo | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 6, Col 18, Line 6, Col 19, "Nullness warning: Possible dereference of a null value when accessing member 'Name' on the nullable value 'd' of type 'DirectoryInfo | null'."]
 
 [<Fact>]
 let ``Consumption of netstandard2 BCL api which is not annotated`` () = 
@@ -258,6 +258,6 @@ let theOtherOne = NullableClass.nullableImmArrayOfNotNullStrings
     |> compile
     |> shouldFail
     |> withDiagnostics 
-                [Error 3261, Line 7, Col 18, Line 7, Col 36, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+                [Error 3261, Line 7, Col 18, Line 7, Col 29, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'firstString' of type 'string | null'."]
             
             
