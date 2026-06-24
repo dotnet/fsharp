@@ -4063,12 +4063,23 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         (request.UpdatedMethods @ triviaRecompileKeys @ addedMethodKeys)
         |> dedupeMethodKeys
 
-    let resolvedMethods =
-        allUpdatedMethods
-        |> List.choose (fun key ->
+    let resolvedMethods, unresolvedMethods =
+        (([], []), allUpdatedMethods)
+        ||> List.fold (fun (resolved, unresolved) key ->
             match FSharpSymbolMatcher.tryGetMethodDef symbolMatcher key with
-            | Some(enclosing, typeDef, methodDef) -> Some(enclosing, typeDef, methodDef, key)
-            | None -> None)
+            | Some(enclosing, typeDef, methodDef) -> (enclosing, typeDef, methodDef, key) :: resolved, unresolved
+            | None -> resolved, key :: unresolved)
+
+    if not (List.isEmpty unresolvedMethods) then
+        let names =
+            unresolvedMethods
+            |> List.rev
+            |> List.map (fun key -> $"{key.DeclaringType}::{key.Name}")
+            |> String.concat ", "
+
+        raise (HotReloadUnsupportedEditException($"Unable to resolve updated method(s) in the fresh compilation: {names}. Please rebuild."))
+
+    let resolvedMethods = List.rev resolvedMethods
 
     if traceUserStringUpdates.Value then
         for (_, _, methodDef, _) in resolvedMethods do
