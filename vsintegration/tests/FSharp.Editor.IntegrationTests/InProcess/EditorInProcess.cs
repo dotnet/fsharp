@@ -129,21 +129,18 @@ internal partial class EditorInProcess
             return Task.CompletedTask;
         }
 
-        // Producer-agnostic "is a fix offered at the caret yet?" gate - the broker aggregates Roslyn today and the
-        // VS LSP CodeActionSource tomorrow. Querying it does not create/dismiss a session, so it doesn't cancel a
-        // slow in-flight analysis the way repeatedly invoking the lightbulb would.
-        async Task<bool> HasSuggestedActionsAsync(CancellationToken token)
-        {
-            await JoinableTaskFactory.SwitchToMainThreadAsync(token);
-            return await broker.HasSuggestedActionsAsync(categoryRegistry.Any, view, token);
-        }
+        // Error List produce signal: count error+warning diagnostics. The F# fixes we read are on-demand
+        // compiler diagnostics (FS0760 warning, FS0010/FS0039 parse errors) that reliably appear in the Error
+        // List - unlike broker.HasSuggestedActions, which is a false-negative for the parse-error fix.
+        async Task<int> GetDiagnosticCountAsync(CancellationToken token)
+            => await TestServices.ErrorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_WARNING, token);
 
         Task TriggerReanalysisAsync(CancellationToken token)
             => TriggerDiagnosticsAsync(view, token);
 
         try
         {
-            return await LightBulbHelper.GetCodeActionsAsync(broker, view, JoinableTaskFactory, ShowLightBulbAsync, HasSuggestedActionsAsync, TriggerReanalysisAsync, cancellationToken);
+            return await LightBulbHelper.GetCodeActionsAsync(broker, view, JoinableTaskFactory, ShowLightBulbAsync, GetDiagnosticCountAsync, TriggerReanalysisAsync, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {

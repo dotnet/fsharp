@@ -21,19 +21,18 @@ namespace FSharp.Editor.IntegrationTests.Helpers
     // session is producer-agnostic (aggregates Roslyn today, the VS LSP CodeActionSource tomorrow).
     internal static class LightBulbHelper
     {
-        // Overall budget for the whole "wait for fix, then read it" flow.
-        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(150);
+        // Overall budget for the read loop.
+        private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(120);
+        // Once a session becomes active, how long to wait for its terminal SuggestedActionsUpdated event.
         private static readonly TimeSpan s_perAttemptTimeout = TimeSpan.FromSeconds(15);
-        private static readonly TimeSpan s_activeWait = TimeSpan.FromSeconds(5);
-        // Produce-gate polling: gently ask the broker whether a fix exists yet (no session churn).
-        private static readonly TimeSpan s_produceGatePoll = TimeSpan.FromSeconds(1.5);
-        // Even when the gate stays false, attempt a real lightbulb read this often. The broker's
-        // HasSuggestedActions query is a false-negative for some F# fixes (e.g. parse-error "ErrorFix")
-        // that ShowQuickFixes + the session DO surface. Spacing protects slow producers from churn.
-        private static readonly TimeSpan s_fallbackReadInterval = TimeSpan.FromSeconds(15);
-        // If no fix appears for this long, re-touch the buffer once (covers a touch that fired before
-        // the project's checker was ready). Long enough not to cancel a slow in-flight analysis.
-        private static readonly TimeSpan s_reTouchInterval = TimeSpan.FromSeconds(45);
+        // How long to wait for a session to become active after invoking ShowQuickFixes. Kept short so a
+        // no-session attempt returns quickly and we can re-invoke - the broken-syntax (ErrorFix) lightbulb
+        // session is unstable and dismisses fast, so frequent re-invocation is how we catch it.
+        private static readonly TimeSpan s_activeWait = TimeSpan.FromSeconds(3);
+        // Delay between aggressive read attempts.
+        private static readonly TimeSpan s_readPoll = TimeSpan.FromSeconds(0.5);
+        // While no diagnostic has been produced yet, re-touch the buffer this often to nudge production.
+        private static readonly TimeSpan s_reTouchInterval = TimeSpan.FromSeconds(30);
 
         // PopulateWithDataAsync returns Task<ImmutableArray<...>> and ActionSets is ImmutableArray;
         // System.Collections.Immutable skews between the NuGet ref and the in-proc VS runtime, so we invoke/read
@@ -44,17 +43,20 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 new[] { typeof(ISuggestedActionCategorySet), typeof(IUIThreadOperationContext) })
             ?? throw new InvalidOperationException("IAsyncLightBulbSession.PopulateWithDataAsync not found.");
 
-        // Separates PRODUCE from READ to avoid cancelling slow background analyzers. We poll a producer-agnostic
-        // gate (broker.HasSuggestedActions) and read the real lightbulb when it reports a fix - this lets slow
-        // analyzers (F# unused-opens needs the project's IncrementalBuilder + a full check) finish uninterrupted.
-        // The gate is a false-negative for some fixes (F# parse-error "ErrorFix"), so we ALSO attempt a real read
-        // on a slow cadence even when the gate is false; that spacing still protects slow producers from churn.
+        // Aggressively invokes the real editor lightbulb (ShowQuickFixes) and reads its session every ~0.5s. The
+        // F# fixes we test are on-demand compiler diagnostics, and the parse-error (ErrorFix) lightbulb session is
+        // unstable headless - it appears then dismisses within seconds - so frequent re-invocation is what catches
+        // it (a sparse cadence misses the flickering session, the failure mode seen on CI). broker.HasSuggestedActions
+        // is a proven false-negative for the ErrorFix, so we don't gate on it; instead we use the Error List (the
+        // F# diagnostic is error/warning severity and reliably appears there) as a produce signal for re-touch and
+        // diagnostics. This is safe to be aggressive now that the slow unused-opens test (which needed an
+        // uninterrupted quiet window) is quarantined.
         public static async Task<IReadOnlyList<SuggestedActionSet>> GetCodeActionsAsync(
             ILightBulbBroker broker,
             IWpfTextView view,
             JoinableTaskFactory joinableTaskFactory,
             Func<Task> showLightBulbAsync,
-            Func<CancellationToken, Task<bool>> hasSuggestedActionsAsync,
+            Func<CancellationToken, Task<int>> getDiagnosticCountAsync,
             Func<CancellationToken, Task> triggerReanalysisAsync,
             CancellationToken cancellationToken)
         {
@@ -63,15 +65,13 @@ namespace FSharp.Editor.IntegrationTests.Helpers
 
             System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] GetCodeActionsAsync starting, timeout={0}s", s_timeout.TotalSeconds);
 
-            // Kick analysis once, then leave the buffer quiet so the (possibly slow) analyzer can complete.
+            // Kick analysis once up front.
             await triggerReanalysisAsync(cancellationToken);
             var lastTouch = DateTime.UtcNow;
-            var lastFallbackRead = DateTime.UtcNow; // first fallback read after one full interval
             var touches = 1;
-            var polls = 0;
             var reads = 0;
-            var lastGate = false;
-            var lastReadDetail = "no read attempted";
+            var lastDetail = "no read attempted";
+            var lastDiagCount = -1;
 
             while (true)
             {
@@ -80,54 +80,46 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 {
                     throw new InvalidOperationException(
                         $"No code actions after {s_timeout.TotalSeconds:F0}s " +
-                        $"(gate stayed {(lastGate ? "true" : "false")}; {polls} polls, {reads} reads, {touches} touches; last read: {lastReadDetail}).");
+                        $"({reads} reads, {touches} touches, lastDiagCount={lastDiagCount}; last read: {lastDetail}).");
                 }
 
-                bool gate;
+                // Error List produce signal (errors + warnings). Deterministic for the F# compiler-diagnostic fixes.
                 try
                 {
-                    gate = await hasSuggestedActionsAsync(cancellationToken);
+                    lastDiagCount = await getDiagnosticCountAsync(cancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    gate = false;
-                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] HasSuggestedActions threw {0}: {1}", ex.GetType().Name, ex.Message);
+                    lastDiagCount = -1;
+                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] diagnostic count threw {0}: {1}", ex.GetType().Name, ex.Message);
                 }
 
-                polls++;
-                lastGate = gate;
+                // Aggressive read: invoke the real lightbulb and try to read its session.
+                reads++;
+                var (sets, detail) = await TryGetFromRealSessionAsync(
+                    broker, view, joinableTaskFactory, showLightBulbAsync, cancellationToken);
+                lastDetail = detail;
 
-                // Read when the gate reports a fix (fast path for CodeFix), or periodically as a fallback for fixes
-                // the gate can't see (ErrorFix). The fallback cadence keeps slow producers from being churned.
-                if (gate || DateTime.UtcNow - lastFallbackRead >= s_fallbackReadInterval)
+                System.Diagnostics.Trace.TraceInformation(
+                    "[LightBulbHelper] Read #{0} ({1:F1}s, diagCount={2}): sets={3}, detail={4}",
+                    reads, (DateTime.UtcNow - start).TotalSeconds, lastDiagCount, sets.Count, detail);
+
+                if (sets.Count > 0)
                 {
-                    reads++;
-                    var (sets, detail) = await TryGetFromRealSessionAsync(
-                        broker, view, joinableTaskFactory, showLightBulbAsync, cancellationToken);
-                    lastFallbackRead = DateTime.UtcNow;
-                    lastReadDetail = detail;
-
-                    System.Diagnostics.Trace.TraceInformation(
-                        "[LightBulbHelper] Read #{0} (gate={1}, {2:F1}s): sets={3}, detail={4}",
-                        reads, gate, (DateTime.UtcNow - start).TotalSeconds, sets.Count, detail);
-
-                    if (sets.Count > 0)
-                    {
-                        return sets;
-                    }
+                    return sets;
                 }
 
-                // Bounded fallback: if nothing has appeared, the first touch may have fired before the checker was
-                // ready - re-touch once, then keep the buffer quiet again for another full interval.
-                if (DateTime.UtcNow - lastTouch > s_reTouchInterval)
+                // Re-touch only while no diagnostic has been produced yet (helps the "diagnostic never computed"
+                // case); once diagnostics exist, leave the buffer alone so reads aren't disrupted.
+                if (lastDiagCount <= 0 && DateTime.UtcNow - lastTouch > s_reTouchInterval)
                 {
-                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] Nothing yet; re-touching (touch #{0})", touches + 1);
+                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] No diagnostic yet; re-touching (touch #{0})", touches + 1);
                     await triggerReanalysisAsync(cancellationToken);
                     lastTouch = DateTime.UtcNow;
                     touches++;
                 }
 
-                await Task.Delay(s_produceGatePoll, cancellationToken);
+                await Task.Delay(s_readPoll, cancellationToken);
             }
         }
 
