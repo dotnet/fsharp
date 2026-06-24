@@ -119,39 +119,6 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname caseVirtual@21
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public class assembly/C o
-    .method public specialname rtspecialname instance void  .ctor(class assembly/C o) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/C assembly/caseVirtual@21::o
-      IL_0007:  ldarg.0
-      IL_0008:  call       instance void [runtime]System.Object::.ctor()
-      IL_000d:  ret
-    } 
-
-    .method assembly hidebysig instance void Invoke(int32 delegateArg0, int32 delegateArg1) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/C assembly/caseVirtual@21::o
-      IL_0006:  ldarg.1
-      IL_0007:  ldarg.2
-      IL_0008:  tail.
-      IL_000a:  callvirt   instance void assembly/C::V(int32,
-                                                                     int32)
-      IL_000f:  ret
-    } 
-
-  } 
-
   .method public static class [runtime]System.Action`2<int32,int32> case10_nonEta(class assembly/C o) cil managed
   {
     
@@ -193,12 +160,12 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/caseVirtual@21::.ctor(class assembly/C)
-    IL_0006:  ldftn      instance void assembly/caseVirtual@21::Invoke(int32,
-                                                                                     int32)
-    IL_000c:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
+    IL_0001:  dup
+    IL_0002:  ldvirtftn  instance void assembly/C::V(int32,
+                                                                   int32)
+    IL_0008:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)
-    IL_0011:  ret
+    IL_000d:  ret
   } 
 
 } 

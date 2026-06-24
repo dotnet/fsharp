@@ -56,25 +56,6 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case7_nonEta@10
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static void  Invoke(int32 x,
-                                         int32 y) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  call       void class assembly/G`1<string>::SMc<int32>(!!0,
-                                                                                          !!0)
-      IL_0007:  nop
-      IL_0008:  ret
-    } 
-
-  } 
-
   .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case8_etaCurried@13
          extends [runtime]System.Object
   {
@@ -118,8 +99,8 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case7_nonEta@10::Invoke(int32,
-                                                                                  int32)
+    IL_0001:  ldftn      void class assembly/G`1<string>::SMc<int32>(!!0,
+                                                                                        !!0)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)
     IL_000c:  ret

@@ -86,22 +86,14 @@
       IL_000a:  ret
     } 
 
-  } 
-
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niNonEta@20
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static int32  Invoke(int32 x,
-                                          int32 y) cil managed
+    .method public hidebysig instance !!T GPick<T>(!!T x, !!T y) cil managed
     {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  call       int32 assembly::accCurried(int32,
-                                                                  int32)
-      IL_0007:  ret
+      IL_0000:  ldarg.1
+      IL_0001:  ret
     } 
 
   } 
@@ -142,24 +134,6 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niStaticNonEta@33
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static int32  Invoke(int32 x,
-                                          int32 y) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  call       int32 assembly/S::AccS(int32,
-                                                              int32)
-      IL_0007:  ret
-    } 
-
-  } 
-
   .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niStaticEta@36
          extends [runtime]System.Object
   {
@@ -178,7 +152,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname niInstanceNonEta@43
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname niInstanceEta@49
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -189,39 +163,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/C assembly/niInstanceNonEta@43::o
-      IL_0007:  ldarg.0
-      IL_0008:  call       instance void [runtime]System.Object::.ctor()
-      IL_000d:  ret
-    } 
-
-    .method assembly hidebysig instance int32 Invoke(int32 delegateArg0, int32 delegateArg1) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/C assembly/niInstanceNonEta@43::o
-      IL_0006:  ldarg.1
-      IL_0007:  ldarg.2
-      IL_0008:  callvirt   instance int32 assembly/C::AccC(int32,
-                                                                       int32)
-      IL_000d:  ret
-    } 
-
-  } 
-
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname niInstanceEta@46
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public class assembly/C o
-    .method public specialname rtspecialname instance void  .ctor(class assembly/C o) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/C assembly/niInstanceEta@46::o
+      IL_0002:  stfld      class assembly/C assembly/niInstanceEta@49::o
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -232,35 +174,50 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/C assembly/niInstanceEta@46::o
+      IL_0001:  ldfld      class assembly/C assembly/niInstanceEta@49::o
       IL_0006:  ldarg.1
       IL_0007:  ldarg.2
-      IL_0008:  callvirt   instance int32 assembly/C::AccC(int32,
+      IL_0008:  tail.
+      IL_000a:  callvirt   instance int32 assembly/C::AccC(int32,
                                                                        int32)
-      IL_000d:  ret
+      IL_000f:  ret
     } 
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niTrivialNonEta@54
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname niGenericInstanceEta@55
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static int32  Invoke(int32 x,
-                                          int32 y) cil managed
+    .field public class assembly/C o
+    .method public specialname rtspecialname instance void  .ctor(class assembly/C o) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  call       int32 assembly::trivial(int32,
-                                                               int32)
-      IL_0007:  ret
+      IL_0002:  stfld      class assembly/C assembly/niGenericInstanceEta@55::o
+      IL_0007:  ldarg.0
+      IL_0008:  call       instance void [runtime]System.Object::.ctor()
+      IL_000d:  ret
+    } 
+
+    .method assembly hidebysig instance int32 Invoke(int32 a, int32 b) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      class assembly/C assembly/niGenericInstanceEta@55::o
+      IL_0006:  ldarg.1
+      IL_0007:  ldarg.2
+      IL_0008:  callvirt   instance !!0 assembly/C::GPick<int32>(!!0,
+                                                                             !!0)
+      IL_000d:  ret
     } 
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niTrivialEta@56
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niTrivialEta@65
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -308,10 +265,10 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/niNonEta@20::Invoke(int32,
-                                                                        int32)
+    IL_0001:  ldftn      int32 assembly::accCurried(int32,
+                                                                int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
+                                                                                                     native int)
     IL_000c:  ret
   } 
 
@@ -323,7 +280,7 @@
     IL_0001:  ldftn      int32 assembly/niEtaCurried@23::Invoke(int32,
                                                                             int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
+                                                                                                     native int)
     IL_000c:  ret
   } 
 
@@ -335,7 +292,7 @@
     IL_0001:  ldftn      int32 assembly/niEtaTupled@26::Invoke(int32,
                                                                            int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
+                                                                                                     native int)
     IL_000c:  ret
   } 
 
@@ -344,10 +301,10 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/niStaticNonEta@33::Invoke(int32,
-                                                                              int32)
+    IL_0001:  ldftn      int32 assembly/S::AccS(int32,
+                                                            int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
+                                                                                                     native int)
     IL_000c:  ret
   } 
 
@@ -359,7 +316,7 @@
     IL_0001:  ldftn      int32 assembly/niStaticEta@36::Invoke(int32,
                                                                            int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
+                                                                                                     native int)
     IL_000c:  ret
   } 
 
@@ -368,12 +325,11 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/niInstanceNonEta@43::.ctor(class assembly/C)
-    IL_0006:  ldftn      instance int32 assembly/niInstanceNonEta@43::Invoke(int32,
-                                                                                         int32)
-    IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
-    IL_0011:  ret
+    IL_0001:  ldftn      instance int32 assembly/C::AccC(int32,
+                                                                     int32)
+    IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
+                                                                                                     native int)
+    IL_000c:  ret
   } 
 
   .method public static class [runtime]System.Func`3<int32,int32,int32> niInstanceEta(class assembly/C o) cil managed
@@ -381,11 +337,36 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/niInstanceEta@46::.ctor(class assembly/C)
-    IL_0006:  ldftn      instance int32 assembly/niInstanceEta@46::Invoke(int32,
+    IL_0001:  newobj     instance void assembly/niInstanceEta@49::.ctor(class assembly/C)
+    IL_0006:  ldftn      instance int32 assembly/niInstanceEta@49::Invoke(int32,
                                                                                       int32)
     IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
+                                                                                                     native int)
+    IL_0011:  ret
+  } 
+
+  .method public static class [runtime]System.Func`3<int32,int32,int32> niGenericInstanceNonEta(class assembly/C o) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldftn      instance !!0 assembly/C::GPick<int32>(!!0,
+                                                                           !!0)
+    IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
+                                                                                                     native int)
+    IL_000c:  ret
+  } 
+
+  .method public static class [runtime]System.Func`3<int32,int32,int32> niGenericInstanceEta(class assembly/C o) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  newobj     instance void assembly/niGenericInstanceEta@55::.ctor(class assembly/C)
+    IL_0006:  ldftn      instance int32 assembly/niGenericInstanceEta@55::Invoke(int32,
+                                                                                             int32)
+    IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
+                                                                                                     native int)
     IL_0011:  ret
   } 
 
@@ -406,10 +387,10 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/niTrivialNonEta@54::Invoke(int32,
-                                                                               int32)
+    IL_0001:  ldftn      int32 assembly::trivial(int32,
+                                                             int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
+                                                                                                     native int)
     IL_000c:  ret
   } 
 
@@ -418,10 +399,10 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/niTrivialEta@56::Invoke(int32,
+    IL_0001:  ldftn      int32 assembly/niTrivialEta@65::Invoke(int32,
                                                                             int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
+                                                                                                     native int)
     IL_000c:  ret
   } 
 

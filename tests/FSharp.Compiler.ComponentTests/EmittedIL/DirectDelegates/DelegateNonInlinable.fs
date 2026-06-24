@@ -39,11 +39,20 @@ type C(k: int) =
     [<NoCompilerInlining>]
     member _.AccC (x: int) (y: int) : int = x + y + k
 
+    [<NoCompilerInlining>]
+    member _.GPick<'T> (x: 'T) (y: 'T) : 'T = x
+
 // non-inlinable instance target, non-eta-expanded
 let niInstanceNonEta (o: C) = Func<int, int, int>(o.AccC)
 
 // non-inlinable instance target, eta-expanded
 let niInstanceEta (o: C) = Func<int, int, int>(fun a b -> o.AccC a b)
+
+// non-inlinable generic instance target, non-eta-expanded
+let niGenericInstanceNonEta (o: C) = Func<int, int, int>(o.GPick<int>)
+
+// non-inlinable generic instance target, eta-expanded
+let niGenericInstanceEta (o: C) = Func<int, int, int>(fun a b -> o.GPick<int> a b)
 
 // Section D, bullet 1 (the contrast case): a trivial, inlinable target kept on purpose to document and
 // guard the inline-vs-direct interaction. In release the optimizer may inline the body before the
