@@ -1947,9 +1947,16 @@ and private snapshotTycon g denv path (tycon: Tycon) =
                     fieldSegment.Append("=") |> ignore
                     fieldSegment.Append(renderEntityType field.FormalType) |> ignore
 
+                    let literalText =
+                        field.LiteralValue
+                        |> Option.map (fun value -> $"[literal:{constDigest value}]")
+                        |> Option.defaultValue ""
+
+                    fieldSegment.Append(literalText) |> ignore
+
                     let digest =
                         let mutability = if field.IsMutable then "[mutable]" else ""
-                        $"{mutability}={renderEntityType field.FormalType}"
+                        $"{mutability}={renderEntityType field.FormalType}{literalText}"
 
                     fields <-
                         fields.Add(
