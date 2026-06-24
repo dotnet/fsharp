@@ -2324,7 +2324,7 @@ module internal DebugPrint =
                 )
             )
             ^^ wordL (tagText tycon.DisplayName)
-            ^^ layoutTyparDecls tycon.TyparsNoRange
+            ^^ layoutTyparDecls tycon.Typars
 
         let lhsL = lhsL --- layoutAttribs tycon.Attribs
 
