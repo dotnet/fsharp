@@ -68,22 +68,23 @@ let computeSymbolChanges
                     })
 
     let definitionMap =
-        ((definitionMap, baselineLookup) ||> Map.fold (fun acc key _ ->
-            if Map.containsKey key updatedLookup then
-                acc
-            else
-                let rudeEdit =
-                    {
-                        Symbol = None
-                        Kind = RudeEditKind.Unsupported
-                        Message = $"File '{key}' was removed or renamed; full rebuild required."
-                    }
+        ((definitionMap, baselineLookup)
+         ||> Map.fold (fun acc key _ ->
+             if Map.containsKey key updatedLookup then
+                 acc
+             else
+                 let rudeEdit =
+                     {
+                         Symbol = None
+                         Kind = RudeEditKind.Unsupported
+                         Message = $"File '{key}' was removed or renamed; full rebuild required."
+                     }
 
-                mergeDefinitionMaps
-                    acc
-                    { emptyDefinitionMap with
-                        RudeEdits = [ rudeEdit ]
-                    }))
+                 mergeDefinitionMaps
+                     acc
+                     { emptyDefinitionMap with
+                         RudeEdits = [ rudeEdit ]
+                     }))
 
     FSharpSymbolChanges.ofDefinitionMap definitionMap
 

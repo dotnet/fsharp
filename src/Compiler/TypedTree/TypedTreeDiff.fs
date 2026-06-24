@@ -1897,6 +1897,7 @@ and private snapshotTycon g denv path (tycon: Tycon) =
     let mutable fields: Map<string, EntityFieldDigest> = Map.empty
     let mutable isFSharpClass = false
     let fieldSegment = StringBuilder()
+
     let typarOrdinals =
         tycon.Typars
         |> List.filter (fun typar -> not typar.IsErased)
