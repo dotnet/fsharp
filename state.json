@@ -116,7 +116,7 @@
       "cats": []
     },
     "19930": {
-      "sha": "8475d0d4f591ba4af4dd45f8468eac938a6aee92",
+      "sha": "42debbe79ae023bb9721adc4b72481cbabd5e25c",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Restore",
@@ -177,10 +177,6 @@
     },
     "19883": {
       "sha": "c2e52a92ccbbffee79f922f9c44b92f2eeca1748",
-      "cats": []
-    },
-    "19879": {
-      "sha": "74ee7b4f42f7f1fa39ddef35103fc47e5807ee3d",
       "cats": []
     },
     "19878": {
