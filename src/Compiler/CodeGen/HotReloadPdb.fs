@@ -116,7 +116,7 @@ let emitDelta
                 | _ ->
                     try
                         let document = reader.GetDocument sourceHandle
-                        let nameBytes = reader.GetBlobBytes document.Name
+                        let name = reader.GetString document.Name
 
                         let hashBytes =
                             if document.Hash.IsNil then
@@ -136,7 +136,7 @@ let emitDelta
                             else
                                 reader.GetGuid document.Language
 
-                        let nameHandle = metadata.GetOrAddBlob nameBytes
+                        let nameHandle = metadata.GetOrAddDocumentName name
                         let hashHandle = metadata.GetOrAddBlob hashBytes
                         let hashAlgorithmHandle = metadata.GetOrAddGuid hashAlgorithmGuid
                         let languageHandle = metadata.GetOrAddGuid languageGuid
