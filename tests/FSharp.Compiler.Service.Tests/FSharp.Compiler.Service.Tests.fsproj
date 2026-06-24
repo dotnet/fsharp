@@ -74,6 +74,7 @@
     <Compile Include="AssemblyContentProviderTests.fs" />
     <Compile Include="TreeVisitorTests.fs" />
     <Compile Include="ParsedInputModuleTests.fs" />
+    <Compile Include="OpenDeclarationInsertionTests.fs" />
     <Compile Include="ParsedInputModuleTests.VeryBigArrayExprTest.fs" />
     <Compile Include="FSharpExprPatternsTests.fs" />
     <Compile Include="SourceTextTests.fs" />
