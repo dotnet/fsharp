@@ -2148,10 +2148,13 @@ let private compareBindings
             && baselineBinding.Symbol.ParameterTypeIdentities = updatedBinding.Symbol.ParameterTypeIdentities
             && baselineBinding.Symbol.ReturnTypeIdentity = updatedBinding.Symbol.ReturnTypeIdentity
 
-        if
-            baselineBinding.SignatureText <> updatedBinding.SignatureText
-            && not hasEquivalentRuntimeSignature
-        then
+        let hasSignatureChange =
+            if runtimeSignatureIdentityKnown then
+                not hasEquivalentRuntimeSignature
+            else
+                baselineBinding.SignatureText <> updatedBinding.SignatureText
+
+        if hasSignatureChange then
             rude.Add(
                 {
                     Symbol = Some baselineBinding.Symbol
