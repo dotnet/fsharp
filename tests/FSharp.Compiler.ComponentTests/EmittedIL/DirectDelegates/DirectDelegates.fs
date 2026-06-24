@@ -21,6 +21,7 @@ module DirectDelegates =
         compilation
         |> coreOptions
         |> compile
+        |> shouldSucceed
         |> verifyILBaseline
 
     // Redirect the IL baseline to a distinct *.Preview.il.bsl path so the preview variant can reuse the
@@ -45,6 +46,7 @@ module DirectDelegates =
         |> withLangVersionPreview
         |> withPreviewBaseline
         |> compile
+        |> shouldSucceed
         |> verifyILBaseline
 
     [<Theory; FileInlineData("DelegateKnownFunction.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.Both)>]
@@ -149,6 +151,14 @@ module DirectDelegates =
 
     [<Theory; FileInlineData("DelegateILMethod.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.Both)>]
     let ``DelegateILMethod_fs preview`` compilation =
+        compilation |> getCompilation |> verifyPreviewCompilation
+
+    [<Theory; FileInlineData("DelegateCustomType.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.Both)>]
+    let ``DelegateCustomType_fs`` compilation =
+        compilation |> getCompilation |> verifyCompilation
+
+    [<Theory; FileInlineData("DelegateCustomType.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.Both)>]
+    let ``DelegateCustomType_fs preview`` compilation =
         compilation |> getCompilation |> verifyPreviewCompilation
 
     [<Fact>]
@@ -299,5 +309,42 @@ let main _ =
             """
         |> withLangVersionPreview
         |> withOptions [ "--optimize+" ]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // Custom, F#-declared delegate types (not just BCL Func/Action) point directly at the target method.
+    // Non-eta targets, so direct in both debug and release. Covers a static target (null Target) and an
+    // instance target (Target = receiver) through a user-defined delegate.
+    [<Fact>]
+    let ``Custom F# delegate targets the real method and dispatch correctly (preview)`` () =
+        FSharp """
+module CustomDelegateExecution
+
+open System
+
+type DTupled = delegate of int * int -> int
+
+[<NoCompilerInlining>]
+let acc (x: int) (y: int) : int = x + y
+
+type C() =
+    [<NoCompilerInlining>]
+    member _.M (x: int) (y: int) : int = x * y
+
+[<EntryPoint>]
+let main _ =
+    let ds = DTupled(acc)
+    if ds.Invoke(2, 3) <> 5 then failwith "static: wrong result"
+    if ds.Method.Name <> "acc" then failwithf "static: expected 'acc' but got '%s'" ds.Method.Name
+    if not (isNull ds.Target) then failwith "static: Target should be null"
+
+    let c = C()
+    let di = DTupled(c.M)
+    if di.Invoke(4, 5) <> 20 then failwith "instance: wrong result"
+    if di.Method.Name <> "M" then failwithf "instance: expected 'M' but got '%s'" di.Method.Name
+    if not (obj.ReferenceEquals(di.Target, c)) then failwith "instance: Target is not the receiver"
+    0
+            """
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
