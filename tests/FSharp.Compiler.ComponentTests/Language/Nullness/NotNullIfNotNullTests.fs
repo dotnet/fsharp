@@ -291,6 +291,22 @@ let r : int option = C.EchoGeneric none
     |> shouldFail
     |> withDiagnosticMessageMatches nullableExpected
 
+// unit is also represented as null at runtime, so EchoGeneric of '()' must keep the result nullable.
+// Like None, this travels the same-tycon nullness subsumption path (unit-with-null vs unit-without-null).
+[<FactForNETCOREAPP>]
+let ``Csharp NotNullIfNotNull - generic echo of unit stays nullable`` () =
+    FSharp """module MyLibrary
+open NotNullLib
+
+let r : unit = C.EchoGeneric (())
+"""
+    |> asLibrary
+    |> withReferences [csNotNullLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldFail
+    |> withDiagnosticMessageMatches nullableExpected
+
 // Control: a genuinely non-null reference value yields a non-null result through the generic echo.
 [<FactForNETCOREAPP>]
 let ``Csharp NotNullIfNotNull - generic echo of non-null reference is non-null`` () =
