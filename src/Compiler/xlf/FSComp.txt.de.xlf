@@ -792,6 +792,11 @@
         <target state="new">Hot reload delta capture (--test:HotReloadDeltas) requires debug symbols (--debug+). Add '--debug+' or remove '--debug-' from the compilation options.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fscHotReloadRequiresPortableDebugInfo">
+        <source>Hot reload delta capture (--test:HotReloadDeltas) requires portable debug symbols written beside the assembly. Use '--debug:portable' instead of '--debug:embedded'.</source>
+        <target state="new">Hot reload delta capture (--test:HotReloadDeltas) requires portable debug symbols written beside the assembly. Use '--debug:portable' instead of '--debug:embedded'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">Ungültige Direktive "#{0} {1}"</target>

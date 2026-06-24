@@ -248,7 +248,7 @@ type CompilerEmitArtifacts =
 /// implementation details while still offering extension points for capture/fallback flows.
 type ICompilerEmitHook =
     abstract ValidateConfiguration:
-        emitCaptureArtifacts: bool * debugInfo: bool * localOptimizationsEnabled: bool -> unit
+        emitCaptureArtifacts: bool * debugInfo: bool * embeddedPdb: bool * localOptimizationsEnabled: bool -> unit
 
     /// Runs after type checking/optimization and immediately before IlxGen lowering. The
     /// hook receives the typed implementation files being lowered so the hot reload

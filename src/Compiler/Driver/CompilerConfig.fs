@@ -467,7 +467,8 @@ type CompilerEmitArtifacts =
 /// Adapter interface that lets the core emit pipeline remain unaware of hot reload
 /// implementation details while still offering extension points for capture/fallback flows.
 type ICompilerEmitHook =
-    abstract ValidateConfiguration: emitCaptureArtifacts: bool * debugInfo: bool * localOptimizationsEnabled: bool -> unit
+    abstract ValidateConfiguration:
+        emitCaptureArtifacts: bool * debugInfo: bool * embeddedPdb: bool * localOptimizationsEnabled: bool -> unit
 
     /// Runs after type checking/optimization and immediately before IlxGen lowering. The
     /// hook receives the typed implementation files being lowered so the hot reload
@@ -505,7 +506,7 @@ type ICompilerEmitHook =
 
 type private NoOpCompilerEmitHook() =
     interface ICompilerEmitHook with
-        member _.ValidateConfiguration(_emitCaptureArtifacts, _debugInfo, _localOptimizationsEnabled) = ()
+        member _.ValidateConfiguration(_emitCaptureArtifacts, _debugInfo, _embeddedPdb, _localOptimizationsEnabled) = ()
         member _.PrepareForCodeGeneration(_emitCaptureArtifacts, _tcGlobals, _optimizedImpls) = ()
         member _.BeforeFileEmit(_emitCaptureArtifacts, _compilerGlobalState) = ()
 

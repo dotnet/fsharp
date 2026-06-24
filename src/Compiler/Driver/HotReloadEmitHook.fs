@@ -105,10 +105,13 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
         | None -> ()
 
     interface ICompilerEmitHook with
-        member _.ValidateConfiguration(emitCaptureArtifacts, debugInfo, localOptimizationsEnabled) =
+        member _.ValidateConfiguration(emitCaptureArtifacts, debugInfo, embeddedPdb, localOptimizationsEnabled) =
             if emitCaptureArtifacts then
                 if not debugInfo then
                     error (Error(FSComp.SR.fscHotReloadRequiresDebugInfo (), rangeStartup))
+
+                if embeddedPdb then
+                    error (Error(FSComp.SR.fscHotReloadRequiresPortableDebugInfo (), rangeStartup))
 
                 if localOptimizationsEnabled then
                     error (Error(FSComp.SR.fscHotReloadIncompatibleWithOptimization (), rangeStartup))

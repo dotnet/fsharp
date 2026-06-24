@@ -1010,6 +1010,7 @@ let main4
     compilerEmitHook.ValidateConfiguration(
         tcConfig.emitCaptureArtifacts,
         tcConfig.debuginfo,
+        tcConfig.embeddedPDB,
         tcConfig.optSettings.LocalOptimizationsEnabled
     )
 
