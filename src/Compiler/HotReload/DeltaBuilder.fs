@@ -38,10 +38,11 @@ let computeSymbolChanges
     (baseline: CheckedAssemblyAfterOptimization)
     (updated: CheckedAssemblyAfterOptimization)
     : FSharpSymbolChanges =
-    let baselineFiles = checkedFiles baseline
-    let updatedFiles = checkedFiles updated
+    let baselineFiles = checkedFiles baseline |> Seq.toList
+    let updatedFiles = checkedFiles updated |> Seq.toList
 
     let baselineLookup = buildLookup baselineFiles
+    let updatedLookup = buildLookup updatedFiles
 
     let definitionMap =
         (emptyDefinitionMap, updatedFiles)
@@ -65,6 +66,24 @@ let computeSymbolChanges
                     { emptyDefinitionMap with
                         RudeEdits = [ rudeEdit ]
                     })
+
+    let definitionMap =
+        ((definitionMap, baselineLookup) ||> Map.fold (fun acc key _ ->
+            if Map.containsKey key updatedLookup then
+                acc
+            else
+                let rudeEdit =
+                    {
+                        Symbol = None
+                        Kind = RudeEditKind.Unsupported
+                        Message = $"File '{key}' was removed or renamed; full rebuild required."
+                    }
+
+                mergeDefinitionMaps
+                    acc
+                    { emptyDefinitionMap with
+                        RudeEdits = [ rudeEdit ]
+                    }))
 
     FSharpSymbolChanges.ofDefinitionMap definitionMap
 
