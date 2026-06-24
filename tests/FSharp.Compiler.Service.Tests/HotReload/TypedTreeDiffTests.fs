@@ -92,7 +92,12 @@ type internal DiffTestHarness() =
         let implFile =
             match List.tryFind matches implFiles with
             | Some impl -> impl
-            | None -> failwithf "Could not locate Library implementation file. Available files: %A" (implFiles |> List.map (fun (CheckedImplFile(qualifiedNameOfFile = qname)) -> qname.Text))
+            // Single-file projects: accept whatever module name the source declares (e.g. a
+            // multi-segment `module Library.Sub`), so tests can exercise non-default module paths.
+            | None ->
+                match implFiles with
+                | [ single ] -> single
+                | _ -> failwithf "Could not locate Library implementation file. Available files: %A" (implFiles |> List.map (fun (CheckedImplFile(qualifiedNameOfFile = qname)) -> qname.Text))
 
         tcGlobals, implFile
 
@@ -138,6 +143,25 @@ module TypedTreeDiffTests =
 
         Assert.Empty(result.SemanticEdits)
         Assert.Empty(result.RudeEdits)
+
+    [<Fact>]
+    let ``rude-edit symbol name is not module-prefix-doubled`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite("module Library.Sub\ntype State = { Count: int }\n")
+        let baseline = harness.Compile()
+        harness.Rewrite("module Library.Sub\ntype State = { Count: int; Extra: int }\n")
+        let updated = harness.Compile()
+        let result = harness.Diff baseline updated
+
+        let names =
+            (result.RudeEdits |> List.choose (fun e -> e.Symbol |> Option.map (fun s -> s.QualifiedName)))
+            @ (result.SemanticEdits |> List.map (fun e -> e.Symbol.QualifiedName))
+
+        // The State type lives in `module Library.Sub`, so its qualified name is "Library.Sub.State",
+        // never the historically module-prefix-doubled "Library.Sub.Library.Sub.State".
+        Assert.NotEmpty(names)
+        Assert.All(names, fun n -> Assert.DoesNotContain("Library.Sub.Library.Sub", n))
+        Assert.Contains("Library.Sub.State", names)
 
     [<Fact>]
     let ``method body update produces semantic edit`` () =

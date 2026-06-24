@@ -45,6 +45,30 @@ type RuntimeTypeIdentity =
     | TypeVariable of ordinal: int
     | VoidType
 
+/// Joins a snapshot path + logical name into a dotted qualified name, dropping a redundant dotted
+/// head. A `module A.B` is modelled as namespace A + module B, so the snapshot path can carry the
+/// file's qualified name ("A.B") followed by that same prefix re-derived as individual segments
+/// ("A", "B"); without this the name would render as "A.B.A.B.State" instead of "A.B.State".
+/// Single-segment modules (`module Library`) have no such redundancy and are left untouched.
+let internal canonicalQualifiedName (path: string list) (logicalName: string) =
+    let canonical =
+        match path with
+        | head :: rest when head.Contains(".") ->
+            let segs = head.Split('.') |> Array.toList
+
+            if
+                List.length rest >= List.length segs
+                && List.truncate (List.length segs) rest = segs
+            then
+                rest
+            else
+                path
+        | _ -> path
+
+    match canonical with
+    | [] -> logicalName
+    | _ -> String.concat "." (canonical @ [ logicalName ])
+
 /// Stable identity for values and entities tracked across baseline/hot reload sessions.
 type SymbolId =
     {
@@ -61,10 +85,7 @@ type SymbolId =
         ReturnTypeIdentity: RuntimeTypeIdentity option
     }
 
-    member x.QualifiedName =
-        match x.Path with
-        | [] -> x.LogicalName
-        | path -> String.concat "." (path @ [ x.LogicalName ])
+    member x.QualifiedName = canonicalQualifiedName x.Path x.LogicalName
 
 [<RequireQualifiedAccess>]
 type SemanticEditKind =
