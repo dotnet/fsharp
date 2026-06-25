@@ -1880,10 +1880,13 @@ type internal FsiDynamicCompiler
                 manifest.CustomAttrs.AsList()
                 |> List.exists (fun a -> a.Method.DeclaringType.TypeRef.FullName = "System.Diagnostics.DebuggableAttribute")
 
+            // Mirror the single-emit path (ilreflect.fs's mkDynamicAssemblyAndModule): attach
+            // DebuggableAttribute(DisableOptimizations|Default) to the submission's manifest exactly
+            // when local optimizations are disabled, so the JIT keeps locals around for debugging.
             let attrs =
                 [
                     tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName tcConfigB.fsiMultiAssemblyEmit)
-                    if generateDebugInfo && not hasUserDebuggableAttr then
+                    if not tcConfigB.optSettings.LocalOptimizationsEnabled && not hasUserDebuggableAttr then
                         tcGlobals.mkDebuggableAttributeV2 (tcConfigB.jitTracking, true)
                     yield! manifest.CustomAttrs.AsList()
                 ]

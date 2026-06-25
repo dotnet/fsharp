@@ -255,8 +255,9 @@ match x with
 
     // https://github.com/dotnet/fsharp/issues/14572
     // Verify that the per-submission dynamic assembly emitted by FSI in --multiemit+ mode
-    // carries a manifest-level DebuggableAttribute when --debug+ is in effect, so that the
-    // CLR's JIT does not optimize away locals (which would empty Locals/Autos/Watch in VS).
+    // carries a manifest-level DebuggableAttribute when local optimizations are disabled
+    // (i.e. --optimize-), matching the single-emit path in ilreflect.fs, so that the CLR's
+    // JIT does not optimize away locals (which would empty Locals/Autos/Watch in VS).
     module DebuggableAttributeManifest =
 
         let private reflectionHelperScript =
@@ -279,8 +280,8 @@ asm.GetCustomAttributes(typeof<System.Diagnostics.DebuggableAttribute>, false)
             int System.Diagnostics.DebuggableAttribute.DebuggingModes.DisableOptimizations
 
         [<Fact>]
-        let ``multi-emit submission with --debug+ has DebuggableAttribute with DisableOptimizations`` () =
-            let args: string array = [| "--multiemit+"; "--debug+" |]
+        let ``multi-emit submission with --optimize- has DebuggableAttribute with DisableOptimizations`` () =
+            let args: string array = [| "--multiemit+"; "--optimize-" |]
             use session = new FSharpScript(additionalArgs = args)
             let flags = evalDebuggableFlags session
 
@@ -292,19 +293,31 @@ asm.GetCustomAttributes(typeof<System.Diagnostics.DebuggableAttribute>, false)
             )
 
         [<Fact>]
-        let ``multi-emit submission with --debug- has no DebuggableAttribute`` () =
-            let args: string array = [| "--multiemit+"; "--debug-" |]
+        let ``multi-emit submission with --optimize+ has no DebuggableAttribute`` () =
+            let args: string array = [| "--multiemit+"; "--optimize+" |]
             use session = new FSharpScript(additionalArgs = args)
             let flags = evalDebuggableFlags session
 
             Assert.Empty(flags)
 
         [<Fact>]
-        let ``single-emit submission with --debug+ keeps DebuggableAttribute (regression)`` () =
+        let ``multi-emit submission gating follows optimization, not --debug`` () =
+            // The gate matches single-emit (ilreflect.fs): it keys off local optimizations being
+            // disabled, not off --debug. With optimizations on (the FSI default) --debug+ alone
+            // must not attach a DebuggableAttribute, otherwise the semantics would diverge from
+            // both the single-emit and batch-compiler reference paths.
+            let args: string array = [| "--multiemit+"; "--debug+" |]
+            use session = new FSharpScript(additionalArgs = args)
+            let flags = evalDebuggableFlags session
+
+            Assert.Empty(flags)
+
+        [<Fact>]
+        let ``single-emit submission with --optimize- keeps DebuggableAttribute (regression)`` () =
             // ilreflect.fs's mkDynamicAssemblyAndModule attaches DebuggableAttribute only when
             // local optimizations are disabled. --optimize- gates that codepath, so include it
             // here to make this a faithful regression test of the existing single-emit behavior.
-            let args: string array = [| "--multiemit-"; "--debug+"; "--optimize-" |]
+            let args: string array = [| "--multiemit-"; "--optimize-" |]
             use session = new FSharpScript(additionalArgs = args)
             let flags = evalDebuggableFlags session
 
@@ -316,27 +329,32 @@ asm.GetCustomAttributes(typeof<System.Diagnostics.DebuggableAttribute>, false)
             )
 
         [<Fact>]
-        let ``multi-emit + --debug+ does not duplicate user-declared DebuggableAttribute`` () =
-            let args: string array = [| "--multiemit+"; "--debug+" |]
+        let ``multi-emit + --optimize- does not duplicate user-declared DebuggableAttribute`` () =
+            let args: string array = [| "--multiemit+"; "--optimize-" |]
             use session = new FSharpScript(additionalArgs = args)
 
-            // User declares the attribute themselves in a prior submission. The fix must
-            // still emit exactly one DebuggableAttribute on subsequent submissions' manifests
-            // (i.e. the auto-attach must not introduce a duplicate when one is already present).
-            let userDecl, errors =
+            // In --multiemit+ every submission is its own assembly, so the user-declared attribute
+            // and the GetExecutingAssembly() inspection must run in the *same* submission to exercise
+            // the per-manifest dedup guard. With optimizations disabled the auto-attach would fire,
+            // so the guard must keep exactly one DebuggableAttribute when the user already declared one.
+            let result, errors =
                 session.Eval(
                     """
 [<assembly: System.Diagnostics.DebuggableAttribute(System.Diagnostics.DebuggableAttribute.DebuggingModes.Default)>]
 do ()
+
+let asm = System.Reflection.Assembly.GetExecutingAssembly()
+asm.GetCustomAttributes(typeof<System.Diagnostics.DebuggableAttribute>, false)
+|> Array.map (fun a -> int (a :?> System.Diagnostics.DebuggableAttribute).DebuggingFlags)
 """
                 )
 
             Assert.Empty(errors)
 
-            match userDecl with
-            | Result.Ok _ -> ()
-            | Result.Error ex -> raise ex
-
-            let flags = evalDebuggableFlags session
+            let flags =
+                match result with
+                | Result.Ok(Some v) -> v.ReflectionValue :?> int[]
+                | Result.Ok None -> failwith "Expected a value from reflection helper script"
+                | Result.Error ex -> raise ex
 
             Assert.Equal(1, flags.Length)
