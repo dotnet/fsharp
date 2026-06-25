@@ -208,6 +208,31 @@ module Foobar = let y = 2
         |> ignore
 
     [<Fact>]
+    let ``Recursive module with duplicate sibling modules still analyzes second module body`` () =
+        let results =
+            FSharp """
+module rec A
+
+module Foobar = let x = 1
+module Foobar = let y = 2
+"""
+            |> typecheckResults
+
+        // The duplicate definition error must still be reported.
+        results.Diagnostics
+        |> Array.exists (fun d -> d.ErrorNumber = 37)
+        |> fun found -> Assert.True(found, "Expected FS0037 duplicate definition error")
+
+        // Despite the duplicate, the body of the second module must still be analyzed
+        // and its binding 'y' reported to the symbol sink (so IDE features keep working).
+        let yUses =
+            results.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.filter (fun su -> su.Symbol.DisplayName = "y")
+            |> Seq.toArray
+
+        Assert.True(yUses.Length >= 1, $"Expected 'y' from the second module to be reported to the sink, got {yUses.Length}")
+
+    [<Fact>]
     let ``Recursive namespace with duplicate sibling modules emits FS0037`` () =
         FSharp """
 namespace rec N
