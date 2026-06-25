@@ -37,23 +37,22 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  ldc.i4.3
-    IL_0003:  sub
-    IL_0004:  switch     ( 
-                          IL_0013,
-                          IL_0019)
-    IL_0011:  br.s       IL_001f
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.3
+    IL_0002:  sub
+    IL_0003:  switch     ( 
+                          IL_0012,
+                          IL_0018)
+    IL_0010:  br.s       IL_001e
 
-    IL_0013:  ldstr      "three"
-    IL_0018:  ret
+    IL_0012:  ldstr      "three"
+    IL_0017:  ret
 
-    IL_0019:  ldstr      "four"
-    IL_001e:  ret
+    IL_0018:  ldstr      "four"
+    IL_001d:  ret
 
-    IL_001f:  ldstr      "five"
-    IL_0024:  ret
+    IL_001e:  ldstr      "five"
+    IL_0023:  ret
   } 
 
 } 
@@ -70,7 +69,6 @@
   } 
 
 } 
-
 
 
 

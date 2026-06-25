@@ -658,19 +658,21 @@ type CalledMeth<'T>
 
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
+                // x.Item(i, value = v) — named arg removes 'i' from unnamed, leaving < 2 unnamed called args.
+                let useIndexerSetterShape = isIndexerSetter && nUnnamedCalledArgs >= 2
                 let supportsParamArgs = 
                     allowParamArgs && 
                     nUnnamedCalledArgs >= 1 && 
                     nUnnamedCallerArgs >= nUnnamedCalledArgs-1 &&
                     let possibleParamArg =
-                        if isIndexerSetter then
+                        if useIndexerSetterShape then
                             unnamedCalledArgs[nUnnamedCalledArgs-2]
                         else
                             unnamedCalledArgs[nUnnamedCalledArgs-1]
                     possibleParamArg.IsParamArray && isArray1DTy g possibleParamArg.CalledArgumentType
 
                 if supportsParamArgs then
-                    if isIndexerSetter then
+                    if useIndexerSetterShape then
                         // Note, for an indexer setter nUnnamedCalledArgs will be at least two, and normally exactly 2
                         let unnamedCalledArgs2 =
                             unnamedCalledArgs[0..unnamedCalledArgs.Length-3] @
@@ -807,6 +809,8 @@ type CalledMeth<'T>
     member x.UsesParamArrayConversion = x.ArgSets |> List.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
 
     member x.IsIndexParamArraySetter = isIndexerSetter && x.UsesParamArrayConversion
+
+    member x.IsIndexerSetter = isIndexerSetter
 
     member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
 
@@ -1868,7 +1872,7 @@ module ProvidedMethodCalls =
                 else
                     if isGeneric then 
                         let genericArgs = st.PApplyArray((fun st -> st.GetGenericArguments()), "GetGenericArguments", m) 
-                        let typars = headTypeAsFSharpType.Typars(m)
+                        let typars = headTypeAsFSharpType.Typars
                         // Drop the generic arguments that don't correspond to type arguments, i.e. are units-of-measure
                         let genericArgs = 
                             [| for genericArg, tp in Seq.zip genericArgs typars do

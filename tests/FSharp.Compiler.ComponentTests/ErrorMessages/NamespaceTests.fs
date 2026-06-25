@@ -81,3 +81,32 @@ do printfn "test"
         |> withDiagnostics [
             (Error 201, Line 4, Col 1, Line 4, Col 18, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
         ]
+
+[<Fact>]
+let ``Namespace-type collision says type not module (FS3889)`` () =
+    let source1 = """namespace Ns
+type T = { Field: int }
+"""
+    let source2 = "namespace Ns.T"
+    FSharp source1
+    |> withAdditionalSourceFile (FsSourceWithFileName "second.fs" source2)
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3889
+    |> withDiagnosticMessageMatches "type"
+    |> ignore
+
+[<Fact>]
+let ``Namespace-module collision still says module (FS0247)`` () =
+    let source1 = """namespace Ns
+module M =
+    let x = 1
+"""
+    let source2 = "namespace Ns.M"
+    FSharp source1
+    |> withAdditionalSourceFile (FsSourceWithFileName "second.fs" source2)
+    |> compile
+    |> shouldFail
+    |> withErrorCode 0247
+    |> withDiagnosticMessageMatches "namespace and a module"
+    |> ignore
