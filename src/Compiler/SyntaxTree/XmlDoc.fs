@@ -15,7 +15,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 /// Represents collected XmlDoc lines
-[<RequireQualifiedAccess>]
 type XmlDoc(unprocessedLines: string[], range: range) =
     let rec processLines (lines: string list) =
         match lines with

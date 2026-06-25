@@ -277,7 +277,7 @@ module internal SymbolHelpers =
 
         | Item.UnqualifiedType (tcref :: _)
         | Item.ExnCase tcref ->
-            mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+            mkXmlComment (GetXmlDocSigOfEntityRef infoReader tcref)
 
         | Item.RecdField rfinfo ->
             mkXmlComment (GetXmlDocSigOfRecdFieldRef rfinfo.RecdFieldRef)
@@ -285,13 +285,13 @@ module internal SymbolHelpers =
         | Item.NewDef _ -> FSharpXmlDoc.None
 
         | Item.ILField finfo ->
-            mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
+            mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader finfo)
 
         | Item.DelegateCtor ty
         | Item.Types(_, ty :: _) ->
             match ty with
             | AbbrevOrAppTy(tcref, _) ->
-                mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+                mkXmlComment (GetXmlDocSigOfEntityRef infoReader tcref)
             | _ -> FSharpXmlDoc.None
 
         | Item.CustomOperation (_, _, Some minfo) ->
@@ -302,13 +302,13 @@ module internal SymbolHelpers =
         | Item.TypeVar _  -> FSharpXmlDoc.None
 
         | Item.ModuleOrNamespaces(modref :: _) ->
-            mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
+            mkXmlComment (GetXmlDocSigOfEntityRef infoReader modref)
 
         | Item.Property(info = pinfo :: _) ->
             mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
 
         | Item.Event einfo ->
-            mkXmlComment (GetXmlDocSigOfEvent infoReader m einfo)
+            mkXmlComment (GetXmlDocSigOfEvent infoReader einfo)
 
         | Item.MethodGroup(_, minfo :: _, _) ->
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
@@ -319,7 +319,7 @@ module internal SymbolHelpers =
         | Item.OtherName(container = Some argContainer) ->
             match argContainer with
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
-            | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+            | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader tcref)
 
         | Item.UnionCaseField (ucinfo, _) ->
             mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)

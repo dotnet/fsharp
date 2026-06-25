@@ -16,6 +16,7 @@ Build fails → 99% YOUR previous change broke it. You ARE the compiler.
 DON'T say "pre-existing", "infra issue", "unrelated".
 DO `git clean -xfd artifacts` and rebuild.
 Bootstrap contamination: early commits break compiler → later "fixes" still use broken bootstrap. Clean fully.
+Triage a build failure → `binlog-analysis` skill fetches the binlog (local build or failed AzDo PR build) and analyzes it live via the `binlog-mcp` MCP (structured errors, root-cause diagnose, MSBuild perf X-ray).
 
 ## Test
 

@@ -224,9 +224,9 @@ T.Instance.OldMethod()
     |> shouldFail
     |> withDiagnostics
         [
-            // First: narrowed to "OldMethod" via mItem (Col 12-21), not the full "T.Instance.OldMethod"
+            // Narrowed to terminal ident "OldMethod" via mItemIdent
             (Warning 44, Line 8, Col 12, Line 8, Col 21, "This construct is deprecated. old method")
-            // Second: pre-existing duplicate from name resolution attribute check (whole application range)
+            // Pre-existing duplicate from name-resolution attribute check (whole application range)
             (Warning 44, Line 8, Col 1, Line 8, Col 23, "This construct is deprecated. old method")
         ]
 
@@ -245,9 +245,9 @@ M.Svc.OldMethod()
     |> shouldFail
     |> withDiagnostics
         [
-            // First: narrowed to "OldMethod" via mItem (Col 7-16), not "M.Svc.OldMethod"
+            // Narrowed to terminal ident "OldMethod" via mItemIdent
             (Warning 44, Line 7, Col 7, Line 7, Col 16, "This construct is deprecated. use NewMethod instead")
-            // Second: pre-existing duplicate from name resolution attribute check (whole expression range)
+            // Pre-existing duplicate from name-resolution attribute check (whole application range)
             (Warning 44, Line 7, Col 1, Line 7, Col 18, "This construct is deprecated. use NewMethod instead")
         ]
 
