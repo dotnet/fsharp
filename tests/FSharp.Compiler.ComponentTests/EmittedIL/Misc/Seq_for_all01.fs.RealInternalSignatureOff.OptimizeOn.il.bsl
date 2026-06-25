@@ -37,15 +37,6 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .field static assembly initonly class assembly/q@4 @_instance
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/q@4::.ctor()
-      IL_0005:  stsfld     class assembly/q@4 assembly/q@4::@_instance
-      IL_000a:  ret
-    } 
-
     .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -63,6 +54,15 @@
       .maxstack  8
       IL_0000:  ldc.i4.1
       IL_0001:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/q@4::.ctor()
+      IL_0005:  stsfld     class assembly/q@4 assembly/q@4::@_instance
+      IL_000a:  ret
     } 
 
   } 
@@ -108,6 +108,7 @@
   } 
 
 } 
+
 
 
 

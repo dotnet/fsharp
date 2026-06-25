@@ -33,15 +33,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method public static void  f() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  tail.
-    IL_0002:  call       void assembly::g()
-    IL_0007:  ret
-  } 
-
   .method public static void  g() cil managed noinlining
   {
     
@@ -51,6 +42,15 @@
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_000f:  pop
     IL_0010:  ret
+  } 
+
+  .method public static void  f() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  tail.
+    IL_0002:  call       void assembly::g()
+    IL_0007:  ret
   } 
 
 } 
@@ -73,6 +73,7 @@
   } 
 
 } 
+
 
 
 

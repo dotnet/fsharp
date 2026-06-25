@@ -35,51 +35,12 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .field static assembly class [runtime]System.Collections.Generic.List`1<int32> ra@5
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
   .method public specialname static class [runtime]System.Collections.Generic.List`1<int32> get_ra() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldsfld     class [runtime]System.Collections.Generic.List`1<int32> assembly::ra@5
     IL_0005:  ret
-  } 
-
-  .method assembly static void  staticInitialization@() cil managed
-  {
-    
-    .maxstack  5
-    .locals init (int32 V_0)
-    IL_0000:  ldc.i4.s   100
-    IL_0002:  newobj     instance void class [runtime]System.Collections.Generic.List`1<int32>::.ctor(int32)
-    IL_0007:  stsfld     class [runtime]System.Collections.Generic.List`1<int32> assembly::ra@5
-    IL_000c:  ldc.i4.0
-    IL_000d:  stloc.0
-    IL_000e:  br.s       IL_001f
-
-    IL_0010:  call       class [runtime]System.Collections.Generic.List`1<int32> assembly::get_ra()
-    IL_0015:  ldloc.0
-    IL_0016:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<int32>::Add(!0)
-    IL_001b:  ldloc.0
-    IL_001c:  ldc.i4.1
-    IL_001d:  add
-    IL_001e:  stloc.0
-    IL_001f:  ldloc.0
-    IL_0020:  ldc.i4.1
-    IL_0021:  ldc.i4.s   100
-    IL_0023:  add
-    IL_0024:  blt.s      IL_0010
-
-    IL_0026:  ret
   } 
 
   .method public static void  test1() cil managed
@@ -146,6 +107,45 @@
     IL_005f:  ret
   } 
 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly static void  staticInitialization@() cil managed
+  {
+    
+    .maxstack  5
+    .locals init (int32 V_0)
+    IL_0000:  ldc.i4.s   100
+    IL_0002:  newobj     instance void class [runtime]System.Collections.Generic.List`1<int32>::.ctor(int32)
+    IL_0007:  stsfld     class [runtime]System.Collections.Generic.List`1<int32> assembly::ra@5
+    IL_000c:  ldc.i4.0
+    IL_000d:  stloc.0
+    IL_000e:  br.s       IL_001f
+
+    IL_0010:  call       class [runtime]System.Collections.Generic.List`1<int32> assembly::get_ra()
+    IL_0015:  ldloc.0
+    IL_0016:  callvirt   instance void class [runtime]System.Collections.Generic.List`1<int32>::Add(!0)
+    IL_001b:  ldloc.0
+    IL_001c:  ldc.i4.1
+    IL_001d:  add
+    IL_001e:  stloc.0
+    IL_001f:  ldloc.0
+    IL_0020:  ldc.i4.1
+    IL_0021:  ldc.i4.s   100
+    IL_0023:  add
+    IL_0024:  blt.s      IL_0010
+
+    IL_0026:  ret
+  } 
+
   .property class [runtime]System.Collections.Generic.List`1<int32>
           ra()
   {
@@ -171,6 +171,7 @@
   } 
 
 } 
+
 
 
 

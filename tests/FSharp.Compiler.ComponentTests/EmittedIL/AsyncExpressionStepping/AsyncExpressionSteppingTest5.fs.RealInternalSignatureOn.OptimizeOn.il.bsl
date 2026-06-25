@@ -46,15 +46,6 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
     {
       .field static assembly initonly class assembly/assembly/'f7@6-1' @_instance
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void assembly/assembly/'f7@6-1'::.ctor()
-        IL_0005:  stsfld     class assembly/assembly/'f7@6-1' assembly/assembly/'f7@6-1'::@_instance
-        IL_000a:  ret
-      } 
-
       .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -91,6 +82,15 @@
         IL_0033:  tail.
         IL_0035:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Zero()
         IL_003a:  ret
+      } 
+
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        
+        .maxstack  10
+        IL_0000:  newobj     instance void assembly/assembly/'f7@6-1'::.ctor()
+        IL_0005:  stsfld     class assembly/assembly/'f7@6-1' assembly/assembly/'f7@6-1'::@_instance
+        IL_000a:  ret
       } 
 
     } 
@@ -177,15 +177,6 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
     {
       .field static assembly initonly class assembly/assembly/f7@6 @_instance
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void assembly/assembly/f7@6::.ctor()
-        IL_0005:  stsfld     class assembly/assembly/f7@6 assembly/assembly/f7@6::@_instance
-        IL_000a:  ret
-      } 
-
       .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -226,21 +217,21 @@
         IL_003a:  ret
       } 
 
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        
+        .maxstack  10
+        IL_0000:  newobj     instance void assembly/assembly/f7@6::.ctor()
+        IL_0005:  stsfld     class assembly/assembly/f7@6 assembly/assembly/f7@6::@_instance
+        IL_000a:  ret
+      } 
+
     } 
 
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f7@9-3'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
     {
       .field static assembly initonly class assembly/assembly/'f7@9-3' @_instance
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void assembly/assembly/'f7@9-3'::.ctor()
-        IL_0005:  stsfld     class assembly/assembly/'f7@9-3' assembly/assembly/'f7@9-3'::@_instance
-        IL_000a:  ret
-      } 
-
       .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -279,21 +270,21 @@
         IL_003a:  ret
       } 
 
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        
+        .maxstack  10
+        IL_0000:  newobj     instance void assembly/assembly/'f7@9-3'::.ctor()
+        IL_0005:  stsfld     class assembly/assembly/'f7@9-3' assembly/assembly/'f7@9-3'::@_instance
+        IL_000a:  ret
+      } 
+
     } 
 
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f7@9-2'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
     {
       .field static assembly initonly class assembly/assembly/'f7@9-2' @_instance
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void assembly/assembly/'f7@9-2'::.ctor()
-        IL_0005:  stsfld     class assembly/assembly/'f7@9-2' assembly/assembly/'f7@9-2'::@_instance
-        IL_000a:  ret
-      } 
-
       .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -318,6 +309,15 @@
         IL_0016:  ret
       } 
 
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        
+        .maxstack  10
+        IL_0000:  newobj     instance void assembly/assembly/'f7@9-2'::.ctor()
+        IL_0005:  stsfld     class assembly/assembly/'f7@9-2' assembly/assembly/'f7@9-2'::@_instance
+        IL_000a:  ret
+      } 
+
     } 
 
     .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> es@4
@@ -326,15 +326,12 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .field static assembly class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> computation@13
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .method private specialname rtspecialname static void  .cctor() cil managed
+    .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_es() cil managed
     {
       
       .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-      IL_000b:  pop
-      IL_000c:  ret
+      IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly/assembly::es@4
+      IL_0005:  ret
     } 
 
     .method public static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> f7() cil managed
@@ -346,6 +343,17 @@
       IL_000a:  tail.
       IL_000c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Delay<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
       IL_0011:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_000b:  pop
+      IL_000c:  ret
     } 
 
     .method assembly specialname static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> get_arg@1() cil managed
@@ -361,14 +369,6 @@
       
       .maxstack  8
       IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> assembly/assembly::computation@13
-      IL_0005:  ret
-    } 
-
-    .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_es() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly/assembly::es@4
       IL_0005:  ret
     } 
 
@@ -458,6 +458,7 @@
   } 
 
 } 
+
 
 
 

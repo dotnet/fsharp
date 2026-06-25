@@ -46,15 +46,6 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
     {
       .field static assembly initonly class assembly/assembly/f1@6 @_instance
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void assembly/assembly/f1@6::.ctor()
-        IL_0005:  stsfld     class assembly/assembly/f1@6 assembly/assembly/f1@6::@_instance
-        IL_000a:  ret
-      } 
-
       .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -99,6 +90,15 @@
         IL_004a:  tail.
         IL_004c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder::Zero()
         IL_0051:  ret
+      } 
+
+      .method private specialname rtspecialname static void  .cctor() cil managed
+      {
+        
+        .maxstack  10
+        IL_0000:  newobj     instance void assembly/assembly/f1@6::.ctor()
+        IL_0005:  stsfld     class assembly/assembly/f1@6 assembly/assembly/f1@6::@_instance
+        IL_000a:  ret
       } 
 
     } 
@@ -176,6 +176,7 @@
   } 
 
 } 
+
 
 
 

@@ -37,6 +37,14 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+    .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_es() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$ListExpressionSteppingTest6::es@5
+      IL_0005:  ret
+    } 
+
     .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f7() cil managed
     {
       
@@ -142,14 +150,6 @@
       IL_00b2:  ret
     } 
 
-    .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_es() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$ListExpressionSteppingTest6::es@5
-      IL_0005:  ret
-    } 
-
     .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>
             es()
     {
@@ -194,6 +194,7 @@
   } 
 
 } 
+
 
 
 

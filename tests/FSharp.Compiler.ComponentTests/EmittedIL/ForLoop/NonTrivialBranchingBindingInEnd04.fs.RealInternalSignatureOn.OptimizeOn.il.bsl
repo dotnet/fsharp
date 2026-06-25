@@ -45,6 +45,22 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> next@9
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .method public specialname static int32[] get_r() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32[] assembly::r@6
+    IL_0005:  ret
+  } 
+
+  .method public specialname static int32[] get_w() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32[] assembly::w@7
+    IL_0005:  ret
+  } 
+
   .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
@@ -85,22 +101,6 @@
     
     .maxstack  8
     IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::next@9
-    IL_0005:  ret
-  } 
-
-  .method public specialname static int32[] get_r() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32[] assembly::r@6
-    IL_0005:  ret
-  } 
-
-  .method public specialname static int32[] get_w() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32[] assembly::w@7
     IL_0005:  ret
   } 
 
@@ -304,6 +304,7 @@
   } 
 
 } 
+
 
 
 

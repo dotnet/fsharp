@@ -49,19 +49,6 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
       .field assembly !T v
       .field assembly int32 u
-      .method public specialname rtspecialname instance void  .ctor(!T v, int32 u) cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldarg.1
-        IL_0002:  stfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::v
-        IL_0007:  ldarg.0
-        IL_0008:  ldarg.2
-        IL_0009:  stfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::u
-        IL_000e:  ret
-      } 
-
       .method public hidebysig virtual final instance int32  CompareTo(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T> obj) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -189,6 +176,61 @@
         IL_0049:  ret
       } 
 
+      .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  7
+        .locals init (int32 V_0,
+                 !T V_1)
+        IL_0000:  ldc.i4.0
+        IL_0001:  stloc.0
+        IL_0002:  ldc.i4     0x9e3779b9
+        IL_0007:  ldarg.0
+        IL_0008:  ldfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::u
+        IL_000d:  ldloc.0
+        IL_000e:  ldc.i4.6
+        IL_000f:  shl
+        IL_0010:  ldloc.0
+        IL_0011:  ldc.i4.2
+        IL_0012:  shr
+        IL_0013:  add
+        IL_0014:  add
+        IL_0015:  add
+        IL_0016:  stloc.0
+        IL_0017:  ldc.i4     0x9e3779b9
+        IL_001c:  ldarg.0
+        IL_001d:  ldfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::v
+        IL_0022:  stloc.1
+        IL_0023:  ldarg.1
+        IL_0024:  ldloc.1
+        IL_0025:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<!T>(class [runtime]System.Collections.IEqualityComparer,
+                                                                                                                                           !!0)
+        IL_002a:  ldloc.0
+        IL_002b:  ldc.i4.6
+        IL_002c:  shl
+        IL_002d:  ldloc.0
+        IL_002e:  ldc.i4.2
+        IL_002f:  shr
+        IL_0030:  add
+        IL_0031:  add
+        IL_0032:  add
+        IL_0033:  stloc.0
+        IL_0034:  ldloc.0
+        IL_0035:  ret
+      } 
+
+      .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+        IL_0006:  call       instance int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+        IL_000b:  ret
+      } 
+
       .method public hidebysig instance bool Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T> obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -245,6 +287,37 @@
         IL_0019:  ret
       } 
 
+      .method public specialname rtspecialname instance void  .ctor(!T v, int32 u) cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldarg.1
+        IL_0002:  stfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::v
+        IL_0007:  ldarg.0
+        IL_0008:  ldarg.2
+        IL_0009:  stfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::u
+        IL_000e:  ret
+      } 
+
+      .method public hidebysig specialname instance !T  get_V() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::v
+        IL_0006:  ret
+      } 
+
+      .method public hidebysig specialname instance int32  get_U() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::u
+        IL_0006:  ret
+      } 
+
       .method public hidebysig virtual final instance bool  Equals(valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T> obj) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -292,79 +365,6 @@
 
         IL_0015:  ldc.i4.0
         IL_0016:  ret
-      } 
-
-      .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  7
-        .locals init (int32 V_0,
-                 !T V_1)
-        IL_0000:  ldc.i4.0
-        IL_0001:  stloc.0
-        IL_0002:  ldc.i4     0x9e3779b9
-        IL_0007:  ldarg.0
-        IL_0008:  ldfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::u
-        IL_000d:  ldloc.0
-        IL_000e:  ldc.i4.6
-        IL_000f:  shl
-        IL_0010:  ldloc.0
-        IL_0011:  ldc.i4.2
-        IL_0012:  shr
-        IL_0013:  add
-        IL_0014:  add
-        IL_0015:  add
-        IL_0016:  stloc.0
-        IL_0017:  ldc.i4     0x9e3779b9
-        IL_001c:  ldarg.0
-        IL_001d:  ldfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::v
-        IL_0022:  stloc.1
-        IL_0023:  ldarg.1
-        IL_0024:  ldloc.1
-        IL_0025:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<!T>(class [runtime]System.Collections.IEqualityComparer,
-                                                                                                                                           !!0)
-        IL_002a:  ldloc.0
-        IL_002b:  ldc.i4.6
-        IL_002c:  shl
-        IL_002d:  ldloc.0
-        IL_002e:  ldc.i4.2
-        IL_002f:  shr
-        IL_0030:  add
-        IL_0031:  add
-        IL_0032:  add
-        IL_0033:  stloc.0
-        IL_0034:  ldloc.0
-        IL_0035:  ret
-      } 
-
-      .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-        IL_0006:  call       instance int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-        IL_000b:  ret
-      } 
-
-      .method public hidebysig specialname instance int32  get_U() cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::u
-        IL_0006:  ret
-      } 
-
-      .method public hidebysig specialname instance !T  get_V() cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      !0 valuetype assembly/EqualsMicroPerfAndCodeGenerationTests/SomeGenericStruct`1<!T>::v
-        IL_0006:  ret
       } 
 
       .property instance !T V()
@@ -498,6 +498,7 @@
   } 
 
 } 
+
 
 
 

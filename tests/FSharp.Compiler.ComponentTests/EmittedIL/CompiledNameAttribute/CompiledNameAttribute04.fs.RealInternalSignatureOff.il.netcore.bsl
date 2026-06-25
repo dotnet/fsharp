@@ -39,6 +39,15 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.AbstractClassAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public hidebysig abstract virtual instance int32  A1(int32 A_1, int32 A_2) cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+    } 
+
+    .method public hidebysig abstract virtual instance int32  A2(int32 A_1) cil managed
+    {
+    } 
+
     .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
@@ -50,13 +59,12 @@
       IL_0008:  ret
     } 
 
-    .method public hidebysig abstract virtual instance int32  A1(int32 A_1, int32 A_2) cil managed
+    .method public hidebysig specialname instance int32  get_P() cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    } 
-
-    .method public hidebysig abstract virtual instance int32  A2(int32 A_1) cil managed
-    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.1
+      IL_0001:  ret
     } 
 
     .method public hidebysig instance int32 M1(int32 x, int32 y) cil managed
@@ -75,14 +83,6 @@
       
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  ret
-    } 
-
-    .method public hidebysig specialname instance int32  get_P() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.1
       IL_0001:  ret
     } 
 
@@ -152,6 +152,26 @@
       IL_000b:  ret
     } 
 
+    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 Program/S::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_000b:  ret
+    } 
+
     .method public hidebysig instance bool Equals(valuetype Program/S obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -193,6 +213,14 @@
       IL_001e:  ret
     } 
 
+    .method public hidebysig instance !!a M1<a>(!!a x) cil managed preservesig
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
     .method public hidebysig virtual final instance bool  Equals(valuetype Program/S obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -230,34 +258,6 @@
 
       IL_001c:  ldc.i4.0
       IL_001d:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.0
-      IL_0001:  ret
-    } 
-
-    .method public hidebysig virtual final instance int32  GetHashCode() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 Program/S::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
-      IL_000b:  ret
-    } 
-
-    .method public hidebysig instance !!a M1<a>(!!a x) cil managed preservesig
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ret
     } 
 
   } 
@@ -359,6 +359,7 @@
   } 
 
 } 
+
 
 
 

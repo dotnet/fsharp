@@ -114,64 +114,121 @@
       .field public static literal valuetype assembly/String/UInt64Enum UInt64 = uint64(0x1)
     } 
 
-    .method public static string  'string Unchecked.defaultof<System.Enum>'() cil managed
+    .method public static string  'string<CharEnum>'(valuetype assembly/String/CharEnum 'enum') cil managed
     {
       
-      .maxstack  5
-      .locals init (class [runtime]System.Enum V_0,
-               object V_1,
-               class [runtime]System.IFormattable V_2,
-               string V_3,
-               class [runtime]System.Enum V_4)
-      IL_0000:  ldnull
+      .maxstack  3
+      .locals init (valuetype assembly/String/CharEnum V_0)
+      IL_0000:  ldarg.0
       IL_0001:  stloc.0
-      IL_0002:  ldloc.0
-      IL_0003:  box        [runtime]System.Enum
-      IL_0008:  stloc.1
-      IL_0009:  ldloc.1
-      IL_000a:  isinst     [runtime]System.IFormattable
-      IL_000f:  brtrue.s   IL_0016
+      IL_0002:  ldloca.s   V_0
+      IL_0004:  constrained. assembly/String/CharEnum
+      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_000f:  ret
+    } 
 
-      IL_0011:  ldloc.1
-      IL_0012:  brfalse.s  IL_0035
+    .method public static string  'string<SByteEnum>'(valuetype assembly/String/SByteEnum 'enum') cil managed
+    {
+      
+      .maxstack  3
+      .locals init (valuetype assembly/String/SByteEnum V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      IL_0002:  ldloca.s   V_0
+      IL_0004:  constrained. assembly/String/SByteEnum
+      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_000f:  ret
+    } 
 
-      IL_0014:  br.s       IL_003b
+    .method public static string  'string<Int16Enum>'(valuetype assembly/String/Int16Enum 'enum') cil managed
+    {
+      
+      .maxstack  3
+      .locals init (valuetype assembly/String/Int16Enum V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      IL_0002:  ldloca.s   V_0
+      IL_0004:  constrained. assembly/String/Int16Enum
+      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_000f:  ret
+    } 
 
-      IL_0016:  ldloc.1
-      IL_0017:  unbox.any  [runtime]System.IFormattable
-      IL_001c:  stloc.2
-      IL_001d:  ldloc.2
-      IL_001e:  ldnull
-      IL_001f:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
-      IL_0024:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
-                                                                                      class [netstandard]System.IFormatProvider)
-      IL_0029:  stloc.3
-      IL_002a:  ldloc.3
-      IL_002b:  brtrue.s   IL_0033
+    .method public static string  'string<Int32Enum>'(valuetype assembly/String/Int32Enum 'enum') cil managed
+    {
+      
+      .maxstack  3
+      .locals init (valuetype assembly/String/Int32Enum V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      IL_0002:  ldloca.s   V_0
+      IL_0004:  constrained. assembly/String/Int32Enum
+      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_000f:  ret
+    } 
 
-      IL_002d:  ldstr      ""
-      IL_0032:  ret
+    .method public static string  'string<Int64Enum>'(valuetype assembly/String/Int64Enum 'enum') cil managed
+    {
+      
+      .maxstack  3
+      .locals init (valuetype assembly/String/Int64Enum V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      IL_0002:  ldloca.s   V_0
+      IL_0004:  constrained. assembly/String/Int64Enum
+      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_000f:  ret
+    } 
 
-      IL_0033:  ldloc.3
-      IL_0034:  ret
+    .method public static string  'string<ByteEnum>'(valuetype assembly/String/ByteEnum 'enum') cil managed
+    {
+      
+      .maxstack  3
+      .locals init (valuetype assembly/String/ByteEnum V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      IL_0002:  ldloca.s   V_0
+      IL_0004:  constrained. assembly/String/ByteEnum
+      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_000f:  ret
+    } 
 
-      IL_0035:  ldstr      ""
-      IL_003a:  ret
+    .method public static string  'string<UInt16Enum>'(valuetype assembly/String/UInt16Enum 'enum') cil managed
+    {
+      
+      .maxstack  3
+      .locals init (valuetype assembly/String/UInt16Enum V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      IL_0002:  ldloca.s   V_0
+      IL_0004:  constrained. assembly/String/UInt16Enum
+      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_000f:  ret
+    } 
 
-      IL_003b:  ldloc.0
-      IL_003c:  stloc.s    V_4
-      IL_003e:  ldloca.s   V_4
-      IL_0040:  constrained. [runtime]System.Enum
-      IL_0046:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_004b:  stloc.3
-      IL_004c:  ldloc.3
-      IL_004d:  brtrue.s   IL_0055
+    .method public static string  'string<UInt32Enum>'(valuetype assembly/String/UInt32Enum 'enum') cil managed
+    {
+      
+      .maxstack  3
+      .locals init (valuetype assembly/String/UInt32Enum V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      IL_0002:  ldloca.s   V_0
+      IL_0004:  constrained. assembly/String/UInt32Enum
+      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_000f:  ret
+    } 
 
-      IL_004f:  ldstr      ""
-      IL_0054:  ret
-
-      IL_0055:  ldloc.3
-      IL_0056:  ret
+    .method public static string  'string<UInt64Enum>'(valuetype assembly/String/UInt64Enum 'enum') cil managed
+    {
+      
+      .maxstack  3
+      .locals init (valuetype assembly/String/UInt64Enum V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      IL_0002:  ldloca.s   V_0
+      IL_0004:  constrained. assembly/String/UInt64Enum
+      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_000f:  ret
     } 
 
     .method public static string  'string<#Enum>'<([runtime]System.Enum) a>(!!a 'enum') cil managed
@@ -402,121 +459,64 @@
       IL_0053:  ret
     } 
 
-    .method public static string  'string<ByteEnum>'(valuetype assembly/String/ByteEnum 'enum') cil managed
+    .method public static string  'string Unchecked.defaultof<System.Enum>'() cil managed
     {
       
-      .maxstack  3
-      .locals init (valuetype assembly/String/ByteEnum V_0)
-      IL_0000:  ldarg.0
+      .maxstack  5
+      .locals init (class [runtime]System.Enum V_0,
+               object V_1,
+               class [runtime]System.IFormattable V_2,
+               string V_3,
+               class [runtime]System.Enum V_4)
+      IL_0000:  ldnull
       IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/ByteEnum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
-    } 
+      IL_0002:  ldloc.0
+      IL_0003:  box        [runtime]System.Enum
+      IL_0008:  stloc.1
+      IL_0009:  ldloc.1
+      IL_000a:  isinst     [runtime]System.IFormattable
+      IL_000f:  brtrue.s   IL_0016
 
-    .method public static string  'string<CharEnum>'(valuetype assembly/String/CharEnum 'enum') cil managed
-    {
-      
-      .maxstack  3
-      .locals init (valuetype assembly/String/CharEnum V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/CharEnum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
-    } 
+      IL_0011:  ldloc.1
+      IL_0012:  brfalse.s  IL_0035
 
-    .method public static string  'string<Int16Enum>'(valuetype assembly/String/Int16Enum 'enum') cil managed
-    {
-      
-      .maxstack  3
-      .locals init (valuetype assembly/String/Int16Enum V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/Int16Enum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
-    } 
+      IL_0014:  br.s       IL_003b
 
-    .method public static string  'string<Int32Enum>'(valuetype assembly/String/Int32Enum 'enum') cil managed
-    {
-      
-      .maxstack  3
-      .locals init (valuetype assembly/String/Int32Enum V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/Int32Enum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
-    } 
+      IL_0016:  ldloc.1
+      IL_0017:  unbox.any  [runtime]System.IFormattable
+      IL_001c:  stloc.2
+      IL_001d:  ldloc.2
+      IL_001e:  ldnull
+      IL_001f:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+      IL_0024:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
+                                                                                      class [netstandard]System.IFormatProvider)
+      IL_0029:  stloc.3
+      IL_002a:  ldloc.3
+      IL_002b:  brtrue.s   IL_0033
 
-    .method public static string  'string<Int64Enum>'(valuetype assembly/String/Int64Enum 'enum') cil managed
-    {
-      
-      .maxstack  3
-      .locals init (valuetype assembly/String/Int64Enum V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/Int64Enum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
-    } 
+      IL_002d:  ldstr      ""
+      IL_0032:  ret
 
-    .method public static string  'string<SByteEnum>'(valuetype assembly/String/SByteEnum 'enum') cil managed
-    {
-      
-      .maxstack  3
-      .locals init (valuetype assembly/String/SByteEnum V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/SByteEnum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
-    } 
+      IL_0033:  ldloc.3
+      IL_0034:  ret
 
-    .method public static string  'string<UInt16Enum>'(valuetype assembly/String/UInt16Enum 'enum') cil managed
-    {
-      
-      .maxstack  3
-      .locals init (valuetype assembly/String/UInt16Enum V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/UInt16Enum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
-    } 
+      IL_0035:  ldstr      ""
+      IL_003a:  ret
 
-    .method public static string  'string<UInt32Enum>'(valuetype assembly/String/UInt32Enum 'enum') cil managed
-    {
-      
-      .maxstack  3
-      .locals init (valuetype assembly/String/UInt32Enum V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/UInt32Enum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
-    } 
+      IL_003b:  ldloc.0
+      IL_003c:  stloc.s    V_4
+      IL_003e:  ldloca.s   V_4
+      IL_0040:  constrained. [runtime]System.Enum
+      IL_0046:  callvirt   instance string [netstandard]System.Object::ToString()
+      IL_004b:  stloc.3
+      IL_004c:  ldloc.3
+      IL_004d:  brtrue.s   IL_0055
 
-    .method public static string  'string<UInt64Enum>'(valuetype assembly/String/UInt64Enum 'enum') cil managed
-    {
-      
-      .maxstack  3
-      .locals init (valuetype assembly/String/UInt64Enum V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/UInt64Enum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
+      IL_004f:  ldstr      ""
+      IL_0054:  ret
+
+      IL_0055:  ldloc.3
+      IL_0056:  ret
     } 
 
   } 
@@ -535,6 +535,7 @@
   } 
 
 } 
+
 
 
 
