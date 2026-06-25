@@ -449,3 +449,21 @@ module CustomAttributes_Basic =
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
         """
         ]
+
+    [<Fact>]
+    let ``sizeof reports correct sizes for various struct DU forms`` () =
+        Fsx """
+[<Struct>] type SingleCase = | Only
+[<Struct>] type MultiNoData = A | B | C
+[<Struct>] type OneIntField = N | S of int
+[<Struct>] type TwoIntFields = T0 | T1 of x: int * y: int
+
+[<EntryPoint>]
+let main _ =
+    printf "SingleCase=%i;MultiNoData=%i;OneIntField=%i;TwoIntFields=%i" sizeof<SingleCase> sizeof<MultiNoData> sizeof<OneIntField> sizeof<TwoIntFields>
+    0
+        """
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> verifyOutput "SingleCase=1;MultiNoData=4;OneIntField=8;TwoIntFields=12"
