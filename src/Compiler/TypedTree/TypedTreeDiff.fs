@@ -593,7 +593,21 @@ let private tryGetReturnTypeIdentity (g: TcGlobals) (typarOrdinals: Map<Stamp, i
 
             match returnTy with
             | None -> Some RuntimeTypeIdentity.VoidType
-            | Some ty -> tryTypeIdentityFromTType g typarOrdinals ty
+            | Some ty ->
+                // A unit-returning F# method compiles to a void-returning IL method, so its
+                // runtime return identity is void. GetValReprTypeInCompiledForm already folds a
+                // unit return to None (-> void above), but it does so via `isUnitTy g`, which
+                // compares the type's tycon to g.unit_tcr_canon by reference. diffImplementationFile
+                // snapshots BOTH the baseline and the updated tree with a single TcGlobals, so for
+                // whichever tree is not g-native the unit tycon is not reference-equal to
+                // g.unit_tcr_canon, isUnitTy returns false, and the unit return leaks through here as
+                // `Some unit`. Resolve the identity (tryTypeIdentityFromTType keys on the
+                // compilation-independent compiled FQN) and fold that residual unit back to void so an
+                // unchanged unit-returning member yields the same return identity on both sides.
+                match tryTypeIdentityFromTType g typarOrdinals ty with
+                | Some(RuntimeTypeIdentity.NamedType(unitName, [])) when unitName = "Microsoft.FSharp.Core.Unit" ->
+                    Some RuntimeTypeIdentity.VoidType
+                | other -> other
         | None -> None
 
 /// Generates a stable digest of type parameter constraints for change detection.
