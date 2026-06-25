@@ -838,7 +838,7 @@ module DeltaEmitterTests =
         Assert.Equal(delta1.GenerationId, delta2.BaseGenerationId)
 
     [<Fact>]
-    let ``emitDelta ignores unknown symbols`` () =
+    let ``emitDelta fails closed on unresolved user methods`` () =
         let _, baseline = createBaseline ()
         let updatedModule = createModule 43 |> TestHelpers.withDebuggableAttribute
         let unknownMethod =
@@ -863,13 +863,12 @@ module DeltaEmitterTests =
                 SynthesizedNames = None
             }
 
-        let delta = emitDelta request
-
-        Assert.Empty(delta.UpdatedTypeTokens)
-        Assert.Empty(delta.UpdatedMethodTokens)
-        Assert.Empty(delta.EncLog)
-        Assert.Empty(delta.EncMap)
-        Assert.Empty(delta.MethodBodies)
+        // A genuinely-requested user method that cannot be resolved in the fresh compilation is a
+        // fail-closed condition: emitting a partial delta would advance the baseline while the
+        // runtime keeps stale code. (Compiler-generated companions, whose names are generation
+        // specific, are tolerated instead - see the unresolved-method handling in IlxDeltaEmitter.)
+        let ex = Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
+        Assert.Contains("Sample.Type::Missing", ex.Message)
 
     [<Fact>]
     let ``emitDelta emits added instance fields`` () =

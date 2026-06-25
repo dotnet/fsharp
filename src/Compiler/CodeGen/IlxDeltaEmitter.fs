@@ -4070,9 +4070,21 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             | Some(enclosing, typeDef, methodDef) -> (enclosing, typeDef, methodDef, key) :: resolved, unresolved
             | None -> resolved, key :: unresolved)
 
-    if not (List.isEmpty unresolvedMethods) then
+    // Compiler-generated closures and companions (declaring type contains '@', e.g.
+    // `view@hotreload#g0_o0`) carry generation-specific names that do not exist under the
+    // same name in a fresh full recompile, so they cannot be resolved by reconstructed key.
+    // They are best-effort recompile targets: the user-facing edit is still emitted through
+    // the owning member, so tolerate them (the historical drop behavior) and fail closed only
+    // on genuinely-requested user methods that fail to resolve, which would otherwise advance
+    // the baseline while the runtime keeps stale code.
+    let isCompilerGeneratedCompanion (key: MethodDefinitionKey) = key.DeclaringType.Contains "@"
+
+    let unresolvedUserMethods =
+        unresolvedMethods |> List.filter (isCompilerGeneratedCompanion >> not)
+
+    if not (List.isEmpty unresolvedUserMethods) then
         let names =
-            unresolvedMethods
+            unresolvedUserMethods
             |> List.rev
             |> List.map (fun key -> $"{key.DeclaringType}::{key.Name}")
             |> String.concat ", "
