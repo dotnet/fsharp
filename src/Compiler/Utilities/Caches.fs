@@ -32,12 +32,6 @@ module CacheMetrics =
         tags.Add("cacheId", box cacheId)
         tags
 
-    let Add (tags: inref<TagList>) = adds.Add(1L, &tags)
-    let Update (tags: inref<TagList>) = updates.Add(1L, &tags)
-    let Hit (tags: inref<TagList>) = hits.Add(1L, &tags)
-    let Miss (tags: inref<TagList>) = misses.Add(1L, &tags)
-    let Eviction (tags: inref<TagList>) = evictions.Add(1L, &tags)
-    let EvictionFail (tags: inref<TagList>) = evictionFails.Add(1L, &tags)
     let Created (tags: inref<TagList>) = creations.Add(1L, &tags)
     let Disposed (tags: inref<TagList>) = disposals.Add(1L, &tags)
 
@@ -279,6 +273,23 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
     let tags = CacheMetrics.mkTags name
 
+    // Per-cache metric totals used by DebugDisplay. These are incremented directly (see recordMetric)
+    // rather than via a per-cache CacheMetrics.CacheMetricsListener: a listener starts a
+    // System.Diagnostics.Metrics.MeterListener which registers in the process-global metrics registry,
+    // so one per Cache would never be disposed (leak) and would make every measurement O(number of
+    // caches) as listeners accumulate.
+#if DEBUG
+    let debugStats = CacheMetrics.Stats()
+#endif
+
+    // Publish one measurement to the global Meter counter (for --times / StatsToString) and, in DEBUG,
+    // record it in this cache's own totals for DebugDisplay.
+    let recordMetric (counter: Counter<int64>) =
+        counter.Add(1L, &tags)
+#if DEBUG
+        debugStats.Incr counter.Name 1L
+#endif
+
     // Track disposal state (0 = not disposed, 1 = disposed)
     let mutable disposed = 0
 
@@ -310,10 +321,10 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
                 match store.TryRemove(first.Value.Key) with
                 | true, _ ->
-                    CacheMetrics.Eviction &tags
+                    recordMetric CacheMetrics.evictions
                     evicted.Trigger()
                 | _ ->
-                    CacheMetrics.EvictionFail &tags
+                    recordMetric CacheMetrics.evictionFails
                     evictionFailed.Trigger()
                     deadKeysCount <- deadKeysCount + 1
 
@@ -361,10 +372,6 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
             post, dispose
 
-#if DEBUG
-    let debugListener = new CacheMetrics.CacheMetricsListener(tags)
-#endif
-
     do CacheMetrics.Created &tags
 
     member val Evicted = evicted.Publish
@@ -373,12 +380,12 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
     member _.TryGetValue(key: 'Key, value: outref<'Value>) =
         match store.TryGetValue(key) with
         | true, entity ->
-            CacheMetrics.Hit &tags
+            recordMetric CacheMetrics.hits
             post (EvictionQueueMessage.Update entity)
             value <- entity.Value
             true
         | _ ->
-            CacheMetrics.Miss &tags
+            recordMetric CacheMetrics.misses
             value <- Unchecked.defaultof<'Value>
             false
 
@@ -388,7 +395,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         let added = store.TryAdd(key, entity)
 
         if added then
-            CacheMetrics.Add &tags
+            recordMetric CacheMetrics.adds
             post (EvictionQueueMessage.Add(entity, store))
 
         added
@@ -405,11 +412,11 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
         if wasMiss then
             post (EvictionQueueMessage.Add(result, store))
-            CacheMetrics.Add &tags
-            CacheMetrics.Miss &tags
+            recordMetric CacheMetrics.adds
+            recordMetric CacheMetrics.misses
         else
             post (EvictionQueueMessage.Update result)
-            CacheMetrics.Hit &tags
+            recordMetric CacheMetrics.hits
 
         result.Value
 
@@ -424,10 +431,10 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
         // Returned value tells us if the entity was added or updated.
         if Object.ReferenceEquals(addValue, result) then
-            CacheMetrics.Add &tags
+            recordMetric CacheMetrics.adds
             post (EvictionQueueMessage.Add(addValue, store))
         else
-            CacheMetrics.Update &tags
+            recordMetric CacheMetrics.updates
             post (EvictionQueueMessage.Update result)
 
     member _.CreateMetricsListener() =
@@ -447,5 +454,5 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
     override this.Finalize() = this.Dispose()
 
 #if DEBUG
-    member _.DebugDisplay() = debugListener.ToString()
+    member _.DebugDisplay() = debugStats.ToString()
 #endif
