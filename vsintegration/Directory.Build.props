@@ -31,4 +31,17 @@
     <FscToolExe>fsc.exe</FscToolExe>
   </PropertyGroup>
 
+  <!-- Block 11b: the vulnerable native e_sqlite3.dll (SQLitePCLRaw.lib.e_sqlite3.v110_xp 1.1.2, the CVE
+       carrier) flows transitively into every Roslyn-consuming vsintegration project via
+       Microsoft.CodeAnalysis.Workspaces.Common -> SQLitePCLRaw.bundle_green. A direct reference with
+       ExcludeAssets="all" overrides the transitive one (per-ref ExcludeAssets="native" is not enough — the
+       package arrives through several paths), so the native is never restored or copied to component bins,
+       the shared release\net40\bin, or the VSIX. The VSIX instead ships the patched SourceGear.Sqlite3
+       3.50.4.5 native (VisualFSharpFull.csproj), mirroring dotnet/roslyn PR #83525. Covering .vbproj too is
+       required for FSharp.ProjectSystem.PropertyPages, whose legacy VS-SDK ResolveNuGetPackageAssets pass
+       also rejects the package's win7 runtimeTargets node ("doesn't list 'win' as a RuntimeIdentifier"). -->
+  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.fsproj' or '$(MSBuildProjectExtension)' == '.csproj' or '$(MSBuildProjectExtension)' == '.vbproj'">
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.v110_xp" Version="1.1.2" ExcludeAssets="all" PrivateAssets="all" />
+  </ItemGroup>
+
 </Project>

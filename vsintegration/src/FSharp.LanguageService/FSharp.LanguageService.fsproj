@@ -74,9 +74,14 @@
 
   <ItemGroup>
     <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" />
+    <!-- Block 11b: Roslyn is VS-provided at runtime for this editor component. Compile against it but do
+         not flow it to consumers, do not ship it in the VSIX, and (critically) exclude its build/native
+         assets: Roslyn's buildTransitive targets otherwise copy the vulnerable transitive SQLitePCLRaw
+         e_sqlite3 native into x86/x64 output subfolders. PrivateAssets="all" suppresses those targets;
+         ExcludeAssets="native" drops any direct native asset. Mirrors FSharp.Editor. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesPackageVersion)" />

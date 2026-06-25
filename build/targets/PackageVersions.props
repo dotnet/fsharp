@@ -68,7 +68,11 @@
     <VSSDKVSHelpPackageVersion>7.0.4</VSSDKVSHelpPackageVersion>
 
     <!-- other packages -->
-    <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
+    <!-- 1.0.30->1.0.31 (Block 11b): the serviced Roslyn 2.10 depends on System.Composition 1.0.31; the
+         RTM 15.9 Roslyn (2.9) used 1.0.30, which is why the original pin matched. Microsoft.Composition 1.0.31
+         is a metapackage that pulls the System.Composition 1.0.31 split assemblies, re-aligning MEF with
+         Roslyn and removing the System.Composition 1.0.30<->1.0.31 MSB3277 conflict in the project system. -->
+    <MicrosoftCompositionPackageVersion>1.0.31</MicrosoftCompositionPackageVersion>
     <!-- 1.1.0-roslyn-62714-01 (the original pin) isn't on public feeds; use the closest published build. -->
     <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-beta2-20527-01</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
     <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>

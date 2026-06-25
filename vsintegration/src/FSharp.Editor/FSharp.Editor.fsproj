@@ -142,10 +142,16 @@
 
   <ItemGroup>
     <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" ExcludeAssets="native" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" ExcludeAssets="native" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Wpf" Version="$(MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion)" ExcludeAssets="native" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" ExcludeAssets="native" />
+    <!-- Block 11b: Roslyn is a VS-provided runtime dependency for a VS editor component: compile against it
+         here, but do NOT flow it (or its transitive SQLitePCLRaw native carrier) to consumers, and do NOT
+         ship it in the VSIX (VS supplies its own serviced Roslyn). PrivateAssets="all" enforces compile-only.
+         This also keeps the SQLitePCLRaw runtimeTargets node out of the only consumer's (ProjectSystem.fsproj)
+         restore graph, which a legacy VS-SDK NuGet RID validation would otherwise reject. ExcludeAssets="native"
+         additionally drops any direct native asset. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Wpf" Version="$(MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorPackageVersion)" />

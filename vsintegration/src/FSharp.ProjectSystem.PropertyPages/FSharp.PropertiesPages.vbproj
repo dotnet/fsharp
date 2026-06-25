@@ -13,6 +13,13 @@
     <OutputType>Library</OutputType>
     <AssemblyAttributeComVisible>true</AssemblyAttributeComVisible>
     <AssemblyName>FSharp.ProjectSystem.PropertyPages</AssemblyName>
+    <!-- Block 11b: this legacy (non-SDK) VB project runs the old VS-SDK Microsoft.NuGet.targets
+         ResolveNuGetPackageAssets pass, which (unlike the SDK-style F#/C# projects) rejects the win7
+         runtimeTargets node of Roslyn's transitive SQLitePCLRaw.lib.e_sqlite3.v110_xp unless the project
+         declares the 'win' RID. The vulnerable native is already neutralized to an empty (_._) asset via
+         vsintegration/Directory.Build.props, so declaring the RID here satisfies the legacy task without
+         restoring or shipping anything vulnerable. -->
+    <RuntimeIdentifiers>win</RuntimeIdentifiers>
     <UseVsVersion>true</UseVsVersion>
     <FileAlignment>512</FileAlignment>
     <MyType>Windows</MyType>
