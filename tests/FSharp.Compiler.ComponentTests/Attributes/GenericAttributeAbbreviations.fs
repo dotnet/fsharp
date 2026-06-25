@@ -17,8 +17,7 @@ type B = A<int>
 """
         |> compile
         |> shouldFail
-        |> withDiagnosticMessageMatches "Generic attribute types are not supported"
-        |> withErrorCode 3888
+        |> withSingleDiagnostic (Error 3888, Line 4, Col 3, Line 4, Col 4, "Generic attribute types are not supported in F#. The type 'A' has type parameters and cannot be used as an attribute.")
         |> ignore
 
     [<Theory>]
