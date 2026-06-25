@@ -1,28 +1,37 @@
+module Module
+
+let (|Id|) (x: int) = x
+
+let f (l: int[]) =
+    for Id i in l do
+        ()
+--------------------------------------------------------------------------------
+
 Module::|Id|
-  (4,23-4,24)  x
+  (3,23-3,24)  x
     IL_0000:  ldarg.0
     IL_0001:  ret
 
 Module::f
-  (7,17-7,18)  l
+  (6,17-6,18)  l
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldc.i4.0
     IL_0003:  stloc.1
     IL_0004:  br.s IL_0019
 
-  (7,5-7,13)  for Id i
+  (6,5-6,13)  for Id i
     IL_0006:  ldloc.0
     IL_0007:  ldloc.1
     IL_0008:  ldelem.i4
     IL_0009:  stloc.2
     IL_000a:  ldloc.2
-    IL_000b:  call |Id|
+    IL_000b:  call Module::|Id|
     IL_0010:  stloc.3
     IL_0011:  ldloc.3
     IL_0012:  stloc.s 4
 
-  (8,9-8,11)  ()
+  (7,9-7,11)  ()
     IL_0014:  nop
 
   <hidden>
@@ -31,7 +40,7 @@ Module::f
     IL_0017:  add
     IL_0018:  stloc.1
 
-  (7,14-7,16)  in
+  (6,14-6,16)  in
     IL_0019:  ldloc.1
     IL_001a:  ldloc.0
     IL_001b:  ldlen

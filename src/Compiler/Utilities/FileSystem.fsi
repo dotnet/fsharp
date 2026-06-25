@@ -101,6 +101,7 @@ module internal MemoryMappedFileExtensions =
         static member TryFromMemory: bytes: ReadOnlyMemory<byte> -> MemoryMappedFile option
 
 /// Filesystem helpers
+[<RequireQualifiedAccess>]
 module internal FileSystemUtils =
     val checkPathForIllegalChars: (string -> unit)
 
