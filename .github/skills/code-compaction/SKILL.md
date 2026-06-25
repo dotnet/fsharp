@@ -46,7 +46,7 @@ routing); steps 3–4 are per-mode prep once a mode is picked:
 
    ```bash
    git diff $base -- <suspect-file> | awk '/^\+[^+]/{p++} /^-[^-]/{m++} END{print "+",p," -",m}'
-   git diff $base -- <suspect-file> | awk '/^\+\s*(\/\/|--|#)/{c++} /^\+[^+\s]/{l++} END{print "comments",c," code",l}'
+   git diff $base -- <suspect-file> | awk '/^\+[^+]/{ s=$0; sub(/^\+[[:space:]]*/,"",s); if (s ~ /^(\/\/|--|#)/) c++; else if (length(s)) l++ } END{print "comments",c," code",l}'
    git diff $base -- <suspect-file> | grep -cE '^\+\s*(let|fn|def|val|public|private)\s+(rec\s+)?[a-zA-Z_]'
    ```
 
