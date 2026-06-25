@@ -503,7 +503,7 @@ type IncrClassReprInfo =
                             let ctorDeclaredTypars = staticCtorInfo.GetNormalizedIncrCtorDeclaredTypars cenv denv staticCtorInfo.TyconRef.Range
 
                             // Note: tcrefObjTy contains the original "formal" typars, thisTy is the "fresh" one... f<>fresh. 
-                            let revTypeInst = List.zip ctorDeclaredTypars (tcref.TyparsNoRange |> List.map mkTyparTy)
+                            let revTypeInst = List.zip ctorDeclaredTypars (tcref.Typars |> List.map mkTyparTy)
 
                             yield MakeIncrClassField(localRep.RepInfoTcGlobals, cpath, revTypeInst, v, isStatic, rfref)
                     | _ -> 

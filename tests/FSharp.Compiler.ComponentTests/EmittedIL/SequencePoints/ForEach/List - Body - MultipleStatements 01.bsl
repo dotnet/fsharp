@@ -22,13 +22,13 @@ Module::f
 
   (5,9-5,35)  System.Console.WriteLine i
     IL_0012:  ldloc.2
-    IL_0013:  call WriteLine
+    IL_0013:  call Console::WriteLine
 
   (6,9-6,40)  System.Console.WriteLine(i + 1)
     IL_0018:  ldloc.2
     IL_0019:  ldc.i4.1
     IL_001a:  add
-    IL_001b:  call WriteLine
+    IL_001b:  call Console::WriteLine
 
   <hidden>
     IL_0020:  ldloc.1

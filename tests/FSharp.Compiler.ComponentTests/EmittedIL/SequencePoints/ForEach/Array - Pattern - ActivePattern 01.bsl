@@ -26,7 +26,7 @@ Module::f
     IL_0008:  ldelem.i4
     IL_0009:  stloc.2
     IL_000a:  ldloc.2
-    IL_000b:  call |Id|
+    IL_000b:  call Module::|Id|
     IL_0010:  stloc.3
     IL_0011:  ldloc.3
     IL_0012:  stloc.s 4
