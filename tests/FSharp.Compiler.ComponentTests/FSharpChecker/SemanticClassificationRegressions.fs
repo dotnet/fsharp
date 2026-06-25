@@ -271,3 +271,111 @@ type MyDelegate = delegate of int -> string
             && (let text = substringOfRange source c.Range
                 text = "BeginInvoke" || text = "EndInvoke"))
     Assert.Empty(asyncInvokeMethods)
+
+// --------------------------------------------------------------------------
+// #5229: recursive object self-reference must NOT be classified as MutableVar.
+// The compiler internally compiles `as this` / recursive `let rec` self refs
+// through a ref cell; that compiler artefact must not leak into colorization.
+// Parallel logic already lives in Symbols.fs (FSharpMemberOrFunctionOrValue.IsMutable
+// excludes vref.IsCtorThisVal from the isRefCellTy branch). Sprint 02 mirrors
+// that exclusion in SemanticClassification.isValRefMutable.
+// --------------------------------------------------------------------------
+
+/// Return every classification item whose source span equals exactly `ident`.
+let private classificationsForIdent (source: string) (ident: string) =
+    getClassifications source
+    |> Array.filter (fun item ->
+        item.Range.StartLine = item.Range.EndLine
+        && substringOfRange source item.Range = ident)
+
+/// Assert no occurrence of `ident` in `source` is classified as MutableVar.
+let private assertIdentNeverMutable (source: string) (ident: string) =
+    let mutableHits =
+        classificationsForIdent source ident
+        |> Array.filter (fun item -> item.Type = SemanticClassificationType.MutableVar)
+    Assert.True(
+        mutableHits.Length = 0,
+        sprintf
+            "#5229: %A occurrences of `%s` were classified as MutableVar, expected none. Items: %A"
+            mutableHits.Length
+            ident
+            (mutableHits |> Array.map (fun i -> i.Range.StartLine, i.Range.StartColumn, i.Range.EndColumn, i.Type)))
+
+/// (#5229) Primary case: `as this` on a class binds `this` to a CtorThisVal whose
+/// internal compilation is a ref cell. That compiler artefact must NOT leak as MutableVar.
+[<Fact>]
+let ``5229 class as this is not MutableVar`` () =
+    let source = """
+module Test
+type C() as this =
+    member _.F() = this
+"""
+    assertIdentNeverMutable source "this"
+
+/// (#5229) Variants where the `as this` self-reference must not classify as MutableVar.
+/// Each row is (label, source, identifier-that-must-not-be-MutableVar).
+[<Theory>]
+[<InlineData("as-this-on-generic-class",
+    """
+module Test
+type C<'T>(value: 'T) as this =
+    member _.Value = value
+    member _.Self = this
+""", "this")>]
+[<InlineData("as-this-with-multiple-members",
+    """
+module Test
+type C() as this =
+    member _.A() = this
+    member _.B() = this
+    member _.C() = this
+""", "this")>]
+let ``5229 as this variants are not MutableVar`` (_label: string) (source: string) (ident: string) =
+    assertIdentNeverMutable source ident
+
+/// (#5229 negative) Real mutable / ref-cell / byref bindings MUST still be classified as MutableVar.
+/// Each row is (label, source, identifier-that-must-be-MutableVar).
+[<Theory>]
+[<InlineData("let-mutable",
+    """
+module Test
+let mutable y = 0
+let () = y <- y + 1
+""", "y")>]
+[<InlineData("ref-cell-deref-and-set",
+    """
+module Test
+let r = ref 0
+let () = r := !r + 1
+""", "r")>]
+let ``5229 real mutable bindings remain MutableVar`` (_label: string) (source: string) (ident: string) =
+    let items = classificationsForIdent source ident
+    let mutableHits =
+        items |> Array.filter (fun item -> item.Type = SemanticClassificationType.MutableVar)
+    Assert.True(
+        mutableHits.Length > 0,
+        sprintf
+            "#5229 negative guard: expected at least one MutableVar classification for `%s`. Items: %A"
+            ident
+            (items |> Array.map (fun i -> i.Range.StartLine, i.Range.StartColumn, i.Range.EndColumn, i.Type)))
+
+/// (#5229 negative) Mutable record fields are an orthogonal code path
+/// (isRecdFieldMutable, not isValRefMutable). They MUST be unaffected by the upcoming fix.
+[<Fact>]
+let ``5229 mutable record field updates remain MutableRecordField`` () =
+    let source = """
+module Test
+type R = { mutable Count: int }
+let r = { Count = 0 }
+let () = r.Count <- r.Count + 1
+"""
+    let items = getClassifications source
+    let mutableFieldHits =
+        items
+        |> Array.filter (fun item ->
+            item.Type = SemanticClassificationType.MutableRecordField
+            && substringOfRange source item.Range = "Count")
+    Assert.True(
+        mutableFieldHits.Length > 0,
+        sprintf "Expected MutableRecordField classification for `Count`, found: %A"
+            (items |> Array.map (fun i -> i.Range.StartLine, i.Range.StartColumn, i.Range.EndColumn, i.Type)))
