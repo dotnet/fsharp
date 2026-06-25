@@ -7,7 +7,11 @@
     <OutputType>Library</OutputType>
     <ImportVsSDK>true</ImportVsSDK>
     <CreateVsixContainer>false</CreateVsixContainer>
-    <NoWarn>$(NoWarn);75</NoWarn>
+    <!-- Block 11a: the serviced Roslyn (2.10.0-beta2) marks INavigateToSearchService [Obsolete] with a
+         transitional message ("..._RemoveInterfaceAboveAndRenameThisAfterInternalsVisibleToUsersUpdate")
+         during an internal IVT refactor; the interface is still functional. FSharp.Editor's frozen RTM
+         source uses the old name, so suppress FS0044 (deprecated). IL-neutral. -->
+    <NoWarn>$(NoWarn);75;44</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
@@ -138,10 +142,10 @@
 
   <ItemGroup>
     <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Wpf" Version="$(MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" ExcludeAssets="native" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" ExcludeAssets="native" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Wpf" Version="$(MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion)" ExcludeAssets="native" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" ExcludeAssets="native" />
     <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorPackageVersion)" />
