@@ -5,6 +5,12 @@
   <Import Project="eng\targets\NuGet.targets" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
   <Import Project="FSharp.Profiles.props" />
 
+  <!-- Source-only/VMR builds must not regenerate xlf files (#19961). Arcade re-enables
+       UpdateXlfOnBuild for non-CI builds in its targets phase, so this must follow the Arcade import to win. -->
+  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+    <UpdateXlfOnBuild>false</UpdateXlfOnBuild>
+  </PropertyGroup>
+
   <PropertyGroup>
     <DefineConstants Condition="'$(Configuration)'=='release'">$(DefineConstants);Release</DefineConstants>
     <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);Debug</DefineConstants>

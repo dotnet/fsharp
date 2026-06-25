@@ -81,10 +81,10 @@ let GetCompiledReturnTyOfProvidedMethodInfo amap m (mi: Tainted<ProvidedMethodBa
 
 /// The slotsig returned by methInfo.GetSlotSig is in terms of the type parameters on the parent type of the overriding method.
 /// Reverse-map the slotsig so it is in terms of the type parameters for the overriding method
-let ReparentSlotSigToUseMethodTypars g m ovByMethValRef slotsig =
+let ReparentSlotSigToUseMethodTypars g ovByMethValRef slotsig =
     match PartitionValRefTypars g ovByMethValRef with
     | Some(_, enclosingTypars, _, _, _) ->
-        let parentToMemberInst, _ = mkTyparToTyparRenaming (ovByMethValRef.MemberApparentEntity.Typars m) enclosingTypars
+        let parentToMemberInst, _ = mkTyparToTyparRenaming (ovByMethValRef.MemberApparentEntity.Typars) enclosingTypars
         let res = instSlotSig parentToMemberInst slotsig
         res
     | None ->
@@ -1331,7 +1331,7 @@ type MethInfo =
 
             // A slot signature is w.r.t. the type variables of the type it is associated with.
             // So we have to rename from the member type variables to the type variables of the type.
-            let formalEnclosingTypars = x.ApparentEnclosingTyconRef.Typars m
+            let formalEnclosingTypars = x.ApparentEnclosingTyconRef.Typars
             let formalEnclosingTyparsFromMethod, formalMethTypars = List.splitAt formalEnclosingTypars.Length allTyparsFromMethod
             let methodToParentRenaming, _ = mkTyparToTyparRenaming formalEnclosingTyparsFromMethod formalEnclosingTypars
             let formalParams =
@@ -1350,7 +1350,7 @@ type MethInfo =
             // then that does not correspond to a slotsig compiled as a 'void' return type.
             // REVIEW: should we copy down attributes to slot params?
             let tcref =  tcrefOfAppTy g x.ApparentEnclosingAppType
-            let formalEnclosingTyparsOrig = tcref.Typars m
+            let formalEnclosingTyparsOrig = tcref.Typars
             let formalEnclosingTypars = copyTypars false formalEnclosingTyparsOrig
             let _, formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
             let formalMethTypars = copyTypars false x.FormalMethodTypars
@@ -1451,7 +1451,7 @@ type MethInfo =
     /// For extension methods, no type parameters are returned, because all the
     /// type parameters are part of the apparent type, rather the
     /// declaring type, even for extension methods extending generic types.
-    member x.GetFormalTyparsOfDeclaringType m =
+    member x.GetFormalTyparsOfDeclaringType() =
         if x.IsExtensionMember then []
         else
             match x with
@@ -1460,7 +1460,7 @@ type MethInfo =
                 let memberParentTypars, _, _, _ = AnalyzeTypeOfMemberVal false g (ty, vref)
                 memberParentTypars
             | _ ->
-                x.DeclaringTyconRef.Typars m
+                x.DeclaringTyconRef.Typars
 
     /// Tries to get the object arg type if it's a byref type.
     member x.TryObjArgByrefType(amap, m, minst) =
@@ -1689,7 +1689,7 @@ type UnionCaseInfo =
     member x.DisplayName = x.UnionCase.DisplayName
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
-    member x.GetTyparInst m =  mkTyparInst (x.TyconRef.Typars m) x.TypeInst
+    member x.GetTyparInst() = mkTyparInst (x.TyconRef.Typars) x.TypeInst
 
     override x.ToString() = x.TyconRef.ToString() + "::" + x.DisplayNameCore
 
@@ -2509,7 +2509,7 @@ let CompiledSigOfMeth g amap m (minfo: MethInfo) =
     // of the enclosing type. This instantiations can be used to interpret those type parameters
     let fmtpinst =
         let parentTyArgs = argsOfAppTy g minfo.ApparentEnclosingAppType
-        let memberParentTypars  = minfo.GetFormalTyparsOfDeclaringType m
+        let memberParentTypars  = minfo.GetFormalTyparsOfDeclaringType()
         mkTyparInst memberParentTypars parentTyArgs
 
     CompiledSig(vargTys, vrty, formalMethTypars, fmtpinst)
