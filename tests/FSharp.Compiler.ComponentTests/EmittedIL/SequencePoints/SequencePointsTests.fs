@@ -9,7 +9,8 @@ open FSharp.Test.Compiler
 
 [<AbstractClass; Sealed>]
 type private Baseline =
-    static member verify(source, [<CallerMemberName; Optional; DefaultParameterValue("")>] name: string) =
+    static member verify(source: string, [<CallerMemberName; Optional; DefaultParameterValue("")>] name: string) =
+        let source = source.Trim()
         let moduleName = StackTrace().GetFrame(1).GetMethod().DeclaringType.Name
         FSharp source
         |> asLibrary
@@ -50,6 +51,89 @@ let f () =
     ()
 """
 
+    [<Fact>]
+    let ``Body - ErasedCall 01`` () =
+        Baseline.verify """
+module Module
+
+let f () =
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Body - Erased call 02`` () =
+        Baseline.verify """
+module Module
+
+let f () =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Body - Erased call 03`` () =
+        Baseline.verify """
+module Module
+
+let f () =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Body - Erased call 04`` () =
+        Baseline.verify """
+module Module
+
+let f () =
+    ()
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Body - Erased call 05`` () =
+        Baseline.verify """
+module Module
+
+let f () =
+    System.Diagnostics.Debug.Write ""
+    ()
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Body - Erased call 06`` () =
+        Baseline.verify """
+module Module
+
+let f () =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+    ()
+"""
+
+    [<Fact>]
+    let ``Body - ErasedThenKeptCall 01`` () =
+        Baseline.verify """
+module Module
+
+let f () =
+    System.Diagnostics.Debug.Write ""
+    System.Console.WriteLine ""
+"""
+
+    [<Fact>]
+    let ``Body - KeptThenErasedCall 01`` () =
+        Baseline.verify """
+module Module
+
+let f () =
+    System.Console.WriteLine ""
+    System.Diagnostics.Debug.Write ""
+"""
+
 module ForEach =
     [<Fact>]
     let ``List - Simple 01`` () =
@@ -80,6 +164,38 @@ let f (l: int list) =
     for i in l do
         System.Console.WriteLine i
         System.Console.WriteLine(i + 1)
+"""
+
+    [<Fact>]
+    let ``List - Body - ErasedCall 01`` () =
+        Baseline.verify """
+module Module
+
+let f (l: int list) =
+    for i in l do
+        System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``List - Body - ErasedThenKeptCall 01`` () =
+        Baseline.verify """
+module Module
+
+let f (l: int list) =
+    for i in l do
+        System.Diagnostics.Debug.Write ""
+        System.Console.WriteLine ""
+"""
+
+    [<Fact>]
+    let ``List - Body - KeptThenErasedCall 01`` () =
+        Baseline.verify """
+module Module
+
+let f (l: int list) =
+    for i in l do
+        System.Console.WriteLine ""
+        System.Diagnostics.Debug.Write ""
 """
 
     [<Fact>]
@@ -469,4 +585,264 @@ module Module
 let f (l: string) =
     for c in l do
         System.Console.WriteLine c
+"""
+
+module If =
+    [<Fact>]
+    let ``If 01`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    if f 5 = 10 then 0 else 1
+"""
+
+    [<Fact>]
+    let ``If 02 - Bind`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    let y = if f 5 = 10 then 0 else 1
+    y + y
+"""
+
+    [<Fact>]
+    let ``If 03 - Set`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g (arr: int[]) =
+    arr[0] <- if f 5 = 10 then 0 else 1
+"""
+
+    [<Fact>]
+    let ``If 04`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    (if f 5 = 10 then 0 else 1) + f 1
+"""
+
+    [<Fact>]
+    let ``If 05`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    let mutable x = 0
+    if f 5 = 10 then x <- 1 else x <- 2
+    x + x
+"""
+
+module Match =
+    [<Fact>]
+    let ``Match 01`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    match f 5 with
+    | 10 -> 0
+    | _ -> 1
+"""
+
+    [<Fact>]
+    let ``Match 02 - Bind`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    let i =
+        match f 5 with
+        | 10 -> 0
+        | _ -> 1
+    i + 1
+"""
+
+module Binding =
+    [<Fact>]
+    let ``Module - Unit 01`` () =
+        Baseline.verify """
+module Module
+
+let i = ()
+"""
+
+    [<Fact>]
+    let ``Module - SequentialUnits 01`` () =
+        Baseline.verify """
+module Module
+
+let i = ()
+let j = ()
+"""
+
+    [<Fact>]
+    let ``Module - ErasedCall 01`` () =
+        Baseline.verify """
+module Module
+
+let i = System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Module - Erased call 02`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Module - Erased call 03`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Module - Erased call 04`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    ()
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Module - Erased call 05`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    ()
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Module - Erased call 06`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+    ()
+"""
+
+    [<Fact>]
+    let ``Local - Unit 01`` () =
+        Baseline.verify """
+module Module
+
+do
+    let i = ()
+    ()
+"""
+
+    [<Fact>]
+    let ``Local - SequentialUnits 01`` () =
+        Baseline.verify """
+module Module
+
+do
+    let i = ()
+    let j = ()
+    ()
+"""
+
+    [<Fact>]
+    let ``Local - ErasedCall 01`` () =
+        Baseline.verify """
+module Module
+
+do
+    let i = System.Diagnostics.Debug.Write ""
+    ()
+"""
+
+    [<Fact>]
+    let ``Local - Erased call 02`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Local - Erased call 03`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Local - Erased call 04`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    ()
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Local - Erased call 05`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    ()
+    System.Diagnostics.Debug.Write ""
+"""
+
+    [<Fact>]
+    let ``Local - Erased call 06`` () =
+        Baseline.verify """
+module Module
+
+let i =
+    System.Diagnostics.Debug.Write ""
+    System.Diagnostics.Debug.Write ""
+    ()
 """
