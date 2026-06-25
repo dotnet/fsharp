@@ -587,6 +587,101 @@ let f (l: string) =
         System.Console.WriteLine c
 """
 
+module If =
+    [<Fact>]
+    let ``If 01`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    if f 5 = 10 then 0 else 1
+"""
+
+    [<Fact>]
+    let ``If 02 - Bind`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    let y = if f 5 = 10 then 0 else 1
+    y + y
+"""
+
+    [<Fact>]
+    let ``If 03 - Set`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g (arr: int[]) =
+    arr[0] <- if f 5 = 10 then 0 else 1
+"""
+
+    [<Fact>]
+    let ``If 04`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    (if f 5 = 10 then 0 else 1) + f 1
+"""
+
+    [<Fact>]
+    let ``If 05`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    let mutable x = 0
+    if f 5 = 10 then x <- 1 else x <- 2
+    x + x
+"""
+
+module Match =
+    [<Fact>]
+    let ``Match 01`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    match f 5 with
+    | 10 -> 0
+    | _ -> 1
+"""
+
+    [<Fact>]
+    let ``Match 02 - Bind`` () =
+        Baseline.verify """
+module Module
+
+let f (x: int) =
+    x + x
+
+let g () =
+    let i =
+        match f 5 with
+        | 10 -> 0
+        | _ -> 1
+    i + 1
+"""
+
 module Binding =
     [<Fact>]
     let ``Module - Unit 01`` () =

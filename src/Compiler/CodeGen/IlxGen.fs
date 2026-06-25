@@ -558,7 +558,7 @@ type TypeReprEnv
     member eenv.ForTypars tps = eenv.ResetTypars().Add tps
 
     /// Get the environment for within a type definition
-    member eenv.ForTycon(tycon: Tycon) = eenv.ForTypars tycon.TyparsNoRange
+    member eenv.ForTycon(tycon: Tycon) = eenv.ForTypars tycon.Typars
 
     /// Get the environment for generating a reference to items within a type definition
     member eenv.ForTyconRef(tcref: TyconRef) = eenv.ForTycon tcref.Deref
@@ -1463,7 +1463,7 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
     let isCtor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor)
     let cctor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.ClassConstructor)
     let parentTcref = vref.DeclaringEntity
-    let parentTypars = parentTcref.TyparsNoRange
+    let parentTypars = parentTcref.Typars
     let numParentTypars = parentTypars.Length
 
     if tps.Length < numParentTypars then
@@ -3723,19 +3723,6 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
 
                          //assert(cgbuf.GetCurrentStack() = stackAfterJoin)  // REVIEW: Since gen_dtree* now sets stack, stack should be stackAfterJoin at this point...
                          CG.SetStack cgbuf stackAfterJoin
-                         // If any values are left on the stack after the join then we're certainly going to do something with them
-                         // For example, we may be about to execute a 'stloc' for
-                         //
-                         //   let y2 = if System.DateTime.Now.Year < 2000 then 1 else 2
-                         //
-                         // or a 'stelem' for
-                         //
-                         //   arr.[0] <- if System.DateTime.Now.Year > 2000 then 1 else 2
-                         //
-                         // In both cases, any instructions that come after this point will be falsely associated with the last branch of the control
-                         // prior to the join point. This is base, e.g. see FSharp 1.0 bug 5155
-                         cgbuf.EmitStartOfHiddenCode()
-
                          GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
                          Fake))
 
@@ -4534,7 +4521,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
             // @REVIEW: refactor this
             let numEnclILTypeArgs =
                 match vref.MemberInfo with
-                | Some _ when not vref.IsExtensionMember -> List.length (vref.MemberApparentEntity.TyparsNoRange |> DropErasedTypars)
+                | Some _ when not vref.IsExtensionMember -> List.length (vref.MemberApparentEntity.Typars |> DropErasedTypars)
                 | _ -> 0
 
             let ilEnclArgTys, ilMethArgTys =
@@ -7952,8 +7939,6 @@ and GenDecisionTreeSwitch
     let m = e.Range
     cgbuf.SetMarkToHereIfNecessary inplabOpt
 
-    cgbuf.EmitStartOfHiddenCode()
-
     match cases with
     // optimize a test against a boolean value, i.e. the all-important if-then-else
     | TCase(DecisionTreeTest.Const(Const.Bool b), successTree) :: _ ->
@@ -8746,11 +8731,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         CommitStartScope cgbuf startMarkOpt
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
-    | _ when
-        vspec.IsClassConstructor
-        && isNil vspec.DeclaringEntity.TyparsNoRange
-        && not isStateVar
-        ->
+    | _ when vspec.IsClassConstructor && isNil vspec.DeclaringEntity.Typars && not isStateVar ->
         let tps, _, _, _, cctorBody, _ =
             IteratedAdjustLambdaToMatchValReprInfo g cenv.amap vspec.ValReprInfo.Value rhsExpr
 
@@ -9518,6 +9499,30 @@ and GenMethodForBinding
     ) =
     let g = cenv.g
     let m = v.Range
+
+    // Closures synthesized inside a member body (inner `let rec`, `task`/`async` state
+    // machines, quotation-splice helpers) are nested in the IL type identified by
+    // eenv.cloc. Under --realsig+ a source-`private` member compiles to IL `private`
+    // (type-scoped), so a closure that calls it must nest inside the declaring type, not
+    // beside it in the module class, or the CLR raises MethodAccessException at runtime.
+    //
+    // Members declared in the type's own definition already reach here with the declaring
+    // type in eenv.cloc, but members declared in an intrinsic augmentation (`type C with
+    // member ...`) reach here with only the enclosing module in scope, because the
+    // augmentation is a separate definition group from the type. Normalize eenv.cloc to the
+    // declaring type for every non-extension member so closure placement is consistent
+    // (idempotent for members that already have it). Real extension members are compiled as
+    // static methods in their own module and must not be re-homed.
+    //
+    // This only matters under --realsig+: with the legacy --realsig- visibility a
+    // module-level sibling closure can still reach the (IL `assembly`) member, so the
+    // placement is left unchanged there to avoid perturbing existing IL.
+    let eenv =
+        match v.MemberInfo with
+        | Some _ when g.realsig && not v.IsExtensionMember ->
+            let declTref = mspec.MethodRef.DeclaringTypeRef
+            AddEnclosingToEnv eenv declTref.Enclosing declTref.Name None
+        | _ -> eenv
 
     // If a method has a witness-passing version of the code, then suppress
     // the generation of any witness in the non-witness passing version of the code
@@ -11316,7 +11321,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let ilThisTy = GenType cenv m eenvinner.tyenv thisTy
             let tref = ilThisTy.TypeRef
-            let ilGenParams = GenGenericParams cenv eenvinner tycon.TyparsNoRange
+            let ilGenParams = GenGenericParams cenv eenvinner tycon.Typars
             let checkNullness = g.langFeatureNullness && g.checkNullness
 
             let ilIntfTys =
@@ -11525,7 +11530,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                 isEmptyStruct
                 && cenv.options.workAroundReflectionEmitBugs
-                && not tycon.TyparsNoRange.IsEmpty
+                && not tycon.Typars.IsEmpty
 
             // Compute a bunch of useful things for each field
             let isCLIMutable =
@@ -11923,7 +11928,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             // If this property doesn't hold then the .cctor can end up running
             // before the main method even starts.
             let typeDefTrigger =
-                if eenv.isFinalFile || tycon.TyparsNoRange.IsEmpty then
+                if eenv.isFinalFile || tycon.Typars.IsEmpty then
                     ILTypeInit.OnAny
                 else
                     ILTypeInit.BeforeField
@@ -12022,7 +12027,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     ||
                                     // Reflection emit doesn't let us emit 'pack' and 'size' for generic structs.
                                     // In that case we generate a dummy field instead
-                                    (cenv.options.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty)
+                                    (cenv.options.workAroundReflectionEmitBugs && not tycon.Typars.IsEmpty)
                                 then
                                     ILTypeDefLayout.Sequential { Size = None; Pack = None }, ILDefaultPInvokeEncoding.Ansi
                                 else
@@ -12271,7 +12276,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             //
             // In this case, the .cctor for this type must force the .cctor of the backing static class for the file.
             if
-                tycon.TyparsNoRange.IsEmpty
+                tycon.Typars.IsEmpty
                 && not eenv.realsig
                 && tycon.MembersOfFSharpTyconSorted
                    |> List.exists (fun vref -> vref.Deref.IsClassConstructor)
