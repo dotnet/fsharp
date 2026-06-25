@@ -2502,12 +2502,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
             keyComparer = HashIdentity.Structural
         )
 
-    let primedFieldCounterByRange =
-        ConcurrentDictionary<struct (int * int * int * int * int), int>(HashIdentity.Structural)
-
-    let fieldSpecByRange =
-        ConcurrentDictionary<struct (int * int * int * int * int), ILFieldSpec>(HashIdentity.Structural)
-
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
     /// static init fields on script modules.
@@ -2570,20 +2564,6 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
             (fun _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@T", cloc.Range))
         )
         |> ignore
-
-    member _.GetOrAssignFieldCounter(m: range) =
-        let key = struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn)
-        primedFieldCounterByRange.GetOrAdd(key, (fun _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@field", m)))
-
-    member this.GetOrCreateRawDataFieldSpec(m: range, makeFspec: int -> ILFieldSpec) =
-        let key = struct (m.FileIndex, m.StartLine, m.StartColumn, m.EndLine, m.EndColumn)
-
-        fieldSpecByRange.GetOrAdd(
-            key,
-            (fun _ ->
-                let counter = this.GetOrAssignFieldCounter(m)
-                makeFspec counter)
-        )
 
     member _.GenerateAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         anonTypeTable.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo)
@@ -2975,7 +2955,7 @@ module CG =
 let GenString cenv cgbuf s =
     CG.EmitInstr cgbuf (pop 0) (Push [ cenv.g.ilg.typ_String ]) (I_ldstr s)
 
-let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (write: ByteBuffer -> 'a -> unit) (m: range) =
+let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (write: ByteBuffer -> 'a -> unit) (_m: range) =
     let g = cenv.g
     use buf = ByteBuffer.Create data.Length
     data |> Array.iter (write buf)
@@ -2985,25 +2965,23 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (w
     if data.Length = 0 then
         CG.EmitInstrs cgbuf (pop 0) (Push [ ilArrayType ]) [ mkLdcInt32 0; I_newarr(ILArrayShape.SingleDimensional, ilElementType) ]
     else
-        let fspec =
-            cgbuf.mgbuf.GetOrCreateRawDataFieldSpec(
-                m,
-                fun unique ->
-                    let vtspec = cgbuf.mgbuf.GenerateRawDataValueType(eenv.cloc, bytes.Length)
-                    let ilFieldName = CompilerGeneratedName $"field{unique}"
-                    let fty = ILType.Value vtspec
+        let vtspec = cgbuf.mgbuf.GenerateRawDataValueType(eenv.cloc, bytes.Length)
 
-                    let ilFieldDef =
-                        mkILStaticField (ilFieldName, fty, None, Some bytes, ILMemberAccess.Assembly)
+        let unique =
+            g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@field", eenv.cloc.Range)
 
-                    let ilFieldDef =
-                        ilFieldDef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ])
+        let ilFieldName = CompilerGeneratedName $"field{unique}"
+        let fty = ILType.Value vtspec
 
-                    let fspec = mkILFieldSpecInTy (mkILTyForCompLoc eenv.cloc, ilFieldName, fty)
-                    CountStaticFieldDef()
-                    cgbuf.mgbuf.AddFieldDef(fspec.DeclaringTypeRef, ilFieldDef)
-                    fspec
-            )
+        let ilFieldDef =
+            mkILStaticField (ilFieldName, fty, None, Some bytes, ILMemberAccess.Assembly)
+
+        let ilFieldDef =
+            ilFieldDef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ])
+
+        let fspec = mkILFieldSpecInTy (mkILTyForCompLoc eenv.cloc, ilFieldName, fty)
+        CountStaticFieldDef()
+        cgbuf.mgbuf.AddFieldDef(fspec.DeclaringTypeRef, ilFieldDef)
 
         CG.EmitInstrs
             cgbuf
@@ -10955,7 +10933,12 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
             GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenvinner mdef
             |> ignore
 
-            GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
+            // Only force the whole-file .cctor when the module actually has static fields.
+            // Forcing it unconditionally adds an eager initialization side effect to modules
+            // with no static state, which changes static-init ordering and caused runtime
+            // regressions (FSharpPlus testChoice hang, topinit/eval failures).
+            if not (cgbuf.mgbuf.GetCurrentFields(tref) |> Seq.isEmpty) then
+                GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo tref eenv.imports mspec.Range
 
 /// Generate the namespace fragments in a single file
 and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: CheckedImplFileAfterOptimization) =
@@ -12715,14 +12698,12 @@ let PrimeStableNamesForCodegen (cenv: cenv) (mgbuf: AssemblyBuilder) (implFiles:
 
                     walkExpr lbvs cloc body
 
-                | Expr.Op(op, _, args, m) ->
+                | Expr.Op(op, _, args, _m) ->
                     match op with
                     | TOp.Bytes bytes when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
                         mgbuf.PrimeRawDataValueTypeCounter(cloc, bytes.Length)
-                        mgbuf.GetOrAssignFieldCounter(m) |> ignore
                     | TOp.UInt16s arr when cenv.options.emitConstantArraysUsingStaticDataBlobs ->
                         mgbuf.PrimeRawDataValueTypeCounter(cloc, arr.Length * 2)
-                        mgbuf.GetOrAssignFieldCounter(m) |> ignore
                     | _ -> ()
 
                     for a in args do
