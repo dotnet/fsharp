@@ -1493,6 +1493,19 @@ module MetadataAsTextILField =
                     sprintf "MaxValue line is missing its literal value: %s" line)
 
     [<Fact>]
+    let ``IL const string field renders with [<Literal>] and the quoted string value`` () =
+        let metadataText =
+            getMetadataTextForEntity "RuntimeFeature" "let _ = typeof<System.Runtime.CompilerServices.RuntimeFeature>"
+
+        Assert.Contains("[<Literal>]", metadataText)
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val PortablePdb:"))
+            |> Option.defaultWith (fun () -> failwithf "PortablePdb declaration not found:\n%s" metadataText)
+        Assert.Contains("= \"PortablePdb\"", line)
+        Assert.DoesNotContain("value unavailable", line)
+
+    [<Fact>]
     let ``System.String.Empty (initonly, non-literal) renders without [<Literal>] and without value`` () =
         let metadataText = getMetadataTextForEntity "String" "let _ = typeof<System.String>"
 

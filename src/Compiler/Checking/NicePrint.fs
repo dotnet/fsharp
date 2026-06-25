@@ -463,7 +463,8 @@ module PrintIL =
                       let s = d.ToString ("g12", CultureInfo.InvariantCulture)
                       let s = ensureFloat s
                       s |> (tagNumericLiteral >> Some)
-                | _ -> None
+                | ILFieldInit.String s -> ("\"" + s + "\"") |> (tagStringLiteral >> Some)
+                | ILFieldInit.Null -> "null" |> (tagKeyword >> Some)
             | None -> None
         match textOpt with
         | None -> WordL.equals ^^ (comment "value unavailable")
