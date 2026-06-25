@@ -1230,13 +1230,6 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
             // otherwise fsi.CommandLineArgs leaks the rewrite to scripts (see #10819).
             // Split argv at the first `--`, post-process only the compiler-args prefix,
             // and pass the suffix (including the `--` separator itself) through unmodified.
-            // Keeping `--` in the suffix preserves both downstream handlers:
-            //   * with a script preceding `--`, the OptionGeneral IsScript handler captures
-            //     the suffix as script args (matching pre-fix behaviour for fsi.CommandLineArgs);
-            //   * with no script (e.g. `dotnet fsi -- -d 5`), the `--` token reaches
-            //     ParseCompilerOptions and fires its OptionRest recordExplicitArg handler,
-            //     so `-d` and `5` are captured as explicit args instead of being parsed
-            //     as compiler options.
             let processedArgs =
                 match Array.tryFindIndex (fun (a: string) -> a = "--") argv with
                 | Some idx ->
