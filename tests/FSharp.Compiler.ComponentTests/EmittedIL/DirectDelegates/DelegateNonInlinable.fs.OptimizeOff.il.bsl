@@ -318,42 +318,6 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niTrivialNonEta@56
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static int32  Invoke(int32 x,
-                                          int32 y) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  call       int32 assembly::trivial(int32,
-                                                               int32)
-      IL_0007:  ret
-    } 
-
-  } 
-
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niTrivialEta@59
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static int32  Invoke(int32 a,
-                                          int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  call       int32 assembly::trivial(int32,
-                                                               int32)
-      IL_0007:  ret
-    } 
-
-  } 
-
   .method public static int32  accCurried(int32 x,
                                           int32 y) cil managed
   {
@@ -489,42 +453,6 @@
     IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                native int)
     IL_0011:  ret
-  } 
-
-  .method public static int32  trivial(int32 x,
-                                       int32 y) cil managed
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  add
-    IL_0003:  ret
-  } 
-
-  .method public static class [runtime]System.Func`3<int32,int32,int32> niTrivialNonEta() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/niTrivialNonEta@56::Invoke(int32,
-                                                                               int32)
-    IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
-    IL_000c:  ret
-  } 
-
-  .method public static class [runtime]System.Func`3<int32,int32,int32> niTrivialEta() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/niTrivialEta@59::Invoke(int32,
-                                                                            int32)
-    IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
-                                                                                               native int)
-    IL_000c:  ret
   } 
 
 } 

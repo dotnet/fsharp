@@ -98,7 +98,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname case37_etaTupled@13
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname case35_etaTupled@13
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -109,7 +109,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/C assembly/case37_etaTupled@13::o
+      IL_0002:  stfld      class assembly/C assembly/case35_etaTupled@13::o
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -120,7 +120,7 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/C assembly/case37_etaTupled@13::o
+      IL_0001:  ldfld      class assembly/C assembly/case35_etaTupled@13::o
       IL_0006:  ldarg.1
       IL_0007:  ldarg.2
       IL_0008:  callvirt   instance void assembly/C::IMt<int32>(!!0,
@@ -144,13 +144,13 @@
     IL_0011:  ret
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case37_etaTupled(class assembly/C o) cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case35_etaTupled(class assembly/C o) cil managed
   {
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/case37_etaTupled@13::.ctor(class assembly/C)
-    IL_0006:  ldftn      instance void assembly/case37_etaTupled@13::Invoke(int32,
+    IL_0001:  newobj     instance void assembly/case35_etaTupled@13::.ctor(class assembly/C)
+    IL_0006:  ldftn      instance void assembly/case35_etaTupled@13::Invoke(int32,
                                                                                                  int32)
     IL_000c:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                            native int)

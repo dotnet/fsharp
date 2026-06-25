@@ -2,7 +2,7 @@ module DelegatePartialApplication
 
 open System
 
-// Cases 15/16 (in DelegateKnownFunction.fs / DelegateStaticMethod.fs) capture a
+// Cases 37/38 (in DelegateKnownFunction.fs / DelegateStaticMethod.fs) capture a
 // constant first argument, so their closure can stay static (the constant is re-materialised in Invoke
 // with no instance field). Capturing a runtime VALUE instead forces the closure to carry an instance
 // field, which exercises a distinct emit path. None of these can ever become a direct delegate (the
@@ -16,11 +16,11 @@ type C =
 type I(k: int) =
     member _.Add3 (x: int) (y: int) (z: int) : unit = ignore k
 
-// 41. partial application of module function (captured var: instance-field capture of n)
+// 39. partial application of module function (captured var: instance-field capture of n)
 let papKnownVar (n: int) = Action<int, int>(handler3 n)
 
-// 42. partial application of static method (captured var)
+// 40. partial application of static method (captured var)
 let papStaticVar (n: int) = Action<int, int>(C.Add3 n)
 
-// 43. partial application of instance method (captures both the receiver and n)
+// 41. partial application of instance method (captures both the receiver and n)
 let papInstanceVar (o: I) (n: int) = Action<int, int>(o.Add3 n)

@@ -345,7 +345,7 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 33-38: a tupled application forwards a single tuple, not the Invoke parameters verbatim, so the
+// Cases 31-36: a tupled application forwards a single tuple, not the Invoke parameters verbatim, so the
 // shape is not recognized and a closure is kept even in release.
 [<Fact>]
 let ``Tupled application stays a closure (preview)`` () =
@@ -369,7 +369,7 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 39-43: a partial application leaves the target with more parameters than the delegate's Invoke,
+// Cases 37-41: a partial application leaves the target with more parameters than the delegate's Invoke,
 // so there is no closed direct form and a closure is kept.
 [<Fact>]
 let ``Partial application stays a closure (preview)`` () =
@@ -392,7 +392,7 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 48-49: the synthesized unit argument is seen as a leading argument for a static target, so a
+// Cases 46-47: the synthesized unit argument is seen as a leading argument for a static target, so a
 // unit-argument delegate stays a closure (and still runs).
 [<Fact>]
 let ``Unit-argument delegate stays a closure (preview)`` () =
@@ -416,7 +416,7 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 50-51: a value-type receiver would need boxing (a delegate Target is object); not implemented, so
+// Cases 48-49: a value-type receiver would need boxing (a delegate Target is object); not implemented, so
 // it stays a closure and still dispatches correctly.
 [<Fact>]
 let ``Struct value-type receiver stays a closure (preview)`` () =
@@ -441,7 +441,7 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Case 52: an extension member compiles to a static method whose first parameter is the receiver, so it is
+// Case 50: an extension member compiles to a static method whose first parameter is the receiver, so it is
 // bound as a leading argument (a partial application) and stays a closure.
 [<Fact>]
 let ``Extension member stays a closure (preview)`` () =
@@ -470,7 +470,7 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Case 53: a byref Invoke parameter with a mutating body is not a transparent forwarding call, so it stays
+// Case 51: a byref Invoke parameter with a mutating body is not a transparent forwarding call, so it stays
 // a closure and mutates through the byref correctly.
 [<Fact>]
 let ``Byref-parameter delegate stays a closure and mutates (preview)`` () =

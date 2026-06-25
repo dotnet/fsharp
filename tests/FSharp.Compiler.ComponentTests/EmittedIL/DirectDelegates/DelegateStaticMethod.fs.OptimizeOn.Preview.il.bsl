@@ -67,7 +67,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case19_nonEta@12
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case18_nonEta@12
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -95,7 +95,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case34_etaTupled@18
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case32_etaTupled@18
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -109,7 +109,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case40_partial@21
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case38_partial@21
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -123,12 +123,12 @@
 
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case19_nonEta() cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case18_nonEta() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case19_nonEta@12::Invoke(int32,
+    IL_0001:  ldftn      void assembly/case18_nonEta@12::Invoke(int32,
                                                                             int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)
@@ -147,24 +147,24 @@
     IL_000c:  ret
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case34_etaTupled() cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case32_etaTupled() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case34_etaTupled@18::Invoke(int32,
+    IL_0001:  ldftn      void assembly/case32_etaTupled@18::Invoke(int32,
                                                                                int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)
     IL_000c:  ret
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case40_partial() cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case38_partial() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case40_partial@21::Invoke(int32,
+    IL_0001:  ldftn      void assembly/case38_partial@21::Invoke(int32,
                                                                              int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)

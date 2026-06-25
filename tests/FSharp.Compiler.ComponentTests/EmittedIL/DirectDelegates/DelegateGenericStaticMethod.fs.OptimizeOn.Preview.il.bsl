@@ -56,7 +56,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case20_nonEta@10
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case19_nonEta@10
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -84,7 +84,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case35_etaTupled@16
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case33_etaTupled@16
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -98,12 +98,12 @@
 
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case20_nonEta() cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case19_nonEta() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case20_nonEta@10::Invoke(int32,
+    IL_0001:  ldftn      void assembly/case19_nonEta@10::Invoke(int32,
                                                                                    int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                            native int)
@@ -122,12 +122,12 @@
     IL_000c:  ret
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case35_etaTupled() cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case33_etaTupled() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case35_etaTupled@16::Invoke(int32,
+    IL_0001:  ldftn      void assembly/case33_etaTupled@16::Invoke(int32,
                                                                                       int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                            native int)

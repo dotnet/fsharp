@@ -52,7 +52,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case33_etaTupled@17
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case31_etaTupled@17
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -71,7 +71,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case39_partial@20
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case37_partial@20
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -120,7 +120,7 @@
     IL_0000:  ret
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case18_nonEta() cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case17_nonEta() cil managed
   {
     
     .maxstack  8
@@ -144,24 +144,24 @@
     IL_000c:  ret
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case33_etaTupled() cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case31_etaTupled() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case33_etaTupled@17::Invoke(int32,
+    IL_0001:  ldftn      void assembly/case31_etaTupled@17::Invoke(int32,
                                                                                 int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                            native int)
     IL_000c:  ret
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case39_partial() cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case37_partial() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case39_partial@20::Invoke(int32,
+    IL_0001:  ldftn      void assembly/case37_partial@20::Invoke(int32,
                                                                               int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                            native int)

@@ -79,7 +79,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case37_etaTupled@13
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case35_etaTupled@13
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -105,12 +105,12 @@
     IL_000c:  ret
   } 
 
-  .method public static class [runtime]System.Action`2<int32,int32> case37_etaTupled(class assembly/C o) cil managed
+  .method public static class [runtime]System.Action`2<int32,int32> case35_etaTupled(class assembly/C o) cil managed
   {
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case37_etaTupled@13::Invoke(int32,
+    IL_0001:  ldftn      void assembly/case35_etaTupled@13::Invoke(int32,
                                                                                         int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                            native int)
