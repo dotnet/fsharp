@@ -509,8 +509,8 @@ type Entity =
 
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     ///
-    /// Lazy because it may read metadata, must provide a context "range" in case error occurs reading metadata.
-    member Typars: m: range -> Typars
+    /// Lazy because it may read metadata. Uses the entity's own range for error context.
+    member Typars: Typars
 
     /// Get the value representing the accessibility of an F# type definition or module.
     member Accessibility: Accessibility
@@ -781,9 +781,6 @@ type Entity =
 
     /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute
     member TryIsReadOnly: bool voption
-
-    /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member TyparsNoRange: Typars
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
     member TypeAbbrev: TType option
@@ -2464,8 +2461,8 @@ type EntityRef =
 
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     ///
-    /// Lazy because it may read metadata, must provide a context "range" in case error occurs reading metadata.
-    member Typars: m: range -> Typars
+    /// Lazy because it may read metadata. Uses the entity's own range for error context.
+    member Typars: Typars
 
     /// Get the value representing the accessibility of an F# type definition or module.
     member Accessibility: Accessibility
@@ -2734,9 +2731,6 @@ type EntityRef =
 
     /// The on-demand analysis about whether the entity has the IsReadOnly attribute
     member TryIsReadOnly: bool voption
-
-    /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member TyparsNoRange: Typars
 
     /// Indicates if this entity is an F# type abbreviation definition
     member TypeAbbrev: TType option
@@ -4414,6 +4408,10 @@ type FreeVars =
         /// Indicates if the expression contains a call to rethrow that is not bound under a (try-)with branch.
         /// Rethrow may only occur in such locations.
         UsesUnboundRethrow: bool
+
+        /// Indicates if the expression contains a direct IL field load/store — a cheap over-approximate
+        /// gate the optimizer refines to protected (family) fields (issue #19963). Never read by escape checks.
+        ContainsILFieldAccess: bool
 
         /// The summary of locally defined tycon representations used in the expression. These may be made private by a signature
         /// or marked 'internal' or 'private' type we have to check various conditions associated with that.
