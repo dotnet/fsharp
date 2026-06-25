@@ -1219,6 +1219,15 @@ module Map =
     let foldBack<'Key, 'T, 'State when 'Key: comparison> folder (table: Map<'Key, 'T>) (state: 'State) =
         MapTree.foldBack folder table.Tree state
 
+    [<CompiledName("Merge")>]
+    let merge resolve (table1: Map<_, _>) (table2: Map<_, _>) =
+        (table1, table2)
+        ||> fold (fun acc key value2 ->
+            acc
+            |> change key (function
+                | Some value1 -> Some(resolve key value1 value2)
+                | None -> Some value2))
+
     [<CompiledName("ToSeq")>]
     let toSeq (table: Map<_, _>) =
         table |> Seq.map (fun kvp -> kvp.Key, kvp.Value)
