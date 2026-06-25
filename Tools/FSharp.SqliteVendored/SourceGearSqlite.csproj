@@ -11,7 +11,10 @@
   <!-- SourceGear.Sqlite3 contains the e_sqlite3.dll for win-x86 / win-x64 / win-arm64 under runtimes/<rid>/native/.
        Microsoft FCIB policy prohibits .dll commits, so we pull the nupkg + extract at build time. -->
   <ItemGroup>
-    <PackageReference Include="SourceGear.Sqlite3" Version="3.50.4.5" GeneratePathProperty="true" />
+    <!-- ExcludeAssets="all": we only need the package restored so $(PkgSourceGear_Sqlite3)
+         (GeneratePathProperty) resolves to the extracted native; the package's buildTransitive props
+         enforce a non-AnyCPU platform and must not run in this AnyCPU vendoring helper. -->
+    <PackageReference Include="SourceGear.Sqlite3" Version="3.50.4.5" GeneratePathProperty="true" ExcludeAssets="all" />
   </ItemGroup>
 
   <!-- After NuGet restore populates $(PkgSourceGear_Sqlite3), copy the DLLs into the local runtimes/ tree
