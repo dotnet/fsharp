@@ -751,7 +751,7 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
 let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
     let g = cenv.g
 
-    checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
+    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
 
     let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
 
@@ -1701,7 +1701,7 @@ module MutRecBindingChecking =
                             let thisValOpt = GetInstanceMemberThisVariable (v, x)
 
                             // Members have at least as many type parameters as the enclosing class. Just grab the type variables for the type.
-                            let thisTyInst = List.map mkTyparTy (List.truncate (tcref.Typars(v.Range).Length) v.Typars)
+                            let thisTyInst = List.map mkTyparTy (List.truncate (tcref.Typars.Length) v.Typars)
                                     
                             let x = localReps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst x 
 
@@ -2153,7 +2153,7 @@ module TyconConstraintInference =
                 | ValueSome tp ->                    
                     // Within structural types, type parameters can be optimistically assumed to have comparison
                     // We record the ones for which we have made this assumption.
-                    if tycon.TyparsNoRange |> List.exists (fun tp2 -> typarRefEq tp tp2) then 
+                    if tycon.Typars |> List.exists (fun tp2 -> typarRefEq tp tp2) then 
                         assumedTyparsAcc <- assumedTyparsAcc.Add(tp.Stamp)
                         true                    
                     else
@@ -2180,7 +2180,7 @@ module TyconConstraintInference =
                             not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoComparisonAttribute tcref.Deref)
                             &&
                             // Check the structural dependencies
-                            (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> 
+                            (tinst, tcref.Typars) ||> List.lengthsEqAndForall2 (fun ty tp -> 
                                 if tp.ComparisonConditionalOn || assumedTypars.Contains tp.Stamp then 
                                     checkIfFieldTypeSupportsComparison tycon ty 
                                 else 
@@ -2239,7 +2239,7 @@ module TyconConstraintInference =
         // OK, we're done, Record the results for the type variable which provide the support
         for tyconStamp in uneliminatedTycons do
             let tycon, _ = tab[tyconStamp] 
-            for tp in tycon.Typars(tycon.Range) do
+            for tp in tycon.Typars do
                 if assumedTyparsActual.Contains(tp.Stamp) then 
                     tp.SetComparisonDependsOn true
 
@@ -2274,7 +2274,7 @@ module TyconConstraintInference =
                 | ValueSome tp ->
                     // Within structural types, type parameters can be optimistically assumed to have equality
                     // We record the ones for which we have made this assumption.
-                    if tycon.Typars(tycon.Range) |> List.exists (fun tp2 -> typarRefEq tp tp2) then                     
+                    if tycon.Typars |> List.exists (fun tp2 -> typarRefEq tp tp2) then                     
                         assumedTyparsAcc <- assumedTyparsAcc.Add(tp.Stamp)
                         true
                     else
@@ -2300,7 +2300,7 @@ module TyconConstraintInference =
                              not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.NoEqualityAttribute tcref.Deref)
                              &&
                              // Check the structural dependencies
-                             (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> 
+                             (tinst, tcref.Typars) ||> List.lengthsEqAndForall2 (fun ty tp -> 
                                  if tp.EqualityConditionalOn || assumedTypars.Contains tp.Stamp then 
                                      checkIfFieldTypeSupportsEquality tycon ty 
                                  else 
@@ -2360,7 +2360,7 @@ module TyconConstraintInference =
         // OK, we're done, Record the results for the type variable which provide the support
         for tyconStamp in uneliminatedTycons do
             let tycon, _ = tab[tyconStamp] 
-            for tp in tycon.Typars(tycon.Range) do
+            for tp in tycon.Typars do
                 if assumedTyparsActual.Contains(tp.Stamp) then 
                     tp.SetEqualityDependsOn true
 
@@ -2604,8 +2604,7 @@ module EstablishTypeDefinitionCores =
     let private GetStructuralElementsOfTyconDefn (cenv: cenv) env tpenv (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) tycon = 
         let thisTyconRef = mkLocalTyconRef tycon
         let g = cenv.g
-        let m = tycon.Range
-        let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) env
+        let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) env
         let env = MakeInnerEnvForTyconRef env thisTyconRef false 
         [ match synTyconRepr with 
           | SynTypeDefnSimpleRepr.None _ -> ()
@@ -2646,7 +2645,7 @@ module EstablishTypeDefinitionCores =
                   for arg in ctorArgNames do
                       let ty = names[arg].Type
                       let m = names[arg].Ident.idRange
-                      if not (isNil (ListSet.subtract typarEq (freeInTypeLeftToRight g false ty) tycon.TyparsNoRange)) then
+                      if not (isNil (ListSet.subtract typarEq (freeInTypeLeftToRight g false ty) tycon.Typars)) then
                           errorR(Error(FSComp.SR.tcStructsMustDeclareTypesOfImplicitCtorArgsExplicitly(), m))   
                       yield (ty, m)
 
@@ -3215,7 +3214,7 @@ module EstablishTypeDefinitionCores =
 
             let hasMeasureAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureAttribute attrs
             let hasMeasureableAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureableAttribute attrs
-            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
+            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
 
             match synTyconRepr with 
@@ -3226,7 +3225,7 @@ module EstablishTypeDefinitionCores =
             // "type x = | A" can always be used instead. 
             | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) _ -> ()
             
-            | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, m) ->
+            | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, _m) ->
 
 #if !NO_TYPEPROVIDERS
               // Check we have not already decided that this is a generative provided type definition. If we have already done this (i.e. this is the second pass
@@ -3275,7 +3274,7 @@ module EstablishTypeDefinitionCores =
 
                     if not firstPass then
                         let ftyvs = freeInTypeLeftToRight g false ty
-                        let typars = tycon.Typars m
+                        let typars = tycon.Typars
                         if ftyvs.Length <> typars.Length then
                             errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(), tycon.Range))
 
@@ -3300,9 +3299,8 @@ module EstablishTypeDefinitionCores =
                match origInfo, tyconAndAttrsOpt with 
                | (typeDefCore, _, _), Some (tycon, (attrs, _)) ->
                 let (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, explicitImplements, _, _, _)) = typeDefCore
-                let m = tycon.Range
                 let tcref = mkLocalTyconRef tycon
-                let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
+                let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) envinner
                 let envinner = MakeInnerEnvForTyconRef envinner tcref false 
                 
                 let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
@@ -3463,7 +3461,7 @@ module EstablishTypeDefinitionCores =
                     if allowed then 
                         if kind = explicitKind then
                             warning(PossibleUnverifiableCode m)
-                    elif List.isEmpty (thisTyconRef.Typars m) then
+                    elif List.isEmpty (thisTyconRef.Typars) then
                         errorR (Error(FSComp.SR.tcOnlyStructsCanHaveStructLayout(), m))
                     else
                         errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(), m))
@@ -3495,7 +3493,7 @@ module EstablishTypeDefinitionCores =
                     if not ctorArgNames.IsEmpty then
                         errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), pat.Range))
 
-            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
+            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
 
             let multiCaseUnionStructCheck (unionCases: UnionCase list) =
@@ -3661,7 +3659,7 @@ module EstablishTypeDefinitionCores =
                     writeFakeRecordFieldsToSink userFields
                     
                     let superTy = tycon.TypeContents.tcaug_super
-                    let containerInfo = TyconContainerInfo(innerParent, thisTyconRef, thisTyconRef.Typars m, NoSafeInitInfo)
+                    let containerInfo = TyconContainerInfo(innerParent, thisTyconRef, thisTyconRef.Typars, NoSafeInitInfo)
                     let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
                     match kind with 
                     | SynTypeDefnKind.Opaque -> 
@@ -3733,7 +3731,7 @@ module EstablishTypeDefinitionCores =
                                   let _, _, curriedArgInfos, returnTy, _ = GetValReprTypeInCompiledForm g (arity |> TranslateSynValInfo cenv m (TcAttributes cenv envinner)  |> TranslatePartialValReprInfo []) 0 tyR m
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))
-                                  let ttps = thisTyconRef.Typars m
+                                  let ttps = thisTyconRef.Typars
                                   let fparams =
                                       curriedArgInfos.Head
                                       |> List.map (fun (ty, argInfo: ArgReprInfo) ->
@@ -4049,7 +4047,7 @@ module EstablishTypeDefinitionCores =
                 let (MutRecDefnsPhase1DataForTycon(synTyconInfo, _, _, _, _, _)) = typeDefCore
                 let (SynComponentInfo(_, TyparsAndConstraints (_, cs1), cs2, _, _, _, _, _)) = synTyconInfo
                 let synTyconConstraints = cs1 @ cs2
-                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envForDecls
+                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) envForDecls
                 let thisTyconRef = mkLocalTyconRef tycon
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon thisTyconRef false 
                 try
@@ -4175,7 +4173,7 @@ module EstablishTypeDefinitionCores =
 
         // No inferred constraints allowed on declared typars 
         (envMutRecPrelim, withEnvs) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (_, tyconOpt) -> 
-            tyconOpt |> Option.iter (fun tycon -> tycon.Typars m |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)))
+            tyconOpt |> Option.iter (fun tycon -> tycon.Typars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)))
         
         // Phase1E. OK, now recheck the abbreviations, super/interface and explicit constraints types (this time checking constraints)
         (envMutRecPrelim, withAttrs) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) -> 
@@ -4278,7 +4276,7 @@ module TcDeclarations =
             tcref.Deref.IsFSharpDelegateTycon ||
             tcref.Deref.IsFSharpEnumTycon
 
-        let reqTypars = tcref.Typars m
+        let reqTypars = tcref.Typars
 
         // Member definitions are intrinsic (added directly to the type) if:
         // a) For interfaces, only if it is in the original defn.
