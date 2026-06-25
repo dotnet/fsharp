@@ -28,10 +28,10 @@
   <!-- Note: This is imported here after SDK to ensure it can override SDK F# targets -->
   <Import Project="../../../../UseLocalCompiler.Directory.Build.props" Condition="'$(LoadLocalFSharpBuild)' == 'True'" />
 
-  <!-- When built with the local compiler, exercise the FS-1073 positional record constructor (preview). -->
+  <!-- Built with the local (preview-capable) compiler: enable preview language features. -->
   <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
     <LangVersion>preview</LangVersion>
-    <DefineConstants>$(DefineConstants);RECORD_CTOR_FEATURE</DefineConstants>
+    <DefineConstants>$(DefineConstants);USES_PREVIEW_COMPILER</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

@@ -56,16 +56,12 @@ module Library =
     type TypeWithLiteralAttrArg() =
         member _.GetValue() = LiteralAttrArg
 
-    /// Plain record used to test the FS-1073 positional record constructor across compiler versions.
-    /// The record itself is ordinary and compiles on any compiler; only the *construction* syntax is new.
+    /// Record + inline constructor for the FS-1073 cross-compiler test. The new positional syntax is used
+    /// when built with a preview compiler, classic syntax otherwise; both pickle identically.
     type RecordCtorPoint = { A: int; B: int }
 
-    /// inline function that constructs the record. When this library is built with the local compiler
-    /// (RECORD_CTOR_FEATURE defined), it uses the new positional constructor; otherwise classic record
-    /// syntax. Both elaborate to the same record-allocation node, so the pickled inline body must be
-    /// consumable by an app built with an older compiler (the FS-1073 cross-compiler concern).
     let inline makeRecordCtorPoint a b =
-#if RECORD_CTOR_FEATURE
+#if USES_PREVIEW_COMPILER
         RecordCtorPoint(a, b)
 #else
         { RecordCtorPoint.A = a; RecordCtorPoint.B = b }

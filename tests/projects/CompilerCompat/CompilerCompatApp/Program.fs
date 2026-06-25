@@ -68,14 +68,8 @@ let main _argv =
                 printfn "ERROR: Processed result doesn't match expected"
                 1
             else
-                // FS-1073 record-constructor cross-compiler checks.
-                // 'makeRecordCtorPoint' is an inline function in the library; if the library was built with
-                // the local compiler it was authored with the new positional-ctor syntax, and this app
-                // (possibly an older compiler) must be able to inline its pickled body correctly.
                 let viaInline = Library.makeRecordCtorPoint 7 9
-                // Direct construction of a packaged record. When this app is built with the local compiler
-                // it uses the new positional constructor on a record defined in another assembly.
-#if RECORD_CTOR_FEATURE
+#if USES_PREVIEW_COMPILER
                 let viaCtor = Library.RecordCtorPoint(3, 4)
 #else
                 let viaCtor = { Library.RecordCtorPoint.A = 3; Library.RecordCtorPoint.B = 4 }
