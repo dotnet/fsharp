@@ -24,17 +24,24 @@ type C() =
     member _.M (x: int) (y: int) : int = x * y
 
 // Tupled-signature custom delegate: Invoke(int, int).
+// 30. non-eta module function, custom delegate
 let tupledNonEta () = DTupled(acc)
+// 15. eta module function, custom delegate
 let tupledEta () = DTupled(fun a b -> acc a b)
 
 // Instance member through a custom delegate: the receiver becomes the delegate's Target.
+// 31. non-eta instance member, custom delegate
 let instanceNonEta (c: C) = DTupled(c.M)
+// 16. eta instance member, custom delegate
 let instanceEta (c: C) = DTupled(fun a b -> c.M a b)
 
 // Generic custom delegate instantiated at int: Invoke(int):int over the generic target.
+// 32. non-eta generic method, generic custom delegate
 let genNonEta () = DGen<int>(ident)
+// 17. eta generic method, generic custom delegate
 let genEta () = DGen<int>(fun x -> ident x)
 
 // byref-parameter custom delegate: the body mutates through the byref, so it is not a transparent forwarding
 // call and stays a closure. Documents that a byref Invoke parameter does not break the recognizer.
+// 53. byref-parameter delegate (mutating body)
 let byrefMutate () = DByref(fun x -> x <- x + 1)

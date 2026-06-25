@@ -8,14 +8,14 @@ type C(k: int) =
     abstract V : int -> int -> unit
     default _.V (x: int) (y: int) : unit = ignore k
 
-// 10. non-eta-expanded instance method target
-let case10_nonEta (o: C) = Action<int, int>(o.AddC)
+// 21. non-eta instance method
+let case21_nonEta (o: C) = Action<int, int>(o.AddC)
 
-// 11. eta-expanded, curried application
-let case11_etaCurried (o: C) = Action<int, int>(fun a b -> o.AddC a b)
+// 4. eta instance method (curried application)
+let case4_etaCurried (o: C) = Action<int, int>(fun a b -> o.AddC a b)
 
-// 12. eta-expanded, tupled application
-let case12_etaTupled (o: C) = Action<int, int>(fun a b -> o.AddT(a, b))
+// 36. eta instance method, tupled application
+let case36_etaTupled (o: C) = Action<int, int>(fun a b -> o.AddT(a, b))
 
-// virtual instance method: a direct delegate must use ldvirtftn (with dup) to preserve dispatch
-let caseVirtual (o: C) = Action<int, int>(o.V)
+// 22. non-eta virtual instance method: a direct delegate must use ldvirtftn (with dup) to preserve dispatch
+let case22_virtual (o: C) = Action<int, int>(o.V)

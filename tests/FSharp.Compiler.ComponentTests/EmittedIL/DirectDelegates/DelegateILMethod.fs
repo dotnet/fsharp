@@ -8,9 +8,9 @@ open System.Text
 // unoptimized builds the eta form keeps a closure (matching the F# eta policy). See DelegateNonInlinable
 // for the F#-value equivalent.
 
-// Static IL method (System.Math.Max), eta-expanded.
+// 13. eta IL/BCL static method (System.Math.Max).
 let ilStaticEta () = Func<int, int, int>(fun a b -> Math.Max(a, b))
 
-// Instance IL method (StringBuilder.Append(string)) on a reference type, eta-expanded. The receiver is a
+// 14. eta IL/BCL instance method (StringBuilder.Append(string)) on a reference type. The receiver is a
 // parameter, evaluated at the construction site and carried as the delegate's Target.
 let ilInstanceEta (sb: StringBuilder) = Func<string, StringBuilder>(fun s -> sb.Append(s))

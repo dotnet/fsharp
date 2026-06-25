@@ -6,11 +6,11 @@ type G<'U> =
     static member SMc<'T> (x: 'T) (y: 'T) : unit = ()
     static member SMt<'T> (x: 'T, y: 'T) : unit = ()
 
-// 7. non-eta-expanded generic static method (generic type + generic method)
-let case7_nonEta () = Action<int, int>(G<string>.SMc<int>)
+// 20. non-eta generic static method (generic type + generic method)
+let case20_nonEta () = Action<int, int>(G<string>.SMc<int>)
 
-// 8. eta-expanded, curried application
-let case8_etaCurried () = Action<int, int>(fun a b -> G<string>.SMc<int> a b)
+// 3. eta generic static method (curried application)
+let case3_etaCurried () = Action<int, int>(fun a b -> G<string>.SMc<int> a b)
 
-// 9. eta-expanded, tupled application
-let case9_etaTupled () = Action<int, int>(fun a b -> G<string>.SMt<int>(a, b))
+// 35. eta generic static method, tupled application
+let case35_etaTupled () = Action<int, int>(fun a b -> G<string>.SMt<int>(a, b))

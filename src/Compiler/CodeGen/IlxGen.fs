@@ -7514,19 +7514,27 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
 
                 // The type checker has already verified that the delegate is built from a compatible function
                 // shape, and the structural match above forwards the Invoke parameters verbatim, so the
-                // target's signature is compatible with the delegate's Invoke by construction. We just confirm
-                // the compiled shape lines up:
-                //  - for a non-generic target, identical parameter and return types (cheap and exact);
-                //  - for a generic target, matching parameter count (the formal signature is written in terms
-                //    of type variables, so an exact type comparison here is not meaningful; arity rejects
-                //    unit-elision / param-array / tupled-arity mismatches).
-                // For an instance method the receiver is implicit and does not appear in FormalArgTypes.
+                // target's signature is compatible with the delegate's Invoke by construction. We confirm:
+                //  - parameter *count* matches (already guaranteed by the verbatim forwarding, so essentially
+                //    a sanity check). We deliberately do not compare parameter IL *types*: a value-type
+                //    parameter is exact by construction (a widening/boxing argument would not be a verbatim
+                //    Val and so would not have matched), and for reference-type parameters the CLR's delegate
+                //    relaxation permits contravariance, so an exact comparison would only produce false
+                //    negatives (a CLR-legal binding bailing to a closure).
+                //  - for a non-generic target, the return type matches exactly. This is the one IL mismatch
+                //    the recognizer cannot see and the CLR will not relax: notably an F# 'unit' return
+                //    compiled to 'void' versus a delegate whose Invoke returns 'Unit'. For a generic target
+                //    the return is written in terms of type variables, so no exact comparison is meaningful.
                 let signatureMatches (ilEnclArgTys: ILType list) (ilMethArgTys: ILType list) (targetMspec: ILMethodSpec) =
-                    if List.isEmpty ilEnclArgTys && List.isEmpty ilMethArgTys then
-                        typesOfILParams ilDelegeeParams = targetMspec.FormalArgTypes
-                        && ilDelegeeRet.Type = targetMspec.FormalReturnType
-                    else
-                        targetMspec.FormalArgTypes.Length = ilDelegeeParams.Length
+                    let arityMatches = targetMspec.FormalArgTypes.Length = ilDelegeeParams.Length
+
+                    let returnMatches =
+                        if List.isEmpty ilEnclArgTys && List.isEmpty ilMethArgTys then
+                            ilDelegeeRet.Type = targetMspec.FormalReturnType
+                        else
+                            true
+
+                    arityMatches && returnMatches
 
                 let receiverInfo virtualCall =
                     match leadingArgs with

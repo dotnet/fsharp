@@ -6,8 +6,10 @@ open System
 [<NoCompilerInlining>]
 let returnsUnit (x: int) (y: int) : unit = ()
 
+// 28. non-eta unit-returning member (compiled to void)
 let voidNonEta () = Action<int, int>(returnsUnit)
 
+// 11. eta unit-returning member
 let voidEta () = Action<int, int>(fun a b -> returnsUnit a b)
 
 type C =
@@ -18,6 +20,8 @@ type C =
     static member Echo<'T>(x: 'T) : 'T = x
 
 // Generic return type variable instantiated to unit; the delegate likewise returns unit.
+// 29. non-eta generic return tyvar instantiated to unit (compiled return is Unit, not void)
 let unitGenericReturnNonEta () = Func<unit, unit>(C.Echo<unit>)
 
+// 12. eta generic unit-returning method
 let unitGenericReturnEta () = Func<unit, unit>(fun (x: unit) -> C.Echo<unit> x)
