@@ -12,24 +12,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.Syntax
 
-/// The target of a direct-delegate forwarding call recognized by (|DirectDelegateForwardingCall|_|).
-[<RequireQualifiedAccess>]
-type internal DirectDelegateForwardingTarget =
-    /// A known F# value: a module-level function or a member. Carries the value reference, its use flags
-    /// and the call's type arguments; the consumer resolves storage to a method spec.
-    | FSharpVal of vref: ValRef * valUseFlags: ValUseFlag * tyargs: TypeInst
-    /// A direct IL method call (e.g. a BCL method), compiled as TOp.ILCall. Carries everything needed to
-    /// build the method spec directly: virtual/struct/ctor flags, use flags, the IL method reference and
-    /// the enclosing-type and method type instantiations.
-    | ILMethod of
-        isVirtual: bool *
-        isStruct: bool *
-        isCtor: bool *
-        valUseFlags: ValUseFlag *
-        ilMethRef: ILMethodRef *
-        enclTypeInst: TypeInst *
-        methInst: TypeInst
-
 [<AutoOpen>]
 module internal AddressOps =
 
@@ -561,14 +543,6 @@ module internal ExprTransforms =
 
     [<return: Struct>]
     val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list * Expr * range * (Expr -> Expr)) voption
-
-    /// Recognizes the body of a delegate's Invoke method when it is a saturated, transparent forwarding
-    /// call to a known method (an F# value or a direct IL call) whose trailing arguments are exactly the
-    /// delegate's Invoke parameters in order. Returns the resolved target and any leading (non-forwarded)
-    /// argument expressions, e.g. an instance method's receiver.
-    [<return: Struct>]
-    val (|DirectDelegateForwardingCall|_|):
-        TcGlobals -> Val list -> Expr -> (DirectDelegateForwardingTarget * Expr list) voption
 
     [<return: Struct>]
     val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * TypeInst * Expr * Expr * range) voption

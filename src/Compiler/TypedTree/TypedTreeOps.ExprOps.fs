@@ -33,24 +33,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeProviders
 #endif
 
-/// The target of a direct-delegate forwarding call recognized by (|DirectDelegateForwardingCall|_|).
-[<RequireQualifiedAccess>]
-type internal DirectDelegateForwardingTarget =
-    /// A known F# value: a module-level function or a member. Carries the value reference, its use flags
-    /// and the call's type arguments; the consumer resolves storage to a method spec.
-    | FSharpVal of vref: ValRef * valUseFlags: ValUseFlag * tyargs: TypeInst
-    /// A direct IL method call (e.g. a BCL method), compiled as TOp.ILCall. Carries everything needed to
-    /// build the method spec directly: virtual/struct/ctor flags, use flags, the IL method reference and
-    /// the enclosing-type and method type instantiations.
-    | ILMethod of
-        isVirtual: bool *
-        isStruct: bool *
-        isCtor: bool *
-        valUseFlags: ValUseFlag *
-        ilMethRef: ILMethodRef *
-        enclTypeInst: TypeInst *
-        methInst: TypeInst
-
 [<AutoOpen>]
 module internal AddressOps =
 
@@ -1831,53 +1813,6 @@ module internal ExprTransforms =
                 m,
                 (fun bodyR -> Expr.Obj(lambdaId, ty, a, b, [ TObjExprMethod(c, d, e, tmvs, bodyR, f) ], [], m))
             )
-        | _ -> ValueNone
-
-    /// Recognizes the body of a delegate's Invoke method when it is a saturated, transparent forwarding
-    /// call `target leading... p0 p1 ...` to a known method, whose trailing arguments are exactly the
-    /// delegate's Invoke parameters in order. This is the shape that lets a delegate point directly at
-    /// `target` instead of an intermediate closure. Any leading arguments (e.g. an instance method's
-    /// receiver) are returned to the consumer, which decides whether a direct delegate can actually be
-    /// emitted (matching IL signature, receiver shape, no witnesses, etc.).
-    [<return: Struct>]
-    let (|DirectDelegateForwardingCall|_|) g (invokeParams: Val list) expr =
-        // The trailing arguments of the call must be exactly the delegate's Invoke parameters, forwarded
-        // verbatim and in order. The remaining leading arguments (e.g. an instance receiver) are returned
-        // for the consumer to handle.
-        let matchForwarding (args: Expr list) =
-            let numLeading = args.Length - invokeParams.Length
-
-            if numLeading >= 0 then
-                let leadingArgs, forwardedArgs = List.splitAt numLeading args
-
-                if
-                    List.forall2
-                        (fun (a: Expr) (tv: Val) ->
-                            match stripDebugPoints a with
-                            | Expr.Val(avref, _, _) -> valRefEq g avref (mkLocalValRef tv)
-                            | _ -> false)
-                        forwardedArgs
-                        invokeParams
-                then
-                    ValueSome leadingArgs
-                else
-                    ValueNone
-            else
-                ValueNone
-
-        match stripDebugPoints expr with
-        | Expr.App(Expr.Val(vref, valUseFlags, _), _, tyargs, args, _) ->
-            match matchForwarding args with
-            | ValueSome leadingArgs -> ValueSome(DirectDelegateForwardingTarget.FSharpVal(vref, valUseFlags, tyargs), leadingArgs)
-            | ValueNone -> ValueNone
-        | Expr.Op(TOp.ILCall(isVirtual, _, isStruct, isCtor, valUseFlag, _, _, ilMethRef, enclTypeInst, methInst, _), _, args, _) ->
-            match matchForwarding args with
-            | ValueSome leadingArgs ->
-                ValueSome(
-                    DirectDelegateForwardingTarget.ILMethod(isVirtual, isStruct, isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst),
-                    leadingArgs
-                )
-            | ValueNone -> ValueNone
         | _ -> ValueNone
 
     [<return: Struct>]

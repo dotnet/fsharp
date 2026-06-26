@@ -493,3 +493,77 @@ let main _ =
     |> withLangVersionPreview
     |> compileExeAndRun
     |> shouldSucceed
+
+// Cross-assembly targets: the recognizer has no locality guard, so a delegate over an F# function imported
+// from a *referenced* assembly takes the same FSharpVal direct path (StorageForValRef resolution + method-spec
+// build across an assembly boundary) that the same-compiland baseline suite never reaches. The targets are
+// [<NoCompilerInlining>] so cross-assembly inlining cannot dissolve the forwarding call before codegen.
+let private crossAssemblyLibrary =
+    FSharp """
+module DelegateLib
+
+[<NoCompilerInlining>]
+let add (x: int) (y: int) : int = x + y
+
+type Calc(k: int) =
+    [<NoCompilerInlining>]
+    member _.Scale (x: int) (y: int) : int = (x + y) * k
+
+// A small inline function: its body is serialized into the referenced assembly and is always inlined at the
+// use site (independent of --optimize), so a delegate over it can never see a forwarding call.
+let inline addInline (x: int) (y: int) : int = x + y
+    """
+    |> asLibrary
+
+[<Fact>]
+let ``Cross-assembly F# target is emitted directly (preview)`` () =
+    FSharp """
+module CrossAsmDirect
+
+open System
+open DelegateLib
+
+[<EntryPoint>]
+let main _ =
+    // Static module function imported from another assembly: direct, null Target, real Method.Name.
+    let ds = Func<int, int, int>(add)
+    if ds.Invoke(2, 3) <> 5 then failwith "static: wrong result"
+    if ds.Method.Name <> "add" then failwithf "static: expected 'add' but got '%s'" ds.Method.Name
+    if not (isNull ds.Target) then failwith "static: Target should be null"
+
+    // Instance member imported from another assembly: direct, Target is the receiver.
+    let c = Calc(10)
+    let di = Func<int, int, int>(c.Scale)
+    if di.Invoke(2, 3) <> 50 then failwithf "instance: expected 50 but got %d" (di.Invoke(2, 3))
+    if di.Method.Name <> "Scale" then failwithf "instance: expected 'Scale' but got '%s'" di.Method.Name
+    if not (obj.ReferenceEquals(di.Target, c)) then failwith "instance: Target is not the receiver"
+    0
+        """
+    |> withReferences [ crossAssemblyLibrary ]
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// An inline target from a referenced assembly is always inlined before the recognizer runs, so the forwarding
+// call vanishes and a closure is kept even in release - the deterministic cross-assembly end of the inline-race.
+[<Fact>]
+let ``Cross-assembly inline target stays a closure (preview)`` () =
+    FSharp """
+module CrossAsmInline
+
+open System
+open DelegateLib
+
+[<EntryPoint>]
+let main _ =
+    let d = Func<int, int, int>(fun a b -> addInline a b)
+    if d.Invoke(2, 3) <> 5 then failwith "wrong result"
+    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    0
+        """
+    |> withReferences [ crossAssemblyLibrary ]
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed

@@ -7464,17 +7464,14 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
 
     // Direct delegate construction: when the delegate body is a saturated, transparent forwarding call to a
     // known static method, module-level function, or instance method, point the delegate straight at that
-    // method instead of generating an intermediate closure class. For a static target the receiver is null
-    // (ldnull; ldftn target); for an instance target the receiver is evaluated and the function pointer is
-    // bound with ldftn, or dup; ldvirtftn for a virtual target so dispatch is preserved. A strict
-    // IL-signature check makes the rewrite provably equivalent to the closure form; anything that does not
-    // match exactly falls back to the closure path below. Gated by LanguageFeature.DirectDelegateConstruction.
+    // method instead of generating an intermediate closure class. Anything that does not match exactly
+    // falls back to the closure path below.
     let directDelegateTarget =
         if not (g.langVersion.SupportsFeature LanguageFeature.DirectDelegateConstruction) then
             None
         elif
             not cenv.options.localOptimizationsEnabled
-            && tmvs |> List.exists (fun (v: Val) -> not v.IsCompilerGenerated)
+            && tmvs |> List.exists (fun v -> not v.IsCompilerGenerated)
         then
             // Eta-expanded delegate in an unoptimized build: the Invoke parameters are the user's own lambda
             // variables, so keep the closure to preserve their names for debugging. Non-eta delegates (whose
@@ -7483,152 +7480,69 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
             // forwarding call survives to here.
             None
         else
-            match body with
-            | DirectDelegateForwardingCall g tmvs (target, leadingArgs) ->
-                // For an instance method the single leading argument is the receiver; a static method or
-                // module function must have no leading arguments (otherwise it is a partial application).
-                let receiverShapeOk takesInstanceArg =
-                    if takesInstanceArg then
-                        match leadingArgs with
-                        | [ _ ] -> true
-                        | _ -> false
-                    else
-                        List.isEmpty leadingArgs
+            match classifyForwardingTarget g tmvs body with
+            | DelegateForwardingTarget.FSharpVal(vref, valUseFlags, tyargs, leadingArgs) ->
+                match StorageForValRef m vref eenvouter with
+                | Method(valReprInfo, vrefM, mspec, _, _, ctps, _, _, _, _, _, _) ->
+                    let _, witnessInfos, _, _, _ =
+                        GetValReprTypeInCompiledForm g valReprInfo ctps.Length vrefM.Type m
 
-                // The receiver is hoisted to the delegate-construction site, so a direct delegate is only sound
-                // when it can be evaluated there exactly once and as the Target:
-                //  - A closure built from an explicit eta-lambda (e.g. `fun a -> recv.M a`) re-evaluates the
-                //    receiver on every Invoke; evaluating it once instead is observable unless it is
-                //    side-effect free (a non-mutable value, a constant, a pure field read).
-                //  - It must not reference the delegate's own Invoke parameters, which only exist inside the
-                //    delegee method.
-                // Checked lazily (and after the cheaper structural bails) so disqualified delegates skip the
-                // receiver traversal; ExprHasEffect short-circuits before the freeInExpr allocation.
-                let receiverNotBindable () =
-                    match leadingArgs with
-                    | [ recv ] ->
-                        Optimizer.ExprHasEffect g recv
-                        || (let recvFreeLocals = (freeInExpr CollectLocals recv).FreeLocals
-                            tmvs |> List.exists (fun tv -> Zset.contains tv recvFreeLocals))
-                    | _ -> false
+                    let hasWitnesses = ComputeGenerateWitnesses g eenvouter && not witnessInfos.IsEmpty
 
-                // The type checker has already verified that the delegate is built from a compatible function
-                // shape, and the structural match above forwards the Invoke parameters verbatim, so the
-                // target's signature is compatible with the delegate's Invoke by construction. We confirm:
-                //  - parameter *count* matches (already guaranteed by the verbatim forwarding, so essentially
-                //    a sanity check). We deliberately do not compare parameter IL *types*: a value-type
-                //    parameter is exact by construction (a widening/boxing argument would not be a verbatim
-                //    Val and so would not have matched), and for reference-type parameters the CLR's delegate
-                //    relaxation permits contravariance, so an exact comparison would only produce false
-                //    negatives (a CLR-legal binding bailing to a closure).
-                //  - for a non-generic target, the return type matches exactly. This is the one IL mismatch
-                //    the recognizer cannot see and the CLR will not relax: notably an F# 'unit' return
-                //    compiled to 'void' versus a delegate whose Invoke returns 'Unit'. For a generic target
-                //    the return is written in terms of type variables, so no exact comparison is meaningful.
-                let signatureMatches (ilEnclArgTys: ILType list) (ilMethArgTys: ILType list) (targetMspec: ILMethodSpec) =
-                    let arityMatches = targetMspec.FormalArgTypes.Length = ilDelegeeParams.Length
-
-                    let returnMatches =
-                        if List.isEmpty ilEnclArgTys && List.isEmpty ilMethArgTys then
-                            ilDelegeeRet.Type = targetMspec.FormalReturnType
-                        else
-                            true
-
-                    arityMatches && returnMatches
-
-                let receiverInfo virtualCall =
-                    match leadingArgs with
-                    | [ recv ] -> Some(recv, virtualCall)
-                    | _ -> None
-
-                match target with
-                | DirectDelegateForwardingTarget.FSharpVal(vref, valUseFlags, tyargs) ->
-                    match StorageForValRef m vref eenvouter with
-                    | Method(valReprInfo, vrefM, mspec, _, _, ctps, _, _, _, _, _, _) ->
-                        let _, witnessInfos, _, _, _ =
-                            GetValReprTypeInCompiledForm g valReprInfo ctps.Length vrefM.Type m
-
-                        let hasWitnesses = ComputeGenerateWitnesses g eenvouter && not witnessInfos.IsEmpty
-
-                        let _, virtualCall, newobj, isSuperInit, isSelfInit, takesInstanceArg, _, _ =
+                    if fsharpValDirectlyBindable g tmvs leadingArgs vrefM valUseFlags hasWitnesses then
+                        let _, virtualCall, _, _, _, takesInstanceArg, _, _ =
                             GetMemberCallInfo g (vrefM, valUseFlags)
 
-                        let isBaseCall = valUseFlags.IsVSlotDirectCall
+                        let ilTyArgs = GenTypeArgs cenv m eenvouter.tyenv tyargs
 
-                        if
-                            hasWitnesses
-                            || newobj
-                            || isSuperInit
-                            || isSelfInit
-                            || isBaseCall
-                            || not (receiverShapeOk takesInstanceArg)
-                            || receiverNotBindable ()
-                        then
-                            None
-                        else
-                            let ilTyArgs = GenTypeArgs cenv m eenvouter.tyenv tyargs
-
-                            let numEnclILTypeArgs =
-                                if vrefM.MemberInfo.IsSome && not vrefM.IsExtensionMember then
-                                    List.length (vrefM.MemberApparentEntity.Typars |> DropErasedTypars)
-                                else
-                                    0
-
-                            if ilTyArgs.Length < numEnclILTypeArgs then
-                                None
+                        let numEnclILTypeArgs =
+                            if vrefM.MemberInfo.IsSome && not vrefM.IsExtensionMember then
+                                List.length (vrefM.MemberApparentEntity.Typars |> DropErasedTypars)
                             else
-                                let ilEnclArgTys, ilMethArgTys = List.splitAt numEnclILTypeArgs ilTyArgs
-                                let boxity = mspec.DeclaringType.Boxity
-                                let targetMspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
+                                0
 
-                                if takesInstanceArg <> targetMspec.MethodRef.CallingConv.IsInstance then
-                                    None
-                                elif takesInstanceArg && boxity = AsValue then
-                                    // value-type receivers not handled
-                                    None
-                                elif signatureMatches ilEnclArgTys ilMethArgTys targetMspec then
-                                    Some(targetMspec, receiverInfo virtualCall)
-                                else
-                                    None
-                    | _ -> None
-
-                | DirectDelegateForwardingTarget.ILMethod(isVirtual, isStruct, isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst) ->
-                    // A direct IL call (e.g. a BCL method). Everything needed to build the method spec is on
-                    // the node, so there is no storage/witness resolution; we still bail on the shapes that
-                    // have no closed direct-delegate form.
-                    let isBaseCall = valUseFlag.IsVSlotDirectCall
-
-                    let isConstrainedCall = valUseFlag.IsPossibleConstrainedCall
-
-                    let takesInstanceArg = ilMethRef.CallingConv.IsInstance
-                    let boxity = if isStruct then AsValue else AsObject
-
-                    if
-                        isCtor
-                        || isBaseCall
-                        || isConstrainedCall
-                        || not (receiverShapeOk takesInstanceArg)
-                        || (takesInstanceArg && boxity = AsValue)
-                        || receiverNotBindable ()
-                    then
-                        None
-                    else
-                        let ilEnclArgTys = GenTypeArgs cenv m eenvouter.tyenv enclTypeInst
-                        let ilMethArgTys = GenTypeArgs cenv m eenvouter.tyenv methInst
-                        let targetMspec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
-
-                        // Unlike the F# case we cannot compare parameter/return IL types here: the target's
-                        // types come from imported metadata, whose assembly scope refs differ from the
-                        // compiler-generated delegee types (e.g. `System.Int32, System.Runtime` vs the bare
-                        // primary-assembly form), so structural equality reports false negatives for the very
-                        // primitives that always match. The forwarding match already pins the arity, and the
-                        // type checker has verified the call is well-typed, so element compatibility holds by
-                        // construction; an arity check is the sound guard (matching the generic case).
-                        if targetMspec.FormalArgTypes.Length = ilDelegeeParams.Length then
-                            Some(targetMspec, receiverInfo isVirtual)
-                        else
+                        if ilTyArgs.Length < numEnclILTypeArgs then
                             None
-            | _ -> None
+                        else
+                            let ilEnclArgTys, ilMethArgTys = List.splitAt numEnclILTypeArgs ilTyArgs
+                            let boxity = mspec.DeclaringType.Boxity
+                            let targetMspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
+
+                            if takesInstanceArg <> targetMspec.MethodRef.CallingConv.IsInstance then
+                                None
+                            elif takesInstanceArg && boxity.IsAsValue then
+                                // value-type receivers not handled
+                                None
+                            elif signatureMatches ilDelegeeParams ilDelegeeRet ilEnclArgTys ilMethArgTys targetMspec then
+                                Some(targetMspec, receiverInfo leadingArgs virtualCall)
+                            else
+                                None
+                    else
+                        None
+                | _ -> None
+
+            | DelegateForwardingTarget.ILMethod(isVirtual, isStruct, isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst, leadingArgs) ->
+                if ilMethodDirectlyBindable g tmvs leadingArgs ilMethRef isStruct valUseFlag isCtor then
+                    let ilEnclArgTys = GenTypeArgs cenv m eenvouter.tyenv enclTypeInst
+                    let ilMethArgTys = GenTypeArgs cenv m eenvouter.tyenv methInst
+                    let boxity = if isStruct then AsValue else AsObject
+                    let targetMspec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
+
+                    // Unlike the F# case we cannot compare parameter/return IL types here: the target's
+                    // types come from imported metadata, whose assembly scope refs differ from the
+                    // compiler-generated delegee types (e.g. `System.Int32, System.Runtime` vs the bare
+                    // primary-assembly form), so structural equality reports false negatives for the very
+                    // primitives that always match. The forwarding match already pins the arity, and the
+                    // type checker has verified the call is well-typed, so element compatibility holds by
+                    // construction; an arity check is the sound guard (matching the generic case).
+                    if targetMspec.FormalArgTypes.Length = ilDelegeeParams.Length then
+                        Some(targetMspec, receiverInfo leadingArgs isVirtual)
+                    else
+                        None
+                else
+                    None
+
+            | DelegateForwardingTarget.Other -> None
 
     match directDelegateTarget with
     | Some(targetMspec, receiverInfo) ->
