@@ -112,7 +112,7 @@
       "cats": []
     },
     "19930": {
-      "sha": "ad5c347107d37cdc88d427fb6d8faf40fe5396fe",
+      "sha": "25dd667f98610f35ea1fd5db13faa319488817b6",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Design-Time",
@@ -235,6 +235,12 @@
     "19758": {
       "sha": "4a9364ebfca65b11c9d6966d80bf45711fc75bd0",
       "cats": []
+    },
+    "20001": {
+      "sha": "815852960ac4a2ab771d988d12e63a539a0d4eb5",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     }
   }
 }
