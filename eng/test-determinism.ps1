@@ -28,7 +28,16 @@ if ($help) {
 
 # List of binary names that should be skipped because they have a known issue that
 # makes them non-deterministic.
-$script:skipList = @()
+#
+# FSharp.Compiler.Service.dll: closure type names carry a "-N" suffix whose counter is
+# allocated in parallel-emit order. The closure 'uniq' values come from a racy
+# Interlocked.Increment, so two same-flags parallel builds can allocate the suffixes in a
+# different order (e.g. func2@1-23 vs func2@1-17), drifting the #Strings heap layout.
+# This is the residual closure-name race tracked by
+# https://github.com/dotnet/fsharp/issues/19928 and fixed by #19929 (always-defer +
+# source-stable closure naming). Skip this one binary until that fix lands so the gate
+# can stay STRICT for every other binary instead of being globally suppressed.
+$script:skipList = @("FSharp.Compiler.Service.dll")
 function Run-Build([string]$rootDir, [string]$increment, [string]$additionalFscFlags = "") {
 
   $logFileName = $increment
