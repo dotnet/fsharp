@@ -515,7 +515,7 @@ module internal TypeRemapping =
         let tinst = generalizeTypars tps
         mkTyparInst tpsorig tinst, tinst
 
-    let mkTyconInst (tycon: Tycon) tinst = mkTyparInst tycon.TyparsNoRange tinst
+    let mkTyconInst (tycon: Tycon) tinst = mkTyparInst tycon.Typars tinst
     let mkTyconRefInst (tcref: TyconRef) tinst = mkTyconInst tcref.Deref tinst
 
 [<AutoOpen>]

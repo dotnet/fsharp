@@ -342,6 +342,11 @@ let (|AbbrevOrAppTy|_|) (ty: TType) =
     | TType_app (tcref, tinst, _) -> ValueSome(tcref, tinst)
     | _ -> ValueNone
 
+/// Matches a type definition reference backed by Abstract IL metadata, returning that metadata.
+[<return: Struct>]
+let (|ILTyconRawMetadata|_|) (tcref: TyconRef) =
+    if tcref.IsILTycon then ValueSome tcref.ILTyconRawMetadata else ValueNone
+
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether
 // the item is globally stable ("published") or not.
