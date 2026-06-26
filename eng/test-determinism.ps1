@@ -199,10 +199,13 @@ function Test-MapContents($dataMap) {
     throw "Didn't find the expected count of binaries"
   }
 
-  # Test for some well known binaries
+  # Test for some well known binaries.
+  # NOTE: FSharp.Compiler.Service.dll is intentionally NOT listed here — it is excluded via
+  # $script:skipList above (known parallel closure-name race, #19928/#19929) so it never enters
+  # the map. Re-add it here once #19929 removes the skip. FSharp.Core.dll remains as the anchor
+  # guaranteeing we actually examined real compiler output.
   $list = @(
-    "FSharp.Core.dll",
-    "FSharp.Compiler.Service.dll")
+    "FSharp.Core.dll")
 
   foreach ($fileName in $list) {
     $found = $false
