@@ -5399,8 +5399,10 @@ let decodeILAttribData (ca: ILAttribute) =
                     // re-encodes with its 0x55 enum tag (e.g. during static linking). Boxed primitives
                     // (et_I4, et_BOOLEAN, ...) also decode to an ILType.Value here but must be left as
                     // their primitive element. See https://github.com/dotnet/fsharp/issues/995.
-                    if et = 0x55uy then ILAttribElem.Enum(ty, v), sigptr
-                    else v, sigptr
+                    if et = 0x55uy then
+                        ILAttribElem.Enum(ty, v), sigptr
+                    else
+                        v, sigptr
             | ILType.Array(shape, elemTy) when shape = ILArrayShape.SingleDimensional ->
                 let n, sigptr = sigptr_get_i32 bytes sigptr
 
