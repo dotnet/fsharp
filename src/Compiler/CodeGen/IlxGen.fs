@@ -7481,7 +7481,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
             None
         else
             match classifyForwardingTarget g tmvs body with
-            | DelegateForwardingTarget.FSharpVal(vref, valUseFlags, tyargs, leadingArgs) ->
+            | DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, tyargs, leadingArgs) ->
                 match StorageForValRef m vref eenvouter with
                 | Method(valReprInfo, vrefM, mspec, _, _, ctps, _, _, _, _, _, _) ->
                     let _, witnessInfos, _, _, _ =
@@ -7521,7 +7521,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                         None
                 | _ -> None
 
-            | DelegateForwardingTarget.ILMethod(isVirtual, isStruct, isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst, leadingArgs) ->
+            | DirectDelegateForwardingTargetCandidate.ILMethod(isVirtual, isStruct, isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst, leadingArgs) ->
                 if ilMethodDirectlyBindable g tmvs leadingArgs ilMethRef isStruct valUseFlag isCtor then
                     let ilEnclArgTys = GenTypeArgs cenv m eenvouter.tyenv enclTypeInst
                     let ilMethArgTys = GenTypeArgs cenv m eenvouter.tyenv methInst
@@ -7542,7 +7542,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                 else
                     None
 
-            | DelegateForwardingTarget.Other -> None
+            | DirectDelegateForwardingTargetCandidate.Other -> None
 
     match directDelegateTarget with
     | Some(targetMspec, receiverInfo) ->

@@ -442,7 +442,7 @@
     <Compile Include="CodeGen\EraseUnions.Emit.fs" />
     <Compile Include="CodeGen\EraseUnions.fsi" />
     <Compile Include="CodeGen\EraseUnions.fs" />
-    <Compile Include="Codegen\IlxGen.Delegates.fs" />
+    <Compile Include="CodeGen\IlxGen.Delegates.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
     <Compile Include="CodeGen\IlxGen.fs" />
     <Compile Include="Driver\FxResolver.fsi" />

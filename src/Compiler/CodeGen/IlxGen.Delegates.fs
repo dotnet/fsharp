@@ -5,18 +5,16 @@
 module internal FSharp.Compiler.IlxGenDelegates
 
 open Internal.Utilities.Collections
-open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
-/// The target of a delegate forwarding call
+/// A delegate target that can potentially be forwarded to directly, without an intermediate closure
 [<RequireQualifiedAccess>]
-type DelegateForwardingTarget =
+type DirectDelegateForwardingTargetCandidate =
     /// A known F# value: a module-level function or a member
     | FSharpVal of vref: ValRef * valUseFlags: ValUseFlag * tyargs: TypeInst * leadingArgs: Expr list
     /// A direct IL method call (e.g. a BCL method)
@@ -59,14 +57,14 @@ let classifyForwardingTarget g (invokeParams: Val list) expr =
     match stripDebugPoints expr with
     | Expr.App(Expr.Val(vref, valUseFlags, _), _, tyargs, args, _) ->
         match matchForwarding args with
-        | ValueSome leadingArgs -> DelegateForwardingTarget.FSharpVal(vref, valUseFlags, tyargs, leadingArgs)
-        | ValueNone -> DelegateForwardingTarget.Other
+        | ValueSome leadingArgs -> DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, tyargs, leadingArgs)
+        | ValueNone -> DirectDelegateForwardingTargetCandidate.Other
     | Expr.Op(TOp.ILCall(isVirtual, _, isStruct, isCtor, valUseFlag, _, _, ilMethRef, enclTypeInst, methInst, _), _, args, _) ->
         match matchForwarding args with
         | ValueSome leadingArgs ->
-            DelegateForwardingTarget.ILMethod(isVirtual, isStruct, isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst, leadingArgs)
-        | ValueNone -> DelegateForwardingTarget.Other
-    | _ -> DelegateForwardingTarget.Other
+            DirectDelegateForwardingTargetCandidate.ILMethod(isVirtual, isStruct, isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst, leadingArgs)
+        | ValueNone -> DirectDelegateForwardingTargetCandidate.Other
+    | _ -> DirectDelegateForwardingTargetCandidate.Other
 
 /// For an instance method the single leading argument is the receiver; a static method or module function
 /// must have no leading arguments (otherwise it is a partial application).
