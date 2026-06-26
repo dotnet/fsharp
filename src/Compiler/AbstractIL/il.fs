@@ -5395,12 +5395,12 @@ let decodeILAttribData (ca: ILAttribute) =
                 else
                     let ty, sigptr = decodeCustomAttrElemType bytes sigptr et
                     let v, sigptr = parseVal ty sigptr
-                    // Preserve the enum type of a boxed enum so it re-encodes with its 0x55 enum tag
-                    // (rather than the bare underlying integer) when the attribute is round-tripped,
-                    // e.g. during static linking. See https://github.com/dotnet/fsharp/issues/995.
-                    match ty with
-                    | ILType.Value _ -> ILAttribElem.Enum(ty, v), sigptr
-                    | _ -> v, sigptr
+                    // Only a genuine enum (the 0x55 tag) is wrapped as ILAttribElem.Enum, so it
+                    // re-encodes with its 0x55 enum tag (e.g. during static linking). Boxed primitives
+                    // (et_I4, et_BOOLEAN, ...) also decode to an ILType.Value here but must be left as
+                    // their primitive element. See https://github.com/dotnet/fsharp/issues/995.
+                    if et = 0x55uy then ILAttribElem.Enum(ty, v), sigptr
+                    else v, sigptr
             | ILType.Array(shape, elemTy) when shape = ILArrayShape.SingleDimensional ->
                 let n, sigptr = sigptr_get_i32 bytes sigptr
 
