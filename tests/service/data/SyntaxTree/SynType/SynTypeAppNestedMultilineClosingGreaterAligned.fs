@@ -1,9 +1,7 @@
-type Foo<'T> = class end
-
-type Terminal =
-    abstract onKey:
-        Foo<
-            Foo<
+type T =
+    abstract M:
+        A<
+            B<
                 int
             >
-        > with get, set
+        >
