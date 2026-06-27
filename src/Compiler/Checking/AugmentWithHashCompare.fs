@@ -1811,6 +1811,37 @@ let MakeBindingsForToStringAugmentation (g: TcGlobals, tycon: Tycon, toStringVal
         else
             mkRecdToString (g, tcref, tycon, "{ ", " }")
 
+    // Only a non-flat field can make ToString recurse.
+    let mightRecurse =
+        let isFlat (ty: TType) =
+            isIntegerTy g ty
+            || isFpTy g ty
+            || isDecimalTy g ty
+            || isStringTy g ty
+            || typeEquiv g g.char_ty ty
+            || isBoolTy g ty
+            || isUnitTy g ty
+            || isEnumTy g ty
+
+        let fieldTys =
+            if tycon.IsUnionTycon then
+                tycon.UnionCasesAsList |> List.collect (fun uc -> uc.RecdFields) |> List.map (fun rf -> rf.FormalType)
+            else
+                tycon.AllInstanceFieldsAsList |> List.map (fun rf -> rf.FormalType)
+
+        fieldTys |> List.exists (fun ty -> not (isFlat ty))
+
+    // Guard deep recursion with a catchable exception, as C# records' PrintMembers do, when the runtime provides it.
+    let body =
+        if mightRecurse then
+            match g.TryFindSysILTypeRef "System.Runtime.CompilerServices.RuntimeHelpers" with
+            | Some tref ->
+                let mspec = mkILNonGenericStaticMethSpecInTy (mkILNonGenericBoxedTy tref, "EnsureSufficientExecutionStack", [], ILType.Void)
+                mkSequential m (mkAsmExpr ([ mkNormalCall mspec ], [], [], [], m)) body
+            | None -> body
+        else
+            body
+
     let unitv, _ = mkCompGenLocal m "unitArg" g.unit_ty
     let expr = mkLambdas g m tps [ thisv; unitv ] (body, g.string_ty)
     [ mkCompGenBind toStringVal expr ]
