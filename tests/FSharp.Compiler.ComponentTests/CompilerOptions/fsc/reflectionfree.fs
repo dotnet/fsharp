@@ -246,6 +246,29 @@ let main _ =
     |> withStdOutContains "{ Value = 1; Parent = Some({ Value = 0; Parent = null }) }"
 
 [<Fact>]
+let ``Deeply nested data fails the generated ToString with a catchable exception, not a hard overflow`` () =
+    FSharp """
+module Test
+type Chain = | End | Link of int * Chain
+
+[<EntryPoint>]
+let main _ =
+    let mutable c = End
+    for i in 1 .. 1_000_000 do c <- Link(i, c)
+    try
+        c.ToString() |> ignore
+        System.Console.WriteLine "rendered"
+    with :? System.InsufficientExecutionStackException ->
+        System.Console.WriteLine "caught"
+    0
+    """
+    |> asExe
+    |> withOptions [ "--reflectionfree" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "caught"
+
+[<Fact>]
 let ``No debug display attribute`` () =
     someCode
     |> withOptions [ "--reflectionfree" ]
