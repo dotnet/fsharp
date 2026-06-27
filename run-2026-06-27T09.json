@@ -1,0 +1,6 @@
+{
+  "timestamp": "2026-06-27T09:38:52Z",
+  "result": "github_mcp_unavailable",
+  "prs_processed": 0,
+  "notes": "GitHub MCP server crashed with WASM context deadline exceeded trap. Unable to query PRs. Previous run at 06:09Z found no eligible PRs."
+}
