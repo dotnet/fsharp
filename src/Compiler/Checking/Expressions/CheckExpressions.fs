@@ -13190,27 +13190,31 @@ and CheckRecursiveInlineGroup (bindings: PreInitializationGraphEliminationBindin
                 let frees = Zset.fold (fun (fv: Val) acc -> Set.add fv.Stamp acc) freeVals Set.empty
                 v.Stamp, frees)
             |> Map.ofList
-        // For each inline binding, perform BFS through inline-only edges and
-        // detect whether we can return to ourselves. A self-loop or any cycle
-        // through other inline bindings counts.
+        // For each inline binding, do a BFS through inline-only reference edges and detect
+        // whether we can return to ourselves. A self-loop or any cycle through other inline
+        // bindings counts. Cycles routed through a non-inline sibling are intentionally allowed:
+        // inlining terminates at the non-inline binding, so such code compiles fine today.
         for pgrbind in inlineBindings do
             let (TBind(v, _, _)) = pgrbind.Binding
             let startStamp = v.Stamp
             let mutable foundCycle = false
-            let mutable visited = Set.empty
-            let mutable queue = [startStamp]
-            while not (List.isEmpty queue) && not foundCycle do
-                let cur = List.head queue
-                queue <- List.tail queue
+            let visited = HashSet<Stamp>()
+            let queue = Queue<Stamp>()
+            queue.Enqueue startStamp
+            while queue.Count > 0 && not foundCycle do
+                let cur = queue.Dequeue()
                 let frees = freeStampsByStamp |> Map.tryFind cur |> Option.defaultValue Set.empty
                 for fv in frees do
                     if not foundCycle then
                         if fv = startStamp then
                             foundCycle <- true
-                        elif Set.contains fv inlineStamps && not (Set.contains fv visited) then
-                            visited <- Set.add fv visited
-                            queue <- fv :: queue
+                        elif Set.contains fv inlineStamps && visited.Add fv then
+                            queue.Enqueue fv
             if foundCycle then
+                // Downgrade the inline flag so the optimizer does not re-report the same binding
+                // via the FS1113/FS1114/FS1118 "not bound in optimization environment" cascade.
+                // This momentarily surfaces the binding as non-inline to the language service,
+                // which is acceptable because compilation already fails here with FS3890.
                 errorR(Error(FSComp.SR.tcRecursiveInlineNotAllowed(v.DisplayName), v.Range))
                 v.SetInlineInfo ValInline.Never
 

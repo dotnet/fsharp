@@ -483,7 +483,7 @@ val FixupLetrecBind:
         PreInitializationGraphEliminationBinding
 
 /// Detect recursive 'inline' bindings within a recursive binding group and
-/// emit FS3888. Mutates inline info to suppress downstream cascades.
+/// emit FS3890. Mutates inline info to suppress downstream cascades.
 val CheckRecursiveInlineGroup: bindings: PreInitializationGraphEliminationBinding list -> unit
 
 /// Produce a fresh view of an object type, e.g. 'List<T>' becomes 'List<?>' for new
