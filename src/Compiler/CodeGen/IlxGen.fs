@@ -2486,6 +2486,10 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                 let unique =
                     match primedRawTypeCounter.TryGetValue((cloc, size)) with
                     | true, c -> c
+                    // Prime-miss fallback (e.g. quotation pickle bytes / numeric-literal arrays the source
+                    // prime walk never sees) stays same-flags deterministic: IncrementOnly buckets per
+                    // (name, FileIndex) and the delayed-codegen drain is sequential within a file, so each
+                    // file gets a stable counter. (#19929 removes this counter via content-derived naming.)
                     | _ -> g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@T", cloc.Range)
 
                 let name = CompilerGeneratedName $"T{unique}_{size}Bytes" // Type names ending ...$T<unique>_37Bytes
