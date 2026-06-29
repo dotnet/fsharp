@@ -31,8 +31,6 @@ namespace FSharp.Editor.IntegrationTests.Helpers
         private static readonly TimeSpan s_activeWait = TimeSpan.FromSeconds(3);
         // Delay between aggressive read attempts.
         private static readonly TimeSpan s_readPoll = TimeSpan.FromSeconds(0.5);
-        // While no diagnostic has been produced yet, re-touch the buffer this often to nudge production.
-        private static readonly TimeSpan s_reTouchInterval = TimeSpan.FromSeconds(30);
 
         // PopulateWithDataAsync returns Task<ImmutableArray<...>> and ActionSets is ImmutableArray;
         // System.Collections.Immutable skews between the NuGet ref and the in-proc VS runtime, so we invoke/read
@@ -47,10 +45,9 @@ namespace FSharp.Editor.IntegrationTests.Helpers
         // F# fixes we test are on-demand compiler diagnostics, and the parse-error (ErrorFix) lightbulb session is
         // unstable headless - it appears then dismisses within seconds - so frequent re-invocation is what catches
         // it (a sparse cadence misses the flickering session, the failure mode seen on CI). broker.HasSuggestedActions
-        // is a proven false-negative for the ErrorFix, so we don't gate on it; instead we use the Error List (the
-        // F# diagnostic is error/warning severity and reliably appears there) as a produce signal for re-touch and
-        // diagnostics. This is safe to be aggressive now that the slow unused-opens test (which needed an
-        // uninterrupted quiet window) is quarantined.
+        // is a proven false-negative for the ErrorFix, so we don't gate on it; instead we read the Error List as a
+        // diagnostic-produced signal for logging. Diagnostic production itself is driven by FullSolution background
+        // analysis enabled in test setup, so we no longer edit the buffer to nudge it (that cancelled the slow check).
         public static async Task<IReadOnlyList<SuggestedActionSet>> GetCodeActionsAsync(
             ILightBulbBroker broker,
             IWpfTextView view,
@@ -65,10 +62,9 @@ namespace FSharp.Editor.IntegrationTests.Helpers
 
             System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] GetCodeActionsAsync starting, timeout={0}s", s_timeout.TotalSeconds);
 
-            // Kick analysis once up front.
+            // Kick analysis once. With FullSolution scope (set in test setup) the crawler produces diagnostics
+            // without buffer churn, which previously cancelled the slow unused-opens check.
             await triggerReanalysisAsync(cancellationToken);
-            var lastTouch = DateTime.UtcNow;
-            var touches = 1;
             var reads = 0;
             var lastDetail = "no read attempted";
             var lastDiagCount = -1;
@@ -80,7 +76,7 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 {
                     throw new InvalidOperationException(
                         $"No code actions after {s_timeout.TotalSeconds:F0}s " +
-                        $"({reads} reads, {touches} touches, lastDiagCount={lastDiagCount}; last read: {lastDetail}).");
+                        $"({reads} reads, lastDiagCount={lastDiagCount}; last read: {lastDetail}).");
                 }
 
                 // Error List produce signal (errors + warnings). Deterministic for the F# compiler-diagnostic fixes.
@@ -107,16 +103,6 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 if (sets.Count > 0)
                 {
                     return sets;
-                }
-
-                // Re-touch only while no diagnostic has been produced yet (helps the "diagnostic never computed"
-                // case); once diagnostics exist, leave the buffer alone so reads aren't disrupted.
-                if (lastDiagCount <= 0 && DateTime.UtcNow - lastTouch > s_reTouchInterval)
-                {
-                    System.Diagnostics.Trace.TraceInformation("[LightBulbHelper] No diagnostic yet; re-touching (touch #{0})", touches + 1);
-                    await triggerReanalysisAsync(cancellationToken);
-                    lastTouch = DateTime.UtcNow;
-                    touches++;
                 }
 
                 await Task.Delay(s_readPoll, cancellationToken);

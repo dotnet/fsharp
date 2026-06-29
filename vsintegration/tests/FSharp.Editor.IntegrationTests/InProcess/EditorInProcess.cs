@@ -112,6 +112,8 @@ internal partial class EditorInProcess
 
         await ActivateAsync(cancellationToken);
 
+        await EnableFSharpFullSolutionAnalysisAsync(cancellationToken);
+
         System.Diagnostics.Trace.TraceInformation("[EditorInProcess] InvokeCodeActionListAsync: waiting for features (Workspace, SolutionCrawlerLegacy, DiagnosticService)");
 
         await AsyncOperationWaiter.WaitForFeaturesAsync(
@@ -152,6 +154,49 @@ internal partial class EditorInProcess
                 $"--- Error List ({entries.Length} entries) ---{Environment.NewLine}" +
                 string.Join(Environment.NewLine, entries),
                 ex);
+        }
+    }
+
+    // Forces F# whole-solution background analysis so diagnostics are produced deterministically in the headless
+    // CI VS (mirrors the package's load-time SetBackgroundAnalysisScope). Reflection: the test has no F# compile ref.
+    private async Task EnableFSharpFullSolutionAnalysisAsync(CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        try
+        {
+            var componentModel = await GetRequiredGlobalServiceAsync<SComponentModel, IComponentModel>(cancellationToken);
+
+            var optionsType = AppDomain.CurrentDomain.GetAssemblies()
+                .Select(a => a.GetType("Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlobalOptions", throwOnError: false))
+                .FirstOrDefault(t => t is not null);
+
+            if (optionsType is null)
+            {
+                System.Diagnostics.Trace.TraceInformation("[EditorInProcess] EnableFSharpFullSolutionAnalysis: FSharpGlobalOptions not loaded; skipping.");
+                return;
+            }
+
+            var options = typeof(IComponentModel).GetMethod("GetService")!.MakeGenericMethod(optionsType).Invoke(componentModel, null);
+
+            var setScope = optionsType.GetMethods()
+                .FirstOrDefault(m => m.Name == "SetBackgroundAnalysisScope"
+                    && m.GetParameters().Length == 1
+                    && m.GetParameters()[0].ParameterType == typeof(bool));
+
+            if (options is null || setScope is null)
+            {
+                System.Diagnostics.Trace.TraceInformation("[EditorInProcess] EnableFSharpFullSolutionAnalysis: option service/method not resolved; skipping.");
+                return;
+            }
+
+            // openFilesOnly: false => FullSolution background analysis scope.
+            setScope.Invoke(options, new object[] { false });
+            System.Diagnostics.Trace.TraceInformation("[EditorInProcess] EnableFSharpFullSolutionAnalysis: FullSolution scope enabled.");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.TraceInformation("[EditorInProcess] EnableFSharpFullSolutionAnalysis: failed ({0}: {1}); continuing.", ex.GetType().Name, ex.Message);
         }
     }
 
