@@ -60,15 +60,14 @@ extends:
               - checkout: self
                 clean: true
                 fetchDepth: 1
-              # Restore the VS-15.9 serviced Roslyn from the devdiv VS package feed using the shared
-              # "DevDiv - VS package feed" service connection (the same one dotnet-roslyn-official uses to
-              # publish those packages). NuGetAuthenticate provides the cred for the feed in NuGet.Config.
+              # STAGED insertion build: the "DevDiv - VS package feed" service connection is now authorized
+              # for this pipeline, but CFS still rejects a direct devdiv feed in NuGet.Config. To enable the
+              # insertion build, point NuGet.Config at a dnceng Azure Artifacts feed that UPSTREAMS devdiv
+              # VS-CoreXtFeeds (CFS requires a single feed via upstreams), then add to this step:
+              #   inputs: { nuGetServiceConnections: 'DevDiv - VS package feed' }   and   env BUILD_INSERTION: 1
               - task: NuGetAuthenticate@1
-                displayName: 'Authenticate NuGet feeds (devdiv VS package feed)'
-                inputs:
-                  nuGetServiceConnections: 'DevDiv - VS package feed'
+                displayName: 'Authenticate NuGet feeds'
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product + vsintegration IDE + VSIX)'
+                displayName: 'Build (product)'
                 env:
                   DisableLocalization: true
-                  BUILD_INSERTION: 1
