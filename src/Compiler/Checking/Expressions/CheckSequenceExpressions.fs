@@ -431,15 +431,29 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                 }
 
             if enableImplicitYield then
-                let hasTypeUnit, _ty, expr, tpenv = TryTcStmt cenv env tpenv comp
+                // Silenced probe classifies body as statement vs yielded element; the authoritative pass below
+                // reports once (else double diagnostics, #16419). Commit captured diagnostics if the probe throws.
+                let outerLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                let probeLogger = CapturingDiagnosticsLogger("SeqImplicitYieldProbe")
+
+                let hasTypeUnit, _ty, expr, tpenvAfterProbe =
+                    use _sink = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                    use _logger = UseDiagnosticsLogger probeLogger
+
+                    try
+                        TryTcStmt cenv env tpenv comp
+                    with _ ->
+                        probeLogger.CommitDelayedDiagnostics outerLogger
+                        reraise ()
 
                 if hasTypeUnit then
+                    let _, _, expr, tpenv = TryTcStmt cenv env tpenv comp
                     Choice2Of2 expr, tpenv
                 else
                     let genResultTy = NewInferenceType g
                     let mExpr = expr.Range
                     UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
-                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
+                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenvAfterProbe comp
                     let exprTy = tyOfExpr cenv.g expr
                     AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
 

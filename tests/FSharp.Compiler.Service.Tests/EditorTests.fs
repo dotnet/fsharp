@@ -561,7 +561,7 @@ let ``Format specifier locations are not duplicated in seq computation expressio
     let locs = typeCheckResults.GetFormatSpecifierLocationsAndArity()
     Assert.Equal(expectedCount, locs.Length)
 
-// Validates that caching the implicit-yield first-pass typecheck does not break
+// Validates that the implicit-yield classification probe does not break
 // expected-type-driven inference (subsumption, type-directed conversion,
 // nullness flex, overload resolution).
 [<Theory>]
@@ -577,6 +577,22 @@ let ``Implicit-yield in seq preserves expected-type-driven inference`` (source: 
         |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
         |> Array.map (fun d -> d.Message)
     Assert.Equal<_ seq>(Array.empty, errors)
+
+// Regression for #16419: the implicit-yield body was checked twice, doubling every diagnostic, not just
+// format specifiers. The probe is now silenced, so body warnings/errors are reported once, while a fatal
+// body error (e.g. a bad format string) still surfaces.
+[<Theory>]
+[<InlineData("[<System.Obsolete(\"x\")>]\nlet f () = 1\nlet _ = seq { f () }")>]
+[<InlineData("let _ = seq { 1 + \"x\" }")>]
+[<InlineData("let _ = seq { sprintf \"%Z\" }")>]
+let ``Implicit-yield seq body diagnostics are reported once`` (source: string) =
+    let _, typeCheckResults = parseAndCheck source
+    Assert.NotEmpty typeCheckResults.Diagnostics
+    let duplicated =
+        typeCheckResults.Diagnostics
+        |> Array.countBy (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)
+        |> Array.filter (fun (_, n) -> n > 1)
+    Assert.Empty duplicated
 
 #if ASSUME_PREVIEW_FSHARP_CORE
 [<Fact>]
