@@ -226,3 +226,37 @@ module Basic =
         |> shouldSucceed
 
     // SOURCE=E_CustomEqualityEquals01.fs SCFLAGS="--test:ErrorRanges"          # E_CustomEqualityEquals01.fs
+
+    // Regression for https://github.com/dotnet/fsharp/issues/17773: a record with a private constructor whose
+    // generated structural-equality/comparison members are consumed from another assembly must not throw
+    // MethodAccessException. Equals(R, IEqualityComparer) / CompareTo(R, IComparer) are emitted at the record
+    // type's accessibility (public), not the private representation's.
+    let private issue17773Lib =
+        FSharp """
+namespace Issue17773.Lib
+type R = private { X: int }
+module Make =
+    let r v : R = { X = v }
+"""
+        |> withName "Issue17773Lib"
+        |> asLibrary
+
+    [<Fact>]
+    let ``Private-constructor record equality and comparison work across assemblies (issue 17773)`` () =
+        FSharp """
+module Consumer
+open Issue17773.Lib
+open System.Collections
+[<EntryPoint>]
+let main _ =
+    let a = Make.r 1
+    let b = Make.r 1
+    let c = Make.r 2
+    let eqWithComparer = (a :> IStructuralEquatable).Equals(b, StructuralComparisons.StructuralEqualityComparer)
+    let cmpWithComparer = (a :> IStructuralComparable).CompareTo(c, StructuralComparisons.StructuralComparer)
+    if a = b && eqWithComparer && cmpWithComparer < 0 && compare a c < 0 then 0 else 1
+"""
+        |> withReferences [issue17773Lib]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
