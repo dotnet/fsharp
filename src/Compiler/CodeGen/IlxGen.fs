@@ -7603,7 +7603,10 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                             None
                         else
                             let ilEnclArgTys, ilMethArgTys = List.splitAt numEnclILTypeArgs ilTyArgs
-                            let targetMspec = mkILMethSpec (mspec.MethodRef, mspec.DeclaringType.Boxity, ilEnclArgTys, ilMethArgTys)
+
+                            let targetMspec =
+                                mkILMethSpec (mspec.MethodRef, mspec.DeclaringType.Boxity, ilEnclArgTys, ilMethArgTys)
+
                             let numBoundLeadingFormals = if takesInstanceArg then 0 else leadingArgs.Length
 
                             if takesInstanceArg <> targetMspec.MethodRef.CallingConv.IsInstance then

@@ -220,14 +220,7 @@ let fsharpValDirectlyBindable g (invokeParams: Val list) (leadingArgs: Expr list
 /// value-type instance receiver is boxed at the construction site (see the emit), matching the closure's
 /// by-value capture. The instance-receiver flag is derived here from ilMethRef and the base/constrained-call
 /// flags from valUseFlag.
-let ilMethodDirectlyBindable
-    g
-    (invokeParams: Val list)
-    (leadingArgs: Expr list)
-    (ilMethRef: ILMethodRef)
-    (valUseFlag: ValUseFlag)
-    isCtor
-    =
+let ilMethodDirectlyBindable g (invokeParams: Val list) (leadingArgs: Expr list) (ilMethRef: ILMethodRef) (valUseFlag: ValUseFlag) isCtor =
     let takesInstanceArg = ilMethRef.CallingConv.IsInstance
 
     not isCtor
