@@ -9582,6 +9582,30 @@ and GenMethodForBinding
     let g = cenv.g
     let m = v.Range
 
+    // Closures synthesized inside a member body (inner `let rec`, `task`/`async` state
+    // machines, quotation-splice helpers) are nested in the IL type identified by
+    // eenv.cloc. Under --realsig+ a source-`private` member compiles to IL `private`
+    // (type-scoped), so a closure that calls it must nest inside the declaring type, not
+    // beside it in the module class, or the CLR raises MethodAccessException at runtime.
+    //
+    // Members declared in the type's own definition already reach here with the declaring
+    // type in eenv.cloc, but members declared in an intrinsic augmentation (`type C with
+    // member ...`) reach here with only the enclosing module in scope, because the
+    // augmentation is a separate definition group from the type. Normalize eenv.cloc to the
+    // declaring type for every non-extension member so closure placement is consistent
+    // (idempotent for members that already have it). Real extension members are compiled as
+    // static methods in their own module and must not be re-homed.
+    //
+    // This only matters under --realsig+: with the legacy --realsig- visibility a
+    // module-level sibling closure can still reach the (IL `assembly`) member, so the
+    // placement is left unchanged there to avoid perturbing existing IL.
+    let eenv =
+        match v.MemberInfo with
+        | Some _ when g.realsig && not v.IsExtensionMember ->
+            let declTref = mspec.MethodRef.DeclaringTypeRef
+            AddEnclosingToEnv eenv declTref.Enclosing declTref.Name None
+        | _ -> eenv
+
     // If a method has a witness-passing version of the code, then suppress
     // the generation of any witness in the non-witness passing version of the code
     let eenv =
