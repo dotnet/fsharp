@@ -457,6 +457,11 @@
         <target state="translated">暗黙的な引数名の改善</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
+        <source>Improved implied argument names with partial application</source>
+        <target state="new">Improved implied argument names with partial application</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">インデックス作成とスライス用の expr[idx] 表記</target>
