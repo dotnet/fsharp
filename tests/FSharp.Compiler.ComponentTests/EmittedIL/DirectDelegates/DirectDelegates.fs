@@ -4,6 +4,7 @@ open System.IO
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
+open FSharp.Test.ProjectGeneration
 
 let private coreOptions compilation =
     compilation
@@ -658,3 +659,51 @@ let main _ =
     |> withOptions [ "--optimize+" ]
     |> compileExeAndRun
     |> shouldSucceed
+
+#if NETCOREAPP
+[<Fact>]
+let ``Minimal API binds a direct delegate handler by parameter name (preview)`` () =
+    let aspNetFrameworkReferences =
+        ReferenceHelpers.getFrameworkReference { Name = "Microsoft.AspNetCore.App"; Version = None }
+
+    Fsx (aspNetFrameworkReferences + """
+module X =
+    open System
+    open System.Net
+    open System.Net.Http
+    open System.Net.Sockets
+    open Microsoft.AspNetCore.Builder
+    open Microsoft.AspNetCore.Http
+
+    [<NoCompilerInlining>]
+    let add (x: int) (y: int) : int = x + y
+
+    let run () =
+        let port =
+            let listener = new TcpListener(IPAddress.Loopback, 0)
+            listener.Start()
+            let p = (listener.LocalEndpoint :?> IPEndPoint).Port
+            listener.Stop()
+            p
+
+        let url = sprintf "http://127.0.0.1:%d" port
+        let app = WebApplication.CreateBuilder().Build()
+        
+        // Route parameters {x}/{y} bind to the handler's parameters by name, which requires delegate.Method to be the
+        // real 'add' (a direct delegate), not a synthesized closure 'Invoke'.
+        app.MapGet("/add/{x}/{y}", Func<int, int, int>(fun z w -> add z w)) |> ignore
+        app.Urls.Add url
+        app.StartAsync().GetAwaiter().GetResult()
+
+        try
+            let client = new HttpClient()
+            let body = client.GetStringAsync(url + "/add/2/3").GetAwaiter().GetResult()
+            if body.Trim() <> "5" then failwithf "minimal API returned '%s', expected '5'" body
+        finally
+            app.StopAsync().GetAwaiter().GetResult()
+
+X.run () """)
+    |> withLangVersionPreview
+    |> runFsi
+    |> shouldSucceed
+#endif

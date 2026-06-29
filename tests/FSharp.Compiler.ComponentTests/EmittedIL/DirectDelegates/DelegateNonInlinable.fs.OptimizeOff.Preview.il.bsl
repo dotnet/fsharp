@@ -33,6 +33,42 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niEtaCurried@15
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+    .method assembly static int32  Invoke(int32 a,
+                                          int32 b) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  call       int32 assembly::accCurried(int32,
+                                                                  int32)
+      IL_0007:  ret
+    } 
+
+  } 
+
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niEtaTupled@18
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+    .method assembly static int32  Invoke(int32 a,
+                                          int32 b) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  call       int32 assembly::accTupled(int32,
+                                                                 int32)
+      IL_0007:  ret
+    } 
+
+  } 
+
   .class auto ansi serializable nested public S
          extends [runtime]System.Object
   {
@@ -48,6 +84,24 @@
       IL_0001:  ldarg.1
       IL_0002:  add
       IL_0003:  ret
+    } 
+
+  } 
+
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niStaticEta@28
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+    .method assembly static int32  Invoke(int32 a,
+                                          int32 b) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  call       int32 assembly/S::AccS(int32,
+                                                              int32)
+      IL_0007:  ret
     } 
 
   } 
@@ -94,60 +148,6 @@
       .maxstack  8
       IL_0000:  ldarg.1
       IL_0001:  ret
-    } 
-
-  } 
-
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niEtaCurried@15
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static int32  Invoke(int32 a,
-                                          int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  call       int32 assembly::accCurried(int32,
-                                                                  int32)
-      IL_0007:  ret
-    } 
-
-  } 
-
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niEtaTupled@18
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static int32  Invoke(int32 a,
-                                          int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  call       int32 assembly::accTupled(int32,
-                                                                 int32)
-      IL_0007:  ret
-    } 
-
-  } 
-
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niStaticEta@28
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static int32  Invoke(int32 a,
-                                          int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  call       int32 assembly/S::AccS(int32,
-                                                              int32)
-      IL_0007:  ret
     } 
 
   } 

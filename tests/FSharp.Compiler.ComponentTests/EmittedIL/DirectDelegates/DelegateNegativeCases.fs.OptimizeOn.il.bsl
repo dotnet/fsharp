@@ -33,51 +33,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable nested public Holder
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname instance void  .ctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  pop
-      IL_0008:  ret
-    } 
-
-    .method public hidebysig instance int32 TakesObj(object x) cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.1
-      IL_0001:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable nested public Extensions
-         extends [runtime]System.Object
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public static !!T  Echo<T>(!!T x,
-                                       int32 y,
-                                       int32 z) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ret
-    } 
-
-  } 
-
   .class auto autochar serializable sealed nested assembly beforefieldinit specialname firstClass@7
          extends [runtime]System.Object
   {
@@ -160,6 +115,32 @@
 
   } 
 
+  .class auto ansi serializable nested public Holder
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public specialname rtspecialname instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  pop
+      IL_0008:  ret
+    } 
+
+    .method public hidebysig instance int32 TakesObj(object x) cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.1
+      IL_0001:  ret
+    } 
+
+  } 
+
   .class auto autochar serializable sealed nested assembly beforefieldinit specialname contra@26
          extends [runtime]System.Object
   {
@@ -186,6 +167,25 @@
       IL_0006:  ldarg.1
       IL_0007:  callvirt   instance int32 assembly/Holder::TakesObj(object)
       IL_000c:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable nested public Extensions
+         extends [runtime]System.Object
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public static !!T  Echo<T>(!!T x,
+                                       int32 y,
+                                       int32 z) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ret
     } 
 
   } 

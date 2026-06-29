@@ -33,71 +33,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable nested public S
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public static int32  AccS(int32 x,
-                                      int32 y) cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  add
-      IL_0003:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable nested public C
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .field assembly int32 k
-    .method public specialname rtspecialname instance void  .ctor(int32 k) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  pop
-      IL_0008:  ldarg.0
-      IL_0009:  ldarg.1
-      IL_000a:  stfld      int32 assembly/C::k
-      IL_000f:  ret
-    } 
-
-    .method public hidebysig instance int32 AccC(int32 x, int32 y) cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ldarg.2
-      IL_0002:  add
-      IL_0003:  ldarg.0
-      IL_0004:  ldfld      int32 assembly/C::k
-      IL_0009:  add
-      IL_000a:  ret
-    } 
-
-    .method public hidebysig instance !!T GPick<T>(!!T x, !!T y) cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  ret
-    } 
-
-  } 
-
   .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niNonEta@12
          extends [runtime]System.Object
   {
@@ -152,6 +87,25 @@
 
   } 
 
+  .class auto ansi serializable nested public S
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public static int32  AccS(int32 x,
+                                      int32 y) cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  add
+      IL_0003:  ret
+    } 
+
+  } 
+
   .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niStaticNonEta@25
          extends [runtime]System.Object
   {
@@ -184,6 +138,52 @@
       IL_0002:  call       int32 assembly/S::AccS(int32,
                                                               int32)
       IL_0007:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable nested public C
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .field assembly int32 k
+    .method public specialname rtspecialname instance void  .ctor(int32 k) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  pop
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  stfld      int32 assembly/C::k
+      IL_000f:  ret
+    } 
+
+    .method public hidebysig instance int32 AccC(int32 x, int32 y) cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ldarg.2
+      IL_0002:  add
+      IL_0003:  ldarg.0
+      IL_0004:  ldfld      int32 assembly/C::k
+      IL_0009:  add
+      IL_000a:  ret
+    } 
+
+    .method public hidebysig instance !!T GPick<T>(!!T x, !!T y) cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
     } 
 
   } 
