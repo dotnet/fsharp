@@ -27,6 +27,72 @@ type TestClass3() as self =
         |> compile
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Inline member referencing private function fails FS1113 at definition`` () =
+        FSharp """
+module Test
+
+module private PrivHelpers =
+    let secret x = x + 1
+
+type Bag() =
+    member inline _.Wrap(x) = PrivHelpers.secret x
+
+type SelfBag() as self =
+    member inline _.Wrap(x) = PrivHelpers.secret x
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
+
+    [<Fact>]
+    let ``Inline member referencing internal function fails FS1113 at definition`` () =
+        FSharp """
+module Test
+
+module internal IntHelpers =
+    let secret x = x + 1
+
+type Bag() =
+    member inline _.Wrap(x) = IntHelpers.secret x
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
+
+    [<Fact>]
+    let ``Inline member capturing a private constructor parameter fails FS1113 at definition`` () =
+        FSharp """
+module Test
+
+type Bag(k: int) =
+    member inline _.Wrap(x) = x + k
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
+
+    [<Fact>]
+    let ``Inline member with class-scope self identifier referencing only public values compiles`` () =
+        FSharp """
+module Test
+
+let publicHelper x = x + 1
+
+type Bag() as self =
+    member inline _.Wrap(x) = publicHelper x
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
     // Error tests
 
     [<Theory; FileInlineData("E_byref_two_arguments_curried.fsx")>]
