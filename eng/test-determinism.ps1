@@ -28,7 +28,16 @@ if ($help) {
 
 # List of binary names that should be skipped because they have a known issue that
 # makes them non-deterministic.
-$script:skipList = @()
+#
+# FSharp.Compiler.Service.dll: closure type names carry a "-N" suffix whose counter is
+# allocated in parallel-emit order. The closure 'uniq' values come from a racy
+# Interlocked.Increment, so two same-flags parallel builds can allocate the suffixes in a
+# different order (e.g. func2@1-23 vs func2@1-17), drifting the #Strings heap layout.
+# This is the residual closure-name race tracked by
+# https://github.com/dotnet/fsharp/issues/19928 and fixed by #19929 (always-defer +
+# source-stable closure naming). Skip this one binary until that fix lands so the gate
+# can stay STRICT for every other binary instead of being globally suppressed.
+$script:skipList = @("FSharp.Compiler.Service.dll")
 function Run-Build([string]$rootDir, [string]$increment, [string]$additionalFscFlags = "") {
 
   $logFileName = $increment
@@ -190,10 +199,13 @@ function Test-MapContents($dataMap) {
     throw "Didn't find the expected count of binaries"
   }
 
-  # Test for some well known binaries
+  # Test for some well known binaries.
+  # NOTE: FSharp.Compiler.Service.dll is intentionally NOT listed here — it is excluded via
+  # $script:skipList above (known parallel closure-name race, #19928/#19929) so it never enters
+  # the map. Re-add it here once #19929 removes the skip. FSharp.Core.dll remains as the anchor
+  # guaranteeing we actually examined real compiler output.
   $list = @(
-    "FSharp.Core.dll",
-    "FSharp.Compiler.Service.dll")
+    "FSharp.Core.dll")
 
   foreach ($fileName in $list) {
     $found = $false

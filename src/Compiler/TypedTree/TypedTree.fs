@@ -761,7 +761,7 @@ type Entity =
 #endif
         else
             ignore withStaticParameters
-            match x.TyparsNoRange with 
+            match x.Typars with 
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
@@ -893,12 +893,9 @@ type Entity =
           CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
     
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    /// 
-    /// Lazy because it may read metadata, must provide a context "range" in case error occurs reading metadata.
-    member x.Typars m = x.entity_typars.Force m
-
-    /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member x.TyparsNoRange: Typars = x.Typars x.Range
+    ///
+    /// Lazy because it may read metadata. Uses the entity's own range for error context.
+    member x.Typars: Typars = x.entity_typars.Force x.Range
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
     member x.TypeAbbrev = 
@@ -1331,7 +1328,7 @@ type Entity =
                         | _ -> ilTypeRefForCompilationPath x.CompilationPath x.CompiledName
                     // Pre-allocate a ILType for monomorphic types, to reduce memory usage from Abstract IL nodes
                     let ilTypeOpt = 
-                        match x.TyparsNoRange with 
+                        match x.Typars with 
                         | [] -> Some (mkILTy boxity (mkILTySpec (ilTypeRef, []))) 
                         | _ -> None
                     CompiledTypeRepr.ILAsmNamed (ilTypeRef, boxity, ilTypeOpt))
@@ -3792,12 +3789,9 @@ type EntityRef =
     member x.IsFSharpException = x.Deref.IsFSharpException
     
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    /// 
-    /// Lazy because it may read metadata, must provide a context "range" in case error occurs reading metadata.
-    member x.Typars m = x.Deref.Typars m
-
-    /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member x.TyparsNoRange = x.Deref.TyparsNoRange
+    ///
+    /// Lazy because it may read metadata. Uses the entity's own range for error context.
+    member x.Typars = x.Deref.Typars
 
     /// Indicates if this entity is an F# type abbreviation definition
     member x.TypeAbbrev = x.Deref.TypeAbbrev
@@ -6085,6 +6079,10 @@ type FreeVars =
       /// Indicates if the expression contains a call to rethrow that is not bound under a (try-)with branch. 
       /// Rethrow may only occur in such locations. 
       UsesUnboundRethrow: bool 
+
+      /// Indicates if the expression contains a direct IL field load/store — a cheap over-approximate
+      /// gate the optimizer refines to protected (family) fields (issue #19963). Never read by escape checks.
+      ContainsILFieldAccess: bool 
 
       /// The summary of locally defined tycon representations used in the expression. These may be made private by a signature 
       /// or marked 'internal' or 'private' and we have to check various conditions associated with that. 
