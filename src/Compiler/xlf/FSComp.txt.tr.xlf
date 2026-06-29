@@ -462,6 +462,11 @@
         <target state="translated">Geliştirilmiş örtük bağımsız değişken adları</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
+        <source>Improved implied argument names with partial application</source>
+        <target state="new">Improved implied argument names with partial application</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">Dizin oluşturma ve dilimleme için expr[idx] gösterimi</target>

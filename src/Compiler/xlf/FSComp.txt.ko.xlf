@@ -462,6 +462,11 @@
         <target state="translated">향상된 암시적 인수 이름</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
+        <source>Improved implied argument names with partial application</source>
+        <target state="new">Improved implied argument names with partial application</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">인덱싱 및 슬라이싱을 위한 expr[idx] 표기법</target>
