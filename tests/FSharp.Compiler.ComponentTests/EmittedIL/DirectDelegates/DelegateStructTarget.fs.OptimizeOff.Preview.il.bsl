@@ -199,41 +199,6 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceNonEta@14
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public valuetype assembly/S s
-    .method public specialname rtspecialname instance void  .ctor(valuetype assembly/S s) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      valuetype assembly/S assembly/structInstanceNonEta@14::s
-      IL_0007:  ldarg.0
-      IL_0008:  call       instance void [runtime]System.Object::.ctor()
-      IL_000d:  ret
-    } 
-
-    .method assembly hidebysig instance int32 Invoke(int32 arg1, int32 arg2) cil managed
-    {
-      
-      .maxstack  7
-      .locals init (valuetype assembly/S V_0)
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      valuetype assembly/S assembly/structInstanceNonEta@14::s
-      IL_0006:  stloc.0
-      IL_0007:  ldloca.s   V_0
-      IL_0009:  ldarg.1
-      IL_000a:  ldarg.2
-      IL_000b:  call       instance int32 assembly/S::Add(int32,
-                                                                      int32)
-      IL_0010:  ret
-    } 
-
-  } 
-
   .class auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceEta@17
          extends [runtime]System.Object
   {
@@ -274,9 +239,9 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/structInstanceNonEta@14::.ctor(valuetype assembly/S)
-    IL_0006:  ldftn      instance int32 assembly/structInstanceNonEta@14::Invoke(int32,
-                                                                                             int32)
+    IL_0001:  box        assembly/S
+    IL_0006:  ldftn      instance int32 assembly/S::Add(int32,
+                                                                    int32)
     IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                      native int)
     IL_0011:  ret

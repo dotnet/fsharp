@@ -1,6 +1,7 @@
 module DelegateNegativeCases
 
 open System
+open System.Runtime.CompilerServices
 
 // 42. first-class function value: there is no target method to point at, so a closure must remain
 let firstClass (handler: int -> int -> unit) = Action<int, int>(handler)
@@ -23,3 +24,15 @@ type Holder() =
 // argument is no longer a verbatim Invoke parameter and the direct-delegate recognizer does not match. (The
 // signature check is not involved - it never even runs here.)
 let contra (h: Holder) = System.Func<string, int>(fun s -> h.TakesObj s)
+
+[<Extension>]
+type Extensions =
+    [<Extension; NoCompilerInlining>]
+    static member Echo<'T> (x: 'T, y: int, z: int) : 'T = x
+
+// 54. extension member on a VALUE-TYPE receiver: an extension member compiles to a static method whose first
+// parameter is the receiver, which the closed-delegate mechanism would store as the 'object' Target and pass
+// straight into that first by-value parameter with no unboxing. A value-type receiver therefore has no closed
+// form (unlike a value-type *instance* receiver, which is reached through the method's unboxing stub), so a
+// closure must remain.
+let valueTypeExtension () = Func<int, int, int>(fun a b -> (3).Echo(a, b))

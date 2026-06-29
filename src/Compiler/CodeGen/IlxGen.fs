@@ -7512,14 +7512,10 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                             None
                         else
                             let ilEnclArgTys, ilMethArgTys = List.splitAt numEnclILTypeArgs ilTyArgs
-                            let boxity = mspec.DeclaringType.Boxity
-                            let targetMspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
+                            let targetMspec = mkILMethSpec (mspec.MethodRef, mspec.DeclaringType.Boxity, ilEnclArgTys, ilMethArgTys)
                             let numBoundLeadingFormals = if takesInstanceArg then 0 else leadingArgs.Length
 
                             if takesInstanceArg <> targetMspec.MethodRef.CallingConv.IsInstance then
-                                None
-                            elif takesInstanceArg && boxity.IsAsValue then
-                                // value-type receivers not handled
                                 None
                             elif
                                 signatureMatches numBoundLeadingFormals ilDelegeeParams ilDelegeeRet ilEnclArgTys ilMethArgTys targetMspec
@@ -7539,7 +7535,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                                                                enclTypeInst,
                                                                methInst,
                                                                leadingArgs) ->
-                if ilMethodDirectlyBindable g tmvs leadingArgs ilMethRef isStruct valUseFlag isCtor then
+                if ilMethodDirectlyBindable g tmvs leadingArgs ilMethRef valUseFlag isCtor then
                     let ilEnclArgTys = GenTypeArgs cenv m eenvouter.tyenv enclTypeInst
                     let ilMethArgTys = GenTypeArgs cenv m eenvouter.tyenv methInst
                     let boxity = if isStruct then AsValue else AsObject
@@ -7577,6 +7573,14 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
         | Some(receiverExpr, isVirtual) ->
             // Instance target: evaluate the receiver as the delegate's target object.
             GenExpr cenv cgbuf eenvouter receiverExpr Continue
+
+            if targetMspec.DeclaringType.Boxity.IsAsValue then
+                // Value-type receiver: box a copy so it can be stored as the delegate's 'object' Target. The
+                // runtime binds the function pointer to the method's unboxing stub, which re-derives the 'this'
+                // pointer from the box on each invocation. This matches the closure form, which likewise
+                // captures the struct by value. (Struct instance methods are non-virtual, so isVirtual is
+                // false here and the ldftn path below is taken.)
+                CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_Object ]) (I_box targetMspec.DeclaringType)
 
             if isVirtual then
                 // dup the receiver and bind the function pointer to its runtime type's override.

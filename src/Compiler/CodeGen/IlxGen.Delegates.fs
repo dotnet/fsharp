@@ -79,47 +79,58 @@ let rec private peel g expr mapReceiver =
         peel g inner mapReceiver
     | e -> e, mapReceiver
 
+// The trailing arguments of the call must be exactly the delegate's Invoke parameters, forwarded
+// verbatim and in order. The remaining leading arguments (e.g. an instance receiver) are returned
+// for the consumer to handle.
+let private matchForwarding g invokeParams (args: Expr list) mapReceiver =
+    // Drop the elided unit argument when the Invoke takes no parameters.
+    let args =
+        match List.tryLast args with
+        | Some last when List.isEmpty invokeParams && isUnitValue last -> List.truncate (args.Length - 1) args
+        | _ -> args
+
+    let numLeading = args.Length - invokeParams.Length
+
+    if numLeading >= 0 then
+        let leadingArgs, forwardedArgs = List.splitAt numLeading args
+
+        if
+            List.forall2
+                (fun (a: Expr) (tv: Val) ->
+                    match stripDebugPoints a with
+                    | Expr.Val(avref, _, _) -> valRefEq g avref (mkLocalValRef tv)
+                    | _ -> false)
+                forwardedArgs
+                invokeParams
+        then
+            // A value-type receiver is passed to its instance method by address ('&recv'); recover the
+            // underlying value so it can be boxed and stored as the delegate Target (the unboxing stub
+            // supplies the 'this' pointer on invocation). When the receiver is a side-effect-free let that
+            // 'peel' removed, this also re-exposes the let-bound variable so 'mapReceiver' can map it back.
+            let leadingArgs =
+                leadingArgs
+                |> List.map (fun a ->
+                    match stripDebugPoints a with
+                    | Expr.Op(TOp.LValueOp(LAddrOf _, vref), _, _, m) -> exprForValRef m vref
+                    | _ -> a)
+
+            Some(mapReceiver leadingArgs)
+        else
+            None
+    else
+        None
+
 let classifyForwardingTarget g (invokeParams: Val list) expr =
     let body, mapReceiver = peel g expr id
 
-    // The trailing arguments of the call must be exactly the delegate's Invoke parameters, forwarded
-    // verbatim and in order. The remaining leading arguments (e.g. an instance receiver) are returned
-    // for the consumer to handle.
-    let matchForwarding (args: Expr list) =
-        // Drop the elided unit argument when the Invoke takes no parameters.
-        let args =
-            match List.tryLast args with
-            | Some last when List.isEmpty invokeParams && isUnitValue last -> List.truncate (args.Length - 1) args
-            | _ -> args
-
-        let numLeading = args.Length - invokeParams.Length
-
-        if numLeading >= 0 then
-            let leadingArgs, forwardedArgs = List.splitAt numLeading args
-
-            if
-                List.forall2
-                    (fun (a: Expr) (tv: Val) ->
-                        match stripDebugPoints a with
-                        | Expr.Val(avref, _, _) -> valRefEq g avref (mkLocalValRef tv)
-                        | _ -> false)
-                    forwardedArgs
-                    invokeParams
-            then
-                ValueSome(mapReceiver leadingArgs)
-            else
-                ValueNone
-        else
-            ValueNone
-
     match body with
     | Expr.App(Expr.Val(vref, valUseFlags, _), _, tyargs, args, _) ->
-        match matchForwarding (flattenTupledArgs vref args) with
-        | ValueSome leadingArgs -> DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, tyargs, leadingArgs)
-        | ValueNone -> DirectDelegateForwardingTargetCandidate.Other
+        match matchForwarding g invokeParams (flattenTupledArgs vref args) mapReceiver with
+        | Some leadingArgs -> DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, tyargs, leadingArgs)
+        | None -> DirectDelegateForwardingTargetCandidate.Other
     | Expr.Op(TOp.ILCall(isVirtual, _, isStruct, isCtor, valUseFlag, _, _, ilMethRef, enclTypeInst, methInst, _), _, args, _) ->
-        match matchForwarding args with
-        | ValueSome leadingArgs ->
+        match matchForwarding g invokeParams args mapReceiver with
+        | Some leadingArgs ->
             DirectDelegateForwardingTargetCandidate.ILMethod(
                 isVirtual,
                 isStruct,
@@ -130,7 +141,7 @@ let classifyForwardingTarget g (invokeParams: Val list) expr =
                 methInst,
                 leadingArgs
             )
-        | ValueNone -> DirectDelegateForwardingTargetCandidate.Other
+        | None -> DirectDelegateForwardingTargetCandidate.Other
     | _ -> DirectDelegateForwardingTargetCandidate.Other
 
 /// At most one leading argument can be hoisted to the construction site and stored as the delegate's Target:
@@ -151,13 +162,23 @@ let private receiverShapeOk (leadingArgs: Expr list) takesInstanceArg =
         | [ _ ] -> true
         | _ -> false
 
-/// A leading argument of a *static* target is stored as the delegate's Target, which is typed `object`. A
-/// value-type leading argument would have to be boxed (changing identity/copy semantics), which is not yet
-/// supported, so it disqualifies the direct form (the same boxing gap that excludes value-type instance
-/// receivers). Targets with no leading argument, or an instance receiver, are unaffected here.
+/// A leading argument of a *static* target is stored as the delegate's Target (typed `object`) and the
+/// delegate thunk passes it straight into the method's first by-value parameter with no unboxing. A value-type
+/// leading argument therefore has no closed form at all, so it disqualifies the direct form. (This is unlike a
+/// value-type *instance* receiver, which is boxed and reached through the method's unboxing stub - see the
+/// emit - and so is supported.) Targets with no leading argument, or an instance receiver, are unaffected here.
 let private staticLeadingArgIsRefType g takesInstanceArg (leadingArgs: Expr list) =
     match leadingArgs with
     | [ recv ] when not takesInstanceArg -> not (isStructTy g (tyOfExpr g recv))
+    | _ -> true
+
+/// A value-type receiver is boxed at the construction site, which needs the receiver as a *value*. A struct
+/// receiver is normally taken by address ('&recv'); the recognizer recovers the value from '&localVar', but any
+/// other address form (e.g. '&someField') would leave a byref the box cannot consume, so disqualify it and keep
+/// the closure.
+let private receiverNotByref g (leadingArgs: Expr list) =
+    match leadingArgs with
+    | [ recv ] -> not (isByrefTy g (tyOfExpr g recv))
     | _ -> true
 
 /// The receiver is hoisted to the delegate-construction site, so a direct delegate is only sound when it can
@@ -192,17 +213,18 @@ let fsharpValDirectlyBindable g (invokeParams: Val list) (leadingArgs: Expr list
     && receiverShapeOk leadingArgs takesInstanceArg
     && receiverBindable g invokeParams leadingArgs
     && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
+    && receiverNotByref g leadingArgs
 
 /// An IL method target can be pointed at directly only when it is not a constructor / base / constrained call,
-/// when the receiver shape is right, when the receiver is not a value type (boxing is not yet implemented), and
-/// when the receiver can be safely hoisted to the construction site. The instance-receiver flag is derived here
-/// from ilMethRef and the base/constrained-call flags from valUseFlag.
+/// when the receiver shape is right, and when the receiver can be safely hoisted to the construction site. A
+/// value-type instance receiver is boxed at the construction site (see the emit), matching the closure's
+/// by-value capture. The instance-receiver flag is derived here from ilMethRef and the base/constrained-call
+/// flags from valUseFlag.
 let ilMethodDirectlyBindable
     g
     (invokeParams: Val list)
     (leadingArgs: Expr list)
     (ilMethRef: ILMethodRef)
-    isStruct
     (valUseFlag: ValUseFlag)
     isCtor
     =
@@ -211,10 +233,10 @@ let ilMethodDirectlyBindable
     not isCtor
     && not valUseFlag.IsVSlotDirectCall
     && not valUseFlag.IsPossibleConstrainedCall
-    && not (takesInstanceArg && isStruct)
     && receiverShapeOk leadingArgs takesInstanceArg
     && receiverBindable g invokeParams leadingArgs
     && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
+    && receiverNotByref g leadingArgs
 
 /// Confirm the target's IL signature is compatible with the delegate's Invoke. The type checker has already
 /// verified the delegate is built from a compatible function shape and the forwarding match pins the arity,

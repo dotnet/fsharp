@@ -464,25 +464,35 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 50-51: a value-type receiver would need boxing (a delegate Target is object); not implemented, so
-// it stays a closure and still dispatches correctly.
+// Cases 50-51: a value-type receiver is boxed (a copy) and stored as the delegate's Target; the runtime binds
+// the unboxing stub, so the delegate points at the real struct method and dispatches correctly, with the boxed
+// copy carrying the receiver's value. The receiver must be effect-free, so it comes from a (non-mutable)
+// parameter here. (By-value capture cannot be observed via external mutation on a *direct* struct delegate: a
+// mutable receiver - or the defensive copy it forces - reads a mutable value, which counts as an effect, so it
+// is kept as a closure instead. The boxing itself guarantees the by-value copy.)
 [<Fact>]
-let ``Struct value-type receiver stays a closure (preview)`` () =
+let ``Struct value-type receiver targets the real method (preview)`` () =
     FSharp """
-module StructClosure
+module StructDirect
 
 open System
 
 [<Struct>]
 type S =
-    member _.Add (x: int) (y: int) : int = x + y
+    val V : int
+    new (v: int) = { V = v }
+    [<NoCompilerInlining>]
+    member this.AddV (x: int) (y: int) : int = this.V + x + y
+    
+let makeAdder (s: S) = Func<int, int, int>(s.AddV)
 
 [<EntryPoint>]
 let main _ =
-    let s = S()
-    let d = Func<int, int, int>(s.Add)
-    if d.Invoke(2, 3) <> 5 then failwith "wrong result"
-    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    let d = makeAdder (S(100))
+    if d.Invoke(2, 3) <> 105 then failwithf "wrong result: %d" (d.Invoke(2, 3))
+    if d.Method.Name <> "AddV" then failwithf "expected direct 'AddV' but got '%s'" d.Method.Name
+    if isNull d.Target then failwith "Target should be the boxed receiver, not null"
+    if not (d.Target :? S) then failwith "Target should be a boxed S"
     0
         """
     |> withLangVersionPreview
@@ -503,7 +513,7 @@ open System.Runtime.CompilerServices
 type Holder() = class end
 
 [<Extension>]
-type HolderExtensions =
+type Extensions =
     [<Extension; NoCompilerInlining>]
     static member Combine (h: Holder, x: int, y: int) : int = x + y
 
