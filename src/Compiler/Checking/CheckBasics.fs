@@ -313,6 +313,8 @@ type TcFileState =
 
       argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
+      /// `inherit` clauses are checked in several mutual-recursion passes under different envs.
+      /// Remember failed base-type lookups so later passes skip them and report FS0039 only once.
       inheritResolutionFailed: ConcurrentDictionary<struct (Stamp * range), unit>
 
       // forward call
