@@ -172,6 +172,7 @@ type ValFlags(flags: int64) =
             let flags =
                      (flags       &&&                                     ~~~0b00000000000000110000L) |||
                      (match inlineInfo with
+                                     | ValInline.InlinedDefinition ->        0b00000000000000000000L
                                      | ValInline.Always ->                   0b00000000000000010000L
                                      | ValInline.Optional ->                 0b00000000000000100000L
                                      | ValInline.Never ->                    0b00000000000000110000L)

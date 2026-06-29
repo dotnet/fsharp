@@ -13,21 +13,16 @@ Test::main
     IL_000e:  stloc.0
 
   (7,5-7,32)  if result.Value = 3.14 then
-    IL_000f:  nop
-
-  <hidden>
-    IL_0010:  ldloc.0
-    IL_0011:  call MyNum::get_Value
-    IL_0016:  ldc.r8 3.140000
-    IL_001f:  ceq
-    IL_0021:  brfalse.s IL_0025
+    IL_000f:  ldloc.0
+    IL_0010:  call MyNum::get_Value
+    IL_0015:  ldc.r8 3.140000
+    IL_001e:  ceq
+    IL_0020:  brfalse.s IL_0024
 
   (7,33-7,34)  0
-    IL_0023:  ldc.i4.0
-    IL_0024:  ret
+    IL_0022:  ldc.i4.0
+    IL_0023:  ret
 
   (7,40-7,41)  1
-    IL_0025:  ldc.i4.1
-    IL_0026:  ret
-
-  <hidden>
+    IL_0024:  ldc.i4.1
+    IL_0025:  ret

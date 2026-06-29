@@ -31,13 +31,6 @@ Test::g$W
     IL_0009:  call InvokeFast
     IL_000e:  ret
 
-Test::<g>__debug@7
-  (5,32-5,41)  f (x + y)
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  add
-    IL_0003:  ret
-
 Test::.cctor
   <hidden>
     IL_0000:  ldc.i4.0
@@ -45,6 +38,13 @@ Test::.cctor
     IL_0006:  ldsfld $Test::init@
     IL_000b:  pop
     IL_000c:  ret
+
+Test::<g>__debug@7
+  (5,32-5,41)  f (x + y)
+    IL_0000:  ldarg.0
+    IL_0001:  ldarg.1
+    IL_0002:  add
+    IL_0003:  ret
 
 Test::staticInitialization@
   (7,1-7,6)  g 1 2

@@ -111,8 +111,6 @@ Test::main
 
   <hidden>
     IL_0033:  nop
-
-  <hidden>
     IL_0034:  brfalse.s IL_0038
 
   (12,30-12,31)  0
@@ -122,8 +120,6 @@ Test::main
   (12,37-12,38)  1
     IL_0038:  ldc.i4.1
     IL_0039:  ret
-
-  <hidden>
 
 Test::<add>__debug@5
   (2,34-2,39)  x + y

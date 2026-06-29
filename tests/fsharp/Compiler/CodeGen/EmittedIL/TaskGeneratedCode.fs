@@ -425,6 +425,47 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable sealed nested assembly beforefieldinit testTask@4
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field public class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@
+    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  ldarg.1
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@4::builder@
+      IL_000d:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@4::builder@
+      IL_0006:  ldarg.0
+      IL_0007:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@4::builder@
+      IL_000c:  ldarg.0
+      IL_000d:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@4::builder@
+      IL_0012:  newobj     instance void Test/'testTask@4-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder)
+      IL_0017:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::Delay<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1>>)
+      IL_001c:  ldsfld     class Test/'testTask@4-2' Test/'testTask@4-2'::@_instance
+      IL_0021:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::TryFinally<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1>,
+                                                                                                                                                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0026:  ret
+    } 
+
+  } 
+
   .class auto ansi serializable sealed nested assembly beforefieldinit 'testTask@4-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
@@ -492,47 +533,6 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
       IL_0000:  newobj     instance void Test/'testTask@4-2'::.ctor()
       IL_0005:  stsfld     class Test/'testTask@4-2' Test/'testTask@4-2'::@_instance
       IL_000a:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit testTask@4
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@
-    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@4::builder@
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@4::builder@
-      IL_0006:  ldarg.0
-      IL_0007:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@4::builder@
-      IL_000c:  ldarg.0
-      IL_000d:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@4::builder@
-      IL_0012:  newobj     instance void Test/'testTask@4-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder)
-      IL_0017:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::Delay<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1>>)
-      IL_001c:  ldsfld     class Test/'testTask@4-2' Test/'testTask@4-2'::@_instance
-      IL_0021:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::TryFinally<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1>,
-                                                                                                                                                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_0026:  ret
     } 
 
   } 
@@ -687,40 +687,6 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'testTask@4-1'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@
-    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/'testTask@4-1'::builder@
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  nop
-      IL_0001:  ldarg.0
-      IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/'testTask@4-1'::builder@
-      IL_0007:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::Zero<class [FSharp.Core]Microsoft.FSharp.Core.Unit>()
-      IL_000c:  ret
-    } 
-
-  } 
-
   .class auto ansi serializable sealed nested assembly beforefieldinit 'testTask@4-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Exception,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
@@ -798,6 +764,40 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
       IL_0027:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::TryWith<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1>,
                                                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Exception,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1>>)
       IL_002c:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'testTask@4-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field public class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@
+    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  ldarg.1
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/'testTask@4-1'::builder@
+      IL_000d:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  nop
+      IL_0001:  ldarg.0
+      IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/'testTask@4-1'::builder@
+      IL_0007:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::Zero<class [FSharp.Core]Microsoft.FSharp.Core.Unit>()
+      IL_000c:  ret
     } 
 
   } 
@@ -938,6 +938,47 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable sealed nested assembly beforefieldinit testTask@5
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
+  {
+    .field public class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@
+    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  ldarg.1
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@5::builder@
+      IL_000d:  ret
+    } 
+
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@5::builder@
+      IL_0006:  ldsfld     class Test/'testTask@5-1' Test/'testTask@5-1'::@_instance
+      IL_000b:  ldarg.0
+      IL_000c:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@5::builder@
+      IL_0011:  ldarg.0
+      IL_0012:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@5::builder@
+      IL_0017:  newobj     instance void Test/'testTask@5-2'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder)
+      IL_001c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::Delay<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1>>)
+      IL_0021:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::While<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,bool>,
+                                                                                                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0026:  ret
+    } 
+
+  } 
+
   .class auto ansi serializable sealed nested assembly beforefieldinit 'testTask@5-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,bool>
   {
@@ -1005,47 +1046,6 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
       IL_000b:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/'testTask@5-2'::builder@
       IL_0010:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::Zero<class [FSharp.Core]Microsoft.FSharp.Core.Unit>()
       IL_0015:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit testTask@5
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
-  {
-    .field public class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@
-    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder builder@) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@5::builder@
-      IL_000d:  ret
-    } 
-
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@5::builder@
-      IL_0006:  ldsfld     class Test/'testTask@5-1' Test/'testTask@5-1'::@_instance
-      IL_000b:  ldarg.0
-      IL_000c:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@5::builder@
-      IL_0011:  ldarg.0
-      IL_0012:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder Test/testTask@5::builder@
-      IL_0017:  newobj     instance void Test/'testTask@5-2'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.TaskBuilder)
-      IL_001c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::Delay<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,!!1>>)
-      IL_0021:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Core.Unit> [FSharp.Core]Microsoft.FSharp.Control.TaskBuilderBase::While<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,bool>,
-                                                                                                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ResumableCode`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_0026:  ret
     } 
 
   } 

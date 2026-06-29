@@ -61,8 +61,6 @@ Test::main
 
   <hidden>
     IL_0035:  nop
-
-  <hidden>
     IL_0036:  brfalse.s IL_003a
 
   (9,28-9,29)  0
@@ -72,8 +70,6 @@ Test::main
   (9,35-9,36)  1
     IL_003a:  ldc.i4.1
     IL_003b:  ret
-
-  <hidden>
 
 Test::<getLength>__debug@7
   (3,5-3,35)  (^T : (member Length : int) x)

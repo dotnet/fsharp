@@ -23,22 +23,17 @@ Test::main
     IL_000b:  stloc.0
 
   (8,5-8,23)  if result = 6 then
-    IL_000c:  nop
-
-  <hidden>
-    IL_000d:  ldloc.0
-    IL_000e:  ldc.i4.6
-    IL_000f:  bne.un.s IL_0013
+    IL_000c:  ldloc.0
+    IL_000d:  ldc.i4.6
+    IL_000e:  bne.un.s IL_0012
 
   (8,24-8,25)  0
-    IL_0011:  ldc.i4.0
-    IL_0012:  ret
+    IL_0010:  ldc.i4.0
+    IL_0011:  ret
 
   (8,31-8,32)  1
-    IL_0013:  ldc.i4.1
-    IL_0014:  ret
-
-  <hidden>
+    IL_0012:  ldc.i4.1
+    IL_0013:  ret
 
 result@7::Invoke
   (7,34-7,39)  i + 1

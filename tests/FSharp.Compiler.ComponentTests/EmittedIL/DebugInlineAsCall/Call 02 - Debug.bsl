@@ -21,19 +21,14 @@ Test::main
     IL_0006:  stloc.0
 
   (8,5-8,19)  if i = 10 then
-    IL_0007:  nop
-
-  <hidden>
-    IL_0008:  ldloc.0
-    IL_0009:  ldc.i4.s 10
-    IL_000b:  bne.un.s IL_000f
+    IL_0007:  ldloc.0
+    IL_0008:  ldc.i4.s 10
+    IL_000a:  bne.un.s IL_000e
 
   (8,20-8,21)  0
-    IL_000d:  ldc.i4.0
-    IL_000e:  ret
+    IL_000c:  ldc.i4.0
+    IL_000d:  ret
 
   (8,27-8,28)  1
-    IL_000f:  ldc.i4.1
-    IL_0010:  ret
-
-  <hidden>
+    IL_000e:  ldc.i4.1
+    IL_000f:  ret

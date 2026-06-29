@@ -33,6 +33,14 @@ Test::g$W
     IL_000d:  add
     IL_000e:  ret
 
+Test::.cctor
+  <hidden>
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld $Test::init@
+    IL_0006:  ldsfld $Test::init@
+    IL_000b:  pop
+    IL_000c:  ret
+
 Test::<g>__debug@7
   (5,32-5,41)  f (x + y)
     IL_0000:  ldarg.0
@@ -41,14 +49,6 @@ Test::<g>__debug@7
     IL_0003:  ldc.i4.1
     IL_0004:  add
     IL_0005:  ret
-
-Test::.cctor
-  <hidden>
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld $Test::init@
-    IL_0006:  ldsfld $Test::init@
-    IL_000b:  pop
-    IL_000c:  ret
 
 Test::staticInitialization@
   (7,1-7,6)  g 1 2

@@ -18,22 +18,17 @@ Test::main
     IL_000e:  stloc.1
 
   (6,5-6,18)  if i = 8 then
-    IL_000f:  nop
-
-  <hidden>
-    IL_0010:  ldloc.1
-    IL_0011:  ldc.i4.8
-    IL_0012:  bne.un.s IL_0016
+    IL_000f:  ldloc.1
+    IL_0010:  ldc.i4.8
+    IL_0011:  bne.un.s IL_0015
 
   (6,19-6,20)  0
-    IL_0014:  ldc.i4.0
-    IL_0015:  ret
+    IL_0013:  ldc.i4.0
+    IL_0014:  ret
 
   (6,26-6,27)  1
-    IL_0016:  ldc.i4.1
-    IL_0017:  ret
-
-  <hidden>
+    IL_0015:  ldc.i4.1
+    IL_0016:  ret
 
 op_PlusPlus@4::Invoke
   (4,41-4,50)  x + y + 1

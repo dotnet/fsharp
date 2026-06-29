@@ -101,8 +101,6 @@ S::Equals
     IL_001d:  ldc.i4.0
     IL_001e:  ret
 
-  <hidden>
-
 S::Foo
   (5,30-5,32)  ()
     IL_0000:  ret
@@ -130,12 +128,36 @@ S::Equals
     IL_001c:  ldc.i4.0
     IL_001d:  ret
 
-  <hidden>
-
 D::Bar
   (7,27-7,31)  true
     IL_0000:  ldc.i4.1
     IL_0001:  ret
+
+g@9::Invoke
+  (10,26-13,6)  (fun sm -> (^A: (member Foo: unit -> unit) x) (^B: (member Bar: unit -> bool) sm.Data) )
+    IL_0000:  ldarg.1
+    IL_0001:  newobj .ctor
+    IL_0006:  ldftn Invoke
+    IL_000c:  newobj .ctor
+    IL_0011:  ret
+
+g@9-2::Invoke
+  (10,26-13,6)  (fun sm -> (^A: (member Foo: unit -> unit) x) (^B: (member Bar: unit -> bool) sm.Data) )
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld bar
+    IL_0006:  ldarg.1
+    IL_0007:  newobj .ctor
+    IL_000c:  ldftn Invoke
+    IL_0012:  newobj .ctor
+    IL_0017:  ret
+
+main@9::Invoke
+  (10,26-13,6)  (fun sm -> (^A: (member Foo: unit -> unit) x) (^B: (member Bar: unit -> bool) sm.Data) )
+    IL_0000:  ldarg.1
+    IL_0001:  newobj main@10-1::.ctor
+    IL_0006:  ldftn main@10-1::Invoke
+    IL_000c:  newobj .ctor
+    IL_0011:  ret
 
 f@10::Invoke
   (11,9-11,43)  (^A: (member Foo: unit -> unit) x)
@@ -184,14 +206,6 @@ g@10-1::Invoke
     IL_0011:  newobj NotSupportedException::.ctor
     IL_0016:  throw
 
-g@9::Invoke
-  (10,26-13,6)  (fun sm -> (^A: (member Foo: unit -> unit) x) (^B: (member Bar: unit -> bool) sm.Data) )
-    IL_0000:  ldarg.1
-    IL_0001:  newobj .ctor
-    IL_0006:  ldftn Invoke
-    IL_000c:  newobj .ctor
-    IL_0011:  ret
-
 g@10-3::Invoke
   (11,9-11,43)  (^A: (member Foo: unit -> unit) x)
     IL_0000:  ldarg.0
@@ -208,16 +222,6 @@ g@10-3::Invoke
     IL_001a:  callvirt Invoke
     IL_001f:  ret
 
-g@9-2::Invoke
-  (10,26-13,6)  (fun sm -> (^A: (member Foo: unit -> unit) x) (^B: (member Bar: unit -> bool) sm.Data) )
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld bar
-    IL_0006:  ldarg.1
-    IL_0007:  newobj .ctor
-    IL_000c:  ldftn Invoke
-    IL_0012:  newobj .ctor
-    IL_0017:  ret
-
 main@10-1::Invoke
   (11,9-11,43)  (^A: (member Foo: unit -> unit) x)
     IL_0000:  ldarg.0
@@ -230,11 +234,3 @@ main@10-1::Invoke
     IL_000d:  ldfld Data
     IL_0012:  callvirt D::Bar
     IL_0017:  ret
-
-main@9::Invoke
-  (10,26-13,6)  (fun sm -> (^A: (member Foo: unit -> unit) x) (^B: (member Bar: unit -> bool) sm.Data) )
-    IL_0000:  ldarg.1
-    IL_0001:  newobj main@10-1::.ctor
-    IL_0006:  ldftn main@10-1::Invoke
-    IL_000c:  newobj .ctor
-    IL_0011:  ret

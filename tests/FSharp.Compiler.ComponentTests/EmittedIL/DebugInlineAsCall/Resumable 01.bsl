@@ -19,23 +19,18 @@ Test::main
     IL_0018:  stloc.0
 
   (7,5-7,25)  if t.Result = 1 then
-    IL_0019:  nop
-
-  <hidden>
-    IL_001a:  ldloc.0
-    IL_001b:  callvirt get_Result
-    IL_0020:  ldc.i4.1
-    IL_0021:  bne.un.s IL_0025
+    IL_0019:  ldloc.0
+    IL_001a:  callvirt get_Result
+    IL_001f:  ldc.i4.1
+    IL_0020:  bne.un.s IL_0024
 
   (7,26-7,27)  0
-    IL_0023:  ldc.i4.0
-    IL_0024:  ret
+    IL_0022:  ldc.i4.0
+    IL_0023:  ret
 
   (7,33-7,34)  1
-    IL_0025:  ldc.i4.1
-    IL_0026:  ret
-
-  <hidden>
+    IL_0024:  ldc.i4.1
+    IL_0025:  ret
 
 t@6::Invoke
   (6,20-6,28)  return 1

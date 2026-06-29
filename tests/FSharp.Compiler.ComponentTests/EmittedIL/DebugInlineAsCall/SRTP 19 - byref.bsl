@@ -44,22 +44,17 @@ Test::main
     IL_000c:  nop
 
   (14,5-14,19)  if v = 42 then
-    IL_000d:  nop
-
-  <hidden>
-    IL_000e:  ldloc.1
-    IL_000f:  ldc.i4.s 42
-    IL_0011:  bne.un.s IL_0015
+    IL_000d:  ldloc.1
+    IL_000e:  ldc.i4.s 42
+    IL_0010:  bne.un.s IL_0014
 
   (14,20-14,21)  0
-    IL_0013:  ldc.i4.0
-    IL_0014:  ret
+    IL_0012:  ldc.i4.0
+    IL_0013:  ret
 
   (14,27-14,28)  1
-    IL_0015:  ldc.i4.1
-    IL_0016:  ret
-
-  <hidden>
+    IL_0014:  ldc.i4.1
+    IL_0015:  ret
 
 Test::<f>__debug@13
   (3,5-3,8)  x.M
@@ -93,8 +88,6 @@ S::Equals
     IL_001d:  ldc.i4.0
     IL_001e:  ret
 
-  <hidden>
-
 S::M
   (7,33-7,40)  x <- 42
     IL_0000:  ldarg.1
@@ -124,5 +117,3 @@ S::Equals
   <hidden>
     IL_001c:  ldc.i4.0
     IL_001d:  ret
-
-  <hidden>

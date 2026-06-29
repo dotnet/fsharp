@@ -22,24 +22,19 @@ Test::main
     IL_000e:  stloc.0
 
   (16,5-16,32)  if result.Value = 2.71 then
-    IL_000f:  nop
-
-  <hidden>
-    IL_0010:  ldloc.0
-    IL_0011:  ldfld MyNum::Value@
-    IL_0016:  ldc.r8 2.710000
-    IL_001f:  ceq
-    IL_0021:  brfalse.s IL_0025
+    IL_000f:  ldloc.0
+    IL_0010:  ldfld MyNum::Value@
+    IL_0015:  ldc.r8 2.710000
+    IL_001e:  ceq
+    IL_0020:  brfalse.s IL_0024
 
   (16,33-16,34)  0
-    IL_0023:  ldc.i4.0
-    IL_0024:  ret
+    IL_0022:  ldc.i4.0
+    IL_0023:  ret
 
   (16,40-16,41)  1
-    IL_0025:  ldc.i4.1
-    IL_0026:  ret
-
-  <hidden>
+    IL_0024:  ldc.i4.1
+    IL_0025:  ret
 
 Test::<Invoke>__debug@15
   <hidden>
@@ -76,8 +71,6 @@ MyNum::CompareTo
     IL_0013:  ldarg.1
     IL_0014:  ldfld MyNum::Value@
     IL_0019:  stloc.2
-
-  <hidden>
     IL_001a:  ldloc.1
     IL_001b:  ldloc.2
     IL_001c:  clt
@@ -131,8 +124,6 @@ MyNum::CompareTo
     IL_0044:  ldc.i4.0
     IL_0045:  ret
 
-  <hidden>
-
 MyNum::CompareTo
   <hidden>
     IL_0000:  ldarg.1
@@ -140,8 +131,6 @@ MyNum::CompareTo
     IL_0006:  stloc.0
     IL_0007:  ldloc.0
     IL_0008:  stloc.1
-
-  <hidden>
     IL_0009:  ldarg.0
     IL_000a:  brfalse.s IL_004e
 
@@ -159,8 +148,6 @@ MyNum::CompareTo
     IL_001d:  ldloc.1
     IL_001e:  ldfld MyNum::Value@
     IL_0023:  stloc.s 4
-
-  <hidden>
     IL_0025:  ldloc.3
     IL_0026:  ldloc.s 4
     IL_0028:  clt
@@ -215,8 +202,6 @@ MyNum::CompareTo
     IL_0058:  ldc.i4.0
     IL_0059:  ret
 
-  <hidden>
-
 MyNum::GetHashCode
   <hidden>
     IL_0000:  ldarg.0
@@ -246,8 +231,6 @@ MyNum::GetHashCode
   <hidden>
     IL_0022:  ldc.i4.0
     IL_0023:  ret
-
-  <hidden>
 
 MyNum::Equals
   <hidden>
@@ -282,15 +265,11 @@ MyNum::Equals
     IL_0020:  ceq
     IL_0022:  ret
 
-  <hidden>
-
 MyNum::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  isinst MyNum
     IL_0006:  stloc.0
-
-  <hidden>
     IL_0007:  ldloc.0
     IL_0008:  brfalse.s IL_0013
 
@@ -304,8 +283,6 @@ MyNum::Equals
   <hidden>
     IL_0013:  ldc.i4.0
     IL_0014:  ret
-
-  <hidden>
 
 MyNum::Equals
   <hidden>
@@ -323,8 +300,6 @@ MyNum::Equals
     IL_000d:  ldarg.1
     IL_000e:  ldfld MyNum::Value@
     IL_0013:  stloc.1
-
-  <hidden>
     IL_0014:  ldloc.0
     IL_0015:  ldloc.1
     IL_0016:  ceq
@@ -363,15 +338,11 @@ MyNum::Equals
     IL_0031:  ceq
     IL_0033:  ret
 
-  <hidden>
-
 MyNum::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  isinst MyNum
     IL_0006:  stloc.0
-
-  <hidden>
     IL_0007:  ldloc.0
     IL_0008:  brfalse.s IL_0012
 
@@ -384,8 +355,6 @@ MyNum::Equals
   <hidden>
     IL_0012:  ldc.i4.0
     IL_0013:  ret
-
-  <hidden>
 
 FromFloat@4::Invoke
   (4,66-4,79)  { Value = x }
@@ -436,8 +405,6 @@ T::CompareTo
     IL_002b:  ldc.i4.0
     IL_002c:  ret
 
-  <hidden>
-
 T::CompareTo
   <hidden>
     IL_0000:  ldarg.1
@@ -445,8 +412,6 @@ T::CompareTo
     IL_0006:  stloc.0
     IL_0007:  ldloc.0
     IL_0008:  stloc.1
-
-  <hidden>
     IL_0009:  ldarg.0
     IL_000a:  brfalse.s IL_0033
 
@@ -490,8 +455,6 @@ T::CompareTo
     IL_003d:  ldc.i4.0
     IL_003e:  ret
 
-  <hidden>
-
 T::GetHashCode
   <hidden>
     IL_0000:  ldarg.0
@@ -521,8 +484,6 @@ T::GetHashCode
   <hidden>
     IL_001e:  ldc.i4.0
     IL_001f:  ret
-
-  <hidden>
 
 T::Equals
   <hidden>
@@ -557,15 +518,11 @@ T::Equals
     IL_0020:  ceq
     IL_0022:  ret
 
-  <hidden>
-
 T::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  isinst T
     IL_0006:  stloc.0
-
-  <hidden>
     IL_0007:  ldloc.0
     IL_0008:  brfalse.s IL_0013
 
@@ -579,8 +536,6 @@ T::Equals
   <hidden>
     IL_0013:  ldc.i4.0
     IL_0014:  ret
-
-  <hidden>
 
 T::Invoke
   <hidden>
@@ -648,15 +603,11 @@ T::Equals
     IL_001c:  ceq
     IL_001e:  ret
 
-  <hidden>
-
 T::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  isinst T
     IL_0006:  stloc.0
-
-  <hidden>
     IL_0007:  ldloc.0
     IL_0008:  brfalse.s IL_0012
 
@@ -669,8 +620,6 @@ T::Equals
   <hidden>
     IL_0012:  ldc.i4.0
     IL_0013:  ret
-
-  <hidden>
 
 call2@9-1::Invoke
   <hidden>
@@ -700,21 +649,6 @@ call@9-2::Invoke
     IL_0013:  newobj NotSupportedException::.ctor
     IL_0018:  throw
 
-call@10-1::Invoke
-  (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x
-    IL_0000:  ldsfld @_instance
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  ldarg.1
-    IL_0008:  ldloca.s 1
-    IL_000a:  initobj 0x1b000023
-    IL_0010:  ldloc.1
-    IL_0011:  newobj .ctor
-    IL_0016:  ldarg.2
-    IL_0017:  tail.
-    IL_0019:  call InvokeFast
-    IL_001e:  ret
-
 Invoke@9-1::Invoke
   <hidden>
     IL_0000:  ldarg.1
@@ -728,21 +662,6 @@ Invoke@9-1::Invoke
     IL_000e:  ldstr "Dynamic invocation of FromFloat is not supported"
     IL_0013:  newobj NotSupportedException::.ctor
     IL_0018:  throw
-
-Invoke@10::Invoke
-  (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x
-    IL_0000:  ldsfld @_instance
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  ldarg.1
-    IL_0008:  ldloca.s 1
-    IL_000a:  initobj 0x1b00002a
-    IL_0010:  ldloc.1
-    IL_0011:  newobj .ctor
-    IL_0016:  ldarg.2
-    IL_0017:  tail.
-    IL_0019:  call InvokeFast
-    IL_001e:  ret
 
 call2@9-3::Invoke
   <hidden>
@@ -780,25 +699,6 @@ call@9-5::Invoke
     IL_0018:  call InvokeFast
     IL_001d:  ret
 
-call@10-4::Invoke
-  (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld fromFloat
-    IL_0006:  ldarg.0
-    IL_0007:  ldfld fromFloat0
-    IL_000c:  newobj .ctor
-    IL_0011:  stloc.0
-    IL_0012:  ldloc.0
-    IL_0013:  ldarg.1
-    IL_0014:  ldloca.s 1
-    IL_0016:  initobj 0x1b000033
-    IL_001c:  ldloc.1
-    IL_001d:  newobj .ctor
-    IL_0022:  ldarg.2
-    IL_0023:  tail.
-    IL_0025:  call InvokeFast
-    IL_002a:  ret
-
 Invoke@9-3::Invoke
   <hidden>
     IL_0000:  ldarg.1
@@ -817,6 +717,55 @@ Invoke@9-3::Invoke
     IL_0018:  call InvokeFast
     IL_001d:  ret
 
+call@10-1::Invoke
+  (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x
+    IL_0000:  ldsfld @_instance
+    IL_0005:  stloc.0
+    IL_0006:  ldloc.0
+    IL_0007:  ldarg.1
+    IL_0008:  ldloca.s 1
+    IL_000a:  initobj 0x1b00002c
+    IL_0010:  ldloc.1
+    IL_0011:  newobj .ctor
+    IL_0016:  ldarg.2
+    IL_0017:  tail.
+    IL_0019:  call InvokeFast
+    IL_001e:  ret
+
+Invoke@10::Invoke
+  (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x
+    IL_0000:  ldsfld @_instance
+    IL_0005:  stloc.0
+    IL_0006:  ldloc.0
+    IL_0007:  ldarg.1
+    IL_0008:  ldloca.s 1
+    IL_000a:  initobj 0x1b000031
+    IL_0010:  ldloc.1
+    IL_0011:  newobj .ctor
+    IL_0016:  ldarg.2
+    IL_0017:  tail.
+    IL_0019:  call InvokeFast
+    IL_001e:  ret
+
+call@10-4::Invoke
+  (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld fromFloat
+    IL_0006:  ldarg.0
+    IL_0007:  ldfld fromFloat0
+    IL_000c:  newobj .ctor
+    IL_0011:  stloc.0
+    IL_0012:  ldloc.0
+    IL_0013:  ldarg.1
+    IL_0014:  ldloca.s 1
+    IL_0016:  initobj 0x1b000035
+    IL_001c:  ldloc.1
+    IL_001d:  newobj .ctor
+    IL_0022:  ldarg.2
+    IL_0023:  tail.
+    IL_0025:  call InvokeFast
+    IL_002a:  ret
+
 Invoke@10-2::Invoke
   (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x
     IL_0000:  ldarg.0
@@ -826,7 +775,7 @@ Invoke@10-2::Invoke
     IL_000c:  ldloc.0
     IL_000d:  ldarg.1
     IL_000e:  ldloca.s 1
-    IL_0010:  initobj 0x1b00002a
+    IL_0010:  initobj 0x1b000031
     IL_0016:  ldloc.1
     IL_0017:  newobj .ctor
     IL_001c:  ldarg.2
@@ -862,19 +811,6 @@ call@9-8::Invoke
     IL_0013:  newobj NotSupportedException::.ctor
     IL_0018:  throw
 
-call@10-7::Invoke
-  (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x
-    IL_0000:  ldsfld @_instance
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  ldarg.1
-    IL_0008:  ldloc.1
-    IL_0009:  newobj .ctor
-    IL_000e:  ldarg.2
-    IL_000f:  tail.
-    IL_0011:  call InvokeFast
-    IL_0016:  ret
-
 result@9-1::Invoke
   <hidden>
     IL_0000:  ldarg.1
@@ -890,6 +826,19 @@ result@9-1::Invoke
     IL_0010:  tail.
     IL_0012:  call MyNum::FromFloat
     IL_0017:  ret
+
+call@10-7::Invoke
+  (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x
+    IL_0000:  ldsfld @_instance
+    IL_0005:  stloc.0
+    IL_0006:  ldloc.0
+    IL_0007:  ldarg.1
+    IL_0008:  ldloc.1
+    IL_0009:  newobj .ctor
+    IL_000e:  ldarg.2
+    IL_000f:  tail.
+    IL_0011:  call InvokeFast
+    IL_0016:  ret
 
 result@10::Invoke
   (10,50-10,86)  call2 (a, Unchecked.defaultof<'r>) x

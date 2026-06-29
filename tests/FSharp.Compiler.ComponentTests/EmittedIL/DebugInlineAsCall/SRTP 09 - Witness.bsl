@@ -11,29 +11,24 @@ let main _ =
 
 Test::check
   (2,33-2,48)  if b1 = b2 then
-    IL_0000:  nop
-
-  <hidden>
-    IL_0001:  ldarg.1
-    IL_0002:  stloc.0
-    IL_0003:  ldarg.2
-    IL_0004:  stloc.1
-    IL_0005:  ldloc.0
-    IL_0006:  ldloc.1
-    IL_0007:  call HashCompare::GenericEqualityIntrinsic
-    IL_000c:  brfalse.s IL_000f
+    IL_0000:  ldarg.1
+    IL_0001:  stloc.0
+    IL_0002:  ldarg.2
+    IL_0003:  stloc.1
+    IL_0004:  ldloc.0
+    IL_0005:  ldloc.1
+    IL_0006:  call HashCompare::GenericEqualityIntrinsic
+    IL_000b:  brfalse.s IL_000e
 
   (2,49-2,51)  ()
-    IL_000e:  ret
+    IL_000d:  ret
 
   (2,57-2,67)  failwith s
-    IL_000f:  ldarg.0
-    IL_0010:  stloc.2
-    IL_0011:  ldloc.2
-    IL_0012:  call Operators::Failure
-    IL_0017:  throw
-
-  <hidden>
+    IL_000e:  ldarg.0
+    IL_000f:  stloc.2
+    IL_0010:  ldloc.2
+    IL_0011:  call Operators::Failure
+    IL_0016:  throw
 
 Test::add
   (4,34-4,39)  x + y

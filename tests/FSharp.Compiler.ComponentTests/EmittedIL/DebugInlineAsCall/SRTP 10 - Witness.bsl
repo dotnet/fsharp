@@ -20,24 +20,19 @@ Test::main
     IL_000e:  stloc.0
 
   (14,5-14,32)  if result.Value = 3.14 then
-    IL_000f:  nop
-
-  <hidden>
-    IL_0010:  ldloc.0
-    IL_0011:  ldfld MyNum::Value@
-    IL_0016:  ldc.r8 3.140000
-    IL_001f:  ceq
-    IL_0021:  brfalse.s IL_0025
+    IL_000f:  ldloc.0
+    IL_0010:  ldfld MyNum::Value@
+    IL_0015:  ldc.r8 3.140000
+    IL_001e:  ceq
+    IL_0020:  brfalse.s IL_0024
 
   (14,33-14,34)  0
-    IL_0023:  ldc.i4.0
-    IL_0024:  ret
+    IL_0022:  ldc.i4.0
+    IL_0023:  ret
 
   (14,40-14,41)  1
-    IL_0025:  ldc.i4.1
-    IL_0026:  ret
-
-  <hidden>
+    IL_0024:  ldc.i4.1
+    IL_0025:  ret
 
 Test::<Invoke>__debug@13
   <hidden>
@@ -72,8 +67,6 @@ MyNum::CompareTo
     IL_0013:  ldarg.1
     IL_0014:  ldfld MyNum::Value@
     IL_0019:  stloc.2
-
-  <hidden>
     IL_001a:  ldloc.1
     IL_001b:  ldloc.2
     IL_001c:  clt
@@ -127,8 +120,6 @@ MyNum::CompareTo
     IL_0044:  ldc.i4.0
     IL_0045:  ret
 
-  <hidden>
-
 MyNum::CompareTo
   <hidden>
     IL_0000:  ldarg.1
@@ -136,8 +127,6 @@ MyNum::CompareTo
     IL_0006:  stloc.0
     IL_0007:  ldloc.0
     IL_0008:  stloc.1
-
-  <hidden>
     IL_0009:  ldarg.0
     IL_000a:  brfalse.s IL_004e
 
@@ -155,8 +144,6 @@ MyNum::CompareTo
     IL_001d:  ldloc.1
     IL_001e:  ldfld MyNum::Value@
     IL_0023:  stloc.s 4
-
-  <hidden>
     IL_0025:  ldloc.3
     IL_0026:  ldloc.s 4
     IL_0028:  clt
@@ -211,8 +198,6 @@ MyNum::CompareTo
     IL_0058:  ldc.i4.0
     IL_0059:  ret
 
-  <hidden>
-
 MyNum::GetHashCode
   <hidden>
     IL_0000:  ldarg.0
@@ -242,8 +227,6 @@ MyNum::GetHashCode
   <hidden>
     IL_0022:  ldc.i4.0
     IL_0023:  ret
-
-  <hidden>
 
 MyNum::Equals
   <hidden>
@@ -278,15 +261,11 @@ MyNum::Equals
     IL_0020:  ceq
     IL_0022:  ret
 
-  <hidden>
-
 MyNum::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  isinst MyNum
     IL_0006:  stloc.0
-
-  <hidden>
     IL_0007:  ldloc.0
     IL_0008:  brfalse.s IL_0013
 
@@ -300,8 +279,6 @@ MyNum::Equals
   <hidden>
     IL_0013:  ldc.i4.0
     IL_0014:  ret
-
-  <hidden>
 
 MyNum::Equals
   <hidden>
@@ -319,8 +296,6 @@ MyNum::Equals
     IL_000d:  ldarg.1
     IL_000e:  ldfld MyNum::Value@
     IL_0013:  stloc.1
-
-  <hidden>
     IL_0014:  ldloc.0
     IL_0015:  ldloc.1
     IL_0016:  ceq
@@ -359,15 +334,11 @@ MyNum::Equals
     IL_0031:  ceq
     IL_0033:  ret
 
-  <hidden>
-
 MyNum::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  isinst MyNum
     IL_0006:  stloc.0
-
-  <hidden>
     IL_0007:  ldloc.0
     IL_0008:  brfalse.s IL_0012
 
@@ -380,8 +351,6 @@ MyNum::Equals
   <hidden>
     IL_0012:  ldc.i4.0
     IL_0013:  ret
-
-  <hidden>
 
 FromFloat@4::Invoke
   (4,60-4,73)  { Value = x }

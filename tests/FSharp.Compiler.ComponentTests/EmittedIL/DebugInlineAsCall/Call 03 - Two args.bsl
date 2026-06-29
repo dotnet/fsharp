@@ -40,22 +40,17 @@ Test::main
     IL_0007:  stloc.0
 
   (9,5-9,18)  if i = 3 then
-    IL_0008:  nop
-
-  <hidden>
-    IL_0009:  ldloc.0
-    IL_000a:  ldc.i4.3
-    IL_000b:  bne.un.s IL_000f
+    IL_0008:  ldloc.0
+    IL_0009:  ldc.i4.3
+    IL_000a:  bne.un.s IL_000e
 
   (9,19-9,20)  0
-    IL_000d:  ldc.i4.0
-    IL_000e:  ret
+    IL_000c:  ldc.i4.0
+    IL_000d:  ret
 
   (9,26-9,27)  1
-    IL_000f:  ldc.i4.1
-    IL_0010:  ret
-
-  <hidden>
+    IL_000e:  ldc.i4.1
+    IL_000f:  ret
 
 Test::<add>__debug@8
   (4,5-4,10)  a + b

@@ -25,19 +25,14 @@ Test::main
     IL_000c:  stloc.0
 
   (8,5-8,18)  if i = 7 then
-    IL_000d:  nop
-
-  <hidden>
-    IL_000e:  ldloc.0
-    IL_000f:  ldc.i4.7
-    IL_0010:  bne.un.s IL_0014
+    IL_000d:  ldloc.0
+    IL_000e:  ldc.i4.7
+    IL_000f:  bne.un.s IL_0013
 
   (8,19-8,20)  0
-    IL_0012:  ldc.i4.0
-    IL_0013:  ret
+    IL_0011:  ldc.i4.0
+    IL_0012:  ret
 
   (8,26-8,27)  1
-    IL_0014:  ldc.i4.1
-    IL_0015:  ret
-
-  <hidden>
+    IL_0013:  ldc.i4.1
+    IL_0014:  ret

@@ -22,20 +22,15 @@ Test::main
     IL_000e:  stloc.0
 
   (9,5-9,25)  if v = 10.0<cm> then
-    IL_000f:  nop
-
-  <hidden>
-    IL_0010:  ldloc.0
-    IL_0011:  ldc.r8 10.000000
-    IL_001a:  ceq
-    IL_001c:  brfalse.s IL_0020
+    IL_000f:  ldloc.0
+    IL_0010:  ldc.r8 10.000000
+    IL_0019:  ceq
+    IL_001b:  brfalse.s IL_001f
 
   (9,26-9,27)  0
-    IL_001e:  ldc.i4.0
-    IL_001f:  ret
+    IL_001d:  ldc.i4.0
+    IL_001e:  ret
 
   (9,33-9,34)  1
-    IL_0020:  ldc.i4.1
-    IL_0021:  ret
-
-  <hidden>
+    IL_001f:  ldc.i4.1
+    IL_0020:  ret

@@ -1395,6 +1395,106 @@ let main _ =
         |> verifySequencePoints
 
     [<Fact>]
+    let ``Accessibility 08`` () =
+        FSharp """
+module Module
+
+type T() =
+    static member private PrivateMethod() = 1
+    static member inline private InlinePrivateMethod() = T.PrivateMethod()
+    static member inline PublicMethod() = T.InlinePrivateMethod()
+
+[<EntryPoint>]
+let main _ =
+    if T.PublicMethod() = 1 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``Accessibility 09`` () =
+        FSharp """
+module Module
+
+type T() =
+    member private this.PrivateMethod() = 1
+    member inline private this.InlinePrivateMethod() = this.PrivateMethod()
+    member inline this.PublicMethod() = this.InlinePrivateMethod()
+
+[<EntryPoint>]
+let main _ =
+    if T().PublicMethod() = 1 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``Accessibility 10`` () =
+        FSharp """
+module Module
+
+type T() =
+    static member internal InternalMethod() = 1
+    static member inline internal InlineInternalMethod() = T.InternalMethod()
+    static member inline PublicMethod() = T.InlineInternalMethod()
+
+[<EntryPoint>]
+let main _ =
+    if T.PublicMethod() = 1 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``Accessibility 11`` () =
+        FSharp """
+module Module
+
+type T() =
+    static let i = 1
+    static member inline private InlinePrivateMethod() = i
+    static member inline PublicMethod() = T.InlinePrivateMethod()
+
+[<EntryPoint>]
+let main _ =
+    if T.PublicMethod() = 1 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``Accessibility 12`` () =
+        FSharp """
+module Module
+
+type T() =
+    let i = 1
+    member inline private this.InlinePrivateMethod() = i
+    member inline this.PublicMethod() = this.InlinePrivateMethod()
+
+[<EntryPoint>]
+let main _ =
+    if T().PublicMethod() = 1 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
     let ``Resumable 01`` () =
         FSharp """
 open System.Threading.Tasks

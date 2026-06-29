@@ -56,22 +56,17 @@ Test::main
     IL_0006:  stloc.0
 
   (14,5-14,19)  if i = 42 then
-    IL_0007:  nop
-
-  <hidden>
-    IL_0008:  ldloc.0
-    IL_0009:  ldc.i4.s 42
-    IL_000b:  bne.un.s IL_000f
+    IL_0007:  ldloc.0
+    IL_0008:  ldc.i4.s 42
+    IL_000a:  bne.un.s IL_000e
 
   (14,20-14,21)  0
-    IL_000d:  ldc.i4.0
-    IL_000e:  ret
+    IL_000c:  ldc.i4.0
+    IL_000d:  ret
 
   (14,27-14,28)  1
-    IL_000f:  ldc.i4.1
-    IL_0010:  ret
-
-  <hidden>
+    IL_000e:  ldc.i4.1
+    IL_000f:  ret
 
 Test::<h>__debug@13
   (9,18-9,25)  g (f a)
@@ -107,8 +102,6 @@ S`1::Equals
     IL_001d:  ldc.i4.0
     IL_001e:  ret
 
-  <hidden>
-
 S`1::M
   (3,34-3,36)  ()
     IL_0000:  ret
@@ -135,8 +128,6 @@ S`1::Equals
   <hidden>
     IL_001c:  ldc.i4.0
     IL_001d:  ret
-
-  <hidden>
 
 h@5::Invoke
   (5,104-5,123)  Unchecked.defaultof

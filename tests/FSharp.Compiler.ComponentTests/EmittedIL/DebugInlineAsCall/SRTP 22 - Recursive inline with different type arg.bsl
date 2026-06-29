@@ -51,39 +51,34 @@ Test::main
     IL_000d:  stloc.0
 
   (14,5-14,18)  if y = 9 then
-    IL_000e:  nop
-
-  <hidden>
-    IL_000f:  ldloc.0
-    IL_0010:  ldc.i4.s 9
-    IL_0012:  bne.un.s IL_0016
+    IL_000e:  ldloc.0
+    IL_000f:  ldc.i4.s 9
+    IL_0011:  bne.un.s IL_0015
 
   (14,19-14,20)  0
-    IL_0014:  ldc.i4.0
-    IL_0015:  ret
+    IL_0013:  ldc.i4.0
+    IL_0014:  ret
 
   (14,26-14,27)  1
-    IL_0016:  ldc.i4.1
-    IL_0017:  ret
-
-  <hidden>
-
-Test::<sum>__debug@9-1
-  (6,36-6,69)  (T $ Unchecked.defaultof<'r>) i x
-    IL_0000:  call T::get_T
-    IL_0005:  ldc.i4.0
-    IL_0006:  call T::op_Dollar
-    IL_000b:  ldarg.0
-    IL_000c:  ldarg.1
-    IL_000d:  tail.
-    IL_000f:  call InvokeFast
-    IL_0014:  ret
+    IL_0015:  ldc.i4.1
+    IL_0016:  ret
 
 Test::<sum>__debug@13
   (6,36-6,69)  (T $ Unchecked.defaultof<'r>) i x
     IL_0000:  call T::get_T
     IL_0005:  ldnull
     IL_0006:  call Test::<op_Dollar>__debug@6
+    IL_000b:  ldarg.0
+    IL_000c:  ldarg.1
+    IL_000d:  tail.
+    IL_000f:  call InvokeFast
+    IL_0014:  ret
+
+Test::<sum>__debug@9-1
+  (6,36-6,69)  (T $ Unchecked.defaultof<'r>) i x
+    IL_0000:  call T::get_T
+    IL_0005:  ldc.i4.0
+    IL_0006:  call T::op_Dollar
     IL_000b:  ldarg.0
     IL_000c:  ldarg.1
     IL_000d:  tail.
@@ -119,15 +114,11 @@ T::CompareTo
     IL_000f:  ldc.i4.0
     IL_0010:  ret
 
-  <hidden>
-
 T::CompareTo
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  unbox.any T
     IL_0006:  stloc.0
-
-  <hidden>
     IL_0007:  ldarg.0
     IL_0008:  brfalse.s IL_0016
 
@@ -157,8 +148,6 @@ T::CompareTo
     IL_0020:  ldc.i4.0
     IL_0021:  ret
 
-  <hidden>
-
 T::GetHashCode
   <hidden>
     IL_0000:  ldarg.0
@@ -175,8 +164,6 @@ T::GetHashCode
   <hidden>
     IL_0009:  ldc.i4.0
     IL_000a:  ret
-
-  <hidden>
 
 T::Equals
   <hidden>
@@ -205,15 +192,11 @@ T::Equals
     IL_0011:  ceq
     IL_0013:  ret
 
-  <hidden>
-
 T::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  isinst T
     IL_0006:  stloc.0
-
-  <hidden>
     IL_0007:  ldloc.0
     IL_0008:  brfalse.s IL_0013
 
@@ -227,8 +210,6 @@ T::Equals
   <hidden>
     IL_0013:  ldc.i4.0
     IL_0014:  ret
-
-  <hidden>
 
 T::op_Dollar
   <hidden>
@@ -267,15 +248,11 @@ T::Equals
     IL_000d:  ceq
     IL_000f:  ret
 
-  <hidden>
-
 T::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  isinst T
     IL_0006:  stloc.0
-
-  <hidden>
     IL_0007:  ldloc.0
     IL_0008:  brfalse.s IL_0012
 
@@ -288,8 +265,6 @@ T::Equals
   <hidden>
     IL_0012:  ldc.i4.0
     IL_0013:  ret
-
-  <hidden>
 
 op_Dollar@9-2::Invoke
   (9,67-9,78)  sum (x + a)

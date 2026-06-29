@@ -69,11 +69,6 @@ foo@6::Invoke
     IL_000e:  ldnull
     IL_000f:  ret
 
-foo@6-1::Invoke
-  (6,47-6,49)  :
-    IL_0000:  ldnull
-    IL_0001:  ret
-
 foo@6-2::Invoke
   <hidden>
     IL_0000:  ldarg.1
@@ -87,11 +82,6 @@ foo@6-2::Invoke
     IL_000e:  ldnull
     IL_000f:  ret
 
-foo@6-3::Invoke
-  (6,47-6,49)  :
-    IL_0000:  ldnull
-    IL_0001:  ret
-
 main@6::Invoke
   <hidden>
     IL_0000:  ldarg.1
@@ -104,6 +94,16 @@ main@6::Invoke
   (6,93-6,95)  ()
     IL_000e:  ldnull
     IL_000f:  ret
+
+foo@6-1::Invoke
+  (6,47-6,49)  :
+    IL_0000:  ldnull
+    IL_0001:  ret
+
+foo@6-3::Invoke
+  (6,47-6,49)  :
+    IL_0000:  ldnull
+    IL_0001:  ret
 
 main@6-1::Invoke
   (6,47-6,49)  :

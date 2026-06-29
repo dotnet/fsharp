@@ -23,39 +23,18 @@ Test::main
     IL_0018:  stloc.0
 
   (11,5-11,25)  if t.Result = 3 then
-    IL_0019:  nop
-
-  <hidden>
-    IL_001a:  ldloc.0
-    IL_001b:  callvirt get_Result
-    IL_0020:  ldc.i4.3
-    IL_0021:  bne.un.s IL_0025
+    IL_0019:  ldloc.0
+    IL_001a:  callvirt get_Result
+    IL_001f:  ldc.i4.3
+    IL_0020:  bne.un.s IL_0024
 
   (11,26-11,27)  0
-    IL_0023:  ldc.i4.0
-    IL_0024:  ret
+    IL_0022:  ldc.i4.0
+    IL_0023:  ret
 
   (11,33-11,34)  1
-    IL_0025:  ldc.i4.1
-    IL_0026:  ret
-
-  <hidden>
-
-t@9-2::Invoke
-  <hidden>
-    IL_0000:  ldarg.1
-    IL_0001:  stloc.0
-
-  (9,9-9,21)  return x + y
-    IL_0002:  ldarg.0
-    IL_0003:  ldfld t@9-2::builder@
-    IL_0008:  ldarg.0
-    IL_0009:  ldfld t@9-2::x
-    IL_000e:  ldloc.0
-    IL_000f:  add
-    IL_0010:  tail.
-    IL_0012:  callvirt TaskBuilderBase::Return
-    IL_0017:  ret
+    IL_0024:  ldc.i4.1
+    IL_0025:  ret
 
 t@8-1::Invoke
   <hidden>
@@ -74,6 +53,22 @@ t@8-1::Invoke
     IL_001a:  tail.
     IL_001c:  call HighPriority::TaskBuilderBase.Bind
     IL_0021:  ret
+
+t@9-2::Invoke
+  <hidden>
+    IL_0000:  ldarg.1
+    IL_0001:  stloc.0
+
+  (9,9-9,21)  return x + y
+    IL_0002:  ldarg.0
+    IL_0003:  ldfld t@9-2::builder@
+    IL_0008:  ldarg.0
+    IL_0009:  ldfld t@9-2::x
+    IL_000e:  ldloc.0
+    IL_000f:  add
+    IL_0010:  tail.
+    IL_0012:  callvirt TaskBuilderBase::Return
+    IL_0017:  ret
 
 t@9::Invoke
   (7,9-7,36)  let! x = Task.FromResult(1)

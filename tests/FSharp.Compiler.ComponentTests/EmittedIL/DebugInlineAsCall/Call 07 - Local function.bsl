@@ -17,22 +17,17 @@ Test::main
     IL_000d:  stloc.1
 
   (6,5-6,19)  if i = 10 then
-    IL_000e:  nop
-
-  <hidden>
-    IL_000f:  ldloc.1
-    IL_0010:  ldc.i4.s 10
-    IL_0012:  bne.un.s IL_0016
+    IL_000e:  ldloc.1
+    IL_000f:  ldc.i4.s 10
+    IL_0011:  bne.un.s IL_0015
 
   (6,20-6,21)  0
-    IL_0014:  ldc.i4.0
-    IL_0015:  ret
+    IL_0013:  ldc.i4.0
+    IL_0014:  ret
 
   (6,27-6,28)  1
-    IL_0016:  ldc.i4.1
-    IL_0017:  ret
-
-  <hidden>
+    IL_0015:  ldc.i4.1
+    IL_0016:  ret
 
 double@4::Invoke
   (4,34-4,39)  x + x

@@ -106,8 +106,6 @@ S`1::Equals
     IL_001d:  ldc.i4.0
     IL_001e:  ret
 
-  <hidden>
-
 S`1::M
   (7,34-7,36)  ()
     IL_0000:  ret
@@ -134,8 +132,6 @@ S`1::Equals
   <hidden>
     IL_001c:  ldc.i4.0
     IL_001d:  ret
-
-  <hidden>
 
 h@9::Invoke
   (9,104-9,123)  Unchecked.defaultof

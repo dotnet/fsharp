@@ -98,8 +98,6 @@ S::Equals
     IL_001d:  ldc.i4.0
     IL_001e:  ret
 
-  <hidden>
-
 S::M
   (4,20-4,22)  ()
     IL_0000:  ret
@@ -126,8 +124,6 @@ S::Equals
   <hidden>
     IL_001c:  ldc.i4.0
     IL_001d:  ret
-
-  <hidden>
 
 T::.ctor
   (6,6-6,7)  T

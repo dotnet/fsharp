@@ -177,49 +177,6 @@ Aw::GetResult
     IL_0001:  ldfld Aw::value
     IL_0006:  ret
 
-wrap@20-4::Invoke
-  (20,47-20,68)  d3 <- (leftR, rightR)
-    IL_0000:  ldarg.1
-    IL_0001:  ldarg.0
-    IL_0002:  ldfld leftR
-    IL_0007:  ldarg.0
-    IL_0008:  ldfld rightR
-    IL_000d:  newobj .ctor
-    IL_0012:  stobj 0x1b000010
-    IL_0017:  ret
-
-wrap@19-3::Invoke
-  (20,36-20,69)  (fun d3 -> d3 <- (leftR, rightR))
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld leftR
-    IL_0006:  ldarg.1
-    IL_0007:  newobj .ctor
-    IL_000c:  ldftn Invoke
-    IL_0012:  newobj .ctor
-    IL_0017:  ret
-
-wrap@18-2::Invoke
-  (19,17-20,70)  bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR)))
-    IL_0000:  ldarg.1
-    IL_0001:  ldarg.0
-    IL_0002:  ldfld right
-    IL_0007:  ldarg.0
-    IL_0008:  ldfld leftR
-    IL_000d:  newobj .ctor
-    IL_0012:  call Test::bindDynamic
-    IL_0017:  nop
-    IL_0018:  ret
-
-wrap@17-1::Invoke
-  (18,28-20,71)  (fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR))))
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld right
-    IL_0006:  ldarg.1
-    IL_0007:  newobj .ctor
-    IL_000c:  ldftn Invoke
-    IL_0012:  newobj .ctor
-    IL_0017:  ret
-
 wrap@16::Invoke
   (17,9-20,72)  bindDynamic (&d, left, fun leftR -> Code<'T1 * 'T2>(fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR)))))
     IL_0000:  ldarg.1
@@ -231,63 +188,6 @@ wrap@16::Invoke
     IL_0012:  call Test::bindDynamic
     IL_0017:  nop
     IL_0018:  ret
-
-wrap@20-9::Invoke
-  (20,47-20,68)  d3 <- (leftR, rightR)
-    IL_0000:  ldarg.1
-    IL_0001:  ldarg.0
-    IL_0002:  ldfld leftR
-    IL_0007:  ldarg.0
-    IL_0008:  ldfld rightR
-    IL_000d:  newobj .ctor
-    IL_0012:  stobj 0x1b000010
-    IL_0017:  ret
-
-wrap@19-8::Invoke
-  (20,36-20,69)  (fun d3 -> d3 <- (leftR, rightR))
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld getResult
-    IL_0006:  ldarg.0
-    IL_0007:  ldfld getResult0
-    IL_000c:  ldarg.0
-    IL_000d:  ldfld leftR
-    IL_0012:  ldarg.1
-    IL_0013:  newobj .ctor
-    IL_0018:  ldftn Invoke
-    IL_001e:  newobj .ctor
-    IL_0023:  ret
-
-wrap@18-7::Invoke
-  (19,17-20,70)  bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR)))
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld getResult0
-    IL_0006:  ldarg.1
-    IL_0007:  ldarg.0
-    IL_0008:  ldfld right
-    IL_000d:  ldarg.0
-    IL_000e:  ldfld getResult
-    IL_0013:  ldarg.0
-    IL_0014:  ldfld getResult0
-    IL_0019:  ldarg.0
-    IL_001a:  ldfld leftR
-    IL_001f:  newobj .ctor
-    IL_0024:  call Test::bindDynamic$W
-    IL_0029:  nop
-    IL_002a:  ret
-
-wrap@17-6::Invoke
-  (18,28-20,71)  (fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR))))
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld getResult
-    IL_0006:  ldarg.0
-    IL_0007:  ldfld getResult0
-    IL_000c:  ldarg.0
-    IL_000d:  ldfld right
-    IL_0012:  ldarg.1
-    IL_0013:  newobj .ctor
-    IL_0018:  ldftn Invoke
-    IL_001e:  newobj .ctor
-    IL_0023:  ret
 
 wrap@16-5::Invoke
   (17,9-20,72)  bindDynamic (&d, left, fun leftR -> Code<'T1 * 'T2>(fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR)))))
@@ -307,26 +207,81 @@ wrap@16-5::Invoke
     IL_0029:  nop
     IL_002a:  ret
 
-code@20-4::Invoke
-  (20,47-20,68)  d3 <- (leftR, rightR)
+code@16::Invoke
+  (17,9-20,72)  bindDynamic (&d, left, fun leftR -> Code<'T1 * 'T2>(fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR)))))
     IL_0000:  ldarg.1
     IL_0001:  ldarg.0
-    IL_0002:  ldfld code@20-4::leftR
+    IL_0002:  ldfld code@16::left
     IL_0007:  ldarg.0
-    IL_0008:  ldfld code@20-4::rightR
-    IL_000d:  newobj .ctor
-    IL_0012:  stobj 0x1b00000b
-    IL_0017:  ret
+    IL_0008:  ldfld code@16::right
+    IL_000d:  newobj code@17-1::.ctor
+    IL_0012:  call Test::<bindDynamic>__debug@17
+    IL_0017:  nop
+    IL_0018:  ret
 
-code@19-3::Invoke
-  (20,36-20,69)  (fun d3 -> d3 <- (leftR, rightR))
+wrap@17-1::Invoke
+  (18,28-20,71)  (fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR))))
     IL_0000:  ldarg.0
-    IL_0001:  ldfld code@19-3::leftR
+    IL_0001:  ldfld right
     IL_0006:  ldarg.1
-    IL_0007:  newobj code@20-4::.ctor
-    IL_000c:  ldftn code@20-4::Invoke
+    IL_0007:  newobj .ctor
+    IL_000c:  ldftn Invoke
     IL_0012:  newobj .ctor
     IL_0017:  ret
+
+wrap@17-6::Invoke
+  (18,28-20,71)  (fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR))))
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld getResult
+    IL_0006:  ldarg.0
+    IL_0007:  ldfld getResult0
+    IL_000c:  ldarg.0
+    IL_000d:  ldfld right
+    IL_0012:  ldarg.1
+    IL_0013:  newobj .ctor
+    IL_0018:  ldftn Invoke
+    IL_001e:  newobj .ctor
+    IL_0023:  ret
+
+code@17-1::Invoke
+  (18,28-20,71)  (fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR))))
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld code@17-1::right
+    IL_0006:  ldarg.1
+    IL_0007:  newobj code@18-2::.ctor
+    IL_000c:  ldftn code@18-2::Invoke
+    IL_0012:  newobj .ctor
+    IL_0017:  ret
+
+wrap@18-2::Invoke
+  (19,17-20,70)  bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR)))
+    IL_0000:  ldarg.1
+    IL_0001:  ldarg.0
+    IL_0002:  ldfld right
+    IL_0007:  ldarg.0
+    IL_0008:  ldfld leftR
+    IL_000d:  newobj .ctor
+    IL_0012:  call Test::bindDynamic
+    IL_0017:  nop
+    IL_0018:  ret
+
+wrap@18-7::Invoke
+  (19,17-20,70)  bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR)))
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld getResult0
+    IL_0006:  ldarg.1
+    IL_0007:  ldarg.0
+    IL_0008:  ldfld right
+    IL_000d:  ldarg.0
+    IL_000e:  ldfld getResult
+    IL_0013:  ldarg.0
+    IL_0014:  ldfld getResult0
+    IL_0019:  ldarg.0
+    IL_001a:  ldfld leftR
+    IL_001f:  newobj .ctor
+    IL_0024:  call Test::bindDynamic$W
+    IL_0029:  nop
+    IL_002a:  ret
 
 code@18-2::Invoke
   (19,17-20,70)  bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR)))
@@ -340,24 +295,69 @@ code@18-2::Invoke
     IL_0017:  nop
     IL_0018:  ret
 
-code@17-1::Invoke
-  (18,28-20,71)  (fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR))))
+wrap@19-3::Invoke
+  (20,36-20,69)  (fun d3 -> d3 <- (leftR, rightR))
     IL_0000:  ldarg.0
-    IL_0001:  ldfld code@17-1::right
+    IL_0001:  ldfld leftR
     IL_0006:  ldarg.1
-    IL_0007:  newobj code@18-2::.ctor
-    IL_000c:  ldftn code@18-2::Invoke
+    IL_0007:  newobj .ctor
+    IL_000c:  ldftn Invoke
     IL_0012:  newobj .ctor
     IL_0017:  ret
 
-code@16::Invoke
-  (17,9-20,72)  bindDynamic (&d, left, fun leftR -> Code<'T1 * 'T2>(fun d2 -> bindDynamic (&d2, right, fun rightR -> Code<'T1 * 'T2>(fun d3 -> d3 <- (leftR, rightR)))))
+wrap@19-8::Invoke
+  (20,36-20,69)  (fun d3 -> d3 <- (leftR, rightR))
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld getResult
+    IL_0006:  ldarg.0
+    IL_0007:  ldfld getResult0
+    IL_000c:  ldarg.0
+    IL_000d:  ldfld leftR
+    IL_0012:  ldarg.1
+    IL_0013:  newobj .ctor
+    IL_0018:  ldftn Invoke
+    IL_001e:  newobj .ctor
+    IL_0023:  ret
+
+code@19-3::Invoke
+  (20,36-20,69)  (fun d3 -> d3 <- (leftR, rightR))
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld code@19-3::leftR
+    IL_0006:  ldarg.1
+    IL_0007:  newobj code@20-4::.ctor
+    IL_000c:  ldftn code@20-4::Invoke
+    IL_0012:  newobj .ctor
+    IL_0017:  ret
+
+wrap@20-4::Invoke
+  (20,47-20,68)  d3 <- (leftR, rightR)
     IL_0000:  ldarg.1
     IL_0001:  ldarg.0
-    IL_0002:  ldfld code@16::left
+    IL_0002:  ldfld leftR
     IL_0007:  ldarg.0
-    IL_0008:  ldfld code@16::right
-    IL_000d:  newobj code@17-1::.ctor
-    IL_0012:  call Test::<bindDynamic>__debug@17
-    IL_0017:  nop
-    IL_0018:  ret
+    IL_0008:  ldfld rightR
+    IL_000d:  newobj .ctor
+    IL_0012:  stobj 0x1b00001a
+    IL_0017:  ret
+
+wrap@20-9::Invoke
+  (20,47-20,68)  d3 <- (leftR, rightR)
+    IL_0000:  ldarg.1
+    IL_0001:  ldarg.0
+    IL_0002:  ldfld leftR
+    IL_0007:  ldarg.0
+    IL_0008:  ldfld rightR
+    IL_000d:  newobj .ctor
+    IL_0012:  stobj 0x1b00001a
+    IL_0017:  ret
+
+code@20-4::Invoke
+  (20,47-20,68)  d3 <- (leftR, rightR)
+    IL_0000:  ldarg.1
+    IL_0001:  ldarg.0
+    IL_0002:  ldfld code@20-4::leftR
+    IL_0007:  ldarg.0
+    IL_0008:  ldfld code@20-4::rightR
+    IL_000d:  newobj .ctor
+    IL_0012:  stobj 0x1b00000b
+    IL_0017:  ret

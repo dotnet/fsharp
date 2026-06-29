@@ -50,6 +50,21 @@ Program::<foo>__debug@12
     IL_000e:  ldsfld main@8-1::@_instance
     IL_0013:  ret
 
+foo@6::Invoke
+  (6,70-6,72)  ()
+    IL_0000:  ldnull
+    IL_0001:  ret
+
+foo@6-2::Invoke
+  (6,70-6,72)  ()
+    IL_0000:  ldnull
+    IL_0001:  ret
+
+main@6::Invoke
+  (6,70-6,72)  ()
+    IL_0000:  ldnull
+    IL_0001:  ret
+
 T::.ctor
   (6,6-6,7)  C
     IL_0000:  ldarg.0
@@ -63,28 +78,13 @@ T::M
     IL_0000:  ldc.i4.s 42
     IL_0002:  ret
 
-foo@6::Invoke
-  (6,70-6,72)  ()
-    IL_0000:  ldnull
-    IL_0001:  ret
-
 foo@8-1::Invoke
   (8,44-8,46)  
     IL_0000:  ldnull
     IL_0001:  ret
 
-foo@6-2::Invoke
-  (6,70-6,72)  ()
-    IL_0000:  ldnull
-    IL_0001:  ret
-
 foo@8-3::Invoke
   (8,44-8,46)  
-    IL_0000:  ldnull
-    IL_0001:  ret
-
-main@6::Invoke
-  (6,70-6,72)  ()
     IL_0000:  ldnull
     IL_0001:  ret
 

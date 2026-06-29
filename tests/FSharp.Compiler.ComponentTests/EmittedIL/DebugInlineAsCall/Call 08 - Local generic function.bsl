@@ -26,22 +26,17 @@ Test::main
     IL_002a:  stloc.1
 
   (6,5-6,18)  if i = 6 then
-    IL_002b:  nop
-
-  <hidden>
-    IL_002c:  ldloc.1
-    IL_002d:  ldc.i4.6
-    IL_002e:  bne.un.s IL_0032
+    IL_002b:  ldloc.1
+    IL_002c:  ldc.i4.6
+    IL_002d:  bne.un.s IL_0031
 
   (6,19-6,20)  0
-    IL_0030:  ldc.i4.0
-    IL_0031:  ret
+    IL_002f:  ldc.i4.0
+    IL_0030:  ret
 
   (6,26-6,27)  1
-    IL_0032:  ldc.i4.1
-    IL_0033:  ret
-
-  <hidden>
+    IL_0031:  ldc.i4.1
+    IL_0032:  ret
 
 apply@4TT::Invoke
   (4,51-4,54)  f x

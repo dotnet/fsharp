@@ -17,22 +17,17 @@ Test::main
     IL_000d:  stloc.1
 
   (6,5-6,18)  if i = 7 then
-    IL_000e:  nop
-
-  <hidden>
-    IL_000f:  ldloc.1
-    IL_0010:  ldc.i4.7
-    IL_0011:  bne.un.s IL_0015
+    IL_000e:  ldloc.1
+    IL_000f:  ldc.i4.7
+    IL_0010:  bne.un.s IL_0014
 
   (6,19-6,20)  0
-    IL_0013:  ldc.i4.0
-    IL_0014:  ret
+    IL_0012:  ldc.i4.0
+    IL_0013:  ret
 
   (6,26-6,27)  1
-    IL_0015:  ldc.i4.1
-    IL_0016:  ret
-
-  <hidden>
+    IL_0014:  ldc.i4.1
+    IL_0015:  ret
 
 Test::<op_PlusPlus>__debug@5
   (4,39-4,44)  x + y
