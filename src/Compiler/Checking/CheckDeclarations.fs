@@ -4093,6 +4093,11 @@ module EstablishTypeDefinitionCores =
         let envTmp, withEnvs =  
             (envInitial, withEntities) ||> MutRecShapes.computeEnvs 
               (fun envAbove (MutRecDefnsPhase2DataForModule (moduleTyAcc, moduleEntity)) ->  
+                  // In recursive scopes all siblings build their entities in Phase1A against the same
+                  // envInitial, so duplicate sibling-module names are not yet visible there. Detect
+                  // them here at the publish point, where envAbove's accumulator already contains
+                  // any earlier-published siblings. See https://github.com/dotnet/fsharp/issues/6694.
+                  CheckForDuplicateModule envAbove moduleEntity.DemangledModuleOrNamespaceName moduleEntity.Range
                   PublishModuleDefn cenv envAbove moduleEntity 
                   MakeInnerEnvWithAcc true envAbove moduleEntity.Id moduleTyAcc moduleEntity.ModuleOrNamespaceType.ModuleOrNamespaceKind)
               (fun envAbove _ -> envAbove)
