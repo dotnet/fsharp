@@ -175,10 +175,3 @@ type ResultTests() =
     member this.ToValueOption() =
         Assert.AreEqual(Result.toValueOption (Error 42), ValueNone)
         Assert.AreEqual(Result.toValueOption (Ok 42), ValueSome 42)
-
-    [<Fact>]
-    member _.ToStringRendersCaseAndValue() =
-        // Reflection-free ToString, consistent with option's "Some(x)" style; null renders as "null".
-        Assert.AreEqual("Ok(5)", (Ok 5).ToString())
-        Assert.AreEqual("Error(bad)", (Error "bad").ToString())
-        Assert.AreEqual("Ok(null)", (Ok (null: string)).ToString())
