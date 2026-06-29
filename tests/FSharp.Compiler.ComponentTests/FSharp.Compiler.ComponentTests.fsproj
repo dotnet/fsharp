@@ -18,6 +18,7 @@
     <!-- allow testing of static methods in interfaces on .NET 6  -->
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <RunSettingsFilePath>HotReload/HotReload.runsettings</RunSettingsFilePath>
 </PropertyGroup>
 
 <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -69,6 +70,36 @@
 	<Compile Include="Conformance\BasicGrammarElements\PropertyResolution\StaticPropertyResolution.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ModuleDefinitions\ModuleDefinitions.fs" />
+  </ItemGroup>
+
+  <!-- Hot reload relies on .NET Core-only APIs (MetadataUpdater.ApplyUpdate, AssemblyLoadContext),
+       so its tests build and run on .NET Core only, not .NET Framework. -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <Compile Include="HotReload\BaselineTests.fs" />
+    <Compile Include="HotReload\NameMapTests.fs" />
+    <Compile Include="HotReload\ClosureIdentityTests.fs" />
+    <Compile Include="HotReload\TestEnv.fs" />
+    <Compile Include="HotReload\TestHelpers.fs" />
+    <Compile Include="HotReload\DeltaEmitterTests.fs" />
+    <Compile Include="HotReload\PdbTests.fs" />
+    <Compile Include="HotReload\ApplyUpdateShared.fs" />
+    <Compile Include="HotReload\ApplyUpdateChild.fs" />
+    <Compile Include="HotReload\ApplyUpdateRunner.fs" />
+    <Compile Include="HotReload\ApplyUpdateConsole.fs" />
+    <Compile Include="HotReload\RuntimeIntegrationTests.fs" />
+    <Compile Include="HotReload\GenericEditTests.fs" />
+    <Compile Include="HotReload\AttributeEditTests.fs" />
+    <Compile Include="HotReload\ParameterEditTests.fs" />
+    <Compile Include="HotReload\NewTypeDefinitionTests.fs" />
+    <Compile Include="HotReload\DefinitionMapTests.fs" />
+    <Compile Include="HotReload\SymbolChangesTests.fs" />
+    <Compile Include="HotReload\MdvValidationTests.fs" />
+    <Compile Include="HotReload\EncMethodDebugInformationTests.fs" />
+    <Compile Include="HotReload\PdbCdiEmissionTests.fs" />
+    <Compile Include="HotReload\BaselineDeterminismTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="Conformance\BasicGrammarElements\NamespaceDeclGroups\NamespaceDeclGroups.fs" />
     <Compile Include="Conformance\BasicGrammarElements\NullRepresentations\NullRepresentations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />

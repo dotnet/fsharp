@@ -45,6 +45,16 @@ open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
+// Naming wrappers routed through here so hot reload naming replay stays enforceable.
+let private freshIlxName (g: TcGlobals) name m =
+    g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName(name, m)
+
+let private freshCoreName (g: TcGlobals) name m =
+    g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(name, m)
+
+let private nextIlxOrdinal (g: TcGlobals) name m =
+    g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly(name, m)
+
 let getEmptyStackGuard () = StackGuard("IlxAssemblyGenerator")
 
 let IsNonErasedTypar (tp: Typar) = not tp.IsErased
@@ -312,6 +322,11 @@ type cenv =
         /// Guard the stack and move to a new one if necessary
         mutable stackGuard: StackGuard
 
+        /// Hot reload side-channel state (closure naming and state machine resume point
+        /// recording), resolved once per GenerateCode run. None when no hook installed any
+        /// state, so the per-closure/per-state-machine call sites skip weak-table probes.
+        hotReloadNameState: ClosureNameAllocationState.ClosureNameStateHolder option
+
     }
 
     member cenv.options =
@@ -508,15 +523,19 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden (accessibility: Accessibility) re
 /// Indicates how type parameters are mapped to IL type variables
 [<NoEquality; NoComparison>]
 type TypeReprEnv
-    (reprs: Map<Stamp, uint16 * Typar>, count: int, templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInstantiation) option) =
+    (
+        reprs: Map<Stamp, uint16 * Typar>,
+        count: int,
+        templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInstantiation * ILBoxity) option
+    ) =
 
     static let empty = TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = None)
 
     /// Get the template replacement information used when using struct types for state machines based on a "template" struct
     member _.TemplateReplacement = templateReplacement
 
-    member _.WithTemplateReplacement(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst) =
-        TypeReprEnv(reprs, count, Some(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst))
+    member _.WithTemplateReplacement(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst, boxity) =
+        TypeReprEnv(reprs, count, Some(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst, boxity))
 
     member _.WithoutTemplateReplacement() = TypeReprEnv(reprs, count, None)
 
@@ -650,10 +669,10 @@ and GenNamedTyAppAux (cenv: cenv) m (tyenv: TypeReprEnv) ptrsOK tcref tinst =
     let g = cenv.g
 
     match tyenv.TemplateReplacement with
-    | Some(tcref2, ilCloTyRef, cloFreeTyvars, _) when tyconRefEq g tcref tcref2 ->
+    | Some(tcref2, ilCloTyRef, cloFreeTyvars, _, boxity) when tyconRefEq g tcref tcref2 ->
         let cloInst = List.map mkTyparTy cloFreeTyvars
         let ilTypeInst = GenTypeArgsAux cenv m tyenv cloInst
-        mkILValueTy ilCloTyRef ilTypeInst
+        mkILNamedTy boxity ilCloTyRef ilTypeInst
     | _ ->
         let tinst = DropErasedTyargs tinst
         // See above note on ptrsOK
@@ -874,23 +893,19 @@ let GenFieldSpecForStaticField (isInteractive, g: TcGlobals, ilContainerTy, vspe
     elif g.realsig then
         assert (g.CompilerGlobalState |> Option.isSome)
 
-        mkILFieldSpecInTy (
-            ilContainerTy,
-            CompilerGeneratedName(g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName(nm, m)),
-            ilTy
-        )
+        mkILFieldSpecInTy (ilContainerTy, CompilerGeneratedName(freshIlxName g nm m), ilTy)
     else
         let fieldName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
-            g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName(nm, m)
+            freshIlxName g nm m
 
         let ilFieldContainerTy = mkILTyForCompLoc (CompLocForInitClass cloc)
         mkILFieldSpecInTy (ilFieldContainerTy, fieldName, ilTy)
 
 let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
     match tyenv.TemplateReplacement with
-    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when tyconRefEq cenv.g rfref.TyconRef tcref2 ->
+    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst, boxity) when tyconRefEq cenv.g rfref.TyconRef tcref2 ->
         // Fixup references to the fields of a struct machine template
         //     templateStructTy = ResumableStateMachine<TaskStateMachineData<SomeType['FreeTyVars]>
         //     templateTyconRef = ResumableStateMachine<'Data>
@@ -903,7 +918,7 @@ let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
         let ilCloTy =
             let cloInst = List.map mkTyparTy cloFreeTyvars
             let ilTypeInst = GenTypeArgsAux cenv m tyenv cloInst
-            mkILValueTy ilCloTyRef ilTypeInst
+            mkILNamedTy boxity ilCloTyRef ilTypeInst
 
         let tyenvinner = TypeReprEnv.Empty.ForTypars cloFreeTyvars
 
@@ -1363,9 +1378,9 @@ let RemoveTemplateReplacement eenv =
         tyenv = eenv.tyenv.WithoutTemplateReplacement()
     }
 
-let AddTemplateReplacement eenv (tcref, ftyvs, ilTy, inst) =
+let AddTemplateReplacement eenv (tcref, ftyvs, ilTy, inst, boxity) =
     { eenv with
-        tyenv = eenv.tyenv.WithTemplateReplacement(tcref, ftyvs, ilTy, inst)
+        tyenv = eenv.tyenv.WithTemplateReplacement(tcref, ftyvs, ilTy, inst, boxity)
     }
 
 let AddStorageForLocalWitness eenv (w, s) =
@@ -2419,8 +2434,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
             "rawDataValueTypeGenerator",
             (fun (cloc, size) ->
 
-                let unique =
-                    g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@T", cloc.Range)
+                let unique = nextIlxOrdinal g "@T" cloc.Range
 
                 let name = CompilerGeneratedName $"T{unique}_{size}Bytes" // Type names ending ...$T<unique>_37Bytes
 
@@ -2888,8 +2902,7 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (w
     else
         let vtspec = cgbuf.mgbuf.GenerateRawDataValueType(eenv.cloc, bytes.Length)
 
-        let unique =
-            g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@field", eenv.cloc.Range)
+        let unique = nextIlxOrdinal g "@field" eenv.cloc.Range
 
         let ilFieldName = CompilerGeneratedName $"field{unique}"
         let fty = ILType.Value vtspec
@@ -3126,7 +3139,15 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 true
             | None ->
 
-                let smResult = LowerStateMachineExpr cenv.g eenv.resumableCodeDefinitions expr
+                // Resume points are only needed by hot reload baseline-capture compiles
+                // (the EnC State Machine State Map); skip collecting them otherwise.
+                let collectResumptionPoints =
+                    match cenv.hotReloadNameState with
+                    | Some hotReloadNameState -> hotReloadNameState.IsResumePointRecordingActive
+                    | None -> false
+
+                let smResult =
+                    LowerStateMachineExpr cenv.g eenv.resumableCodeDefinitions collectResumptionPoints expr
 
                 match smResult with
                 | LoweredStateMachineResult.Lowered res ->
@@ -4121,8 +4142,27 @@ and GenSetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, e2, m) sequel =
     CG.EmitInstr cgbuf (pop 2) Push0 (mkStData (cuspec, idx, n))
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
+// Hot reload: a class state machine threads its 'this' as the original
+// byref<ResumableStateMachine<_>> value, but the emitted state-machine type is a reference
+// type. The receiver therefore evaluates to a byref to a slot holding the object reference,
+// so the object reference must be loaded before the field is accessed. This is a no-op for
+// struct state machines and for all ordinary field accesses (only fires when an AsObject
+// template replacement is active and the receiver is itself a byref).
+and GenStateMachineByrefThisDeref cenv cgbuf eenv (e, f, tyargs, m) =
+    match eenv.tyenv.TemplateReplacement with
+    | Some(_, _, _, _, ILBoxity.AsObject) ->
+        let fspec = GenRecdFieldRef m cenv eenv.tyenv f tyargs
+
+        if
+            fspec.DeclaringType.Boxity = ILBoxity.AsObject
+            && isByrefTy cenv.g (tyOfExpr cenv.g e)
+        then
+            CG.EmitInstr cgbuf (pop 1) (Push [ fspec.DeclaringType ]) (mkNormalLdobj fspec.DeclaringType)
+    | _ -> ()
+
 and GenGetRecdFieldAddr cenv cgbuf eenv (e, f, tyargs, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
+    GenStateMachineByrefThisDeref cenv cgbuf eenv (e, f, tyargs, m)
     let fref = GenRecdFieldRef m cenv eenv.tyenv f tyargs
     CG.EmitInstr cgbuf (pop 1) (Push [ ILType.Byref fref.ActualType ]) (I_ldflda fref)
     GenSequel cenv eenv.cloc cgbuf sequel
@@ -4134,11 +4174,13 @@ and GenGetStaticFieldAddr cenv cgbuf eenv (f, tyargs, m) sequel =
 
 and GenGetRecdField cenv cgbuf eenv (e, f, tyargs, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
+    GenStateMachineByrefThisDeref cenv cgbuf eenv (e, f, tyargs, m)
     GenFieldGet false cenv cgbuf eenv (f, tyargs, m)
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenSetRecdField cenv cgbuf eenv (e1, f, tyargs, e2, m) sequel =
     GenExpr cenv cgbuf eenv e1 Continue
+    GenStateMachineByrefThisDeref cenv cgbuf eenv (e1, f, tyargs, m)
     GenExpr cenv cgbuf eenv e2 Continue
     GenFieldStore false cenv cgbuf eenv (f, tyargs, m) sequel
 
@@ -4622,7 +4664,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                             let locName =
                                 // Ensure that we have an g.CompilerGlobalState
                                 assert (g.CompilerGlobalState |> Option.isSome)
-                                g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("arg", m), ilTy, false
+                                freshIlxName g "arg" m, ilTy, false
 
                             let loc, _realloc, eenv = AllocLocal cenv cgbuf eenv true locName scopeMarks
                             GenExpr cenv cgbuf eenv laterArg Continue
@@ -4959,13 +5001,7 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resultTy, spTry) =
             assert (cenv.g.CompilerGlobalState |> Option.isSome)
 
             let whereToSave, _realloc, eenvinner =
-                AllocLocal
-                    cenv
-                    cgbuf
-                    eenvinner
-                    true
-                    (cenv.g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("tryres", m), ilResultTy, false)
-                    (startTryMark, endTryMark)
+                AllocLocal cenv cgbuf eenvinner true (freshIlxName cenv.g "tryres" m, ilResultTy, false) (startTryMark, endTryMark)
 
             Some(whereToSave, ilResultTy), eenvinner
 
@@ -5240,8 +5276,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            let vName =
-                g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("endLoop", m)
+            let vName = freshIlxName g "endLoop" m
 
             let v, _realloc, eenvinner =
                 AllocLocal cenv cgbuf eenvinner true (vName, g.ilg.typ_Int32, false) (start, finish)
@@ -5864,13 +5899,7 @@ and GenDefaultValue cenv cgbuf eenv (ty, m) =
                     // Ensure that we have an g.CompilerGlobalState
                     assert (g.CompilerGlobalState |> Option.isSome)
 
-                    AllocLocal
-                        cenv
-                        cgbuf
-                        eenv
-                        true
-                        (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("default", m), ilTy, false)
-                        scopeMarks
+                    AllocLocal cenv cgbuf eenv true (freshIlxName g "default" m, ilTy, false) scopeMarks
                 // We can normally rely on .NET IL zero-initialization of the temporaries
                 // we create to get zero values for struct types.
                 //
@@ -6249,12 +6278,29 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                              thisVars,
                              (moveNextThisVar, moveNextBody),
                              (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody),
-                             (afterCodeThisVar, afterCodeBody))) =
+                             (afterCodeThisVar, afterCodeBody),
+                             resumptionPoints)) =
         res
 
     let m = moveNextBody.Range
     let g = cenv.g
     let amap = cenv.amap
+
+    // Hot reload: optionally emit the resumable state machine as a reference type (class)
+    // instead of a struct, so that adding a suspension point becomes an
+    // AddInstanceFieldToExistingType runtime edit rather than a forbidden value-type
+    // re-layout. This generalizes Roslyn's struct->class flip under EnC to the
+    // resumable-code substrate (task / taskSeq / user resumable CEs). Gated for now by an
+    // env var; wired to the hot-reload codegen flag once the class path is validated.
+    let emitStateMachineAsClass =
+        g.emitHotReloadClassStateMachines
+        || FSharp.Compiler.EnvironmentHelpers.isEnvVarTruthy "FSHARP_HOTRELOAD_CLASS_STATEMACHINES"
+
+    let stateMachineBoxity =
+        if emitStateMachineAsClass then
+            ILBoxity.AsObject
+        else
+            ILBoxity.AsValue
 
     let stateVarsSet =
         stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder
@@ -6280,7 +6326,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             eenvouter
             |> AddStorageForLocalVals g [ (moveNextThisVar, Local(0, false, None)) ]
 
-        GetIlxClosureInfo cenv m ILBoxity.AsValue false false (mkLocalValRef moveNextThisVar :: thisVars) eenvouter moveNextBody
+        GetIlxClosureInfo cenv m stateMachineBoxity false false (mkLocalValRef moveNextThisVar :: thisVars) eenvouter moveNextBody
 
     let cloFreeVars = cloinfo.cloFreeVars
 
@@ -6288,7 +6334,16 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let ilCloGenericFormals = cloinfo.cloILGenericParams
     let ilCloGenericActuals = cloinfo.cloSpec.GenericArgs
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
-    let ilCloTy = mkILValueTy ilCloTypeRef ilCloGenericActuals
+    let ilCloTy = mkILNamedTy stateMachineBoxity ilCloTypeRef ilCloGenericActuals
+
+    // Hot reload: record the state machine's resume points against the
+    // emitted struct type name so the fsc emit path can persist them as the EnC State
+    // Machine State Map CDI rows. No state installed (flag-off and non-session
+    // compiles) -> strict no-op, byte-identical output, no weak-table probe.
+    do
+        match cenv.hotReloadNameState with
+        | Some hotReloadNameState -> hotReloadNameState.RecordResumePoints(ilCloTypeRef.FullName, resumptionPoints |> List.map fst)
+        | None -> ()
 
     // The closure implements what ever interfaces the template implements.
     let interfaceTys =
@@ -6297,13 +6352,17 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let ilInterfaceTys =
         List.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create) interfaceTys
 
-    let super = g.iltyp_ValueType
+    let super =
+        if emitStateMachineAsClass then
+            g.ilg.typ_Object
+        else
+            g.iltyp_ValueType
 
     let templateTyconRef, templateTypeArgs = destAppTy g templateStructTy
     let templateTypeInst = mkTyconRefInst templateTyconRef templateTypeArgs
 
     let eenvinner =
-        AddTemplateReplacement eenvinner (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
+        AddTemplateReplacement eenvinner (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst, stateMachineBoxity)
 
     // In MoveNext we're relying on default initialization of locals, so force it in spite of the presence of any SkipLocalsInit
     let eenvinner = ForceInitLocals eenvinner
@@ -6408,7 +6467,46 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 let sequel = if retTy.IsNone then discardAndReturnVoid else Return
 
                 let ilCode =
-                    CodeGenMethodForExpr cenv cgbuf.mgbuf ([], imethName, eenvinner, 1 + argVals.Length, None, bodyR, sequel)
+                    if emitStateMachineAsClass then
+                        // Class state machine: spill the object-reference 'this' (arg 0) into a
+                        // byref local so the byref-typed state-machine 'this' loads consistently
+                        // as byref<class>. Field access through it is dereferenced by
+                        // GenStateMachineByrefThisDeref; '&sm' loads the byref directly.
+                        let _, code =
+                            CodeGenMethod
+                                cenv
+                                cgbuf.mgbuf
+                                ([],
+                                 imethName,
+                                 { eenvinner with exitSequel = sequel },
+                                 1 + argVals.Length,
+                                 None,
+                                 (fun cgbuf eenv ->
+                                     LocalScope "smref" cgbuf (fun scopeMarks ->
+                                         let smRefIdx, _, _ =
+                                             AllocLocal
+                                                 cenv
+                                                 cgbuf
+                                                 eenv
+                                                 true
+                                                 (freshIlxName g "smref" m, ILType.Byref ilCloTy, false)
+                                                 scopeMarks
+
+                                         CG.EmitInstr cgbuf (pop 0) (Push [ ILType.Byref ilCloTy ]) (I_ldarga 0us)
+                                         CG.EmitInstr cgbuf (pop 1) (Push []) (I_stloc(uint16 smRefIdx))
+
+                                         let eenv =
+                                             eenv
+                                             |> AddStorageForLocalVals
+                                                 g
+                                                 (thisVals |> List.map (fun v -> (v.Deref, Local(smRefIdx, false, None))))
+
+                                         GenExpr cenv cgbuf eenv bodyR sequel)),
+                                 bodyR.Range)
+
+                        code
+                    else
+                        CodeGenMethodForExpr cenv cgbuf.mgbuf ([], imethName, eenvinner, 1 + argVals.Length, None, bodyR, sequel)
 
                 let ilParams =
                     (ilArgTys, argVals)
@@ -6513,6 +6611,13 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         |> mkILCustomAttrs
         |> storeILCustomAttrs
 
+    // A class state machine needs a parameterless constructor for 'newobj'; a struct does not.
+    let ctorDefs =
+        if emitStateMachineAsClass then
+            [ mkILNonGenericEmptyCtor (g.ilg.typ_Object, None, None) ]
+        else
+            []
+
     let cloTypeDef =
         ILTypeDef(
             name = ilCloTypeRef.Name,
@@ -6523,7 +6628,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             fields = mkILFields fdefs,
             events = emptyILEvents,
             properties = emptyILProperties,
-            methods = mkILMethods mdefs,
+            methods = mkILMethods (ctorDefs @ mdefs),
             methodImpls = mkILMethodImpls mimpls,
             nestedTypes = emptyILTypeDefs,
             implements = ilInterfaceTys,
@@ -6543,63 +6648,70 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
     LocalScope "machine" cgbuf (fun scopeMarks ->
         let eenvouter =
-            AddTemplateReplacement eenvouter (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
+            AddTemplateReplacement eenvouter (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst, stateMachineBoxity)
 
         let ilMachineAddrTy = ILType.Byref ilCloTy
 
         // The local for the state machine
         let locIdx, realloc, _ =
-            AllocLocal
-                cenv
-                cgbuf
-                eenvouter
-                true
-                (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("machine", m), ilCloTy, false)
-                scopeMarks
+            AllocLocal cenv cgbuf eenvouter true (freshIlxName g "machine" m, ilCloTy, false) scopeMarks
 
         // The local for the state machine address
         let locIdx2, _realloc2, _ =
-            AllocLocal
-                cenv
-                cgbuf
-                eenvouter
-                true
-                (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName(afterCodeThisVar.DisplayName, m),
-                 ilMachineAddrTy,
-                 false)
-                scopeMarks
+            AllocLocal cenv cgbuf eenvouter true (freshIlxName g afterCodeThisVar.DisplayName m, ilMachineAddrTy, false) scopeMarks
 
+        // Bind the AfterCode 'this' to the machine's byref address local (locIdx2). For a
+        // struct this is a byref to the value; for a class it is a byref to the slot holding
+        // the object reference. Field access through it is dereferenced by
+        // GenStateMachineByrefThisDeref under class mode; '&sm' (e.g. MethodBuilder.Start)
+        // loads the byref directly.
         let eenvouter =
             eenvouter
             |> AddStorageForLocalVals g [ (afterCodeThisVar, Local(locIdx2, realloc, None)) ]
 
-        // Zero-initialize the machine
-        EmitInitLocal cgbuf ilCloTy locIdx
+        // Allocate the machine: a struct is zero-initialized in place; a class state
+        // machine (hot reload) is allocated with newobj. The address-of-machine local
+        // then carries a byref to the machine in both cases (used by the AfterCode body).
+        if emitStateMachineAsClass then
+            let ctorSpec = mkILCtorMethSpecForTy (ilCloTy, [])
+            CG.EmitInstr cgbuf (pop 0) (Push [ ilCloTy ]) (I_newobj(ctorSpec, None))
+            CG.EmitInstr cgbuf (pop 1) (Push []) (I_stloc(uint16 locIdx))
+        else
+            EmitInitLocal cgbuf ilCloTy locIdx
 
         // Initialize the address-of-machine local
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca(uint16 locIdx))
         CG.EmitInstr cgbuf (pop 1) (Push []) (I_stloc(uint16 locIdx2))
+
+        // Push the receiver for a captured-variable field store. A class stores into the
+        // object reference directly; a struct stores via the machine's byref address.
+        let emitMachineFieldStoreReceiver () =
+            if emitStateMachineAsClass then
+                CG.EmitInstr cgbuf (pop 0) (Push [ ilCloTy ]) (I_ldloc(uint16 locIdx))
+            else
+                CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
 
         // Initialize witness closure variables (these come first in ilCloAllFreeVars)
         let nWitnesses = cloinfo.cloWitnessInfos.Length
 
         for i in 0 .. nWitnesses - 1 do
             let ilv = cloinfo.ilCloAllFreeVars.[i]
-            CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
+            emitMachineFieldStoreReceiver ()
             GenWitnessArgFromWitnessInfo cenv cgbuf eenvouter m cloinfo.cloWitnessInfos.[i]
             CG.EmitInstr cgbuf (pop 2) (Push []) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
 
         // Initialize the regular closure variables (skip witness entries in ilCloAllFreeVars)
         for fv, ilv in Seq.zip cloFreeVars (cloinfo.ilCloAllFreeVars |> Seq.skip nWitnesses) do
             if stateVarsSet.Contains fv then
-                // zero-initialize the state var
-                if realloc then
-                    CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
+                // zero-initialize the state var (only needed for a reused struct local; a
+                // freshly newobj'd class already has zeroed fields)
+                if realloc && not emitStateMachineAsClass then
+                    emitMachineFieldStoreReceiver ()
                     GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
                     CG.EmitInstr cgbuf (pop 2) (Push []) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
             else
                 // initialize the captured var
-                CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloc(uint16 locIdx2))
+                emitMachineFieldStoreReceiver ()
                 GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
                 CG.EmitInstr cgbuf (pop 2) (Push []) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
 
@@ -7200,7 +7312,36 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let cloName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            let compilerGlobalState = g.CompilerGlobalState.Value
+
+            // The replay-map slot is consumed UNCONDITIONALLY (GetUniqueCompilerGeneratedName
+            // memoizes per stamp, so exactly one slot per closure): other synthesized names
+            // sharing the same basic name then keep their baseline replay positions even when
+            // an occurrence-keyed override below picks a different name for this closure.
+            let replayName =
+                compilerGlobalState.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+
+            // Hot reload closure mapping: in a session's delta compile the emit
+            // hook runs the occurrence-keyed allocator before lowering and installs a
+            // stamp -> assigned-name table; consult it FIRST so surviving closures reuse
+            // their baseline class names verbatim and added closures get generation-suffixed
+            // names. No state installed (flag-off, non-session compiles, or fail-closed
+            // members) -> existing sequence-replay behavior, byte-identical, and no
+            // side-channel traffic (the holder was resolved once per codegen run).
+            match cenv.hotReloadNameState with
+            | None -> replayName
+            | Some hotReloadNameState ->
+                let cloName =
+                    match hotReloadNameState.TryGetAssignedName uniq with
+                    | Some assignedName -> assignedName
+                    | None -> replayName
+
+                // Baseline capture: record the lambda stamp -> emitted closure type name so the
+                // fsc emit path can join it with the typed-tree lambda occurrence extraction of
+                // the same tree (the stamp bridge documented in docs/hot-reload-closure-mapping.md).
+                // No recorder begun -> strict no-op.
+                hotReloadNameState.Record(uniq, cloName)
+                cloName
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -7221,7 +7362,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let opts =
             match eenv.tyenv.TemplateReplacement with
             | None -> opts
-            | Some(tcref, _, typars, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
+            | Some(tcref, _, typars, _, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
 
         accFreeInExpr
             opts
@@ -9309,7 +9450,7 @@ and GenParams
                         if takenNames.Contains(id.idText) then
                             // Ensure that we have an g.CompilerGlobalState
                             assert (g.CompilerGlobalState |> Option.isSome)
-                            g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(id.idText, id.idRange)
+                            freshCoreName g id.idText id.idRange
                         else
                             id.idText
 
@@ -10378,13 +10519,7 @@ and EmitSaveStack cenv cgbuf eenv m scopeMarks =
                 // Ensure that we have an g.CompilerGlobalState
                 assert (cenv.g.CompilerGlobalState |> Option.isSome)
 
-                AllocLocal
-                    cenv
-                    cgbuf
-                    eenv
-                    true
-                    (cenv.g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("spill", m), ty, false)
-                    scopeMarks
+                AllocLocal cenv cgbuf eenv true (freshIlxName cenv.g "spill" m, ty, false) scopeMarks
 
             idx, eenv)
 
@@ -12641,6 +12776,46 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         resumableCodeDefinitions = ValMap<_>.Empty
     }
 
+[<NoEquality; NoComparison>]
+/// <summary>Captures the subset of <see cref="IlxGenEnv"/> that must be replayed to regenerate identical IL during hot reload.</summary>
+type IlxGenEnvSnapshot =
+    {
+        Tyenv: TypeReprEnv
+        SigToImplRemapInfo: (Remap * SignatureHidingInfo) list
+        Imports: ILDebugImports option
+        ValsInScope: ValMap<InterruptibleLazy<ValStorage>>
+        WitnessesInScope: TraitWitnessInfoHashMap<ValStorage>
+        SuppressWitnesses: bool
+        InnerVals: (ValRef * (BranchCallItem * Mark)) list
+        LetBoundVars: ValRef list
+        LiveLocals: IntMap<unit>
+        WithinSeh: bool
+        IsInLoop: bool
+        InitLocals: bool
+        DelayCodeGen: bool
+        ExitSequel: sequel
+        DelayedFileGenReverse: list<(unit -> unit)[]>
+    }
+
+let snapshotIlxGenEnv eenv : IlxGenEnvSnapshot =
+    {
+        Tyenv = eenv.tyenv
+        SigToImplRemapInfo = eenv.sigToImplRemapInfo
+        Imports = eenv.imports
+        ValsInScope = eenv.valsInScope
+        WitnessesInScope = eenv.witnessesInScope
+        SuppressWitnesses = eenv.suppressWitnesses
+        InnerVals = eenv.innerVals
+        LetBoundVars = eenv.letBoundVars
+        LiveLocals = eenv.liveLocals
+        WithinSeh = eenv.withinSEH
+        IsInLoop = eenv.isInLoop
+        InitLocals = eenv.initLocals
+        DelayCodeGen = eenv.delayCodeGen
+        ExitSequel = eenv.exitSequel
+        DelayedFileGenReverse = eenv.delayedFileGenReverse
+    }
+
 type IlxGenResults =
     {
         ilTypeDefs: ILTypeDef list
@@ -12649,6 +12824,7 @@ type IlxGenResults =
         topAssemblyAttrs: Attribs
         permissionSets: ILSecurityDecl list
         quotationResourceInfo: (ILTypeRef list * byte[]) list
+        ilxGenEnvSnapshot: IlxGenEnvSnapshot option
     }
 
 let private GenerateResourcesForQuotations reflectedDefinitions cenv =
@@ -12692,6 +12868,17 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
 
     use _ = UseBuildPhase BuildPhase.IlxGen
     let g = cenv.g
+
+    // Hot reload side-channel state for this codegen run, resolved from the weak
+    // table once so the per-closure and per-state-machine call sites consult a plain
+    // field. Compiles that never installed state (flag-off, no emit hook) resolve
+    // None and pay nothing per closure.
+    let cenv =
+        { cenv with
+            hotReloadNameState =
+                g.CompilerGlobalState
+                |> Option.bind (fun compilerGlobalState -> ClosureNameAllocationState.tryGetClosureNameState (compilerGlobalState :> obj))
+        }
 
     // Generate the implementations into the mgbuf
     let mgbuf = AssemblyBuilder(cenv, anonTypeTable)
@@ -12744,6 +12931,13 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
         topAssemblyAttrs = topAssemblyAttrs
         permissionSets = permissionSets
         quotationResourceInfo = quotationResourceInfo
+        // Snapshot the final IlxGen environment only for hot reload baseline-capture
+        // compiles (the emit hook begins closure-name recording before codegen runs);
+        // ordinary compiles must not retain valsInScope/witness maps past codegen.
+        ilxGenEnvSnapshot =
+            match cenv.hotReloadNameState with
+            | Some hotReloadNameState when hotReloadNameState.IsClosureNameRecordingActive -> Some(snapshotIlxGenEnv eenv)
+            | _ -> None
     }
 
 //-------------------------------------------------------------------------
@@ -12894,6 +13088,7 @@ type IlxAssemblyGenerator(amap: ImportMap, g: TcGlobals, tcVal: ConstraintSolver
             optimizeDuringCodeGen = (fun _flag expr -> expr)
             stackGuard = getEmptyStackGuard ()
             delayedGenMethods = Queue()
+            hotReloadNameState = None
         }
 
     /// Register a set of referenced assemblies with the ILX code generator

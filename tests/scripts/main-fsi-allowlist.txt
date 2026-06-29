@@ -1,0 +1,12 @@
+
+# during hot-reload branch development. Keep this list intentionally small and remove
+# entries as invasive surface changes are refactored away.
+# ilwrite.fsi is additionally hash-locked in main-fsi-drift-hashes.txt
+# Paths under src/Compiler/*.fsi that are currently expected to differ from origin/main
+src/Compiler/AbstractIL/ilwrite.fsi
+src/Compiler/AbstractIL/ilwritepdb.fsi
+src/Compiler/CodeGen/IlxGen.fsi
+src/Compiler/Driver/CompilerConfig.fsi
+src/Compiler/Optimize/LowerStateMachines.fsi
+src/Compiler/Service/FSharpCheckerResults.fsi
+src/Compiler/Service/service.fsi

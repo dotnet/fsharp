@@ -115,6 +115,7 @@
     </EmbeddedResource>
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
+    <Compile Include="Utilities\EnvironmentHelpers.fs" />
 	<Compile Include="Utilities\Caches.fsi" />
     <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\illib.fsi" />
@@ -161,6 +162,7 @@
     <Compile Include="Utilities\RidHelpers.fs" />
     <Compile Include="Utilities\range.fsi" />
     <Compile Include="Utilities\range.fs" />
+    <Compile Include="Utilities\EditAndContinueCapabilities.fs" />
     <EmbeddedText Include="Facilities\UtilsStrings.txt" />
     <Compile Include="Facilities\LanguageFeatures.fsi" />
     <Compile Include="Facilities\LanguageFeatures.fs" />
@@ -234,6 +236,8 @@
     <Compile Include="AbstractIL\ilsupp.fs" />
     <Compile Include="AbstractIL\ilbinary.fsi" />
     <Compile Include="AbstractIL\ilbinary.fs" />
+    <Compile Include="AbstractIL\ILDeltaHandles.fs" />
+    <Compile Include="AbstractIL\ILMetadataHeaps.fs" />
     <Compile Include="AbstractIL\ilread.fsi" />
     <Compile Include="AbstractIL\ilread.fs" />
     <Compile Include="AbstractIL\ilwritepdb.fsi" />
@@ -306,6 +310,9 @@
     <Compile Include="SyntaxTree\LexHelpers.fs">
       <Link>SyntaxTree\LexHelpers.fs</Link>
     </Compile>
+    <Compile Include="TypedTree\GeneratedNames.fs" />
+    <Compile Include="TypedTree\CompilerGeneratedNameMapState.fs" />
+    <Compile Include="TypedTree\ClosureNameAllocationState.fs" />
     <Compile Include="$(FsYaccOutputFolder)pplex.fsi">
       <Link>SyntaxTree\FsLexOutput\pplex.fsi</Link>
     </Compile>
@@ -326,6 +333,7 @@
     <Compile Include="TypedTree\TypeProviders.fs" />
     <Compile Include="TypedTree\QuotationPickler.fsi" />
     <Compile Include="TypedTree\QuotationPickler.fs" />
+    <Compile Include="TypedTree\SynthesizedTypeMaps.fs" />
     <Compile Include="TypedTree\CompilerGlobalState.fsi" />
     <Compile Include="TypedTree\CompilerGlobalState.fs" />
     <Compile Include="TypedTree\WellKnownAttribs.fsi" />
@@ -350,6 +358,9 @@
     <Compile Include="TypedTree\TypedTreeOps.ExprOps.fs" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fs" />
+    <Compile Include="TypedTree\TypedTreeDiff.fs" />
+    <Compile Include="TypedTree\ClosureNameAllocator.fs" />
+    <Compile Include="HotReload\DefinitionMap.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
@@ -444,6 +455,32 @@
     <Compile Include="CodeGen\EraseUnions.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
     <Compile Include="CodeGen\IlxGen.fs" />
+    <Compile Include="AbstractIL\ILBaselineReader.fs" />
+    <Compile Include="CodeGen\EncMethodDebugInformation.fs" />
+    <Compile Include="HotReload\ActiveStatements.fs" />
+    <Compile Include="CodeGen\HotReloadBaseline.fs" />
+    <Compile Include="CodeGen\HotReloadPdb.fs" />
+    <Compile Include="HotReload\FSharpSymbolChanges.fs" />
+    <Compile Include="CodeGen\IlxDeltaStreams.fs" />
+    <Compile Include="CodeGen\FSharpDefinitionIndex.fs" />
+    <Compile Include="CodeGen\DeltaMetadataEncoding.fs" />
+    <Compile Include="CodeGen\DeltaMetadataTypes.fs" />
+    <Compile Include="CodeGen\DeltaMetadataTables.fs" />
+    <Compile Include="CodeGen\DeltaTableLayout.fs" />
+    <Compile Include="CodeGen\DeltaIndexSizing.fs" />
+    <Compile Include="CodeGen\DeltaMetadataSerializer.fs" />
+    <Compile Include="CodeGen\FSharpDeltaMetadataWriter.fs" />
+    <Compile Include="HotReload\SymbolMatcher.fs" />
+    <Compile Include="HotReload\HotReloadAccessorTypes.fs" />
+    <Compile Include="CodeGen\IlxDeltaEmitter.fs" />
+    <Compile Include="HotReload\TrackedInputs.fs" />
+    <Compile Include="HotReload\HotReloadState.fs" />
+    <Compile Include="HotReload\DeltaBuilder.fs" />
+    <Compile Include="HotReload\HotReloadCapabilities.fs" />
+    <Compile Include="HotReload\RudeEditDiagnostics.fs" />
+    <Compile Include="HotReload\HotReloadContracts.fs" />
+    <Compile Include="HotReload\EditAndContinueLanguageService.fs" />
+    <Compile Include="HotReload\Adapters.fs" />
     <Compile Include="Driver\FxResolver.fsi" />
     <Compile Include="Driver\FxResolver.fs" />
     <Compile Include="DependencyManager/AssemblyResolveHandler.fsi">
@@ -466,6 +503,9 @@
     </Compile>
     <Compile Include="Driver\CompilerConfig.fsi" />
     <Compile Include="Driver\CompilerConfig.fs" />
+    <Compile Include="Driver\CompilerEmitHookState.fs" />
+    <Compile Include="Driver\HotReloadEmitHook.fs" />
+    <Compile Include="Driver\CompilerEmitHookBootstrap.fs" />
     <Compile Include="Driver\CompilerImports.fsi" />
     <Compile Include="Driver\CompilerImports.fs" />
     <Compile Include="Driver\CompilerDiagnostics.fsi" />
@@ -563,6 +603,7 @@
     <Compile Include="Service\BackgroundCompiler.fs" />
     <Compile Include="Service\TransparentCompiler.fsi" />
     <Compile Include="Service\TransparentCompiler.fs" />
+    <Compile Include="HotReload\FSharpHotReloadSession.fs" />
     <Compile Include="Service\service.fsi" />
     <Compile Include="Service\service.fs" />
     <Compile Include="Service\FSharpWorkspaceState.fs" />

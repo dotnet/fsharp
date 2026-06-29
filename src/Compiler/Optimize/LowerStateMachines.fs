@@ -9,6 +9,7 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -144,14 +145,18 @@ let rec IsStateMachineExpr g overallExpr =
     | _ -> None
 
 type LoweredStateMachine =
-    LoweredStateMachine of 
+    LoweredStateMachine of
          templateStructTy: TType *
          dataTy: TType *
          stateVars: ValRef list *
          thisVars: ValRef list *
-         moveNext: (Val * Expr) * 
+         moveNext: (Val * Expr) *
          setStateMachine: (Val * Val * Expr) *
-         afterCode: (Val * Expr)
+         afterCode: (Val * Expr) *
+         // The state machine's resume points in state-number order: (state number
+         // assigned by the conversion, source range of the resumable entry). Hot reload
+         // compiles persist these as the EnC State Machine State Map.
+         resumptionPoints: (int * range) list
 
 type LoweredStateMachineResult =
     /// A state machine was recognised and was compilable
@@ -167,12 +172,19 @@ type LoweredStateMachineResult =
     | NotAStateMachine
 
 /// Used to scope the action of lowering a state machine expression
-type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
+type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>, collectResumptionPoints: bool) =
 
     let mutable pcCount = 0
     let genPC() =
         pcCount <- pcCount + 1
         pcCount
+
+    // Resume points recorded as the conversion assigns their state numbers (one entry
+    // per ConvertResumableEntry, carrying the entry's source range). Surfaced on
+    // LoweredStateMachine for the hot reload EnC State Machine State Map. Only
+    // populated when the caller requested collection (hot reload capture compiles), so
+    // ordinary compiles pay nothing beyond the boolean check.
+    let resumptionPoints = ResizeArray<int * range>()
 
     // Record definitions for any resumable code
     let rec BindResumableCodeDefinitions (env: env) expr = 
@@ -430,11 +442,15 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
                     printfn "%s" (DebugPrint.showExpr setStateMachineBodyR)
                     printfn "----------- AFTER REWRITE afterCodeBodyR ----------------------"
                     printfn "%s" (DebugPrint.showExpr afterCodeBodyR)
-                LoweredStateMachine 
-                    (templateStructTy, dataTy, stateVars, thisVars, 
-                        (moveNextThisVar, moveNextExprR), 
-                        (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBodyR), 
-                        (afterCodeThisVar, afterCodeBodyR))
+                LoweredStateMachine
+                    (templateStructTy, dataTy, stateVars, thisVars,
+                        (moveNextThisVar, moveNextExprR),
+                        (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBodyR),
+                        (afterCodeThisVar, afterCodeBodyR),
+                        (if collectResumptionPoints then
+                             resumptionPoints |> Seq.sortBy fst |> List.ofSeq
+                         else
+                             []))
             ValueSome (env, remake2, moveNextBody)
         | _ -> 
             ValueNone
@@ -565,9 +581,12 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         res
 
     and ConvertResumableEntry env pcValInfo (noneBranchExpr, someVar, someBranchExpr, _rebuild) =
-        if sm_verbose then printfn "ResumableEntryMatchExpr" 
+        if sm_verbose then printfn "ResumableEntryMatchExpr"
         // printfn "found sequential"
         let reenterPC = genPC()
+
+        if collectResumptionPoints then
+            resumptionPoints.Add(reenterPC, someBranchExpr.Range)
         let envSome = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add someVar (mkInt g someVar.Range reenterPC) }
         let resNone = ConvertResumableCode env pcValInfo noneBranchExpr
         let resSome = ConvertResumableCode envSome pcValInfo someBranchExpr
@@ -947,12 +966,12 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
             let msg = FSComp.SR.reprStateMachineInvalidForm()
             fallback msg
 
-let LowerStateMachineExpr g (outerResumableCodeDefns: ValMap<Expr>) (overallExpr: Expr) : LoweredStateMachineResult =
+let LowerStateMachineExpr g (outerResumableCodeDefns: ValMap<Expr>) (collectResumptionPoints: bool) (overallExpr: Expr) : LoweredStateMachineResult =
     // Detect a state machine and convert it
     let stateMachine = IsStateMachineExpr g overallExpr
 
-    match stateMachine with 
+    match stateMachine with
     | None -> LoweredStateMachineResult.NotAStateMachine
     | Some altExprOpt ->
 
-    LowerStateMachine(g, outerResumableCodeDefns).Apply(overallExpr, altExprOpt)
+    LowerStateMachine(g, outerResumableCodeDefns, collectResumptionPoints).Apply(overallExpr, altExprOpt)

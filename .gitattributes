@@ -29,6 +29,12 @@ mono/launcher text eol=lf
 mono/config.make text eol=lf
 targets.make text eol=lf
 
+# Hot reload tests embed F# source snippets as string literals and run line-anchored
+# string operations ('\n' Replace/Contains) on them; keep these files LF so the snippets
+# behave identically on Windows checkouts.
+tests/FSharp.Compiler.ComponentTests/HotReload/*.fs text eol=lf
+tests/FSharp.Compiler.Service.Tests/HotReload/*.fs text eol=lf
+
 *.sh text eol=lf
 
 *.bsl linguist-vendored=true

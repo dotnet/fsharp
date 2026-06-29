@@ -151,6 +151,7 @@ type internal TcGlobals =
         pathMap: Internal.Utilities.PathMap *
         langVersion: Features.LanguageVersion *
         realsig: bool *
+        emitHotReloadClassStateMachines: bool *
         compilationMode: CompilationMode ->
             TcGlobals
 
@@ -900,6 +901,11 @@ type internal TcGlobals =
     member raw_expr_tcr: TypedTree.EntityRef
 
     member realsig: bool
+
+    /// Hot reload: emit resumable (task/taskSeq/user CE) state machines as reference types
+    /// (classes), so adding/removing a let!/do!/yield is an AddInstanceFieldToExistingType +
+    /// method update rather than a forbidden struct re-layout.
+    member emitHotReloadClassStateMachines: bool
 
     member ref_tuple1_tcr: TypedTree.EntityRef
 

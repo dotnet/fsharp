@@ -445,6 +445,92 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
+/// Artifacts captured from a single baseline emit pass.
+///
+/// These bytes/maps are reused to start or refresh a hot reload baseline without
+/// running a second IL writer pass that could diverge from what hit disk.
+type CompilerEmitArtifacts =
+    {
+        IlxMainModule: ILModuleDef
+        TokenMappings: FSharp.Compiler.AbstractIL.ILBinaryWriter.ILTokenMappings
+        AssemblyBytes: byte[]
+        PortablePdbBytes: byte[] option
+        IlxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot option
+        OptimizedImpls: CheckedAssemblyAfterOptimization
+        /// Per-method closure-class name tables (occurrence-chain -> emitted closure type
+        /// name) keyed by IL method name, joined in the emit path from the IlxGen
+        /// stamp -> name recording and the typed-tree lambda occurrence extraction.
+        /// Empty for flag-off compiles.
+        ClosureNameRows: Map<string, Map<int list, string>>
+    }
+
+/// Adapter interface that lets the core emit pipeline remain unaware of hot reload
+/// implementation details while still offering extension points for capture/fallback flows.
+type ICompilerEmitHook =
+    abstract ValidateConfiguration:
+        emitCaptureArtifacts: bool * debugInfo: bool * embeddedPdb: bool * localOptimizationsEnabled: bool -> unit
+
+    /// Runs after type checking/optimization and immediately before IlxGen lowering. The
+    /// hook receives the typed implementation files being lowered so the hot reload
+    /// closure mapping can extract lambda occurrences from the SAME tree IlxGen lowers
+    /// (stamp-keyed) and install per-compile naming state on the compilation's
+    /// CompilerGlobalState (tcGlobals.CompilerGlobalState).
+    abstract PrepareForCodeGeneration:
+        emitCaptureArtifacts: bool * tcGlobals: FSharp.Compiler.TcGlobals.TcGlobals * optimizedImpls: CheckedAssemblyAfterOptimization ->
+            unit
+
+    abstract BeforeFileEmit:
+        emitCaptureArtifacts: bool * compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
+
+    /// Attempts to perform the final emit phase and capture baseline artifacts in one pass.
+    /// Returns true when the hook handled emission; false means caller must use normal emit.
+    abstract TryEmitWithArtifacts:
+        emitCaptureArtifacts: bool *
+        compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState *
+        ilWriteOptions: FSharp.Compiler.AbstractIL.ILBinaryWriter.options *
+        ilxMainModule: ILModuleDef *
+        normalizeAssemblyRefs: (ILAssemblyRef -> ILAssemblyRef) *
+        optimizedImpls: CheckedAssemblyAfterOptimization *
+        ilxGenEnvSnapshot: FSharp.Compiler.IlxGen.IlxGenEnvSnapshot option *
+        methodClosureNameRows: Map<string, Map<int list, string>> *
+        outputFile: string *
+        pdbfile: string option ->
+            bool
+
+    /// Captures baseline artifacts after emission when emit happened outside TryEmitWithArtifacts.
+    abstract CaptureArtifacts:
+        compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState * artifacts: CompilerEmitArtifacts -> unit
+
+    /// Resets hook-owned state when the compiler falls back to dynamic assembly emission.
+    abstract FallbackEmit: compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
+
+type private NoOpCompilerEmitHook() =
+    interface ICompilerEmitHook with
+        member _.ValidateConfiguration(_emitCaptureArtifacts, _debugInfo, _embeddedPdb, _localOptimizationsEnabled) = ()
+        member _.PrepareForCodeGeneration(_emitCaptureArtifacts, _tcGlobals, _optimizedImpls) = ()
+        member _.BeforeFileEmit(_emitCaptureArtifacts, _compilerGlobalState) = ()
+
+        member _.TryEmitWithArtifacts
+            (
+                _emitCaptureArtifacts,
+                _compilerGlobalState,
+                _ilWriteOptions,
+                _ilxMainModule,
+                _normalizeAssemblyRefs,
+                _optimizedImpls,
+                _ilxGenEnvSnapshot,
+                _methodClosureNameRows,
+                _outputFile,
+                _pdbfile
+            ) =
+            false
+
+        member _.CaptureArtifacts(_compilerGlobalState, _artifacts) = ()
+        member _.FallbackEmit(_compilerGlobalState) = ()
+
+let defaultCompilerEmitHook: ICompilerEmitHook =
+    NoOpCompilerEmitHook() :> ICompilerEmitHook
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -598,6 +684,9 @@ type TcConfigBuilder =
         /// If true - every expression in quotations will be augmented with full debug info (fileName, location in file)
         mutable emitDebugInfoInQuotations: bool
 
+        mutable emitCaptureArtifacts: bool
+        mutable compilerEmitHook: ICompilerEmitHook option
+
         mutable strictIndentation: bool option
 
         mutable exename: string option
@@ -652,6 +741,8 @@ type TcConfigBuilder =
         mutable dumpSignatureData: bool
 
         mutable realsig: bool
+
+        mutable emitHotReloadClassStateMachines: bool
 
         mutable compilationMode: TcGlobals.CompilationMode
     }
@@ -818,6 +909,8 @@ type TcConfigBuilder =
             noDebugAttributes = false
             useReflectionFreeCodeGen = false
             emitDebugInfoInQuotations = false
+            emitCaptureArtifacts = false
+            compilerEmitHook = None
             exename = None
             shadowCopyReferences = false
             useSdkRefs = true
@@ -852,6 +945,7 @@ type TcConfigBuilder =
                 }
             dumpSignatureData = false
             realsig = false
+            emitHotReloadClassStateMachines = false
             strictIndentation = None
             compilationMode = TcGlobals.CompilationMode.Unset
         }
@@ -1379,6 +1473,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.isInteractive = data.isInteractive
     member _.isInvalidationSupported = data.isInvalidationSupported
     member _.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
+
+    member _.emitCaptureArtifacts = data.emitCaptureArtifacts
+    member _.compilerEmitHook = data.compilerEmitHook
     member _.copyFSharpCore = data.copyFSharpCore
     member _.shadowCopyReferences = data.shadowCopyReferences
     member _.useSdkRefs = data.useSdkRefs
@@ -1394,6 +1491,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.typeCheckingConfig = data.typeCheckingConfig
     member _.dumpSignatureData = data.dumpSignatureData
     member _.realsig = data.realsig
+    member _.emitHotReloadClassStateMachines = data.emitHotReloadClassStateMachines
     member _.compilationMode = data.compilationMode
 
     static member Create(builder, validate) =

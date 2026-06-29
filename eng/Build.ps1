@@ -66,6 +66,7 @@ param (
     [switch]$testpack,
     [switch]$testAOT,
     [switch]$testEditor,
+    [switch]$testHotReload,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch][Alias('pb')]$productBuild,
@@ -131,6 +132,7 @@ function Print-Usage() {
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -testEditor                   Run VS Editor tests"
+    Write-Host "  -testHotReload                Run the hot reload demo smoke test"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -153,6 +155,52 @@ function Print-Usage() {
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
 
+function Invoke-HotReloadDemoSmokeTest([string] $dotnetExe) {
+    if ($script:HotReloadDemoSmokeTestExecuted) {
+        return
+    }
+
+    $demoDirectory = Join-Path $RepoRoot "tests/projects/HotReloadDemo/HotReloadDemoApp"
+    if (-not (Test-Path $demoDirectory)) {
+        Write-Verbose "Hot reload demo directory not found; skipping smoke test."
+        $script:HotReloadDemoSmokeTestExecuted = $True
+        return
+    }
+
+    Write-Host "Running hot reload demo smoke test..."
+
+    $previousValue = [System.Environment]::GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES", "Process")
+    $output = @()
+    $exitCode = 0
+    try {
+        [System.Environment]::SetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES", "debug", "Process")
+
+        Push-Location $demoDirectory
+        try {
+            $output = & $dotnetExe run -- --scripted 2>&1
+            $exitCode = $LASTEXITCODE
+        }
+        finally {
+            Pop-Location
+        }
+    }
+    finally {
+        [System.Environment]::SetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES", $previousValue, "Process")
+    }
+
+    $output | ForEach-Object { Write-Host $_ }
+
+    if ($exitCode -ne 0) {
+        throw "Hot reload demo smoke test failed with exit code $exitCode"
+    }
+
+    if ($output -notmatch "Scripted run succeeded: delta emitted") {
+        throw "Hot reload demo smoke test did not report success marker"
+    }
+
+    $script:HotReloadDemoSmokeTestExecuted = $True
+}
+
 # Process the command line arguments and establish defaults for the values which are not
 # specified.
 function Process-Arguments() {
@@ -166,6 +214,7 @@ function Process-Arguments() {
     }
 
     $script:nodeReuse = $False;
+    $script:HotReloadDemoSmokeTestExecuted = $False
 
     if ($testAll) {
         $script:testDesktop = $True
@@ -554,6 +603,11 @@ try {
 
     $dotnetPath = InitializeDotNetCli
     $env:DOTNET_ROOT = "$dotnetPath"
+    $dotnetExecutableName = "dotnet"
+    if ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
+        $dotnetExecutableName = "dotnet.exe"
+    }
+    $dotnetExe = Join-Path $dotnetPath $dotnetExecutableName
     Get-Item -Path Env:
 
     if ($bootstrap) {
@@ -621,6 +675,10 @@ try {
         } else {
             TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:desktopTargetFramework
         }
+    }
+
+    if ($testHotReload) {
+        Invoke-HotReloadDemoSmokeTest $dotnetExe
     }
 
     if ($testFSharpCore) {
