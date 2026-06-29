@@ -60,7 +60,13 @@ extends:
               - checkout: self
                 clean: true
                 fetchDepth: 1
+              # Authenticate the 1ES build identity to every feed in NuGet.config, incl. the cross-org
+              # devdiv VS-CoreXtFeeds that carries the VS-2017 serviced Roslyn (2.x dropped from public).
+              # F# already ships VS insertions, so this identity is the routine devdiv-read path.
+              - task: NuGetAuthenticate@1
+                displayName: 'Authenticate NuGet feeds (incl. devdiv VS-CoreXtFeeds)'
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product + vsintegration IDE)'
+                displayName: 'Build (product + vsintegration IDE + VSIX)'
                 env:
                   DisableLocalization: true
+                  BUILD_INSERTION: 1
