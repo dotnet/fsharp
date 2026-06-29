@@ -383,9 +383,6 @@ type OptimizationSettings =
     /// This optimization is off by default, given tiny overhead of including try/with. See https://github.com/dotnet/fsharp/pull/376
     member _.EliminateTryWithAndTryFinally = false 
 
-    /// Determines if we should eliminate first part of sequential expression if it has no effect 
-    member x.EliminateSequential = x.LocalOptimizationsEnabled 
-
     /// Determines if we should determine branches in pattern matching based on known information, e.g.
     /// eliminate a "if true then .. else ... "
     member x.EliminateSwitch = x.LocalOptimizationsEnabled
@@ -1427,8 +1424,43 @@ let AbstractOptimizationInfoToEssentials =
       
     abstractLazyModulInfo
 
+/// True if the IL field has protected (family) accessibility.
+let private isProtectedILFieldSpec cenv m (fspec: ILFieldSpec) =
+    match fspec.DeclaringTypeRef with
+    | Import.TryImportILTypeRef cenv.amap m (ILTyconRawMetadata tdef) ->
+        tdef.Fields.LookupByName fspec.Name
+        |> List.exists (fun fdef -> fdef.Access = ILMemberAccess.Family || fdef.Access = ILMemberAccess.FamilyOrAssembly)
+    | _ -> false
+
+/// True if the expression loads or stores a protected (family) IL field anywhere in its body.
+let private exprReferencesProtectedILField cenv expr =
+    let mutable found = false
+
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _recurseF noInterceptF z e ->
+                    if not found then
+                        match e with
+                        | Expr.Op(TOp.ILAsm(instrs, _), _, _, m) ->
+                            if instrs |> List.exists (function ILFieldInstr fspec -> isProtectedILFieldSpec cenv m fspec | _ -> false) then
+                                found <- true
+                        | _ -> ()
+
+                    noInterceptF z e }
+
+    FoldExpr folder () expr |> ignore
+    found
+
+/// True if the expression references constructs that are only valid within their defining method or
+/// family, and so must not be relocated by inlining or method-splitting: a protected/base call
+/// (UsesMethodLocalConstructs) or a protected (family) IL field access (issue #19963).
+let usesMethodLocalConstructsOrProtectedField cenv (fvs: FreeVars) expr =
+    fvs.UsesMethodLocalConstructs
+    || (fvs.ContainsILFieldAccess && exprReferencesProtectedILField cenv expr)
+
 /// Hide information because of a "let ... in ..." or "let rec ... in ... "
-let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
+let AbstractExprInfoByVars cenv (boundVars: Val list, boundTyVars) ivalue =
     // Module and member bindings can be skipped when checking abstraction, since abstraction of these values has already been done when 
     // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadratically retraversing  
     // the inferred optimization data, i.e. at each binding all the way up a sequences of 'lets' in a module. 
@@ -1459,7 +1491,7 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
             (let fvs = freeInExpr (if isNil boundTyVars then CollectLocalsWithStackGuard() else CollectTyparsAndLocals) expr
              (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
              (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
-             fvs.UsesMethodLocalConstructs) ->
+             usesMethodLocalConstructsOrProtectedField cenv fvs expr) ->
               
               // Trimming lambda
               UnknownValue
@@ -2300,27 +2332,35 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
         //printfn "Not eliminating because no Run found"
         None
 
+let inline (|StringTy|_|) (ilTy: ILType) : bool =
+    ilTy.IsNominal && ilTy.TypeRef.Name = tname_String
+
+let inline private isILMethodRefOnSystemString
+        (methodName: string)
+        (returnTypeName: string)
+        ([<InlineIfLambda>] argsCheck: ILType list -> bool)
+        (mref: ILMethodRef) =
+    mref.Name = methodName &&
+    mref.DeclaringTypeRef.Name = tname_String &&
+    mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = returnTypeName &&
+    argsCheck mref.ArgTypes
+
+let IsILMethodRefSystemStringEquals (mref: ILMethodRef) =
+    mref |> isILMethodRefOnSystemString "Equals" tname_Bool (function
+        | [StringTy; StringTy] -> true
+        | _ -> false)
+
 let IsILMethodRefSystemStringConcat (mref: ILMethodRef) =
-    mref.Name = "Concat" &&
-    mref.DeclaringTypeRef.Name = "System.String" &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.String") &&
-    (mref.ArgCount >= 2 && mref.ArgCount <= 4 &&
-        mref.ArgTypes 
-        |> List.forall (fun ilTy ->
-            ilTy.IsNominal && ilTy.TypeRef.Name = "System.String"))
+    mref |> isILMethodRefOnSystemString "Concat" tname_String (function
+        | [StringTy; StringTy]
+        | [StringTy; StringTy; StringTy]
+        | [StringTy; StringTy; StringTy; StringTy] -> true
+        | _ -> false)
 
 let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
-    mref.Name = "Concat" &&
-    mref.DeclaringTypeRef.Name = "System.String" &&
-    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.String") &&
-    (mref.ArgCount = 1 && 
-        mref.ArgTypes
-        |> List.forall (fun ilTy ->          
-            match ilTy with
-            | ILType.Array (shape, ilTy) when shape = ILArrayShape.SingleDimensional &&
-                                              ilTy.IsNominal &&
-                                              ilTy.TypeRef.Name = "System.String" -> true
-            | _ -> false))
+    mref |> isILMethodRefOnSystemString "Concat" tname_String (function
+        | [ILType.Array (shape, StringTy)] when shape = ILArrayShape.SingleDimensional -> true
+        | _ -> false)
 
 let rec IsDebugPipeRightExpr cenv expr =
     let g = cenv.g
@@ -2549,6 +2589,14 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
     | _ ->
         OptimizeExpr cenv env expr
 
+/// Rewrite `String.Equals(x, "")` to `x <> null && x.Length = 0` (issue #19873 —
+/// done here so quotation bodies, which the optimizer skips, keep `op_Equality(_, "")`).
+and MakeOptimizedStringEqualsEmptyCall cenv env m nonEmptyArg =
+    let g = cenv.g
+    let _, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m nonEmptyArg
+    let lengthIsZero = mkILAsmCeq g m (mkGetStringLength g m vExpr) (mkInt g m 0)
+    OptimizeExpr cenv env (mkLetBind m bind (mkLazyAnd g m (mkNonNullTest g m vExpr) lengthIsZero))
+
 /// Optimize/analyze an application of an intrinsic operator to arguments
 and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
@@ -2619,6 +2667,12 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args 
       when IsILMethodRefSystemStringConcat ilMethRef ->
         MakeOptimizedSystemStringConcatCall cenv env m args
+
+    // See MakeOptimizedStringEqualsEmptyCall (issue #19873). `(=)` lowers to `String.Equals` post-inlining.
+    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _,
+        ([nonEmpty; Expr.Const(Const.String "", _, _)] | [Expr.Const(Const.String "", _, _); nonEmpty])
+      when IsILMethodRefSystemStringEquals ilMethRef ->
+        MakeOptimizedStringEqualsEmptyCall cenv env m nonEmpty
 
     | _ -> 
         // Reductions
@@ -2841,7 +2895,7 @@ and OptimizeLetRec cenv env (binds, bodyExpr, m) =
         let fvs = List.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 bindsR
         SplitValuesByIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) bindsR
     // Trim out any optimization info that involves escaping values 
-    let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
+    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info 
     // REVIEW: size of constructing new closures - should probably add #freevars + #recfixups here 
     let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, Construct.NewFreeVarsCache()) 
     let info = CombineValueInfos (einfo :: bindinfos) evalueR 
@@ -2882,11 +2936,10 @@ and OptimizeLinearExpr cenv env expr contf =
       let e1R, e1info = OptimizeExpr cenv env e1 
 
       OptimizeLinearExpr cenv env e2 (contf << (fun (e2R, e2info) -> 
-        if (flag = NormalSeq) && 
-           // Always eliminate '(); expr' sequences, even in debug code, to ensure that 
-           // conditional method calls don't leave a dangling breakpoint (see FSharp 1.0 bug 6034)
-           (cenv.settings.EliminateSequential || (match stripDebugPoints e1R with Expr.Const (Const.Unit, _, _) -> true | _ -> false)) && 
-           not e1info.HasEffect then 
+        if (flag = NormalSeq) &&
+           (cenv.settings.LocalOptimizationsEnabled ||
+            (match e1R with | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden, _), _) -> isHidden | _ -> false)) &&
+           not e1info.HasEffect then
             e2R, e2info
         else 
             Expr.Sequential (e1R, e2R, flag, m), 
@@ -2917,7 +2970,7 @@ and OptimizeLinearExpr cenv env expr contf =
               Info = UnknownValue }
         else 
             // On the way back up: Trim out any optimization info that involves escaping values on the way back up
-            let evalueR = AbstractExprInfoByVars ([bindR.Var], []) bodyInfo.Info 
+            let evalueR = AbstractExprInfoByVars cenv ([bindR.Var], []) bodyInfo.Info 
 
             // Preserve the debug points for eliminated bindings that have debug points. 
             let bodyR =
@@ -2948,9 +3001,11 @@ and OptimizeLinearExpr cenv env expr contf =
          OptimizeLinearExpr cenv env argLast (contf << (fun (argLastR, argLastInfo) ->
              OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsHeadR @ [argLastR], argsHeadInfosR @ [argLastInfo], m)))
 
-    | Expr.DebugPoint (m, innerExpr) when not (IsDebugPipeRightExpr cenv innerExpr)-> 
+    | Expr.DebugPoint (m, innerExpr) when not (IsDebugPipeRightExpr cenv innerExpr)->
         OptimizeLinearExpr cenv env innerExpr (contf << (fun (innerExprR, einfo) ->
-            Expr.DebugPoint (m, innerExprR), einfo))
+            match m with
+            | DebugPointAtLeafExpr.Yes(isHidden = true) when not einfo.HasEffect -> innerExprR, einfo
+            | _ -> Expr.DebugPoint (m, innerExprR), einfo))
 
     | _ -> contf (OptimizeExpr cenv env expr)
 
@@ -2972,7 +3027,7 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
     if cenv.settings.EliminateTryWithAndTryFinally && not e1info.HasEffect then 
         let e1R2 = 
             match spTry with 
-            | DebugPointAtTry.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, e1R)
+            | DebugPointAtTry.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), e1R)
             | DebugPointAtTry.No -> e1R
         Expr.Sequential (e1R2, e2R, ThenDoSeq, m), info 
     else
@@ -3083,8 +3138,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
 
     | CurriedLambdaValue (_, _, _, expr, _) when shouldInline || inlineIfLambda ->
         let fvs = freeInExpr CollectLocals expr
-        if fvs.UsesMethodLocalConstructs then
-            // Discarding lambda for binding because uses protected members --- TBD: Should we warn or error here
+        if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
             None
         else
             let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
@@ -3882,7 +3936,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy) 
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals bodyR
-              if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
+              if usesMethodLocalConstructsOrProtectedField cenv fvs bodyR || fvs.FreeLocals.Contains baseVal then 
                   UnknownValue
               else 
                   let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyTy)
@@ -3964,7 +4018,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
     let m = e.Range
     (let fvs = freeInExpr (CollectLocalsWithStackGuard()) e
      not fvs.UsesUnboundRethrow &&
-     not fvs.UsesMethodLocalConstructs &&
+     not (usesMethodLocalConstructsOrProtectedField cenv fvs e) &&
      fvs.FreeLocals |> Zset.forall (fun v -> 
           // no direct-self-recursive references
           not (env.dontSplitVars.ContainsVal v) &&
@@ -4026,7 +4080,7 @@ and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, flags)) =
     let env = BindInternalValsToUnknown cenv vs env 
     let exprR, einfo = OptimizeExpr cenv env expr 
     let exprR, einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (exprR, einfo) 
-    let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
+    let evalueR = AbstractExprInfoByVars cenv (vs, []) einfo.Info 
     TTarget(vs, exprR, flags), 
     { TotalSize=einfo.TotalSize 
       FunctionSize=einfo.FunctionSize
@@ -4157,8 +4211,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     UnknownValue 
                 else
                     let fvs = freeInExpr CollectLocals body
-                    if fvs.UsesMethodLocalConstructs then
-                        // Discarding lambda for binding because uses protected members
+                    if usesMethodLocalConstructsOrProtectedField cenv fvs body then
                         UnknownValue
                     elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
                         // Discarding lambda for binding because uses private members
@@ -4239,7 +4292,14 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             if capturesInaccessible then
                 errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(vref.DisplayName), vref.Range))
         
-        let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env 
+        let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
+
+        // The hidden debug point on the r.h.s. is dropped above, so suppress the binding's debug point too.
+        let spBind =
+            match expr with
+            | Expr.DebugPoint(DebugPointAtLeafExpr.Yes(isHidden = true), _) when not einfo.HasEffect -> DebugPointAtBinding.NoneAtLet
+            | _ -> spBind
+
         (TBind(vref, exprOptimized, spBind), einfo), env
     with RecoverableException exn -> 
         errorRecovery exn vref.Range 

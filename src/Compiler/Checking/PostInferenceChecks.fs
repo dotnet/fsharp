@@ -707,7 +707,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
             // with unconstrained generics (like List<ITest> or Dictionary<K, ITest>) is fine.
             // See: https://github.com/dotnet/fsharp/issues/19184
             if tcref.CanDeref then
-                let typars = tcref.Typars m
+                let typars = tcref.Typars
                 if typars.Length = tinst.Length then
                     (typars, tinst) ||> List.iter2 (CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers cenv m)
 
@@ -2089,10 +2089,12 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
 
     let env = { env with external = env.external || ValHasWellKnownAttribute g WellKnownValAttributes.DllImportAttribute v }
 
-    // Check that active patterns don't have free type variables in their result
+    // Check active pattern shape/type constraints
     match TryGetActivePatternInfo vref with
-    | Some _apinfo when _apinfo.ActiveTags.Length > 1 ->
-        if doesActivePatternHaveFreeTypars g vref then
+    | Some apinfo ->
+        let hasFreeTypars = doesActivePatternHaveFreeTypars g vref
+
+        if apinfo.ActiveTags.Length > 1 && hasFreeTypars then
            errorR(Error(FSComp.SR.activePatternChoiceHasFreeTypars(v.LogicalName), v.Range))
     | _ -> ()
 
@@ -2359,7 +2361,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     let ty = generalizedTyconRef g tcref
 
     let env = { env with reflect = env.reflect || EntityHasWellKnownAttribute g WellKnownEntityAttributes.ReflectedDefinitionAttribute tycon }
-    let env = BindTypars g env (tycon.Typars m)
+    let env = BindTypars g env (tycon.Typars)
 
     CheckAttribs cenv env tycon.Attribs
 

@@ -287,6 +287,24 @@ let main _ =
             IL_000a:  ret
           }"""]
 
+    [<Fact>]
+    let ``SRTP get_Item works on strings`` () =
+        FSharp """
+let inline indexInto (slice: ^T when ^T: (member get_Item: int -> ^U)) i : ^U =
+    slice.get_Item i
+
+[<EntryPoint>]
+let main _ =
+    if indexInto "abcde" 2 <> 'c' then
+        failwith "Unexpected result"
+
+    0
+        """
+        |> asExe
+        |> withOptions ["--nowarn:77"]
+        |> compileAndRun
+        |> shouldSucceed
+
     [<Theory>]
     [<InlineData("let inline f_set_Item<'T when 'T : (member Item: int -> string with set) >(x: 'T) = (^T : (member Item: int -> string with set) (x, 3, \"a\"))")>]
     [<InlineData("let inline f_set_Item<'T when 'T : (member set_Item: int * string -> unit) >(x: 'T) = (^T : (member set_Item: int * string -> unit) (x, 3, \"a\"))")>]
@@ -698,6 +716,7 @@ let main _ =
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -1955,4 +1974,3 @@ if resultInt <> 0 then failwith $"Expected 0 but got {resultInt}"
         |> asExe
         |> compileAndRun
         |> shouldSucceed
-

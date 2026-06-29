@@ -201,39 +201,44 @@
       .locals init (int32 V_0,
                valuetype Experiment.Test/Repro& V_1,
                int32 V_2,
-               int32 V_3)
+               int32 V_3,
+               valuetype Experiment.Test/Repro& V_4)
       IL_0000:  ldarg.0
-      IL_0001:  ldc.i4.0
-      IL_0002:  stloc.0
-      IL_0003:  stloc.1
-      IL_0004:  ldc.i4.0
-      IL_0005:  stloc.3
-      IL_0006:  ldarg.1
-      IL_0007:  ldc.i4.1
-      IL_0008:  sub
-      IL_0009:  stloc.2
-      IL_000a:  ldloc.2
-      IL_000b:  ldloc.3
-      IL_000c:  blt.s      IL_001d
+      IL_0001:  stloc.1
+      IL_0002:  ldloc.1
+      IL_0003:  ldc.i4.0
+      IL_0004:  stloc.0
+      IL_0005:  stloc.1
+      IL_0006:  ldc.i4.0
+      IL_0007:  stloc.3
+      IL_0008:  ldarg.1
+      IL_0009:  ldc.i4.1
+      IL_000a:  sub
+      IL_000b:  stloc.2
+      IL_000c:  ldloc.2
+      IL_000d:  ldloc.3
+      IL_000e:  blt.s      IL_001f
 
-      IL_000e:  ldc.i4.s   26
-      IL_0010:  ldloc.0
-      IL_0011:  mul
-      IL_0012:  stloc.0
-      IL_0013:  ldloc.3
-      IL_0014:  ldc.i4.1
-      IL_0015:  add
-      IL_0016:  stloc.3
-      IL_0017:  ldloc.3
-      IL_0018:  ldloc.2
-      IL_0019:  ldc.i4.1
-      IL_001a:  add
-      IL_001b:  bne.un.s   IL_000e
+      IL_0010:  ldc.i4.s   26
+      IL_0012:  ldloc.0
+      IL_0013:  mul
+      IL_0014:  stloc.0
+      IL_0015:  ldloc.3
+      IL_0016:  ldc.i4.1
+      IL_0017:  add
+      IL_0018:  stloc.3
+      IL_0019:  ldloc.3
+      IL_001a:  ldloc.2
+      IL_001b:  ldc.i4.1
+      IL_001c:  add
+      IL_001d:  bne.un.s   IL_0010
 
-      IL_001d:  ldloc.1
-      IL_001e:  ldloc.0
-      IL_001f:  stfld      int32 Experiment.Test/Repro::hash@
-      IL_0024:  ret
+      IL_001f:  ldloc.1
+      IL_0020:  stloc.s    V_4
+      IL_0022:  ldloc.s    V_4
+      IL_0024:  ldloc.0
+      IL_0025:  stfld      int32 Experiment.Test/Repro::hash@
+      IL_002a:  ret
     } 
 
     .method public hidebysig virtual final instance bool  Equals(valuetype Experiment.Test/Repro obj) cil managed

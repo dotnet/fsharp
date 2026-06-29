@@ -873,6 +873,8 @@ let main3
 
             let observer = if hasIvt then PublicAndInternal else PublicOnly
 
+            // `hash` here is on byte[] / int64, neither of which depends on
+            // String.GetHashCode; safe for deterministic output. See issue #19751.
             let optDataHash =
                 optDataResources
                 |> List.map (fun ilResource ->
