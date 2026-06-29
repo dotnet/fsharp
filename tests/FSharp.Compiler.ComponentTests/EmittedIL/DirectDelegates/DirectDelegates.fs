@@ -345,12 +345,13 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 31-36: a tupled application forwards a single tuple, not the Invoke parameters verbatim, so the
-// shape is not recognized and a closure is kept even in release.
+// Cases 31-36: a tupled application carries each tupled group as a single tuple node, exactly the shape the
+// code generator de-tuples by the target's arity when it emits the call. The recognizer de-tuples the same
+// way, so a tupled target is as direct-able as its curried counterpart and points at the real method.
 [<Fact>]
-let ``Tupled application stays a closure (preview)`` () =
+let ``Tupled application targets the real method (preview)`` () =
     FSharp """
-module TupledClosure
+module TupledDirect
 
 open System
 
@@ -361,7 +362,8 @@ let accT (x: int, y: int) : int = x + y
 let main _ =
     let d = Func<int, int, int>(fun a b -> accT (a, b))
     if d.Invoke(2, 3) <> 5 then failwith "wrong result"
-    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    if d.Method.Name <> "accT" then failwithf "expected direct 'accT' but got '%s'" d.Method.Name
+    if not (isNull d.Target) then failwith "Target should be null for a static target"
     0
         """
     |> withLangVersionPreview
@@ -369,8 +371,11 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 37-41: a partial application leaves the target with more parameters than the delegate's Invoke,
-// so there is no closed direct form and a closure is kept.
+// Cases 37-41: the CLR's closed delegate binds exactly one leading argument as the Target, so a partial
+// application that fixes two or more arguments (or also fixes a receiver) has no closed direct form and stays
+// a closure. A one-argument partial application could be closed, but only if that argument is a reference type
+// (a value-type Target would need boxing - the same gap as a value-type receiver), so fixing a value-type
+// argument keeps a closure too.
 [<Fact>]
 let ``Partial application stays a closure (preview)`` () =
     FSharp """
@@ -383,12 +388,39 @@ let add3 (x: int) (y: int) (z: int) : int = x + y + z
 
 [<EntryPoint>]
 let main _ =
+    // One fixed argument, but it is a value type: a value-type Target would need boxing, so a closure is kept.
     let d = Func<int, int, int>(add3 1)
     if d.Invoke(2, 3) <> 6 then failwith "wrong result"
     if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
     0
         """
     |> withLangVersionPreview
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// A one-argument partial application whose fixed argument is a reference type is expressible as a closed
+// delegate: the argument is bound as the Target and the delegate points directly at the static method.
+[<Fact>]
+let ``Reference-type single-argument partial application is direct (preview)`` () =
+    FSharp """
+module PartialDirect
+
+open System
+
+[<NoCompilerInlining>]
+let prepend (prefix: string) (x: int) (y: int) : string = sprintf "%s%d%d" prefix x y
+
+[<EntryPoint>]
+let main _ =
+    let p = "p"
+    let d = Func<int, int, string>(prepend p)
+    if d.Invoke(2, 3) <> "p23" then failwith "wrong result"
+    if d.Method.Name <> "prepend" then failwithf "expected direct 'prepend' but got '%s'" d.Method.Name
+    if not (obj.ReferenceEquals(d.Target, p)) then failwith "Target is not the fixed argument"
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -457,12 +489,13 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Case 52: an extension member compiles to a static method whose first parameter is the receiver, so it is
-// bound as a leading argument (a partial application) and stays a closure.
+// Case 52: an extension member compiles to a static method whose first parameter is the receiver. The CLR's
+// "closed over the first argument" delegate binds that receiver as the Target, so the delegate points directly
+// at the static extension method (in release, where the eta-lambda does not need to survive for debugging).
 [<Fact>]
-let ``Extension member stays a closure (preview)`` () =
+let ``Extension member targets the real method (preview)`` () =
     FSharp """
-module ExtensionClosure
+module ExtensionDirect
 
 open System
 open System.Runtime.CompilerServices
@@ -471,7 +504,7 @@ type Holder() = class end
 
 [<Extension>]
 type HolderExtensions =
-    [<Extension>]
+    [<Extension; NoCompilerInlining>]
     static member Combine (h: Holder, x: int, y: int) : int = x + y
 
 [<EntryPoint>]
@@ -479,10 +512,42 @@ let main _ =
     let h = Holder()
     let d = Func<int, int, int>(fun a b -> h.Combine(a, b))
     if d.Invoke(2, 3) <> 5 then failwith "wrong result"
-    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    if d.Method.Name <> "Combine" then failwithf "expected direct 'Combine' but got '%s'" d.Method.Name
+    if not (obj.ReferenceEquals(d.Target, h)) then failwith "Target is not the extension receiver"
     0
         """
     |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+// A generic extension member whose receiver type uses the method's type parameter ('T list) still binds the
+// receiver as the Target: the type argument is threaded through as a method instantiation (an extension member
+// has no enclosing type arguments), and the receiver - a reference type - is the closed-over first argument.
+[<Fact>]
+let ``Generic extension member receiver targets the real method (preview)`` () =
+    FSharp """
+module GenericExtensionDirect
+
+open System
+open System.Runtime.CompilerServices
+
+[<Extension>]
+type ListExtensions =
+    [<Extension; NoCompilerInlining>]
+    static member CountWith<'T> (xs: 'T list, x: int, y: int) : int = List.length xs + x + y
+
+[<EntryPoint>]
+let main _ =
+    let xs = [ "a"; "b"; "c" ]
+    let d = Func<int, int, int>(fun a b -> xs.CountWith(a, b))
+    if d.Invoke(2, 3) <> 8 then failwithf "wrong result: %d" (d.Invoke(2, 3))
+    if d.Method.Name <> "CountWith" then failwithf "expected direct 'CountWith' but got '%s'" d.Method.Name
+    if not (obj.ReferenceEquals(d.Target, xs)) then failwith "Target is not the extension receiver"
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
     |> compileExeAndRun
     |> shouldSucceed
 

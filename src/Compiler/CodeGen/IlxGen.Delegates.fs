@@ -34,6 +34,27 @@ let private isUnitValue e =
     | Expr.Const(Const.Unit, _, _) -> true
     | _ -> false
 
+// The forwarding call of a *tupled* target carries each tupled argument group as a single tuple node: e.g. for
+// `accTupled (x, y)` (a value of arity [2]) the call `accTupled (a, b)` is one `(a, b)` argument, exactly the
+// shape BuildFSharpMethodApp produced from the value's arity. The code generator de-tuples these by the value's
+// arity when it emits the call, so the compiled target takes the elements as separate IL parameters and is
+// perfectly compatible with the delegate (a tupled target is as direct-able as a curried one). Mirror that
+// de-tupling here so the forwarding match sees the flattened argument list: expand a tuple-construction argument
+// whose size matches its arity group into the group's elements; leave anything else (including a target with no
+// arity info) untouched, which conservatively falls back to a closure.
+let private flattenTupledArgs (vref: ValRef) (args: Expr list) =
+    let arities = (arityOfVal vref.Deref).AritiesOfArgs
+
+    if arities.Length <> args.Length then
+        args
+    else
+        (arities, args)
+        ||> List.map2 (fun arity arg ->
+            match stripDebugPoints arg with
+            | Expr.Op(TOp.Tuple _, _, elems, _) when arity >= 2 && elems.Length = arity -> elems
+            | _ -> [ arg ])
+        |> List.concat
+
 // The forwarding call may be wrapped in let-bindings the recognizer must see through, in any combination:
 //  - a 'let unitVar = () in …' that BindUnitVars (or the elaborator) inserts for the elided unit parameter
 //    of a zero-parameter Invoke (e.g. System.Action), and
@@ -93,7 +114,7 @@ let classifyForwardingTarget g (invokeParams: Val list) expr =
 
     match body with
     | Expr.App(Expr.Val(vref, valUseFlags, _), _, tyargs, args, _) ->
-        match matchForwarding args with
+        match matchForwarding (flattenTupledArgs vref args) with
         | ValueSome leadingArgs -> DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, tyargs, leadingArgs)
         | ValueNone -> DirectDelegateForwardingTargetCandidate.Other
     | Expr.Op(TOp.ILCall(isVirtual, _, isStruct, isCtor, valUseFlag, _, _, ilMethRef, enclTypeInst, methInst, _), _, args, _) ->
@@ -112,15 +133,32 @@ let classifyForwardingTarget g (invokeParams: Val list) expr =
         | ValueNone -> DirectDelegateForwardingTargetCandidate.Other
     | _ -> DirectDelegateForwardingTargetCandidate.Other
 
-/// For an instance method the single leading argument is the receiver; a static method or module function
-/// must have no leading arguments (otherwise it is a partial application).
+/// At most one leading argument can be hoisted to the construction site and stored as the delegate's Target:
+///  - for an instance method it is the receiver (not part of the IL signature), and
+///  - for a static method it is the first IL parameter, bound via the CLR's "closed over the first argument"
+///    delegate mechanism (this is how an extension member's receiver, or a one-argument partial application of
+///    a static method / module function, becomes direct).
+/// Two or more leading arguments (e.g. a partial application that also fixes a receiver) have no closed
+/// direct-delegate form, so they stay a closure.
 let private receiverShapeOk (leadingArgs: Expr list) takesInstanceArg =
     if takesInstanceArg then
         match leadingArgs with
         | [ _ ] -> true
         | _ -> false
     else
-        List.isEmpty leadingArgs
+        match leadingArgs with
+        | []
+        | [ _ ] -> true
+        | _ -> false
+
+/// A leading argument of a *static* target is stored as the delegate's Target, which is typed `object`. A
+/// value-type leading argument would have to be boxed (changing identity/copy semantics), which is not yet
+/// supported, so it disqualifies the direct form (the same boxing gap that excludes value-type instance
+/// receivers). Targets with no leading argument, or an instance receiver, are unaffected here.
+let private staticLeadingArgIsRefType g takesInstanceArg (leadingArgs: Expr list) =
+    match leadingArgs with
+    | [ recv ] when not takesInstanceArg -> not (isStructTy g (tyOfExpr g recv))
+    | _ -> true
 
 /// The receiver is hoisted to the delegate-construction site, so a direct delegate is only sound when it can
 /// be evaluated there exactly once and as the Target:
@@ -153,6 +191,7 @@ let fsharpValDirectlyBindable g (invokeParams: Val list) (leadingArgs: Expr list
     && not valUseFlags.IsVSlotDirectCall
     && receiverShapeOk leadingArgs takesInstanceArg
     && receiverBindable g invokeParams leadingArgs
+    && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
 
 /// An IL method target can be pointed at directly only when it is not a constructor / base / constrained call,
 /// when the receiver shape is right, when the receiver is not a value type (boxing is not yet implemented), and
@@ -175,6 +214,7 @@ let ilMethodDirectlyBindable
     && not (takesInstanceArg && isStruct)
     && receiverShapeOk leadingArgs takesInstanceArg
     && receiverBindable g invokeParams leadingArgs
+    && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
 
 /// Confirm the target's IL signature is compatible with the delegate's Invoke. The type checker has already
 /// verified the delegate is built from a compatible function shape and the forwarding match pins the arity,
@@ -187,14 +227,20 @@ let ilMethodDirectlyBindable
 ///    cannot see and the CLR will not relax: notably an F# 'unit' return compiled to 'void' versus a delegate
 ///    whose Invoke returns 'Unit'. For a generic target the return is written in terms of type variables, so
 ///    no exact comparison is meaningful.
+///
+/// 'numBoundLeadingFormals' is the number of leading IL parameters consumed by a hoisted Target (1 for a
+/// static method whose first argument is bound, e.g. an extension receiver; 0 otherwise - an instance
+/// receiver is not part of the IL signature), so it is subtracted from the target's formal-argument count.
 let signatureMatches
+    numBoundLeadingFormals
     (ilDelegeeParams: ILParameter list)
     (ilDelegeeRet: ILReturn)
     (ilEnclArgTys: ILType list)
     (ilMethArgTys: ILType list)
     (targetMspec: ILMethodSpec)
     =
-    let arityMatches = targetMspec.FormalArgTypes.Length = ilDelegeeParams.Length
+    let arityMatches =
+        targetMspec.FormalArgTypes.Length - numBoundLeadingFormals = ilDelegeeParams.Length
 
     let returnMatches =
         if List.isEmpty ilEnclArgTys && List.isEmpty ilMethArgTys then

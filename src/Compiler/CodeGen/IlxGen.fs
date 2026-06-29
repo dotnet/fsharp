@@ -7514,13 +7514,16 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                             let ilEnclArgTys, ilMethArgTys = List.splitAt numEnclILTypeArgs ilTyArgs
                             let boxity = mspec.DeclaringType.Boxity
                             let targetMspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
+                            let numBoundLeadingFormals = if takesInstanceArg then 0 else leadingArgs.Length
 
                             if takesInstanceArg <> targetMspec.MethodRef.CallingConv.IsInstance then
                                 None
                             elif takesInstanceArg && boxity.IsAsValue then
                                 // value-type receivers not handled
                                 None
-                            elif signatureMatches ilDelegeeParams ilDelegeeRet ilEnclArgTys ilMethArgTys targetMspec then
+                            elif
+                                signatureMatches numBoundLeadingFormals ilDelegeeParams ilDelegeeRet ilEnclArgTys ilMethArgTys targetMspec
+                            then
                                 Some(targetMspec, receiverInfo leadingArgs virtualCall)
                             else
                                 None
@@ -7542,6 +7545,12 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                     let boxity = if isStruct then AsValue else AsObject
                     let targetMspec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
 
+                    let numBoundLeadingFormals =
+                        if ilMethRef.CallingConv.IsInstance then
+                            0
+                        else
+                            leadingArgs.Length
+
                     // Unlike the F# case we cannot compare parameter/return IL types here: the target's
                     // types come from imported metadata, whose assembly scope refs differ from the
                     // compiler-generated delegee types (e.g. `System.Int32, System.Runtime` vs the bare
@@ -7549,7 +7558,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                     // primitives that always match. The forwarding match already pins the arity, and the
                     // type checker has verified the call is well-typed, so element compatibility holds by
                     // construction; an arity check is the sound guard (matching the generic case).
-                    if targetMspec.FormalArgTypes.Length = ilDelegeeParams.Length then
+                    if targetMspec.FormalArgTypes.Length - numBoundLeadingFormals = ilDelegeeParams.Length then
                         Some(targetMspec, receiverInfo leadingArgs isVirtual)
                     else
                         None

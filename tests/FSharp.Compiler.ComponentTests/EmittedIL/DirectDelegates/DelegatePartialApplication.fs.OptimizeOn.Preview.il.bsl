@@ -83,7 +83,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname papKnownVar@20
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname papKnownVar@26
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -97,7 +97,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname papStaticVar@23
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname papStaticVar@29
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -111,7 +111,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname papInstanceVar@26
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname papInstanceVar@32
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -141,7 +141,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/papKnownVar@20::Invoke(int32,
+    IL_0001:  ldftn      void assembly/papKnownVar@26::Invoke(int32,
                                                                                 int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)
@@ -153,7 +153,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/papStaticVar@23::Invoke(int32,
+    IL_0001:  ldftn      void assembly/papStaticVar@29::Invoke(int32,
                                                                                  int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)
@@ -166,7 +166,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/papInstanceVar@26::Invoke(int32,
+    IL_0001:  ldftn      void assembly/papInstanceVar@32::Invoke(int32,
                                                                                    int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)

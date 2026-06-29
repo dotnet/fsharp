@@ -98,24 +98,6 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname niEtaTupled@18
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static int32  Invoke(int32 a,
-                                          int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  call       int32 assembly::accTupled(int32,
-                                                                 int32)
-      IL_0007:  ret
-    } 
-
-  } 
-
   .method public static int32  accCurried(int32 x,
                                           int32 y) cil managed
   {
@@ -170,8 +152,8 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/niEtaTupled@18::Invoke(int32,
-                                                                           int32)
+    IL_0001:  ldftn      int32 assembly::accTupled(int32,
+                                                               int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                      native int)
     IL_000c:  ret
