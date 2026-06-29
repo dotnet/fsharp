@@ -420,7 +420,7 @@ let rec ImportProvidedTypeAsILType (env: ImportMap) (m: range) (st: Tainted<Prov
                 st, []
         let tref = GetILTypeRefOfProvidedType (gst, m)
         let tcref = ImportProvidedNamedType env m gst
-        let tps = tcref.Typars m
+        let tps = tcref.Typars
         if tps.Length <> genericArgs.Length then
            error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgs.Length), m))
         // We're converting to an IL type, where generic arguments are erased
@@ -497,7 +497,7 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
             else
                 tcref
 
-        let tps = tcref.Typars m
+        let tps = tcref.Typars
         if tps.Length <> genericArgsLength then
            error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgsLength), m))
 
@@ -709,9 +709,14 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
     Construct.NewILTycon
         (Some cpath)
         (nm, m)
-        // The read of the type parameters may fail to resolve types. We pick up a new range from the point where that read is forced
+        // The read of the type parameters may fail to resolve types. Entity.Typars forces
+        // entity_typars with entity_range, so the range used here is always the import-time
+        // range 'm' passed to NewILTycon above — never a caller's ad-hoc source range.
         // Make sure we reraise the original exception one occurs - see findOriginalException.
-        (LazyWithContext.Create((fun m -> ImportILGenericParameters amap m scoref [] nullableFallback tdef.GenericParams), findOriginalException))
+        (LazyWithContext.Create(
+            (fun m -> ImportILGenericParameters amap m scoref [] nullableFallback tdef.GenericParams),
+            findOriginalException
+        ))
         (scoref, enc, tdef)
         (MaybeLazy.Lazy lazyModuleOrNamespaceTypeForNestedTypes)
 
