@@ -36,6 +36,9 @@ tools:
   bash: true
 
 safe-outputs:
+  # Transient gh-aw infra crashes (e.g. unhealthy firewall container) and engine
+  # hiccups must not open tracking issues — real problems surface as PR labels/comments.
+  report-failure-as-issue: false
   noop:
     report-as-issue: false
   max-patch-size: 10240

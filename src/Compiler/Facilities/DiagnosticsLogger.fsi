@@ -427,6 +427,7 @@ val inline MapReduce2D:
     ys: 'T2 list ->
         OperationResult<'c>
 
+[<RequireQualifiedAccess>]
 module OperationResult =
     val inline ignore: res: OperationResult<'T> -> OperationResult<unit>
 

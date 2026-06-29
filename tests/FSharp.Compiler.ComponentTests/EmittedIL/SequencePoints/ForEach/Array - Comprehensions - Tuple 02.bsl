@@ -1,8 +1,17 @@
+module Module
+
+let f (l: (int * int) list) =
+    [|
+        for i, i1 in l do
+            yield i
+    |]
+--------------------------------------------------------------------------------
+
 Module::f
-  (5,5-8,7)  [| for i, i1 in l do yield i |]
+  (4,5-7,7)  [| for i, i1 in l do yield i |]
     IL_0000:  nop
 
-  (6,9-6,12)  for
+  (5,9-5,12)  for
     IL_0001:  ldarg.0
     IL_0002:  callvirt GetEnumerator
     IL_0007:  stloc.1
@@ -17,15 +26,15 @@ Module::f
     IL_001a:  call get_Item1
     IL_001f:  stloc.s 5
 
-  (7,13-7,20)  yield i
+  (6,13-6,20)  yield i
     IL_0021:  ldloca.s 0
     IL_0023:  ldloc.s 5
     IL_0025:  call Add
     IL_002a:  nop
 
-  (6,19-6,21)  in
+  (5,19-5,21)  in
     IL_002b:  ldloc.1
-    IL_002c:  callvirt MoveNext
+    IL_002c:  callvirt IEnumerator::MoveNext
     IL_0031:  brtrue.s IL_000a
     IL_0033:  ldnull
     IL_0034:  stloc.2
@@ -33,14 +42,12 @@ Module::f
     IL_0037:  ldloc.1
     IL_0038:  isinst IDisposable
     IL_003d:  stloc.s 6
-
-  <hidden>
     IL_003f:  ldloc.s 6
     IL_0041:  brfalse.s IL_004b
 
   <hidden>
     IL_0043:  ldloc.s 6
-    IL_0045:  callvirt Dispose
+    IL_0045:  callvirt IDisposable::Dispose
     IL_004a:  endfinally
 
   <hidden>
