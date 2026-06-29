@@ -38,6 +38,21 @@ From GitHub repo variable `VNEXT` (e.g., `10.0.300`)
 - Basic: `* Description. ([PR #NNNNN](https://github.com/dotnet/fsharp/pull/NNNNN))`
 - With issue: `* Description. ([Issue #NNNNN](...), [PR #NNNNN](...))`
 
+## Where to insert (avoid merge conflicts)
+Do NOT prepend at the top of the section — every PR doing that guarantees a merge conflict.
+Instead, insert at a random line within the target section using the helper, then edit there:
+
+```
+dotnet fsi .github/skills/release-notes/pick-insert-line.fsx --sink <Sink> --section <Section>
+```
+- `<Sink>`: `FSharp.Compiler.Service` | `FSharp.Core` | `Language` | `VisualStudio` (no leading dot).
+- `<Section>`: `Fixed` | `Added` | `Changed` | `Breaking Changes` | etc.
+- Or target a file directly: `--file docs/release-notes/.FSharp.Core/11.0.100.md --section Added`.
+
+It prints an existing bullet line (number + verbatim text). Insert your new bullet immediately
+ABOVE that line: use the printed line as the `edit` anchor (`old_str` = the line; `new_str` =
+`<your bullet>\n<the line>`). If it reports the section is missing, add the section first.
+
 ## CI Check
 PR fails if changes in tracked paths without release notes entry containing PR URL.
 Add `NO_RELEASE_NOTES` label to skip.
