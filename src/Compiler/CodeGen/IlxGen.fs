@@ -7454,8 +7454,15 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
 
     let numthis = if useStaticClosure then 0 else 1
 
-    let tmvs, body =
-        BindUnitVars g (tmvs, List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1, body)
+    let invokeParamInfos =
+        List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1
+
+    let etaUnitDelegate =
+        match tmvs, invokeParamInfos with
+        | [ _ ], [] -> true
+        | _ -> false
+
+    let tmvs, body = BindUnitVars g (tmvs, invokeParamInfos, body)
 
     // The slot sig contains a formal instantiation. When creating delegates we're only
     // interested in the actual instantiation since we don't have to emit a method impl.
@@ -7471,13 +7478,13 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
             None
         elif
             not cenv.options.localOptimizationsEnabled
-            && tmvs |> List.exists (fun v -> not v.IsCompilerGenerated)
+            && (etaUnitDelegate || tmvs |> List.exists (fun v -> not v.IsCompilerGenerated))
         then
             // Eta-expanded delegate in an unoptimized build: the Invoke parameters are the user's own lambda
-            // variables, so keep the closure to preserve their names for debugging. Non-eta delegates (whose
-            // parameters are synthesized by BuildNewDelegateExpr) are always made direct; eta-expanded ones
-            // are made direct only in optimized builds, where debuggability is not a concern and the
-            // forwarding call survives to here.
+            // variables (or, for a unit-argument eta delegate, an elided unit parameter), so keep the closure
+            // to preserve the user's lambda for debugging. Non-eta delegates (whose parameters are synthesized
+            // by BuildNewDelegateExpr) are always made direct; eta-expanded ones are made direct only in
+            // optimized builds, where debuggability is not a concern and the forwarding call survives to here.
             None
         else
             match classifyForwardingTarget g tmvs body with
@@ -7521,7 +7528,14 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                         None
                 | _ -> None
 
-            | DirectDelegateForwardingTargetCandidate.ILMethod(isVirtual, isStruct, isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst, leadingArgs) ->
+            | DirectDelegateForwardingTargetCandidate.ILMethod(isVirtual,
+                                                               isStruct,
+                                                               isCtor,
+                                                               valUseFlag,
+                                                               ilMethRef,
+                                                               enclTypeInst,
+                                                               methInst,
+                                                               leadingArgs) ->
                 if ilMethodDirectlyBindable g tmvs leadingArgs ilMethRef isStruct valUseFlag isCtor then
                     let ilEnclArgTys = GenTypeArgs cenv m eenvouter.tyenv enclTypeInst
                     let ilMethArgTys = GenTypeArgs cenv m eenvouter.tyenv methInst

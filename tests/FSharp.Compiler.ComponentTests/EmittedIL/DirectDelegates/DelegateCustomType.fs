@@ -43,5 +43,5 @@ let genEta () = DGen<int>(fun x -> ident x)
 
 // byref-parameter custom delegate: the body mutates through the byref, so it is not a transparent forwarding
 // call and stays a closure. Documents that a byref Invoke parameter does not break the recognizer.
-// 51. byref-parameter delegate (mutating body)
+// 53. byref-parameter delegate (mutating body)
 let byrefMutate () = DByref(fun x -> x <- x + 1)

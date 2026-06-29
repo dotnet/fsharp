@@ -104,7 +104,7 @@
       IL_000d:  ret
     } 
 
-    .method assembly hidebysig instance void Invoke(int32 delegateArg0, int32 delegateArg1) cil managed
+    .method assembly hidebysig instance void Invoke(int32 arg1, int32 arg2) cil managed
     {
       
       .maxstack  8
@@ -138,7 +138,7 @@
       IL_000d:  ret
     } 
 
-    .method assembly hidebysig instance void Invoke(int32 delegateArg0, int32 delegateArg1) cil managed
+    .method assembly hidebysig instance void Invoke(int32 arg1, int32 arg2) cil managed
     {
       
       .maxstack  8
@@ -176,7 +176,7 @@
       IL_0014:  ret
     } 
 
-    .method assembly hidebysig instance void Invoke(int32 delegateArg0, int32 delegateArg1) cil managed
+    .method assembly hidebysig instance void Invoke(int32 arg1, int32 arg2) cil managed
     {
       
       .maxstack  8

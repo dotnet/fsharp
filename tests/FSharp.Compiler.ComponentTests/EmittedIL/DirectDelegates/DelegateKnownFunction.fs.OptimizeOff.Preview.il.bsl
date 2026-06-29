@@ -75,8 +75,8 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static void  Invoke(int32 delegateArg0,
-                                         int32 delegateArg1) cil managed
+    .method assembly static void  Invoke(int32 arg1,
+                                         int32 arg2) cil managed
     {
       
       .maxstack  8

@@ -392,31 +392,47 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 46-47: the synthesized unit argument is seen as a leading argument for a static target, so a
-// unit-argument delegate stays a closure (and still runs).
+// Cases 46-49: the forwarded unit argument is stripped, so a unit-argument delegate points directly at the
+// target - a static target carries a null Target, an instance target carries the receiver.
 [<Fact>]
-let ``Unit-argument delegate stays a closure (preview)`` () =
+let ``Unit-argument delegate targets the real method (preview)`` () =
     FSharp """
-module UnitArgClosure
+module UnitArgDirect
 
 open System
 
-let mutable ran = false
-let handler () : unit = ran <- true
+let mutable ran = 0
+
+[<NoCompilerInlining>]
+let handler () : unit = ran <- ran + 1
+
+type C() =
+    [<NoCompilerInlining>]
+    member _.M () : unit = ran <- ran + 10
 
 [<EntryPoint>]
 let main _ =
-    let d = Action(handler)
-    d.Invoke()
-    if not ran then failwith "did not run"
-    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    // Static unit-argument target: direct, null Target, real Method.Name.
+    let ds = Action(handler)
+    ds.Invoke()
+    if ds.Method.Name <> "handler" then failwithf "static: expected 'handler' but got '%s'" ds.Method.Name
+    if not (isNull ds.Target) then failwith "static: Target should be null"
+
+    // Instance unit-argument target: direct, Target is the receiver.
+    let c = C()
+    let di = Action(c.M)
+    di.Invoke()
+    if di.Method.Name <> "M" then failwithf "instance: expected 'M' but got '%s'" di.Method.Name
+    if not (obj.ReferenceEquals(di.Target, c)) then failwith "instance: Target is not the receiver"
+
+    if ran <> 11 then failwithf "expected both targets to run (ran=%d)" ran
     0
         """
     |> withLangVersionPreview
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 48-49: a value-type receiver would need boxing (a delegate Target is object); not implemented, so
+// Cases 50-51: a value-type receiver would need boxing (a delegate Target is object); not implemented, so
 // it stays a closure and still dispatches correctly.
 [<Fact>]
 let ``Struct value-type receiver stays a closure (preview)`` () =
@@ -441,7 +457,7 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Case 50: an extension member compiles to a static method whose first parameter is the receiver, so it is
+// Case 52: an extension member compiles to a static method whose first parameter is the receiver, so it is
 // bound as a leading argument (a partial application) and stays a closure.
 [<Fact>]
 let ``Extension member stays a closure (preview)`` () =
@@ -470,7 +486,7 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Case 51: a byref Invoke parameter with a mutating body is not a transparent forwarding call, so it stays
+// Case 53: a byref Invoke parameter with a mutating body is not a transparent forwarding call, so it stays
 // a closure and mutates through the byref correctly.
 [<Fact>]
 let ``Byref-parameter delegate stays a closure and mutates (preview)`` () =

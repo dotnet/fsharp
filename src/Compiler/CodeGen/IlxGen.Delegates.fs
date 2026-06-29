@@ -29,11 +29,48 @@ type DirectDelegateForwardingTargetCandidate =
         leadingArgs: Expr list
     | Other
 
+let private isUnitValue e =
+    match stripDebugPoints e with
+    | Expr.Const(Const.Unit, _, _) -> true
+    | _ -> false
+
+// The forwarding call may be wrapped in let-bindings the recognizer must see through, in any combination:
+//  - a 'let unitVar = () in …' that BindUnitVars (or the elaborator) inserts for the elided unit parameter
+//    of a zero-parameter Invoke (e.g. System.Action), and
+//  - a side-effect-free receiver binding 'let v = recv in v.M …' that a non-eta delegate over an instance
+//    method value (e.g. Action(c.M)) produces to evaluate the receiver once.
+// Peel them repeatedly: unit bindings are dropped; a receiver binding is dropped while recording 'v -> recv'
+// so the receiver, which appears in the leading args as 'v', is mapped back to 'recv'. The downstream
+// bindability check confirms 'recv' may be hoisted to the construction site.
+let rec private peel g expr mapReceiver =
+    match stripDebugPoints expr with
+    | Expr.Let(TBind(v, rhs, _), inner, _, _) when isUnitTy g v.Type && isUnitValue rhs -> peel g inner mapReceiver
+    | Expr.Let(TBind(v, recv, _), inner, _, _) when not (Optimizer.ExprHasEffect g recv) ->
+        let mapReceiver leadingArgs =
+            mapReceiver (
+                leadingArgs
+                |> List.map (fun a ->
+                    match stripDebugPoints a with
+                    | Expr.Val(vref, _, _) when valRefEq g vref (mkLocalValRef v) -> recv
+                    | _ -> a)
+            )
+
+        peel g inner mapReceiver
+    | e -> e, mapReceiver
+
 let classifyForwardingTarget g (invokeParams: Val list) expr =
+    let body, mapReceiver = peel g expr id
+
     // The trailing arguments of the call must be exactly the delegate's Invoke parameters, forwarded
     // verbatim and in order. The remaining leading arguments (e.g. an instance receiver) are returned
     // for the consumer to handle.
     let matchForwarding (args: Expr list) =
+        // Drop the elided unit argument when the Invoke takes no parameters.
+        let args =
+            match List.tryLast args with
+            | Some last when List.isEmpty invokeParams && isUnitValue last -> List.truncate (args.Length - 1) args
+            | _ -> args
+
         let numLeading = args.Length - invokeParams.Length
 
         if numLeading >= 0 then
@@ -48,13 +85,13 @@ let classifyForwardingTarget g (invokeParams: Val list) expr =
                     forwardedArgs
                     invokeParams
             then
-                ValueSome leadingArgs
+                ValueSome(mapReceiver leadingArgs)
             else
                 ValueNone
         else
             ValueNone
 
-    match stripDebugPoints expr with
+    match body with
     | Expr.App(Expr.Val(vref, valUseFlags, _), _, tyargs, args, _) ->
         match matchForwarding args with
         | ValueSome leadingArgs -> DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, tyargs, leadingArgs)
@@ -62,7 +99,16 @@ let classifyForwardingTarget g (invokeParams: Val list) expr =
     | Expr.Op(TOp.ILCall(isVirtual, _, isStruct, isCtor, valUseFlag, _, _, ilMethRef, enclTypeInst, methInst, _), _, args, _) ->
         match matchForwarding args with
         | ValueSome leadingArgs ->
-            DirectDelegateForwardingTargetCandidate.ILMethod(isVirtual, isStruct, isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst, leadingArgs)
+            DirectDelegateForwardingTargetCandidate.ILMethod(
+                isVirtual,
+                isStruct,
+                isCtor,
+                valUseFlag,
+                ilMethRef,
+                enclTypeInst,
+                methInst,
+                leadingArgs
+            )
         | ValueNone -> DirectDelegateForwardingTargetCandidate.Other
     | _ -> DirectDelegateForwardingTargetCandidate.Other
 
@@ -82,7 +128,6 @@ let private receiverShapeOk (leadingArgs: Expr list) takesInstanceArg =
 ///    every Invoke; evaluating it once instead is observable unless it is side-effect free (a non-mutable
 ///    value, a constant, a pure field read).
 ///  - It must not reference the delegate's own Invoke parameters, which only exist inside the delegee method.
-/// ExprHasEffect short-circuits before the freeInExpr allocation, so disqualified delegates skip the traversal.
 let private receiverBindable g (invokeParams: Val list) (leadingArgs: Expr list) =
     match leadingArgs with
     | [ recv ] ->
@@ -127,8 +172,8 @@ let ilMethodDirectlyBindable
     not isCtor
     && not valUseFlag.IsVSlotDirectCall
     && not valUseFlag.IsPossibleConstrainedCall
-    && receiverShapeOk leadingArgs takesInstanceArg
     && not (takesInstanceArg && isStruct)
+    && receiverShapeOk leadingArgs takesInstanceArg
     && receiverBindable g invokeParams leadingArgs
 
 /// Confirm the target's IL signature is compatible with the delegate's Invoke. The type checker has already
