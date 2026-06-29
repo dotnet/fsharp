@@ -35,7 +35,7 @@ module RecursiveSafetyAnalysis =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3888, Line 7, Col 16, Line 7, Col 20, "The value or member 'test' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.")
+            (Error 3890, Line 7, Col 16, Line 7, Col 20, "The value or member 'test' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.")
         ]
 
     // SOURCE=E_TypeDeclaration01.fs SCFLAGS="--langversion:8.0 --test:ErrorRanges" COMPILE_ONLY=1	# E_TypeDeclaration01.fs
@@ -137,7 +137,7 @@ type C() as self =
             |> fun r -> r.Output.Diagnostics
         let recursiveErrs =
             diags
-            |> List.filter (fun d -> d.Error = Error 3888)
+            |> List.filter (fun d -> d.Error = Error 3890)
         Assert.Equal(2, recursiveErrs.Length)
 
     [<Fact>]
@@ -195,7 +195,7 @@ type B() =
             FSharp source
             |> compile
             |> fun r -> r.Output.Diagnostics
-        let recursiveErrs = diags |> List.filter (fun d -> d.Error = Error 3888)
+        let recursiveErrs = diags |> List.filter (fun d -> d.Error = Error 3890)
         Assert.NotEmpty(recursiveErrs)
 
     [<Fact>]
@@ -208,7 +208,7 @@ type C() as self =
             FSharp source
             |> compile
             |> fun r -> r.Output.Diagnostics
-        let recursiveErrs = diags |> List.filter (fun d -> d.Error = Error 3888)
+        let recursiveErrs = diags |> List.filter (fun d -> d.Error = Error 3890)
         Assert.Empty(recursiveErrs)
 
     [<Fact>]
@@ -222,6 +222,6 @@ type C() =
             FSharp source
             |> compile
             |> fun r -> r.Output.Diagnostics
-        let recursiveErrs = diags |> List.filter (fun d -> d.Error = Error 3888)
+        let recursiveErrs = diags |> List.filter (fun d -> d.Error = Error 3890)
         Assert.Equal(1, recursiveErrs.Length)
 
