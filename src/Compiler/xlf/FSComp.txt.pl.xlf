@@ -457,6 +457,11 @@
         <target state="translated">Ulepszone nazwy dorozumianych argumentów</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
+        <source>Improved implied argument names with partial application</source>
+        <target state="new">Improved implied argument names with partial application</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">notacja wyrażenia expr[idx] do indeksowania i fragmentowania</target>
@@ -1360,6 +1365,11 @@
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
         <target state="translated">(Sugerowana nazwa)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastNamespaceAndTypeWithSameNameInAssembly">
+        <source>The namespace '{0}' clashes with the type '{1}'.</source>
+        <target state="new">The namespace '{0}' clashes with the type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">

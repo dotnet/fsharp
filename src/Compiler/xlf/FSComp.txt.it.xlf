@@ -457,6 +457,11 @@
         <target state="translated">Nomi di argomenti impliciti migliorati</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
+        <source>Improved implied argument names with partial application</source>
+        <target state="new">Improved implied argument names with partial application</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">Notazione expr[idx] per l'indicizzazione e il sezionamento</target>
@@ -1360,6 +1365,11 @@
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
         <target state="translated">(Nome consigliato)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastNamespaceAndTypeWithSameNameInAssembly">
+        <source>The namespace '{0}' clashes with the type '{1}'.</source>
+        <target state="new">The namespace '{0}' clashes with the type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
