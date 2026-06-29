@@ -1654,20 +1654,18 @@ let IlAssemblyCodeInstrHasEffect i =
 let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
 
 /// EI_ilzero embeds tyargs into IL; eliminating the binding is only safe when
-/// the tyargs are fully concrete types (not type variables, even solved ones).
-/// Solved SRTP type variables can still reference intermediate anonymous typars
-/// that trip FS0073 in IlxGen when the binding is removed.
+/// the tyargs are fully ground (contain no free type variables, even after
+/// following solutions). A binding whose type still references unsolved typars
+/// is the only thing pinning those typars; removing it leaves them unsolved and
+/// trips FS0073 in IlxGen. This is common for SRTP witness/dummy arguments.
 let ILAsmWithIlzeroHasEffect instrs tyargs =
     let hasIlzero = instrs |> List.exists (function EI_ilzero _ -> true | _ -> false)
 
     if not hasIlzero then
         IlAssemblyCodeHasEffect instrs
     else
-        // EI_ilzero is effect-free only when ALL tyargs are concrete TType_app/TType_tuple
-        // (not TType_var at the tree node level, regardless of whether the typar is solved).
         let ilzeroIsSafe =
-            not (List.isEmpty tyargs)
-            && tyargs |> List.forall (fun ty -> match ty with TType_var _ -> false | _ -> true)
+            tyargs |> List.forall (fun ty -> Zset.isEmpty (freeInType CollectTypars ty).FreeTypars)
 
         let otherInstrsHaveEffect =
             instrs |> List.exists (fun i -> match i with EI_ilzero _ -> false | _ -> IlAssemblyCodeInstrHasEffect i)
