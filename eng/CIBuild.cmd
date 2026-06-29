@@ -28,9 +28,18 @@ rem --- Step 4: real product build via Arcade (uses Proto\net40\bin). -m:1 avoid
 rem    legacy net40\bin race; DisableLocalization defers XliffTasks. No signing/pack here. ---
 echo ---------------- Building product (real) ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Product.sln' /m:1 /p:DisableLocalization=true; exit $LASTEXITCODE"
-exit /b %ERRORLEVEL%
+if errorlevel 1 ( echo Error: product build failed 1>&2 & exit /b 1 )
 
-rem vsintegration is NOT built here. Building it (FSharp.Insertion.sln, GeneratePkgDefFile=false)
-rem on CI surfaced open compile blockers - FS0039 (e.g. Colorize.fs 'TokenInfo' not defined),
-rem BC30389 (VB property-pages Friend/IVT access), MSB3277 - that are EPIC-V work, separate from
-rem this product clean slate. The MSBuild repoint + FSharp.Insertion.sln stay staged for that effort.
+rem --- Step 5 (opt-in): vsintegration IDE + VS insertion VSIX. EPIC-V compile blockers are resolved;
+rem    it builds locally green. Gated on BUILD_INSERTION because FSharp.Insertion.sln pulls the serviced
+rem    Roslyn 2.10 from the cross-org devdiv VS-CoreXtFeeds, which needs a feed credential on this dnceng
+rem    pipeline (operator step). Restore is done separately (the netfx credential provider is broken) then
+rem    build without -restore. Until the credential is provisioned, product CI stays green by default. ---
+if not defined BUILD_INSERTION ( echo vsintegration/insertion skipped ^(set BUILD_INSERTION=1 once devdiv feed cred is on the pipeline^) & exit /b 0 )
+echo ---------------- Restoring + building vsintegration insertion ----------------
+dotnet restore "%_root%\FSharp.Insertion.sln" --configfile "%_root%\NuGet.Config"
+if errorlevel 1 ( echo Error: insertion restore failed 1>&2 & exit /b 1 )
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Insertion.sln' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
+if errorlevel 1 ( echo Error: vsintegration build failed 1>&2 & exit /b 1 )
+powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj' /m:1 /p:DisableLocalization=true /p:GeneratePkgDefFile=false; exit $LASTEXITCODE"
+exit /b %ERRORLEVEL%
