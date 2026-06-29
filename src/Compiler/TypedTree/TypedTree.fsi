@@ -152,6 +152,8 @@ type ValFlags =
 
     member WithInlineIfLambda: ValFlags
 
+    member WithInlineInfo: inlineInfo: ValInline -> ValFlags
+
     member WithIsImplied: ValFlags
 
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
@@ -2009,6 +2011,11 @@ type Val =
     member SetIgnoresByrefScope: unit -> unit
 
     member SetInlineIfLambda: unit -> unit
+
+    /// Sets the inline information for this value. Used by the type checker
+    /// to downgrade an erroneously-recursive inline binding to non-inline
+    /// so that the optimizer does not cascade further diagnostics.
+    member SetInlineInfo: inlineInfo: ValInline -> unit
 
     member SetIsImplied: unit -> unit
 
