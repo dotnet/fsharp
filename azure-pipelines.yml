@@ -60,11 +60,15 @@ extends:
               - checkout: self
                 clean: true
                 fetchDepth: 1
-              # NuGetAuthenticate stays staged so the insertion build can restore the serviced Roslyn once
-              # those packages are mirrored into dotnet-public (CFS forbids the cross-org devdiv feed here).
+              # Restore the VS-15.9 serviced Roslyn from the devdiv VS package feed using the shared
+              # "DevDiv - VS package feed" service connection (the same one dotnet-roslyn-official uses to
+              # publish those packages). NuGetAuthenticate provides the cred for the feed in NuGet.Config.
               - task: NuGetAuthenticate@1
-                displayName: 'Authenticate NuGet feeds'
+                displayName: 'Authenticate NuGet feeds (devdiv VS package feed)'
+                inputs:
+                  nuGetServiceConnections: 'DevDiv - VS package feed'
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product)'
+                displayName: 'Build (product + vsintegration IDE + VSIX)'
                 env:
                   DisableLocalization: true
+                  BUILD_INSERTION: 1
