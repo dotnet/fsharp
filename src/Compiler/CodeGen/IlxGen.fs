@@ -8809,11 +8809,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         CommitStartScope cgbuf startMarkOpt
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
-    | _ when
-        vspec.IsClassConstructor
-        && isNil vspec.DeclaringEntity.Typars
-        && not isStateVar
-        ->
+    | _ when vspec.IsClassConstructor && isNil vspec.DeclaringEntity.Typars && not isStateVar ->
         let tps, _, _, _, cctorBody, _ =
             IteratedAdjustLambdaToMatchValReprInfo g cenv.amap vspec.ValReprInfo.Value rhsExpr
 
