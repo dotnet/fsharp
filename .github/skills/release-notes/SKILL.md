@@ -47,11 +47,13 @@ dotnet fsi .github/skills/release-notes/pick-insert-line.fsx --sink <Sink> --sec
 ```
 - `<Sink>`: `FSharp.Compiler.Service` | `FSharp.Core` | `Language` | `VisualStudio` (no leading dot).
 - `<Section>`: `Fixed` | `Added` | `Changed` | `Breaking Changes` | etc.
-- Or target a file directly: `--file docs/release-notes/.FSharp.Core/11.0.100.md --section Added`.
+- `--sink` auto-selects the newest version file on disk, which can differ from the
+  `VNEXT`-targeted version (e.g. on servicing branches). When the version is known, prefer
+  passing the explicit path: `--file docs/release-notes/.<Sink>/<Version>.md --section <Section>`.
 
-It prints an existing bullet line (number + verbatim text). Insert your new bullet immediately
-ABOVE that line: use the printed line as the `edit` anchor (`old_str` = the line; `new_str` =
-`<your bullet>\n<the line>`). If it reports the section is missing, add the section first.
+It prints an anchor line (number + verbatim text) and whether to insert ABOVE or BELOW it.
+Use the printed line as the `edit` anchor (`old_str` = the line; `new_str` places your bullet
+on the indicated side). If it reports the section is missing, add the section first.
 
 ## CI Check
 PR fails if changes in tracked paths without release notes entry containing PR URL.

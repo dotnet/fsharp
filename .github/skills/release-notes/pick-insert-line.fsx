@@ -9,8 +9,13 @@
 //   dotnet fsi .github/skills/release-notes/pick-insert-line.fsx --sink FSharp.Compiler.Service --section Fixed
 //   dotnet fsi .github/skills/release-notes/pick-insert-line.fsx --file docs/release-notes/.FSharp.Core/11.0.100.md --section Added
 //
-// It prints an existing bullet line (number + verbatim content). Insert your new
-// bullet immediately ABOVE that line (use the printed line as the edit anchor).
+// --sink auto-selects the NEWEST version file on disk, which can diverge from the
+// version the repo variable VNEXT points at (e.g. on servicing branches). When the
+// target version is known (it is in the skill flow), prefer passing --file with the
+// VNEXT-derived path so the bullet always lands in the intended file.
+//
+// It prints an anchor line (number + verbatim content) and whether to insert ABOVE or
+// BELOW it. Use the printed line as the edit anchor and place your bullet accordingly.
 
 open System
 open System.IO
@@ -57,7 +62,17 @@ let resolveFile () =
                         | _ -> Int32.MaxValue)
                     |> List.ofArray
 
-                Directory.GetFiles(dir, "*.md") |> Array.sortBy versionKey |> Array.last
+                let chosen =
+                    Directory.GetFiles(dir, "*.md") |> Array.sortBy versionKey |> Array.last
+
+                // This is the newest file ON DISK, which may not match the VNEXT-targeted
+                // version. Surface it (on stderr, so stdout stays the clean anchor output)
+                // so a mismatch is noticed; pass --file to override.
+                eprintfn
+                    "note: --sink auto-selected newest on-disk file '%s'. If VNEXT targets another version, pass --file."
+                    (Path.GetFileName chosen)
+
+                chosen
 
 let file = resolveFile ()
 
@@ -94,13 +109,28 @@ match lines |> Array.tryFindIndex headerMatches with
               if lines.[i].TrimStart().StartsWith("* ") then
                   yield i ]
 
-    match bulletIdxs with
-    | [] -> printfn "Section '### %s' (%s) is empty. Add your bullet on line %d, just below the header." section rel (h + 2)
-    | _ ->
-        let pick = bulletIdxs.[Random().Next(bulletIdxs.Length)]
-        printfn "Insert your new bullet ABOVE this line in %s:" rel
-        printfn ""
-        printfn "  line %d: %s" (pick + 1) lines.[pick]
-        printfn ""
+    // Candidate insertion points, each a (non-blank anchor line, side) pair. Anchoring
+    // only on non-blank lines (the header or an existing bullet) keeps the edit anchor
+    // unique. Offering BOTH sides of every bullet plus the header means even a 0-1 bullet
+    // section yields several distinct positions, so two concurrent PRs rarely pick the
+    // same spot. Dedup by the resulting gap so we never present two options that land in
+    // the same place (which would still merge-conflict).
+    let candidates =
+        [ yield h, "below"
+          for b in bulletIdxs do
+              yield b, "above"
+              yield b, "below" ]
+        |> List.distinctBy (fun (idx, side) -> if side = "above" then idx else idx + 1)
+
+    let anchorIdx, side = candidates.[Random().Next(candidates.Length)]
+    printfn "Insert your new bullet %s this line in %s:" (side.ToUpperInvariant()) rel
+    printfn ""
+    printfn "  line %d: %s" (anchorIdx + 1) lines.[anchorIdx]
+    printfn ""
+
+    if side = "above" then
         printfn "Use that exact line as the edit anchor: old_str = the line; new_str = <your bullet>\\n<the line>."
-        printfn "(Random position within '### %s' — avoids the top-of-section merge conflicts.)" section
+    else
+        printfn "Use that exact line as the edit anchor: old_str = the line; new_str = <the line>\\n<your bullet>."
+
+    printfn "(Random position within '### %s' — avoids the top-of-section merge conflicts.)" section
