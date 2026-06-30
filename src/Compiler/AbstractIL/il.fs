@@ -5417,11 +5417,7 @@ let decodeILAttribData (ca: ILAttribute) =
 
                     let elems, sigptr = parseElems [] n sigptr
                     ILAttribElem.Array(elemTy, elems), sigptr
-            | ILType.Value _ ->
-                // Assume an enumeration. Note: the underlying integer width is not present in the
-                // blob, so this reads it as int32. Enums with a non-int32 underlying type (byte,
-                // int16, int64, ...) are therefore not read correctly here; resolving that would
-                // require materializing the enum type, which this blob parser does not do.
+            | ILType.Value _ -> (* assume it is an enumeration *)
                 let n, sigptr = sigptr_get_i32 bytes sigptr
                 ILAttribElem.Int32 n, sigptr
             | _ -> failwith "decodeILAttribData: attribute data involves an enum or System.Type value"
