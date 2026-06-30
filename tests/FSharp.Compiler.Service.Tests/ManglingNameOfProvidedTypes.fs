@@ -191,7 +191,7 @@ module ProvidedTypeHostingTests =
             let names = [ for i in 1..100 -> $"Provided{i}" ]
 
             let writerCount = names.Length
-            let readerCount = 16
+            let readerCount = 32
             use barrier = new System.Threading.Barrier(writerCount + readerCount)
             let stop = ref 0
 
@@ -201,13 +201,17 @@ module ProvidedTypeHostingTests =
                           barrier.SignalAndWait()
                           mtyp.GetOrInternProvidedEntity(name, fun () -> makeEntity name) |> ignore) ]
 
-            // Readers hammer a guarded lookup table while interning is in flight, forcing recompute/store races.
+            // Readers hammer the version-stamped lookup tables while interning is in flight, forcing the
+            // recompute/store races that a flag-gated lock would lose during the first concurrent append.
             let readers =
                 [ for _ in 1..readerCount ->
                       System.Threading.Thread(fun () ->
                           barrier.SignalAndWait()
                           while System.Threading.Volatile.Read(&stop.contents) = 0 do
-                              mtyp.AllEntitiesByCompiledAndLogicalMangledNames |> ignore) ]
+                              mtyp.AllEntitiesByCompiledAndLogicalMangledNames |> ignore
+                              mtyp.TypesByMangledName |> ignore
+                              mtyp.TypesByAccessNames |> ignore
+                              mtyp.TypesByDemangledNameAndArity |> ignore) ]
 
             readers |> List.iter (fun t -> t.Start())
             writers |> List.iter (fun t -> t.Start())
@@ -216,7 +220,9 @@ module ProvidedTypeHostingTests =
             readers |> List.iter (fun t -> t.Join())
 
             Assert.Equal(names.Length, mtyp.AllEntities |> Seq.length)
-            // The cache-derived view must agree with the entity set: every interned name resolves.
+            // Once interning has quiesced, the version-stamped view must agree with the entity set: every
+            // interned name resolves. A poisoned memo from a racing read cannot survive, because the final
+            // entities version no longer matches any table a reader cached mid-append.
             let table = mtyp.AllEntitiesByCompiledAndLogicalMangledNames
             for name in names do
                 Assert.True(table.ContainsKey name, $"Lookup cache dropped interned entity '{name}'.")

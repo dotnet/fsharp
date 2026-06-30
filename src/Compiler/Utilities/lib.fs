@@ -358,25 +358,21 @@ let inline cacheOptByref (cache: byref<'T option>) ([<InlineIfLambda>] f) =
        cache <- Some res
        res
 
-/// Like 'cacheOptByref', but when 'useLock' is set the read/compute/store is serialized on 'gate'.
-/// Used for memo tables whose backing data can be mutated from other threads (e.g. provided-type linking
-/// under graph-based parallel checking), where an unguarded reader could otherwise republish a memo computed
-/// from a stale snapshot after a concurrent mutation cleared it. 'gate' must be non-null whenever 'useLock'.
-let inline cacheOptByrefWithLock (useLock: bool) (gate: obj | null) (cache: byref<'T option>) ([<InlineIfLambda>] f) =
-    if useLock then
-        let gate = nonNull gate
-        System.Threading.Monitor.Enter gate
-        try
-            match cache with
-            | Some v -> v
-            | None ->
-                let res = f()
-                cache <- Some res
-                res
-        finally
-            System.Threading.Monitor.Exit gate
-    else
-        cacheOptByref &cache f
+/// Version-stamped variant of 'cacheOptByref' for memo tables whose backing data may be appended to
+/// concurrently (e.g. provided-type linking under graph-based parallel checking). The cached value is tagged
+/// with the data 'version' observed when it was computed; a reader whose 'version' no longer matches the tag
+/// recomputes. Callers must read 'version' (with acquire semantics) before evaluating 'f', and 'f' must read
+/// only data covered by that version. This never strands a table missing an entry committed at or before the
+/// cached version, so unlike a flag-gated lock - whose fast/locked split can poison the cache during the first
+/// concurrent append - it stays coherent without any lock. 'cache' must be a reference type so its publication
+/// is a single atomic store; a struct option could tear under concurrent reads.
+let inline cacheOptByrefByVersion (version: int) (cache: byref<(int * 'T) option>) ([<InlineIfLambda>] f) =
+    match cache with
+    | Some (cachedVersion, value) when cachedVersion = version -> value
+    | _ ->
+        let value = f ()
+        cache <- Some(version, value)
+        value
 
 // REVIEW: this is only used because we want to mutate a record field,
 // and because you cannot take a byref<_> of such a thing directly,
