@@ -307,6 +307,7 @@
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
+    <Compile Include="ErrorMessages\AssignmentToParameterErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />
     <Compile Include="ErrorMessages\OperatorTests.fs" />
     <Compile Include="ErrorMessages\CommaSemicolonListTests.fs" />

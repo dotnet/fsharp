@@ -581,6 +581,7 @@ module OldStyleMessages =
     let RuleNeverMatchedE () = Message("RuleNeverMatched", "")
     let EnumMatchIncomplete1E () = Message("EnumMatchIncomplete1", "")
     let ValNotMutableE () = Message("ValNotMutable", "%s")
+    let ValNotMutableParameterE () = Message("ValNotMutableParameter", "%s%s%s")
     let ValNotLocalE () = Message("ValNotLocal", "")
     let Obsolete1E () = Message("Obsolete1", "")
     let Obsolete2E () = Message("Obsolete2", "%s")
@@ -1862,7 +1863,16 @@ type Exception with
 
         | PatternMatchCompilation.RuleNeverMatched _ -> os.AppendString(RuleNeverMatchedE().Format)
 
-        | ValNotMutable(_, vref, _) -> os.AppendString(ValNotMutableE().Format(vref.DisplayName))
+        | ValNotMutable(_, vref, _) ->
+            let name = vref.DisplayName
+
+            let msg =
+                if vref.Deref.IsParameter then
+                    ValNotMutableParameterE().Format name name name
+                else
+                    ValNotMutableE().Format name
+
+            os.AppendString msg
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
 
