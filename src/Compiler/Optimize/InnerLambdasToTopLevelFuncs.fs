@@ -157,6 +157,32 @@ let IsRefusedTLR g (f: Val) =
     let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline || isResumableCode || isInlineIfLambda
     refuseTest
 
+/// Under --realsig+, a TLR-lifted helper is emitted at module scope (outside its declaring
+/// type when that type is a class). If the helper's body invokes a source-`private` member
+/// of a class/struct, the CLR raises MethodAccessException at runtime because IL `private`
+/// is type-scoped.
+///
+/// Private members of MODULES are not at risk: the lifted helper lands in the same module
+/// IL class as the private val. F# RecdFields always compile to IL `assembly` or wider, so
+/// field access is safe; only val/method references whose declaring entity is a class need
+/// to be checked.
+let BodyReferencesTypeScopedPrivate e =
+    let mutable found = false
+    let folder =
+        { ExprFolder0 with
+            exprIntercept = fun _recurseF noInterceptF z expr ->
+                if found then z
+                else
+                    match expr with
+                    | Expr.Val (vref, _, _) when vref.Accessibility.IsPrivate ->
+                        match vref.TryDeclaringEntity with
+                        | Parent eref when not eref.IsModuleOrNamespace -> found <- true
+                        | _ -> ()
+                    | _ -> ()
+                    noInterceptF z expr }
+    FoldExpr folder () e |> ignore
+    found
+
 let IsMandatoryTopLevel (f: Val) =
     let specialVal = f.MemberInfo.IsSome
     let isModulBinding = f.IsMemberOrModuleBinding
@@ -185,6 +211,11 @@ module Pass1_DetermineTLRAndArities =
         // Exclude values bound in a decision tree
         elif Zset.contains f xinfo.DecisionTreeBindings then
             None
+
+        // Under --realsig+, lifting a helper out of its declaring type would lose access to
+        // any source-`private` members it references, producing MethodAccessException at runtime.
+        elif g.realsig && BodyReferencesTypeScopedPrivate e then
+            None
         else
             // Could the binding be TLR? with what arity?
             let atTopLevel = Zset.contains f xinfo.TopLevelBindings
@@ -192,11 +223,7 @@ module Pass1_DetermineTLRAndArities =
             let nFormals = vss.Length
             let nMaxApplied = GetMaxNumArgsAtUses xinfo f
             let arity = min nFormals nMaxApplied
-            if atTopLevel then
-                Some (f, arity)
-            elif g.realsig then
-                None
-            else if arity<>0 || not (isNil tps) then
+            if atTopLevel || arity <> 0 || not (isNil tps) then
                 Some (f, arity)
             else
                 None
@@ -818,7 +845,7 @@ let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =
 // REVIEW: could do better here by preserving names
 let MakeSimpleArityInfo tps n = ValReprInfo (ValReprInfo.InferTyparInfo tps, List.replicate n ValReprInfo.unnamedTopArg, ValReprInfo.unnamedRetVal)
 
-let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
+let CreateNewValuesForTLR (scope: PerFileNamingScope) g tlrS arityM fclassM envPackM =
 
     let createFHat (f: Val) =
         let wf = Zmap.force f arityM ("createFHat - wf", (valL >> showL))
@@ -837,14 +864,14 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
         let fHatArity = MakeSimpleArityInfo newTps (envp.ep_aenvs.Length + wf)
 
         let fHatName =
-            // Ensure that we have an g.CompilerGlobalState
-            assert(g.CompilerGlobalState |> Option.isSome)
-            g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(name, m)
+            scope.Fresh(name, m)
 
         let fHat = mkLocalNameTypeArity f.IsCompilerGenerated m fHatName fHatTy (Some fHatArity)
         fHat
 
-    let fs = Zset.elements tlrS
+    let fs =
+        Zset.elements tlrS
+        |> List.sortWith (fun v1 v2 -> compare (valSourceOrderKey v1) (valSourceOrderKey v2))
     let ffHats = List.map (fun f -> f, createFHat f) fs
     let fHatM = Zmap.ofList valOrder ffHats
     fHatM
@@ -1345,7 +1372,7 @@ let RecreateUniqueBounds g expr =
 // entry point
 //-------------------------------------------------------------------------
 
-let MakeTopLevelRepresentationDecisions ccu g expr =
+let MakeTopLevelRepresentationDecisions (scope: PerFileNamingScope) ccu g expr =
    try
       // pass1: choose the f to be TLR with arity(f)
       let tlrS, topValS, arityM = Pass1_DetermineTLRAndArities.DetermineTLRAndArities g expr
@@ -1355,7 +1382,7 @@ let MakeTopLevelRepresentationDecisions ccu g expr =
 
       // pass3
       let envPackM = ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap
-      let fHatM = CreateNewValuesForTLR g tlrS arityM fclassM envPackM
+      let fHatM = CreateNewValuesForTLR scope g tlrS arityM fclassM envPackM
 
       // pass4: rewrite
       if verboseTLR then dprintf "TransExpr(rw)------\n"

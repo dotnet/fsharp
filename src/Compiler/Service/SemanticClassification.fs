@@ -91,8 +91,12 @@ module TcResolutionsExtensions =
 
     let isValRefMutable g (vref: ValRef) =
         // Mutable values, ref cells, and non-inref byrefs are mutable.
+        // Exclude CtorThisVal: the compiler wraps recursive object self-references
+        // (`as this`, `let rec` self-refs) in a ref cell for initialization, but the
+        // user-visible binding is immutable. Mirrors FSharpMemberOrFunctionOrValue.IsMutable
+        // in src/Compiler/Symbols/Symbols.fs.
         vref.IsMutable
-        || isRefCellTy g vref.Type
+        || (not vref.IsCtorThisVal && isRefCellTy g vref.Type)
         || (isByrefTy g vref.Type && not (isInByrefTy g vref.Type))
 
     let isRecdFieldMutable g (rfinfo: RecdFieldInfo) =
