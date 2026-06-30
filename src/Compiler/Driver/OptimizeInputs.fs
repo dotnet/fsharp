@@ -437,6 +437,9 @@ let ApplyAllOptimizations
     if tcConfig.extraOptimizationIterations > 0 then
         addPhase "ExtraLoop" extraLoop
 
+    let mkFileNamingScope (file: CheckedImplFile) =
+        tcGlobals.CompilerGlobalState.Value.NewFileScope(file.QualifiedNameOfFile.Range)
+
     let detuple
         ({
              File = file
@@ -444,7 +447,8 @@ let ApplyAllOptimizations
              PrevFile = _prevFile
          }: PhaseInputs)
         : PhaseRes =
-        let file = file |> Detuple.DetupleImplFile ccu tcGlobals
+        let scope = mkFileNamingScope file
+        let file = file |> Detuple.DetupleImplFile scope ccu tcGlobals
         file, prevPhase
 
     if tcConfig.doDetuple then
@@ -457,9 +461,11 @@ let ApplyAllOptimizations
              PrevFile = _prevFile
          }: PhaseInputs)
         : PhaseRes =
+        let scope = mkFileNamingScope file
+
         let file =
             file
-            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions importMap ccu tcGlobals
+            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions importMap scope ccu tcGlobals
 
         file, prevPhase
 
@@ -511,7 +517,6 @@ let ApplyAllOptimizations
 
     let results, optEnvFirstLoop =
         match tcConfig.optSettings.processingMode with
-        // Parallel optimization breaks determinism - turn it off in deterministic builds.
         | Optimizer.OptimizationProcessingMode.Parallel ->
             let results, optEnvFirstPhase =
                 ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
