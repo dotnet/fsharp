@@ -1752,6 +1752,11 @@
         <target state="new">You can remove this `nonNull` assertion.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcRecursiveInlineNotAllowed">
+        <source>The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</source>
+        <target state="new">The value or member '{0}' has been marked 'inline' but is part of a recursive binding group. F# does not support recursive 'inline' values. Either remove the 'inline' modifier or refactor the recursion.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
         <target state="translated">Le « laissez ! » ... et! ...' ne peut être utilisée que si le générateur d'expression de calcul définit soit une méthode '{0}', soit des méthodes 'MergeSources' et 'Bind' appropriées.</target>
