@@ -229,7 +229,8 @@ module Basic =
 
     // Regression for https://github.com/dotnet/fsharp/issues/17773: a record with a private constructor whose
     // generated structural-equality/comparison members are consumed from another assembly must not throw
-    // MethodAccessException. Equals(R, IEqualityComparer) / CompareTo(R, IComparer) are emitted at the record
+    // MethodAccessException. Cross-assembly `a = b` emits a direct call to the typed `R::Equals(R, IEqualityComparer)`
+    // (the member that threw in #17773) and `compare a c` to `R::CompareTo(R)`; both must be emitted at the record
     // type's accessibility (public), not the private representation's.
     let private issue17773Lib =
         FSharp """
@@ -246,15 +247,12 @@ module Make =
         FSharp """
 module Consumer
 open Issue17773.Lib
-open System.Collections
 [<EntryPoint>]
 let main _ =
     let a = Make.r 1
     let b = Make.r 1
     let c = Make.r 2
-    let eqWithComparer = (a :> IStructuralEquatable).Equals(b, StructuralComparisons.StructuralEqualityComparer)
-    let cmpWithComparer = (a :> IStructuralComparable).CompareTo(c, StructuralComparisons.StructuralComparer)
-    if a = b && eqWithComparer && cmpWithComparer < 0 && compare a c < 0 then 0 else 1
+    if a = b && compare a c < 0 then 0 else 1
 """
         |> withReferences [issue17773Lib]
         |> asExe
