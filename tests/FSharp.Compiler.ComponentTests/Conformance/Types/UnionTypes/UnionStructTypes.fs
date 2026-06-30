@@ -953,25 +953,13 @@ let main args =
       IL_0001:  ldarg.1
       IL_0002:  stfld      int32 Foo/StructUnion::_tag
       IL_0007:  ret
-    } """;(*This is getter for a data-less case, just calling into the constructor above*)"""
-            get_Case11() cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                  int32) = ( 01 00 08 00 00 00 0A 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldc.i4.s   10
-      IL_0002:  newobj     instance void Foo/StructUnion::.ctor(int32)
-      IL_0007:  ret
-    }""";(*This is a 'maker method' New{CaseName} used for cases which do have fields associated with them, + the _tag gets initialized*)"""
+    } """;(*This is a 'maker method' New{CaseName} used for cases which do have fields associated with them, + the _tag gets initialized*)"""
             NewCase3(string _field1_3, string _field2_3) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 02 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
 
       .maxstack  3
       .locals init (valuetype Foo/StructUnion V_0)
@@ -990,6 +978,19 @@ let main args =
       IL_0021:  ret
     } 
 
+""";(*This is getter for a data-less case, just calling into the constructor above*)"""
+            get_Case11() cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32) = ( 01 00 08 00 00 00 0A 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.s   10
+      IL_0002:  newobj     instance void Foo/StructUnion::.ctor(int32)
+      IL_0007:  ret
+    }""";(*This is the getter on a per-instance basis, used as a way to check if a given instance is of a given case*)"""
     .method public hidebysig instance bool 
             get_IsCase3() cil managed
     {
