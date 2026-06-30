@@ -102,6 +102,8 @@ type LanguageFeature =
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
     | NotNullIfNotNull
+    | AccessProtectedBaseFieldFromClosure
+    | ImprovedImpliedArgumentNamesPartTwo
 
 /// LanguageVersion management
 type LanguageVersion =
