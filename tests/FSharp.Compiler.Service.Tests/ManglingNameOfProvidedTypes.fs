@@ -82,8 +82,17 @@ module ProvidedTypeHostingTests =
     /// The TypeProvider SDK reflects over the value the compiler stores in
     /// TypeProviderConfig.systemRuntimeContainsType and requires a captured field literally named
     /// 'tcImports' (https://github.com/fsprojects/FSharp.TypeProviders.SDK ProvidedTypes.fs). That field
-    /// name comes from a closure capture, which is codegen-sensitive: an unoptimized build once emitted it
-    /// as 'objectArg'. Guard the contract here so it cannot silently break per configuration again.
+    /// name comes from a closure capture, which is codegen-sensitive: the previous method-group form
+    /// (`tcImports.SystemRuntimeContainsType`) captured its receiver under a synthesized, optimization-dependent
+    /// name (`objectArg` under `--optimize-`), so the contract held only in some configurations. The explicit
+    /// lambda now used in CompilerImports.fs captures the local under its own name `tcImports` in every
+    /// configuration.
+    ///
+    /// This test reflects over whichever build of FSharp.Compiler.Service it is run against. To stay meaningful
+    /// for the optimized FCS that the SDK actually consumes as well as for the Debug build, it asserts both
+    /// halves of the contract: a 'tcImports' field is present, and the regression symptom (a synthesized
+    /// 'objectArg' receiver capture on this closure) is absent. The fix has been verified to satisfy both in
+    /// Debug and Release builds.
     [<Fact>]
     let ``systemRuntimeContainsType closure exposes a field named tcImports`` () =
         let asm = typeof<FSharp.Compiler.CodeAnalysis.FSharpChecker>.Assembly
@@ -108,6 +117,16 @@ module ProvidedTypeHostingTests =
         Assert.True(
             exposesTcImports,
             $"No 'systemRuntimeContainsType' closure exposes a 'tcImports' field. Found: %A{fieldsByClosure}")
+
+        // The method-group regression symptom: the receiver captured under a synthesized 'objectArg' name
+        // instead of 'tcImports'. Asserting its absence makes the guard catch a regression in the configuration
+        // where the name is codegen-sensitive, not only where the SDK happens to still find 'tcImports'.
+        let capturesSynthesizedReceiver =
+            fieldsByClosure |> List.exists (fun (_, fields) -> List.contains "objectArg" fields)
+
+        Assert.False(
+            capturesSynthesizedReceiver,
+            $"A 'systemRuntimeContainsType' closure captures its receiver under the synthesized name 'objectArg', which breaks the TypeProvider SDK reflection contract. Found: %A{fieldsByClosure}")
 
     /// Under graph-based parallel checking the same provided type can be linked from several files at once.
     /// GetOrInternProvidedEntity must yield one canonical Entity (compared by object identity elsewhere) and
@@ -147,3 +166,57 @@ module ProvidedTypeHostingTests =
         Assert.All(entities, (fun e -> Assert.Same(canonical, e)))
         Assert.Equal(1, createCount.Value)
         Assert.Equal(1, mtyp.AllEntities |> Seq.length)
+
+    /// Interning a provided-type entity clears the memoized lookup tables on the shared ModuleOrNamespaceType.
+    /// Under graph-based parallel checking other threads read those tables (e.g. during name resolution) while
+    /// interning is in progress. Without serialization a reader can recompute a table from a stale 'entities'
+    /// snapshot and store it after a concurrent intern cleared the cache, dropping just-linked entities and
+    /// resurfacing the spurious type errors this PR targets. Stress the read/compute/store against concurrent
+    /// interns and assert the derived table stays consistent with the entity set.
+    [<Fact>]
+    let ``Interning provided entities keeps the lookup caches coherent under concurrent reads`` () =
+        let cpath = CompPath(ILScopeRef.Local, SyntaxAccess.Unknown, [])
+
+        let makeEntity (name: string) =
+            Construct.NewModuleOrNamespace
+                (Some cpath)
+                taccessPublic
+                (ident (name, Range.range0))
+                XmlDoc.Empty
+                []
+                (MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType(Namespace true)))
+
+        for _ in 1..20 do
+            let mtyp = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
+            let names = [ for i in 1..100 -> $"Provided{i}" ]
+
+            let writerCount = names.Length
+            let readerCount = 16
+            use barrier = new System.Threading.Barrier(writerCount + readerCount)
+            let stop = ref 0
+
+            let writers =
+                [ for name in names ->
+                      System.Threading.Thread(fun () ->
+                          barrier.SignalAndWait()
+                          mtyp.GetOrInternProvidedEntity(name, fun () -> makeEntity name) |> ignore) ]
+
+            // Readers hammer a guarded lookup table while interning is in flight, forcing recompute/store races.
+            let readers =
+                [ for _ in 1..readerCount ->
+                      System.Threading.Thread(fun () ->
+                          barrier.SignalAndWait()
+                          while System.Threading.Volatile.Read(&stop.contents) = 0 do
+                              mtyp.AllEntitiesByCompiledAndLogicalMangledNames |> ignore) ]
+
+            readers |> List.iter (fun t -> t.Start())
+            writers |> List.iter (fun t -> t.Start())
+            writers |> List.iter (fun t -> t.Join())
+            System.Threading.Volatile.Write(&stop.contents, 1)
+            readers |> List.iter (fun t -> t.Join())
+
+            Assert.Equal(names.Length, mtyp.AllEntities |> Seq.length)
+            // The cache-derived view must agree with the entity set: every interned name resolves.
+            let table = mtyp.AllEntitiesByCompiledAndLogicalMangledNames
+            for name in names do
+                Assert.True(table.ContainsKey name, $"Lookup cache dropped interned entity '{name}'.")

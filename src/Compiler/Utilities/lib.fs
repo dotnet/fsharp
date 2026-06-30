@@ -358,6 +358,26 @@ let inline cacheOptByref (cache: byref<'T option>) ([<InlineIfLambda>] f) =
        cache <- Some res
        res
 
+/// Like 'cacheOptByref', but when 'useLock' is set the read/compute/store is serialized on 'gate'.
+/// Used for memo tables whose backing data can be mutated from other threads (e.g. provided-type linking
+/// under graph-based parallel checking), where an unguarded reader could otherwise republish a memo computed
+/// from a stale snapshot after a concurrent mutation cleared it. 'gate' must be non-null whenever 'useLock'.
+let inline cacheOptByrefWithLock (useLock: bool) (gate: obj | null) (cache: byref<'T option>) ([<InlineIfLambda>] f) =
+    if useLock then
+        let gate = nonNull gate
+        System.Threading.Monitor.Enter gate
+        try
+            match cache with
+            | Some v -> v
+            | None ->
+                let res = f()
+                cache <- Some res
+                res
+        finally
+            System.Threading.Monitor.Exit gate
+    else
+        cacheOptByref &cache f
+
 // REVIEW: this is only used because we want to mutate a record field,
 // and because you cannot take a byref<_> of such a thing directly,
 // we cannot use 'cacheOptByref'. If that is changed, this can be removed.

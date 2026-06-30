@@ -2012,6 +2012,16 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     // One Entity per provided type even when linked concurrently from several files (graph-based checking).
     let mutable providedEntitiesByMangledName: ConcurrentDictionary<string, Lazy<Entity>> | null = null
 #endif
+
+    // Guards cache coherence when provided-type entities are appended to this module from several
+    // graph-based-checking threads. Lazily created on the first such append, so the common case
+    // (modules that never host provided types) allocates nothing and keeps the lock-free read path below.
+    let mutable providedTypeCacheLock: obj | null = null
+
+    // Set true once this module has hosted a provided-type entity, i.e. once the lookup caches below can be
+    // mutated concurrently. Read on every guarded cache access, hence volatile.
+    [<VolatileField>]
+    let mutable hostsProvidedTypes = false
       
     // Lookup tables keyed the way various clients expect them to be keyed.
     // We attach them here so we don't need to store lookup tables via any other technique.
@@ -2019,7 +2029,10 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     // The type option ref is used because there are a few functions that treat these as first class values.
     // We should probably change to 'mutable'.
     //
-    // We do not need to lock this mutable state this it is only ever accessed from the compiler thread.
+    // We do not need to lock most of this mutable state since it is only ever accessed from the compiler thread.
+    // The exception is the four lookup tables invalidated by AddProvidedTypeEntity (provided-type linking can
+    // run on several graph-based-checking threads): those reads go through 'cacheOptByrefWithLock' guarded by
+    // 'providedTypeCacheLock', but only once 'hostsProvidedTypes' is set.
     let activePatternElemRefCache: NameMap<ActivePatternElemRef> option ref = ref None
 
     let mutable modulesByDemangledNameCache: NameMap<ModuleOrNamespace> option = None
@@ -2059,16 +2072,14 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member mtyp.AddProvidedTypeEntity(entity: Entity) = 
-        let rec append () =
-            let current = entities
-            let updated = QueueList.appendOne current entity
-            if not (obj.ReferenceEquals(System.Threading.Interlocked.CompareExchange(&entities, updated, current), current)) then
-                append ()
-        append ()
-        tyconsByMangledNameCache <- None          
-        tyconsByDemangledNameAndArityCache <- None
-        tyconsByAccessNamesCache <- None
-        allEntitiesByMangledNameCache <- None             
+        let gate = mtyp.ProvidedTypeCacheGate
+        lock gate (fun () ->
+            hostsProvidedTypes <- true
+            entities <- QueueList.appendOne entities entity
+            tyconsByMangledNameCache <- None          
+            tyconsByDemangledNameAndArityCache <- None
+            tyconsByAccessNamesCache <- None
+            allEntitiesByMangledNameCache <- None)
 
     /// Interns a provided-type entity by mangled name; callers must use the returned entity.
     member mtyp.GetOrInternProvidedEntity(mangledName: string, create: unit -> Entity) : Entity =
@@ -2082,6 +2093,16 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
             | existing -> existing
         table.GetOrAdd(mangledName, fun _ -> lazy (let entity = create () in mtyp.AddProvidedTypeEntity entity; entity)).Value
 #endif 
+
+    /// Lazily-created lock guarding the provided-type-mutated lookup caches. See 'hostsProvidedTypes'.
+    member private _.ProvidedTypeCacheGate : obj =
+        match providedTypeCacheLock with
+        | null ->
+            let created = obj ()
+            match System.Threading.Interlocked.CompareExchange(&providedTypeCacheLock, created, null) with
+            | null -> created
+            | existing -> existing
+        | existing -> existing
           
     /// Return a new module or namespace type with an entity added.
     member _.AddEntity(tycon: Tycon) = 
@@ -2110,23 +2131,23 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     /// table is indexed by both name and generic arity. This means that for generic 
     /// types "List`1", the entry (List, 1) will be present.
     member mtyp.TypesByDemangledNameAndArity = 
-        cacheOptByref &tyconsByDemangledNameAndArityCache (fun () -> 
+        cacheOptByrefWithLock hostsProvidedTypes providedTypeCacheLock &tyconsByDemangledNameAndArityCache (fun () -> 
            LayeredMap.Empty.AddMany( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
 
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and, for generic types, also by mangled name.
     member mtyp.TypesByAccessNames = 
-        cacheOptByref &tyconsByAccessNamesCache (fun () -> 
+        cacheOptByrefWithLock hostsProvidedTypes providedTypeCacheLock &tyconsByAccessNamesCache (fun () -> 
              LayeredMultiMap.Empty.AddMany (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> Construct.KeyTyconByAccessNames tc.LogicalName tc)))
 
     // REVIEW: we can remove this lookup and use AllEntitiesByMangledName instead?
     member mtyp.TypesByMangledName = 
         let addTyconByMangledName (x: Tycon) tab = NameMap.add x.LogicalName x tab 
-        cacheOptByref &tyconsByMangledNameCache (fun () -> 
+        cacheOptByrefWithLock hostsProvidedTypes providedTypeCacheLock &tyconsByMangledNameCache (fun () -> 
              List.foldBack addTyconByMangledName mtyp.TypeAndExceptionDefinitions Map.empty)
 
     /// Get a table of entities indexed by both logical and compiled names
-    member _.AllEntitiesByCompiledAndLogicalMangledNames: NameMap<Entity> = 
+    member mtyp.AllEntitiesByCompiledAndLogicalMangledNames: NameMap<Entity> = 
         let addEntityByMangledName (x: Entity) tab = 
             let name1 = x.LogicalName
             let name2 = x.CompiledName
@@ -2134,7 +2155,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
             if name1 = name2 then tab
             else NameMap.add name2 x tab 
           
-        cacheOptByref &allEntitiesByMangledNameCache (fun () -> 
+        cacheOptByrefWithLock hostsProvidedTypes providedTypeCacheLock &allEntitiesByMangledNameCache (fun () -> 
              QueueList.foldBack addEntityByMangledName entities Map.empty)
 
     /// Get a table of entities indexed by both logical name
