@@ -5672,6 +5672,7 @@ let emptyTcEnv g =
       eCallerMemberName = None 
       eLambdaArgInfos = []
       eIsControlFlow = false
+      eInObjectExpr = false
       eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)
       eUseBoundValStamps = Set.empty }
 
