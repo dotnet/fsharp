@@ -209,6 +209,15 @@ let ExitFamilyRegion env =
 
 let AreWithinCtorShape env = match env.eCtorInfo with None -> false | Some ctorInfo -> ctorInfo.ctorShapeCounter > 0
 
+/// #5302: keep the family region so a protected base field can be read from a closure (it nests under the
+/// declaring type, preserving family access) — except inside an object-expression body, whose closures are
+/// emitted beside the object-expression class rather than within it and so cannot keep family access.
+let KeepFamilyRegionForClosure (g: TcGlobals) env =
+    if g.langVersion.SupportsFeature LanguageFeature.AccessProtectedBaseFieldFromClosure && not env.eInObjectExpr then
+        env
+    else
+        ExitFamilyRegion env
+
 let GetCtorShapeCounter env = match env.eCtorInfo with None -> 0 | Some ctorInfo -> ctorInfo.ctorShapeCounter
 
 let GetRecdInfo env = match env.eCtorInfo with None -> RecdExpr | Some ctorInfo -> if ctorInfo.ctorShapeCounter = 1 then RecdExprIsObjInit else RecdExpr
@@ -6094,12 +6103,12 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         then
             warning (Error(FSComp.SR.chkDeprecatePlacesWhereSeqCanBeOmitted (), m))
 
-        let env = ExitFamilyRegion env
+        let env = KeepFamilyRegionForClosure cenv.g env
         cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
 
     | SynExpr.ArrayOrListComputed (isArray, comp, m) ->
         TcNonControlFlowExpr env <| fun env ->
-        let env = ExitFamilyRegion env
+        let env = KeepFamilyRegionForClosure cenv.g env
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
         cenv.TcArrayOrListComputedExpression cenv env overallTy tpenv (isArray, comp)  m
 
@@ -6250,7 +6259,7 @@ and TcExprMatchLambda (cenv: cenv) overallTy env tpenv (isExnMatch, mFunction, c
     let idv1, idve1 = mkCompGenLocal mFunction (cenv.synArgNameGenerator.New()) domainTy
     CallExprHasTypeSink cenv.tcSink (mFunction.StartRange, env.NameEnv, domainTy, env.AccessRights)
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
-    let envinner = ExitFamilyRegion env
+    let envinner = KeepFamilyRegionForClosure cenv.g env
     let envinner = { envinner with eIsControlFlow = true }
     let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mFunction (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
     let overallExpr = mkMultiLambda m [idv1] ((mkLet spMatch m idv2 idve1 matchExpr), resultTy)
@@ -6315,7 +6324,7 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
     let g = cenv.g
     let innerTy = NewInferenceType g
     UnifyTypes cenv env m overallTy.Commit (mkLazyTy g innerTy)
-    let envinner = ExitFamilyRegion env
+    let envinner = KeepFamilyRegionForClosure g env
     let envinner = { envinner with eIsControlFlow = true }
     let innerExpr, tpenv = TcExpr cenv (MustEqual innerTy) envinner tpenv synInnerExpr
     let expr = mkLazyDelayed g m innerTy (mkUnitDelayLambda g m innerExpr)
@@ -6641,7 +6650,9 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
 
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy g v.Type, v)
-        let envinner = if isMember then envinner else ExitFamilyRegion envinner
+        // #5302: fields-only — a protected base field read type-checks here; methods/base stay FS0405.
+        let envinner =
+            if isMember then envinner else KeepFamilyRegionForClosure g envinner
         let vspecs = vs |> List.map (fun nm -> NameMap.find nm vspecMap)
 
         // Mark these values as parameters so diagnostics (e.g. FS0027 on assignment to a
@@ -7404,6 +7415,8 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 
     // Object expression members can access protected members of the implemented type
     let env = EnterFamilyRegion tcref env
+    // #5302: closures inside an object-expression body cannot keep the family region (see eInObjectExpr).
+    let env = { env with eInObjectExpr = true }
     let ad = env.AccessRights
 
     if // record construction ? e.g { A = 1; B = 2 }
