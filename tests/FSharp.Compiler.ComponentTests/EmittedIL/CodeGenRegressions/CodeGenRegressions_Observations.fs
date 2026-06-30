@@ -218,3 +218,94 @@ let empty<'T> = Seq.empty<'T>
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
 """
         ]
+
+    // https://github.com/dotnet/fsharp/issues/18128
+    // Concrete-type Unchecked.defaultof bindings should be eliminated under optimization.
+    // Pins both the absence of initobj and that no decimal local slot is allocated for
+    // any of the three discarded bindings.
+    [<Fact>]
+    let ``Issue_18128_Unchecked_defaultof_concrete_eliminated`` () =
+        FSharp """
+module Test
+
+open System
+
+let f (n: float32) =
+    Console.WriteLine n
+    let _ = Unchecked.defaultof<decimal>
+    let _ = Unchecked.defaultof<decimal>
+    let _ = Unchecked.defaultof<decimal>
+    let n' = n * 2.f
+    Console.WriteLine n'
+"""
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILNotPresent [ "initobj"; "valuetype [runtime]System.Decimal" ]
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/18128
+    // The real-world FSharpPlus-style SRTP witness pattern from the issue. After elimination,
+    // doWork reduces to a direct double-precision multiplication; the nil<PreOps> and nil<^b>
+    // witness bindings are gone.
+    [<Fact>]
+    let ``Issue_18128_SRTP_witness_pattern_compiles_and_optimizes`` () =
+        FSharp """
+module Test
+
+open System.ComponentModel
+open FSharp.Core.LanguagePrimitives
+
+[<AbstractClass; Sealed; EditorBrowsable(EditorBrowsableState.Never)>]
+type PreOps =
+    static member inline Double (n: float<'u>) : float<'u> = n * 2.
+    static member inline Double (n: float32<'u>) : float32<'u> = n * 2.f
+
+#nowarn "64"
+module PreludeOperators =
+    let inline private nil<'T> = Unchecked.defaultof<'T>
+    let inline double (x: ^a) =
+        let inline _call (_: ^M, input: ^I, _: ^R) = ((^M or ^I) : (static member Double : ^I -> ^R) input)
+        _call (nil<PreOps>, x, nil< ^b >)
+
+open PreludeOperators
+let doWork (n: float) = double n
+"""
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyILNotPresent [ "initobj"; "ldnull" ]
+        |> ignore
+
+    // Soundness pin: optimizing away an unused `Unchecked.defaultof<T>` must not introduce
+    // a new reference to T in the enclosing method. `defaultof` of a reference type lowers
+    // to `ldnull` (not `newobj`), so the binding's removal cannot suppress an observable
+    // cctor call - f's body should contain no reference to WithCctor at all.
+    [<Fact>]
+    let ``Issue_18128_eliminated_defaultof_leaves_no_reference_to_T_in_caller`` () =
+        FSharp """
+module Test
+
+type WithCctor() =
+    static do failwith "cctor must not run"
+
+let f () =
+    let _ = Unchecked.defaultof<WithCctor>
+    42
+"""
+        |> asLibrary
+        |> withOptimize
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """.method public static int32  f() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.s   42
+    IL_0002:  ret
+  }"""
+        ]
+        |> ignore

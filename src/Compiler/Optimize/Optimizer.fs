@@ -1644,13 +1644,33 @@ let SplitValuesByIsUsedOrHasEffect cenv fvs x =
 
 let IlAssemblyCodeInstrHasEffect i = 
     match i with 
-    | ( AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or 
-               | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl 
-               | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull )
-    | I_ldstr _ | I_ldtoken _ -> false
+    | AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or
+    | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl
+    | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull
+    | I_ldstr _ | I_ldtoken _
+    | EI_ilzero _ -> false
     | _ -> true
-  
+
 let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
+
+/// EI_ilzero embeds tyargs into IL; eliminating the binding is only safe when
+/// the tyargs are fully ground (contain no free type variables, even after
+/// following solutions). A binding whose type still references unsolved typars
+/// is the only thing pinning those typars; removing it leaves them unsolved and
+/// trips FS0073 in IlxGen. This is common for SRTP witness/dummy arguments.
+let ILAsmWithIlzeroHasEffect instrs tyargs =
+    let hasIlzero = instrs |> List.exists (function EI_ilzero _ -> true | _ -> false)
+
+    if not hasIlzero then
+        IlAssemblyCodeHasEffect instrs
+    else
+        let ilzeroIsSafe =
+            tyargs |> List.forall (fun ty -> Zset.isEmpty (freeInType CollectTypars ty).FreeTypars)
+
+        let otherInstrsHaveEffect =
+            instrs |> List.exists (fun i -> match i with EI_ilzero _ -> false | _ -> IlAssemblyCodeInstrHasEffect i)
+
+        otherInstrsHaveEffect || not ilzeroIsSafe
 
 let rec ExprHasEffect g expr = 
     match stripDebugPoints expr with 
@@ -1661,7 +1681,7 @@ let rec ExprHasEffect g expr =
     | Expr.Const _ -> false
     // type applications do not have effects, with the exception of type functions
     | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect g f0
-    | Expr.Op (op, _, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op
+    | Expr.Op (op, tyargs, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op tyargs
     | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
     | Expr.Let (bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
@@ -1673,7 +1693,7 @@ and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
 
 and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 
-and OpHasEffect g m op = 
+and OpHasEffect g m op tyargs =
     match op with 
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
@@ -1687,7 +1707,7 @@ and OpHasEffect g m op =
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
-    | TOp.ILAsm (instrs, _) -> IlAssemblyCodeHasEffect instrs
+    | TOp.ILAsm (instrs, _) -> ILAsmWithIlzeroHasEffect instrs tyargs
     | TOp.TupleFieldGet _ -> false
     | TOp.ExnFieldGet (ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet _ -> false
@@ -2618,7 +2638,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect g m newOp
+          HasEffect = OpHasEffect g m newOp tyargs
           MightMakeCriticalTailcall = false
           Info = ValueOfExpr newExpr }
 
@@ -2695,7 +2715,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let argsFSize = AddFunctionSizes arginfos
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
-    let effect = OpHasEffect g m op
+    let effect = OpHasEffect g m op tyargs
     let cost, value_ = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
