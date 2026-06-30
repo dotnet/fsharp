@@ -135,6 +135,12 @@
   <data name="ConstraintSolverNullnessWarningWithTypes" xml:space="preserve">
     <value>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</value>
   </data>
+  <data name="ConstraintSolverNullnessWarningOnDotAccess" xml:space="preserve">
+    <value>Nullness warning: Possible dereference of a null value when accessing member '{0}' on a nullable expression of type '{1}'</value>
+  </data>
+  <data name="ConstraintSolverNullnessWarningOnDotAccessWithBinding" xml:space="preserve">
+    <value>Nullness warning: Possible dereference of a null value when accessing member '{0}' on the nullable value '{1}' of type '{2}'</value>
+  </data>
   <data name="ConstraintSolverNullnessWarningWithType" xml:space="preserve">
     <value>Nullness warning: The type '{0}' does not support 'null'.</value>
   </data>
