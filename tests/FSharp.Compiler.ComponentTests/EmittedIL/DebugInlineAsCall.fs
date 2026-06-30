@@ -1411,8 +1411,9 @@ let main _ =
         |> withDebug
         |> withNoOptimize
         |> asExe
-        |> compileAndRun
-        |> verifySequencePoints
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
 
     [<Fact>]
     let ``Accessibility 09`` () =
@@ -1431,8 +1432,9 @@ let main _ =
         |> withDebug
         |> withNoOptimize
         |> asExe
-        |> compileAndRun
-        |> verifySequencePoints
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
 
     [<Fact>]
     let ``Accessibility 10`` () =
@@ -1451,8 +1453,9 @@ let main _ =
         |> withDebug
         |> withNoOptimize
         |> asExe
-        |> compileAndRun
-        |> verifySequencePoints
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
 
     [<Fact>]
     let ``Accessibility 11`` () =
@@ -1591,3 +1594,4 @@ let main _ =
         |> compile
         |> shouldSucceed
         |> verifyILNotPresent ["call       int32 Test::apply(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,"]
+

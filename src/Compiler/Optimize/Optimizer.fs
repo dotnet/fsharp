@@ -504,18 +504,8 @@ let rec IsPartialExprVal x =
     | ValValue (_, a) 
     | SizeValue (_, a) -> IsPartialExprVal a
 
-let CheckInlineValueIsComplete (v: Val) res =
-    if v.ShouldInline && not v.IsMember && IsPartialExprVal res then
-        errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
-        //System.Diagnostics.Debug.Assert(false, sprintf "Break for incomplete inline value %s" v.DisplayName)
-
-let check (cenv: cenv) (vref: ValRef) (res: ValInfo) =
-    if cenv.settings.alwaysInline then
-        CheckInlineValueIsComplete vref.Deref res.ValExprInfo
-    (vref, res)
-
 //-------------------------------------------------------------------------
-// Bind information about values 
+// Bind information about values
 //------------------------------------------------------------------------- 
 
 let EmptyModuleInfo = 
@@ -699,10 +689,6 @@ let GetInfoForVal cenv env m (vref: ValRef) =
             GetInfoForNonLocalVal cenv env vref
     res
 
-let GetInfoForValWithCheck cenv env m (vref: ValRef) =  
-    let res = GetInfoForVal cenv env m vref
-    check cenv vref res |> ignore
-    res
 
 let IsPartialExpr cenv env m x =
     let rec isPartialExpression x =
@@ -1413,7 +1399,7 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary (cenv: cenv) mhi =
                          |> Seq.filter (fun (vref, _) ->
                              not (hiddenVal vref.Deref) ||
                              (not cenv.settings.alwaysInline && vref.Deref.ShouldInline))
-                         |> Seq.map (fun (vref, e) -> check cenv vref (abstractValInfo e) )) }
+                         |> Seq.map (fun (vref, e) -> (vref, abstractValInfo e))) }
 
     and abstractLazyModulInfo (ss: LazyModuleInfo) = 
           ss.Force() |> abstractModulInfo |> notlazy
@@ -1498,8 +1484,7 @@ let AbstractExprInfoByVars (cenv: cenv) (boundVars: Val list, boundTyVars) ivalu
 
       let rec abstractModulInfo ss =
          { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) 
-           ValInfos = ss.ValInfos.Map (fun (vref, e) -> 
-               check cenv vref (abstractValInfo e)) }
+           ValInfos = ss.ValInfos.Map (fun (vref, e) -> (vref, abstractValInfo e)) }
 
       abstractExprInfo ivalue
 
@@ -3171,7 +3156,7 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     let g = cenv.g
 
-    let valInfoForVal = GetInfoForValWithCheck cenv env m v 
+    let valInfoForVal = GetInfoForVal cenv env m v 
 
     match TryOptimizeVal cenv env (Some v, v.ShouldInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
     | Some e -> 
@@ -3512,7 +3497,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
         else
 
-        let origFinfo = GetInfoForValWithCheck cenv env m vref
+        let origFinfo = GetInfoForVal cenv env m vref
         match stripValue origFinfo.ValExprInfo with
         | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) ->
             let f2R = CopyExprForInlining cenv true origLambda m
@@ -3866,7 +3851,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
                  // Note we also have to check the argument count to ensure this is a direct call (or a partial application).
                  let doesNotMakeCriticalTailcall = 
                      vref.MakesNoCriticalTailcalls ||
-                     (let valInfoForVal = GetInfoForValWithCheck cenv env m vref in valInfoForVal.ValMakesNoCriticalTailcalls) ||
+                     (let valInfoForVal = GetInfoForVal cenv env m vref in valInfoForVal.ValMakesNoCriticalTailcalls) ||
                      (match env.functionVal with | None -> false | Some (v, _) -> valEq vref.Deref v)
                  if doesNotMakeCriticalTailcall then
                     let numArgs = otherArgs.Length + newArgs.Length
