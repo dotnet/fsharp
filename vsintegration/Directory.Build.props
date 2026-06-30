@@ -31,16 +31,19 @@
     <FscToolExe>fsc.exe</FscToolExe>
   </PropertyGroup>
 
-  <!-- Block 11b: the vulnerable native e_sqlite3.dll (SQLitePCLRaw.lib.e_sqlite3.v110_xp 1.1.2, the CVE
-       carrier) flows transitively into every Roslyn-consuming vsintegration project via
-       Microsoft.CodeAnalysis.Workspaces.Common -> SQLitePCLRaw.bundle_green. A direct reference with
-       ExcludeAssets="all" overrides the transitive one (per-ref ExcludeAssets="native" is not enough — the
-       package arrives through several paths), so the native is never restored or copied to component bins,
-       the shared release\net40\bin, or the VSIX. The VSIX instead ships the patched SourceGear.Sqlite3
-       3.50.4.5 native (VisualFSharpFull.csproj), mirroring dotnet/roslyn PR #83525. Covering .vbproj too is
-       required for FSharp.ProjectSystem.PropertyPages, whose legacy VS-SDK ResolveNuGetPackageAssets pass
-       also rejects the package's win7 runtimeTargets node ("doesn't list 'win' as a RuntimeIdentifier"). -->
+  <!-- Block 12: ship ZERO sqlite. Roslyn's Microsoft.CodeAnalysis.Workspaces.Common pulls the whole
+       SQLitePCLRaw chain (bundle_green -> core / provider.e_sqlite3.net45 / batteries managed wrappers AND
+       the lib.e_sqlite3.* natives incl. the CVE-bearing v110_xp). The F# editor never uses Roslyn's SQLite
+       persistence - at runtime it binds to VS's own Roslyn + sqlite - so none of it should ship. The Roslyn
+       PackageReferences already ExcludeAssets="runtime;...;native" (16.11 pattern), which cuts the directly
+       referenced packages; these direct ExcludeAssets="all" references additionally override every transitive
+       path to the SQLitePCLRaw packages, so neither the managed wrappers nor any native are restored or copied
+       to component bins, the shared release\net40\bin, or the VSIX. Result: no sqlite at all (no SourceGear
+       swap needed). Applies to .fsproj/.csproj/.vbproj (the legacy VB property-pages project pulls it too). -->
   <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.fsproj' or '$(MSBuildProjectExtension)' == '.csproj' or '$(MSBuildProjectExtension)' == '.vbproj'">
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="1.1.2" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="1.1.2" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3.net45" Version="1.1.2" ExcludeAssets="all" PrivateAssets="all" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.v110_xp" Version="1.1.2" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>
 

@@ -142,16 +142,14 @@
 
   <ItemGroup>
     <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" />
-    <!-- Block 11b: Roslyn is a VS-provided runtime dependency for a VS editor component: compile against it
-         here, but do NOT flow it (or its transitive SQLitePCLRaw native carrier) to consumers, and do NOT
-         ship it in the VSIX (VS supplies its own serviced Roslyn). PrivateAssets="all" enforces compile-only.
-         This also keeps the SQLitePCLRaw runtimeTargets node out of the only consumer's (ProjectSystem.fsproj)
-         restore graph, which a legacy VS-SDK NuGet RID validation would otherwise reject. ExcludeAssets="native"
-         additionally drops any direct native asset. -->
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Wpf" Version="$(MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" ExcludeAssets="native" PrivateAssets="all" />
+    <!-- Block 12: Roslyn is VS-provided at runtime; compile against it but ship NONE of it. Excluding
+         runtime+native (the 16.11 pattern) drops the entire transitive SQLitePCLRaw chain - managed
+         providers AND the native e_sqlite3.dll - so the F# editor ships ZERO sqlite and uses VS's own
+         Roslyn+sqlite at runtime. (Supersedes the earlier native-only exclusion + SourceGear swap.) -->
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)" ExcludeAssets="runtime;contentFiles;build;analyzers;native" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)" ExcludeAssets="runtime;contentFiles;build;analyzers;native" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Wpf" Version="$(MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion)" ExcludeAssets="runtime;contentFiles;build;analyzers;native" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonPackageVersion)" ExcludeAssets="runtime;contentFiles;build;analyzers;native" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorPackageVersion)" />

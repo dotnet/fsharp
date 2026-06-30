@@ -1,5 +1,0 @@
-<!-- Empty by design: this native-vendoring helper must stay fully isolated from the repo build infra.
-     The sibling empty Directory.Build.props stops the props walk; this stops the targets walk so the
-     repo-root Directory.Build.targets (which injects a Pdb2Pdb PackageReference whose version variable
-     lives only in the repo props we deliberately don't import) is not applied here. -->
-<Project />
