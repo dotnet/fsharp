@@ -4285,11 +4285,9 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             // here (FS1113) instead of deferring a confusing FS1118 to the consumer. The
             // class-scope self-identifier safe-init field is excluded: it is benign and the
             // member is still rejected by the cross-assembly inliner if actually exported.
-            let fvs = freeInExpr CollectAll exprOptimized
-            let capturesInaccessible =
-                (fvs.FreeLocals |> Zset.exists (fun v -> not (canAccessFromEverywhere v.Accessibility))) ||
-                (fvs.FreeRecdFields |> Zset.exists (fun rfref -> not (isSafeInitField rfref) && not (canAccessFromEverywhere rfref.RecdField.Accessibility)))
-            if capturesInaccessible then
+            let fvs0 = freeInExpr CollectAll exprOptimized
+            let fvs = { fvs0 with FreeRecdFields = fvs0.FreeRecdFields |> Zset.filter (isSafeInitField >> not) }
+            if not (freeVarsAllPublic fvs) then
                 errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(vref.DisplayName), vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env

@@ -93,6 +93,35 @@ type Bag() as self =
         |> compile
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Inline member capturing a private union case fails FS1113 at definition`` () =
+        FSharp """
+module Test
+
+type private Secret = A | B
+
+type Bag() =
+    member inline _.Wrap(x) = match (if x then A else B) with A -> 1 | B -> 2
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
+
+    [<Fact>]
+    let ``Inline member referencing a public union case compiles`` () =
+        FSharp """
+module Test
+
+type Bag() =
+    member inline _.Wrap(x) = Some x
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
     // Error tests
 
     [<Theory; FileInlineData("E_byref_two_arguments_curried.fsx")>]
