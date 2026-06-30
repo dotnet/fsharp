@@ -171,7 +171,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <UsingTask TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" />
   
   <!-- Generate ILLink.Substitutions.xml to remove F# metadata resources during trimming. F# Core already has the resource defined -->
-  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="CoreCompile" Condition="$(DisableILLinkSubstitutions) != 'true' and $(AssemblyName) != 'FSharp.Core'">
+  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="CoreCompile" Condition="'$(DisableILLinkSubstitutions)' != 'true' and '$(AssemblyName)' != 'FSharp.Core'">
     <GenerateILLinkSubstitutions
       AssemblyName="$(AssemblyName)"
       IntermediateOutputPath="$(IntermediateOutputPath)">
