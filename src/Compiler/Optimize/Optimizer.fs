@@ -1647,8 +1647,7 @@ let IlAssemblyCodeInstrHasEffect i =
     | AI_nop | AI_ldc _ | AI_add | AI_sub | AI_mul | AI_xor | AI_and | AI_or
     | AI_ceq | AI_cgt | AI_cgt_un | AI_clt | AI_clt_un | AI_conv _ | AI_shl
     | AI_shr | AI_shr_un | AI_neg | AI_not | AI_ldnull
-    | I_ldstr _ | I_ldtoken _
-    | EI_ilzero _ -> false
+    | I_ldstr _ | I_ldtoken _ -> false
     | _ -> true
 
 let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
