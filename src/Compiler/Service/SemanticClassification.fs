@@ -330,6 +330,14 @@ module TcResolutionsExtensions =
                                 if isSynthesizedDelegateMemberInDecl then
                                     ()
                                 elif
+                                    // The synthesized indexer `xs[a..]` is desugared to a `GetSlice`/`SetSlice`
+                                    // call whose `Item.MethodGroup` resolution range spans the whole indexing
+                                    // expression. There is no source text spelling the member name, so this pass
+                                    // (which has only resolutions, not source) cannot distinguish it from an
+                                    // explicit `xs.GetSlice(..)` call, whose resolution range likewise covers the
+                                    // receiver. Both forms are suppressed; explicit GetSlice/SetSlice invocations
+                                    // are exceedingly rare, and the alternative (coloring the whole `xs[a..]`
+                                    // expression as a Method) is the more visible bug.
                                     minfos
                                     |> List.forall (fun minfo -> minfo.LogicalName = "GetSlice" || minfo.LogicalName = "SetSlice")
                                 then

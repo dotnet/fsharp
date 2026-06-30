@@ -573,6 +573,57 @@ let _ = r.X
     Assert.False(
         (unused |> List.filter (fun r -> r.StartLine = 3)).IsEmpty,
         "`open type R` (line 3) should be unused when only an instance record field of R is used")
+
+/// (#19960 review) `open type` whose static members are only ever used through a fully-qualified
+/// path is treated as used, consistently with how `open <module>` already behaves for a
+/// fully-qualified `Module.member` use. This is intentional: the static-member case shares the
+/// declaring-entity fast path, so it inherits the same (pre-existing) behavior modules have.
+[<Fact>]
+let ``Issue 19905 item 7 - open type used only via fully-qualified static member is consistent with module opens`` () =
+    let source =
+        """module Test
+module M =
+    let value = 1
+open M
+
+[<AbstractClass; Sealed>]
+type View =
+    static member Window (x: int) = x
+open type View
+
+let usedModuleQualified = M.value
+let usedTypeQualified = View.Window 1
+"""
+
+    let fileName, snapshot, checker = singleFileChecker source
+    let parseResults, checkAnswer = checker.ParseAndCheckFileInProject(fileName, snapshot) |> Async.RunSynchronously
+    let checkResults = getTypeCheckResult (parseResults, checkAnswer)
+
+    let getSourceLineStr lineNo =
+        let lines = source.Replace("\r\n", "\n").Split('\n')
+        if lineNo >= 1 && lineNo <= lines.Length then lines.[lineNo - 1] else ""
+
+    let unused =
+        UnusedOpens.getUnusedOpens(checkResults, getSourceLineStr)
+        |> Async.RunSynchronously
+
+    let unusedLines = unused |> List.map (fun r -> r.StartLine) |> Set.ofList
+
+    // `open M` (line 4) is used only via the fully-qualified `M.value`; it is treated as used.
+    let openModuleReportedUnused = unusedLines.Contains 4
+    // `open type View` (line 9) is used only via the fully-qualified `View.Window`.
+    let openTypeReportedUnused = unusedLines.Contains 9
+    let behavesConsistently = (openModuleReportedUnused = openTypeReportedUnused)
+
+    Assert.True(
+        behavesConsistently,
+        sprintf
+            "`open type` used only fully-qualified must behave like `open <module>` used only fully-qualified. open M unused=%b, open type View unused=%b. Full unused: %A"
+            openModuleReportedUnused
+            openTypeReportedUnused
+            (unused |> List.map (fun r -> r.StartLine, r.StartColumn, r.EndColumn))
+    )
+
 // --------------------------------------------------------------------------
 // #5229: recursive object self-reference must NOT be classified as MutableVar.
 // The compiler internally compiles `as this` / recursive `let rec` self refs

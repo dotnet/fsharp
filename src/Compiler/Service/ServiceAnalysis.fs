@@ -287,6 +287,14 @@ module UnusedOpens =
                 Dictionary<FSharpEntity, range list>(entityHash)
 
             let recordByDeclaringEntity (symbolUse: FSharpSymbolUse) =
+                // `importedByOpenType` records a use of a static/non-instance member or static field against its
+                // declaring entity so that `open type T` is considered used when such a member is referenced.
+                // This mirrors how `open <module>` already works: a use is recorded against the declaring module
+                // regardless of whether the reference was unqualified (`member`) or fully qualified (`T.member`).
+                // Consequently an `open type T` whose members are only ever used fully qualified is treated as
+                // used, exactly as `open M` is when its members are only ever used as `M.member`. This is an
+                // accepted, pre-existing trade-off shared with module opens, and removes the prior false positive
+                // where a genuinely-used `open type` was reported as unused.
                 let declaringEntity, importedByOpenType =
                     match symbolUse.Symbol with
                     | :? FSharpMemberOrFunctionOrValue as f -> f.DeclaringEntity, not f.IsInstanceMember
