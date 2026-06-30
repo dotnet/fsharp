@@ -173,6 +173,15 @@ type ValFlags(flags: int64) =
                                                              |               0b00000000000000110000L -> ValInline.Never
                                                              | _          -> failwith "unreachable"
 
+    member x.WithInlineInfo inlineInfo =
+            let flags =
+                     (flags       &&&                                     ~~~0b00000000000000110000L) |||
+                     (match inlineInfo with
+                                     | ValInline.Always ->                   0b00000000000000010000L
+                                     | ValInline.Optional ->                 0b00000000000000100000L
+                                     | ValInline.Never ->                    0b00000000000000110000L)
+            ValFlags flags
+
     member x.MutabilityInfo = 
                                   match (flags       &&&                     0b00000000000001000000L) with 
                                                              |               0b00000000000000000000L -> Immutable
@@ -243,13 +252,18 @@ type ValFlags(flags: int64) =
 
     member x.WithIsImplied                             = ValFlags(flags ||| 0b1000000000000000000000L)
 
+    member x.IsParameter                               =       (flags &&& 0b10000000000000000000000L) <> 0L
+
+    member x.WithIsParameter                           = ValFlags(flags ||| 0b10000000000000000000000L)
+
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
         // Clear the RecursiveValInfo, only used during inference and irrelevant across assembly boundaries
         // Clear the IsCompiledAsStaticPropertyWithoutField, only used to determine whether to use a true field for a value, and to eliminate the optimization info for observable bindings
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
-                                                      (flags       &&&   ~~~0b010011001100000000000L) 
+        // Clear the IsParameter, only used during type checking of the current compilation to specialize diagnostics
+                                                      (flags       &&&   ~~~0b10010011001100000000000L) 
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -3099,6 +3113,10 @@ type Val =
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member x.IsImplied = x.val_flags.IsImplied
 
+    /// Indicates whether this value is a function or method parameter, as opposed to a local binding.
+    /// Used to specialize diagnostics such as FS0027.
+    member x.IsParameter = x.val_flags.IsParameter
+
     /// Indicates whether the inline declaration for the value indicate that the value should be inlined?
     member x.ShouldInline = x.InlineInfo.ShouldInline
 
@@ -3345,7 +3363,11 @@ type Val =
 
     member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
 
+    member x.SetInlineInfo (inlineInfo: ValInline) = x.val_flags <- x.val_flags.WithInlineInfo inlineInfo
+
     member x.SetIsImplied() = x.val_flags <- x.val_flags.WithIsImplied
+
+    member x.SetIsParameter() = x.val_flags <- x.val_flags.WithIsParameter
 
     member x.SetValReprInfo info = 
         match x.val_opt_data with

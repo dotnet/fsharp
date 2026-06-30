@@ -22,6 +22,8 @@ module internal ExprConstruction =
     /// An ordering for value definitions, based on stamp
     val valOrder: IComparer<Val>
 
+    val valSourceOrderKey: Val -> struct (int * int * int * string)
+
     /// An ordering for type definitions, based on stamp
     val tyconOrder: IComparer<Tycon>
 
