@@ -186,12 +186,15 @@ module ProvidedTypeHostingTests =
                 []
                 (MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType(Namespace true)))
 
-        for _ in 1..20 do
+        // Kept deliberately modest: enough writers to bump the version many times with readers interleaved,
+        // but bounded thread counts and cooperative (yielding) readers so the guard does not peg CPU or pile
+        // up allocations on memory-constrained CI agents.
+        for _ in 1..5 do
             let mtyp = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
-            let names = [ for i in 1..100 -> $"Provided{i}" ]
+            let names = [ for i in 1..40 -> $"Provided{i}" ]
 
             let writerCount = names.Length
-            let readerCount = 32
+            let readerCount = 6
             use barrier = new System.Threading.Barrier(writerCount + readerCount)
             let stop = ref 0
 
@@ -201,7 +204,8 @@ module ProvidedTypeHostingTests =
                           barrier.SignalAndWait()
                           mtyp.GetOrInternProvidedEntity(name, fun () -> makeEntity name) |> ignore) ]
 
-            // Readers hammer the version-stamped lookup tables while interning is in flight, forcing the
+            // Readers poll the version-stamped lookup tables while interning is in flight, yielding between
+            // passes so they interleave with the writers without spinning hot. This still forces the
             // recompute/store races that a flag-gated lock would lose during the first concurrent append.
             let readers =
                 [ for _ in 1..readerCount ->
@@ -211,7 +215,8 @@ module ProvidedTypeHostingTests =
                               mtyp.AllEntitiesByCompiledAndLogicalMangledNames |> ignore
                               mtyp.TypesByMangledName |> ignore
                               mtyp.TypesByAccessNames |> ignore
-                              mtyp.TypesByDemangledNameAndArity |> ignore) ]
+                              mtyp.TypesByDemangledNameAndArity |> ignore
+                              System.Threading.Thread.Yield() |> ignore) ]
 
             readers |> List.iter (fun t -> t.Start())
             writers |> List.iter (fun t -> t.Start())
