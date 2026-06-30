@@ -111,6 +111,7 @@ type LanguageFeature =
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
     | DirectDelegateConstruction
+    | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
 
 /// LanguageVersion management
@@ -267,6 +268,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ImplicitDIMCoverage, languageVersion110
                 LanguageFeature.ErrorOnMissingSignatureAttribute, previewVersion // Opt-in: turn FS3888 from warning into error
                 LanguageFeature.DirectDelegateConstruction, previewVersion
+                LanguageFeature.AccessProtectedBaseFieldFromClosure, previewVersion // #5302: read a protected base field from a closure
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -464,6 +466,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ExceptionFieldSerializationSupport -> FSComp.SR.featureExceptionFieldSerializationSupport ()
         | LanguageFeature.ErrorOnMissingSignatureAttribute -> FSComp.SR.featureErrorOnMissingSignatureAttribute ()
         | LanguageFeature.DirectDelegateConstruction -> FSComp.SR.featureDirectDelegateConstruction ()
+        | LanguageFeature.AccessProtectedBaseFieldFromClosure -> FSComp.SR.featureAccessProtectedBaseFieldFromClosure ()
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
 
     /// Get a version string associated with the given feature.
