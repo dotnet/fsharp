@@ -8,3 +8,5 @@
 ### Fixed
 
 ### Changed
+
+* Direct delegate construction ([PR ##19993](https://github.com/dotnet/fsharp/pull/19993))

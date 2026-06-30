@@ -7545,116 +7545,262 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
 
     let numthis = if useStaticClosure then 0 else 1
 
-    let tmvs, body =
-        BindUnitVars g (tmvs, List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1, body)
+    let invokeParamInfos =
+        List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1
+
+    let etaUnitDelegate =
+        match tmvs, invokeParamInfos with
+        | [ _ ], [] -> true
+        | _ -> false
+
+    let tmvs, body = BindUnitVars g (tmvs, invokeParamInfos, body)
 
     // The slot sig contains a formal instantiation. When creating delegates we're only
     // interested in the actual instantiation since we don't have to emit a method impl.
     let ilDelegeeParams, ilDelegeeRet =
         GenActualSlotsig m cenv envForDelegeeUnderTypars slotsig methTyparsOfOverridingMethod tmvs
 
-    let envForDelegeeMeth =
-        AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg(i + numthis))) tmvs) envForDelegeeUnderTypars
+    // Direct delegate construction: when the delegate body is a saturated, transparent forwarding call to a
+    // known static method, module-level function, or instance method, point the delegate straight at that
+    // method instead of generating an intermediate closure class. Anything that does not match exactly
+    // falls back to the closure path below.
+    let directDelegateTarget =
+        if not (g.langVersion.SupportsFeature LanguageFeature.DirectDelegateConstruction) then
+            None
+        elif
+            not cenv.options.localOptimizationsEnabled
+            && (etaUnitDelegate || tmvs |> List.exists (fun v -> not v.IsCompilerGenerated))
+        then
+            // Eta-expanded delegate in an unoptimized build: the Invoke parameters are the user's own lambda
+            // variables (or, for a unit-argument eta delegate, an elided unit parameter), so keep the closure
+            // to preserve the user's lambda for debugging. Non-eta delegates (whose parameters are synthesized
+            // by BuildNewDelegateExpr) are always made direct; eta-expanded ones are made direct only in
+            // optimized builds, where debuggability is not a concern and the forwarding call survives to here.
+            None
+        else
+            match classifyForwardingTarget g tmvs body with
+            | DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, tyargs, leadingArgs) ->
+                match StorageForValRef m vref eenvouter with
+                | Method(valReprInfo, vrefM, mspec, _, _, ctps, _, _, _, _, _, _) ->
+                    let _, witnessInfos, _, _, _ =
+                        GetValReprTypeInCompiledForm g valReprInfo ctps.Length vrefM.Type m
 
-    let ilMethodBody =
-        CodeGenMethodForExpr
-            cenv
-            cgbuf.mgbuf
-            ([],
-             delegeeMethName,
-             envForDelegeeMeth,
-             1,
-             None,
-             body,
-             (if slotSigHasVoidReturnTy slotsig then
-                  discardAndReturnVoid
-              else
-                  Return))
+                    let hasWitnesses = ComputeGenerateWitnesses g eenvouter && not witnessInfos.IsEmpty
 
-    let delegeeInvokeMeth =
-        (if useStaticClosure then
-             mkILNonGenericStaticMethod
-         else
-             mkILNonGenericInstanceMethod) (
-            delegeeMethName,
-            ILMemberAccess.Assembly,
-            ilDelegeeParams,
-            ilDelegeeRet,
-            MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
-        )
+                    if fsharpValDirectlyBindable g tmvs leadingArgs vrefM valUseFlags hasWitnesses then
+                        let _, virtualCall, _, _, _, takesInstanceArg, _, _ =
+                            GetMemberCallInfo g (vrefM, valUseFlags)
 
-    let delegeeCtorMeth =
-        mkILSimpleStorageCtor (Some g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], [], ILMemberAccess.Assembly, None, eenvouter.imports)
+                        let ilTyArgs = GenTypeArgs cenv m eenvouter.tyenv tyargs
 
-    let ilCtorBody = delegeeCtorMeth.MethodBody
+                        let numEnclILTypeArgs =
+                            if vrefM.MemberInfo.IsSome && not vrefM.IsExtensionMember then
+                                List.length (vrefM.MemberApparentEntity.Typars |> DropErasedTypars)
+                            else
+                                0
 
-    let ilCloLambdas = Lambdas_return ilCtxtDelTy
+                        if ilTyArgs.Length < numEnclILTypeArgs then
+                            None
+                        else
+                            let ilEnclArgTys, ilMethArgTys = List.splitAt numEnclILTypeArgs ilTyArgs
 
-    let cloTypeDefs =
-        (if useStaticClosure then
-             GenStaticDelegateClosureTypeDefs
-         else
-             GenClosureTypeDefs)
-            cenv
-            (ilDelegeeTypeRef,
-             ilDelegeeGenericParams,
-             [],
-             ilCloAllFreeVars,
-             ilCloLambdas,
-             ilCtorBody,
-             [ delegeeInvokeMeth ],
-             [],
-             g.ilg.typ_Object,
-             [],
-             None)
+                            let targetMspec =
+                                mkILMethSpec (mspec.MethodRef, mspec.DeclaringType.Boxity, ilEnclArgTys, ilMethArgTys)
 
-    for cloTypeDef in cloTypeDefs do
-        cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None, m)
+                            let numBoundLeadingFormals = if takesInstanceArg then 0 else leadingArgs.Length
 
-    CountClosure()
+                            if takesInstanceArg <> targetMspec.MethodRef.CallingConv.IsInstance then
+                                None
+                            elif
+                                signatureMatches numBoundLeadingFormals ilDelegeeParams ilDelegeeRet ilEnclArgTys ilMethArgTys targetMspec
+                            then
+                                Some(targetMspec, receiverInfo leadingArgs virtualCall)
+                            else
+                                None
+                    else
+                        None
+                | _ -> None
 
-    // Push the constructor for the delegee
-    let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
+            | DirectDelegateForwardingTargetCandidate.ILMethod(isVirtual,
+                                                               isStruct,
+                                                               isCtor,
+                                                               valUseFlag,
+                                                               ilMethRef,
+                                                               enclTypeInst,
+                                                               methInst,
+                                                               leadingArgs) ->
+                if ilMethodDirectlyBindable g tmvs leadingArgs ilMethRef valUseFlag isCtor then
+                    let ilEnclArgTys = GenTypeArgs cenv m eenvouter.tyenv enclTypeInst
+                    let ilMethArgTys = GenTypeArgs cenv m eenvouter.tyenv methInst
+                    let boxity = if isStruct then AsValue else AsObject
+                    let targetMspec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
 
-    if useStaticClosure then
-        GenUnit cenv eenvouter m cgbuf
-    else
-        let ilxCloSpec =
-            IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloAllFreeVars), ctxtGenericArgsForDelegee, false)
+                    let numBoundLeadingFormals =
+                        if ilMethRef.CallingConv.IsInstance then
+                            0
+                        else
+                            leadingArgs.Length
 
-        GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
+                    // Unlike the F# case we cannot compare parameter/return IL types here: the target's
+                    // types come from imported metadata, whose assembly scope refs differ from the
+                    // compiler-generated delegee types (e.g. `System.Int32, System.Runtime` vs the bare
+                    // primary-assembly form), so structural equality reports false negatives for the very
+                    // primitives that always match. The forwarding match already pins the arity, and the
+                    // type checker has verified the call is well-typed, so element compatibility holds by
+                    // construction; an arity check is the sound guard (matching the generic case).
+                    if targetMspec.FormalArgTypes.Length - numBoundLeadingFormals = ilDelegeeParams.Length then
+                        Some(targetMspec, receiverInfo leadingArgs isVirtual)
+                    else
+                        None
+                else
+                    None
 
-        for fv in cloFreeVars do
-            GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
+            | DirectDelegateForwardingTargetCandidate.Other -> None
 
-        CG.EmitInstr
-            cgbuf
-            (pop ilCloAllFreeVars.Length)
-            (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv ilCloLambdas ])
-            (I_newobj(ilxCloSpec.Constructor, None))
+    match directDelegateTarget with
+    | Some(targetMspec, receiverInfo) ->
+        match receiverInfo with
+        | None ->
+            // Static target: the delegate carries a null receiver.
+            GenUnit cenv eenvouter m cgbuf
+            CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn targetMspec)
+        | Some(receiverExpr, isVirtual) ->
+            // Instance target: evaluate the receiver as the delegate's target object.
+            GenExpr cenv cgbuf eenvouter receiverExpr Continue
 
-    // Push the function pointer to the Invoke method of the delegee
-    let ilDelegeeTyOuter = mkILBoxedTy ilDelegeeTypeRef ctxtGenericArgsForDelegee
+            if targetMspec.DeclaringType.Boxity.IsAsValue then
+                // Value-type receiver: box a copy so it can be stored as the delegate's 'object' Target. The
+                // runtime binds the function pointer to the method's unboxing stub, which re-derives the 'this'
+                // pointer from the box on each invocation. This matches the closure form, which likewise
+                // captures the struct by value. (Struct instance methods are non-virtual, so isVirtual is
+                // false here and the ldftn path below is taken.)
+                CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_Object ]) (I_box targetMspec.DeclaringType)
 
-    let ilDelegeeInvokeMethOuter =
-        (if useStaticClosure then
-             mkILNonGenericStaticMethSpecInTy
-         else
-             mkILNonGenericInstanceMethSpecInTy) (
-            ilDelegeeTyOuter,
-            "Invoke",
-            typesOfILParams ilDelegeeParams,
-            ilDelegeeRet.Type
-        )
+            if isVirtual then
+                // dup the receiver and bind the function pointer to its runtime type's override.
+                CG.EmitInstr cgbuf (pop 0) (Push [ targetMspec.DeclaringType ]) AI_dup
+                CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_IntPtr ]) (I_ldvirtftn targetMspec)
+            else
+                CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn targetMspec)
 
-    CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn ilDelegeeInvokeMethOuter)
+        // newobj Delegate::.ctor(object, native int)
+        let ilDelegeeCtorMethOuter =
+            mkCtorMethSpecForDelegate g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
 
-    // Instantiate the delegate
-    let ilDelegeeCtorMethOuter =
-        mkCtorMethSpecForDelegate g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
+        CG.EmitInstr cgbuf (pop 2) (Push [ ilCtxtDelTy ]) (I_newobj(ilDelegeeCtorMethOuter, None))
+        GenSequel cenv eenvouter.cloc cgbuf sequel
 
-    CG.EmitInstr cgbuf (pop 2) (Push [ ilCtxtDelTy ]) (I_newobj(ilDelegeeCtorMethOuter, None))
-    GenSequel cenv eenvouter.cloc cgbuf sequel
+    | None ->
+        let envForDelegeeMeth =
+            AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg(i + numthis))) tmvs) envForDelegeeUnderTypars
+
+        let ilMethodBody =
+            CodeGenMethodForExpr
+                cenv
+                cgbuf.mgbuf
+                ([],
+                 delegeeMethName,
+                 envForDelegeeMeth,
+                 1,
+                 None,
+                 body,
+                 (if slotSigHasVoidReturnTy slotsig then
+                      discardAndReturnVoid
+                  else
+                      Return))
+
+        let delegeeInvokeMeth =
+            (if useStaticClosure then
+                 mkILNonGenericStaticMethod
+             else
+                 mkILNonGenericInstanceMethod) (
+                delegeeMethName,
+                ILMemberAccess.Assembly,
+                ilDelegeeParams,
+                ilDelegeeRet,
+                MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
+            )
+
+        let delegeeCtorMeth =
+            mkILSimpleStorageCtor (
+                Some g.ilg.typ_Object.TypeSpec,
+                ilDelegeeTyInner,
+                [],
+                [],
+                ILMemberAccess.Assembly,
+                None,
+                eenvouter.imports
+            )
+
+        let ilCtorBody = delegeeCtorMeth.MethodBody
+
+        let ilCloLambdas = Lambdas_return ilCtxtDelTy
+
+        let cloTypeDefs =
+            (if useStaticClosure then
+                 GenStaticDelegateClosureTypeDefs
+             else
+                 GenClosureTypeDefs)
+                cenv
+                (ilDelegeeTypeRef,
+                 ilDelegeeGenericParams,
+                 [],
+                 ilCloAllFreeVars,
+                 ilCloLambdas,
+                 ilCtorBody,
+                 [ delegeeInvokeMeth ],
+                 [],
+                 g.ilg.typ_Object,
+                 [],
+                 None)
+
+        for cloTypeDef in cloTypeDefs do
+            cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None, m)
+
+        CountClosure()
+
+        // Push the constructor for the delegee
+        let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
+
+        if useStaticClosure then
+            GenUnit cenv eenvouter m cgbuf
+        else
+            let ilxCloSpec =
+                IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloAllFreeVars), ctxtGenericArgsForDelegee, false)
+
+            GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
+
+            for fv in cloFreeVars do
+                GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
+
+            CG.EmitInstr
+                cgbuf
+                (pop ilCloAllFreeVars.Length)
+                (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv ilCloLambdas ])
+                (I_newobj(ilxCloSpec.Constructor, None))
+
+        // Push the function pointer to the Invoke method of the delegee
+        let ilDelegeeTyOuter = mkILBoxedTy ilDelegeeTypeRef ctxtGenericArgsForDelegee
+
+        let ilDelegeeInvokeMethOuter =
+            (if useStaticClosure then
+                 mkILNonGenericStaticMethSpecInTy
+             else
+                 mkILNonGenericInstanceMethSpecInTy) (
+                ilDelegeeTyOuter,
+                "Invoke",
+                typesOfILParams ilDelegeeParams,
+                ilDelegeeRet.Type
+            )
+
+        CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn ilDelegeeInvokeMethOuter)
+
+        // Instantiate the delegate
+        let ilDelegeeCtorMethOuter =
+            mkCtorMethSpecForDelegate g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
+
+        CG.EmitInstr cgbuf (pop 2) (Push [ ilCtxtDelTy ]) (I_newobj(ilDelegeeCtorMethOuter, None))
+        GenSequel cenv eenvouter.cloc cgbuf sequel
 
 /// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
 and ExprIsTraitCall expr =
