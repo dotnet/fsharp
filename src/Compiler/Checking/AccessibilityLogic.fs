@@ -250,14 +250,19 @@ let exprReferencesProtectedILField (amap: ImportMap) expr =
         { ExprFolder0 with
             exprIntercept =
                 fun _recurseF noInterceptF z e ->
-                    if not found then
+                    // Invoked per-member (IlxGen) and per-TLR-candidate (SelectTLRVals), so prune the
+                    // walk as soon as a hit is recorded: skipping noInterceptF stops descent into this
+                    // node's subtree, bounding the post-hit cost to the current fold frontier.
+                    if found then
+                        z
+                    else
                         match e with
                         | Expr.Op(TOp.ILAsm(instrs, _), _, _, m) ->
                             if instrs |> List.exists (function ILFieldInstr fspec -> isProtectedILFieldSpec amap m fspec | _ -> false) then
                                 found <- true
                         | _ -> ()
 
-                    noInterceptF z e }
+                        noInterceptF z e }
 
     FoldExpr folder () expr |> ignore
     found
