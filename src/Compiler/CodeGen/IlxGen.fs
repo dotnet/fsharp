@@ -10412,7 +10412,7 @@ and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
     // integer (e.g. 'Prop = MyEnum.B' surfaces as boxed int32). See
     // https://github.com/dotnet/fsharp/issues/995. The enum type is carried alongside the
     // underlying integer value, which is computed by recursing with the underlying IL type.
-    | Expr.Const(c, m, ty), _ when ilArgTy.TypeSpec.Name = "System.Object" && isEnumTy g ty ->
+    | Expr.Const(c, m, ty), _ when ilArgTy = g.ilg.typ_Object && isEnumTy g ty ->
         let enumIlTy = GenType amap m eenv.tyenv ty
         let underlyingTy = underlyingTypeOfEnumTy g ty
         let underlyingIlTy = GenType amap m eenv.tyenv underlyingTy
@@ -10425,7 +10425,7 @@ and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
     // Detect standard constants
     | Expr.Const(c, m, ty), _ ->
         let tynm = ilArgTy.TypeSpec.Name
-        let isobj = (tynm = "System.Object")
+        let isobj = (ilArgTy = g.ilg.typ_Object)
 
         match c with
         | Const.Bool b -> ILAttribElem.Bool b
