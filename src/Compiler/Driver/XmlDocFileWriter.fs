@@ -78,11 +78,14 @@ module XmlDocWriter =
         doModuleSig None generatedCcu.Contents
 
     let WriteXmlDocFile (g, assemblyName, generatedCcu: CcuThunk, xmlFile) =
+
         if not (FileSystemUtils.checkSuffix xmlFile "xml") then
             error (Error(FSComp.SR.docfileNoXmlSuffix (), Range.rangeStartup))
 
         let mutable members = []
 
+        // <inheritdoc> elements are written to the XML file as-is.
+        // Resolution happens at tooling time (IDE tooltips, FCS Symbols API).
         let addMember id xmlDoc =
             if hasDoc xmlDoc then
                 let doc = xmlDoc.GetXmlText()

@@ -343,6 +343,8 @@ module internal SymbolHelpers =
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d =
         match xmlDoc with
         | Some xmlDoc when not xmlDoc.IsEmpty  ->
+            // <inheritdoc> elements are left intact here. Full resolution happens through the
+            // Symbols.fs path (FSharpEntity.XmlDoc / FSharpMemberOrFunctionOrValue.XmlDoc).
             FSharpXmlDoc.FromXmlText xmlDoc
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
