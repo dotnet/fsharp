@@ -6643,6 +6643,11 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
         let envinner = if isMember then envinner else ExitFamilyRegion envinner
         let vspecs = vs |> List.map (fun nm -> NameMap.find nm vspecMap)
 
+        // Mark these values as parameters so diagnostics (e.g. FS0027 on assignment to a
+        // non-mutable parameter) can distinguish them from ordinary local bindings.
+        for v in vspecs do
+            v.SetIsParameter()
+
         // Match up the arginfos with the generated arguments and apply any information extracted from the attributes
         let envinner =
             match envinner.eLambdaArgInfos with

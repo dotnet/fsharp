@@ -50,12 +50,6 @@
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" />
   </ItemGroup>
 
-  <!-- On net472, transitive dependencies from MSBuild packages reference System.ValueTuple 4.0.5.0
-       while the framework facade provides 4.0.2.0. Binding redirects handle this at runtime. -->
-  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
-    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
-  </PropertyGroup>
-
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />

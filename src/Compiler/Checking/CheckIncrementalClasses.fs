@@ -162,12 +162,11 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
     // Put them in order 
     let ctorArgs = List.map (fun v -> NameMap.find v vspecs) ctorArgNames
 
-    // Mark constructor arguments as "displayed as parameters" so that diagnostics
+    // Mark constructor arguments as parameters so that diagnostics
     // (e.g. FS0027 on assignment to a non-mutable parameter) can distinguish them
     // from ordinary local bindings.
     for v in ctorArgs do
-        if v.ArgReprInfoForDisplay.IsNone then
-            v.SetArgReprInfoForDisplay (Some (ValReprInfo.InferArgReprInfo v))
+        v.SetIsParameter()
 
     let safeThisValOpt = MakeAndPublishSafeThisVal cenv env thisIdOpt thisTy
         

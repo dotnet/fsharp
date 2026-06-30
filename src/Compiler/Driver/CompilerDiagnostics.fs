@@ -1843,7 +1843,7 @@ type Exception with
             let name = vref.DisplayName
 
             let msg =
-                if vref.Deref.ArgReprInfoForDisplay.IsSome then
+                if vref.Deref.IsParameter then
                     ValNotMutableParameterE().Format name name name
                 else
                     ValNotMutableE().Format name
