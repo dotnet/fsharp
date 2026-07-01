@@ -621,6 +621,11 @@ val internal WithNewTypecheckResultsSink: ITypecheckResultsSink * TcResultsSink 
 /// Temporarily suspend reporting of name resolution and type checking results
 val internal TemporarilySuspendReportingTypecheckResultsToSink: TcResultsSink -> System.IDisposable
 
+/// Temporarily buffer reporting of name resolution and type checking results, returning a `replay` action
+/// that flushes the buffered notifications to the previously active sink (a no-op if there was none) and a
+/// disposable that restores it.
+val internal TemporarilyBufferReportingTypecheckResultsToSink: TcResultsSink -> (unit -> unit) * System.IDisposable
+
 /// Report the active name resolution environment for a source range
 val internal CallEnvSink: TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit
 

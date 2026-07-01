@@ -2334,6 +2334,37 @@ let TemporarilySuspendReportingTypecheckResultsToSink (sink: TcResultsSink) =
     sink.CurrentSink <- None
     { new System.IDisposable with member x.Dispose() = sink.CurrentSink <- old }
 
+/// A sink that records all notifications so they can later be replayed to the wrapped sink or discarded.
+/// Query members are forwarded to the wrapped sink so results computed while buffering (e.g. printf
+/// format-specifier ranges) are accurate when replayed.
+type private BufferingTypecheckResultsSink(sink: ITypecheckResultsSink) =
+    let buffered = ResizeArray<unit -> unit>()
+    member _.Replay() = for notify in buffered do notify ()
+
+    interface ITypecheckResultsSink with
+        member _.NotifyEnvWithScope(m, nenv, ad) = buffered.Add(fun () -> sink.NotifyEnvWithScope(m, nenv, ad))
+        member _.NotifyExprHasType(ty, nenv, ad, m) = buffered.Add(fun () -> sink.NotifyExprHasType(ty, nenv, ad, m))
+        member _.NotifyExprHasTypeSynthetic(ty, nenv, ad, m) = buffered.Add(fun () -> sink.NotifyExprHasTypeSynthetic(ty, nenv, ad, m))
+        member _.NotifyNameResolution(p, item, tpinst, occ, nenv, ad, m, replace) = buffered.Add(fun () -> sink.NotifyNameResolution(p, item, tpinst, occ, nenv, ad, m, replace))
+        member _.NotifyMethodGroupNameResolution(p, item, itemGroup, tpinst, occ, nenv, ad, m, replace) = buffered.Add(fun () -> sink.NotifyMethodGroupNameResolution(p, item, itemGroup, tpinst, occ, nenv, ad, m, replace))
+        member _.NotifyFormatSpecifierLocation(m, numArgs) = buffered.Add(fun () -> sink.NotifyFormatSpecifierLocation(m, numArgs))
+        member _.NotifyRelatedSymbolUse(m, item, kind) = buffered.Add(fun () -> sink.NotifyRelatedSymbolUse(m, item, kind))
+        member _.NotifyOpenDeclaration decl = buffered.Add(fun () -> sink.NotifyOpenDeclaration decl)
+        member _.CurrentSourceText = sink.CurrentSourceText
+        member _.FormatStringCheckContext = sink.FormatStringCheckContext
+
+/// Temporarily buffer reporting of name resolution and type checking results. Returns a `replay` action
+/// that flushes the buffered notifications to the previously active sink (a no-op if there was none), and a
+/// disposable that restores it. Lets a speculative pass defer reporting until it is known whether its
+/// results should be kept (replay) or dropped.
+let TemporarilyBufferReportingTypecheckResultsToSink (sink: TcResultsSink) =
+    match sink.CurrentSink with
+    | None -> (fun () -> ()), { new System.IDisposable with member _.Dispose() = () }
+    | Some inner ->
+        let buffer = BufferingTypecheckResultsSink inner
+        sink.CurrentSink <- Some(buffer :> ITypecheckResultsSink)
+        buffer.Replay, { new System.IDisposable with member _.Dispose() = sink.CurrentSink <- Some inner }
+
 
 /// Report the active name resolution environment for a specific source range
 let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =

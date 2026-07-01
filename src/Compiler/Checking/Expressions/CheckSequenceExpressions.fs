@@ -431,13 +431,20 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                 }
 
             if enableImplicitYield then
-                // Silenced probe classifies body as statement vs yielded element; the authoritative pass below
-                // reports once (else double diagnostics, #16419). Commit captured diagnostics if the probe throws.
+                // The body is speculatively type-checked once to classify it as a statement or a yielded
+                // element. Reporting is buffered rather than emitted so the kept interpretation reports
+                // exactly once (else format-specifier locations and diagnostics double - #16419): for a unit
+                // statement the probe result is authoritative and its buffered notifications/diagnostics are
+                // replayed; for a yielded element they are dropped and TcExprFlex re-checks with the element's
+                // target type. A fatal probe error is committed so it still surfaces.
                 let outerLogger = DiagnosticsThreadStatics.DiagnosticsLogger
                 let probeLogger = CapturingDiagnosticsLogger("SeqImplicitYieldProbe")
 
-                let hasTypeUnit, _ty, expr, tpenvAfterProbe =
-                    use _sink = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                let replaySink, restoreSink =
+                    TemporarilyBufferReportingTypecheckResultsToSink cenv.tcSink
+
+                let hasTypeUnit, _ty, expr, tpenv =
+                    use _restoreSink = restoreSink
                     use _logger = UseDiagnosticsLogger probeLogger
 
                     try
@@ -447,13 +454,16 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                         reraise ()
 
                 if hasTypeUnit then
-                    let _, _, expr, tpenv = TryTcStmt cenv env tpenv comp
+                    // Keep the probe result: replay its buffered notifications and commit its diagnostics
+                    // (mutually exclusive with the commit-on-throw above, so each path reports once).
+                    replaySink ()
+                    probeLogger.CommitDelayedDiagnostics outerLogger
                     Choice2Of2 expr, tpenv
                 else
                     let genResultTy = NewInferenceType g
                     let mExpr = expr.Range
                     UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
-                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenvAfterProbe comp
+                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
                     let exprTy = tyOfExpr cenv.g expr
                     AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
 
