@@ -29,6 +29,12 @@ type StableNiceNameGenerator =
     new: unit -> StableNiceNameGenerator
     member GetUniqueCompilerGeneratedName: name: string * m: range * uniq: int64 -> string
 
+    /// As GetUniqueCompilerGeneratedName, but allocates the disambiguating "-N" suffix in the bucket
+    /// identified by 'scopeFileIndex' instead of 'm.FileIndex', so callers (IlxGen closure naming) can
+    /// keep names deterministic under the parallel per-file codegen drain. See
+    /// https://github.com/dotnet/fsharp/issues/19928.
+    member GetUniqueCompilerGeneratedNameInScope: scopeFileIndex: int * name: string * m: range * uniq: int64 -> string
+
 /// A compiler-generated-name allocation scope bound to a single ImplFile being optimized.
 /// Instances can only be obtained from CompilerGlobalState.NewFileScope so a call site can't
 /// accidentally bucket names by the wrong (e.g. inlined-source) file and reintroduce the

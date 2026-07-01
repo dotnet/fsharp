@@ -64,6 +64,20 @@ type StableNiceNameGenerator() =
                 lazy innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
         lazyName.Value
 
+    /// As GetUniqueCompilerGeneratedName, but the disambiguating "-N" suffix counter is bucketed by
+    /// `scopeFileIndex` rather than by `m.FileIndex`. IlxGen passes the current codegen file scope so
+    /// that closure type names materialized during the parallel per-file drain cannot race on a bucket
+    /// shared across files - e.g. an inlined closure whose range points at its (foreign or synthetic)
+    /// definition file. `m` still contributes only the source-line marker. See
+    /// https://github.com/dotnet/fsharp/issues/19928.
+    member x.GetUniqueCompilerGeneratedNameInScope (scopeFileIndex: int, name, m: range, uniq) =
+        let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
+        let key = basicName, uniq
+        let lazyName =
+            niceNames.GetOrAdd(key, fun (basicName, _) ->
+                lazy innerGenerator.FreshCompilerGeneratedNameInScope(scopeFileIndex, basicName, m))
+        lazyName.Value
+
 [<Sealed>]
 type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
 

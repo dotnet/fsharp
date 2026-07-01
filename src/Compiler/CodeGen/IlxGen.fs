@@ -2004,6 +2004,10 @@ type CodegenFileScope private () =
         localCounter <- k + 1
         struct (CodegenFileScope.currentFileIdx, k)
 
+    /// The file index of the innermost active CodegenFileScope.With on this thread, or 0 when no
+    /// codegen file scope is active. Used to bucket per-file, drain-order-independent names.
+    static member CurrentFileIdx = CodegenFileScope.currentFileIdx
+
     static member With(fileIdx: int, action: unit -> 'T) : 'T =
         let prev = CodegenFileScope.currentFileIdx
 
@@ -7278,7 +7282,22 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            // Bucket the "-N" disambiguation counter by the codegen file scope, not by expr.Range's
+            // file. Inlined or synthetic-range closures otherwise share a counter bucket that the
+            // parallel per-file drain increments in a racy order (#19928). Outside a codegen file
+            // scope (currentFileIdx = 0, e.g. interactive) fall back to the range's file.
+            let scopeFileIndex =
+                if CodegenFileScope.CurrentFileIdx > 0 then
+                    CodegenFileScope.CurrentFileIdx
+                else
+                    expr.Range.FileIndex
+
+            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedNameInScope(
+                scopeFileIndex,
+                basenameSafeForUseAsTypename,
+                expr.Range,
+                uniq
+            )
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -12698,35 +12717,41 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         else
             batches |> Array.iter runBatch
 
-        // Some constructs generate residue types and bindings. Generate these now. They don't result in any
-        // top-level initialization code.
+        // Some constructs generate residue types and bindings (e.g. anon-record structural-equality
+        // augmentations). Generate these now in a trailing file scope past the last real file index so any
+        // members/closures they emit still key by a positive currentFileIdx: this preserves the OrderKey
+        // Debug.Assert(currentFileIdx > 0) invariant and keeps them from being hoisted ahead of real
+        // members via a struct(0, _) key. They don't result in any top-level initialization code.
         let extraBindings = mgbuf.GrabExtraBindingsToGenerate()
         //printfn "#extraBindings = %d" extraBindings.Length
         if extraBindings.Length > 0 then
-            let mexpr = TMDefs [ for b in extraBindings -> TMDefLet(b, range0) ]
+            CodegenFileScope.With(
+                List.length firstImplFiles + 2,
+                fun () ->
+                    let mexpr = TMDefs [ for b in extraBindings -> TMDefLet(b, range0) ]
 
-            let _emptyTopInstrs, _emptyTopCode =
-                CodeGenMethod
-                    cenv
-                    mgbuf
-                    ([],
-                     "unused",
-                     eenv,
-                     0,
-                     None,
-                     (fun cgbuf eenv ->
-                         let lazyInitInfo = ResizeArray()
-                         let qname = QualifiedNameOfFile(mkSynId range0 "unused")
+                    let _emptyTopInstrs, _emptyTopCode =
+                        CodeGenMethod
+                            cenv
+                            mgbuf
+                            ([],
+                             "unused",
+                             eenv,
+                             0,
+                             None,
+                             (fun cgbuf eenv ->
+                                 let lazyInitInfo = ResizeArray()
+                                 let qname = QualifiedNameOfFile(mkSynId range0 "unused")
 
-                         LocalScope "module" cgbuf (fun (_, endMark) ->
-                             let eenv =
-                                 AddBindingsForModuleOrNamespaceContents (AllocValReprWithinExpr cenv cgbuf endMark) eenv.cloc eenv mexpr
+                                 LocalScope "module" cgbuf (fun (_, endMark) ->
+                                     let eenv =
+                                         AddBindingsForModuleOrNamespaceContents (AllocValReprWithinExpr cenv cgbuf endMark) eenv.cloc eenv mexpr
 
-                             let _eenvEnv = GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenv mexpr
-                             ())),
-                     range0)
-            //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
-            ()
+                                     let _eenvEnv = GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenv mexpr
+                                     ())),
+                             range0)
+                    //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
+                    ())
 
         mgbuf.AddInitializeScriptsInOrderToEntryPoint(eenv.imports)
 
