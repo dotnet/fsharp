@@ -86,6 +86,14 @@
     <Compile Include="OverloadCacheTests.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- ECMA-335 Edit-and-Continue metadata delta writer tests. See PR #TBD. -->
+    <Compile Include="DeltaMetadata\CodedIndexTests.fs" />
+    <Compile Include="DeltaMetadata\MetadataDeltaTestHelpers.fs" />
+    <Compile Include="DeltaMetadata\SrmReaderParityTests.fs" />
+    <Compile Include="DeltaMetadata\FSharpDeltaMetadataWriterTests.fs" />
+  </ItemGroup>
+
 	<ItemGroup>
 		<None Include="..\service\data\SyntaxTree\**\*.*" Exclude="@(Compile)">
 			<Link>SyntaxTreeTestSource\%(RecursiveDir)\%(Extension)\%(Filename)%(Extension)</Link>
