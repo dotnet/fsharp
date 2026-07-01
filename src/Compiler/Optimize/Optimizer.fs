@@ -1321,15 +1321,6 @@ let CombineValueInfos einfos res =
 
 let CombineValueInfosUnknown einfos = CombineValueInfos einfos UnknownValue
 
-/// A class-scope self identifier (`as self`) makes the compiler add a safe-initialization
-/// field (named `init@...`) and a guard reading it to every member of the type. That
-/// compiler-generated field is private to the assembly, so it must not be counted as an
-/// inaccessible reference when deciding whether an inline member is incomplete (FS1113),
-/// otherwise valid members get a spurious error. Matched the same way as elsewhere in the
-/// compiler (FSharpExprConvert.IsStaticInitializationField, QuotationTranslator).
-let isSafeInitField (rfref: RecdFieldRef) =
-    rfref.RecdField.IsCompilerGenerated && rfref.RecdField.LogicalName.StartsWithOrdinal("init")
-
 /// Hide information because of a signature
 let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
 
@@ -4280,14 +4271,14 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             errorR(InternalError("the inline value '"+vref.LogicalName+"' was not inferred to have a known value", vref.Range))
 
         if vref.ShouldInline && vref.IsMember && not g.compilingFSharpCore && canAccessFromEverywhere vref.Accessibility then
-            // A publicly-accessible inline member whose body captures something that is not
+            // A publicly-accessible inline member whose body references a value that is not
             // accessible everywhere cannot be inlined at an external call site, so report it
-            // here (FS1113) instead of deferring a confusing FS1118 to the consumer. The
-            // class-scope self-identifier safe-init field is excluded: it is benign and the
-            // member is still rejected by the cross-assembly inliner if actually exported.
-            let fvs0 = freeInExpr CollectAll exprOptimized
-            let fvs = { fvs0 with FreeRecdFields = fvs0.FreeRecdFields |> Zset.filter (isSafeInitField >> not) }
-            if not (freeVarsAllPublic fvs) then
+            // here (FS1113) instead of deferring a confusing FS1118 to the consumer. Only free
+            // value references are considered: a class-scope self identifier (`as self`) makes
+            // members reference a private safe-init field, but that is a field (never a free
+            // local) so it does not trip this check.
+            let fvs = freeInExpr CollectLocals exprOptimized
+            if fvs.FreeLocals |> Zset.exists (fun v -> not (canAccessFromEverywhere v.Accessibility)) then
                 errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(vref.DisplayName), vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env

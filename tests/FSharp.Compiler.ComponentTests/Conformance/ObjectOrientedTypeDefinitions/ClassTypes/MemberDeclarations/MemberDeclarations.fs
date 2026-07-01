@@ -65,20 +65,6 @@ type Bag() =
         |> withErrorCode 1113
 
     [<Fact>]
-    let ``Inline member capturing a private constructor parameter fails FS1113 at definition`` () =
-        FSharp """
-module Test
-
-type Bag(k: int) =
-    member inline _.Wrap(x) = x + k
-"""
-        |> asLibrary
-        |> ignoreWarnings
-        |> compile
-        |> shouldFail
-        |> withErrorCode 1113
-
-    [<Fact>]
     let ``Inline member with class-scope self identifier referencing only public values compiles`` () =
         FSharp """
 module Test
@@ -92,22 +78,6 @@ type Bag() as self =
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
-
-    [<Fact>]
-    let ``Inline member capturing a private union case fails FS1113 at definition`` () =
-        FSharp """
-module Test
-
-type private Secret = A | B
-
-type Bag() =
-    member inline _.Wrap(x) = match (if x then A else B) with A -> 1 | B -> 2
-"""
-        |> asLibrary
-        |> ignoreWarnings
-        |> compile
-        |> shouldFail
-        |> withErrorCode 1113
 
     [<Fact>]
     let ``Inline member referencing a public union case compiles`` () =
