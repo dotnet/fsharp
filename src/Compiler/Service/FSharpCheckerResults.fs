@@ -677,8 +677,8 @@ type internal TypeCheckInfo
             | _ -> [])
 
     let GetNamedParametersAndSettableFields endOfExprPos cursorLine (lineStr: string) allowObsolete =
-        let cnrs =
-            GetCapturedNameResolutions endOfExprPos ResolveOverloads.No
+        let getCnrs resolveOverloads =
+            GetCapturedNameResolutions endOfExprPos resolveOverloads
             |> ResizeArray.toList
             |> List.rev
 
@@ -754,7 +754,7 @@ type internal TypeCheckInfo
 
         // Walk the reversed CNR list and pick the first Ctor/MethodGroup, instead of matching the head only.
         // Overload refinement or trailing partial arguments can push the original group off the head.
-        let pickedFromCnrs =
+        let pickGroupFromCnrs (cnrs: CapturedNameResolution list) =
             cnrs
             |> List.tryPick (fun cnr ->
                 match cnr.Item with
@@ -765,13 +765,23 @@ type internal TypeCheckInfo
                 | _ -> None)
 
         let result =
-            match pickedFromCnrs with
-            | Some _ -> pickedFromCnrs
+            // First consult the method-group resolution stream (ResolveOverloads.No).
+            match pickGroupFromCnrs (getCnrs ResolveOverloads.No) with
+            | Some _ as picked -> picked
             | None ->
-                match tryRecoverGroupFromLineText () with
-                | Some(denv, nenv, ad, m, Choice1Of2 ctors) -> Some(groupForCtor ctors denv nenv ad m)
-                | Some(denv, nenv, ad, m, Choice2Of2 methods) -> Some(groupForMethods methods denv nenv ad m)
-                | None -> None
+                // ResolveOverloads.No stops at CapturedMethodGroupResolutions as soon as it has any entry
+                // ending at endOfExprPos, so a Ctor/MethodGroup that only lives in the broader
+                // CapturedNameResolutions stream can be missed. Retry with ResolveOverloads.Yes, which reads
+                // that stream directly - cheaper than the textual recovery below and covering the same group.
+                match pickGroupFromCnrs (getCnrs ResolveOverloads.Yes) with
+                | Some _ as picked -> picked
+                | None ->
+                    // Type-checker abandoned resolution entirely (malformed argument list): re-resolve the
+                    // long-ident to the left of endOfExprPos from the line text as a last resort.
+                    match tryRecoverGroupFromLineText () with
+                    | Some(denv, nenv, ad, m, Choice1Of2 ctors) -> Some(groupForCtor ctors denv nenv ad m)
+                    | Some(denv, nenv, ad, m, Choice2Of2 methods) -> Some(groupForMethods methods denv nenv ad m)
+                    | None -> None
 
         match result with
         | None -> NameResResult.Empty
