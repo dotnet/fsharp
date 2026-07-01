@@ -38,7 +38,7 @@
       "cats": []
     },
     "19979": {
-      "sha": "e81c71537f4674faa77cfa9970cfbdef9e45a33e",
+      "sha": "a188a831f5d99858a40e3cf2ba9030f4cf528c28",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Design-Time",
@@ -145,7 +145,7 @@
       "cats": []
     },
     "19895": {
-      "sha": "36866806a957fb96c81e1bf8ff2703416ace4908",
+      "sha": "e08de3d9d401f7f6c19e1a34c857a114b3f902d4",
       "cats": []
     },
     "19885": {
@@ -161,7 +161,7 @@
       "cats": []
     },
     "19862": {
-      "sha": "0435921da13f2966e47fa99ae8bd4c568eb10ac9",
+      "sha": "9eb6061a9202d2016abdba325ddc3646fefe2a39",
       "cats": []
     },
     "19850": {
@@ -193,7 +193,7 @@
       "cats": []
     },
     "19761": {
-      "sha": "ba391ed5249fb01a100f83b7b207b7f86a6285a0",
+      "sha": "aa3adc8b8caafa0ab7da1b9d693c9b25d80baec5",
       "cats": []
     },
     "19759": {
@@ -215,6 +215,13 @@
     "20012": {
       "sha": "edad731fede890de3cab333e08690543776f3061",
       "cats": []
+    },
+    "20016": {
+      "sha": "88e64501a0db50d05a18a0267434fa18f254527d",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
     }
   }
 }
