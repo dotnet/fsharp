@@ -5009,6 +5009,155 @@ type Type =
                 Assert.Contains("ebuild", message))
 
     [<Fact>]
+    let ``Disk-started flag-off session rejects pipeline stage added before existing closures`` () =
+        // The failure topology is a FLAG-OFF disk baseline: a plain SDK build (no
+        // --test:HotReloadDeltas) names pipe-stage closures by debug pipe desugaring
+        // ("Pipe #N stage #M at line L@L", see OptimizeDebugPipeRights in Optimizer.fs),
+        // numbered by occurrence order within the chain, and persists no EnC CDI to
+        // reconstruct occurrence keys from. A NEW `|> List.map` stage inserted BEFORE the
+        // existing stages shifts every later stage's name off its baseline row, so the
+        // chain cannot be aligned. Before the compiler-generated-name predicate fix, only
+        // the `@hotreload` spelling was recognized by the fail-closed guard, so this shape
+        // fell through to a baseline token-map lookup known to be invalid and crashed
+        // EmitDelta with an ilwrite InternalError (DeltaEmissionFailed) instead of failing
+        // closed as a rude edit; that exact crash shape was reproduced and re-verified
+        // fixed with a full external-build repro (multi-module app). This test pins the
+        // contract for the topology: the emit must reject as UnsupportedEdit (whichever
+        // closure-chain fail-closed check fires first), never surface an internal error.
+        // (With a FLAG-ON baseline the same insertion is genuinely supported via
+        // CDI-reconstructed occurrence keys - see the disk-started addition test above -
+        // so this rejection only applies to the flag-off topology.)
+        let modifiable = Environment.GetEnvironmentVariable("DOTNET_MODIFIABLE_ASSEMBLIES")
+
+        if not (String.Equals(modifiable, "debug", StringComparison.OrdinalIgnoreCase)) then
+            printfn "[skip] DOTNET_MODIFIABLE_ASSEMBLIES must be 'debug' for this test"
+        else
+            let checker =
+                FSharpChecker.Create(
+                    keepAssemblyContents = true,
+                    keepAllBackgroundResolutions = false,
+                    keepAllBackgroundSymbolUses = false,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                    enablePartialTypeChecking = false,
+                    captureIdentifiersWhenParsing = false
+                )
+
+            let baselineSource =
+                """
+module Sample.PipeChain
+
+let transform (input: int list) =
+    input
+    |> List.map (fun r -> r + 1)
+    |> List.filter (fun r -> r > 0)
+    |> List.map (fun r -> r * 2)
+
+let probe () = List.sum (transform [ 1; 2; 3 ])
+"""
+
+            let updatedSource =
+                baselineSource.Replace(
+                    "input\n    |> List.map (fun r -> r + 1)",
+                    "input\n    |> List.map (fun r -> r - 1)\n    |> List.map (fun r -> r + 1)")
+
+            Assert.NotEqual<string>(baselineSource, updatedSource)
+
+            let projectDir =
+                Path.Combine(Path.GetTempPath(), "fsharp-hotreload-pipe-reject", System.Guid.NewGuid().ToString("N"))
+
+            Directory.CreateDirectory(projectDir) |> ignore
+            let fsPath = Path.Combine(projectDir, "PipeReject.fs")
+            let dllPath = Path.Combine(projectDir, "PipeReject.dll")
+
+            try
+                File.WriteAllText(fsPath, baselineSource)
+
+                let projectOptions, _ =
+                    checker.GetProjectOptionsFromScript(
+                        fsPath,
+                        SourceText.ofString baselineSource,
+                        assumeDotNetFramework = false,
+                        useSdkRefs = true,
+                        useFsiAuxLib = false
+                    )
+                    |> Async.RunImmediate
+
+                // Deliberately NO --test:HotReloadDeltas anywhere: both compiles use the
+                // plain fsc naming, matching a stock SDK project under dotnet watch.
+                let projectOptions =
+                    { projectOptions with
+                        SourceFiles = [| fsPath |]
+                        OtherOptions =
+                            projectOptions.OtherOptions
+                            |> Array.append
+                                [| "--target:library"
+                                   "--langversion:preview"
+                                   "--optimize-"
+                                   "--debug:portable"
+                                   "--deterministic"
+                                   $"--out:{dllPath}" |] }
+
+                checker.InvalidateAll()
+
+                let compileDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors =
+                    compileDiagnostics
+                    |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
+                if errors.Length > 0 then
+                    failwithf "Baseline compilation failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+                // Simulate the process boundary: the on-disk dll+pdb are the only baseline inputs.
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+                let capabilities = [ "Baseline"; "AddMethodToExistingType"; "NewTypeDefinition" ]
+                use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+                match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Error error -> failwithf "Failed to start hot reload session from disk: %A" error
+                | Ok() -> ()
+
+                File.WriteAllText(fsPath, updatedSource)
+                checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+                let updatedDiagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let updatedErrors =
+                    updatedDiagnostics
+                    |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
+                if updatedErrors.Length > 0 then
+                    failwithf "Updated compilation failed: %A" (updatedErrors |> Array.map (fun d -> d.Message))
+
+                match session.EmitDelta(snapshotOf projectOptions) |> Async.RunImmediate with
+                | Ok _ ->
+                    failwith
+                        "Expected the flag-off pipe-stage insertion to be rejected as a rude edit, but a delta was emitted."
+                | Error error ->
+                    let message = sprintf "%A" error
+                    // Must be the graceful rude-edit shape (dotnet-watch rebuilds), never the
+                    // ilwrite InternalError surfaced as DeltaEmissionFailed.
+                    Assert.Contains("UnsupportedEdit", message)
+                    Assert.DoesNotContain("DeltaEmissionFailed", message)
+                    Assert.Contains("closure chain", message)
+                    Assert.Contains("Please rebuild", message)
+            finally
+                try
+                    checker.InvalidateAll()
+                with _ ->
+                    ()
+
+                try
+                    Directory.Delete(projectDir, true)
+                with _ ->
+                    ()
+
+    [<Fact>]
     let ``Disk-started session applies a task body edit with stable resume points`` () =
         // The dotnet-watch topology for state machines: the baseline is built
         // by the command-line fsc path (persisting the EnC State Machine State Map CDI

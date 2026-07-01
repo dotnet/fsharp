@@ -3691,12 +3691,15 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         addedTypeNewTokens[fullName] <- newTypeToken
                         addedTypeDefs.Add(enclosing, typeDef, fullName)
                         deltaToken
-                | None when typeDef.Name.Contains "@hotreload" ->
-                    // A legacy (non-generation-suffixed) hot-reload closure name with no
-                    // baseline counterpart: closure-chain CE lowerings (async) number
-                    // their classes `-N` by emission order, so a structural CE change
-                    // shifts every later name off its baseline row. Tokens looked up
-                    // through the baseline mappings would be garbage; fail closed.
+                | None when IsCompilerGeneratedName typeDef.Name ->
+                    // A compiler-generated type (closure/CE-lowering class, under either the
+                    // stable `@hotreload...` naming scheme or the external/fresh-fsc `@<line>`
+                    // scheme, e.g. `Pipe #1 stage #3 at line 16@16`) with no baseline
+                    // counterpart. Closure-chain CE lowerings and pipe-stage lambdas number
+                    // their classes by emission order, so a structural change (an added CE
+                    // bind, an added pipe stage) shifts every later name off its baseline row.
+                    // Tokens looked up through the baseline mappings would be garbage; fail
+                    // closed before making a token-map call known to be invalid.
                     let fullName =
                         (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
 
