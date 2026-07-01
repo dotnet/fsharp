@@ -291,43 +291,11 @@
     IL_0005:  ret
   } 
 
-  .method assembly specialname static int32 'get_arg_0@34-1'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_0@34-1'
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 'get_arg_0@38-2'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_0@38-2'
-    IL_0005:  ret
-  } 
-
   .method assembly specialname static int32 get_arg_1@30() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::arg_1@30
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 'get_arg_1@34-1'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_1@34-1'
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 'get_arg_1@38-2'() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_1@38-2'
     IL_0005:  ret
   } 
 
@@ -339,6 +307,30 @@
     IL_0005:  ret
   } 
 
+  .method assembly specialname static int32 get_arg_3@30() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::arg_3@30
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_0@34-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_0@34-1'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_1@34-1'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_1@34-1'
+    IL_0005:  ret
+  } 
+
   .method assembly specialname static int32 'get_arg_2@34-1'() cil managed
   {
     
@@ -347,19 +339,27 @@
     IL_0005:  ret
   } 
 
+  .method assembly specialname static int32 'get_arg_0@38-2'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_0@38-2'
+    IL_0005:  ret
+  } 
+
+  .method assembly specialname static int32 'get_arg_1@38-2'() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_1@38-2'
+    IL_0005:  ret
+  } 
+
   .method assembly specialname static int32 'get_arg_2@38-2'() cil managed
   {
     
     .maxstack  8
     IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::'arg_2@38-2'
-    IL_0005:  ret
-  } 
-
-  .method assembly specialname static int32 get_arg_3@30() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::arg_3@30
     IL_0005:  ret
   } 
 
