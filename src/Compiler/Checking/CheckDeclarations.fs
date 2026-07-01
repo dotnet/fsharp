@@ -53,10 +53,7 @@ type cenv = TcFileState
 let rec (|UndefinedNameError|_|) (e: exn) =
     match e with
     | UndefinedName _ -> Some ()
-    | WrappedError(inner, _)
-    | ErrorFromAddingTypeEquation(error = inner)
-    | ErrorFromAddingConstraint(error = inner)
-    | ErrorFromApplyingDefault(error = inner) -> (|UndefinedNameError|_|) inner
+    | WrappedError(inner, _) -> (|UndefinedNameError|_|) inner
     | _ -> None
 
 //-------------------------------------------------------------------------
