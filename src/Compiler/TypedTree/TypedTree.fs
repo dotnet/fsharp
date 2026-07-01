@@ -172,6 +172,15 @@ type ValFlags(flags: int64) =
                                                              |               0b00000000000000110000L -> ValInline.Never
                                                              | _          -> failwith "unreachable"
 
+    member x.WithInlineInfo inlineInfo =
+            let flags =
+                     (flags       &&&                                     ~~~0b00000000000000110000L) |||
+                     (match inlineInfo with
+                                     | ValInline.Always ->                   0b00000000000000010000L
+                                     | ValInline.Optional ->                 0b00000000000000100000L
+                                     | ValInline.Never ->                    0b00000000000000110000L)
+            ValFlags flags
+
     member x.MutabilityInfo = 
                                   match (flags       &&&                     0b00000000000001000000L) with 
                                                              |               0b00000000000000000000L -> Immutable
@@ -242,13 +251,18 @@ type ValFlags(flags: int64) =
 
     member x.WithIsImplied                             = ValFlags(flags ||| 0b1000000000000000000000L)
 
+    member x.IsParameter                               =       (flags &&& 0b10000000000000000000000L) <> 0L
+
+    member x.WithIsParameter                           = ValFlags(flags ||| 0b10000000000000000000000L)
+
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
         // Clear the RecursiveValInfo, only used during inference and irrelevant across assembly boundaries
         // Clear the IsCompiledAsStaticPropertyWithoutField, only used to determine whether to use a true field for a value, and to eliminate the optimization info for observable bindings
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
-                                                      (flags       &&&   ~~~0b010011001100000000000L) 
+        // Clear the IsParameter, only used during type checking of the current compilation to specialize diagnostics
+                                                      (flags       &&&   ~~~0b10010011001100000000000L) 
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -761,7 +775,7 @@ type Entity =
 #endif
         else
             ignore withStaticParameters
-            match x.TyparsNoRange with 
+            match x.Typars with 
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
@@ -893,12 +907,9 @@ type Entity =
           CompilationPath.DemangleEntityName x.LogicalName x.ModuleOrNamespaceType.ModuleOrNamespaceKind
     
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    /// 
-    /// Lazy because it may read metadata, must provide a context "range" in case error occurs reading metadata.
-    member x.Typars m = x.entity_typars.Force m
-
-    /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member x.TyparsNoRange: Typars = x.Typars x.Range
+    ///
+    /// Lazy because it may read metadata. Uses the entity's own range for error context.
+    member x.Typars: Typars = x.entity_typars.Force x.Range
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
     member x.TypeAbbrev = 
@@ -1331,7 +1342,7 @@ type Entity =
                         | _ -> ilTypeRefForCompilationPath x.CompilationPath x.CompiledName
                     // Pre-allocate a ILType for monomorphic types, to reduce memory usage from Abstract IL nodes
                     let ilTypeOpt = 
-                        match x.TyparsNoRange with 
+                        match x.Typars with 
                         | [] -> Some (mkILTy boxity (mkILTySpec (ilTypeRef, []))) 
                         | _ -> None
                     CompiledTypeRepr.ILAsmNamed (ilTypeRef, boxity, ilTypeOpt))
@@ -3058,6 +3069,10 @@ type Val =
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member x.IsImplied = x.val_flags.IsImplied
 
+    /// Indicates whether this value is a function or method parameter, as opposed to a local binding.
+    /// Used to specialize diagnostics such as FS0027.
+    member x.IsParameter = x.val_flags.IsParameter
+
     /// Indicates whether the inline declaration for the value indicate that the value should be inlined?
     member x.ShouldInline = x.InlineInfo.ShouldInline
 
@@ -3304,7 +3319,11 @@ type Val =
 
     member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
 
+    member x.SetInlineInfo (inlineInfo: ValInline) = x.val_flags <- x.val_flags.WithInlineInfo inlineInfo
+
     member x.SetIsImplied() = x.val_flags <- x.val_flags.WithIsImplied
+
+    member x.SetIsParameter() = x.val_flags <- x.val_flags.WithIsParameter
 
     member x.SetValReprInfo info = 
         match x.val_opt_data with
@@ -3792,12 +3811,9 @@ type EntityRef =
     member x.IsFSharpException = x.Deref.IsFSharpException
     
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    /// 
-    /// Lazy because it may read metadata, must provide a context "range" in case error occurs reading metadata.
-    member x.Typars m = x.Deref.Typars m
-
-    /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member x.TyparsNoRange = x.Deref.TyparsNoRange
+    ///
+    /// Lazy because it may read metadata. Uses the entity's own range for error context.
+    member x.Typars = x.Deref.Typars
 
     /// Indicates if this entity is an F# type abbreviation definition
     member x.TypeAbbrev = x.Deref.TypeAbbrev
@@ -5274,7 +5290,7 @@ type Expr =
         | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
-        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
+        | DebugPoint (DebugPointAtLeafExpr.Yes(_, m), e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
 
     /// Get the mark/range/position information from an expression
     member expr.Range =
@@ -6085,6 +6101,10 @@ type FreeVars =
       /// Indicates if the expression contains a call to rethrow that is not bound under a (try-)with branch. 
       /// Rethrow may only occur in such locations. 
       UsesUnboundRethrow: bool 
+
+      /// Indicates if the expression contains a direct IL field load/store — a cheap over-approximate
+      /// gate the optimizer refines to protected (family) fields (issue #19963). Never read by escape checks.
+      ContainsILFieldAccess: bool 
 
       /// The summary of locally defined tycon representations used in the expression. These may be made private by a signature 
       /// or marked 'internal' or 'private' and we have to check various conditions associated with that. 

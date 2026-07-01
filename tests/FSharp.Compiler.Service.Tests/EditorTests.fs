@@ -2235,3 +2235,26 @@ let x = new X()
 let _ = { field1 =; f{caret} }
 """
     assertItemsWithNames false ["field1"; "field2"] info
+
+[<Fact>]
+let ``19905 - object-initializer property completion still works`` () =
+    let parseResults, checkResults = getParseAndCheckResults "\ntype A() =\n    member val SettableProperty = 1 with get,set\n    member val NonSettableProperty = 1\nA()\n"
+    let decls = checkResults.GetDeclarationListInfo(Some parseResults, 5, "A()", PartialLongName.Empty(2), (fun _ -> []))
+    let names = decls.Items |> Array.map (fun i -> i.NameInCode) |> Set.ofArray
+    Assert.True(names.Contains "SettableProperty", sprintf "object-initializer completion regressed: %d items" names.Count)
+
+[<Fact>]
+let ``19905 - generic constructor parameter info still works`` () =
+    let parseResults, checkResults = getParseAndCheckResults "\nopen System.Collections.Generic\nlet _ = new Dictionary<_, _>()\n"
+    match parseResults.FindParameterLocations(FSharp.Compiler.Text.Position.mkPos 3 29) with
+    | None -> Assert.True(false, "FindParameterLocations returned None for generic ctor")
+    | Some nwpl ->
+        let lidEnd = nwpl.LongIdEndLocation
+        let methods = checkResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some nwpl.LongId)
+        Assert.True(methods.Methods.Length > 0, "generic constructor parameter info regressed (no methods)")
+
+[<Fact>]
+let ``19905 - custom GetSlice usage via slice syntax is found`` () =
+    let _, checkResults = getParseAndCheckResults "\ntype T() =\n    member _.GetSlice(a: int option, b: int option) = [a; b]\nlet xs = T()\nlet ys = xs.[0..2]\n"
+    let callSites = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.filter (fun u -> u.Symbol.DisplayName = "GetSlice" && not u.IsFromDefinition) |> Seq.length
+    Assert.True(callSites > 0, "custom GetSlice slice call site not found by find-all-references")

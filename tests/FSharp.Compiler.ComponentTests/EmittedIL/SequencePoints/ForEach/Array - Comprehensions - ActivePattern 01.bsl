@@ -1,13 +1,24 @@
+module Module
+
+let (|Id|) (x: int) = x
+
+let f (l: int list) =
+    [|
+        for Id i in l do
+            yield i
+    |]
+--------------------------------------------------------------------------------
+
 Module::|Id|
-  (4,23-4,24)  x
+  (3,23-3,24)  x
     IL_0000:  ldarg.0
     IL_0001:  ret
 
 Module::f
-  (7,5-10,7)  [| for Id i in l do yield i |]
+  (6,5-9,7)  [| for Id i in l do yield i |]
     IL_0000:  nop
 
-  (8,9-8,12)  for
+  (7,9-7,12)  for
     IL_0001:  ldarg.0
     IL_0002:  callvirt GetEnumerator
     IL_0007:  stloc.1
@@ -16,20 +27,20 @@ Module::f
     IL_000b:  callvirt get_Current
     IL_0010:  stloc.3
     IL_0011:  ldloc.3
-    IL_0012:  call |Id|
+    IL_0012:  call Module::|Id|
     IL_0017:  stloc.s 4
     IL_0019:  ldloc.s 4
     IL_001b:  stloc.s 5
 
-  (9,13-9,20)  yield i
+  (8,13-8,20)  yield i
     IL_001d:  ldloca.s 0
     IL_001f:  ldloc.s 5
     IL_0021:  call Add
     IL_0026:  nop
 
-  (8,18-8,20)  in
+  (7,18-7,20)  in
     IL_0027:  ldloc.1
-    IL_0028:  callvirt MoveNext
+    IL_0028:  callvirt IEnumerator::MoveNext
     IL_002d:  brtrue.s IL_000a
     IL_002f:  ldnull
     IL_0030:  stloc.2
@@ -37,14 +48,12 @@ Module::f
     IL_0033:  ldloc.1
     IL_0034:  isinst IDisposable
     IL_0039:  stloc.s 6
-
-  <hidden>
     IL_003b:  ldloc.s 6
     IL_003d:  brfalse.s IL_0047
 
   <hidden>
     IL_003f:  ldloc.s 6
-    IL_0041:  callvirt Dispose
+    IL_0041:  callvirt IDisposable::Dispose
     IL_0046:  endfinally
 
   <hidden>

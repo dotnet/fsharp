@@ -113,6 +113,7 @@
     <Compile Include="Conformance\Expressions\EvaluationOfElaboratedForms\EvaluationOfElaboratedForms.fs" />
     <Compile Include="Conformance\Expressions\ExpressionQuotations\Baselines.fs" />
     <Compile Include="Conformance\Expressions\ExpressionQuotations\Regressions.fs" />
+    <Compile Include="Conformance\Expressions\ExpressionQuotations\QuotationRendering\QuotationRenderingTests.fs" />
     <Compile Include="Conformance\Expressions\SyntacticSugar\SyntacticSugar.fs" />
     <Compile Include="Conformance\Expressions\SyntacticSugarAndAmbiguities\SyntacticSugarAndAmbiguities.fs" />
     <Compile Include="Conformance\InferenceProcedures\ByrefSafetyAnalysis\ByrefSafetyAnalysis.fs" />
@@ -211,6 +212,7 @@
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\optional\Optional.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\TypeKindInference\TypeKindInference.fs" />
     <Compile Include="Conformance\Signatures\Signatures.fs" />
+    <Compile Include="Conformance\Signatures\SignatureEnforcedAttributes.fs" />
     <Compile Include="Conformance\SpecialAttributesAndTypes\CallerInfo.fs" />
     <Compile Include="Conformance\SpecialAttributesAndTypes\ThreadStatic.fs" />
     <Compile Include="Conformance\Stress\StressTests.fs" />
@@ -264,6 +266,10 @@
     <Compile Include="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <Compile Include="EmittedIL\GenericComparison\GenericComparison.fs" />
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_MutualInnerRec_StructuralAssertions.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_RealsigPrivate.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_RealsigAugmentationClosure.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_Specialize_ConstraintVerification.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
@@ -296,10 +302,12 @@
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TailCallAttribute.fs" />
+    <Compile Include="ErrorMessages\IndexedSetterNamedArgTests.fs" />
     <Compile Include="ErrorMessages\IndexingSyntax.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
+    <Compile Include="ErrorMessages\AssignmentToParameterErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />
     <Compile Include="ErrorMessages\OperatorTests.fs" />
     <Compile Include="ErrorMessages\CommaSemicolonListTests.fs" />
@@ -314,6 +322,7 @@
     <Compile Include="ErrorMessages\ModuleTests.fs" />
     <Compile Include="ErrorMessages\DiagnosticRegressionTests.fs" />
     <Compile Include="ErrorMessages\OverloadResolutionErrorRangeTests.fs" />
+    <Compile Include="ErrorMessages\Issue9838Tests.fs" />
     <Compile Include="ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="ErrorMessages\SuggestionsTests.fs" />
     <Compile Include="ErrorMessages\TypeMismatchTests.fs" />
@@ -349,6 +358,7 @@
     <Compile Include="Language\CodeQuotationTests.fs" />
     <Compile Include="Language\InterpolatedStringsTests.fs" />
     <Compile Include="Language\ComputationExpressionTests.fs" />
+    <Compile Include="Language\CE_PipelineRange19550.fs" />
     <Compile Include="Language\StateMachineTests.fs" />
     <Compile Include="Language\DynamicAssignmentOperatorTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
@@ -370,6 +380,7 @@
     <Compile Include="Language\Nullness\NullableReferenceTypesTests.fs" />
     <Compile Include="Language\Nullness\EventNullnessTests.fs" />
     <Compile Include="Language\IndexedSetTests.fs" />
+    <Compile Include="Language\UseBindingDisposalTests.fs" />
     <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
@@ -388,6 +399,7 @@
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
     <Compile Include="Scripting\PreferredUiLangTests.fs" />
     <Compile Include="InteractiveSession\Misc.fs" />
+    <Compile Include="InteractiveSession\AnonRecordPrinting.fs" />
     <Compile Include="TypeChecks\TypeRelations.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
