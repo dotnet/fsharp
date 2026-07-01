@@ -493,7 +493,7 @@ let rec IsPartialExprVal x =
     | SizeValue (_, a) -> IsPartialExprVal a
 
 let CheckInlineValueIsComplete (v: Val) res =
-    if v.ShouldInline && IsPartialExprVal res then
+    if v.ShouldInline && not v.IsMember && IsPartialExprVal res then
         errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
         //System.Diagnostics.Debug.Assert(false, sprintf "Break for incomplete inline value %s" v.DisplayName)
 
@@ -4229,6 +4229,17 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             else einfo 
         if vref.ShouldInline && IsPartialExprVal einfo.Info then 
             errorR(InternalError("the inline value '"+vref.LogicalName+"' was not inferred to have a known value", vref.Range))
+
+        if vref.ShouldInline && vref.IsMember && not g.compilingFSharpCore && canAccessFromEverywhere vref.Accessibility then
+            // A publicly-accessible inline member whose body references a value that is not
+            // accessible everywhere cannot be inlined at an external call site, so report it
+            // here (FS1113) instead of deferring a confusing FS1118 to the consumer. Only free
+            // value references are considered: a class-scope self identifier (`as self`) makes
+            // members reference a private safe-init field, but that is a field (never a free
+            // local) so it does not trip this check.
+            let fvs = freeInExpr CollectLocals exprOptimized
+            if fvs.FreeLocals |> Zset.exists (fun v -> not (canAccessFromEverywhere v.Accessibility)) then
+                errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(vref.DisplayName), vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
 
