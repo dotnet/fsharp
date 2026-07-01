@@ -470,6 +470,7 @@
     <Compile Include="CompilerOptions\fsi\Langversion.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\Caches.fs" />
+    <Compile Include="CompilerService\EncMethodDebugInformationTests.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
