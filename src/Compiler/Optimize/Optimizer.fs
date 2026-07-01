@@ -4405,9 +4405,10 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             // here (FS1113) instead of deferring a confusing FS1118 to the consumer. Only free
             // value references are considered: a class-scope self identifier (`as self`) makes
             // members reference a private safe-init field, but that is a field (never a free
-            // local) so it does not trip this check.
+            // local) so it does not trip this check. Values that are themselves inline are
+            // excluded, as they are expanded transitively when the outer member is inlined.
             let fvs = freeInExpr CollectLocals exprOptimized
-            if fvs.FreeLocals |> Zset.exists (fun v -> not (canAccessFromEverywhere v.Accessibility)) then
+            if fvs.FreeLocals |> Zset.exists (fun v -> not v.ShouldInline && not (canAccessFromEverywhere v.Accessibility)) then
                 errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(vref.DisplayName), vref.Range))
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env
