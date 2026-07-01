@@ -1501,52 +1501,61 @@ module MutRecBindingChecking =
         // Build an index ---> binding map
         let generalizedBindingsMap = generalizedRecBinds |> List.map (fun pgrbind -> (pgrbind.RecBindingInfo.Index, pgrbind)) |> Map.ofList
 
-        defnsBs |> MutRecShapes.mapTyconsAndLets 
+        let collectedBinds = ResizeArray()
 
-            // Phase2C: Fixup member bindings 
-            (fun (TyconBindingsPhase2B(tyconOpt, tcref, defnBs)) -> 
+        let result =
+            defnsBs |> MutRecShapes.mapTyconsAndLets 
 
-                let defnCs = 
-                    defnBs |> List.map (fun defnB -> 
+                // Phase2C: Fixup member bindings 
+                (fun (TyconBindingsPhase2B(tyconOpt, tcref, defnBs)) -> 
 
-                        // Phase2C: Generalise implicit ctor val 
-                        match defnB with
-                        | Phase2BIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt) ->
-                            match incrCtorInfoOpt with
-                            | Some incrCtorInfo ->
-                                let valscheme = incrCtorInfo.InstanceCtorValScheme
-                                let valscheme = ChooseCanonicalValSchemeAfterInference g denv valscheme scopem
-                                AdjustRecType incrCtorInfo.InstanceCtorVal valscheme
-                            | None -> ()
-                            Phase2CIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt)
+                    let defnCs = 
+                        defnBs |> List.map (fun defnB -> 
 
-                        | Phase2BInherit inheritsExpr -> 
-                            Phase2CInherit inheritsExpr
+                            // Phase2C: Generalise implicit ctor val 
+                            match defnB with
+                            | Phase2BIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt) ->
+                                match incrCtorInfoOpt with
+                                | Some incrCtorInfo ->
+                                    let valscheme = incrCtorInfo.InstanceCtorValScheme
+                                    let valscheme = ChooseCanonicalValSchemeAfterInference g denv valscheme scopem
+                                    AdjustRecType incrCtorInfo.InstanceCtorVal valscheme
+                                | None -> ()
+                                Phase2CIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt)
 
-                        | Phase2BIncrClassBindings bindRs -> 
-                            Phase2CIncrClassBindings bindRs
+                            | Phase2BInherit inheritsExpr -> 
+                                Phase2CInherit inheritsExpr
 
-                        | Phase2BIncrClassCtorJustAfterSuperInit -> 
-                            Phase2CIncrClassCtorJustAfterSuperInit
+                            | Phase2BIncrClassBindings bindRs -> 
+                                Phase2CIncrClassBindings bindRs
 
-                        | Phase2BIncrClassCtorJustAfterLastLet -> 
-                            Phase2CIncrClassCtorJustAfterLastLet
+                            | Phase2BIncrClassCtorJustAfterSuperInit -> 
+                                Phase2CIncrClassCtorJustAfterSuperInit
 
-                        | Phase2BMember idx ->
-                            // Phase2C: Fixup member bindings 
+                            | Phase2BIncrClassCtorJustAfterLastLet -> 
+                                Phase2CIncrClassCtorJustAfterLastLet
+
+                            | Phase2BMember idx ->
+                                // Phase2C: Fixup member bindings 
+                                let generalizedBinding = generalizedBindingsMap[idx] 
+                                let vxbind = TcLetrecAdjustMemberForSpecialVals cenv generalizedBinding
+                                let pgbrind = FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock vxbind
+                                collectedBinds.Add pgbrind
+                                Phase2CMember pgbrind)
+
+                    TyconBindingsPhase2C(tyconOpt, tcref, defnCs))
+
+                // Phase2C: Fixup let bindings 
+                (fun bindIdxs -> 
+                        [ for idx in bindIdxs do 
                             let generalizedBinding = generalizedBindingsMap[idx] 
                             let vxbind = TcLetrecAdjustMemberForSpecialVals cenv generalizedBinding
                             let pgbrind = FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock vxbind
-                            Phase2CMember pgbrind)
+                            collectedBinds.Add pgbrind
+                            yield pgbrind ])
 
-                TyconBindingsPhase2C(tyconOpt, tcref, defnCs))
-
-            // Phase2C: Fixup let bindings 
-            (fun bindIdxs -> 
-                    [ for idx in bindIdxs do 
-                        let generalizedBinding = generalizedBindingsMap[idx] 
-                        let vxbind = TcLetrecAdjustMemberForSpecialVals cenv generalizedBinding
-                        yield FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock vxbind ])
+        CheckRecursiveInlineGroup (List.ofSeq collectedBinds)
+        result
 
 
     // --- Extract field bindings from let-bindings 
@@ -4093,6 +4102,11 @@ module EstablishTypeDefinitionCores =
         let envTmp, withEnvs =  
             (envInitial, withEntities) ||> MutRecShapes.computeEnvs 
               (fun envAbove (MutRecDefnsPhase2DataForModule (moduleTyAcc, moduleEntity)) ->  
+                  // In recursive scopes all siblings build their entities in Phase1A against the same
+                  // envInitial, so duplicate sibling-module names are not yet visible there. Detect
+                  // them here at the publish point, where envAbove's accumulator already contains
+                  // any earlier-published siblings. See https://github.com/dotnet/fsharp/issues/6694.
+                  CheckForDuplicateModule envAbove moduleEntity.DemangledModuleOrNamespaceName moduleEntity.Range
                   PublishModuleDefn cenv envAbove moduleEntity 
                   MakeInnerEnvWithAcc true envAbove moduleEntity.Id moduleTyAcc moduleEntity.ModuleOrNamespaceType.ModuleOrNamespaceKind)
               (fun envAbove _ -> envAbove)
@@ -5652,6 +5666,7 @@ let emptyTcEnv g =
       eCallerMemberName = None 
       eLambdaArgInfos = []
       eIsControlFlow = false
+      eInObjectExpr = false
       eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)
       eUseBoundValStamps = Set.empty }
 
