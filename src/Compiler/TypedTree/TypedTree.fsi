@@ -119,6 +119,8 @@ type ValFlags =
 
     member IsImplied: bool
 
+    member IsParameter: bool
+
     member IsCompiledAsStaticPropertyWithoutField: bool
 
     member IsCompilerGenerated: bool
@@ -155,6 +157,8 @@ type ValFlags =
     member WithInlineInfo: inlineInfo: ValInline -> ValFlags
 
     member WithIsImplied: ValFlags
+
+    member WithIsParameter: ValFlags
 
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
@@ -2019,6 +2023,8 @@ type Val =
 
     member SetIsImplied: unit -> unit
 
+    member SetIsParameter: unit -> unit
+
     member SetIsCompiledAsStaticPropertyWithoutField: unit -> unit
 
     member SetIsCompilerGenerated: v: bool -> unit
@@ -2136,6 +2142,10 @@ type Val =
 
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member IsImplied: bool
+
+    /// Indicates whether this value is a function or method parameter, as opposed to a local binding.
+    /// Used to specialize diagnostics such as FS0027.
+    member IsParameter: bool
 
     /// Indicates if this is a 'base' value?
     member IsBaseVal: bool
