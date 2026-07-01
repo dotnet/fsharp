@@ -9592,25 +9592,25 @@ and GenMethodForBinding
     let m = v.Range
 
     // Closures synthesized inside a member body (inner `let rec`, `task`/`async` state
-    // machines, quotation-splice helpers) are nested in the IL type identified by
-    // eenv.cloc. Under --realsig+ a source-`private` member compiles to IL `private`
-    // (type-scoped), so a closure that calls it must nest inside the declaring type, not
-    // beside it in the module class, or the CLR raises MethodAccessException at runtime.
-    //
-    // Members declared in the type's own definition already reach here with the declaring
-    // type in eenv.cloc, but members declared in an intrinsic augmentation (`type C with
-    // member ...`) reach here with only the enclosing module in scope, because the
-    // augmentation is a separate definition group from the type. Normalize eenv.cloc to the
-    // declaring type for every non-extension member so closure placement is consistent
-    // (idempotent for members that already have it). Real extension members are compiled as
-    // static methods in their own module and must not be re-homed.
-    //
-    // This only matters under --realsig+: with the legacy --realsig- visibility a
-    // module-level sibling closure can still reach the (IL `assembly`) member, so the
-    // placement is left unchanged there to avoid perturbing existing IL.
+    // machines, quotation-splice helpers) nest in the IL type identified by eenv.cloc.
+    // Normalize eenv.cloc to the declaring type so they nest inside it rather than beside it
+    // in the module class, in two cases:
+    //   * under --realsig+, for every non-extension member: a source-`private` member compiles
+    //     to IL `private` (type-scoped), so a sibling-module closure calling it would raise
+    //     MethodAccessException;
+    //   * under --realsig-, only when the body reads a protected base field: the closure would
+    //     otherwise lose family access and raise FieldAccessException (issue #5302).
+    // Members declared in an intrinsic augmentation (`type C with member ...`) reach here with
+    // only the enclosing module in scope, so this also normalizes their placement. Real
+    // extension members compile as static methods in their own module and must not be re-homed.
     let eenv =
         match v.MemberInfo with
-        | Some _ when g.realsig && not v.IsExtensionMember ->
+        | Some _ when
+            not v.IsExtensionMember
+            && (g.realsig
+                || (g.langVersion.SupportsFeature LanguageFeature.AccessProtectedBaseFieldFromClosure
+                    && AccessibilityLogic.exprReferencesProtectedILField cenv.amap methLambdaBody))
+            ->
             let declTref = mspec.MethodRef.DeclaringTypeRef
             AddEnclosingToEnv eenv declTref.Enclosing declTref.Name None
         | _ -> eenv
