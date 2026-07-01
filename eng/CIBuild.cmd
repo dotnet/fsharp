@@ -30,6 +30,13 @@ echo ---------------- Building product (real) ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -Command "& '%~dp0common\build.ps1' -ci -build -configuration Release -projects '%_root%\FSharp.Product.sln' /m:1 /p:DisableLocalization=true; exit $LASTEXITCODE"
 if errorlevel 1 ( echo Error: product build failed 1>&2 & exit /b 1 )
 
+rem --- Step 4b: smoke tests. Run the compiler that was just built (fsc/fsi) against real F# code so a
+rem    green pipeline proves the produced compiler actually compiles and executes F#, not just that the
+rem    build completed. Fast; runs on the build agent (no Helix). Heavier unit/suite tests layer on later. ---
+echo ---------------- Running smoke tests ----------------
+powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0run-smoke-tests.ps1"
+if errorlevel 1 ( echo Error: smoke tests failed 1>&2 & exit /b 1 )
+
 rem --- Step 5 (opt-in): vsintegration IDE + VS insertion VSIX. EPIC-V compile blockers are resolved;
 rem    it builds locally green. Gated on BUILD_INSERTION because FSharp.Insertion.sln pulls the serviced
 rem    Roslyn 2.10 from the cross-org devdiv VS-CoreXtFeeds, which needs a feed credential on this dnceng
