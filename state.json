@@ -2,10 +2,7 @@
   "prs": {
     "20016": {
       "sha": "88e64501a0db50d05a18a0267434fa18f254527d",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Restore"
-      ]
+      "cats": ["Affects-Build-Infra", "Affects-Restore"]
     },
     "20014": {
       "sha": "7f2beb785e3519df0592a4025e919bcebd3a5a27",
@@ -21,16 +18,11 @@
     },
     "20007": {
       "sha": "a3e997d43318a15a40401a1f2619e7bcd7ce0b8f",
-      "cats": [
-        "Affects-Bootstrap",
-        "Affects-Build-Infra"
-      ]
+      "cats": ["Affects-Bootstrap", "Affects-Build-Infra"]
     },
     "20003": {
-      "sha": "275632d7b1a6",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
+      "sha": "275632d7b1a6bb3fe33cbd12b37bd2ce153d7c8f",
+      "cats": ["Affects-Compiler-Output"]
     },
     "19995": {
       "sha": "f96b70e1c112af68b5e14fd75fca4bc6ca7308c2",
@@ -42,84 +34,51 @@
     },
     "19993": {
       "sha": "fa4c43bfbc671fa387e1ae5a9168985881b79296",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
+      "cats": ["Affects-Compiler-Output"]
     },
     "19979": {
-      "sha": "2b2f7315ceeb",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Design-Time",
-        "Affects-Test-Tooling"
-      ]
+      "sha": "2b2f7315ceeb13650fadd09bf6a86cf08eab7a61",
+      "cats": ["Affects-Build-Infra", "Affects-Design-Time", "Affects-Test-Tooling"]
     },
     "19977": {
       "sha": "bc46a83e78c940e95dded4fe0e1b9975683d8ff7",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
+      "cats": ["Affects-Compiler-Output"]
     },
     "19976": {
-      "sha": "c4debaff6a1b",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
+      "sha": "c4debaff6a1b1ae58b2f3f7d6307cae9a03a1ee5",
+      "cats": ["Affects-Compiler-Output"]
     },
     "19975": {
       "sha": "b015e4688d426ca17d5bb9c7aab383a324246a1a",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
+      "cats": ["Affects-Compiler-Output"]
     },
     "19974": {
       "sha": "23e39ee083e26ad562a5dcf806075361bdb7a1b7",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
+      "cats": ["Affects-Compiler-Output"]
     },
     "19971": {
       "sha": "e87b12fdb7cdd05b7dec01adcf7f029d2b459636",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Bootstrap",
-        "Affects-Compiler-Output",
-        "Affects-Test-Tooling"
-      ]
+      "cats": ["Affects-Build-Infra", "Affects-Bootstrap", "Affects-Compiler-Output", "Affects-Test-Tooling"]
     },
     "19969": {
-      "sha": "02a4e4fda714",
-      "cats": [
-        "Affects-Compiler-Output",
-        "Affects-Design-Time"
-      ]
-    },
-    "19954": {
-      "sha": "16366c1641a99a3d3b17193113f40bb7bdbc056c",
-      "cats": []
+      "sha": "02a4e4fda7140b99bb9645cf0fe6c83d29838e1b",
+      "cats": ["Affects-Compiler-Output", "Affects-Design-Time"]
     },
     "19948": {
       "sha": "2917a9953fc3092f71a405e2ab78b23e80b23017",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
+      "cats": ["Affects-Compiler-Output"]
     },
     "19947": {
       "sha": "0d24d4c82901822179bd74b239ff6986a40f1996",
       "cats": []
     },
     "19940": {
-      "sha": "5a5560d98c3e",
+      "sha": "5a5560d98c3e69ec13d7428c512aa84136abc5de",
       "cats": []
     },
     "19930": {
-      "sha": "c86ea32ef611",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Design-Time",
-        "Affects-Restore",
-        "Affects-Test-Tooling"
-      ]
+      "sha": "c86ea32ef611492ba33d2ac09b9517c6ee4ef9b6",
+      "cats": ["Affects-Build-Infra", "Affects-Design-Time", "Affects-Restore", "Affects-Test-Tooling"]
     },
     "19929": {
       "sha": "cf7f5c02ee8c7063fc32a2b7fa25a36f3dfcc220",
@@ -154,7 +113,7 @@
       "cats": []
     },
     "19878": {
-      "sha": "c634446e2404",
+      "sha": "c634446e2404bd77d2d8c3655336c3cba0c6ed75",
       "cats": []
     },
     "19868": {
