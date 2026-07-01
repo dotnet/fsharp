@@ -4134,6 +4134,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
 
         match tyconIdOpt with
         | Some _ ->
+            // Report every type-qualifier occurrence before grouping collapses duplicates; UseInType matches ResolveField.
             ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurrence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
         | None -> ()
 
@@ -4141,12 +4142,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             if isAnonRecdTy then
                 []
             else
-                lid
-                |> List.takeWhile (fun id -> not (equals id.idRange fieldId.idRange))
-                // Mark the qualifier idents synthetic so a subsequent ResolveField call
-                // (e.g. via BuildFieldMap) does not double-emit the entity-path sink event
-                // we already emitted above.
-                |> List.map (fun id -> ident (id.idText, id.idRange.MakeSynthetic()))
+                lid |> List.takeWhile (fun id -> not (equals id.idRange fieldId.idRange))
 
         match rest with
         | [] -> idsBeforeField, [ (fieldId, item) ]
