@@ -301,13 +301,9 @@ let private buildCSharpScratchPdb () =
 
     let psi = System.Diagnostics.ProcessStartInfo()
     psi.FileName <- Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", ".dotnet", "dotnet")
-    psi.ArgumentList.Add "build"
-    psi.ArgumentList.Add projPath
-    psi.ArgumentList.Add "-c"
-    psi.ArgumentList.Add "Debug"
-    psi.ArgumentList.Add "-p:DebugType=portable"
-    psi.ArgumentList.Add "-v"
-    psi.ArgumentList.Add "m"
+    // ProcessStartInfo.ArgumentList does not exist on net472, so build the quoted argument
+    // string by hand (projPath is the only argument that can contain spaces).
+    psi.Arguments <- $"build \"{projPath}\" -c Debug -p:DebugType=portable -v m"
     psi.RedirectStandardOutput <- true
     psi.RedirectStandardError <- true
     psi.WorkingDirectory <- workDir
