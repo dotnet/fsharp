@@ -1415,40 +1415,12 @@ let AbstractOptimizationInfoToEssentials =
       
     abstractLazyModulInfo
 
-/// True if the IL field has protected (family) accessibility.
-let private isProtectedILFieldSpec cenv m (fspec: ILFieldSpec) =
-    match fspec.DeclaringTypeRef with
-    | Import.TryImportILTypeRef cenv.amap m (ILTyconRawMetadata tdef) ->
-        tdef.Fields.LookupByName fspec.Name
-        |> List.exists (fun fdef -> fdef.Access = ILMemberAccess.Family || fdef.Access = ILMemberAccess.FamilyOrAssembly)
-    | _ -> false
-
-/// True if the expression loads or stores a protected (family) IL field anywhere in its body.
-let private exprReferencesProtectedILField cenv expr =
-    let mutable found = false
-
-    let folder =
-        { ExprFolder0 with
-            exprIntercept =
-                fun _recurseF noInterceptF z e ->
-                    if not found then
-                        match e with
-                        | Expr.Op(TOp.ILAsm(instrs, _), _, _, m) ->
-                            if instrs |> List.exists (function ILFieldInstr fspec -> isProtectedILFieldSpec cenv m fspec | _ -> false) then
-                                found <- true
-                        | _ -> ()
-
-                    noInterceptF z e }
-
-    FoldExpr folder () expr |> ignore
-    found
-
 /// True if the expression references constructs that are only valid within their defining method or
 /// family, and so must not be relocated by inlining or method-splitting: a protected/base call
 /// (UsesMethodLocalConstructs) or a protected (family) IL field access (issue #19963).
 let usesMethodLocalConstructsOrProtectedField cenv (fvs: FreeVars) expr =
     fvs.UsesMethodLocalConstructs
-    || (fvs.ContainsILFieldAccess && exprReferencesProtectedILField cenv expr)
+    || (fvs.ContainsILFieldAccess && AccessibilityLogic.exprReferencesProtectedILField cenv.amap expr)
 
 /// Hide information because of a "let ... in ..." or "let rec ... in ... "
 let AbstractExprInfoByVars cenv (boundVars: Val list, boundTyVars) ivalue =

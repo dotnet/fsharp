@@ -372,7 +372,10 @@ let callSite%d{i} () =
             |> compileGuid
 
         try
-            Assert.Equal(getMvid (), getMvid ())
+            let mvids = [| for _ in 1..10 -> getMvid () |]
+
+            for i in 1 .. mvids.Length - 1 do
+                Assert.Equal(mvids.[0], mvids.[i])
         finally
             outputDir.Delete(true)
 

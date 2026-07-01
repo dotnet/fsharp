@@ -437,7 +437,7 @@ let ApplyAllOptimizations
     if tcConfig.extraOptimizationIterations > 0 then
         addPhase "ExtraLoop" extraLoop
 
-    let scopeOf (file: CheckedImplFile) =
+    let mkFileNamingScope (file: CheckedImplFile) =
         tcGlobals.CompilerGlobalState.Value.NewFileScope(file.QualifiedNameOfFile.Range)
 
     let detuple
@@ -447,7 +447,8 @@ let ApplyAllOptimizations
              PrevFile = _prevFile
          }: PhaseInputs)
         : PhaseRes =
-        let file = file |> Detuple.DetupleImplFile (scopeOf file) ccu tcGlobals
+        let scope = mkFileNamingScope file
+        let file = file |> Detuple.DetupleImplFile scope ccu tcGlobals
         file, prevPhase
 
     if tcConfig.doDetuple then
@@ -460,9 +461,11 @@ let ApplyAllOptimizations
              PrevFile = _prevFile
          }: PhaseInputs)
         : PhaseRes =
+        let scope = mkFileNamingScope file
+
         let file =
             file
-            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions (scopeOf file) ccu tcGlobals
+            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions importMap scope ccu tcGlobals
 
         file, prevPhase
 

@@ -6,9 +6,11 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Detuple.GlobalUsageAnalysis
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
@@ -204,7 +206,7 @@ module Pass1_DetermineTLRAndArities =
        | Some sites ->
            sites |> List.map (fun (_accessors, _tinst, args) -> List.length args) |> List.max
 
-    let SelectTLRVals g xinfo f e =
+    let SelectTLRVals amap g xinfo f e =
         if IsRefusedTLR g f then
             None
 
@@ -215,6 +217,14 @@ module Pass1_DetermineTLRAndArities =
         // Under --realsig+, lifting a helper out of its declaring type would lose access to
         // any source-`private` members it references, producing MethodAccessException at runtime.
         elif g.realsig && BodyReferencesTypeScopedPrivate e then
+            None
+
+        // #5302: a module-level static lifted out of its family would lose access to a protected base
+        // field (FieldAccessException), so refuse the lift.
+        elif
+            g.langVersion.SupportsFeature LanguageFeature.AccessProtectedBaseFieldFromClosure
+            && exprReferencesProtectedILField amap e
+        then
             None
         else
             // Could the binding be TLR? with what arity?
@@ -240,9 +250,9 @@ module Pass1_DetermineTLRAndArities =
         let dump f n = dprintf "tlr: arity %50s = %d\n" (showL (valL f)) n
         Zmap.iter dump arityM
 
-    let DetermineTLRAndArities g expr =
+    let DetermineTLRAndArities amap g expr =
        let xinfo = GetUsageInfoOfImplFile g expr
-       let fArities = Zmap.chooseL (SelectTLRVals g xinfo) xinfo.Defns
+       let fArities = Zmap.chooseL (SelectTLRVals amap g xinfo) xinfo.Defns
        let fArities = List.filter (fst >> IsValueRecursionFree xinfo) fArities
        // Do not TLR v if it is bound under a shouldinline defn
        // There is simply no point - the original value will be duplicated and TLR'd anyway
@@ -1372,10 +1382,10 @@ let RecreateUniqueBounds g expr =
 // entry point
 //-------------------------------------------------------------------------
 
-let MakeTopLevelRepresentationDecisions (scope: PerFileNamingScope) ccu g expr =
+let MakeTopLevelRepresentationDecisions amap (scope: PerFileNamingScope) ccu g expr =
    try
       // pass1: choose the f to be TLR with arity(f)
-      let tlrS, topValS, arityM = Pass1_DetermineTLRAndArities.DetermineTLRAndArities g expr
+      let tlrS, topValS, arityM = Pass1_DetermineTLRAndArities.DetermineTLRAndArities amap g expr
 
       // pass2: determine the typar/freevar closures, f->fclass and fclass declist
       let reqdItemsMap, fclassM, declist, recShortCallS = Pass2_DetermineReqdItems.DetermineReqdItems (tlrS, arityM) expr
