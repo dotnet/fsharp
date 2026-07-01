@@ -12745,13 +12745,18 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
 
                                  LocalScope "module" cgbuf (fun (_, endMark) ->
                                      let eenv =
-                                         AddBindingsForModuleOrNamespaceContents (AllocValReprWithinExpr cenv cgbuf endMark) eenv.cloc eenv mexpr
+                                         AddBindingsForModuleOrNamespaceContents
+                                             (AllocValReprWithinExpr cenv cgbuf endMark)
+                                             eenv.cloc
+                                             eenv
+                                             mexpr
 
                                      let _eenvEnv = GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenv mexpr
                                      ())),
                              range0)
                     //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
-                    ())
+                    ()
+            )
 
         mgbuf.AddInitializeScriptsInOrderToEntryPoint(eenv.imports)
 
