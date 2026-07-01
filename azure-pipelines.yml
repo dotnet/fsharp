@@ -68,6 +68,13 @@ extends:
               - task: NuGetAuthenticate@1
                 displayName: 'Authenticate NuGet feeds'
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
-                displayName: 'Build (product)'
+                displayName: 'Build (product) + tests'
                 env:
                   DisableLocalization: true
+              - task: PublishTestResults@2
+                displayName: 'Publish test results'
+                condition: always()
+                inputs:
+                  testResultsFormat: 'NUnit'
+                  testResultsFiles: '$(Build.SourcesDirectory)/artifacts/TestResults/*.xml'
+                  failTaskOnFailedTests: true

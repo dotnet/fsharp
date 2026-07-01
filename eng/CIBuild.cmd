@@ -37,6 +37,13 @@ echo ---------------- Running smoke tests ----------------
 powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0run-smoke-tests.ps1"
 if errorlevel 1 ( echo Error: smoke tests failed 1>&2 & exit /b 1 )
 
+rem --- Step 4c: unit tests. Build + run the 15.9 NUnit unit-test suites (FSharp.Core.UnitTests,
+rem    FSharp.Compiler.UnitTests) against the product just built, emitting NUnit XML to
+rem    artifacts\TestResults for PublishTestResults. Fails the pipeline on any test failure. ---
+echo ---------------- Running unit tests ----------------
+powershell -NoProfile -ExecutionPolicy ByPass -File "%~dp0run-tests.ps1" -Configuration Release
+if errorlevel 1 ( echo Error: unit tests failed 1>&2 & exit /b 1 )
+
 rem --- Step 5 (opt-in): vsintegration IDE + VS insertion VSIX. EPIC-V compile blockers are resolved;
 rem    it builds locally green. Gated on BUILD_INSERTION because FSharp.Insertion.sln pulls the serviced
 rem    Roslyn 2.10 from the cross-org devdiv VS-CoreXtFeeds, which needs a feed credential on this dnceng
