@@ -1,5 +1,24 @@
 {
   "prs": {
+    "20016": {
+      "sha": "88e64501a0db50d05a18a0267434fa18f254527d",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
+    },
+    "20014": {
+      "sha": "7f2beb785e3519df0592a4025e919bcebd3a5a27",
+      "cats": []
+    },
+    "20013": {
+      "sha": "bea83d4ebdceced7b5464623f04d3def23d40492",
+      "cats": []
+    },
+    "20012": {
+      "sha": "edad731fede890de3cab333e08690543776f3061",
+      "cats": []
+    },
     "20009": {
       "sha": "abcd333793b98dd92fc0564d4cac0dffc0d881fb",
       "cats": []
@@ -16,8 +35,10 @@
       ]
     },
     "20003": {
-      "sha": "51005a21e0baebbbb1c501d809323801654001c5",
-      "cats": []
+      "sha": "275632d7b1a6",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     },
     "19995": {
       "sha": "f96b70e1c112af68b5e14fd75fca4bc6ca7308c2",
@@ -38,7 +59,7 @@
       "cats": []
     },
     "19979": {
-      "sha": "b6e8f9325538313322fcf0620fa7c0ef103bc427",
+      "sha": "4b0785fd00ca",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Design-Time",
@@ -145,8 +166,10 @@
       "cats": []
     },
     "19895": {
-      "sha": "df7aba1c09400f61769b001c3df6a3cff06f029f",
-      "cats": []
+      "sha": "8a051b1b13f8",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     },
     "19885": {
       "sha": "25c04bd5ce444a7368e156d1867a39c17626b5a5",
@@ -158,10 +181,6 @@
     },
     "19868": {
       "sha": "da70a8bc94b8c3c741e401f59d580fbf817bf667",
-      "cats": []
-    },
-    "19862": {
-      "sha": "9eb6061a9202d2016abdba325ddc3646fefe2a39",
       "cats": []
     },
     "19850": {
@@ -203,25 +222,6 @@
     "19758": {
       "sha": "8967ecdc68c914d8d1df06af606c4be432388f3e",
       "cats": []
-    },
-    "20014": {
-      "sha": "7f2beb785e3519df0592a4025e919bcebd3a5a27",
-      "cats": []
-    },
-    "20013": {
-      "sha": "bea83d4ebdceced7b5464623f04d3def23d40492",
-      "cats": []
-    },
-    "20012": {
-      "sha": "edad731fede890de3cab333e08690543776f3061",
-      "cats": []
-    },
-    "20016": {
-      "sha": "88e64501a0db50d05a18a0267434fa18f254527d",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Restore"
-      ]
     }
   }
 }
