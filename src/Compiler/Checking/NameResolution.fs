@@ -2353,11 +2353,9 @@ type private BufferingTypecheckResultsSink(sink: ITypecheckResultsSink) =
         member _.CurrentSourceText = sink.CurrentSourceText
         member _.FormatStringCheckContext = sink.FormatStringCheckContext
 
-/// Temporarily buffer reporting of name resolution and type checking results. Returns a `replay` action
-/// that flushes the buffered notifications to the previously active sink (a no-op if there was none), and a
-/// disposable that restores it. Lets a speculative pass defer reporting until it is known whether its
-/// results should be kept (replay) or dropped.
-let TemporarilyBufferReportingTypecheckResultsToSink (sink: TcResultsSink) =
+/// Temporarily buffer reporting to the sink, returning a `replay` action that flushes the buffered
+/// notifications to the previously active sink (a no-op if there was none) and a disposable that restores it.
+let private bufferReportingToSink (sink: TcResultsSink) =
     match sink.CurrentSink with
     | None -> (fun () -> ()), { new System.IDisposable with member _.Dispose() = () }
     | Some inner ->
@@ -2365,6 +2363,32 @@ let TemporarilyBufferReportingTypecheckResultsToSink (sink: TcResultsSink) =
         sink.CurrentSink <- Some(buffer :> ITypecheckResultsSink)
         buffer.Replay, { new System.IDisposable with member _.Dispose() = sink.CurrentSink <- Some inner }
 
+/// Run `compute` with all typecheck-results reporting buffered: its sink notifications and diagnostics are
+/// recorded rather than emitted. If `commitWhen` holds for the result they are flushed to the sink and
+/// diagnostics logger that were active before buffering began; otherwise they are dropped. Diagnostics from a
+/// `compute` that raises are always flushed so the error still surfaces. Lets a speculative pass defer
+/// reporting until its result is known to be kept. `commitWhen` runs after reporting is restored, so it must
+/// be side-effect-free. `loggerName` names the internal capturing logger for debugging.
+let RunWithBufferedReporting (sink: TcResultsSink) (loggerName: string) (compute: unit -> 'T) (commitWhen: 'T -> bool) : 'T =
+    let outerLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    let capturingLogger = CapturingDiagnosticsLogger(loggerName)
+    let replaySink, restoreSink = bufferReportingToSink sink
+
+    let result =
+        use _restoreSink = restoreSink
+        use _restoreLogger = UseDiagnosticsLogger capturingLogger
+
+        try
+            compute ()
+        with _ ->
+            capturingLogger.CommitDelayedDiagnostics outerLogger
+            reraise ()
+
+    if commitWhen result then
+        replaySink ()
+        capturingLogger.CommitDelayedDiagnostics outerLogger
+
+    result
 
 /// Report the active name resolution environment for a specific source range
 let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =

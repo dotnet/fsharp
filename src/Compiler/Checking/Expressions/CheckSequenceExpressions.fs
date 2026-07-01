@@ -432,32 +432,18 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             if enableImplicitYield then
                 // The body is speculatively type-checked once to classify it as a statement or a yielded
-                // element. Reporting is buffered rather than emitted so the kept interpretation reports
-                // exactly once (else format-specifier locations and diagnostics double - #16419): for a unit
-                // statement the probe result is authoritative and its buffered notifications/diagnostics are
-                // replayed; for a yielded element they are dropped and TcExprFlex re-checks with the element's
-                // target type. A fatal probe error is committed so it still surfaces.
-                let outerLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                let probeLogger = CapturingDiagnosticsLogger("SeqImplicitYieldProbe")
-
-                let replaySink, restoreSink =
-                    TemporarilyBufferReportingTypecheckResultsToSink cenv.tcSink
-
+                // element. Reporting is buffered so the kept interpretation reports exactly once (else
+                // format-specifier locations and diagnostics double - #16419): a unit statement keeps the
+                // probe result and its buffered reporting is committed; a yielded element drops it and
+                // TcExprFlex re-checks with the element's target type.
                 let hasTypeUnit, _ty, expr, tpenv =
-                    use _restoreSink = restoreSink
-                    use _logger = UseDiagnosticsLogger probeLogger
-
-                    try
-                        TryTcStmt cenv env tpenv comp
-                    with _ ->
-                        probeLogger.CommitDelayedDiagnostics outerLogger
-                        reraise ()
+                    RunWithBufferedReporting
+                        cenv.tcSink
+                        "SeqImplicitYieldProbe"
+                        (fun () -> TryTcStmt cenv env tpenv comp)
+                        (fun (hasTypeUnit, _, _, _) -> hasTypeUnit)
 
                 if hasTypeUnit then
-                    // Keep the probe result: replay its buffered notifications and commit its diagnostics
-                    // (mutually exclusive with the commit-on-throw above, so each path reports once).
-                    replaySink ()
-                    probeLogger.CommitDelayedDiagnostics outerLogger
                     Choice2Of2 expr, tpenv
                 else
                     let genResultTy = NewInferenceType g
