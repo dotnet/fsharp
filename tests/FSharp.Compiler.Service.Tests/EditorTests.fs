@@ -11,6 +11,13 @@ open FSharp.Compiler.Tokenization
 
 #nowarn "1182" // Unused bindings when ignored parsed results etc.
 
+/// Virtual source filename used by tests that don't need a real on-disk path.
+/// Path.Combine keeps this OS-neutral for any test that compares the resulting range filename.
+let private testFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Test.fsx")
+
+/// Parses and type-checks an inline source snippet against the shared `testFile` identifier.
+let private parseAndCheck (source: string) = parseAndCheckScript (testFile, source)
+
 let stringMethods =
     [
         "Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith";
@@ -541,18 +548,51 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
                      (4, 82, 4, 84, 1);
                      (4, 108, 4, 110, 1)|]
 
-[<Fact>]
-let ``Format specifier locations not duplicated in CE`` () =
-    let input = "let _ = seq { sprintf \"%d\" 1 }"
-    let file = "/home/user/Test.fsx"
-    let _parseResult, typeCheckResults = parseAndCheckScript(file, input)
+// Regression for issue #16419: in `seq { e }` with implicit-yield, the body 'e' was
+// type-checked twice (once as a statement via TryTcStmt, once as a yielded expression).
+// Both passes used to notify the sink, leading to duplicate format-specifier entries
+// when 'e' contained a printf-style format string.
+[<Theory>]
+[<InlineData("let _ = seq { sprintf \"%d\" 1 }", 1)>]
+[<InlineData("let _ = seq { sprintf \"%d %s %A\" 1 \"x\" 2 }", 3)>]
+[<InlineData("let _ = seq { printfn \"%d\" 1 }", 1)>]
+let ``Format specifier locations are not duplicated in seq computation expression`` (source: string, expectedCount: int) =
+    let _, typeCheckResults = parseAndCheck source
+    let locs = typeCheckResults.GetFormatSpecifierLocationsAndArity()
+    Assert.Equal(expectedCount, locs.Length)
 
-    let locations = typeCheckResults.GetFormatSpecifierLocationsAndArity()
-    let percentD =
-        locations
-        |> Array.filter (fun (r, _) -> r.StartColumn = 23)
+// Validates that the implicit-yield classification probe does not break
+// expected-type-driven inference (subsumption, type-directed conversion,
+// nullness flex, overload resolution).
+[<Theory>]
+[<InlineData("let xs : seq<obj> = seq { 1 }")>]
+[<InlineData("let ys : seq<obj> = seq { yield 1 }")>]
+[<InlineData("let xs : seq<obj> = seq { \"hi\" }")>]
+[<InlineData("#nowarn \"0025\"\nlet xs : seq<string | null> = seq { \"hi\" }")>]
+[<InlineData("type T() =\n    static member M(x: int) = \"int\"\n    static member M(x: string) = \"string\"\nlet xs : seq<string> = seq { T.M(1) }")>]
+let ``Implicit-yield in seq preserves expected-type-driven inference`` (source: string) =
+    let _, typeCheckResults = parseAndCheck source
+    let errors =
+        typeCheckResults.Diagnostics
+        |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
+        |> Array.map (fun d -> d.Message)
+    Assert.Equal<_ seq>(Array.empty, errors)
 
-    Assert.Equal(1, percentD.Length)
+// Regression for #16419: the implicit-yield body was checked twice, doubling every diagnostic, not just
+// format specifiers. The probe is now silenced, so body warnings/errors are reported once, while a fatal
+// body error (e.g. a bad format string) still surfaces.
+[<Theory>]
+[<InlineData("[<System.Obsolete(\"x\")>]\nlet f () = 1\nlet _ = seq { f () }")>]
+[<InlineData("let _ = seq { 1 + \"x\" }")>]
+[<InlineData("let _ = seq { sprintf \"%Z\" }")>]
+let ``Implicit-yield seq body diagnostics are reported once`` (source: string) =
+    let _, typeCheckResults = parseAndCheck source
+    Assert.NotEmpty typeCheckResults.Diagnostics
+    let duplicated =
+        typeCheckResults.Diagnostics
+        |> Array.countBy (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)
+        |> Array.filter (fun (_, n) -> n > 1)
+    Assert.Empty duplicated
 
 #if ASSUME_PREVIEW_FSHARP_CORE
 [<Fact>]
