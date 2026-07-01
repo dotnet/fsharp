@@ -22,43 +22,18 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
     static member GetUnusedOpenRanges(document: Document) =
         cancellableTask {
             if not document.Project.IsFSharpCodeFixesUnusedOpensEnabled then
-                Trace.TraceInformation(
-                    "[UnusedOpensAnalyzer] GetUnusedOpenRanges: SKIPPED (IsFSharpCodeFixesUnusedOpensEnabled=false) doc={0} proj={1}",
-                    document.Name,
-                    document.Project.Name
-                )
-
                 return ValueNone
             else
                 let! ct = CancellableTask.getCancellationToken ()
                 let! sourceText = document.GetTextAsync ct
 
-                Trace.TraceInformation(
-                    "[UnusedOpensAnalyzer] GetUnusedOpenRanges: getting parse/check results for doc={0} proj={1} sourceLen={2}",
-                    document.Name,
-                    document.Project.Name,
-                    sourceText.Length
-                )
-
                 let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof UnusedOpensDiagnosticAnalyzer)
 
-                Trace.TraceInformation(
-                    "[UnusedOpensAnalyzer] GetUnusedOpenRanges: parse/check complete. HasErrors={0} Diagnostics={1}",
-                    checkResults.HasErrors,
-                    checkResults.Diagnostics.Length
-                )
-
                 if checkResults.HasErrors then
-                    Trace.TraceInformation("[UnusedOpensAnalyzer] GetUnusedOpenRanges: SKIPPED (checkResults.HasErrors=true)")
                     return ValueNone
                 else
                     let! unusedOpens =
                         UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines[Line.toZ lineNumber].ToString()))
-
-                    Trace.TraceInformation(
-                        "[UnusedOpensAnalyzer] GetUnusedOpenRanges: getUnusedOpens returned {0} ranges",
-                        unusedOpens.Length
-                    )
 
                     return (ValueSome unusedOpens)
         }
@@ -66,16 +41,7 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
     interface IFSharpUnusedOpensDiagnosticAnalyzer with
 
         member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
-            Trace.TraceInformation(
-                "[UnusedOpensAnalyzer] AnalyzeSemanticsAsync ENTER: doc={0} proj={1} isMisc={2} isScript={3}",
-                document.Name,
-                document.Project.Name,
-                document.Project.IsFSharpMiscellaneousOrMetadata,
-                document.IsFSharpScript
-            )
-
             if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
-                Trace.TraceInformation("[UnusedOpensAnalyzer] AnalyzeSemanticsAsync: SKIPPED (misc/metadata non-script)")
                 Tasks.Task.FromResult(ImmutableArray.Empty)
             else
                 cancellableTask {
@@ -83,19 +49,11 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
                     let! sourceText = document.GetTextAsync()
                     let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges document
 
-                    let result =
+                    return
                         unusedOpens
                         |> ValueOption.defaultValue List.Empty
                         |> List.map (fun range ->
                             Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
                         |> Seq.toImmutableArray
-
-                    Trace.TraceInformation(
-                        "[UnusedOpensAnalyzer] AnalyzeSemanticsAsync: returning {0} diagnostics for doc={1}",
-                        result.Length,
-                        document.Name
-                    )
-
-                    return result
                 }
                 |> CancellableTask.start cancellationToken
