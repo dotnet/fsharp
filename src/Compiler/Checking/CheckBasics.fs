@@ -236,6 +236,10 @@ type TcEnv =
 
       // Do we lay down an implicit debug point?
       eIsControlFlow: bool
+
+      /// Are we checking the body of an object expression? Such a body has family access to the
+      /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
+      eInObjectExpr: bool
       
       // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
       // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.

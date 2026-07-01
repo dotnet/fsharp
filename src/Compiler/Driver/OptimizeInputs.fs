@@ -465,7 +465,7 @@ let ApplyAllOptimizations
 
         let file =
             file
-            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions scope ccu tcGlobals
+            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions importMap scope ccu tcGlobals
 
         file, prevPhase
 
