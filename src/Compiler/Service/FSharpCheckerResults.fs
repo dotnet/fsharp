@@ -677,19 +677,49 @@ type internal TypeCheckInfo
             | _ -> [])
 
     let GetNamedParametersAndSettableFields endOfExprPos cursorLine (lineStr: string) allowObsolete =
-        let getCnrs resolveOverloads =
-            GetCapturedNameResolutions endOfExprPos resolveOverloads
+        let cnrs =
+            GetCapturedNameResolutions endOfExprPos ResolveOverloads.No
             |> ResizeArray.toList
             |> List.rev
 
-        // For overloaded calls with a malformed argument list, the type-checker can abandon
-        // resolution before publishing the Item.MethodGroup CNR. In that case, re-resolve the
-        // long-ident immediately to the left of endOfExprPos in the best-known name resolution
-        // environment so named-argument completion still works.
-        // Only attempt this when endOfExprPos is on the cursor's line, since lineStr is the
-        // cursor's line - using it to look at columns on a different line of a multi-line call
-        // site could match an unrelated identifier.
-        let tryRecoverGroupFromLineText () =
+        // A ctor or method group under the cursor whose named parameters and settable fields can be
+        // offered as completions. For a ctor we surface settable props of the constructed type; for a
+        // method, of its return type(s).
+        let (|NamedArgGroup|_|) item =
+            match item with
+            | Item.CtorGroup(name, (_ :: _ as meths)) -> Some(name, meths, true)
+            | Item.MethodGroup(name, (_ :: _ as meths), _) -> Some(name, meths, false)
+            | _ -> None
+
+        let buildGroup (meths: MethInfo list) isCtor nenv ad m =
+            let propTys =
+                if isCtor then
+                    [ (List.head meths).ApparentEnclosingType ]
+                else
+                    meths
+                    |> List.map (fun meth -> meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst))
+
+            let props =
+                propTys
+                |> List.collect (fun ty ->
+                    ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ty allowObsolete)
+
+            nenv.DisplayEnv, m, props @ CollectParameters meths amap m
+
+        // Walk the whole position-filtered CNR list rather than only its head: after the first named
+        // argument, overload refinement or a trailing partial argument can push the ctor/method group
+        // off the head of the list.
+        let fromCnrs =
+            cnrs
+            |> List.tryPick (function
+                | CNR(NamedArgGroup(_, meths, isCtor), _, _, nenv, ad, m) -> Some(buildGroup meths isCtor nenv ad m)
+                | _ -> None)
+
+        // For an overloaded call with a malformed trailing argument the type-checker can abandon overload
+        // resolution before publishing any method-group CNR at endOfExprPos. Recover by re-resolving the
+        // long ident to the left of the cursor. Restricted to the cursor's own line, since lineStr only
+        // holds that line and columns on other lines of a multi-line call could match an unrelated ident.
+        let fromLineText () =
             if
                 endOfExprPos.Line <> cursorLine
                 || endOfExprPos.Column <= 0
@@ -705,85 +735,12 @@ type internal TypeCheckInfo
                 else
                     let (nenv, ad), m = GetBestEnvForPos endOfExprPos
 
-                    let items =
-                        ResolvePartialLongIdent
-                            ncenv
-                            nenv
-                            (ConstraintSolver.IsApplicableMethApprox g amap m)
-                            m
-                            ad
-                            plid.QualifyingIdents
-                            false
-
-                    items
-                    |> List.tryPick (fun item ->
-                        match item with
-                        | Item.CtorGroup(name, (_ :: _ as ctors)) when name = lastName ->
-                            Some(nenv.DisplayEnv, nenv, ad, m, Choice1Of2 ctors)
-                        | Item.MethodGroup(name, (_ :: _ as methods), _) when name = lastName ->
-                            Some(nenv.DisplayEnv, nenv, ad, m, Choice2Of2 methods)
+                    ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid.QualifyingIdents false
+                    |> List.tryPick (function
+                        | NamedArgGroup(name, meths, isCtor) when name = lastName -> Some(buildGroup meths isCtor nenv ad m)
                         | _ -> None)
 
-        let groupForCtor (ctors: MethInfo list) denv nenv ad m =
-            let ctor = List.head ctors
-
-            let props =
-                ResolveCompletionsInType
-                    ncenv
-                    nenv
-                    ResolveCompletionTargets.SettablePropertiesAndFields
-                    m
-                    ad
-                    false
-                    ctor.ApparentEnclosingType
-                    allowObsolete
-
-            let parameters = CollectParameters ctors amap m
-            denv, m, props @ parameters
-
-        let groupForMethods (methods: MethInfo list) denv nenv ad m =
-            let props =
-                methods
-                |> List.collect (fun meth ->
-                    let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
-
-                    ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy allowObsolete)
-
-            let parameters = CollectParameters methods amap m
-            denv, m, props @ parameters
-
-        // Walk the reversed CNR list and pick the first Ctor/MethodGroup, instead of matching the head only.
-        // Overload refinement or trailing partial arguments can push the original group off the head.
-        let pickGroupFromCnrs (cnrs: CapturedNameResolution list) =
-            cnrs
-            |> List.tryPick (fun cnr ->
-                match cnr.Item with
-                | Item.CtorGroup(_, (_ :: _ as ctors)) ->
-                    Some(groupForCtor ctors cnr.DisplayEnv cnr.NameResolutionEnv cnr.AccessorDomain cnr.Range)
-                | Item.MethodGroup(_, (_ :: _ as methods), _) ->
-                    Some(groupForMethods methods cnr.DisplayEnv cnr.NameResolutionEnv cnr.AccessorDomain cnr.Range)
-                | _ -> None)
-
-        let result =
-            // First consult the method-group resolution stream (ResolveOverloads.No).
-            match pickGroupFromCnrs (getCnrs ResolveOverloads.No) with
-            | Some _ as picked -> picked
-            | None ->
-                // ResolveOverloads.No stops at CapturedMethodGroupResolutions as soon as it has any entry
-                // ending at endOfExprPos, so a Ctor/MethodGroup that only lives in the broader
-                // CapturedNameResolutions stream can be missed. Retry with ResolveOverloads.Yes, which reads
-                // that stream directly - cheaper than the textual recovery below and covering the same group.
-                match pickGroupFromCnrs (getCnrs ResolveOverloads.Yes) with
-                | Some _ as picked -> picked
-                | None ->
-                    // Type-checker abandoned resolution entirely (malformed argument list): re-resolve the
-                    // long-ident to the left of endOfExprPos from the line text as a last resort.
-                    match tryRecoverGroupFromLineText () with
-                    | Some(denv, nenv, ad, m, Choice1Of2 ctors) -> Some(groupForCtor ctors denv nenv ad m)
-                    | Some(denv, nenv, ad, m, Choice2Of2 methods) -> Some(groupForMethods methods denv nenv ad m)
-                    | None -> None
-
-        match result with
+        match fromCnrs |> Option.orElseWith fromLineText with
         | None -> NameResResult.Empty
         | Some(denv, m, items) ->
             let items = List.map ItemWithNoInst items
