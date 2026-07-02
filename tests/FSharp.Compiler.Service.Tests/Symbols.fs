@@ -916,6 +916,91 @@ let _ = T().Prop
                 Assert.Equal(15, loc.StartColumn)
             | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
+    [<Fact>]
+    let ``IsPropertyAccessor true for getter`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.Prop with get() = 42
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "get_Prop" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.True(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``IsPropertyAccessor true for setter`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member val Prop = 0 with get, set
+"""
+        let setter =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.tryPick (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "set_Prop" -> Some m
+                | _ -> None)
+        match setter with
+        | Some mfv -> Assert.True(mfv.IsPropertyAccessor)
+        | None -> Assert.Fail("set_Prop not found")
+
+    [<Fact>]
+    let ``IsPropertyAccessor false for regular method`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.DoStuff() = 42
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "DoStuff" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.False(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``IsPropertyAccessor false for function`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+let myFunc x = x + 1
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "myFunc" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.False(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``Fable query pattern: filter accessor properties`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.Prop with get() = 42
+    member _.Method() = 42
+"""
+        let members =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.IsPropertyAccessor -> Some m
+                | _ -> None)
+            |> List.ofSeq
+        Assert.True(members.Length >= 1)
+        Assert.True(
+            members
+            |> List.forall (fun m ->
+                m.LogicalName.StartsWith("get_") || m.LogicalName.StartsWith("set_")))
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source

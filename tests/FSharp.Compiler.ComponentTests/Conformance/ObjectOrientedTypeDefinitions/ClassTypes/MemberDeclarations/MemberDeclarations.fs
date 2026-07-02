@@ -8,6 +8,108 @@ open FSharp.Test.Compiler
 
 module MemberDeclarations =
 
+    [<Fact>]
+    let ``Inline member with class-scope self identifier should compile`` () =
+        FSharp """
+module Test
+
+type TestClass1() as SomeSelfIdentifier =
+    member inline AnotherSelfIdentifier.test() = 5
+
+type TestClass2() as self =
+    member inline self.test() = 5
+
+type TestClass3() as self =
+    member inline _.test() = 5
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline member referencing private function fails FS1113 at definition`` () =
+        FSharp """
+module Test
+
+module private PrivHelpers =
+    let secret x = x + 1
+
+type Bag() =
+    member inline _.Wrap(x) = PrivHelpers.secret x
+
+type SelfBag() as self =
+    member inline _.Wrap(x) = PrivHelpers.secret x
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
+
+    [<Fact>]
+    let ``Inline member referencing internal function fails FS1113 at definition`` () =
+        FSharp """
+module Test
+
+module internal IntHelpers =
+    let secret x = x + 1
+
+type Bag() =
+    member inline _.Wrap(x) = IntHelpers.secret x
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
+
+    [<Fact>]
+    let ``Inline member with class-scope self identifier referencing only public values compiles`` () =
+        FSharp """
+module Test
+
+let publicHelper x = x + 1
+
+type Bag() as self =
+    member inline _.Wrap(x) = publicHelper x
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Inline member referencing a public union case compiles`` () =
+        FSharp """
+module Test
+
+type Bag() =
+    member inline _.Wrap(x) = Some x
+"""
+        |> asLibrary
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
+    // A referenced value that is not inline must still fail with FS1113; only inline values,
+    // which expand transitively when the outer member is inlined, are excluded.
+    [<Fact>]
+    let ``Inline member referencing an internal non-inline member fails FS1113`` () =
+        FSharp """
+module Test
+
+type Bag() =
+    member internal _.Helper(x) = x + 1
+    member inline this.Wrap(x) = this.Helper(x)
+"""
+        |> asLibrary
+        |> withNoOptimize
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1113
+
     // Error tests
 
     [<Theory; FileInlineData("E_byref_two_arguments_curried.fsx")>]

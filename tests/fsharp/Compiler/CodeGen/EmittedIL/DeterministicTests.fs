@@ -334,6 +334,72 @@ let inline myFunc x y = x - y"""
         else
             Assert.NotEqual(mvid1,mvid2)
 
+    // https://github.com/dotnet/fsharp/issues/19732
+    // Multi-file optimized compilation exercises DetupleArgs and TLR (tuple-arg
+    // functions + nested lambdas). These passes iterate Val sets whose order
+    // depends on Val.Stamp, which is racy under parallel optimization.
+    // The fix sorts by source position (valSourceOrderKey) before iterating.
+    // Note: this in-process test is a regression guard; the full race requires
+    // large-scale parallel compilation tested by eng/test-determinism.ps1 in Release.
+    [<Fact>]
+    let ``Optimized multi-file assembly should be deterministic`` () =
+        let outputDir = DirectoryInfo(Path.Combine(Path.GetTempPath(), "fsharp-determinism-test"))
+        if outputDir.Exists then outputDir.Delete(true)
+        outputDir.Create()
+
+        let makeFile i =
+            FsSourceWithFileName
+                $"File%d{i}.fs"
+                $"""
+module File%d{i}
+
+let processTuple%d{i} (a: int, b: string) =
+    let inner x = x + a
+    (inner 1, b.Length)
+
+let callSite%d{i} () =
+    let r1 = processTuple%d{i} (42, "hello")
+    let r2 = processTuple%d{i} (99, "world")
+    let nested () =
+        let deep () = fst r1 + fst r2
+        deep ()
+    nested ()
+"""
+
+        let additionalFiles = [ for i in 2..8 -> makeFile i ]
+
+        let getMvid () =
+            FSharp
+                """
+module File1
+
+let processTuple1 (a: int, b: string) =
+    let inner x = x + a
+    (inner 1, b.Length)
+
+let callSite1 () =
+    let r1 = processTuple1 (42, "hello")
+    let r2 = processTuple1 (99, "world")
+    let nested () =
+        let deep () = fst r1 + fst r2
+        deep ()
+    nested ()
+"""
+            |> withAdditionalSourceFiles additionalFiles
+            |> asLibrary
+            |> withOptimize
+            |> withName "DetTest"
+            |> withOutputDirectory (Some outputDir)
+            |> withOptions [ "--deterministic" ]
+            |> compileGuid
+
+        let mvids = [| for _ in 1..10 -> getMvid () |]
+
+        for i in 1 .. mvids.Length - 1 do
+            Assert.Equal(mvids.[0], mvids.[i])
+
+        outputDir.Delete(true)
+
     [<Fact>]
     let ``Reference assemblies MVID must change when literal constant value changes`` () =
         let codeWithLiteral42 = """

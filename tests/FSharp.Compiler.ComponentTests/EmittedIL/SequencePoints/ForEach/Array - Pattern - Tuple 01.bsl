@@ -1,12 +1,19 @@
+module Module
+
+let f (l: (int * int)[]) =
+    for i1, i2 in l do
+        ()
+--------------------------------------------------------------------------------
+
 Module::f
-  (5,19-5,20)  l
+  (4,19-4,20)  l
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldc.i4.0
     IL_0003:  stloc.1
     IL_0004:  br.s IL_0022
 
-  (5,5-5,15)  for i1, i2
+  (4,5-4,15)  for i1, i2
     IL_0006:  ldloc.0
     IL_0007:  ldloc.1
     IL_0008:  ldelem 0x1b000001
@@ -18,7 +25,7 @@ Module::f
     IL_0016:  call get_Item1
     IL_001b:  stloc.s 4
 
-  (6,9-6,11)  ()
+  (5,9-5,11)  ()
     IL_001d:  nop
 
   <hidden>
@@ -27,7 +34,7 @@ Module::f
     IL_0020:  add
     IL_0021:  stloc.1
 
-  (5,16-5,18)  in
+  (4,16-4,18)  in
     IL_0022:  ldloc.1
     IL_0023:  ldloc.0
     IL_0024:  ldlen

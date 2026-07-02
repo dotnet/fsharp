@@ -1,8 +1,17 @@
+module Module
+
+let f (l: (int * int) list) =
+    [
+        for i, i1 in l do
+            yield i
+    ]
+--------------------------------------------------------------------------------
+
 Module::f
-  (5,5-8,6)  [ for i, i1 in l do yield i ]
+  (4,5-7,6)  [ for i, i1 in l do yield i ]
     IL_0000:  nop
 
-  (6,9-6,12)  for
+  (5,9-5,12)  for
     IL_0001:  ldarg.0
     IL_0002:  stloc.1
     IL_0003:  ldloc.1
@@ -21,7 +30,7 @@ Module::f
     IL_0023:  stloc.s 5
     IL_0025:  stloc.s 6
 
-  (7,13-7,20)  yield i
+  (6,13-6,20)  yield i
     IL_0027:  ldloc.s 6
     IL_0029:  ldloc.s 5
     IL_002b:  call Add
@@ -32,7 +41,7 @@ Module::f
     IL_0034:  call get_TailOrNull
     IL_0039:  stloc.2
 
-  (6,19-6,21)  in
+  (5,19-5,21)  in
     IL_003a:  ldloc.2
     IL_003b:  brtrue.s IL_000c
     IL_003d:  ldloca.s 0
