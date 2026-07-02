@@ -29,7 +29,23 @@ if (-not $RepoRoot) {
 if (-not $ResultsDir) { $ResultsDir = Join-Path $RepoRoot 'artifacts\TestResults' }
 New-Item -ItemType Directory -Force -Path $ResultsDir | Out-Null
 
-$dotnet   = Join-Path $env:ProgramFiles 'dotnet\dotnet.exe'
+# Pick a dotnet that actually satisfies global.json here: the Arcade-provisioned .dotnet on CI (system
+# dotnet may be too old for global.json's pinned SDK), or the system dotnet locally (a dev box may have a
+# broken/partial .dotnet). Probe each candidate with `dotnet --version` from the repo root and use the
+# first that resolves global.json successfully.
+Push-Location $RepoRoot
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+try {
+    $dotnet = $null
+    foreach ($cand in @((Join-Path $RepoRoot '.dotnet\dotnet.exe'), (Join-Path $env:ProgramFiles 'dotnet\dotnet.exe'), (Get-Command dotnet -ErrorAction SilentlyContinue).Source)) {
+        if (-not $cand -or -not (Test-Path $cand)) { continue }
+        & $cand --version 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) { $dotnet = $cand; break }
+    }
+} finally { $ErrorActionPreference = $prevEAP; Pop-Location }
+if (-not $dotnet) { Write-Host "TESTS FAIL: no dotnet resolves global.json (tried .dotnet, ProgramFiles, PATH)"; exit 1 }
+Write-Host "dotnet: $dotnet"
 $protoBin = Join-Path $RepoRoot 'Proto\net40\bin'      # has fsc.exe
 $prodBin  = Join-Path $RepoRoot 'release\net40\bin'    # has fsi.exe + runtime deps
 
