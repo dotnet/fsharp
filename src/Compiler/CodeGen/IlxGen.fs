@@ -7447,6 +7447,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
                 // fsc emit path can join it with the typed-tree lambda occurrence extraction of
                 // the same tree (the stamp bridge documented in docs/hot-reload-closure-mapping.md).
                 // No recorder begun -> strict no-op.
+                hotReloadNameState.RecordSynthesizedNameOverride(replayName, cloName)
                 hotReloadNameState.Record(uniq, cloName)
                 cloName
 

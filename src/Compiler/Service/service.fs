@@ -467,6 +467,7 @@ type FSharpChecker
                 referenceAssemblyAttribOpt = None
                 referenceAssemblySignatureHash = None
                 pathMap = PathMap.empty
+                moduleCustomDebugInfoRows = []
                 methodCustomDebugInfoRows = Map.empty
             }
 
@@ -478,6 +479,35 @@ type FSharpChecker
 
         let baseline =
             HotReloadBaseline.createFromEmittedArtifacts ilModule tokenMappings assemblyBytes portablePdbSnapshot None
+
+        // The in-memory rewrite above passes no hot reload CDI side channel, so its PDB
+        // never carries EnC rows or the F# synthesized-name snapshot. The on-disk PDB
+        // produced by the flag-on build is the durable source: read it as a sibling input
+        // when the rewrite yielded none. Recorded synthesized-name snapshots take
+        // precedence over IL reconstruction; absent records preserve the old fallback.
+        let baseline =
+            if
+                baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
+                && File.Exists(pdbPath)
+            then
+                match EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath) with
+                | Some recordedSnapshot ->
+                    if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
+                        printfn "[fsharp-hotreload][closure-names] synthesized-name snapshot source=recorded buckets=%d" (Map.count recordedSnapshot)
+
+                    { baseline with
+                        SynthesizedNameSnapshot = recordedSnapshot
+                        SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Recorded
+                    }
+                | None ->
+                    if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
+                        printfn
+                            "[fsharp-hotreload][closure-names] synthesized-name snapshot source=reconstructed buckets=%d"
+                            (Map.count baseline.SynthesizedNameSnapshot)
+
+                    baseline
+            else
+                baseline
 
         // The in-memory rewrite above passes no EnC CDI side channel (methodCustomDebugInfoRows =
         // Map.empty), so its PDB never carries EnC rows. The on-disk PDB produced by the flag-on
@@ -1403,12 +1433,26 @@ type FSharpChecker
 
             ReportTime tcConfig "CompileFromCheckedProject: Write .NET Binary"
 
+            let moduleCustomDebugInfoRows =
+                match naming with
+                | HotReloadEmitNaming.PreserveInstalledState _ when
+                    Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DISABLE_SYNTHESIZED_NAME_SNAPSHOT_CDI")
+                    <> "1"
+                    ->
+                    match tryGetCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) with
+                    | Some map ->
+                        HotReloadBaseline.collectRecordedSynthesizedNameSnapshot (tcGlobals.CompilerGlobalState.Value :> obj) map
+                        |> EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
+                    | None -> []
+                | _ -> []
+
             // Emit the sibling portable PDB alongside the DLL (mirroring a normal
             // --debug:portable fsc write). The hot reload emit path reads this PDB back as the
             // fresh sequence-point source for line-shift detection and active-statement
             // remapping; leaving the external build's stale PDB on disk would silently feed
-            // outdated lines into that analysis. CDI rows stay empty (methodCustomDebugInfoRows
-            // below): those are baseline-capture-only, the fresh PDB only needs sequence points.
+            // outdated lines into that analysis. Method CDI rows stay empty here; the only
+            // hot reload CDI written by this path is the F# allocation-ordered
+            // synthesized-name snapshot when preserving session naming state.
             // Write once in memory: the bytes are persisted to disk below (the runtime and
             // debugger read them there) AND parsed straight back for the caller, so the hot
             // reload delta path consumes the exact read-back representation a disk parse
@@ -1433,6 +1477,7 @@ type FSharpChecker
                     referenceAssemblyAttribOpt = None
                     referenceAssemblySignatureHash = None
                     pathMap = tcConfig.pathMap
+                    moduleCustomDebugInfoRows = moduleCustomDebugInfoRows
                     methodCustomDebugInfoRows = Map.empty
                 }
 

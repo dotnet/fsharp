@@ -248,6 +248,7 @@ let private defaultWriterOptions (ilg: ILGlobals) (checksumAlgorithm: HashAlgori
         referenceAssemblyAttribOpt = None
         referenceAssemblySignatureHash = None
         pathMap = PathMap.empty
+        moduleCustomDebugInfoRows = []
         methodCustomDebugInfoRows = Map.empty
     }
 
@@ -3328,6 +3329,9 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
 /// in-process. When neither is present, the emitter falls back to the legacy in-memory rewrite
 /// (callers that construct modules with debug points, e.g. the component tests, need no sibling file).
 let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequest) : IlxDelta =
+    let usesRecordedSynthesizedSnapshot =
+        request.SynthesizedNames |> Option.exists (fun map -> map.UsesRecordedSnapshot)
+
     let synthesizedBuckets =
         request.SynthesizedNames
         |> Option.map (fun map -> map.Snapshot |> Seq.map (fun struct (basic, names) -> basic, names) |> dict)
@@ -3583,10 +3587,42 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
             if not (String.IsNullOrEmpty enclosingFullName) then
                 enclosingFullName + "+" + simpleName
+                enclosingFullName + "." + simpleName
         ]
+        |> List.distinct
+
+    let freshTypeFullNames =
+        lazy
+            let names = HashSet<string>(StringComparer.Ordinal)
+
+            let rec visit (enclosing: ILTypeDef list) (typeDef: ILTypeDef) =
+                let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+
+                for variant in shapeTypeNameVariants typeRef.FullName do
+                    names.Add variant |> ignore
+
+                typeDef.NestedTypes.AsList() |> List.iter (visit (enclosing @ [ typeDef ]))
+
+            request.Module.TypeDefs.AsList() |> List.iter (visit [])
+            names
 
     let normalizeSelfReferencesInShape (fullName: string) (shape: SynthesizedTypeShape) =
         let replacements = shapeTypeNameVariants fullName
+
+        let normalizeText (text: string) =
+            (text, replacements)
+            ||> List.fold (fun acc replacement -> acc.Replace(replacement, "<self>"))
+
+        { shape with
+            BaseType = shape.BaseType |> Option.map normalizeText
+            InterfaceTypes = shape.InterfaceTypes |> List.map normalizeText
+            FieldTypeNames = shape.FieldTypeNames |> List.map normalizeText
+            MethodNameAndArities = shape.MethodNameAndArities
+        }
+
+    let normalizeAliasReferencesInShape (fullNames: string[]) (shape: SynthesizedTypeShape) =
+        let replacements =
+            fullNames |> Array.toList |> List.collect shapeTypeNameVariants |> List.distinct
 
         let normalizeText (text: string) =
             (text, replacements)
@@ -3781,17 +3817,60 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             | true, positionalMatch -> Some positionalMatch
             | _ -> None
 
+        let tryGetShapeCompatibleAliasMatch (matches: (string * int)[]) =
+            let freshShape =
+                shapeOfSynthesizedTypeDef typeDef
+                |> normalizeAliasReferencesInShape candidateNames
+
+            let availableMatches =
+                matches
+                |> Array.filter (fun (matchedName, _) ->
+                    String.Equals(matchedName, newFullName, StringComparison.Ordinal)
+                    || not (freshTypeFullNames.Value.Contains matchedName))
+
+            let shapeMatches =
+                availableMatches
+                |> Array.filter (fun (matchedName, _) ->
+                    match request.Baseline.SynthesizedTypeShapes |> Map.tryFind matchedName with
+                    | Some baselineShape ->
+                        let baselineShape = baselineShape |> normalizeAliasReferencesInShape candidateNames
+
+                        (tryFindSynthesizedTypeShapeMismatch baselineShape freshShape).IsNone
+                    | None -> false)
+
+            match shapeMatches with
+            | [| single |] -> Some single
+            | matches when usesRecordedSynthesizedSnapshot && matches.Length > 0 -> Some matches[0]
+            | [||] when usesRecordedSynthesizedSnapshot && availableMatches.Length > 0 -> Some availableMatches[0]
+            | _ -> None
+
         let baselineNameOpt =
             match baselineMatches with
             | [||] -> tryGetPositionalBaselineMatch ()
-            | [| single |] -> Some single
+            | [| single |] ->
+                match tryGetPositionalBaselineMatch () with
+                | Some positionalMatch when
+                    usesRecordedSynthesizedSnapshot
+                    && IsCompilerGeneratedName typeDef.Name
+                    && not (String.Equals(fst positionalMatch, fst single, StringComparison.Ordinal))
+                    ->
+                    Some positionalMatch
+                | _ -> Some single
             | matches ->
                 let exactMatch =
                     matches
                     |> Array.tryFind (fun (matchedName, _) -> String.Equals(matchedName, newFullName, StringComparison.Ordinal))
 
                 match exactMatch with
-                | Some matchResult -> Some matchResult
+                | Some matchResult ->
+                    match tryGetPositionalBaselineMatch () with
+                    | Some positionalMatch when
+                        usesRecordedSynthesizedSnapshot
+                        && IsCompilerGeneratedName typeDef.Name
+                        && not (String.Equals(fst positionalMatch, fst matchResult, StringComparison.Ordinal))
+                        ->
+                        Some positionalMatch
+                    | _ -> Some matchResult
                 | None ->
                     let normalizeTypePath (name: string) =
                         name.Split([| '.'; '+' |], StringSplitOptions.RemoveEmptyEntries)
@@ -3810,14 +3889,17 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         match tryGetPositionalBaselineMatch () with
                         | Some positionalMatch -> Some positionalMatch
                         | None ->
-                            let matchedNames = matches |> Array.map fst |> String.concat "; "
-                            let allCandidates = candidateNames |> String.concat "; "
+                            match tryGetShapeCompatibleAliasMatch matches with
+                            | Some shapeMatch -> Some shapeMatch
+                            | None ->
+                                let matchedNames = matches |> Array.map fst |> String.concat "; "
+                                let allCandidates = candidateNames |> String.concat "; "
 
-                            raise (
-                                HotReloadUnsupportedEditException(
-                                    $"Ambiguous synthesized type mapping for '{newFullName}' (candidates=[{allCandidates}], baselineMatches=[{matchedNames}]); full rebuild required."
+                                raise (
+                                    HotReloadUnsupportedEditException(
+                                        $"Ambiguous synthesized type mapping for '{newFullName}' (candidates=[{allCandidates}], baselineMatches=[{matchedNames}]); full rebuild required."
+                                    )
                                 )
-                            )
 
         if traceSynthesizedMappings.Value then
             match baselineNameOpt with

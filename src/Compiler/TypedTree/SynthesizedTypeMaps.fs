@@ -19,6 +19,7 @@ type FSharpSynthesizedTypeMaps() =
     let syncLock = obj ()
     let buckets = ConcurrentDictionary<string, ResizeArray<string>>()
     let ordinals = ConcurrentDictionary<string, int>()
+    let mutable usesRecordedSnapshot = false
 
     let makeHotReloadName (baseName: string) ordinal =
         let suffix = if ordinal <= 0 then "hotreload" else $"hotreload-{ordinal}"
@@ -135,6 +136,61 @@ type FSharpSynthesizedTypeMaps() =
         if not (String.Equals(actualKey, mapKey, StringComparison.Ordinal)) then
             invalidArg "snapshot" $"Name '{name}' at index {index} belongs to normalized key '{actualKey}', not snapshot key '{mapKey}'"
 
+    let loadSnapshotCore canonicalize (snapshot: seq<struct (string * string[])>) =
+        lock syncLock (fun () ->
+            buckets.Clear()
+            ordinals.Clear()
+            usesRecordedSnapshot <- not canonicalize
+
+            let normalizedBuckets =
+                Dictionary<string, ResizeArray<string>>(StringComparer.Ordinal)
+
+            for struct (basicName, names) in snapshot do
+                let mapKey = GeneratedNames.SynthesizedNameMapKey basicName
+
+                if canonicalize then
+                    // Validate each name matches the normalized key. Loading normalizes
+                    // old raw-key snapshots, so on-disk baselines captured before this
+                    // change replay through the same line-stable buckets.
+                    names |> Array.iteri (fun i name -> validateName mapKey name i)
+                else
+                    // Recorded snapshots are allocation-key -> final-emitted-name slots.
+                    // Occurrence-keyed closure overrides can intentionally move a final
+                    // name into a bucket whose allocation key differs from the name's
+                    // derived key, so only null validation applies here.
+                    names
+                    |> Array.iteri (fun i name ->
+                        if isNull (box name) then
+                            invalidArg "snapshot" $"Name at index {i} in snapshot key '{mapKey}' is null")
+
+                let namesToLoad =
+                    if canonicalize then
+                        canonicalizeSnapshotNames mapKey names
+                    else
+                        // Recorded hot reload CDI snapshots are already the allocation
+                        // order. Keep them identity-preserving after validation; old
+                        // reconstructed snapshots continue through canonicalization.
+                        Array.copy names
+
+                let bucket =
+                    match normalizedBuckets.TryGetValue mapKey with
+                    | true, existing -> existing
+                    | _ ->
+                        let created = ResizeArray<string>()
+                        normalizedBuckets[mapKey] <- created
+                        created
+
+                for name in namesToLoad do
+                    if canonicalize then
+                        if not (bucket.Contains name) then
+                            bucket.Add name
+                    else
+                        bucket.Add name
+
+            for KeyValue(mapKey, bucket) in normalizedBuckets do
+                buckets[mapKey] <- createBucket (bucket.ToArray())
+                ordinals[mapKey] <- 0)
+
     member _.GetOrAddName(basicName: string) =
         lock syncLock (fun () ->
             let mapKey = GeneratedNames.SynthesizedNameMapKey basicName
@@ -178,39 +234,17 @@ type FSharpSynthesizedTypeMaps() =
             |]
             :> seq<struct (string * string[])>)
 
+    member _.UsesRecordedSnapshot = lock syncLock (fun () -> usesRecordedSnapshot)
+
     /// <summary>Loads a previously captured snapshot, replacing any existing allocation state.</summary>
-    member _.LoadSnapshot(snapshot: seq<struct (string * string[])>) =
-        lock syncLock (fun () ->
-            buckets.Clear()
-            ordinals.Clear()
+    member _.LoadSnapshot(snapshot: seq<struct (string * string[])>) = loadSnapshotCore true snapshot
 
-            let normalizedBuckets =
-                Dictionary<string, ResizeArray<string>>(StringComparer.Ordinal)
-
-            for struct (basicName, names) in snapshot do
-                let mapKey = GeneratedNames.SynthesizedNameMapKey basicName
-
-                // Validate each name matches the normalized key. Loading normalizes
-                // old raw-key snapshots, so on-disk baselines captured before this
-                // change replay through the same line-stable buckets.
-                names |> Array.iteri (fun i name -> validateName mapKey name i)
-                let canonicalNames = canonicalizeSnapshotNames mapKey names
-
-                let bucket =
-                    match normalizedBuckets.TryGetValue mapKey with
-                    | true, existing -> existing
-                    | _ ->
-                        let created = ResizeArray<string>()
-                        normalizedBuckets[mapKey] <- created
-                        created
-
-                for name in canonicalNames do
-                    if not (bucket.Contains name) then
-                        bucket.Add name
-
-            for KeyValue(mapKey, bucket) in normalizedBuckets do
-                buckets[mapKey] <- createBucket (bucket.ToArray())
-                ordinals[mapKey] <- 0)
+    /// <summary>
+    /// Loads a snapshot that was recorded from this allocator's own allocation slots.
+    /// The bucket arrays are ground truth, so this intentionally skips IL-order
+    /// reconstruction canonicalization and key-derived name validation.
+    /// </summary>
+    member _.LoadRecordedSnapshot(snapshot: seq<struct (string * string[])>) = loadSnapshotCore false snapshot
 
     interface ICompilerGeneratedNameMap with
         member this.BeginSession() = this.BeginSession()

@@ -175,21 +175,29 @@ type internal FSharpHotReloadService
             names
             |> Array.exists FSharp.Compiler.ClosureNameAllocator.isGenerationSuffixedClosureName)
 
+    let loadSynthesizedNameSnapshot (map: FSharpSynthesizedTypeMaps) (baseline: FSharpEmitBaseline) =
+        let snapshot =
+            baseline.SynthesizedNameSnapshot
+            |> Map.toSeq
+            |> Seq.map (fun (k, v) -> struct (k, v))
+
+        match baseline.SynthesizedNameSnapshotSource with
+        | SynthesizedNameSnapshotSource.Recorded -> map.LoadRecordedSnapshot snapshot
+        | SynthesizedNameSnapshotSource.Reconstructed -> map.LoadSnapshot snapshot
+
     let installInProcessCompileNamingState (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey) (compileTcGlobals: TcGlobals) =
         lock hotReloadGate (fun () ->
             match editAndContinueService.TryGetSession(projectKey) with
             | ValueSome session when
                 not (Map.isEmpty session.Baseline.EncClosureNames)
                 || synthesizedSnapshotHasOccurrenceNames session.Baseline.SynthesizedNameSnapshot
+                || session.Baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Recorded
                 ->
                 let compilerState = compileTcGlobals.CompilerGlobalState.Value
 
                 let map = getOrCreateSynthesizedTypeMap projectKey
 
-                session.Baseline.SynthesizedNameSnapshot
-                |> Map.toSeq
-                |> Seq.map (fun (k, v) -> struct (k, v))
-                |> map.LoadSnapshot
+                loadSynthesizedNameSnapshot map session.Baseline
 
                 map.BeginSession()
                 setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
@@ -287,10 +295,7 @@ type internal FSharpHotReloadService
                             let map =
                                 let targetMap = getOrCreateSynthesizedTypeMap projectKey
 
-                                baseline.SynthesizedNameSnapshot
-                                |> Map.toSeq
-                                |> Seq.map (fun (k, v) -> struct (k, v))
-                                |> targetMap.LoadSnapshot
+                                loadSynthesizedNameSnapshot targetMap baseline
 
                                 targetMap.BeginSession()
                                 targetMap
@@ -401,10 +406,7 @@ type internal FSharpHotReloadService
                                         let compilerState = tcGlobals.CompilerGlobalState.Value
                                         let map = getOrCreateSynthesizedTypeMap projectKey
 
-                                        restoredSession.Baseline.SynthesizedNameSnapshot
-                                        |> Map.toSeq
-                                        |> Seq.map (fun (k, v) -> struct (k, v))
-                                        |> map.LoadSnapshot
+                                        loadSynthesizedNameSnapshot map restoredSession.Baseline
 
                                         map.BeginSession()
                                         setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)

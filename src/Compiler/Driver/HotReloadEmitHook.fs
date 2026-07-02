@@ -218,10 +218,14 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                         | ValueSome session ->
                             let restored = FSharpSynthesizedTypeMaps()
 
-                            session.Baseline.SynthesizedNameSnapshot
-                            |> Map.toSeq
-                            |> Seq.map (fun (k, v) -> struct (k, v))
-                            |> restored.LoadSnapshot
+                            let snapshot =
+                                session.Baseline.SynthesizedNameSnapshot
+                                |> Map.toSeq
+                                |> Seq.map (fun (k, v) -> struct (k, v))
+
+                            match session.Baseline.SynthesizedNameSnapshotSource with
+                            | SynthesizedNameSnapshotSource.Recorded -> restored.LoadRecordedSnapshot snapshot
+                            | SynthesizedNameSnapshotSource.Reconstructed -> restored.LoadSnapshot snapshot
 
                             Some(restored :> ICompilerGeneratedNameMap)
                         | ValueNone -> None

@@ -84,6 +84,7 @@ let transform (values: int list) =
             PortableCustomDebugInfoKinds.encLocalSlotMap
             PortableCustomDebugInfoKinds.encLambdaAndClosureMap
             PortableCustomDebugInfoKinds.encStateMachineStateMap
+            PortableCustomDebugInfoKinds.fsharpSynthesizedNameSnapshot
         ]
 
     /// Reads all (kind, blob) CDI rows attached to the given method row in the PDB.
@@ -143,7 +144,18 @@ let transform (values: int list) =
         Assert.Empty slotMapRows
 
     [<Fact>]
-    let ``Compile without hot reload flag emits no EnC custom debug information`` () =
+    let ``Compile with hot reload flag emits synthesized name snapshot CDI`` () =
+        let assemblyPath = compileSample [ "--test:HotReloadDeltas" ]
+        let pdbPath = pdbPathFor assemblyPath
+
+        match readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath) with
+        | Some snapshot ->
+            Assert.False(Map.isEmpty snapshot, "expected a recorded synthesized-name snapshot")
+            Assert.True(snapshot |> Map.exists (fun _ names -> names.Length > 0), "expected at least one recorded name")
+        | None -> failwith "expected synthesized-name snapshot CDI in the flag-on PDB"
+
+    [<Fact>]
+    let ``Compile without hot reload flag emits no hot reload custom debug information`` () =
         let assemblyPath = compileSample []
         let pdbPath = pdbPathFor assemblyPath
 

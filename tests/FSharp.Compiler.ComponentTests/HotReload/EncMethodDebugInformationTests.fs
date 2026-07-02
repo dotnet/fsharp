@@ -179,6 +179,30 @@ module EncMethodDebugInformationTests =
 
         Assert.Equal<EncMethodDebugInformation>(info, decoded)
 
+    [<Fact>]
+    let ``Synthesized name snapshot preserves mixed bucket allocation order`` () =
+        let expectedNames =
+            [|
+                "endpoints@hotreload"
+                "endpoints@hotreload#g0_o0"
+                "endpoints@hotreload-2"
+                "endpoints@hotreload#g0_o1"
+                "endpoints@hotreload-4"
+                "endpoints@hotreload#g0_o2"
+                "endpoints@hotreload#g0_o3"
+                "endpoints@hotreload#g0_o4"
+            |]
+
+        let snapshot =
+            [ struct ("endpoints", expectedNames) ]
+
+        let blob = serializeSynthesizedNameSnapshot snapshot
+        let decoded = deserializeSynthesizedNameSnapshot blob
+
+        match Map.tryFind "endpoints" decoded with
+        | Some actualNames -> Assert.Equal<string>(expectedNames, actualNames)
+        | None -> failwith "expected endpoints bucket to round-trip"
+
     // -----------------------------------------------------------------------
     // Occurrence-key packing
     // -----------------------------------------------------------------------

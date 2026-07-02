@@ -134,9 +134,18 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
 
         augmented
 
-    static let createSynthesizedMapFromSnapshot (snapshot: Map<string, string[]>) =
+    static let createSynthesizedMapFromBaseline (baseline: FSharpEmitBaseline) =
         let map = FSharpSynthesizedTypeMaps()
-        map.LoadSnapshot(snapshot |> Map.toSeq |> Seq.map (fun (k, v) -> struct (k, v)))
+
+        let snapshot =
+            baseline.SynthesizedNameSnapshot
+            |> Map.toSeq
+            |> Seq.map (fun (k, v) -> struct (k, v))
+
+        match baseline.SynthesizedNameSnapshotSource with
+        | SynthesizedNameSnapshotSource.Recorded -> map.LoadRecordedSnapshot snapshot
+        | SynthesizedNameSnapshotSource.Reconstructed -> map.LoadSnapshot snapshot
+
         map.BeginSession()
         map
 
@@ -271,8 +280,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         session.PreviousGenerationId
                         session.Baseline.EncId
 
-                let synthesizedMap =
-                    createSynthesizedMapFromSnapshot session.Baseline.SynthesizedNameSnapshot
+                let synthesizedMap = createSynthesizedMapFromBaseline session.Baseline
 
                 let deltaRequest =
                     {

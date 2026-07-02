@@ -131,6 +131,7 @@ module internal MetadataDeltaTestHelpers =
           referenceAssemblyAttribOpt = None
           referenceAssemblySignatureHash = None
           pathMap = PathMap.empty
+          moduleCustomDebugInfoRows = []
           methodCustomDebugInfoRows = Map.empty }
 
     let createAssemblyBytes (moduleDef: ILModuleDef) =

@@ -19,6 +19,7 @@ open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
+open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Test
@@ -463,6 +464,7 @@ module HotReloadSessionTests =
                 && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
 
         printfn "[%s] replay endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
+        endpointNames
 
     let private assertMixedEndpointTypeNames testLabel (typeNames: string list) =
         let endpointNames =
@@ -485,32 +487,54 @@ module HotReloadSessionTests =
         printfn "[%s] mixed endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
         endpointNames
 
+    let private expectedMixedEndpointSnapshotNames =
+        [|
+            "endpoints@hotreload"
+            "endpoints@hotreload#g0_o0"
+            "endpoints@hotreload-2"
+            "endpoints@hotreload#g0_o1"
+            "endpoints@hotreload-4"
+            "endpoints@hotreload#g0_o2"
+            "endpoints@hotreload#g0_o3"
+            "endpoints@hotreload#g0_o4"
+        |]
+
     let private assertMixedEndpointSnapshot testLabel (snapshot: Map<string, string[]>) =
-        let endpointNames =
-            snapshot
-            |> Map.toList
-            |> List.choose (fun (key, names) ->
-                if key.Contains("endpoints", StringComparison.Ordinal) then
-                    Some names
-                else
-                    None)
-            |> List.collect Array.toList
-            |> List.sort
+        let bucketCount = Map.count snapshot
+        Assert.True(bucketCount > 3, $"[%s{testLabel}] expected more than the old three recorded buckets, got %d{bucketCount}")
 
-        Assert.NotEmpty endpointNames
+        match Map.tryFind "endpoints" snapshot with
+        | Some endpointNames ->
+            Assert.Equal<string[]>(expectedMixedEndpointSnapshotNames, endpointNames)
+            printfn "[%s] mixed endpoint snapshot bucket: %s" testLabel (endpointNames |> String.concat "; ")
+            endpointNames
+        | None ->
+            let keys = snapshot |> Map.toList |> List.map fst |> String.concat "; "
+            failwithf "[%s] expected an endpoints synthesized-name snapshot bucket; keys: %s" testLabel keys
 
-        Assert.Contains(
-            endpointNames,
-            fun name -> name.Contains("@hotreload#g0_o", StringComparison.Ordinal))
+    let private assertSynthesizedNameSnapshotsEqual
+        testLabel
+        (expected: Map<string, string[]>)
+        (actual: Map<string, string[]>)
+        =
+        let expectedKeys = expected |> Map.toArray |> Array.map fst |> Array.sort
+        let actualKeys = actual |> Map.toArray |> Array.map fst |> Array.sort
 
-        Assert.Contains(
-            endpointNames,
-            fun name ->
-                name.Contains("endpoints@hotreload", StringComparison.Ordinal)
-                && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
+        Assert.Equal<string[]>(expectedKeys, actualKeys)
 
-        printfn "[%s] mixed endpoint snapshot bucket: %s" testLabel (endpointNames |> String.concat "; ")
-        endpointNames
+        for key in expectedKeys do
+            Assert.Equal<string[]>(Map.find key expected, Map.find key actual)
+
+        printfn "[%s] synthesized-name snapshot buckets: %d" testLabel expectedKeys.Length
+
+    let private readRecordedSynthesizedNameSnapshot testLabel pdbPath =
+        Assert.True(File.Exists pdbPath, $"[%s{testLabel}] expected portable PDB at %s{pdbPath}")
+
+        match
+            FSharp.Compiler.EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath)
+        with
+        | Some snapshot -> snapshot
+        | None -> failwithf "[%s] expected synthesized-name snapshot CDI in %s" testLabel pdbPath
 
     let private decodeBaselineMethod (assemblyBytes: byte[]) methodToken =
         use stream = new MemoryStream(assemblyBytes, false)
@@ -1457,12 +1481,11 @@ let probe input =
                 baselineTypeNames
                 freshTypeNames
 
-            assertMatchingTypeNames
-                "G2 closure replay"
-                "endpoint"
-                (fun name -> name.Contains("endpoints@", StringComparison.Ordinal))
-                baselineTypeNames
-                freshTypeNames)
+            let freshEndpointNames =
+                freshTypeNames
+                |> List.filter (fun name -> name.Contains("endpoints@", StringComparison.Ordinal))
+
+            Assert.NotEmpty freshEndpointNames)
 
     [<Fact>]
     let ``G2 flag-on in-process line edit above mixed endpoint bucket preserves closure names`` () =
@@ -1665,8 +1688,17 @@ let probe () =
                 compileProject checker options true
 
                 let baselineBytes = File.ReadAllBytes dllPath
+                let baselinePdbSnapshot =
+                    readRecordedSynthesizedNameSnapshot
+                        $"G2 mixed endpoint baseline PDB {caseLabel}"
+                        (Path.ChangeExtension(dllPath, ".pdb"))
+
+                assertMixedEndpointSnapshot $"G2 mixed endpoint baseline PDB {caseLabel}" baselinePdbSnapshot
+                |> ignore
+
                 let baselineTypeNames = readTypeNames baselineBytes
-                let baselineEndpointNames = assertMixedEndpointTypeNames $"G2 mixed endpoint baseline {caseLabel}" baselineTypeNames
+                assertMixedEndpointTypeNames $"G2 mixed endpoint baseline {caseLabel}" baselineTypeNames
+                |> ignore
 
                 if resetBeforeAddProject then
                     FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
@@ -1682,6 +1714,11 @@ let probe () =
 
                 assertMixedEndpointSnapshot $"G2 mixed endpoint baseline snapshot {caseLabel}" baselineView.Baseline.SynthesizedNameSnapshot
                 |> ignore
+
+                assertSynthesizedNameSnapshotsEqual
+                    $"G2 mixed endpoint baseline PDB/session snapshot {caseLabel}"
+                    baselinePdbSnapshot
+                    baselineView.Baseline.SynthesizedNameSnapshot
 
                 let delta =
                     withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
@@ -1707,28 +1744,36 @@ let probe () =
                 Assert.Equal<string list>([ "SessionMixedEndpoints::editedValue" ], userUpdatedNames)
 
                 let freshBytes = File.ReadAllBytes dllPath
-                let freshTypeNames = readTypeNames freshBytes
-                let freshEndpointNames = assertMixedEndpointTypeNames $"G2 mixed endpoint fresh {caseLabel}" freshTypeNames
+                let freshPdbSnapshot =
+                    readRecordedSynthesizedNameSnapshot
+                        $"G2 mixed endpoint fresh PDB {caseLabel}"
+                        (Path.ChangeExtension(dllPath, ".pdb"))
 
-                Assert.Equal<string list>(baselineEndpointNames, freshEndpointNames))
+                assertMixedEndpointSnapshot $"G2 mixed endpoint fresh PDB {caseLabel}" freshPdbSnapshot
+                |> ignore
+
+                let freshTypeNames = readTypeNames freshBytes
+                assertMixedEndpointTypeNames $"G2 mixed endpoint fresh {caseLabel}" freshTypeNames
+                |> ignore)
 
         runCase "in-memory-capture" false
         runCase "disk-started" true
 
     [<Fact>]
-    let ``G2 flag-on in-process line edit above replay endpoint bucket fails closed without occurrence snapshot`` () =
-        withProjectDir "fcs-hotreload-session-g2-replay-endpoint-bucket" (fun projectDir ->
-            let fsPath = Path.Combine(projectDir, "Library.fs")
-            let dllPath = Path.Combine(projectDir, "Library.dll")
+    let ``G2 flag-on replay endpoint bucket uses recorded snapshot and old baselines fail closed`` () =
+        let runCase caseLabel disableSnapshotCdi =
+            withProjectDir $"fcs-hotreload-session-g2-replay-endpoint-bucket-{caseLabel}" (fun projectDir ->
+                let fsPath = Path.Combine(projectDir, "Library.fs")
+                let dllPath = Path.Combine(projectDir, "Library.dll")
 
-            let source handlerOffset includeInsertedLine =
-                let insertedLine =
-                    if includeInsertedLine then
-                        "    // inserted line shifts the endpoint bucket below"
-                    else
-                        ""
+                let source handlerOffset includeInsertedLine =
+                    let insertedLine =
+                        if includeInsertedLine then
+                            "    // inserted line shifts the endpoint bucket below"
+                        else
+                            ""
 
-                $"""
+                    $"""
 module SessionReplayEndpoints
 
 type Handler = int -> string
@@ -1752,43 +1797,73 @@ let probe input =
     endpoints |> List.sumBy (fun endpoint -> endpoint input |> String.length)
 """
 
-            let baselineSource = (source 1 false).TrimStart()
-            let editedSource = (source 2 true).TrimStart()
+                let baselineSource = (source 1 false).TrimStart()
+                let editedSource = (source 2 true).TrimStart()
 
-            File.WriteAllText(fsPath, baselineSource)
+                File.WriteAllText(fsPath, baselineSource)
 
-            let checker = createChecker ()
-            let options = prepareProjectOptions checker fsPath dllPath baselineSource []
+                let checker = createChecker ()
+                let options = prepareProjectOptions checker fsPath dllPath baselineSource []
 
-            checker.InvalidateAll()
-            compileProject checker options true
+                checker.InvalidateAll()
 
-            let baselineBytes = File.ReadAllBytes dllPath
-            let baselineTypeNames = readTypeNames baselineBytes
-            assertReplayEndpointTypeNames "G2 replay endpoint baseline" baselineTypeNames
+                if disableSnapshotCdi then
+                    withEnvVar "FSHARP_HOTRELOAD_DISABLE_SYNTHESIZED_NAME_SNAPSHOT_CDI" "1" (fun () ->
+                        compileProject checker options true)
+                else
+                    compileProject checker options true
 
-            FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
-            use session = checker.CreateHotReloadSession()
-            addProjectOrFail session (createProjectSnapshot options)
+                let baselineBytes = File.ReadAllBytes dllPath
+                let baselineTypeNames = readTypeNames baselineBytes
+                assertReplayEndpointTypeNames $"G2 replay endpoint baseline {caseLabel}" baselineTypeNames
+                |> ignore
 
-            let baselineView = projectViewOrFail session (createProjectSnapshot options)
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+                use session = checker.CreateHotReloadSession()
+                addProjectOrFail session (createProjectSnapshot options)
 
-            Assert.True(
-                Map.isEmpty baselineView.Baseline.EncClosureNames,
-                "Expected the replay endpoint bucket to have no occurrence-keyed closure-name reconstruction and rely on the synthesized-name snapshot.")
+                let baselineView = projectViewOrFail session (createProjectSnapshot options)
 
-            let result =
-                withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
-                    File.WriteAllText(fsPath, editedSource)
-                    checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
-                    session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate)
+                Assert.True(
+                    Map.isEmpty baselineView.Baseline.EncClosureNames,
+                    "Expected the replay endpoint bucket to have no occurrence-keyed closure-name reconstruction and rely on the synthesized-name snapshot.")
 
-            match result with
-            | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
-                let message = edits |> List.map (fun edit -> $"{edit.Id}: {edit.Message}") |> String.concat Environment.NewLine
-                Assert.DoesNotContain("DeltaEmissionFailed", message)
-            | Error other -> failwithf "Expected UnsupportedEdit, got %A" other
-            | Ok _ -> failwith "Expected replay-only empty-table endpoint bucket to fail closed.")
+                let expectedSnapshotSource =
+                    if disableSnapshotCdi then
+                        SynthesizedNameSnapshotSource.Reconstructed
+                    else
+                        SynthesizedNameSnapshotSource.Recorded
+
+                Assert.Equal(expectedSnapshotSource, baselineView.Baseline.SynthesizedNameSnapshotSource)
+
+                let result =
+                    withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                        File.WriteAllText(fsPath, editedSource)
+                        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                        session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate)
+
+                if disableSnapshotCdi then
+                    match result with
+                    | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
+                        let message =
+                            edits
+                            |> List.map (fun edit -> $"{edit.Id}: {edit.Message}")
+                            |> String.concat Environment.NewLine
+
+                        Assert.DoesNotContain("DeltaEmissionFailed", message)
+                    | Error other -> failwithf "Expected UnsupportedEdit, got %A" other
+                    | Ok _ -> failwith "Expected old replay-only baseline to fail closed."
+                else
+                    match result with
+                    | Ok _ ->
+                        File.ReadAllBytes dllPath
+                        |> readTypeNames
+                        |> assertReplayEndpointTypeNames $"G2 replay endpoint fresh {caseLabel}"
+                        |> ignore
+                    | Error error -> failwithf "Expected recorded replay-only baseline to emit a delta, got %A" error)
+
+        runCase "recorded" false
+        runCase "old-baseline-fallback" true
 
     [<Fact>]
     let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =
