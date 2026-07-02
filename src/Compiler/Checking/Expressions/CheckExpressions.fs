@@ -11820,28 +11820,28 @@ and TcAttributesWithPossibleTargets canFail cenv env attrTgt synAttribs =
 and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
     TcAttributesMaybeFailEx canFail cenv env attrTgt (enum 0) synAttribs
 
-and TcAttributesCanFail cenv env attrTgt synAttribs =
-    let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
-    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
-
 and TcAttributesWithPossibleTargetsCanFail cenv env attrTgt synAttribs =
     let attrs, didFail = TcAttributesWithPossibleTargetsEx TcCanFail.IgnoreAllErrors cenv env attrTgt (enum 0) synAttribs
-    attrs, (fun () ->
-        if didFail then
-            TcAttributesWithPossibleTargetsEx TcCanFail.ReportAllErrors cenv env attrTgt (enum 0) synAttribs |> fst
+    attrs, (fun envFinal ->
+        if didFail then TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv envFinal attrTgt synAttribs |> fst
         else attrs)
 
-/// Like TcAttributesCanFail, but for attributes checked so early (e.g. type-parameter decls in
-/// Phase1A of a recursive group) that even *name* resolution of a sibling attribute type can fail
-/// and emit a diagnostic. The tentative pass runs with diagnostics discarded; the fixup thunk
-/// re-resolves (reporting errors) against the final environment passed to it.
+and TcAttributesCanFail cenv env attrTgt synAttribs =
+    let attrs, reresolve = TcAttributesWithPossibleTargetsCanFail cenv env attrTgt synAttribs
+    List.map snd attrs, (reresolve >> List.map snd)
+
+/// Like TcAttributesCanFail, but also tolerates attributes checked so early (e.g. type-parameter
+/// declarations in Phase1A of a recursive group) that even the attribute type *name* cannot be
+/// resolved yet and would otherwise emit a spurious error. Such diagnostics are captured during the
+/// tentative pass; when any were captured the fixup unconditionally re-resolves (reporting the real
+/// errors) against the final environment.
 and TcAttributesCanFailReresolve cenv env attrTgt synAttribs =
     let capturing = CapturingDiagnosticsLogger("TcAttributesCanFailReresolve")
-    let attrs, didFail =
+    let attrs, reresolve =
         use _ = UseDiagnosticsLogger capturing
-        TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
-    let deferred = didFail || not capturing.Diagnostics.IsEmpty
-    attrs, (fun envFinal -> if deferred then TcAttributes cenv envFinal attrTgt synAttribs else attrs)
+        TcAttributesCanFail cenv env attrTgt synAttribs
+    attrs, (if capturing.Diagnostics.IsEmpty then reresolve
+            else fun envFinal -> TcAttributes cenv envFinal attrTgt synAttribs)
 
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst

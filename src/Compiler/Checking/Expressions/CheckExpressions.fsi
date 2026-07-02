@@ -615,7 +615,7 @@ val TcAttributesCanFail:
     env: TcEnv ->
     attrTgt: AttributeTargets ->
     synAttribs: SynAttribute list ->
-        Attrib list * (unit -> Attribs)
+        Attrib list * (TcEnv -> Attribs)
 
 /// Check a set of attributes which can only target specific elements
 val TcAttributesWithPossibleTargets:
@@ -633,7 +633,7 @@ val TcAttributesWithPossibleTargetsCanFail:
     env: TcEnv ->
     attrTgt: AttributeTargets ->
     synAttribs: SynAttribute list ->
-        (AttributeTargets * Attrib) list * (unit -> (AttributeTargets * Attrib) list)
+        (AttributeTargets * Attrib) list * (TcEnv -> (AttributeTargets * Attrib) list)
 
 /// Check a constant value, e.g. a literal
 val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> synConst: SynConst -> Const
