@@ -58,6 +58,7 @@ type public Fsc() as this =
     let mutable preferredUILang: string | null = null
     let mutable publicSign: bool = false
     let mutable provideCommandLineArgs: bool = false
+    let mutable alwaysInline: bool option = None
     let mutable realsig: bool option = None
     let mutable references: ITaskItem[] = [||]
     let mutable referencePath: string | null = null
@@ -199,6 +200,9 @@ type public Fsc() as this =
             builder.AppendSwitch("--optimize+")
         else
             builder.AppendSwitch("--optimize-")
+
+        // AlwaysInline
+        builder.AppendOptionalSwitch("--always-inline", alwaysInline)
 
         // realsig
         builder.AppendOptionalSwitch("--realsig", realsig)
@@ -559,6 +563,14 @@ type public Fsc() as this =
     member _.PublicSign
         with get () = publicSign
         and set (s) = publicSign <- s
+
+    // --always-inline[+-]
+    member _.AlwaysInline
+        with get () =
+            match alwaysInline with
+            | Some true -> true
+            | _ -> false
+        and set (b) = alwaysInline <- Some b
 
     // --realsig[+-]
     member _.RealSig

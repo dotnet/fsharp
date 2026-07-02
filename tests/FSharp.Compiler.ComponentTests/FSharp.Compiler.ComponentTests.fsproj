@@ -228,6 +228,7 @@
     <Compile Include="Conformance\TypeForwarding\NestedTests.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\TypesAndTypeConstraints.fs" />
     <Compile Include="Conformance\MultiTargeting.fs" />
+    <Compile Include="EmittedIL\SequencePoints\SequencePointsBaseline.fs" />
     <Compile Include="EmittedIL\SequencePoints\SequencePointsTests.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\VeryLargeClasses.fs" />
@@ -236,6 +237,7 @@
     <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />
+    <Compile Include="EmittedIL\DebugInlineAsCall.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ModuleVisibility.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ModuleInitialization.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityNamespaceRootWithFsi.fs" />
