@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- Re-import the parent props chain, then pin a deterministic package version so the test assertions
+       (which look for e.g. Host.1.0.0.nupkg) match the produced package regardless of the product version. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+</Project>

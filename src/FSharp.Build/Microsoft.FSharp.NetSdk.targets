@@ -49,22 +49,10 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
   </PropertyGroup>
 
-  <!-- Gate inclusion of PackageFSharpDesignTimeTools target when design-time provider is present -->
-  <PropertyGroup Condition=" '$(IsFSharpDesignTimeProvider)' == 'true' ">
+  <!-- Register unconditionally at eval time (NuGet fixes the TargetsForTfmSpecificContentInPackage schedule before any target runs); the target's own Condition gates execution. -->
+  <PropertyGroup>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
-
-  <!-- Check for design-time provider references and add target if needed -->
-  <!-- This target attempts to update TargetsForTfmSpecificContentInPackage based on reference metadata -->
-  <Target Name="_CheckForDesignTimeProviderReferences" BeforeTargets="GenerateNuspec" Condition=" '$(IsFSharpDesignTimeProvider)' != 'true' ">
-    <ItemGroup>
-      <_FSharpDesignTimeProviderProject Include="@(ProjectReference)" Condition="'%(ProjectReference.IsFSharpDesignTimeProvider)' == 'true'" />
-      <_FSharpDesignTimeProviderPackage Include="@(PackageReference)" Condition="'%(PackageReference.IsFSharpDesignTimeProvider)' == 'true'" />
-    </ItemGroup>
-    <PropertyGroup Condition=" '@(_FSharpDesignTimeProviderProject)' != '' or '@(_FSharpDesignTimeProviderPackage)' != '' ">
-      <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
-    </PropertyGroup>
-  </Target>
 
   <PropertyGroup Condition=" '$(DisableImplicitLibraryPacksFolder)' != 'true' ">
     <RestoreAdditionalProjectSources Condition="Exists('$(_FSharpCoreLibraryPacksFolder)')">$(RestoreAdditionalProjectSources);$(_FSharpCoreLibraryPacksFolder)</RestoreAdditionalProjectSources>
@@ -78,7 +66,9 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     </ItemGroup>
   </Target>
 
-  <Target Name="PackageFSharpDesignTimeTools" AfterTargets="ResolveReferences">
+  <!-- Pack-only (run via TargetsForTfmSpecificContentInPackage, no AfterTargets); execution-time Condition skips non-providers. -->
+  <Target Name="PackageFSharpDesignTimeTools"
+          Condition="'$(IsFSharpDesignTimeProvider)' == 'true' or '@(ProjectReference->AnyHaveMetadataValue('IsFSharpDesignTimeProvider', 'true'))' == 'true'">
     <PropertyGroup>
       <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
       <FSharpToolsDirectory Condition = " '$(FSharpToolsDirectory)' == '' ">tools</FSharpToolsDirectory>
@@ -87,22 +77,71 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Error Text="'$(FSharpToolsDirectory)' is an invalid value for 'FSharpToolsDirectory' valid values are 'typeproviders' and 'tools'." Condition="'$(FSharpToolsDirectory)' != 'typeproviders' and '$(FSharpToolsDirectory)' != 'tools'" />
     <Error Text="The 'FSharpDesignTimeProtocol'  property can be only 'fsharp41'" Condition="'$(FSharpDesignTimeProtocol)' != 'fsharp41'" />
 
+    <!-- 1. Query provider TFMs without building; RemoveProperties=TargetFramework queries the outer cross-targeting project, not one inner build. -->
+    <MSBuild Projects="@(ProjectReference->WithMetadataValue('IsFSharpDesignTimeProvider', 'true'))"
+             Targets="GetTargetFrameworks"
+             RemoveProperties="TargetFramework">
+      <Output TaskParameter="TargetOutputs" ItemName="_FSharpDesignTimeProviderTFMs" />
+    </MSBuild>
+
+    <!-- 2. Compute the nearest compatible TFM for each DT provider based on the consumer's TargetFramework.
+         GetReferenceNearestTargetFrameworkTask is provided by NuGet's build targets (imported during pack), the
+         same task the SDK uses for ProjectReference nearest-TFM assignment, so no UsingTask is needed here. -->
+    <GetReferenceNearestTargetFrameworkTask AnnotatedProjectReferences="@(_FSharpDesignTimeProviderTFMs)"
+                                            CurrentProjectTargetFramework="$(TargetFramework)"
+                                            CurrentProjectName="$(MSBuildProjectName)"
+                                            FallbackTargetFrameworks="$(AssetTargetFallback)"
+                                            Condition="'@(_FSharpDesignTimeProviderTFMs)' != ''">
+      <Output ItemName="_FSharpDesignTimeProviderNearestTFM" TaskParameter="AssignedProjects" />
+    </GetReferenceNearestTargetFrameworkTask>
+
+    <!-- 3. GetTargetPath on the exact matched inner build, safely picking the proper path for single-match, multi-match, or cross-tfm. -->
+    <MSBuild Projects="@(_FSharpDesignTimeProviderNearestTFM)"
+             Targets="GetTargetPath"
+             Properties="TargetFramework=%(_FSharpDesignTimeProviderNearestTFM.NearestTargetFramework)"
+             Condition="'@(_FSharpDesignTimeProviderNearestTFM)' != ''">
+      <Output TaskParameter="TargetOutputs" ItemName="_FSharpDesignTimeProviderPath" />
+    </MSBuild>
+
+    <!-- Never silently drop a provider: if the gesture is present but resolved no output, fail loud (an
+         incompatible provider target framework is already a NuGet restore error, NU1201, before we get here). -->
+    <Error Condition="'@(ProjectReference->AnyHaveMetadataValue('IsFSharpDesignTimeProvider', 'true'))' == 'true' and '@(_FSharpDesignTimeProviderPath)' == ''"
+           Text="A design-time provider ProjectReference did not resolve a build output for '$(TargetFramework)'. Ensure the provider targets a compatible framework and is built before packing." />
+
+    <!-- GetTargetPath returns the path the provider WOULD produce, not proof it exists; assert (per provider) that it
+         was actually built, so packing before building the provider fails loud instead of packaging nothing. -->
+    <Error Condition="'@(_FSharpDesignTimeProviderPath)' != '' and !Exists('%(_FSharpDesignTimeProviderPath.FullPath)')"
+           Text="Design-time provider output '%(_FSharpDesignTimeProviderPath.FullPath)' was not built before packing." />
+
+    <!-- Each resolved output carries the SDK-computed nearest target framework (GetReferenceNearestTargetFrameworkTask
+         placed it on the reference item, and the MSBuild task flows it onto GetTargetPath's outputs). Fail loud rather
+         than pack under a blank folder if it is ever missing. -->
+    <Error Condition="'@(_FSharpDesignTimeProviderPath)' != '' and '%(_FSharpDesignTimeProviderPath.NearestTargetFramework)' == ''"
+           Text="Could not determine the nearest target framework for design-time provider output '%(_FSharpDesignTimeProviderPath.FullPath)'." />
+
     <ItemGroup>
-      <_ResolvedOutputFiles
-          Include="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/*"
-          Exclude="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/FSharp.Core.dll;%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/System.ValueTuple.dll"
-          Condition="'%(_ResolvedProjectReferencePaths.IsFSharpDesignTimeProvider)' == 'true'">
-        <NearestTargetFramework>%(_ResolvedProjectReferencePaths.NearestTargetFramework)</NearestTargetFramework>
+      <!-- ProjectReference case: the whole design-time build output (provider dll + its bundled dependencies),
+           subfolder structure preserved (satellites under <culture>/, native under runtimes/<rid>/...). The package
+           folder is the PROVIDER's resolved TFM — the moniker the compiler's design-time probe looks under
+           (src/Compiler/Facilities/CompilerLocation.fs), not the consumer's. The guards above keep the path
+           non-empty and the framework known, so this recursive glob can never widen to a drive-root scan. -->
+      <_ResolvedOutputFiles Condition="'@(_FSharpDesignTimeProviderPath)' != ''"
+                            Include="%(_FSharpDesignTimeProviderPath.RootDir)%(_FSharpDesignTimeProviderPath.Directory)**\*"
+                            Exclude="%(_FSharpDesignTimeProviderPath.RootDir)%(_FSharpDesignTimeProviderPath.Directory)**\*.pdb;%(_FSharpDesignTimeProviderPath.RootDir)%(_FSharpDesignTimeProviderPath.Directory)**\*.deps.json;%(_FSharpDesignTimeProviderPath.RootDir)%(_FSharpDesignTimeProviderPath.Directory)ref\**;%(_FSharpDesignTimeProviderPath.RootDir)%(_FSharpDesignTimeProviderPath.Directory)analyzers\**">
+        <DesignTimeFramework>%(_FSharpDesignTimeProviderPath.NearestTargetFramework)</DesignTimeFramework>
       </_ResolvedOutputFiles>
 
-      <_ResolvedOutputFiles
-          Include="@(BuiltProjectOutputGroupKeyOutput)"
-          Condition=" '$(IsFSharpDesignTimeProvider)' == 'true' and '%(BuiltProjectOutputGroupKeyOutput->Filename)%(BuiltProjectOutputGroupKeyOutput->Extension)' != 'FSharp.Core.dll' and '%(BuiltProjectOutputGroupKeyOutput->Filename)%(BuiltProjectOutputGroupKeyOutput->Extension)' != 'System.ValueTuple.dll' ">
-        <NearestTargetFramework>$(TargetFramework)</NearestTargetFramework>
+      <!-- Direct case (<IsFSharpDesignTimeProvider>true</...>): this project's own output, under its own framework. -->
+      <_ResolvedOutputFiles Condition="'$(IsFSharpDesignTimeProvider)' == 'true'" Include="@(BuiltProjectOutputGroupKeyOutput)">
+        <DesignTimeFramework>$(TargetFramework)</DesignTimeFramework>
       </_ResolvedOutputFiles>
 
-      <TfmSpecificPackageFile Include="@(_ResolvedOutputFiles)">
-         <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedOutputFiles.NearestTargetFramework)/%(_ResolvedOutputFiles.FileName)%(_ResolvedOutputFiles.Extension)</PackagePath>
+      <!-- The consumer always supplies its own FSharp.Core / System.ValueTuple (and FSharp.Core's culture
+           satellites), so never pack those. Preserve the file's relative subpath (%(RecursiveDir)) so a provider's
+           own satellites/native keep their layout; it is empty for the top-level dll and for the direct case. -->
+      <TfmSpecificPackageFile Include="@(_ResolvedOutputFiles)"
+                              Condition="'%(_ResolvedOutputFiles.Filename)' != 'FSharp.Core' and '%(_ResolvedOutputFiles.Filename)' != 'System.ValueTuple' and '%(_ResolvedOutputFiles.Filename)' != 'FSharp.Core.resources'">
+        <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedOutputFiles.DesignTimeFramework)/%(_ResolvedOutputFiles.RecursiveDir)%(_ResolvedOutputFiles.FileName)%(_ResolvedOutputFiles.Extension)</PackagePath>
       </TfmSpecificPackageFile>
     </ItemGroup>
   </Target>

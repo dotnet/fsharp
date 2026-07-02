@@ -1886,7 +1886,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match v.InlineInfo with 
         | ValInline.Always -> FSharpInlineAnnotation.AlwaysInline
         | ValInline.Optional -> FSharpInlineAnnotation.OptionalInline
-        | ValInline.Never -> FSharpInlineAnnotation.NeverInline
+        | ValInline.Never | ValInline.InlinedDefinition -> FSharpInlineAnnotation.NeverInline
 
     member _.IsMutable = 
         if isUnresolved() then false else 
