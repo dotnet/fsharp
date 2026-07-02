@@ -1624,32 +1624,39 @@ let IlAssemblyCodeInstrHasEffect i =
 
 let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
 
-/// EI_ilzero embeds tyargs into IL; eliminating the binding is only safe when:
-///  - We are optimizing for emission (optimizing = true). Inside an inline value's body
-///    (optimizing = false) the optimized expression is pickled as cross-assembly optimization
-///    info and re-inlined at each use site; dropping an ilzero witness/dummy binding there
-///    corrupts that info and trips FS0073 in a consumer's IlxGen (e.g. the SRTP witness/dummy
-///    arguments used pervasively by FSharpPlus). Elimination is still performed at the (fully
-///    instantiated) use site itself, where optimizing = true, so no codegen quality is lost.
-///  - The tyargs are fully ground (contain no free type variables, even after following
-///    solutions). A binding whose type still references unsolved typars is the only thing
-///    pinning those typars; removing it leaves them unsolved and also trips FS0073.
-let ILAsmWithIlzeroHasEffect optimizing instrs tyargs =
+/// The context an expression's effects are analyzed in. It governs whether a fully-ground
+/// `Unchecked.defaultof` (an `EI_ilzero` witness) may be treated as effect-free and its unused
+/// binding dropped: safe when emitting here, but not inside an `inline` value's body, whose
+/// optimized form is pickled as cross-assembly info and re-inlined at each use site — dropping
+/// the witness there corrupts that info and trips FS0073 in the consumer's IlxGen (e.g. the SRTP
+/// witness/dummy arguments used pervasively by FSharpPlus).
+[<RequireQualifiedAccess>]
+type EffectContext =
+    /// Emitting IL here, at a fully instantiated use site.
+    | Emit
+    /// Analyzing the pickled body of an `inline` value, re-inlined at other sites.
+    | InlineBody
+
+let ILAsmWithIlzeroHasEffect context instrs tyargs =
     let hasIlzero = instrs |> List.exists (function EI_ilzero _ -> true | _ -> false)
 
     if not hasIlzero then
         IlAssemblyCodeHasEffect instrs
     else
-        let ilzeroIsSafe =
-            optimizing &&
-            tyargs |> List.forall (fun ty -> Zset.isEmpty (freeInType CollectTypars ty).FreeTypars)
+        // A fully-ground ilzero is a pure default-value load whose unused binding may be dropped,
+        // but only at emission and only when no tyarg still holds a free typar: such a binding is
+        // the sole pin for those typars and dropping it leaves them unsolved (FS0073).
+        let ilzeroIsSafeToDrop =
+            match context with
+            | EffectContext.Emit -> tyargs |> List.forall (fun ty -> Zset.isEmpty (freeInType CollectTypars ty).FreeTypars)
+            | EffectContext.InlineBody -> false
 
         let otherInstrsHaveEffect =
-            instrs |> List.exists (fun i -> match i with EI_ilzero _ -> false | _ -> IlAssemblyCodeInstrHasEffect i)
+            instrs |> List.exists (function EI_ilzero _ -> false | i -> IlAssemblyCodeInstrHasEffect i)
 
-        otherInstrsHaveEffect || not ilzeroIsSafe
+        otherInstrsHaveEffect || not ilzeroIsSafeToDrop
 
-let rec ExprHasEffectImpl optimizing g expr = 
+let rec ExprHasEffect context g expr = 
     match stripDebugPoints expr with 
     | Expr.Val (vref, _, _) -> vref.IsTypeFunction || vref.IsMutable
     | Expr.Quote _ 
@@ -1657,20 +1664,20 @@ let rec ExprHasEffectImpl optimizing g expr =
     | Expr.TyLambda _ 
     | Expr.Const _ -> false
     // type applications do not have effects, with the exception of type functions
-    | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffectImpl optimizing g f0
-    | Expr.Op (op, tyargs, args, m) -> ExprsHaveEffectImpl optimizing g args || OpHasEffectImpl optimizing g m op tyargs
-    | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffectImpl optimizing g binds || ExprHasEffectImpl optimizing g body
-    | Expr.Let (bind, body, _, _) -> BindingHasEffectImpl optimizing g bind || ExprHasEffectImpl optimizing g body
+    | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect context g f0
+    | Expr.Op (op, tyargs, args, m) -> ExprsHaveEffect context g args || OpHasEffect context g m op tyargs
+    | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect context g binds || ExprHasEffect context g body
+    | Expr.Let (bind, body, _, _) -> BindingHasEffect context g bind || ExprHasEffect context g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
     | _ -> true
 
-and ExprsHaveEffectImpl optimizing g exprs = List.exists (ExprHasEffectImpl optimizing g) exprs
+and ExprsHaveEffect context g exprs = List.exists (ExprHasEffect context g) exprs
 
-and BindingsHaveEffectImpl optimizing g binds = List.exists (BindingHasEffectImpl optimizing g) binds
+and BindingsHaveEffect context g binds = List.exists (BindingHasEffect context g) binds
 
-and BindingHasEffectImpl optimizing g bind = bind.Expr |> ExprHasEffectImpl optimizing g
+and BindingHasEffect context g bind = bind.Expr |> ExprHasEffect context g
 
-and OpHasEffectImpl optimizing g m op tyargs =
+and OpHasEffect context g m op tyargs =
     match op with 
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
@@ -1684,7 +1691,7 @@ and OpHasEffectImpl optimizing g m op tyargs =
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
-    | TOp.ILAsm (instrs, _) -> ILAsmWithIlzeroHasEffect optimizing instrs tyargs
+    | TOp.ILAsm (instrs, _) -> ILAsmWithIlzeroHasEffect context instrs tyargs
     | TOp.TupleFieldGet _ -> false
     | TOp.ExnFieldGet (ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet _ -> false
@@ -1711,10 +1718,8 @@ and OpHasEffectImpl optimizing g m op tyargs =
     | TOp.LValueOp _ (* conservative *)
     | TOp.ValFieldSet _ -> true
 
-/// Check if an expression has an effect. This is the entry point used outside the optimizer
-/// (e.g. IlxGen), so it uses the emission-time semantics (optimizing = true) under which a
-/// fully-ground `Unchecked.defaultof` (ilzero) is effect-free.
-let ExprHasEffect g expr = ExprHasEffectImpl true g expr
+let effectContextOf (cenv: cenv) =
+    if cenv.optimizing then EffectContext.Emit else EffectContext.InlineBody
 
 
 let TryEliminateBinding cenv _env bind e2 _m =
@@ -1745,7 +1750,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
               match argsr with 
               | Expr.Val (VRefLocal vspec2, _, _) :: argsr2
                  when valEq vspec1 vspec2 && IsUniqueUse vspec2 (List.rev rargsl@argsr2) -> Some(List.rev rargsl, argsr2)
-              | argsrh :: argsrt when not (ExprHasEffectImpl cenv.optimizing g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
+              | argsrh :: argsrt when not (ExprHasEffect (effectContextOf cenv) g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
               | _ -> None
 
         let (DebugPoints(e2, recreate0)) = e2
@@ -2620,7 +2625,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffectImpl cenv.optimizing g m newOp tyargs
+          HasEffect = OpHasEffect (effectContextOf cenv) g m newOp tyargs
           MightMakeCriticalTailcall = false
           Info = ValueOfExpr newExpr }
 
@@ -2697,7 +2702,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let argsFSize = AddFunctionSizes arginfos
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
-    let effect = OpHasEffectImpl cenv.optimizing g m op tyargs
+    let effect = OpHasEffect (effectContextOf cenv) g m op tyargs
     let cost, value_ = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
