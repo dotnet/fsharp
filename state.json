@@ -158,6 +158,12 @@
     "19759": {
       "sha": "7258278430ccb5c453e737cfc75eb39fdf1d9d08",
       "cats": []
+    },
+    "19948": {
+      "sha": "146f9f60973edf6f40c04dd52a21704de967482c",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     }
   }
 }
