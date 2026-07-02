@@ -1017,8 +1017,11 @@ let CheckForDirectReferenceToGeneratedType (tcref: TyconRef, genOk, m) =
 let AddEntityForProvidedType (amap: Import.ImportMap, modref: ModuleOrNamespaceRef, resolutionEnvironment, st: Tainted<ProvidedType>, m) =
     let importProvidedType t = Import.ImportProvidedType amap m t
     let isSuppressRelocate = amap.g.isInteractive || st.PUntaint((fun st -> st.IsSuppressRelocate), m)
-    let tycon = Construct.NewProvidedTycon(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
-    modref.ModuleOrNamespaceType.AddProvidedTypeEntity tycon
+    let providedTypeName = st.PUntaint((fun st -> st.Name), m)
+    let tycon =
+        modref.ModuleOrNamespaceType.GetOrInternProvidedEntity(
+            providedTypeName,
+            (fun () -> Construct.NewProvidedTycon(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)))
     let tcref = modref.NestedTyconRef tycon
     System.Diagnostics.Debug.Assert(modref.TryDeref.IsSome)
     tcref
