@@ -3362,6 +3362,36 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         |> List.map (fun symbol -> normalizeTypePathName symbol.QualifiedName)
         |> Set.ofList
 
+    let cleanUpGeneratedTypeName (name: string) =
+        if name.IndexOfAny IllegalCharactersInTypeAndNamespaceNames = -1 then
+            name
+        else
+            (name, IllegalCharactersInTypeAndNamespaceNames)
+            ||> Array.fold (fun acc c -> acc.Replace(string c, "-"))
+
+    let updatedMethodNameBases =
+        request.UpdatedMethods
+        |> List.map (fun methodKey -> cleanUpGeneratedTypeName methodKey.Name)
+        |> Set.ofList
+
+    let isResumableCodeShape (shape: SynthesizedTypeShape) =
+        let mentionsResumableCode (text: string) =
+            text.IndexOf("Microsoft.FSharp.Core.CompilerServices.ResumableCode", StringComparison.Ordinal)
+            >= 0
+
+        shape.BaseType |> Option.exists mentionsResumableCode
+        || shape.InterfaceTypes |> List.exists mentionsResumableCode
+        || shape.FieldTypeNames |> List.exists mentionsResumableCode
+
+    let isUpdatedMethodResumableCodeHelper (typeDef: ILTypeDef) =
+        if IsCompilerGeneratedName typeDef.Name then
+            let basicName = GetBasicNameOfPossibleCompilerGeneratedName typeDef.Name
+
+            Set.contains basicName updatedMethodNameBases
+            && (typeDef |> shapeOfSynthesizedTypeDef |> isResumableCodeShape)
+        else
+            false
+
     let builder = IlDeltaStreamBuilder(Some request.Baseline.Metadata)
 
     if traceHeapOffsets.Value then
@@ -3473,6 +3503,10 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let addedTypeShapes =
         Dictionary<string, SynthesizedTypeShape>(StringComparer.Ordinal)
 
+    let addedTypeKeyByFreshFullName = Dictionary<string, string>(StringComparer.Ordinal)
+    let freshFullNameByAddedTypeKey = Dictionary<string, string>(StringComparer.Ordinal)
+    let addedTypeMetadataNameByKey = Dictionary<string, string>(StringComparer.Ordinal)
+
     let baselineTypeDefRowCount =
         request.Baseline.Metadata.TableRowCounts.[TableNames.TypeDef.Index]
 
@@ -3488,6 +3522,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
     let eventHandleLookup = Dictionary<EventDefinitionKey, EventDefinitionHandle>()
     let baselineTypeNameByNew = Dictionary<string, string>(StringComparer.Ordinal)
+    let forcedAddedTypeNames = HashSet<string>(StringComparer.Ordinal)
     // Reverse of baselineTypeNameByNew: the new->baseline synthesized type mapping must
     // stay INJECTIVE. Closure-chain CE lowerings (async) carry legacy `-N`-suffixed
     // names; a structural CE change shifts the numbering, and alias-bucket matching
@@ -3752,7 +3787,15 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     ""
 
         let candidateNames =
-            let aliases = getAliasCandidates typeDef.Name
+            let aliases =
+                if
+                    usesRecordedSynthesizedSnapshot
+                    && isUpdatedMethodResumableCodeHelper typeDef
+                    && FSharp.Compiler.ClosureNameAllocator.isGenerationSuffixedClosureName typeDef.Name
+                then
+                    [| typeDef.Name |]
+                else
+                    getAliasCandidates typeDef.Name
 
             let prefixes =
                 if basePrefix.EndsWith("+", StringComparison.Ordinal) then
@@ -3826,6 +3869,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 matches
                 |> Array.filter (fun (matchedName, _) ->
                     String.Equals(matchedName, newFullName, StringComparison.Ordinal)
+                    || forcedAddedTypeNames.Contains matchedName
                     || not (freshTypeFullNames.Value.Contains matchedName))
 
             let shapeMatches =
@@ -3844,18 +3888,38 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             | [||] when usesRecordedSynthesizedSnapshot && availableMatches.Length > 0 -> Some availableMatches[0]
             | _ -> None
 
+        let shouldAddShapeChangedResumableHelper (matchedName: string) =
+            isUpdatedMethodResumableCodeHelper typeDef
+            && String.Equals(matchedName, newFullName, StringComparison.Ordinal)
+            && match request.Baseline.SynthesizedTypeShapes |> Map.tryFind matchedName with
+               | Some baselineShape ->
+                   let freshShape = shapeOfSynthesizedTypeDef typeDef
+
+                   (tryFindSynthesizedTypeShapeMismatch
+                       (normalizeSelfReferencesInShape matchedName baselineShape)
+                       (normalizeSelfReferencesInShape newFullName freshShape))
+                       .IsSome
+               | None -> false
+
+        let markShapeChangedResumableHelperAdded () =
+            forcedAddedTypeNames.Add newFullName |> ignore
+            None
+
         let baselineNameOpt =
             match baselineMatches with
             | [||] -> tryGetPositionalBaselineMatch ()
             | [| single |] ->
-                match tryGetPositionalBaselineMatch () with
-                | Some positionalMatch when
-                    usesRecordedSynthesizedSnapshot
-                    && IsCompilerGeneratedName typeDef.Name
-                    && not (String.Equals(fst positionalMatch, fst single, StringComparison.Ordinal))
-                    ->
-                    Some positionalMatch
-                | _ -> Some single
+                if shouldAddShapeChangedResumableHelper (fst single) then
+                    markShapeChangedResumableHelperAdded ()
+                else
+                    match tryGetPositionalBaselineMatch () with
+                    | Some positionalMatch when
+                        usesRecordedSynthesizedSnapshot
+                        && IsCompilerGeneratedName typeDef.Name
+                        && not (String.Equals(fst positionalMatch, fst single, StringComparison.Ordinal))
+                        ->
+                        Some positionalMatch
+                    | _ -> Some single
             | matches ->
                 let exactMatch =
                     matches
@@ -3863,14 +3927,17 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
                 match exactMatch with
                 | Some matchResult ->
-                    match tryGetPositionalBaselineMatch () with
-                    | Some positionalMatch when
-                        usesRecordedSynthesizedSnapshot
-                        && IsCompilerGeneratedName typeDef.Name
-                        && not (String.Equals(fst positionalMatch, fst matchResult, StringComparison.Ordinal))
-                        ->
-                        Some positionalMatch
-                    | _ -> Some matchResult
+                    if shouldAddShapeChangedResumableHelper (fst matchResult) then
+                        markShapeChangedResumableHelperAdded ()
+                    else
+                        match tryGetPositionalBaselineMatch () with
+                        | Some positionalMatch when
+                            usesRecordedSynthesizedSnapshot
+                            && IsCompilerGeneratedName typeDef.Name
+                            && not (String.Equals(fst positionalMatch, fst matchResult, StringComparison.Ordinal))
+                            ->
+                            Some positionalMatch
+                        | _ -> Some matchResult
                 | None ->
                     let normalizeTypePath (name: string) =
                         name.Split([| '.'; '+' |], StringSplitOptions.RemoveEmptyEntries)
@@ -3891,6 +3958,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         | None ->
                             match tryGetShapeCompatibleAliasMatch matches with
                             | Some shapeMatch -> Some shapeMatch
+                            | None when isUpdatedMethodResumableCodeHelper typeDef -> markShapeChangedResumableHelperAdded ()
                             | None ->
                                 let matchedNames = matches |> Array.map fst |> String.concat "; "
                                 let allCandidates = candidateNames |> String.concat "; "
@@ -3913,14 +3981,30 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             | Some(baseline, token) -> baseline, Some token
             | None -> newFullName, None
 
-        match newTypeNameByBaseline.TryGetValue baselineName with
-        | true, existingNewName when not (String.Equals(existingNewName, newFullName, StringComparison.Ordinal)) ->
-            raise (
-                HotReloadUnsupportedEditException(
-                    $"Computation-expression closure chain changed: synthesized types '{existingNewName}' and '{newFullName}' both map to baseline type '{baselineName}'; the closure chain cannot be aligned with the baseline. Please rebuild."
+        let baselineName, baselineTokenOpt =
+            match baselineTokenOpt with
+            | Some _ when
+                isUpdatedMethodResumableCodeHelper typeDef
+                && FSharp.Compiler.ClosureNameAllocator.isGenerationSuffixedClosureName typeDef.Name
+                ->
+                match newTypeNameByBaseline.TryGetValue baselineName with
+                | true, existingNewName when not (String.Equals(existingNewName, newFullName, StringComparison.Ordinal)) ->
+                    forcedAddedTypeNames.Add newFullName |> ignore
+                    newFullName, None
+                | _ -> baselineName, baselineTokenOpt
+            | _ -> baselineName, baselineTokenOpt
+
+        match baselineTokenOpt with
+        | Some _ ->
+            match newTypeNameByBaseline.TryGetValue baselineName with
+            | true, existingNewName when not (String.Equals(existingNewName, newFullName, StringComparison.Ordinal)) ->
+                raise (
+                    HotReloadUnsupportedEditException(
+                        $"Computation-expression closure chain changed: synthesized types '{existingNewName}' and '{newFullName}' both map to baseline type '{baselineName}'; the closure chain cannot be aligned with the baseline. Please rebuild."
+                    )
                 )
-            )
-        | _ -> newTypeNameByBaseline[baselineName] <- newFullName
+            | _ -> newTypeNameByBaseline[baselineName] <- newFullName
+        | None -> ()
 
         baselineTypeNameByNew[newFullName] <- baselineName
 
@@ -3930,9 +4014,56 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         baselineName, baselineTokenOpt
 
     let tryGetBaselineTypeName fullName =
-        match baselineTypeNameByNew.TryGetValue fullName with
-        | true, baseline -> baseline
+        match addedTypeKeyByFreshFullName.TryGetValue fullName with
+        | true, addedKey -> addedKey
+        | _ ->
+            match baselineTypeNameByNew.TryGetValue fullName with
+            | true, baseline -> baseline
+            | _ -> fullName
+
+    let getAddedTypeKey fullName =
+        match addedTypeKeyByFreshFullName.TryGetValue fullName with
+        | true, addedKey -> addedKey
         | _ -> fullName
+
+    let createAddedTypeKey (typeDef: ILTypeDef) fullName =
+        match addedTypeKeyByFreshFullName.TryGetValue fullName with
+        | true, addedKey -> addedKey
+        | _ ->
+            let addedKey, metadataNameOpt =
+                if request.Baseline.TypeTokens |> Map.containsKey fullName then
+                    let rec choose index =
+                        let suffix = $"@hotreload-added{index}"
+                        let candidate = fullName + suffix
+
+                        if
+                            (request.Baseline.TypeTokens |> Map.containsKey candidate)
+                            || addedTypeDeltaTokens.ContainsKey candidate
+                        then
+                            choose (index + 1)
+                        else
+                            candidate, Some(typeDef.Name + suffix)
+
+                    choose 1
+                else
+                    fullName, None
+
+            addedTypeKeyByFreshFullName[fullName] <- addedKey
+            freshFullNameByAddedTypeKey[addedKey] <- fullName
+
+            match metadataNameOpt with
+            | Some metadataName -> addedTypeMetadataNameByKey[addedKey] <- metadataName
+            | None -> ()
+
+            addedKey
+
+    let tryResolveFreshTypeNameForKey declaringType =
+        match freshFullNameByAddedTypeKey.TryGetValue declaringType with
+        | true, freshFullName -> Some freshFullName
+        | _ ->
+            match newTypeNameByBaseline.TryGetValue declaringType with
+            | true, freshFullName when not (String.Equals(freshFullName, declaringType, StringComparison.Ordinal)) -> Some freshFullName
+            | _ -> None
 
     let tryGetBaselineTypeToken (enclosing: ILTypeDef list) (typeDef: ILTypeDef) =
         let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
@@ -3943,18 +4074,35 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         if newToken <> 0 && baselineToken <> 0 && newToken <> baselineToken then
             dict[newToken] <- baselineToken
 
+    let addAddedTypeDefinition (enclosing: ILTypeDef list) (typeDef: ILTypeDef) fullName newTypeToken =
+        let addedTypeKey = createAddedTypeKey typeDef fullName
+
+        match addedTypeDeltaTokens.TryGetValue addedTypeKey with
+        | true, token -> token
+        | _ ->
+            let rowId = baselineTypeDefRowCount + addedTypeDeltaTokens.Count + 1
+            let deltaToken = 0x02000000 ||| rowId
+            addedTypeDeltaTokens[addedTypeKey] <- deltaToken
+            addedTypeNewTokens[addedTypeKey] <- newTypeToken
+            addedTypeShapes[addedTypeKey] <- shapeOfSynthesizedTypeDef typeDef
+            addedTypeDefs.Add(enclosing, typeDef, addedTypeKey)
+            deltaToken
+
     let rec collectTypeMappings (enclosing: ILTypeDef list) (typeDef: ILTypeDef) =
         let newTypeToken = emittedTokenMappings.TypeDefTokenMap(enclosing, typeDef)
 
+        let fullName =
+            (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
+
         if traceSynthesizedMappings.Value then
-            let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
-            printfn "[fsharp-hotreload][synthesized-map] visiting %s" typeRef.FullName
+            printfn "[fsharp-hotreload][synthesized-map] visiting %s" fullName
 
         let _, baselineTokenOpt = resolveBaselineTypeFullName enclosing typeDef
 
         let baselineTypeToken =
             match baselineTokenOpt with
             | Some token -> token
+            | None when forcedAddedTypeNames.Contains fullName -> addAddedTypeDefinition enclosing typeDef fullName newTypeToken
             | None ->
                 match tryGetBaselineTypeToken enclosing typeDef with
                 | Some token -> token
@@ -3970,16 +4118,17 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     let fullName =
                         (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
 
-                    match addedTypeDeltaTokens.TryGetValue fullName with
-                    | true, token -> token
-                    | _ ->
-                        let rowId = baselineTypeDefRowCount + addedTypeDeltaTokens.Count + 1
-                        let deltaToken = 0x02000000 ||| rowId
-                        addedTypeDeltaTokens[fullName] <- deltaToken
-                        addedTypeNewTokens[fullName] <- newTypeToken
-                        addedTypeShapes[fullName] <- shapeOfSynthesizedTypeDef typeDef
-                        addedTypeDefs.Add(enclosing, typeDef, fullName)
-                        deltaToken
+                    addAddedTypeDefinition enclosing typeDef fullName newTypeToken
+                | None when isUpdatedMethodResumableCodeHelper typeDef ->
+                    // Resumable-code helper classes are part of the task/class-state-machine
+                    // lowering for the updated method. A complete recorded snapshot can put
+                    // their replay names in the same bucket as older closure helpers; absence of
+                    // an exact baseline TypeDef means this helper is new, not closure-chain
+                    // evidence.
+                    let fullName =
+                        (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
+
+                    addAddedTypeDefinition enclosing typeDef fullName newTypeToken
                 | None when
                     (let fullName =
                         (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
@@ -3998,7 +4147,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                              let parentRef =
                                  mkRefForNestedILTypeDef ILScopeRef.Local (parentEnclosing, parentType)
 
-                             addedTypeDeltaTokens.ContainsKey parentRef.FullName))
+                             addedTypeDeltaTokens.ContainsKey(getAddedTypeKey parentRef.FullName)))
                     ->
                     // ADDED user-defined type: classification gated the entity
                     // addition on NewTypeDefinition and projected its IL name into the
@@ -4007,16 +4156,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     let fullName =
                         (mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)).FullName
 
-                    match addedTypeDeltaTokens.TryGetValue fullName with
-                    | true, token -> token
-                    | _ ->
-                        let rowId = baselineTypeDefRowCount + addedTypeDeltaTokens.Count + 1
-                        let deltaToken = 0x02000000 ||| rowId
-                        addedTypeDeltaTokens[fullName] <- deltaToken
-                        addedTypeNewTokens[fullName] <- newTypeToken
-                        addedTypeShapes[fullName] <- shapeOfSynthesizedTypeDef typeDef
-                        addedTypeDefs.Add(enclosing, typeDef, fullName)
-                        deltaToken
+                    addAddedTypeDefinition enclosing typeDef fullName newTypeToken
                 | None when IsCompilerGeneratedName typeDef.Name ->
                     // A compiler-generated type (closure/CE-lowering class, under either the
                     // stable `@hotreload...` naming scheme or the external/fresh-fsc `@<line>`
@@ -4042,6 +4182,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         |> List.iter (fun fieldDef ->
             let declaringTypeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
             let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
+            let declaringTypeIsAdded = addedTypeDeltaTokens.ContainsKey baselineDeclaringType
 
             let fieldKey: FieldDefinitionKey =
                 {
@@ -4051,20 +4192,23 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 }
 
             let baselineFieldTokenOpt =
-                match request.Baseline.FieldTokens |> Map.tryFind fieldKey with
-                | Some token -> Some token
-                | None ->
-                    let sanitizedTarget = normalizeGeneratedFieldName fieldDef.Name
+                if declaringTypeIsAdded then
+                    None
+                else
+                    match request.Baseline.FieldTokens |> Map.tryFind fieldKey with
+                    | Some token -> Some token
+                    | None ->
+                        let sanitizedTarget = normalizeGeneratedFieldName fieldDef.Name
 
-                    request.Baseline.FieldTokens
-                    |> Map.tryPick (fun key token ->
-                        if key.DeclaringType = baselineDeclaringType && key.FieldType = fieldDef.FieldType then
-                            if normalizeGeneratedFieldName key.Name = sanitizedTarget then
-                                Some token
+                        request.Baseline.FieldTokens
+                        |> Map.tryPick (fun key token ->
+                            if key.DeclaringType = baselineDeclaringType && key.FieldType = fieldDef.FieldType then
+                                if normalizeGeneratedFieldName key.Name = sanitizedTarget then
+                                    Some token
+                                else
+                                    None
                             else
-                                None
-                        else
-                            None)
+                                None)
 
             match baselineFieldTokenOpt with
             | Some baselineFieldToken ->
@@ -4072,7 +4216,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     emittedTokenMappings.FieldDefTokenMap (enclosing, typeDef) fieldDef
 
                 addMapping fieldTokenMap newFieldToken baselineFieldToken
-            | None when addedTypeDeltaTokens.ContainsKey declaringTypeRef.FullName ->
+            | None when declaringTypeIsAdded ->
                 // Field of an ADDED type (closure capture field / cached-instance field):
                 // appended to the delta Field table, parented to the NEW TypeDef row. The
                 // instance-field restriction below only applies to EXISTING types (the
@@ -4155,7 +4299,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
 
             if
-                not (addedTypeDeltaTokens.ContainsKey declaringTypeRef.FullName)
+                not (addedTypeDeltaTokens.ContainsKey baselineDeclaringType)
                 && request.Baseline.TypeTokens |> Map.containsKey baselineDeclaringType
             then
                 let freshFieldNames =
@@ -4182,6 +4326,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
             let declaringTypeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
             let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
+            let declaringTypeIsAdded = addedTypeDeltaTokens.ContainsKey baselineDeclaringType
 
             let methodKey: MethodDefinitionKey =
                 {
@@ -4192,15 +4337,45 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     ReturnType = methodDef.Return.Type
                 }
 
-            match request.Baseline.MethodTokens |> Map.tryFind methodKey with
-            | Some baselineMethodToken ->
+            let tryFindBaselineResumableHelperMethodIgnoringReturnType () =
+                if isUpdatedMethodResumableCodeHelper typeDef then
+                    request.Baseline.MethodTokens
+                    |> Map.toArray
+                    |> Array.filter (fun (candidate, _) ->
+                        String.Equals(candidate.DeclaringType, baselineDeclaringType, StringComparison.Ordinal)
+                        && String.Equals(candidate.Name, methodDef.Name, StringComparison.Ordinal)
+                        && candidate.GenericArity = methodDef.GenericParams.Length
+                        && candidate.ParameterTypes = methodDef.ParameterTypes)
+                    |> function
+                        | [| candidate, token |] -> Some(candidate, token)
+                        | _ -> None
+                else
+                    None
+
+            let baselineMethodTokenOpt =
+                if declaringTypeIsAdded then
+                    None
+                else
+                    match request.Baseline.MethodTokens |> Map.tryFind methodKey with
+                    | Some token -> Some(methodKey, token)
+                    | None -> tryFindBaselineResumableHelperMethodIgnoringReturnType ()
+
+            match baselineMethodTokenOpt with
+            | Some(_, baselineMethodToken) ->
                 if newMethodToken <> 0 && baselineMethodToken <> 0 then
                     matchedMethodTokenPairs[newMethodToken] <- baselineMethodToken
 
                 addMapping methodTokenMap newMethodToken baselineMethodToken
-            | None when addedTypeDeltaTokens.ContainsKey declaringTypeRef.FullName ->
+            | None when declaringTypeIsAdded ->
                 // Method of an ADDED type (closure .ctor / Invoke override): emitted as an
                 // added method parented to the NEW TypeDef row.
+                if not (addedMethodTokens.ContainsKey methodKey) then
+                    addedMethodTokens[methodKey] <- newMethodToken
+            | None when isUpdatedMethodResumableCodeHelper typeDef ->
+                // Method of an existing task/class-state-machine helper whose signature
+                // changed as the resumable step shape changed. The diff already gated this
+                // path on AddMethodToExistingType; do not let the generic synthesized skip
+                // drop the fresh Invoke/.ctor body.
                 if not (addedMethodTokens.ContainsKey methodKey) then
                     addedMethodTokens[methodKey] <- newMethodToken
             | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
@@ -4215,6 +4390,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
             let declaringTypeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
             let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
+            let declaringTypeIsAdded = addedTypeDeltaTokens.ContainsKey baselineDeclaringType
 
             let propertyKey: PropertyDefinitionKey =
                 {
@@ -4224,8 +4400,20 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     IndexParameterTypes = List.ofSeq propertyDef.Args
                 }
 
-            match request.Baseline.PropertyTokens |> Map.tryFind propertyKey with
+            let baselinePropertyTokenOpt =
+                if declaringTypeIsAdded then
+                    None
+                else
+                    request.Baseline.PropertyTokens |> Map.tryFind propertyKey
+
+            match baselinePropertyTokenOpt with
             | Some baselinePropertyToken -> addMapping propertyTokenMap newPropertyToken baselinePropertyToken
+            | None when declaringTypeIsAdded ->
+                if not (addedPropertyTokens.ContainsKey propertyKey) then
+                    addedPropertyTokens[propertyKey] <- newPropertyToken
+                    addedPropertyTokenLookup[newPropertyToken] <- propertyKey
+                    let rowId = newPropertyToken &&& 0x00FFFFFF
+                    propertyHandleLookup[propertyKey] <- MetadataTokens.PropertyDefinitionHandle rowId
             | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
             | None ->
                 if not (addedPropertyTokens.ContainsKey propertyKey) then
@@ -4239,6 +4427,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let newEventToken = emittedTokenMappings.EventTokenMap (enclosing, typeDef) eventDef
             let declaringTypeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
             let baselineDeclaringType = tryGetBaselineTypeName declaringTypeRef.FullName
+            let declaringTypeIsAdded = addedTypeDeltaTokens.ContainsKey baselineDeclaringType
 
             let eventKey: EventDefinitionKey =
                 {
@@ -4247,8 +4436,20 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     EventType = eventDef.EventType
                 }
 
-            match request.Baseline.EventTokens |> Map.tryFind eventKey with
+            let baselineEventTokenOpt =
+                if declaringTypeIsAdded then
+                    None
+                else
+                    request.Baseline.EventTokens |> Map.tryFind eventKey
+
+            match baselineEventTokenOpt with
             | Some baselineEventToken -> addMapping eventTokenMap newEventToken baselineEventToken
+            | None when declaringTypeIsAdded ->
+                if not (addedEventTokens.ContainsKey eventKey) then
+                    addedEventTokens[eventKey] <- newEventToken
+                    addedEventTokenLookup[newEventToken] <- eventKey
+                    let rowId = newEventToken &&& 0x00FFFFFF
+                    eventHandleLookup[eventKey] <- MetadataTokens.EventDefinitionHandle rowId
             | None when synthesizedBuckets.IsSome && IsCompilerGeneratedName typeDef.Name -> ()
             | None ->
                 if not (addedEventTokens.ContainsKey eventKey) then
@@ -4392,12 +4593,64 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         (request.UpdatedMethods @ triviaRecompileKeys @ addedMethodKeys)
         |> dedupeMethodKeys
 
+    let tryResolveMethodThroughMappedDeclaringType (key: MethodDefinitionKey) =
+        match tryResolveFreshTypeNameForKey key.DeclaringType with
+        | Some freshDeclaringType ->
+            let freshKey =
+                { key with
+                    DeclaringType = freshDeclaringType
+                }
+
+            match FSharpSymbolMatcher.tryGetMethodDef symbolMatcher freshKey with
+            | Some(enclosing, typeDef, methodDef) ->
+                if traceMethodUpdates.Value then
+                    printfn
+                        "[fsharp-hotreload][method-update] resolved mapped helper: %s::%s -> %s::%s"
+                        key.DeclaringType
+                        key.Name
+                        freshDeclaringType
+                        key.Name
+
+                Some(enclosing, typeDef, methodDef)
+            | None -> None
+        | None -> None
+
+    let tryResolveResumableHelperMethodIgnoringReturnType (key: MethodDefinitionKey) =
+        let declaringType =
+            tryResolveFreshTypeNameForKey key.DeclaringType
+            |> Option.defaultValue key.DeclaringType
+
+        match FSharpSymbolMatcher.tryGetTypeDef symbolMatcher declaringType with
+        | Some(enclosing, typeDef) when isUpdatedMethodResumableCodeHelper typeDef ->
+            typeDef.Methods.AsList()
+            |> List.filter (fun methodDef ->
+                String.Equals(methodDef.Name, key.Name, StringComparison.Ordinal)
+                && methodDef.GenericParams.Length = key.GenericArity
+                && methodDef.ParameterTypes = key.ParameterTypes)
+            |> function
+                | [ methodDef ] ->
+                    if traceMethodUpdates.Value then
+                        printfn
+                            "[fsharp-hotreload][method-update] resolved resumable helper by stable signature: %s::%s"
+                            key.DeclaringType
+                            key.Name
+
+                    Some(enclosing, typeDef, methodDef)
+                | _ -> None
+        | _ -> None
+
     let resolvedMethods, unresolvedMethods =
         (([], []), allUpdatedMethods)
         ||> List.fold (fun (resolved, unresolved) key ->
             match FSharpSymbolMatcher.tryGetMethodDef symbolMatcher key with
             | Some(enclosing, typeDef, methodDef) -> (enclosing, typeDef, methodDef, key) :: resolved, unresolved
-            | None -> resolved, key :: unresolved)
+            | None ->
+                match tryResolveMethodThroughMappedDeclaringType key with
+                | Some(enclosing, typeDef, methodDef) -> (enclosing, typeDef, methodDef, key) :: resolved, unresolved
+                | None ->
+                    match tryResolveResumableHelperMethodIgnoringReturnType key with
+                    | Some(enclosing, typeDef, methodDef) -> (enclosing, typeDef, methodDef, key) :: resolved, unresolved
+                    | None -> resolved, key :: unresolved)
 
     // Compiler-generated closures and companions (declaring type contains '@', e.g.
     // `view@hotreload#g0_o0`) carry generation-specific names that do not exist under the
@@ -5289,7 +5542,11 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     let newToken = addedTypeNewTokens.[fullName]
                     let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
                     let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
-                    let name = metadataReader.GetString freshTypeDef.Name
+
+                    let name =
+                        match addedTypeMetadataNameByKey.TryGetValue fullName with
+                        | true, metadataName -> metadataName
+                        | _ -> metadataReader.GetString freshTypeDef.Name
 
                     // Explicit/sized layouts need a ClassLayout row (ECMA-335 II.22.8)
                     // the writer cannot express; shipping the TypeDef without it would
