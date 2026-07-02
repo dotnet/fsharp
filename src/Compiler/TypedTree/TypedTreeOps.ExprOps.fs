@@ -1366,6 +1366,9 @@ module internal Makers =
     let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety formatStringExpr =
         mkApps g (typedExprForIntrinsic g m g.new_format_info, [ [ aty; bty; cty; dty; ety ] ], [ formatStringExpr ], m)
 
+    let mkCallStringOperator (g: TcGlobals) m argTy e =
+        mkApps g (typedExprForIntrinsic g m g.string_operator_info, [ [ argTy ] ], [ e ], m)
+
     let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
         let info, tinst = g.MakeBuiltInWitnessInfo traitInfo
         let vref = ValRefForIntrinsic info
@@ -1569,6 +1572,17 @@ module internal Makers =
             [ arg ],
             m
         )
+
+    /// Concatenate string-valued expressions, choosing the cheapest String.Concat overload by arity.
+    /// An empty list yields "" and a singleton yields itself.
+    let mkStringConcat (g: TcGlobals, m: range, exprs: Expr list) =
+        match exprs with
+        | [] -> mkString g m ""
+        | [ arg ] -> arg
+        | [ arg1; arg2 ] -> mkStaticCall_String_Concat2 g m arg1 arg2
+        | [ arg1; arg2; arg3 ] -> mkStaticCall_String_Concat3 g m arg1 arg2 arg3
+        | [ arg1; arg2; arg3; arg4 ] -> mkStaticCall_String_Concat4 g m arg1 arg2 arg3 arg4
+        | _ -> mkStaticCall_String_Concat_Array g m (mkArray (g.string_ty, exprs, m))
 
     // Quotations can't contain any IL.
     // As a result, we aim to get rid of all IL generation in the typechecker and pattern match

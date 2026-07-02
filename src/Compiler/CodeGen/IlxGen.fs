@@ -2284,7 +2284,6 @@ type AnonTypeGenerationTable() =
 
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, ILAttributes.Empty, attrs)
                         |> g.AddMethodGeneratedAttributes
-                    yield! genToStringMethod ilTy
                 ]
 
             let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
@@ -2387,6 +2386,10 @@ type AnonTypeGenerationTable() =
                 Some(mkLocalValRef augmentation.EqualsExactWithComparer)
             )
 
+            // Generate ToString through the synthetic record tycon (renders "{| Name = value; ... |}" under
+            // --reflectionfree, otherwise sprintf "%+A"). Done here, not in ilMethods above, because it needs the tycon.
+            let ilToStringMethodDefs = genToStringMethod (ilTy, tycon)
+
             // Build the ILTypeDef. We don't rely on the normal record generation process because we want very specific field names
 
             let ilTypeDefAttribs =
@@ -2409,7 +2412,7 @@ type AnonTypeGenerationTable() =
                     ilGenericParams,
                     ilBaseTy,
                     ilInterfaceTys,
-                    mkILMethods (ilCtorDef :: ilMethods),
+                    mkILMethods (ilCtorDef :: ilMethods @ ilToStringMethodDefs),
                     ilFieldDefs,
                     emptyILTypeDefs,
                     ilProperties,
@@ -3888,7 +3891,11 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref, argTys, args, m) sequel =
 
 and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, m) sequel =
     let anonCtor, _anonMethods, anonType =
-        cgbuf.mgbuf.LookupAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
+        cgbuf.mgbuf.LookupAnonType(
+            (fun (ilThisTy, tycon) ->
+                GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")),
+            anonInfo
+        )
 
     let boxity = anonType.Boxity
     GenExprs cenv cgbuf eenv args
@@ -3902,7 +3909,11 @@ and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, 
 
 and GenGetAnonRecdField cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, e, tyargs, n, m) sequel =
     let _anonCtor, anonMethods, anonType =
-        cgbuf.mgbuf.LookupAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
+        cgbuf.mgbuf.LookupAnonType(
+            (fun (ilThisTy, tycon) ->
+                GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")),
+            anonInfo
+        )
 
     let boxity = anonType.Boxity
     let ilTypeArgs = GenTypeArgs cenv m eenv.tyenv tyargs
@@ -10987,7 +10998,11 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
 
     // Generate all the anonymous record types mentioned anywhere in this module
     for anonInfo in anonRecdTypes.Values do
-        mgbuf.GenerateAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
+        mgbuf.GenerateAnonType(
+            (fun (ilThisTy, tycon) ->
+                GenRecordToStringMethod(cenv, mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")),
+            anonInfo
+        )
 
     let withQName (loc: CompileLocation) =
         { loc with
@@ -11355,11 +11370,8 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
     else
         [], [], []
 
-and GenToStringMethod cenv eenv ilThisTy m =
-    GenPrintingMethod cenv eenv "ToString" ilThisTy m
-
 /// Generate a ToString/get_Message method that calls 'sprintf "%A"'
-and GenPrintingMethod cenv eenv methName ilThisTy m =
+and GenSprintfPrintingMethod cenv eenv methName ilThisTy m =
     let g = cenv.g
 
     [
@@ -11423,6 +11435,42 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
                 yield mdef
             | _ -> ()
     ]
+
+/// Emit a [<CompilerGenerated>] virtual ToString override whose body is the given string-typed expression.
+/// 'thisv' is the 'this' value (stored at arg 0) referenced by bodyExpr.
+and EmitToStringMethodDef (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, thisv: Val, bodyExpr: Expr) =
+    let g = cenv.g
+    let eenvForMeth = AddStorageForLocalVals g [ (thisv, Arg 0) ] eenv
+
+    let ilMethodBody =
+        CodeGenMethodForExpr cenv mgbuf ([], "ToString", eenvForMeth, 0, Some thisv, bodyExpr, Return)
+
+    let mdef =
+        mkILNonGenericVirtualInstanceMethod (
+            "ToString",
+            ILMemberAccess.Public,
+            [],
+            mkILReturn g.ilg.typ_String,
+            MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
+        )
+
+    [ mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ]) ]
+
+/// Generate an anonymous record's ToString as a single line "{| F1 = v1; F2 = v2 |}". Nominal records and
+/// unions get their reflection-free ToString from the type-augmentation phase instead (so the 'string'
+/// operator calls are optimized), but anonymous record types are synthesized too late for that, so they are
+/// generated here. Under non-reflection-free codegen, falls back to sprintf "%+A".
+and GenRecordToStringMethod
+    (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, ilThisTy: ILType, tcref: TyconRef, m: range, openBrace: string, closeBrace: string) =
+    let g = cenv.g
+
+    if not g.useReflectionFreeCodeGen then
+        GenSprintfPrintingMethod cenv eenv "ToString" ilThisTy m
+    else
+        let thisv, body =
+            AugmentTypeDefinitions.mkRecdToString (g, tcref, tcref.Deref, openBrace, closeBrace)
+
+        EmitToStringMethodDef(cenv, mgbuf, eenv, thisv, body)
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option =
     let g = cenv.g
@@ -12007,8 +12055,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         then
                             yield mkILSimpleStorageCtor (Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess, None, eenv.imports)
 
-                        if not (tycon.HasMember g "ToString" []) then
-                            yield! GenToStringMethod cenv eenv ilThisTy m
+                        // Reflection-free nominal records get their ToString from the type-augmentation phase; here we
+                        // only emit the sprintf "%+A" ToString for the non-reflection-free case.
+                        if not g.useReflectionFreeCodeGen && not (tycon.HasMember g "ToString" []) then
+                            yield! GenSprintfPrintingMethod cenv eenvinner "ToString" ilThisTy m
 
                     | TFSharpTyconRepr r when tycon.IsFSharpDelegateTycon ->
 
@@ -12031,8 +12081,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             yield! mkILDelegateMethods reprAccess g.ilg (g.iltyp_AsyncCallback, g.iltyp_IAsyncResult) (parameters, ret)
                         | _ -> ()
 
-                    | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } when not (tycon.HasMember g "ToString" []) ->
-                        yield! GenToStringMethod cenv eenv ilThisTy m
+                    // Reflection-free nominal unions get their ToString from the type-augmentation phase; here we
+                    // only emit the sprintf "%+A" ToString for the non-reflection-free case.
+                    | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } when
+                        not g.useReflectionFreeCodeGen && not (tycon.HasMember g "ToString" [])
+                        ->
+                        yield! GenSprintfPrintingMethod cenv eenvinner "ToString" ilThisTy m
                     | _ -> ()
                 ]
 
@@ -12656,7 +12710,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     && not (exnc.HasMember g "Message" [])
                     && not (fspecs |> List.exists (fun rf -> rf.DisplayNameCore = "Message"))
                 then
-                    yield! GenPrintingMethod cenv eenv "get_Message" ilThisTy m
+                    yield! GenSprintfPrintingMethod cenv eenv "get_Message" ilThisTy m
             ]
 
         let interfaces =
