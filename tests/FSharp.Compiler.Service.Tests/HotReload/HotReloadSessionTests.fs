@@ -3,9 +3,15 @@
 namespace FSharp.Compiler.Service.Tests.HotReload
 
 open System
+open System.Collections.Generic
 open System.Collections.Immutable
 open System.IO
+open System.Reflection
+open System.Reflection.Emit
 open System.Reflection.Metadata
+open System.Reflection.Metadata.Ecma335
+open System.Reflection.PortableExecutable
+open System.Text
 open Xunit
 
 open FSharp.Compiler.CodeAnalysis
@@ -124,6 +130,20 @@ module HotReloadSessionTests =
             with _ ->
                 ()
 
+    let private withProjectDirReturning (testName: string) (action: string -> 'T) =
+        let projectDir =
+            Path.Combine(Path.GetTempPath(), testName, Guid.NewGuid().ToString("N"))
+
+        Directory.CreateDirectory(projectDir) |> ignore
+
+        try
+            action projectDir
+        finally
+            try
+                Directory.Delete(projectDir, true)
+            with _ ->
+                ()
+
     let private writeAndCompile (checker: FSharpChecker) (fsPath: string) (options: FSharpProjectOptions) (source: string) capture =
         File.WriteAllText(fsPath, source)
         checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
@@ -147,6 +167,357 @@ module HotReloadSessionTests =
         use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange bytes)
         let reader = provider.GetMetadataReader()
         Assert.True(reader.MethodDebugInformation.Count > 0, "Expected method debug information in portable PDB delta.")
+
+    type private G1LdstrOperand =
+        {
+            InstructionOffset: int
+            Token: int
+            Offset: int
+        }
+
+    type private G1UserStringEntry =
+        {
+            RelativeOffset: int
+            AbsoluteOffset: int
+            Value: string
+            Bytes: string
+        }
+
+    type private G1BaselineDecode =
+        {
+            UserStringHeapSize: int
+            UpdatedMethod: string
+            Ldstrs: G1LdstrOperand list
+            UserStrings: (int * string) list
+        }
+
+    type private G1DeltaDecode =
+        {
+            EncLog: (int * int) list
+            EncMap: int list
+            MethodRows: (int * string) list
+            UserStrings: G1UserStringEntry list
+            Ldstrs: G1LdstrOperand list
+            UserStringUpdates: (int * int * string) list
+        }
+
+    type private G1CaseDecode =
+        {
+            Label: string
+            UpdatedMethods: int list
+            Baseline: G1BaselineDecode
+            Delta: G1DeltaDecode
+        }
+
+    let private formatToken token = sprintf "0x%08X" token
+
+    let private opcodeOperandTypes =
+        lazy
+            let table = Dictionary<int, OperandType>()
+
+            for field in typeof<OpCodes>.GetFields(BindingFlags.Public ||| BindingFlags.Static) do
+                match field.GetValue null with
+                | :? OpCode as opCode ->
+                    let key = (int opCode.Value) &&& 0xFFFF
+                    table.[key] <- opCode.OperandType
+                | _ -> ()
+
+            table
+
+    let private findLdstrOperands (ilBytes: byte[]) =
+        let operands = ResizeArray<G1LdstrOperand>()
+        let mutable offset = 0
+
+        let advance count =
+            offset <- min ilBytes.Length (offset + count)
+
+        while offset < ilBytes.Length do
+            let instructionOffset = offset
+            let first = int ilBytes.[offset]
+            offset <- offset + 1
+
+            let opcode =
+                if first = 0xFE && offset < ilBytes.Length then
+                    let second = int ilBytes.[offset]
+                    offset <- offset + 1
+                    0xFE00 ||| second
+                else
+                    first
+
+            let operandType =
+                match opcodeOperandTypes.Value.TryGetValue opcode with
+                | true, operandType -> operandType
+                | _ -> OperandType.InlineNone
+
+            let operandOffset = offset
+
+            match operandType with
+            | OperandType.InlineNone -> ()
+            | OperandType.ShortInlineI
+            | OperandType.ShortInlineBrTarget
+            | OperandType.ShortInlineVar -> advance 1
+            | OperandType.InlineVar -> advance 2
+            | OperandType.InlineI
+            | OperandType.ShortInlineR
+            | OperandType.InlineBrTarget
+            | OperandType.InlineField
+            | OperandType.InlineMethod
+            | OperandType.InlineSig
+            | OperandType.InlineTok
+            | OperandType.InlineType -> advance 4
+            | OperandType.InlineI8
+            | OperandType.InlineR -> advance 8
+            | OperandType.InlineString ->
+                let token = BitConverter.ToInt32(ilBytes, operandOffset)
+                let offsetValue = token &&& 0x00FFFFFF
+                operands.Add(
+                    {
+                        InstructionOffset = instructionOffset
+                        Token = token
+                        Offset = offsetValue
+                    })
+
+                advance 4
+            | OperandType.InlineSwitch ->
+                if operandOffset + 4 <= ilBytes.Length then
+                    let count = BitConverter.ToInt32(ilBytes, operandOffset)
+                    advance (4 + count * 4)
+                else
+                    advance 4
+            | _ -> ()
+
+        operands |> Seq.toList
+
+    let private readCompressedUInt (bytes: byte[]) offset =
+        let b0 = int bytes.[offset]
+
+        if (b0 &&& 0x80) = 0 then
+            b0, 1
+        elif (b0 &&& 0xC0) = 0x80 then
+            ((b0 &&& 0x3F) <<< 8) ||| int bytes.[offset + 1], 2
+        else
+            ((b0 &&& 0x1F) <<< 24)
+            ||| (int bytes.[offset + 1] <<< 16)
+            ||| (int bytes.[offset + 2] <<< 8)
+            ||| int bytes.[offset + 3],
+            4
+
+    let private decodeUserStringHeapEntries baselineUserStringHeapSize (heapBytes: byte[]) =
+        let entries = ResizeArray<G1UserStringEntry>()
+        let mutable offset = 1
+
+        while offset < heapBytes.Length do
+            if heapBytes.[offset] = 0uy then
+                offset <- heapBytes.Length
+            else
+                let length, prefixLength = readCompressedUInt heapBytes offset
+                let textByteLength = max 0 (length - 1)
+                let textOffset = offset + prefixLength
+                let nextOffset = textOffset + length
+
+                if nextOffset <= heapBytes.Length then
+                    let value = Encoding.Unicode.GetString(heapBytes, textOffset, textByteLength)
+                    let encodedLength = prefixLength + length
+
+                    let encodedBytes =
+                        heapBytes.[offset .. offset + encodedLength - 1]
+                        |> Array.map (sprintf "%02X")
+                        |> String.concat " "
+
+                    entries.Add(
+                        {
+                            RelativeOffset = offset
+                            AbsoluteOffset = baselineUserStringHeapSize + offset
+                            Value = value
+                            Bytes = encodedBytes
+                        })
+
+                    offset <- offset + encodedLength
+                else
+                    offset <- heapBytes.Length
+
+        entries |> Seq.toList
+
+    let private tryGetMetadataStreamBytes streamName (metadata: byte[]) =
+        use stream = new MemoryStream(metadata, false)
+        use reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen = true)
+
+        let align4 () =
+            while stream.Position % 4L <> 0L do
+                reader.ReadByte() |> ignore
+
+        let readStreamName () =
+            let bytes = ResizeArray<byte>()
+            let mutable b = reader.ReadByte()
+
+            while b <> 0uy do
+                bytes.Add b
+                b <- reader.ReadByte()
+
+            align4 ()
+            Encoding.UTF8.GetString(bytes.ToArray())
+
+        try
+            let signature = reader.ReadUInt32()
+
+            if signature <> 0x424A5342u then
+                None
+            else
+                reader.ReadUInt16() |> ignore
+                reader.ReadUInt16() |> ignore
+                reader.ReadUInt32() |> ignore
+                let versionLength = int (reader.ReadUInt32())
+                reader.ReadBytes(versionLength) |> ignore
+                align4 ()
+                reader.ReadUInt16() |> ignore
+                let streamCount = int (reader.ReadUInt16())
+                let mutable found = None
+
+                for _ = 1 to streamCount do
+                    let offset = int (reader.ReadUInt32())
+                    let size = int (reader.ReadUInt32())
+                    let name = readStreamName ()
+
+                    if name = streamName && offset >= 0 && size >= 0 && offset + size <= metadata.Length then
+                        found <- Some(Array.sub metadata offset size)
+
+                found
+        with _ ->
+            None
+
+    let private methodDisplayName (reader: MetadataReader) (handle: MethodDefinitionHandle) =
+        let methodDef = reader.GetMethodDefinition handle
+        let declaringType = reader.GetTypeDefinition(methodDef.GetDeclaringType())
+        let ns = reader.GetString declaringType.Namespace
+        let typeName = reader.GetString declaringType.Name
+        let methodName = reader.GetString methodDef.Name
+
+        if String.IsNullOrEmpty ns then
+            $"{typeName}::{methodName}"
+        else
+            $"{ns}.{typeName}::{methodName}"
+
+    let private decodeBaselineMethod (assemblyBytes: byte[]) methodToken =
+        use stream = new MemoryStream(assemblyBytes, false)
+        use peReader = new PEReader(stream)
+        let reader = peReader.GetMetadataReader()
+        let userStringHeapSize = reader.GetHeapSize HeapIndex.UserString
+        let methodHandle = MetadataTokens.MethodDefinitionHandle(methodToken &&& 0x00FFFFFF)
+        let methodDef = reader.GetMethodDefinition methodHandle
+        let methodBody = peReader.GetMethodBody methodDef.RelativeVirtualAddress
+
+        let ldstrs =
+            methodBody.GetILBytes()
+            |> findLdstrOperands
+
+        let userStrings =
+            ldstrs
+            |> List.map (fun operand ->
+                operand.Offset,
+                reader.GetUserString(MetadataTokens.UserStringHandle operand.Offset))
+
+        {
+            UserStringHeapSize = userStringHeapSize
+            UpdatedMethod = methodDisplayName reader methodHandle
+            Ldstrs = ldstrs
+            UserStrings = userStrings
+        }
+
+    let private extractDeltaMethodIl (delta: FSharpHotReloadDelta) (methodInfo: FSharpAddedOrChangedMethodInfo) =
+        let headerOffset = methodInfo.CodeOffset
+        let first = delta.IL.[headerOffset]
+        let format = first &&& 0x03uy
+
+        if format = 0x02uy then
+            let codeSize = int (first >>> 2)
+            Array.sub delta.IL (headerOffset + 1) codeSize
+        elif format = 0x03uy then
+            let headerSize = int (delta.IL.[headerOffset + 1] >>> 4) * 4
+            let codeSize = BitConverter.ToInt32(delta.IL, headerOffset + 4)
+            Assert.Equal(methodInfo.CodeLength, codeSize)
+            Array.sub delta.IL (headerOffset + headerSize) codeSize
+        else
+            failwithf "Unsupported method body header format 0x%02X at delta IL offset %d" format headerOffset
+
+    let private decodeDelta baselineUserStringHeapSize (delta: FSharpHotReloadDelta) =
+        let methodInfo = Assert.Single(delta.AddedOrChangedMethods)
+
+        use provider =
+            MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange<byte> delta.Metadata)
+
+        let reader = provider.GetMetadataReader()
+
+        let encLog =
+            reader.GetEditAndContinueLogEntries()
+            |> Seq.map (fun entry -> MetadataTokens.GetToken entry.Handle, int entry.Operation)
+            |> Seq.toList
+
+        let encMap =
+            reader.GetEditAndContinueMapEntries()
+            |> Seq.map MetadataTokens.GetToken
+            |> Seq.toList
+
+        let methodRows =
+            reader.MethodDefinitions
+            |> Seq.map (fun handle -> MetadataTokens.GetToken(EntityHandle.op_Implicit handle), "<delta MethodDef row>")
+            |> Seq.toList
+
+        let userStringHeapBytes =
+            tryGetMetadataStreamBytes "#US" delta.Metadata
+            |> Option.defaultValue Array.empty
+
+        let methodIl = extractDeltaMethodIl delta methodInfo
+
+        {
+            EncLog = encLog
+            EncMap = encMap
+            MethodRows = methodRows
+            UserStrings = decodeUserStringHeapEntries baselineUserStringHeapSize userStringHeapBytes
+            Ldstrs = findLdstrOperands methodIl
+            UserStringUpdates = delta.UserStringUpdates |> List.map (fun struct (oldToken, newToken, value) -> oldToken, newToken, value)
+        }
+
+    let private formatLdstrs ldstrs =
+        ldstrs
+        |> List.map (fun operand ->
+            sprintf "il+0x%04X token=%s offset=%d" operand.InstructionOffset (formatToken operand.Token) operand.Offset)
+        |> String.concat "; "
+
+    let private printG1CaseDecode decode =
+        printfn "[g1] case=%s" decode.Label
+        printfn "[g1] updatedMethods=%s" (decode.UpdatedMethods |> List.map formatToken |> String.concat ", ")
+        printfn "[g1] baselineMethod=%s" decode.Baseline.UpdatedMethod
+        printfn "[g1] baselineUSSize=%d" decode.Baseline.UserStringHeapSize
+        printfn "[g1] baselineLdstr=%s" (formatLdstrs decode.Baseline.Ldstrs)
+
+        for offset, value in decode.Baseline.UserStrings do
+            printfn "[g1] baselineUserString offset=%d value=%A" offset value
+
+        printfn
+            "[g1] deltaEncLog=%s"
+            (decode.Delta.EncLog
+             |> List.map (fun (token, op) -> sprintf "(%s, op=%d)" (formatToken token) op)
+             |> String.concat ", ")
+
+        printfn
+            "[g1] deltaEncMap=%s"
+            (decode.Delta.EncMap |> List.map formatToken |> String.concat ", ")
+
+        for token, name in decode.Delta.MethodRows do
+            printfn "[g1] deltaMethodRow token=%s name=%s" (formatToken token) name
+
+        for entry in decode.Delta.UserStrings do
+            printfn
+                "[g1] deltaUserString relative=%d absolute=%d value=%A bytes=%s"
+                entry.RelativeOffset
+                entry.AbsoluteOffset
+                entry.Value
+                entry.Bytes
+
+        printfn "[g1] deltaLdstr=%s" (formatLdstrs decode.Delta.Ldstrs)
+
+        for oldToken, newToken, value in decode.Delta.UserStringUpdates do
+            printfn "[g1] userStringUpdate original=%s new=%s value=%A" (formatToken oldToken) (formatToken newToken) value
 
     let private checkProjectOrFail (checker: FSharpChecker) (options: FSharpProjectOptions) =
         let results =
@@ -178,6 +549,46 @@ module HotReloadSessionTests =
         match session.EmitDelta(snapshot) |> Async.RunImmediate with
         | Ok delta -> delta
         | Error error -> failwithf "EmitDelta failed: %A" error
+
+    let private runG1SessionCase (label: string) (baselineSource: string) (editedSource: string) =
+        withProjectDirReturning $"fcs-hotreload-g1-{label}" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+            let checker = createChecker ()
+            let trimmedBaselineSource = baselineSource.TrimStart()
+            let trimmedEditedSource = editedSource.TrimStart()
+
+            File.WriteAllText(fsPath, trimmedBaselineSource)
+            let options = prepareProjectOptions checker fsPath dllPath trimmedBaselineSource []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+            let baselineBytes = File.ReadAllBytes dllPath
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            let delta =
+                withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                    File.WriteAllText(fsPath, trimmedEditedSource)
+                    checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                    emitOrFail session (createProjectSnapshot options))
+
+            Assert.Equal(1, delta.UpdatedMethods.Length)
+            let updatedMethod = Assert.Single(delta.UpdatedMethods)
+            let baseline = decodeBaselineMethod baselineBytes updatedMethod
+            let deltaDecode = decodeDelta baseline.UserStringHeapSize delta
+
+            let decode =
+                {
+                    Label = label
+                    UpdatedMethods = delta.UpdatedMethods
+                    Baseline = baseline
+                    Delta = deltaDecode
+                }
+
+            printG1CaseDecode decode
+            decode)
 
     let private projectViewOrFail (session: FSharpHotReloadSession) snapshot =
         match session.TryGetProjectView(snapshot) with
@@ -765,6 +1176,56 @@ type Calculator<'T>() =
     /// if the in-process compile wrote a FRESH sibling PDB - the stale external-build PDB still
     /// carries the unshifted lines, so line-shift detection would stay silent); and, with the
     /// flag off (the default), the existing stale-build-output refusal staying unaffected.
+    [<Fact>]
+    let ``G1 same-line Giraffe-shaped handler string edit decodes delta user string operand`` () =
+        let source literal =
+            $"""
+module Sample.G1
+
+type HttpFunc = string -> string
+
+let handler1 (_: HttpFunc) (ctx: string) = "{literal}"
+
+let endpointA: (HttpFunc -> string -> string) = fun (_: HttpFunc) (ctx: string) -> "Endpoint A"
+let endpointB: (HttpFunc -> string -> string) = fun (_: HttpFunc) (ctx: string) -> "Endpoint B"
+let endpointC: (HttpFunc -> string -> string) = fun (_: HttpFunc) (ctx: string) -> "Endpoint C"
+"""
+
+        let decode =
+            runG1SessionCase
+                "giraffe-handler"
+                (source "Hello World")
+                (source "Hello World EDITED")
+
+        Assert.Equal(1, decode.UpdatedMethods.Length)
+        Assert.Single(decode.Baseline.Ldstrs) |> ignore
+        Assert.Single(decode.Delta.Ldstrs) |> ignore
+        Assert.Contains(decode.Baseline.UserStrings, fun (_, value) -> value = "Hello World")
+        Assert.Contains(decode.Delta.UserStrings, fun entry -> entry.Value = "Hello World EDITED")
+
+    [<Fact>]
+    let ``G1 simple module string edit decodes working contrast delta user string operand`` () =
+        let source generation =
+            $"""
+module SessionLib
+
+let libValue () = "lib generation {generation}"
+
+let probe () = libValue ()
+"""
+
+        let decode =
+            runG1SessionCase
+                "simple-module"
+                (source 0)
+                (source 1)
+
+        Assert.Equal(1, decode.UpdatedMethods.Length)
+        Assert.Single(decode.Baseline.Ldstrs) |> ignore
+        Assert.Single(decode.Delta.Ldstrs) |> ignore
+        Assert.Contains(decode.Baseline.UserStrings, fun (_, value) -> value = "lib generation 0")
+        Assert.Contains(decode.Delta.UserStrings, fun entry -> entry.Value = "lib generation 1")
+
     [<Fact>]
     let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =
         withProjectDir "fcs-hotreload-session-inprocess-compile" (fun projectDir ->

@@ -556,7 +556,39 @@ type internal FSharpHotReloadService
                                                         pendingOutputFingerprints[projectKey] <- outputFingerprint)
                                                 | None -> ()
 
-                                                return Result.Ok(toPublicDelta result.Delta)
+                                                let publicDelta = toPublicDelta result.Delta
+
+                                                // Diagnostic side channel: FSHARP_HOTRELOAD_DUMP_DELTAS=<dir> persists
+                                                // each emitted delta's blobs so a live session's output can be decoded
+                                                // offline (metadata/IL/PDB plus the updated tokens). Best-effort only.
+                                                match Environment.GetEnvironmentVariable "FSHARP_HOTRELOAD_DUMP_DELTAS" with
+                                                | null
+                                                | "" -> ()
+                                                | dumpDir ->
+                                                    try
+                                                        Directory.CreateDirectory dumpDir |> ignore
+
+                                                        let timestamp = DateTime.UtcNow.ToString "yyyyMMdd-HHmmss-fff"
+
+                                                        let stem = Path.Combine(dumpDir, $"delta-{timestamp}")
+
+                                                        File.WriteAllBytes(stem + ".dmeta", publicDelta.Metadata)
+                                                        File.WriteAllBytes(stem + ".dil", publicDelta.IL)
+
+                                                        publicDelta.Pdb
+                                                        |> Option.iter (fun pdb -> File.WriteAllBytes(stem + ".dpdb", pdb))
+
+                                                        let tokens =
+                                                            [
+                                                                yield! publicDelta.UpdatedTypes |> List.map (sprintf "type 0x%08X")
+                                                                yield! publicDelta.UpdatedMethods |> List.map (sprintf "method 0x%08X")
+                                                            ]
+
+                                                        File.WriteAllLines(stem + ".tokens.txt", tokens)
+                                                    with _ ->
+                                                        ()
+
+                                                return Result.Ok publicDelta
                                             | Error error -> return Result.Error(mapHotReloadError error)
             finally
                 match totalStopwatch with
