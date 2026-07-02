@@ -1,11 +1,9 @@
-// #Conformance #TypesAndModules #Unions 
 // Anonymous Union Types
 // Pattern matching on anonymous union types with subtype inclusion
-//<Expects status="success"></Expects>
 
-let prettyPrint2 (x: (int8|int16|int64|string)) =
+let decide (x: (int8|int16|int64|string)): int =
     match x with
-    | :? System.ValueType as y -> printfn "value type"
-    | :? string as y -> printfn "string"
+    | :? System.ValueType as y -> 0
+    | :? string as y -> 1
 
-prettyPrint2 42y
+if not (decide 42y = 0) then failwith "Test failed"

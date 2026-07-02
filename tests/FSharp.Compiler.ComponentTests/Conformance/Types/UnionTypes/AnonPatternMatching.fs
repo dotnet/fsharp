@@ -1,14 +1,12 @@
-// #Conformance #TypesAndModules #Unions 
 // Anonymous Union Types
 // Pattern matching on anonymous union types
-//<Expects status="success"></Expects>
 
-let prettyPrint (x: (int8|int16|int64|string)) =
+let decide (x: (int8|int16|int64|string)): int =
     match x with
-    | :? int8 as y -> printfn "int8: %d" y
-    | :? int16 as y -> printfn "int16: %d" y
-    | :? int64 as y -> printfn "int64: %d" y
-    | :? string as y -> printfn "string: %s" y
+    | :? int8 -> 1
+    | :? int16 -> 2
+    | :? int64 -> 3
+    | :? string -> 4
 
-prettyPrint 42y
-prettyPrint "hello"
+if not (decide 42y = 1) then failwith "Test failed"
+if not (decide "hello" = 4) then failwith "Test failed"

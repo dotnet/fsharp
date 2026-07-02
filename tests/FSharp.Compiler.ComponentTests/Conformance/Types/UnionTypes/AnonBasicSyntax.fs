@@ -1,7 +1,5 @@
-// #Conformance #TypesAndModules #Unions 
 // Anonymous Union Types
 // Basic syntax of anonymous union types
-//<Expects status="success"></Expects>
 
 let x: (int|string) = 42
 let y: (int|string) = "hello"

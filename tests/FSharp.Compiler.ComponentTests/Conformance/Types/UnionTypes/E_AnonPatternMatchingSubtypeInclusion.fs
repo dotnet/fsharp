@@ -1,4 +1,3 @@
-// #Conformance #TypesAndModules #Unions 
 // Anonymous Union Types
 // Non-exhaustive pattern matching on anonymous union types with subtype inclusion
 

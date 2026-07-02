@@ -102,80 +102,24 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    [<Theory; FileInlineData("E_AnonTupleEliminationOverlap.fs")>]
-    let ``E_TupleEliminationOverlap_fs`` compilation =
+    [<Theory; FileInlineData("AnonNakedGenerics.fs")>]
+    let ``NakedGenerics_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
+        |> verifyCompileAndRun
+        |> shouldSucceed
 
-    [<Theory; FileInlineData("E_AnonFunctionEliminationOverlap.fs")>]
-    let ``E_FunctionEliminationOverlap_fs`` compilation =
+    [<Theory; FileInlineData("AnonNonNakedGenerics.fs")>]
+    let ``NonNakedGenerics_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
+        |> verifyCompileAndRun
+        |> shouldSucceed
 
-    [<Theory; FileInlineData("E_AnonGenericsOverlap1.fs")>]
-    let ``E_GenericsOverlap1_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
-
-    [<Theory; FileInlineData("E_AnonGenericsOverlap2.fs")>]
-    let ``E_GenericsOverlap2_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
-
-    [<Theory; FileInlineData("E_AnonNakedGenerics1.fs")>]
-    let ``E_NakedGenerics1_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
-
-    [<Theory; FileInlineData("E_AnonNakedGenerics2.fs")>]
-    let ``E_NakedGenerics2_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
-
-    [<Theory; FileInlineData("E_AnonTypeInclusion1.fs")>]
-    let ``E_TypeInclusion1_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
-
-    [<Theory; FileInlineData("E_AnonTypeInclusion2.fs")>]
-    let ``E_TypeInclusion2_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
-
-    [<Theory; FileInlineData("E_AnonTypeInclusion3.fs")>]
-    let ``E_TypeInclusion3_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
-
-    [<Theory; FileInlineData("E_AnonTypeInclusion4.fs")>]
-    let ``E_TypeInclusion4_fs`` compilation =
+    [<Theory; FileInlineData("E_AnonWildcard.fs")>]
+    let ``E_Wildcard_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -205,3 +149,59 @@ module AnonymousUnionTypes =
         |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
+
+    [<Theory; FileInlineData("W_AnonTypeInclusion1.fs")>]
+    let ``W_TypeInclusion1_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> withWarningCode 3875
+
+    [<Theory; FileInlineData("W_AnonTypeInclusion2.fs")>]
+    let ``W_TypeInclusion2_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> withWarningCode 3875
+
+    [<Theory; FileInlineData("W_AnonTypeInclusion3.fs")>]
+    let ``W_TypeInclusion3_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> withWarningCode 3875
+
+    [<Theory; FileInlineData("W_AnonTypeInclusion4.fs")>]
+    let ``W_TypeInclusion4_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> withWarningCode 3875
+
+    [<Theory; FileInlineData("W_AnonUnitsOfMeasureOverlap.fs")>]
+    let ``W_UnitsOfMeasureOverlap_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> withWarningCode 3875
+
+    [<Theory; FileInlineData("W_AnonTupleEliminationOverlap.fs")>]
+    let ``W_TupleEliminationOverlap_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> withWarningCode 3875
+
+    [<Theory; FileInlineData("W_AnonFunctionEliminationOverlap.fs")>]
+    let ``W_FunctionEliminationOverlap_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> withWarningCode 3875

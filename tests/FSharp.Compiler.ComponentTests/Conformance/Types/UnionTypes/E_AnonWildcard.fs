@@ -1,4 +1,3 @@
-// #Conformance #TypesAndModules #Unions 
 // Anonymous Union Types
 // Wildcards are not allowed in anonymous union types
 
