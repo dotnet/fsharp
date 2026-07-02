@@ -982,6 +982,7 @@ module internal TestHelpers =
               IlxGenEnvironment = None
               PortablePdb = None
               SynthesizedNameSnapshot = Map.empty
+              SynthesizedTypeShapes = Map.empty
               MetadataHandles =
                 { MethodHandles = Map.empty
                   ParameterHandles = Map.empty

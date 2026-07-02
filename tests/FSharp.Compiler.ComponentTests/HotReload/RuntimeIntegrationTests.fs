@@ -4850,6 +4850,271 @@ let probe () = greetingPrefix + "|" + Greeter.Message()
             try checker.InvalidateAll() with _ -> ()
             try Directory.Delete(projectDir, true) with _ -> ()
 
+    let private runSynthesizedAlignmentScenario
+        (testLabel: string)
+        (diskStartedSession: bool)
+        (useHotReloadDeltas: bool)
+        (baselineSource: string)
+        (updatedSource: string)
+        (handleResult: FSharpEmitBaseline -> Result<FSharpHotReloadDelta, FSharpHotReloadError> -> unit)
+        =
+        let checker =
+            FSharpChecker.Create(
+                keepAssemblyContents = true,
+                keepAllBackgroundResolutions = false,
+                keepAllBackgroundSymbolUses = false,
+                enableBackgroundItemKeyStoreAndSemanticClassification = false,
+                enablePartialTypeChecking = false,
+                captureIdentifiersWhenParsing = false
+            )
+
+        let projectDir =
+            Path.Combine(Path.GetTempPath(), "fsharp-hotreload-synth-align", System.Guid.NewGuid().ToString("N"))
+
+        Directory.CreateDirectory(projectDir) |> ignore
+        let fsPath = Path.Combine(projectDir, "Library.fs")
+        let dllPath = Path.Combine(projectDir, "Library.dll")
+
+        try
+            File.WriteAllText(fsPath, baselineSource)
+
+            let projectOptions, _ =
+                checker.GetProjectOptionsFromScript(
+                    fsPath,
+                    SourceText.ofString baselineSource,
+                    assumeDotNetFramework = false,
+                    useSdkRefs = true,
+                    useFsiAuxLib = false
+                )
+                |> Async.RunImmediate
+
+            let projectOptions =
+                let hotReloadOptions =
+                    if useHotReloadDeltas then
+                        [| "--test:HotReloadDeltas" |]
+                    else
+                        [||]
+
+                let otherOptions =
+                    projectOptions.OtherOptions
+                    |> Array.append
+                        [| "--target:library"
+                           "--langversion:preview"
+                           "--optimize-"
+                           "--debug:portable"
+                           "--deterministic"
+                           $"--out:{dllPath}" |]
+                    |> Array.append hotReloadOptions
+
+                { projectOptions with
+                    SourceFiles = [| fsPath |]
+                    OtherOptions = otherOptions }
+
+            let compileOnce label options =
+                let diagnostics, _ =
+                    checker.Compile(Array.concat [ [| "fsc.exe" |]; options.OtherOptions; options.SourceFiles ])
+                    |> Async.RunImmediate
+
+                let errors =
+                    diagnostics
+                    |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
+                if errors.Length > 0 then
+                    failwithf "[%s] %s compilation failed: %A" testLabel label (errors |> Array.map (fun d -> d.Message))
+
+            checker.InvalidateAll()
+            compileOnce "baseline" projectOptions
+
+            if diskStartedSession then
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+
+            let capabilities =
+                [ "Baseline"
+                  "AddMethodToExistingType"
+                  "AddStaticFieldToExistingType"
+                  "AddInstanceFieldToExistingType"
+                  "NewTypeDefinition" ]
+
+            use session = checker.CreateHotReloadSession(capabilities = capabilities)
+
+            match session.AddProject(snapshotOf projectOptions) |> Async.RunImmediate with
+            | Error error -> failwithf "[%s] failed to start hot reload session: %A" testLabel error
+            | Ok () -> ()
+
+            let baseline =
+                match session.TryGetProjectView(snapshotOf projectOptions) with
+                | ValueSome view -> view.Baseline
+                | ValueNone -> failwithf "[%s] expected an active hot reload project view." testLabel
+
+            File.WriteAllText(fsPath, updatedSource)
+            checker.NotifyFileChanged(fsPath, projectOptions) |> Async.RunImmediate
+
+            let updatedOptions =
+                { projectOptions with
+                    OtherOptions =
+                        projectOptions.OtherOptions
+                        |> Array.filter (fun opt ->
+                            not (opt.StartsWith("--test:HotReloadDeltas", StringComparison.OrdinalIgnoreCase))) }
+
+            compileOnce "updated" updatedOptions
+
+            session.EmitDelta(snapshotOf projectOptions)
+            |> Async.RunImmediate
+            |> handleResult baseline
+        finally
+            try checker.InvalidateAll() with _ -> ()
+            try Directory.Delete(projectDir, true) with _ -> ()
+
+    let private assertSingleUserMethodUpdate
+        testLabel
+        methodName
+        (baseline: FSharpEmitBaseline)
+        (result: Result<FSharpHotReloadDelta, FSharpHotReloadError>)
+        =
+        match result with
+        | Error error -> failwithf "[%s] EmitDelta failed: %A" testLabel error
+        | Ok delta ->
+            let userMethodTokenByToken =
+                baseline.MethodTokens
+                |> Map.toSeq
+                |> Seq.choose (fun (key, token) ->
+                    if key.DeclaringType.IndexOf("@", StringComparison.Ordinal) < 0 then
+                        Some(token, key)
+                    else
+                        None)
+                |> Map.ofSeq
+
+            let expectedTokens =
+                baseline.MethodTokens
+                |> Map.toList
+                |> List.choose (fun (key, token) ->
+                    if key.Name = methodName && key.DeclaringType.IndexOf("@", StringComparison.Ordinal) < 0 then
+                        Some token
+                    else
+                        None)
+
+            let expectedToken = Assert.Single expectedTokens
+            let userUpdatedMethods =
+                delta.AddedOrChangedMethods
+                |> List.choose (fun methodInfo ->
+                    userMethodTokenByToken
+                    |> Map.tryFind methodInfo.MethodToken
+                    |> Option.map (fun key -> methodInfo, key))
+
+            let methodInfo, methodKey = Assert.Single userUpdatedMethods
+
+            Assert.Equal(expectedToken, methodInfo.MethodToken)
+            Assert.Equal(methodName, methodKey.Name)
+
+    let private assertUnsupportedEdit testLabel (result: Result<FSharpHotReloadDelta, FSharpHotReloadError>) =
+        match result with
+        | Ok _ -> failwithf "[%s] expected EmitDelta to fail, but it succeeded." testLabel
+        | Error (FSharpHotReloadError.UnsupportedEdit edits) ->
+            let message = edits |> List.map (fun edit -> $"{edit.Id}: {edit.Message}") |> String.concat Environment.NewLine
+            Assert.DoesNotContain("DeltaEmissionFailed", message)
+        | Error other -> failwithf "[%s] expected UnsupportedEdit, got %A" testLabel other
+
+    let private positionalPipeBaselineSource =
+        """
+module Sample.PositionalPipes
+
+let transform (input: int list) =
+    let bias = 1
+    input
+    |> List.map (fun value -> value + bias)
+    |> List.filter (fun value -> value > 1)
+    |> List.map (fun value -> value * 2)
+
+let probe () = transform [ 1; 2; 3 ] |> List.sum
+"""
+
+    let private positionalPipeLineShiftUpdate =
+        positionalPipeBaselineSource.Replace(
+            "let transform (input: int list) =\n    let bias = 1\n    input",
+            "let transform (input: int list) =\n    // inserted line\n    let bias = 2\n    input")
+
+    let private positionalEndpointBaselineSource =
+        """
+module Sample.PositionalEndpoints
+
+let handler input =
+    input + 1
+
+let endpoints : (int -> int) list =
+    [
+        fun value -> handler value
+        fun value -> handler (value + 1)
+        fun value -> handler (value + 2)
+    ]
+
+let probe input = endpoints |> List.sumBy (fun endpoint -> endpoint input)
+"""
+
+    let private positionalEndpointLineShiftUpdate =
+        positionalEndpointBaselineSource.Replace(
+            "let handler input =\n    input + 1",
+            "let handler input =\n    // inserted line\n    input + 2")
+
+    [<Fact>]
+    let ``EmitDelta aligns line-shifted pipe closures positionally in-process`` () =
+        runSynthesizedAlignmentScenario
+            "pipe-line-shift-in-process"
+            false
+            true
+            positionalPipeBaselineSource
+            positionalPipeLineShiftUpdate
+            (assertSingleUserMethodUpdate "pipe-line-shift-in-process" "transform")
+
+    [<Fact>]
+    let ``Disk-started EmitDelta aligns line-shifted pipe closures positionally`` () =
+        runSynthesizedAlignmentScenario
+            "pipe-line-shift-disk-start"
+            true
+            true
+            positionalPipeBaselineSource
+            positionalPipeLineShiftUpdate
+            (assertSingleUserMethodUpdate "pipe-line-shift-disk-start" "transform")
+
+    [<Fact>]
+    let ``EmitDelta aligns ordinal-shifted value-list closures positionally`` () =
+        runSynthesizedAlignmentScenario
+            "value-list-line-shift"
+            false
+            false
+            positionalEndpointBaselineSource
+            positionalEndpointLineShiftUpdate
+            (assertSingleUserMethodUpdate "value-list-line-shift" "handler")
+
+    [<Fact>]
+    let ``EmitDelta rejects positional pipe closure count mismatch`` () =
+        let updatedSource =
+            positionalPipeBaselineSource.Replace(
+                "input\n    |> List.map (fun value -> value + bias)",
+                "input\n    |> List.map (fun value -> value - 1)\n    |> List.map (fun value -> value + bias)")
+
+        runSynthesizedAlignmentScenario
+            "pipe-count-mismatch"
+            true
+            false
+            positionalPipeBaselineSource
+            updatedSource
+            (fun _ result -> assertUnsupportedEdit "pipe-count-mismatch" result)
+
+    [<Fact>]
+    let ``EmitDelta rejects positional value-list closure count mismatch`` () =
+        let updatedSource =
+            positionalEndpointBaselineSource.Replace(
+                "        fun value -> handler (value + 2)\n    ]",
+                "        fun value -> handler (value + 2)\n        fun value -> handler (value + 3)\n    ]")
+
+        runSynthesizedAlignmentScenario
+            "value-list-count-mismatch"
+            false
+            false
+            positionalEndpointBaselineSource
+            updatedSource
+            (fun _ result -> assertUnsupportedEdit "value-list-count-mismatch" result)
+
     let private taskStableResumeBaselineSource =
         """
 namespace Sample

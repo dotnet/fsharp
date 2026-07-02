@@ -5,12 +5,27 @@ open Xunit
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.GeneratedNames
+open FSharp.Compiler.HotReloadBaseline
+open FSharp.Compiler.IlxDeltaEmitter
 open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.Text
 
 module GeneratedNamesTests =
 
     let zeroRange = Range.range0
+
+    let private expectPositionalName input expectedName expectedOrdinal =
+        match tryNormalizeSynthesizedTypeNameForPositionalPairing input with
+        | Some actual ->
+            Assert.Equal(expectedName, actual.NormalizedBasicName)
+            Assert.Equal<int list>(expectedOrdinal, actual.Ordinal)
+        | None -> failwithf "Expected '%s' to normalize for positional pairing." input
+
+    let private expectNoPositionalName input =
+        Assert.True(
+            Option.isNone (tryNormalizeSynthesizedTypeNameForPositionalPairing input),
+            sprintf "Expected '%s' not to normalize for positional pairing." input
+        )
 
     [<Fact>]
     let ``NiceNameGenerator without map uses legacy suffix`` () =
@@ -111,3 +126,44 @@ module GeneratedNamesTests =
         Assert.Equal(1, first)
         Assert.Equal(2, second)
         Assert.Equal(1, third)
+
+    [<Fact>]
+    let ``positional synthesized name normalization recognizes pipe and ordinal labels`` () =
+        expectPositionalName "Pipe #1 input at line 28@28" "Pipe #1 input" [ 28; 0 ]
+        expectPositionalName "Pipe #1 stage #2 at line 28@28" "Pipe #1 stage #2" [ 28; 0 ]
+        expectPositionalName "Pipe #1 stage #2 at line 28" "Pipe #1 stage #2" [ 28; 0 ]
+        expectPositionalName "endpoints@hotreload" "endpoints" [ 0 ]
+        expectPositionalName "endpoints@hotreload-2" "endpoints" [ 2 ]
+        expectPositionalName "endpoints@42-1" "endpoints" [ 42; 1 ]
+
+    [<Fact>]
+    let ``positional synthesized name normalization rejects unrelated generated-looking names`` () =
+        expectNoPositionalName ""
+        expectNoPositionalName "not generated"
+        expectNoPositionalName "Pipe #1 stage #2 line 28@28"
+        expectNoPositionalName "Pipe #1 stage #2 at line 28@29"
+        expectNoPositionalName "endpoints@hotreload#g0_o0"
+
+    [<Fact>]
+    let ``synthesized type shape guard compares structural surface`` () =
+        let baselineShape =
+            {
+                GenericArity = 0
+                BaseType = Some "class Microsoft.FSharp.Core.FSharpFunc`2"
+                InterfaceTypes = [ "class System.IDisposable" ]
+                FieldTypeNames = [ "class System.String"; "valuetype System.Int32" ]
+                MethodNameAndArities = [ ".ctor", 0; "Invoke", 0 ]
+            }
+
+        Assert.True(Option.isNone (tryFindSynthesizedTypeShapeMismatch baselineShape baselineShape))
+
+        let expectMismatch fragment freshShape =
+            match tryFindSynthesizedTypeShapeMismatch baselineShape freshShape with
+            | Some message -> Assert.Contains(fragment, message)
+            | None -> failwithf "Expected shape mismatch containing '%s'." fragment
+
+        expectMismatch "generic arity" { baselineShape with GenericArity = 1 }
+        expectMismatch "base type" { baselineShape with BaseType = Some "class System.Object" }
+        expectMismatch "interface set" { baselineShape with InterfaceTypes = [] }
+        expectMismatch "field type multiset" { baselineShape with FieldTypeNames = [ "class System.String" ] }
+        expectMismatch "method set" { baselineShape with MethodNameAndArities = [ ".ctor", 0 ] }

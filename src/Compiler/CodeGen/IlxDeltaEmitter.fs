@@ -10,6 +10,7 @@ open System.Reflection.Metadata.Ecma335
 open System.Reflection
 open System.Reflection.Emit
 open System.Reflection.PortableExecutable
+open System.Text.RegularExpressions
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
@@ -274,6 +275,157 @@ let private traceSynthesizedMappings =
 let private traceMethodUpdates = traceFlag "FSHARP_HOTRELOAD_TRACE_METHODS"
 let private traceMetadata = traceFlag "FSHARP_HOTRELOAD_TRACE_METADATA"
 let private traceHeapOffsets = traceFlag "FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS"
+
+type internal SynthesizedPositionalName =
+    {
+        NormalizedBasicName: string
+        Ordinal: int list
+    }
+
+type private PositionalTypeInfo =
+    {
+        FullName: string
+        EnclosingFullName: string
+        NormalizedBasicName: string
+        Ordinal: int list
+        Shape: SynthesizedTypeShape
+    }
+
+let private debugPipeNameRegex =
+    lazy Regex(@"^Pipe #[1-9][0-9]* (?:input|stage #[1-9][0-9]*) at line ([1-9][0-9]*)$", RegexOptions.CultureInvariant)
+
+let private tryParseNonNegativeInt (text: string) =
+    match Int32.TryParse text with
+    | true, value when value >= 0 -> Some value
+    | _ -> None
+
+let private tryParsePositiveInt (text: string) =
+    match Int32.TryParse text with
+    | true, value when value > 0 -> Some value
+    | _ -> None
+
+let private tryParseLineOrdinalSuffix (suffix: string) =
+    let dashIndex = suffix.IndexOf('-')
+
+    if dashIndex < 0 then
+        tryParsePositiveInt suffix |> Option.map (fun line -> line, 0)
+    elif dashIndex > 0 && dashIndex < suffix.Length - 1 then
+        match tryParsePositiveInt (suffix.Substring(0, dashIndex)), tryParseNonNegativeInt (suffix.Substring(dashIndex + 1)) with
+        | Some line, Some ordinal -> Some(line, ordinal)
+        | _ -> None
+    else
+        None
+
+let private tryNormalizeDebugPipeName (name: string) =
+    let matchResult = debugPipeNameRegex.Value.Match name
+
+    if matchResult.Success then
+        let line = Int32.Parse matchResult.Groups[1].Value
+        let marker = " at line "
+        let markerIndex = name.LastIndexOf(marker, StringComparison.Ordinal)
+
+        if markerIndex > 0 then
+            Some
+                {
+                    NormalizedBasicName = name.Substring(0, markerIndex)
+                    Ordinal = [ line; 0 ]
+                }
+        else
+            None
+    else
+        None
+
+let private tryNormalizeHotReloadOrdinalName (name: string) =
+    let marker = "@hotreload"
+    let markerIndex = name.LastIndexOf(marker, StringComparison.Ordinal)
+
+    if markerIndex <= 0 then
+        None
+    else
+        let suffixStart = markerIndex + marker.Length
+        let suffix = name.Substring suffixStart
+        let baseName = name.Substring(0, markerIndex)
+
+        if
+            String.IsNullOrWhiteSpace baseName
+            || baseName.IndexOf("@", StringComparison.Ordinal) >= 0
+        then
+            None
+        else
+            let ordinalOpt =
+                if suffix = "" then
+                    Some 0
+                elif suffix.StartsWith("-", StringComparison.Ordinal) then
+                    tryParsePositiveInt (suffix.Substring 1)
+                else
+                    None
+
+            ordinalOpt
+            |> Option.map (fun ordinal ->
+                {
+                    NormalizedBasicName = baseName
+                    Ordinal = [ ordinal ]
+                })
+
+let private tryNormalizeLineOrdinalName (name: string) =
+    let atIndex = name.LastIndexOf('@')
+
+    if atIndex <= 0 || atIndex = name.Length - 1 then
+        None
+    else
+        let baseName = name.Substring(0, atIndex)
+        let suffix = name.Substring(atIndex + 1)
+
+        match tryParseLineOrdinalSuffix suffix with
+        | None -> None
+        | Some(line, ordinal) ->
+            match tryNormalizeDebugPipeName baseName with
+            | Some pipeName ->
+                match pipeName.Ordinal with
+                | pipeLine :: _ when pipeLine = line ->
+                    Some
+                        { pipeName with
+                            Ordinal = [ line; ordinal ]
+                        }
+                | _ -> None
+            | None ->
+                if
+                    String.IsNullOrWhiteSpace baseName
+                    || baseName.IndexOf("@", StringComparison.Ordinal) >= 0
+                    || baseName.StartsWith("Pipe #", StringComparison.Ordinal)
+                then
+                    None
+                else
+                    Some
+                        {
+                            NormalizedBasicName = baseName
+                            Ordinal = [ line; ordinal ]
+                        }
+
+let internal tryNormalizeSynthesizedTypeNameForPositionalPairing (name: string) =
+    if String.IsNullOrWhiteSpace name then
+        None
+    else
+        match tryNormalizeHotReloadOrdinalName name with
+        | Some normalized -> Some normalized
+        | None ->
+            match tryNormalizeLineOrdinalName name with
+            | Some normalized -> Some normalized
+            | None -> tryNormalizeDebugPipeName name
+
+let internal tryFindSynthesizedTypeShapeMismatch (baseline: SynthesizedTypeShape) (fresh: SynthesizedTypeShape) =
+    if baseline.GenericArity <> fresh.GenericArity then
+        Some($"generic arity changed baseline={baseline.GenericArity} fresh={fresh.GenericArity}")
+    elif baseline.BaseType <> fresh.BaseType then
+        Some($"base type changed baseline={baseline.BaseType} fresh={fresh.BaseType}")
+    elif baseline.InterfaceTypes <> fresh.InterfaceTypes then
+        Some($"interface set changed baseline={baseline.InterfaceTypes} fresh={fresh.InterfaceTypes}")
+    elif baseline.FieldTypeNames <> fresh.FieldTypeNames then
+        Some($"field type multiset changed baseline={baseline.FieldTypeNames} fresh={fresh.FieldTypeNames}")
+    elif baseline.MethodNameAndArities <> fresh.MethodNameAndArities then
+        Some($"method set changed baseline={baseline.MethodNameAndArities} fresh={fresh.MethodNameAndArities}")
+    else
+        None
 
 /// Deduplicates method keys while preserving order
 let private dedupeMethodKeys (keys: MethodDefinitionKey list) =
@@ -670,6 +822,7 @@ let private buildUpdatedBaseline
     (addedPropertyDeltaTokens: Dictionary<PropertyDefinitionKey, int>)
     (addedEventDeltaTokens: Dictionary<EventDefinitionKey, int>)
     (addedTypeDeltaTokens: Dictionary<string, int>)
+    (addedTypeShapes: Dictionary<string, SynthesizedTypeShape>)
     =
     let addPropertyMapEntry (entries: Map<string, int>) (row: PropertyMapRowInfo) =
         if row.IsAdded then
@@ -741,6 +894,10 @@ let private buildUpdatedBaseline
         addedTypeDeltaTokens
         |> Seq.fold (fun acc (KeyValue(fullName, token)) -> acc |> Map.add fullName token) updatedBaselineCore.TypeTokens
 
+    let updatedSynthesizedTypeShapes =
+        addedTypeShapes
+        |> Seq.fold (fun acc (KeyValue(fullName, shape)) -> acc |> Map.add fullName shape) updatedBaselineCore.SynthesizedTypeShapes
+
     // Chain delta-appended MemberRef rows (already in baseline coordinates) so the next
     // generation's content-validated passthrough can recognize and reuse them.
     let updatedMemberReferenceRows =
@@ -784,6 +941,7 @@ let private buildUpdatedBaseline
 
     { updatedBaselineCore with
         TypeTokens = updatedTypeTokenMap
+        SynthesizedTypeShapes = updatedSynthesizedTypeShapes
         MemberReferenceRows = updatedMemberReferenceRows
         TypeSpecSignatures = updatedTypeSpecSignatures
         CustomAttributeRows = updatedCustomAttributeRows
@@ -2619,6 +2777,7 @@ let private finalizeDeltaArtifacts
     (addedPropertyDeltaTokens: Dictionary<PropertyDefinitionKey, int>)
     (addedEventDeltaTokens: Dictionary<EventDefinitionKey, int>)
     (addedTypeDeltaTokens: Dictionary<string, int>)
+    (addedTypeShapes: Dictionary<string, SynthesizedTypeShape>)
     =
     let addedOrChangedMethods = buildAddedOrChangedMethods streams.MethodBodies
 
@@ -2683,6 +2842,7 @@ let private finalizeDeltaArtifacts
             addedPropertyDeltaTokens
             addedEventDeltaTokens
             addedTypeDeltaTokens
+            addedTypeShapes
 
     // Sequence-point tracking: replace the committed sequence-point view wholesale with the fresh compile's
     // points, re-keyed from fresh tokens to baseline/delta tokens. Updated methods get their
@@ -3417,6 +3577,9 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let addedTypeDeltaTokens = Dictionary<string, int>(StringComparer.Ordinal)
     let addedTypeDefs = ResizeArray<ILTypeDef list * ILTypeDef * string>()
 
+    let addedTypeShapes =
+        Dictionary<string, SynthesizedTypeShape>(StringComparer.Ordinal)
+
     let baselineTypeDefRowCount =
         request.Baseline.Metadata.TableRowCounts.[TableNames.TypeDef.Index]
 
@@ -3438,6 +3601,175 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     // could then silently pair two different fresh closures with one baseline class -
     // emitting fresh bodies into the wrong rows. Fail closed instead.
     let newTypeNameByBaseline = Dictionary<string, string>(StringComparer.Ordinal)
+
+    let splitTypeFullName (fullName: string) =
+        let nestedIndex = fullName.LastIndexOf('+')
+
+        if nestedIndex >= 0 then
+            fullName.Substring(0, nestedIndex), fullName.Substring(nestedIndex + 1)
+        else
+            let namespaceIndex = fullName.LastIndexOf('.')
+
+            if namespaceIndex >= 0 then
+                fullName.Substring(0, namespaceIndex), fullName.Substring(namespaceIndex + 1)
+            else
+                "", fullName
+
+    let positionalGroupKey (info: PositionalTypeInfo) =
+        info.EnclosingFullName, info.NormalizedBasicName
+
+    let tryFreshPositionalInfo (enclosing: ILTypeDef list) (typeDef: ILTypeDef) =
+        match tryNormalizeSynthesizedTypeNameForPositionalPairing typeDef.Name with
+        | None -> None
+        | Some normalized ->
+            let typeRef = mkRefForNestedILTypeDef ILScopeRef.Local (enclosing, typeDef)
+
+            let enclosingFullName =
+                match enclosing with
+                | [] -> ""
+                | _ ->
+                    let parentType = List.last enclosing
+                    let parentEnclosing = enclosing |> List.take (List.length enclosing - 1)
+                    (mkRefForNestedILTypeDef ILScopeRef.Local (parentEnclosing, parentType)).FullName
+
+            Some
+                {
+                    FullName = typeRef.FullName
+                    EnclosingFullName = enclosingFullName
+                    NormalizedBasicName = normalized.NormalizedBasicName
+                    Ordinal = normalized.Ordinal
+                    Shape = shapeOfSynthesizedTypeDef typeDef
+                }
+
+    let collectFreshPositionalInfos () =
+        let infos = ResizeArray<PositionalTypeInfo>()
+
+        let rec visit (enclosing: ILTypeDef list) (typeDef: ILTypeDef) =
+            match tryFreshPositionalInfo enclosing typeDef with
+            | Some info -> infos.Add info
+            | None -> ()
+
+            typeDef.NestedTypes.AsList() |> List.iter (visit (enclosing @ [ typeDef ]))
+
+        request.Module.TypeDefs.AsList() |> List.iter (visit [])
+        infos |> Seq.toArray
+
+    let collectBaselinePositionalInfos () =
+        request.Baseline.SynthesizedTypeShapes
+        |> Map.toSeq
+        |> Seq.choose (fun (fullName, shape) ->
+            let enclosingFullName, simpleName = splitTypeFullName fullName
+
+            match tryNormalizeSynthesizedTypeNameForPositionalPairing simpleName with
+            | None -> None
+            | Some normalized ->
+                Some
+                    {
+                        FullName = fullName
+                        EnclosingFullName = enclosingFullName
+                        NormalizedBasicName = normalized.NormalizedBasicName
+                        Ordinal = normalized.Ordinal
+                        Shape = shape
+                    })
+        |> Seq.toArray
+
+    let hasDistinctOrdinals (items: PositionalTypeInfo[]) =
+        let distinct = items |> Array.map (fun item -> item.Ordinal) |> Array.distinct
+
+        distinct.Length = items.Length
+
+    let tracePositionalRejection (enclosingFullName, normalizedBasicName) reason =
+        if traceSynthesizedMappings.Value then
+            printfn
+                "[fsharp-hotreload][synthesized-map] positional group rejected enclosing=%s name=%s reason=%s"
+                enclosingFullName
+                normalizedBasicName
+                reason
+
+    let shapeTypeNameVariants (fullName: string) =
+        let enclosingFullName, simpleName = splitTypeFullName fullName
+
+        [
+            fullName
+
+            if not (String.IsNullOrEmpty enclosingFullName) then
+                enclosingFullName + "+" + simpleName
+        ]
+
+    let normalizeSelfReferencesInShape (fullName: string) (shape: SynthesizedTypeShape) =
+        let replacements = shapeTypeNameVariants fullName
+
+        let normalizeText (text: string) =
+            (text, replacements)
+            ||> List.fold (fun acc replacement -> acc.Replace(replacement, "<self>"))
+
+        { shape with
+            BaseType = shape.BaseType |> Option.map normalizeText
+            InterfaceTypes = shape.InterfaceTypes |> List.map normalizeText
+            FieldTypeNames = shape.FieldTypeNames |> List.map normalizeText
+            MethodNameAndArities = shape.MethodNameAndArities
+        }
+
+    let tryFindPositionalShapeMismatch (baselineInfo: PositionalTypeInfo) (freshInfo: PositionalTypeInfo) =
+        tryFindSynthesizedTypeShapeMismatch
+            (normalizeSelfReferencesInShape baselineInfo.FullName baselineInfo.Shape)
+            (normalizeSelfReferencesInShape freshInfo.FullName freshInfo.Shape)
+
+    let positionalBaselineByFresh =
+        let accepted = Dictionary<string, string * int>(StringComparer.Ordinal)
+        let usedBaselineNames = HashSet<string>(StringComparer.Ordinal)
+
+        let baselineGroups =
+            collectBaselinePositionalInfos ()
+            |> Array.groupBy positionalGroupKey
+            |> Map.ofArray
+
+        let freshGroups = collectFreshPositionalInfos () |> Array.groupBy positionalGroupKey
+
+        for groupKey, freshGroup in freshGroups do
+            match baselineGroups |> Map.tryFind groupKey with
+            | None -> tracePositionalRejection groupKey "no baseline group"
+            | Some baselineGroup ->
+                if baselineGroup.Length <> freshGroup.Length then
+                    tracePositionalRejection groupKey $"count mismatch baseline={baselineGroup.Length} fresh={freshGroup.Length}"
+                elif not (hasDistinctOrdinals baselineGroup) then
+                    tracePositionalRejection groupKey "baseline group has duplicate ordinals"
+                elif not (hasDistinctOrdinals freshGroup) then
+                    tracePositionalRejection groupKey "fresh group has duplicate ordinals"
+                else
+                    let baselineSorted = baselineGroup |> Array.sortBy (fun item -> item.Ordinal)
+                    let freshSorted = freshGroup |> Array.sortBy (fun item -> item.Ordinal)
+
+                    let shapeMismatch =
+                        Array.zip baselineSorted freshSorted
+                        |> Array.tryPick (fun (baselineInfo, freshInfo) ->
+                            tryFindPositionalShapeMismatch baselineInfo freshInfo
+                            |> Option.map (fun reason -> $"{baselineInfo.FullName} -> {freshInfo.FullName}: {reason}"))
+
+                    match shapeMismatch with
+                    | Some reason -> tracePositionalRejection groupKey reason
+                    | None ->
+                        let duplicateBaseline =
+                            baselineSorted
+                            |> Array.tryFind (fun baselineInfo -> usedBaselineNames.Contains baselineInfo.FullName)
+
+                        match duplicateBaseline with
+                        | Some baselineInfo -> tracePositionalRejection groupKey $"baseline type already paired: {baselineInfo.FullName}"
+                        | None ->
+                            for baselineInfo, freshInfo in Array.zip baselineSorted freshSorted do
+                                match request.Baseline.TypeTokens |> Map.tryFind baselineInfo.FullName with
+                                | Some baselineToken ->
+                                    usedBaselineNames.Add baselineInfo.FullName |> ignore
+                                    accepted[freshInfo.FullName] <- (baselineInfo.FullName, baselineToken)
+
+                                    if traceSynthesizedMappings.Value then
+                                        printfn
+                                            "[fsharp-hotreload][synthesized-map] positional %s -> %s"
+                                            freshInfo.FullName
+                                            baselineInfo.FullName
+                                | None -> tracePositionalRejection groupKey $"baseline token missing for {baselineInfo.FullName}"
+
+        accepted
 
     let getAliasCandidates (typeName: string) =
         match synthesizedBuckets with
@@ -3554,9 +3886,14 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 | None -> None)
             |> Array.distinctBy fst
 
+        let tryGetPositionalBaselineMatch () =
+            match positionalBaselineByFresh.TryGetValue newFullName with
+            | true, positionalMatch -> Some positionalMatch
+            | _ -> None
+
         let baselineNameOpt =
             match baselineMatches with
-            | [||] -> None
+            | [||] -> tryGetPositionalBaselineMatch ()
             | [| single |] -> Some single
             | matches ->
                 let exactMatch =
@@ -3580,14 +3917,17 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     match normalizedMatches with
                     | [| normalizedMatch |] -> Some normalizedMatch
                     | _ ->
-                        let matchedNames = matches |> Array.map fst |> String.concat "; "
-                        let allCandidates = candidateNames |> String.concat "; "
+                        match tryGetPositionalBaselineMatch () with
+                        | Some positionalMatch -> Some positionalMatch
+                        | None ->
+                            let matchedNames = matches |> Array.map fst |> String.concat "; "
+                            let allCandidates = candidateNames |> String.concat "; "
 
-                        raise (
-                            HotReloadUnsupportedEditException(
-                                $"Ambiguous synthesized type mapping for '{newFullName}' (candidates=[{allCandidates}], baselineMatches=[{matchedNames}]); full rebuild required."
+                            raise (
+                                HotReloadUnsupportedEditException(
+                                    $"Ambiguous synthesized type mapping for '{newFullName}' (candidates=[{allCandidates}], baselineMatches=[{matchedNames}]); full rebuild required."
+                                )
                             )
-                        )
 
         if traceSynthesizedMappings.Value then
             match baselineNameOpt with
@@ -3665,6 +4005,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         let deltaToken = 0x02000000 ||| rowId
                         addedTypeDeltaTokens[fullName] <- deltaToken
                         addedTypeNewTokens[fullName] <- newTypeToken
+                        addedTypeShapes[fullName] <- shapeOfSynthesizedTypeDef typeDef
                         addedTypeDefs.Add(enclosing, typeDef, fullName)
                         deltaToken
                 | None when
@@ -3701,6 +4042,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         let deltaToken = 0x02000000 ||| rowId
                         addedTypeDeltaTokens[fullName] <- deltaToken
                         addedTypeNewTokens[fullName] <- newTypeToken
+                        addedTypeShapes[fullName] <- shapeOfSynthesizedTypeDef typeDef
                         addedTypeDefs.Add(enclosing, typeDef, fullName)
                         deltaToken
                 | None when IsCompilerGeneratedName typeDef.Name ->
@@ -5380,6 +5722,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             addedPropertyDeltaTokens
             addedEventDeltaTokens
             addedTypeDeltaTokens
+            addedTypeShapes
 
 /// Emits a delta using only the in-memory rewrite's debug data (no sibling on-disk PDB).
 let emitDelta (request: IlxDeltaRequest) : IlxDelta = emitDeltaWithDebugData None request

@@ -186,6 +186,61 @@ type MethodSemanticsEntry =
         Association: MethodSemanticsAssociation
     }
 
+type SynthesizedTypeShape =
+    {
+        GenericArity: int
+        BaseType: string option
+        InterfaceTypes: string list
+        FieldTypeNames: string list
+        MethodNameAndArities: (string * int) list
+    }
+
+let rec private ilTypeShapeName (ty: ILType) =
+    match ty with
+    | ILType.Void -> "void"
+    | ILType.TypeVar ordinal -> "!" + string ordinal
+    | ILType.Array(ILArrayShape dimensions, elementType) ->
+        ilTypeShapeName elementType
+        + "["
+        + String(',', max 0 (dimensions.Length - 1))
+        + "]"
+    | ILType.Value typeSpec -> "valuetype " + ilTypeSpecShapeName typeSpec
+    | ILType.Boxed typeSpec -> "class " + ilTypeSpecShapeName typeSpec
+    | ILType.Ptr elementType -> ilTypeShapeName elementType + "*"
+    | ILType.Byref elementType -> ilTypeShapeName elementType + "&"
+    | ILType.FunctionPointer signature ->
+        let args = signature.ArgTypes |> List.map ilTypeShapeName |> String.concat ","
+        $"fnptr({args})->{ilTypeShapeName signature.ReturnType}"
+    | ILType.Modified(required, modifier, modifiedType) ->
+        let modifierKind = if required then "modreq" else "modopt"
+        $"{modifierKind}({modifier.QualifiedName}) {ilTypeShapeName modifiedType}"
+
+and private ilTypeSpecShapeName (typeSpec: ILTypeSpec) =
+    if List.isEmpty typeSpec.GenericArgs then
+        typeSpec.TypeRef.QualifiedName
+    else
+        let args = typeSpec.GenericArgs |> List.map ilTypeShapeName |> String.concat ","
+        $"{typeSpec.TypeRef.QualifiedName}<{args}>"
+
+let internal shapeOfSynthesizedTypeDef (typeDef: ILTypeDef) : SynthesizedTypeShape =
+    {
+        GenericArity = typeDef.GenericParams.Length
+        BaseType = typeDef.Extends.Value |> Option.map ilTypeShapeName
+        InterfaceTypes =
+            typeDef.Implements.Value
+            |> List.map (fun implementation -> ilTypeShapeName implementation.Type)
+            |> List.sort
+        FieldTypeNames =
+            typeDef.Fields.AsList()
+            |> List.map (fun fieldDef -> ilTypeShapeName fieldDef.FieldType)
+            |> List.sort
+        MethodNameAndArities =
+            typeDef.Methods.AsList()
+            |> List.map (fun methodDef -> methodDef.Name, methodDef.GenericParams.Length)
+            |> List.distinct
+            |> List.sort
+    }
+
 /// <summary>Portable PDB snapshot captured during baseline emission.</summary>
 type PortablePdbSnapshot =
     {
@@ -218,6 +273,7 @@ type FSharpEmitBaseline =
         IlxGenEnvironment: IlxGenEnvSnapshot option
         PortablePdb: PortablePdbSnapshot option
         SynthesizedNameSnapshot: Map<string, string[]>
+        SynthesizedTypeShapes: Map<string, SynthesizedTypeShape>
         MetadataHandles: BaselineHandleCache
         TypeReferenceTokens: Map<TypeReferenceKey, int>
         AssemblyReferenceTokens: Map<string, int>
@@ -289,6 +345,7 @@ type private BaselineMaps =
         EventTokens: Map<EventDefinitionKey, int>
         PropertyMapEntries: Map<string, int>
         EventMapEntries: Map<string, int>
+        SynthesizedTypeShapes: Map<string, SynthesizedTypeShape>
     }
 
 let private emptyMaps =
@@ -300,6 +357,7 @@ let private emptyMaps =
         EventTokens = Map.empty
         PropertyMapEntries = Map.empty
         EventMapEntries = Map.empty
+        SynthesizedTypeShapes = Map.empty
     }
 
 let private collectSynthesizedNameSnapshot (ilModule: ILModuleDef) =
@@ -360,6 +418,14 @@ let rec private collectType
         { maps with
             TypeTokens = maps.TypeTokens |> Map.add typeName typeToken
         }
+
+    let maps =
+        if IsCompilerGeneratedName tdef.Name then
+            { maps with
+                SynthesizedTypeShapes = maps.SynthesizedTypeShapes |> Map.add typeName (shapeOfSynthesizedTypeDef tdef)
+            }
+        else
+            maps
 
     let maps =
         tdef.Methods.AsList()
@@ -701,6 +767,7 @@ let private createCore
         IlxGenEnvironment = ilxGenEnvironment
         PortablePdb = portablePdbSnapshot
         SynthesizedNameSnapshot = synthesizedNames
+        SynthesizedTypeShapes = maps.SynthesizedTypeShapes
         MetadataHandles = BaselineHandleCache.Empty
         TypeReferenceTokens = Map.empty
         AssemblyReferenceTokens = Map.empty
