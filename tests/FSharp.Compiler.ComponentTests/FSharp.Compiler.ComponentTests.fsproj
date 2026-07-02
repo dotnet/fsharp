@@ -463,6 +463,7 @@
     <Compile Include="CompilerOptions\Fsc\pdb\Pdb.fs" />
     <Compile Include="CompilerOptions\fsc\tailcalls\tailcalls.fs" />
     <Compile Include="CompilerOptions\fsi\FsiCliTests.fs" />
+    <Compile Include="CompilerOptions\fsi\FsiCommandLineArgsTests.fs" />
     <Compile Include="CompilerOptions\fsi\Nologo.fs" />
     <Compile Include="CompilerOptions\fsi\Langversion.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
