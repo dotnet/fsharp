@@ -13,9 +13,8 @@ namespace FSharp.Editor.IntegrationTests;
 public class CodeActionTests : AbstractIntegrationTest
 {
     // "Remove unused open declarations" comes from F#'s unused-opens analyzer - a background
-    // SemanticDocumentAnalysis. Its production was non-deterministic for a freshly-opened single-file project in
-    // the headless CI VS; FullSolution background analysis (enabled in test setup) makes the crawler analyze the
-    // document regardless of open/active state, so the diagnostic - and its fix - are produced deterministically.
+    // SemanticDocumentAnalysis whose production is non-deterministic for a freshly-opened single-file project
+    // in the headless CI VS, so this test is currently flaky (kept active, not quarantined).
     [IdeFact]
     public async Task UnusedOpenDeclarations()
     {
