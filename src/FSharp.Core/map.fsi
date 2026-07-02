@@ -663,6 +663,29 @@ module Map =
     [<CompiledName("Map")>]
     val map: mapping: ('Key -> 'T -> 'U) -> table: Map<'Key, 'T> -> Map<'Key, 'U>
 
+    /// <summary>Builds a new map that contains the bindings of the two given maps. When a key occurs in
+    /// both maps, the given function is used to combine the two values into one.</summary>
+    ///
+    /// <param name="resolve">The function used to combine the values for keys that occur in both maps. It is
+    /// passed the key and the corresponding values from the first and second map respectively.</param>
+    /// <param name="table1">The first input map.</param>
+    /// <param name="table2">The second input map.</param>
+    ///
+    /// <returns>The merged map.</returns>
+    ///
+    /// <remarks>This is an O(m log n) operation, where m is the size of the second map and n is the size of the merged map.</remarks>
+    ///
+    /// <example id="merge-1">
+    /// <code lang="fsharp">
+    /// let sample1 = Map [ (1, 1); (2, 2) ]
+    /// let sample2 = Map [ (2, 20); (3, 30) ]
+    ///
+    /// (sample1, sample2) ||> Map.merge (fun _key v1 v2 -> v1 + v2) // evaluates to map [(1, 1); (2, 22); (3, 30)]
+    /// </code>
+    /// </example>
+    [<CompiledName("Merge")>]
+    val merge: resolve: ('Key -> 'T -> 'T -> 'T) -> table1: Map<'Key, 'T> -> table2: Map<'Key, 'T> -> Map<'Key, 'T>
+
     /// <summary>Tests if an element is in the domain of the map.</summary>
     ///
     /// <param name="key">The input key.</param>

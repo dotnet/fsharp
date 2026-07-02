@@ -407,6 +407,38 @@ type MapModule() =
         ()     
 
     [<Fact>]
+    member _.Merge() =
+
+        // value keys, with both overlapping and disjoint keys
+        let valueKeyMap1 = Map.ofSeq [(1, 1); (2, 2); (3, 3)]
+        let valueKeyMap2 = Map.ofSeq [(2, 20); (3, 30); (4, 40)]
+        let resultValueMap = (valueKeyMap1, valueKeyMap2) ||> Map.merge (fun _ v1 v2 -> v1 + v2)
+        Assert.AreEqual([(1, 1); (2, 22); (3, 33); (4, 40)] |> Map.ofList, resultValueMap)
+
+        // the resolver is passed the key and the values from the first and second map respectively
+        let left = Map.ofList [("a", "L")]
+        let right = Map.ofList [("a", "R")]
+        let resultOrder = (left, right) ||> Map.merge (fun k v1 v2 -> k + v1 + v2)
+        Assert.AreEqual(Map.ofList [("a", "aLR")], resultOrder)
+
+        // reference keys
+        let refMap1 = Map.ofSeq [for c in ["."; ".."; "..."] do yield (c, c.Length)]
+        let refMap2 = Map.ofSeq [for c in [".."; "..."; "...."] do yield (c, c.Length * 10)]
+        let resultRefMap = (refMap1, refMap2) ||> Map.merge (fun _ v1 v2 -> v1 + v2)
+        Assert.AreEqual([(".", 1); ("..", 22); ("...", 33); ("....", 40)] |> Map.ofList, resultRefMap)
+
+        // merging with an empty map returns the other map unchanged
+        let oeleMap = Map.ofSeq [(1, "one")]
+        let eptMap = Map.empty<int, string>
+        Assert.AreEqual(oeleMap, (oeleMap, eptMap) ||> Map.merge (fun _ v1 v2 -> v1 + v2))
+        Assert.AreEqual(oeleMap, (eptMap, oeleMap) ||> Map.merge (fun _ v1 v2 -> v1 + v2))
+
+        // both empty
+        Assert.AreEqual(eptMap, (eptMap, eptMap) ||> Map.merge (fun _ v1 v2 -> v1 + v2))
+
+        ()
+
+    [<Fact>]
     member _.Contains() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
