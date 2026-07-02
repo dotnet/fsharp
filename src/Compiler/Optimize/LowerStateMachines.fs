@@ -183,8 +183,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
             if sm_verbose then printfn "binding %A --> %A..." defn.Var defn.Expr
             let envR = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add defn.Var defn.Expr }
             let envR2, bodyR = BindResumableCodeDefinitions envR finalizing bodyExpr
-            // Dropping the 'let' relies on defn.Expr being re-materialised at each use of defn.Var;
-            // if defn.Var is unused, keep defn.Expr as a statement so its side effect survives (#13099).
+            // Dropping the 'let' loses defn.Expr's side effect when defn.Var is unused (#13099).
             if finalizing && not (isExpandVar g defn.Var) &&
                not (Zset.contains defn.Var (freeInExpr CollectLocals bodyExpr).FreeLocals) then
                 envR2, mkSequential m defn.Expr bodyR
