@@ -4508,26 +4508,16 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
     let (SynTyparDecl (attributes = Attributes synAttrs; typar = synTypar)) = synTyparDecl
     let (SynTypar (ident = id)) = synTypar
 
-    // Prelim pass: suppress diagnostics so rec-scope attrs (not yet wired) don't emit FS0039.
-    // Framework attrs (Measure, EqualityConditionalOn, etc.) resolve here for kind inference.
-    // Fixup thunk re-resolves with the final env.
-    let prelimCapture = CapturingDiagnosticsLogger("TcTyparDecl prelim")
-    let prelimAttrs, didFailReported =
-        let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-        try
-            SetThreadDiagnosticsLoggerNoUnwind prelimCapture
-            TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env AttributeTargets.GenericParameter synAttrs
-        finally
-            SetThreadDiagnosticsLoggerNoUnwind oldLogger
-    // Failed if: TcCanFail reported failure, attrs were dropped, or diagnostics were suppressed.
-    let didFail =
-        didFailReported
-        || List.length prelimAttrs < List.length synAttrs
-        || not prelimCapture.Diagnostics.IsEmpty
-    let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute prelimAttrs
-    let hasEqDepAttr = HasFSharpAttribute g g.attrib_EqualityConditionalOnAttribute prelimAttrs
-    let hasCompDepAttr = HasFSharpAttribute g g.attrib_ComparisonConditionalOnAttribute prelimAttrs
-    let attrsForTypar = prelimAttrs |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
+    // Type parameters are checked in Phase1A, before sibling entities of a recursive group are
+    // established, so a rec-scope attribute type may not resolve yet. Resolve tentatively (errors
+    // discarded); the fixup re-resolves against the final env. Framework attributes (Measure,
+    // EqualityConditionalOn, ...) are always in scope, so kind/dependency inference is reliable here.
+    let attrs, getFinalAttrs = TcAttributesCanFailReresolve cenv env AttributeTargets.GenericParameter synAttrs
+
+    let hasMeasureAttr = attribsHaveEntityFlag g WellKnownEntityAttributes.MeasureAttribute attrs
+    let hasEqDepAttr = HasFSharpAttribute g g.attrib_EqualityConditionalOnAttribute attrs
+    let hasCompDepAttr = HasFSharpAttribute g g.attrib_ComparisonConditionalOnAttribute attrs
+    let attrsForTypar = attrs |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
     let tp = Construct.NewTypar (kind, TyparRigidity.WarnIfNotRigid, synTypar, false, TyparDynamicReq.Yes, attrsForTypar, hasEqDepAttr, hasCompDepAttr)
 
@@ -4540,21 +4530,16 @@ and TcTyparDecl (cenv: cenv) (env: TcEnv) synTyparDecl =
 
     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.UseInType, env.eAccessRights)
 
-    let fixupAttrs (envForFinal: TcEnv) =
-        // Re-resolve only if prelim pass suppressed errors.
-        if didFail then
-            let finalAttrs =
-                TcAttributes cenv envForFinal AttributeTargets.GenericParameter synAttrs
-                |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
-            tp.SetAttribs finalAttrs
+    let fixupAttrs envFinal =
+        getFinalAttrs envFinal
+        |> filterOutWellKnownAttribs g WellKnownEntityAttributes.MeasureAttribute WellKnownValAttributes.None
+        |> tp.SetAttribs
 
     tp, fixupAttrs
 
 and TcTyparDecls (cenv: cenv) env synTypars =
-    let results = List.map (TcTyparDecl cenv env) synTypars
-    let typars = results |> List.map fst
-    let fixups = results |> List.map snd
-    typars, (fun envForFinal -> fixups |> List.iter (fun f -> f envForFinal))
+    let typars, fixups = synTypars |> List.map (TcTyparDecl cenv env) |> List.unzip
+    typars, (fun envFinal -> fixups |> List.iter (fun fixup -> fixup envFinal))
 
 /// Check and elaborate a syntactic type or unit-of-measure
 ///
@@ -11845,6 +11830,18 @@ and TcAttributesWithPossibleTargetsCanFail cenv env attrTgt synAttribs =
         if didFail then
             TcAttributesWithPossibleTargetsEx TcCanFail.ReportAllErrors cenv env attrTgt (enum 0) synAttribs |> fst
         else attrs)
+
+/// Like TcAttributesCanFail, but for attributes checked so early (e.g. type-parameter decls in
+/// Phase1A of a recursive group) that even *name* resolution of a sibling attribute type can fail
+/// and emit a diagnostic. The tentative pass runs with diagnostics discarded; the fixup thunk
+/// re-resolves (reporting errors) against the final environment passed to it.
+and TcAttributesCanFailReresolve cenv env attrTgt synAttribs =
+    let capturing = CapturingDiagnosticsLogger("TcAttributesCanFailReresolve")
+    let attrs, didFail =
+        use _ = UseDiagnosticsLogger capturing
+        TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
+    let deferred = didFail || not capturing.Diagnostics.IsEmpty
+    attrs, (fun envFinal -> if deferred then TcAttributes cenv envFinal attrTgt synAttribs else attrs)
 
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst
