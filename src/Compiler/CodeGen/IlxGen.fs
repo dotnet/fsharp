@@ -10498,10 +10498,25 @@ and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
     // Detect 'null' used for an array argument
     | Expr.Const(Const.Zero, _, _), ILType.Array _ -> ILAttribElem.Null
 
+    // An enum value stored into an 'object'-typed argument must keep its enum type in the
+    // custom-attribute blob (ECMA-335 II.23.3), otherwise it round-trips as the underlying
+    // integer (e.g. 'Prop = MyEnum.B' surfaces as boxed int32). See
+    // https://github.com/dotnet/fsharp/issues/995. The enum type is carried alongside the
+    // underlying integer value, which is computed by recursing with the underlying IL type.
+    | Expr.Const(c, m, ty), _ when ilArgTy = g.ilg.typ_Object && isEnumTy g ty ->
+        let enumIlTy = GenType amap m eenv.tyenv ty
+        let underlyingTy = underlyingTypeOfEnumTy g ty
+        let underlyingIlTy = GenType amap m eenv.tyenv underlyingTy
+
+        let underlyingElem =
+            GenAttribArg amap g eenv (Expr.Const(c, m, underlyingTy)) underlyingIlTy
+
+        ILAttribElem.Enum(enumIlTy, underlyingElem)
+
     // Detect standard constants
     | Expr.Const(c, m, ty), _ ->
         let tynm = ilArgTy.TypeSpec.Name
-        let isobj = (tynm = "System.Object")
+        let isobj = (ilArgTy = g.ilg.typ_Object)
 
         match c with
         | Const.Bool b -> ILAttribElem.Bool b
