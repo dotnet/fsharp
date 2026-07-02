@@ -7,6 +7,7 @@ open System.Collections
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
+open System.Runtime.CompilerServices
 open System.Security.Cryptography
 open System.Threading
 open Internal.Utilities.Collections
@@ -112,6 +113,38 @@ module CompileHelpers =
                 ))
 
         diagnostics.ToArray(), result
+
+module private HotReloadIncrementalEmit =
+    // Keyed by input CheckedImplFile reference identity: TransparentCompiler returns
+    // reference-identical CheckedImplFile instances for unchanged files, and the INC-0
+    // spike proved that --optimize- per-file optimization from a fresh environment is
+    // byte-identical when whole-assembly IlxGen is preserved. ConditionalWeakTable
+    // keeps cached optimized trees bounded by the checker's own typed-tree cache.
+    let private optimizedImplFileCache =
+        ConditionalWeakTable<CheckedImplFile, CheckedImplFileAfterOptimization>()
+
+    let private gate = obj ()
+
+    let private tryFind (implFile: CheckedImplFile) =
+        let mutable cached = Unchecked.defaultof<CheckedImplFileAfterOptimization>
+
+        if optimizedImplFileCache.TryGetValue(implFile, &cached) then
+            Some cached
+        else
+            None
+
+    let getOrAdd implFile optimize =
+        match tryFind implFile with
+        | Some cached -> cached
+        | None ->
+            let optimized = optimize ()
+
+            lock gate (fun () ->
+                match tryFind implFile with
+                | Some cached -> cached
+                | None ->
+                    optimizedImplFileCache.Add(implFile, optimized)
+                    optimized)
 
 [<Sealed; AutoSerializable(false)>]
 // There is typically only one instance of this type in an IDE process.
@@ -1216,46 +1249,68 @@ type FSharpChecker
             // Dev-loop optimization: use minimal passes only (no extra loops, no detuple,
             // no TLR, no cross-assembly opt). This DLL is for local testing, not shipping.
             // OptimizeImplFile + LowerLocalMutables + LowerCalls are mandatory for correct IlxGen.
+            let minimalSettings =
+                { tcConfig.optSettings with
+                    jitOptUser = Some false
+                    localOptUser = Some false
+                    crossAssemblyOptimizationUser = Some false
+                    lambdaInlineThreshold = 0
+                    abstractBigTargets = false
+                    reportingPhase = false
+                }
+
+            let optimizeImplFile env hidingInfo implFile =
+                let (env', file, _optInfo, hidingInfo'), optDuringCodeGen =
+                    Optimizer.OptimizeImplFile(
+                        minimalSettings,
+                        generatedCcu,
+                        tcGlobals,
+                        tcVal,
+                        importMap,
+                        env,
+                        false,
+                        tcConfig.emitTailcalls,
+                        hidingInfo,
+                        implFile
+                    )
+
+                let file = LowerLocalMutables.TransformImplFile tcGlobals importMap file
+                let file = LowerCalls.LowerImplFile tcGlobals file
+
+                {
+                    ImplFile = file
+                    OptimizeDuringCodeGen = optDuringCodeGen
+                },
+                env',
+                hidingInfo'
+
+            let optimizeWithThreadedEnvironment () =
+                typedImplFiles
+                |> List.mapFold
+                    (fun (env, hidingInfo) implFile ->
+                        let file, env', hidingInfo' = optimizeImplFile env hidingInfo implFile
+                        file, (env', hidingInfo'))
+                    (optEnv0, SignatureHidingInfo.Empty)
+                |> fst
+                |> CheckedAssemblyAfterOptimization
+
+            let optimizeWithCachedPerFileTrees () =
+                typedImplFiles
+                |> List.map (fun implFile ->
+                    HotReloadIncrementalEmit.getOrAdd implFile (fun () ->
+                        let file, _, _ = optimizeImplFile optEnv0 SignatureHidingInfo.Empty implFile
+                        file))
+                |> CheckedAssemblyAfterOptimization
+
             let optimizedImpls, optDataResources =
-                let minimalSettings =
-                    { tcConfig.optSettings with
-                        jitOptUser = Some false
-                        localOptUser = Some false
-                        crossAssemblyOptimizationUser = Some false
-                        lambdaInlineThreshold = 0
-                        abstractBigTargets = false
-                        reportingPhase = false
-                    }
-
                 let impls =
-                    typedImplFiles
-                    |> List.mapFold
-                        (fun (env, hidingInfo) implFile ->
-                            let (env', file, _optInfo, hidingInfo'), optDuringCodeGen =
-                                Optimizer.OptimizeImplFile(
-                                    minimalSettings,
-                                    generatedCcu,
-                                    tcGlobals,
-                                    tcVal,
-                                    importMap,
-                                    env,
-                                    false,
-                                    tcConfig.emitTailcalls,
-                                    hidingInfo,
-                                    implFile
-                                )
-
-                            let file = LowerLocalMutables.TransformImplFile tcGlobals importMap file
-                            let file = LowerCalls.LowerImplFile tcGlobals file
-
-                            {
-                                ImplFile = file
-                                OptimizeDuringCodeGen = optDuringCodeGen
-                            },
-                            (env', hidingInfo'))
-                        (optEnv0, SignatureHidingInfo.Empty)
-                    |> fst
-                    |> CheckedAssemblyAfterOptimization
+                    if isEnvVarTruthy "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" then
+                        try
+                            optimizeWithCachedPerFileTrees ()
+                        with _ ->
+                            optimizeWithThreadedEnvironment ()
+                    else
+                        optimizeWithThreadedEnvironment ()
 
                 impls, []
 

@@ -127,6 +127,36 @@ module HotReloadSessionTests =
         checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
         compileProject checker options capture
 
+    let private withEnvVar name value action =
+        let previous = Environment.GetEnvironmentVariable name
+
+        try
+            Environment.SetEnvironmentVariable(name, value)
+            action ()
+        finally
+            Environment.SetEnvironmentVariable(name, previous)
+
+    let private checkProjectOrFail (checker: FSharpChecker) (options: FSharpProjectOptions) =
+        let results =
+            checker.ParseAndCheckProject(options)
+            |> Async.RunImmediate
+
+        let errors =
+            results.Diagnostics
+            |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+
+        if results.HasCriticalErrors || errors.Length > 0 then
+            failwithf "Project check failed: %A" (errors |> Array.map (fun d -> d.Message))
+
+        results
+
+    let private compileFromCheckedProjectAndReadBytes (checker: FSharpChecker) (results: FSharpCheckProjectResults) (outfile: string) =
+        checker.CompileFromCheckedProject(results, outfile)
+        |> Async.RunImmediate
+        |> ignore
+
+        File.ReadAllBytes(outfile)
+
     let private addProjectOrFail (session: FSharpHotReloadSession) snapshot =
         match session.AddProject(snapshot) |> Async.RunImmediate with
         | Ok() -> ()
@@ -158,6 +188,158 @@ module SessionApp
 
 let appValue () = "app generation {generation}"
 """
+
+    let private generatedIncrementalEmitSources generation =
+        [|
+            "File01_Common.fs",
+            """
+namespace IncEmit
+
+module Common =
+    [<Literal>]
+    let LiteralValue = 7
+
+    let addLiteral value = value + LiteralValue
+"""
+            "File02_AnonProducer.fs",
+            """
+namespace IncEmit
+
+module AnonProducer =
+    let makeAnon name count = {| Name = name; Count = count |}
+
+    let pipeHeavy values =
+        values
+        |> List.map (fun value -> value + Common.LiteralValue)
+        |> List.filter (fun value -> value % 2 = 0)
+        |> List.collect (fun value -> [ value; value * 2 ])
+        |> List.fold (fun state value -> state + value) 0
+"""
+            "File03_AnonConsumer.fs",
+            """
+namespace IncEmit
+
+module AnonConsumer =
+    let localAnon count = {| Name = "local"; Count = count |}
+
+    let consume () =
+        let produced = AnonProducer.makeAnon "shared" 3
+        let local = localAnon 4
+        produced.Count + local.Count + Common.addLiteral 1
+"""
+            "File04_Chain01.fs",
+            """
+namespace IncEmit
+
+module Chain01 =
+    let value () = AnonConsumer.consume ()
+"""
+            "File05_Chain02.fs",
+            """
+namespace IncEmit
+
+module Chain02 =
+    let value () = Chain01.value () + AnonProducer.pipeHeavy [ 1; 2; 3; 4 ]
+"""
+            "File06_Chain03.fs",
+            """
+namespace IncEmit
+
+module Chain03 =
+    let value () = Chain02.value () + Common.addLiteral 5
+"""
+            "File07_Chain04.fs",
+            """
+namespace IncEmit
+
+module Chain04 =
+    let choose f x = f x
+    let value () = choose (fun value -> value + 1) (Chain03.value ())
+"""
+            "File08_Chain05.fs",
+            """
+namespace IncEmit
+
+module Chain05 =
+    let value () =
+        [ 1 .. 5 ]
+        |> List.map (fun n -> n * Chain04.value ())
+        |> List.sum
+"""
+            "File09_Chain06.fs",
+            """
+namespace IncEmit
+
+module Chain06 =
+    let value () = Chain05.value () / Common.LiteralValue
+"""
+            "File10_Chain07.fs",
+            """
+namespace IncEmit
+
+module Chain07 =
+    let value () =
+        let anon = {| Name = "consumer"; Count = Chain06.value () |}
+        anon.Count + anon.Name.Length
+"""
+            "File11_Chain08.fs",
+            """
+namespace IncEmit
+
+module Chain08 =
+    let value () = Chain07.value () + Chain06.value ()
+"""
+            "File12_Entry.fs",
+            $"""
+namespace IncEmit
+
+module Entry =
+    let mutable sink = 0
+
+    let run () =
+        let value = Chain08.value ()
+        sink <- value
+        sprintf "generation {generation} value %%d" value
+"""
+        |]
+
+    let private writeIncrementalEmitSources projectDir generation =
+        generatedIncrementalEmitSources generation
+        |> Array.map (fun (name, source) ->
+            let path = Path.Combine(projectDir, name)
+            File.WriteAllText(path, source.TrimStart())
+            path)
+
+    [<Fact>]
+    let ``CompileFromCheckedProject incremental emit cache matches batch optimization bytes after one file edit`` () =
+        withProjectDir "fcs-hotreload-incremental-emit-equivalence" (fun projectDir ->
+            let checker = createChecker ()
+            let fsPaths = writeIncrementalEmitSources projectDir 0
+            let dllPath = Path.Combine(projectDir, "IncrementalEmit.dll")
+            let options = prepareMultiFileProjectOptions checker fsPaths dllPath (snd (generatedIncrementalEmitSources 0).[0]) []
+
+            checker.InvalidateAll()
+
+            let warmResults = checkProjectOrFail checker options
+
+            withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
+                compileFromCheckedProjectAndReadBytes checker warmResults dllPath |> ignore)
+
+            let _, updatedEntry = (generatedIncrementalEmitSources 1).[11]
+            File.WriteAllText(fsPaths[11], updatedEntry.TrimStart())
+            checker.NotifyFileChanged(fsPaths[11], options) |> Async.RunImmediate
+
+            let editedResults = checkProjectOrFail checker options
+
+            let incrementalBytes =
+                withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
+                    compileFromCheckedProjectAndReadBytes checker editedResults dllPath)
+
+            let batchBytes =
+                withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" null (fun () ->
+                    compileFromCheckedProjectAndReadBytes checker editedResults dllPath)
+
+            Assert.Equal<byte>(batchBytes, incrementalBytes))
 
     [<Fact>]
     let ``EmitDelta reuses checked implementation files for unchanged earlier files`` () =
@@ -652,3 +834,53 @@ let probe () = 1
             | Error(FSharpHotReloadError.DeltaEmissionFailed _) -> ()
             | Error other -> failwithf "Expected a stale-output DeltaEmissionFailed error, got %A" other
             | Ok _ -> failwith "Expected EmitDelta to refuse a delta from an unchanged (stale) build output.")
+
+    [<Fact>]
+    let ``EmitDelta splices successive in-process incremental emit generations`` () =
+        withProjectDir "fcs-hotreload-session-incremental-emit" (fun projectDir ->
+            let supportPath = Path.Combine(projectDir, "Support.fs")
+            let entryPath = Path.Combine(projectDir, "Entry.fs")
+            let dllPath = Path.Combine(projectDir, "IncrementalSession.dll")
+
+            let supportSource =
+                """
+module IncrementalSupport
+
+let addOne value = value + 1
+"""
+
+            let entrySource generation =
+                $"""
+module IncrementalEntry
+
+let changed () = IncrementalSupport.addOne {generation}
+"""
+
+            File.WriteAllText(supportPath, supportSource.TrimStart())
+            File.WriteAllText(entryPath, (entrySource 0).TrimStart())
+
+            let checker = createChecker ()
+            let fsPaths = [| supportPath; entryPath |]
+            let options = prepareMultiFileProjectOptions checker fsPaths dllPath supportSource []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" "1" (fun () ->
+                    File.WriteAllText(entryPath, (entrySource 1).TrimStart())
+                    checker.NotifyFileChanged(entryPath, options) |> Async.RunImmediate
+
+                    let firstDelta = emitOrFail session (createProjectSnapshot options)
+                    Assert.Equal(1, firstDelta.UpdatedMethods.Length)
+                    session.Commit()
+
+                    File.WriteAllText(entryPath, (entrySource 2).TrimStart())
+                    checker.NotifyFileChanged(entryPath, options) |> Async.RunImmediate
+
+                    let secondDelta = emitOrFail session (createProjectSnapshot options)
+                    Assert.Equal(1, secondDelta.UpdatedMethods.Length)
+                    session.Commit())))
