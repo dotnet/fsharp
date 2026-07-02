@@ -141,7 +141,7 @@ let test () =
     let ffff = ValueNone
     x &ffff
         """
-        |> asExe
+        |> asLibrary
         |> compile
         |> shouldSucceed
 
