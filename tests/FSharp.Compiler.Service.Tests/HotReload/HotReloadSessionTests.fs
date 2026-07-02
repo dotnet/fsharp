@@ -19,6 +19,7 @@ open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditAndContinue
 open FSharp.Compiler.HotReload
+open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Test
@@ -463,6 +464,7 @@ module HotReloadSessionTests =
                 && not (name.Contains("@hotreload#g0_o", StringComparison.Ordinal)))
 
         printfn "[%s] replay endpoint synthesized TypeDefs: %s" testLabel (endpointNames |> String.concat "; ")
+        endpointNames
 
     let private assertMixedEndpointTypeNames testLabel (typeNames: string list) =
         let endpointNames =
@@ -1716,19 +1718,20 @@ let probe () =
         runCase "disk-started" true
 
     [<Fact>]
-    let ``G2 flag-on in-process line edit above replay endpoint bucket fails closed without occurrence snapshot`` () =
-        withProjectDir "fcs-hotreload-session-g2-replay-endpoint-bucket" (fun projectDir ->
-            let fsPath = Path.Combine(projectDir, "Library.fs")
-            let dllPath = Path.Combine(projectDir, "Library.dll")
+    let ``G2 flag-on replay endpoint bucket uses recorded snapshot and old baselines fail closed`` () =
+        let runCase caseLabel disableSnapshotCdi =
+            withProjectDir $"fcs-hotreload-session-g2-replay-endpoint-bucket-{caseLabel}" (fun projectDir ->
+                let fsPath = Path.Combine(projectDir, "Library.fs")
+                let dllPath = Path.Combine(projectDir, "Library.dll")
 
-            let source handlerOffset includeInsertedLine =
-                let insertedLine =
-                    if includeInsertedLine then
-                        "    // inserted line shifts the endpoint bucket below"
-                    else
-                        ""
+                let source handlerOffset includeInsertedLine =
+                    let insertedLine =
+                        if includeInsertedLine then
+                            "    // inserted line shifts the endpoint bucket below"
+                        else
+                            ""
 
-                $"""
+                    $"""
 module SessionReplayEndpoints
 
 type Handler = int -> string
@@ -1752,43 +1755,76 @@ let probe input =
     endpoints |> List.sumBy (fun endpoint -> endpoint input |> String.length)
 """
 
-            let baselineSource = (source 1 false).TrimStart()
-            let editedSource = (source 2 true).TrimStart()
+                let baselineSource = (source 1 false).TrimStart()
+                let editedSource = (source 2 true).TrimStart()
 
-            File.WriteAllText(fsPath, baselineSource)
+                File.WriteAllText(fsPath, baselineSource)
 
-            let checker = createChecker ()
-            let options = prepareProjectOptions checker fsPath dllPath baselineSource []
+                let checker = createChecker ()
+                let options = prepareProjectOptions checker fsPath dllPath baselineSource []
 
-            checker.InvalidateAll()
-            compileProject checker options true
+                checker.InvalidateAll()
 
-            let baselineBytes = File.ReadAllBytes dllPath
-            let baselineTypeNames = readTypeNames baselineBytes
-            assertReplayEndpointTypeNames "G2 replay endpoint baseline" baselineTypeNames
+                if disableSnapshotCdi then
+                    withEnvVar "FSHARP_HOTRELOAD_DISABLE_SYNTHESIZED_NAME_SNAPSHOT_CDI" "1" (fun () ->
+                        compileProject checker options true)
+                else
+                    compileProject checker options true
 
-            FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
-            use session = checker.CreateHotReloadSession()
-            addProjectOrFail session (createProjectSnapshot options)
+                let baselineBytes = File.ReadAllBytes dllPath
+                let baselineTypeNames = readTypeNames baselineBytes
+                let baselineEndpointNames = assertReplayEndpointTypeNames $"G2 replay endpoint baseline {caseLabel}" baselineTypeNames
 
-            let baselineView = projectViewOrFail session (createProjectSnapshot options)
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+                use session = checker.CreateHotReloadSession()
+                addProjectOrFail session (createProjectSnapshot options)
 
-            Assert.True(
-                Map.isEmpty baselineView.Baseline.EncClosureNames,
-                "Expected the replay endpoint bucket to have no occurrence-keyed closure-name reconstruction and rely on the synthesized-name snapshot.")
+                let baselineView = projectViewOrFail session (createProjectSnapshot options)
 
-            let result =
-                withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
-                    File.WriteAllText(fsPath, editedSource)
-                    checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
-                    session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate)
+                Assert.True(
+                    Map.isEmpty baselineView.Baseline.EncClosureNames,
+                    "Expected the replay endpoint bucket to have no occurrence-keyed closure-name reconstruction and rely on the synthesized-name snapshot.")
 
-            match result with
-            | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
-                let message = edits |> List.map (fun edit -> $"{edit.Id}: {edit.Message}") |> String.concat Environment.NewLine
-                Assert.DoesNotContain("DeltaEmissionFailed", message)
-            | Error other -> failwithf "Expected UnsupportedEdit, got %A" other
-            | Ok _ -> failwith "Expected replay-only empty-table endpoint bucket to fail closed.")
+                let expectedSnapshotSource =
+                    if disableSnapshotCdi then
+                        SynthesizedNameSnapshotSource.Reconstructed
+                    else
+                        SynthesizedNameSnapshotSource.Recorded
+
+                Assert.Equal(expectedSnapshotSource, baselineView.Baseline.SynthesizedNameSnapshotSource)
+
+                let result =
+                    withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                        File.WriteAllText(fsPath, editedSource)
+                        checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                        session.EmitDelta(createProjectSnapshot options) |> Async.RunImmediate)
+
+                if disableSnapshotCdi then
+                    match result with
+                    | Error(FSharpHotReloadError.UnsupportedEdit edits) ->
+                        let message =
+                            edits
+                            |> List.map (fun edit -> $"{edit.Id}: {edit.Message}")
+                            |> String.concat Environment.NewLine
+
+                        Assert.DoesNotContain("DeltaEmissionFailed", message)
+                    | Error other -> failwithf "Expected UnsupportedEdit, got %A" other
+                    | Ok _ -> failwith "Expected old replay-only baseline to fail closed."
+                else
+                    match result with
+                    | Ok _ ->
+                        let freshBytes = File.ReadAllBytes dllPath
+
+                        let freshEndpointNames =
+                            freshBytes
+                            |> readTypeNames
+                            |> assertReplayEndpointTypeNames $"G2 replay endpoint fresh {caseLabel}"
+
+                        Assert.Equal<string list>(baselineEndpointNames, freshEndpointNames)
+                    | Error error -> failwithf "Expected recorded replay-only baseline to emit a delta, got %A" error)
+
+        runCase "recorded" false
+        runCase "old-baseline-fallback" true
 
     [<Fact>]
     let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =

@@ -27,6 +27,9 @@ let private TraceHeapOffsetsFlagName = "FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS"
 
 let private traceHeapOffsets = lazy (isEnvVarTruthy TraceHeapOffsetsFlagName)
 
+let private traceClosureNames =
+    lazy (isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES")
+
 /// Align a size to a 4-byte boundary (stream alignment per ECMA-335).
 /// Used for Blob and UserString heap cumulative tracking, per Roslyn behavior.
 let private align4 value = (value + 3) &&& ~~~3
@@ -250,6 +253,11 @@ type PortablePdbSnapshot =
         EntryPointToken: int option
     }
 
+[<RequireQualifiedAccess>]
+type SynthesizedNameSnapshotSource =
+    | Recorded
+    | Reconstructed
+
 /// <summary>
 /// Represents the captured state of a baseline emission, mirroring Roslyn's EmitBaseline. It stores metadata
 /// snapshots along with stable token maps so delta emission can reuse pre-existing metadata handles.
@@ -274,6 +282,7 @@ type FSharpEmitBaseline =
         IlxGenEnvironment: IlxGenEnvSnapshot option
         PortablePdb: PortablePdbSnapshot option
         SynthesizedNameSnapshot: Map<string, string[]>
+        SynthesizedNameSnapshotSource: SynthesizedNameSnapshotSource
         SynthesizedTypeShapes: Map<string, SynthesizedTypeShape>
         MetadataHandles: BaselineHandleCache
         TypeReferenceTokens: Map<TypeReferenceKey, int>
@@ -361,7 +370,7 @@ let private emptyMaps =
         SynthesizedTypeShapes = Map.empty
     }
 
-let private collectSynthesizedNameSnapshot (ilModule: ILModuleDef) =
+let internal collectSynthesizedNameSnapshot (ilModule: ILModuleDef) =
     let buckets = Dictionary<string, ResizeArray<string>>(StringComparer.Ordinal)
 
     let recordName (name: string) =
@@ -642,7 +651,7 @@ let private cleanUpGeneratedTypeName (nm: string) =
         ||> Array.fold (fun nm c -> nm.Replace(string c, "-"))
 
 /// Simple (unqualified) names of every TypeDef in the module, nested types included.
-let private collectTypeDefSimpleNames (ilModule: ILModuleDef) : Set<string> =
+let internal collectTypeDefSimpleNames (ilModule: ILModuleDef) : Set<string> =
     let names = HashSet<string>(StringComparer.Ordinal)
 
     let rec visit (typeDef: ILTypeDef) =
@@ -734,7 +743,26 @@ let private createCore
     let methodSemanticsEntries =
         collectMethodSemanticsEntries ilModule maps.MethodTokens maps.PropertyTokens maps.EventTokens
 
-    let synthesizedNames = collectSynthesizedNameSnapshot ilModule
+    let reconstructedSynthesizedNames = collectSynthesizedNameSnapshot ilModule
+
+    // Precedence is explicit: recorded > reconstructed. A recorded snapshot is the
+    // allocation-order ground truth persisted by the flag-on compiler; the IL walk is
+    // only an old-baseline fallback and keeps its previous behavior unchanged.
+    let synthesizedNames, synthesizedNameSnapshotSource =
+        match
+            portablePdbSnapshot
+            |> Option.bind (fun snapshot -> readSynthesizedNameSnapshotFromPortablePdb snapshot.Bytes)
+        with
+        | Some recordedSnapshot -> recordedSnapshot, SynthesizedNameSnapshotSource.Recorded
+        | None -> reconstructedSynthesizedNames, SynthesizedNameSnapshotSource.Reconstructed
+
+    if traceClosureNames.Value then
+        let source =
+            match synthesizedNameSnapshotSource with
+            | SynthesizedNameSnapshotSource.Recorded -> "recorded"
+            | SynthesizedNameSnapshotSource.Reconstructed -> "reconstructed"
+
+        printfn "[fsharp-hotreload][closure-names] synthesized-name snapshot source=%s buckets=%d" source (Map.count synthesizedNames)
 
     // The baseline PDB is already in memory here (captured alongside the emitted
     // assembly), so the EnC CDI rows are decoded eagerly; flag-off baselines and
@@ -769,6 +797,7 @@ let private createCore
         IlxGenEnvironment = ilxGenEnvironment
         PortablePdb = portablePdbSnapshot
         SynthesizedNameSnapshot = synthesizedNames
+        SynthesizedNameSnapshotSource = synthesizedNameSnapshotSource
         SynthesizedTypeShapes = maps.SynthesizedTypeShapes
         MetadataHandles = BaselineHandleCache.Empty
         TypeReferenceTokens = Map.empty

@@ -247,6 +247,7 @@ module internal TestHelpers =
           referenceAssemblyAttribOpt = None
           referenceAssemblySignatureHash = None
           pathMap = PathMap.empty
+          moduleCustomDebugInfoRows = []
           methodCustomDebugInfoRows = Map.empty }
 
     let private collectSourceDocuments (ilModule: ILModuleDef) : ILSourceDocument list =
@@ -982,6 +983,7 @@ module internal TestHelpers =
               IlxGenEnvironment = None
               PortablePdb = None
               SynthesizedNameSnapshot = Map.empty
+              SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
               SynthesizedTypeShapes = Map.empty
               MetadataHandles =
                 { MethodHandles = Map.empty

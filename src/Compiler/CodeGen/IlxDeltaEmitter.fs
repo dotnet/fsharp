@@ -248,6 +248,7 @@ let private defaultWriterOptions (ilg: ILGlobals) (checksumAlgorithm: HashAlgori
         referenceAssemblyAttribOpt = None
         referenceAssemblySignatureHash = None
         pathMap = PathMap.empty
+        moduleCustomDebugInfoRows = []
         methodCustomDebugInfoRows = Map.empty
     }
 
@@ -3311,6 +3312,9 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
 /// in-process. When neither is present, the emitter falls back to the legacy in-memory rewrite
 /// (callers that construct modules with debug points, e.g. the component tests, need no sibling file).
 let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequest) : IlxDelta =
+    let usesRecordedSynthesizedSnapshot =
+        request.SynthesizedNames |> Option.exists (fun map -> map.UsesRecordedSnapshot)
+
     let synthesizedBuckets =
         request.SynthesizedNames
         |> Option.map (fun map -> map.Snapshot |> Seq.map (fun struct (basic, names) -> basic, names) |> dict)
@@ -3645,6 +3649,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
     let getAliasCandidates (typeName: string) =
         match synthesizedBuckets with
+        | Some _ when usesRecordedSynthesizedSnapshot -> [| typeName |]
         // Generation-suffixed closure names (allocator format: {base}@hotreload#g{N}_o{i})
         // identify occurrences ADDED in a delta compile: they never alias a baseline
         // closure class, so basic-name bucket expansion must not apply (it would make

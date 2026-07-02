@@ -28,6 +28,10 @@ type options =
         referenceAssemblyAttribOpt: ILAttribute option
         referenceAssemblySignatureHash: int option
         pathMap: PathMap
+        /// Hot reload baseline side channel: module-level CustomDebugInformation rows for
+        /// F#-owned records in the portable PDB. Empty unless a gated hot reload capture
+        /// compile needs to persist extra deterministic state.
+        moduleCustomDebugInfoRows: PdbModuleCustomDebugInfo list
         /// Hot reload baseline side channel: per-method EnC CustomDebugInformation rows for
         /// the portable PDB writer, keyed by IL method name. Empty unless the compilation
         /// runs with --test:HotReloadDeltas (flag-off output stays byte-identical).

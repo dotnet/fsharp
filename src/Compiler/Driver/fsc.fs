@@ -34,6 +34,7 @@ open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerEmitHookBootstrap
 open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CreateILModule
@@ -1239,6 +1240,7 @@ let main6
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
                             referenceAssemblySignatureHash = refAssemblySignatureHash
                             pathMap = tcConfig.pathMap
+                            moduleCustomDebugInfoRows = []
                             methodCustomDebugInfoRows = Map.empty
                         },
                         ilxMainModule,
@@ -1295,6 +1297,30 @@ let main6
                                 ClosureNameAllocator.computeBaselineClosureNameRows tcGlobals implFiles recordedClosureNames
                         | None -> Map.empty
 
+                    let moduleCustomDebugInfoRows =
+                        match hotReloadCaptureInputs with
+                        | Some _ when
+                            Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DISABLE_SYNTHESIZED_NAME_SNAPSHOT_CDI")
+                            <> "1"
+                            ->
+                            match tryGetCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) with
+                            | Some map ->
+                                let overrides =
+                                    ClosureNameAllocationState.getSynthesizedNameOverrides (tcGlobals.CompilerGlobalState.Value :> obj)
+
+                                let emittedNames =
+                                    FSharp.Compiler.HotReloadBaseline.collectTypeDefSimpleNames ilxMainModule
+
+                                map.Snapshot
+                                |> ClosureNameAllocationState.applySynthesizedNameOverrides overrides
+                                |> Seq.choose (fun struct (key, names) ->
+                                    let names = names |> Array.filter emittedNames.Contains
+
+                                    if names.Length = 0 then None else Some(struct (key, names)))
+                                |> EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
+                            | None -> []
+                        | _ -> []
+
                     let ilWriteOptions: ILBinaryWriter.options =
                         {
                             ilg = tcGlobals.ilg
@@ -1315,6 +1341,7 @@ let main6
                             referenceAssemblyAttribOpt = None
                             referenceAssemblySignatureHash = None
                             pathMap = tcConfig.pathMap
+                            moduleCustomDebugInfoRows = moduleCustomDebugInfoRows
                             methodCustomDebugInfoRows = methodCustomDebugInfoRows
                         }
 

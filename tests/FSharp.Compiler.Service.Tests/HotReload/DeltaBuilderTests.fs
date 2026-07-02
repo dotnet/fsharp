@@ -45,6 +45,7 @@ module DeltaBuilderTests =
           IlxGenEnvironment = None
           PortablePdb = None
           SynthesizedNameSnapshot = Map.empty
+          SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
           SynthesizedTypeShapes = Map.empty
           MetadataHandles =
             { MethodHandles = Map.empty

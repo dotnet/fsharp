@@ -39,6 +39,7 @@ type ClosureNameStateHolder() =
     let syncRoot = obj ()
     let mutable recordedNamesByStamp: Dictionary<int64, string> option = None
     let mutable assignedNamesByStamp: Map<int64, string> = Map.empty
+    let synthesizedNameOverrides = Dictionary<string, string>()
     // State machine resume points recorded by IlxGen lowering, keyed by the
     // emitted state machine struct's full type name. Shares the recording lifecycle of
     // recordedNamesByStamp: both begin/clear together, so flag-off compiles never pay.
@@ -48,6 +49,7 @@ type ClosureNameStateHolder() =
     member _.BeginRecording() =
         lock syncRoot (fun () ->
             recordedNamesByStamp <- Some(Dictionary<int64, string>())
+            synthesizedNameOverrides.Clear()
             recordedResumePointsByTypeName <- Some(Dictionary<string, int list>()))
 
     member _.Record(stamp: int64, name: string) =
@@ -55,6 +57,11 @@ type ClosureNameStateHolder() =
             match recordedNamesByStamp with
             | Some recorded -> recorded[stamp] <- name
             | None -> ())
+
+    member _.RecordSynthesizedNameOverride(replayName: string, emittedName: string) =
+        lock syncRoot (fun () ->
+            if replayName <> emittedName then
+                synthesizedNameOverrides[replayName] <- emittedName)
 
     member _.RecordedNames() =
         lock syncRoot (fun () ->
@@ -81,15 +88,21 @@ type ClosureNameStateHolder() =
             | None -> Map.empty)
 
     member _.SetAssignedNames(names: Map<int64, string>) =
-        lock syncRoot (fun () -> assignedNamesByStamp <- names)
+        lock syncRoot (fun () ->
+            assignedNamesByStamp <- names
+            synthesizedNameOverrides.Clear())
 
     member _.TryGetAssignedName(stamp: int64) =
         lock syncRoot (fun () -> Map.tryFind stamp assignedNamesByStamp)
+
+    member _.SynthesizedNameOverrides() =
+        lock syncRoot (fun () -> synthesizedNameOverrides |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq)
 
     member _.Clear() =
         lock syncRoot (fun () ->
             recordedNamesByStamp <- None
             assignedNamesByStamp <- Map.empty
+            synthesizedNameOverrides.Clear()
             recordedResumePointsByTypeName <- None)
 
 let private holders = ConditionalWeakTable<obj, ClosureNameStateHolder>()
@@ -127,6 +140,30 @@ let getRecordedStateMachineResumePoints (owner: obj) : Map<string, int list> =
     match tryGetHolder owner with
     | Some holder -> holder.RecordedResumePoints()
     | None -> Map.empty
+
+/// The replay-name -> final-emitted-name overrides observed at the closure lowering
+/// call site during this compile. Applying these to FSharpSynthesizedTypeMaps.Snapshot
+/// preserves the allocation slots while recording the names that actually hit IL.
+let getSynthesizedNameOverrides (owner: obj) : Map<string, string> =
+    match tryGetHolder owner with
+    | Some holder -> holder.SynthesizedNameOverrides()
+    | None -> Map.empty
+
+let applySynthesizedNameOverrides
+    (overrides: Map<string, string>)
+    (snapshot: seq<struct (string * string[])>)
+    : seq<struct (string * string[])> =
+
+    snapshot
+    |> Seq.map (fun struct (key, names) ->
+        let names =
+            names
+            |> Array.map (fun name ->
+                match Map.tryFind name overrides with
+                | Some emittedName -> emittedName
+                | None -> name)
+
+        struct (key, names))
 
 /// Installs the allocator-assigned stamp -> closure-name table for a delta compile.
 let setAssignedClosureNames (owner: obj) (names: Map<int64, string>) =

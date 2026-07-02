@@ -122,6 +122,10 @@ type PdbMethodData =
 /// definition row in the portable PDB.
 type PdbMethodCustomDebugInfo = { KindGuid: Guid; Blob: byte[] }
 
+/// A pre-serialized CustomDebugInformation row (kind GUID + blob) to attach to the
+/// module definition row in the portable PDB.
+type PdbModuleCustomDebugInfo = { KindGuid: Guid; Blob: byte[] }
+
 module SequencePoint =
     let orderBySource sp1 sp2 =
         let c1 = compare sp1.Document sp2.Document
@@ -366,6 +370,7 @@ type PortablePdbGenerator
         checksumAlgorithm,
         info: PdbData,
         pathMap: PathMap,
+        moduleCustomDebugInfoRows: PdbModuleCustomDebugInfo list,
         methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>
     ) =
 
@@ -494,6 +499,14 @@ type PortablePdbGenerator
                 ModuleDefinitionHandle.op_Implicit EntityHandle.ModuleDefinition,
                 metadata.GetOrAddGuid sourceLinkId,
                 metadata.GetOrAddBlob(ms.ToArray())
+            )
+            |> ignore
+
+        for cdiRow in moduleCustomDebugInfoRows |> List.sortBy (fun row -> row.KindGuid) do
+            metadata.AddCustomDebugInformation(
+                ModuleDefinitionHandle.op_Implicit EntityHandle.ModuleDefinition,
+                metadata.GetOrAddGuid cdiRow.KindGuid,
+                metadata.GetOrAddBlob cdiRow.Blob
             )
             |> ignore
 
@@ -894,10 +907,20 @@ let generatePortablePdb
     checksumAlgorithm
     (info: PdbData)
     (pathMap: PathMap)
+    (moduleCustomDebugInfoRows: PdbModuleCustomDebugInfo list)
     (methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>)
     =
     let generator =
-        PortablePdbGenerator(embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, info, pathMap, methodCustomDebugInfoRows)
+        PortablePdbGenerator(
+            embedAllSource,
+            embedSourceList,
+            sourceLink,
+            checksumAlgorithm,
+            info,
+            pathMap,
+            moduleCustomDebugInfoRows,
+            methodCustomDebugInfoRows
+        )
 
     generator.Emit()
 

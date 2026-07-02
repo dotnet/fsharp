@@ -577,6 +577,7 @@ module MdvValidationTests =
               referenceAssemblyAttribOpt = None
               referenceAssemblySignatureHash = None
               pathMap = PathMap.empty
+              moduleCustomDebugInfoRows = []
               methodCustomDebugInfoRows = Map.empty }
 
         let assemblyBytes, pdbBytesOpt, tokenMappings, _ =
