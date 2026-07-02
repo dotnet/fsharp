@@ -269,6 +269,8 @@ type IlxGenOptions =
 
         /// When set to true, the IlxGen will delay generation of method bodies and generated them later in parallel (parallelized across files)
         parallelIlxGenEnabled: bool
+
+        alwaysInline: bool
     }
 
 /// Compilation environment for compiling a fragment of an assembly
@@ -5840,8 +5842,13 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
 
     | None ->
 
-        // If witnesses are available, we should now always find trait witnesses in scope
-        assert not generateWitnesses
+        // When alwaysInline is true, all trait calls should be resolved via witnesses in scope.
+        // When alwaysInline is false, inline functions are kept as calls rather than inlined.
+        // Their witness arguments may contain TraitCall operations for constraints that were resolved
+        // without a witness (e.g., when the constraint is satisfied by a known concrete type).
+        // In such cases, generateWitnesses can be true (because other witnesses are in scope) but
+        // the specific trait's witness is not found. Fall through to the constraint solver to resolve it.
+        assert (not generateWitnesses || not cenv.options.alwaysInline)
 
         let exprOpt =
             CommitOperationResult(ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
@@ -7290,8 +7297,19 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let cloName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
+            // The closure name counter is keyed by (basicName, fileIndex). When an expression is copied
+            // from another file (e.g. specializing an inline function body across files), its ranges
+            // still point at the original file, so its closures fall into a different counter bucket
+            // than closures minted for the current file. Since all these closures live under the same
+            // enclosing type, that can produce two closures with the same final name. Bucket the counter
+            // by the enclosing type's file while keeping expr.Range's StartLine for the displayed name.
+            let nameRange =
+                if expr.Range.FileIndex = eenv.cloc.Range.FileIndex then
+                    expr.Range
+                else
+                    Range.mkFileIndexRange eenv.cloc.Range.FileIndex expr.Range.Start expr.Range.End
 
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
+            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, nameRange, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
@@ -7348,6 +7366,21 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             | _ -> ftyvs)
 
     let cloFreeTyvars = cloFreeTyvars.FreeTypars |> Zset.elements
+
+    // When generating witnesses, witness types may reference type variables that appear
+    // only in SRTP constraints of the captured type variables (e.g. 'b in 'a : (member M: unit -> 'b)).
+    // Include those so they are available when generating witness field types.
+    let cloFreeTyvars =
+        if ComputeGenerateWitnesses g eenv then
+            let extra =
+                GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
+                |> List.collect (fun w ->
+                    (freeInType CollectTyparsNoCaching (GenWitnessTy g w)).FreeTypars
+                    |> Zset.elements)
+
+            (cloFreeTyvars @ extra) |> List.distinctBy (fun tp -> tp.Stamp)
+        else
+            cloFreeTyvars
 
     let eenvinner = eenv |> EnvForTypars cloFreeTyvars
 

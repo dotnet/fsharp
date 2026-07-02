@@ -5,6 +5,7 @@ module internal rec FSharp.Compiler.TypedTree
 
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.Diagnostics
 open Internal.Utilities.Collections
@@ -41,21 +42,15 @@ type StampMap<'T> = Map<Stamp, 'T>
 
 [<RequireQualifiedAccess>]
 type ValInline =
-
-    /// Indicates the value is inlined but the .NET IL code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
     | Always
-
-    /// Indicates the value may optionally be inlined by the optimizer
     | Optional
-
-    /// Indicates the value must never be inlined by the optimizer
     | Never
+    | InlinedDefinition
 
-    /// Returns true if the implementation of a value should be inlined
     member x.ShouldInline = 
         match x with 
         | ValInline.Always -> true 
-        | ValInline.Optional | ValInline.Never -> false
+        | ValInline.Optional | ValInline.Never | ValInline.InlinedDefinition -> false
 
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, and 
 /// if the value has been generalized or not as yet.
@@ -110,6 +105,7 @@ type ValFlags(flags: int64) =
                      (if isCompGen then                                      0b00000000000000001000L 
                       else                                                   0b000000000000000000000L) |||
                      (match inlineInfo with
+                                        | ValInline.InlinedDefinition ->     0b00000000000000000000L
                                         | ValInline.Always ->                0b00000000000000010000L
                                         | ValInline.Optional ->              0b00000000000000100000L
                                         | ValInline.Never ->                 0b00000000000000110000L) |||
@@ -166,7 +162,7 @@ type ValFlags(flags: int64) =
 
     member x.InlineInfo = 
                                   match (flags       &&&                     0b00000000000000110000L) with 
-                                                             |               0b00000000000000000000L
+                                                             |               0b00000000000000000000L -> ValInline.InlinedDefinition
                                                              |               0b00000000000000010000L -> ValInline.Always
                                                              |               0b00000000000000100000L -> ValInline.Optional
                                                              |               0b00000000000000110000L -> ValInline.Never
@@ -176,6 +172,7 @@ type ValFlags(flags: int64) =
             let flags =
                      (flags       &&&                                     ~~~0b00000000000000110000L) |||
                      (match inlineInfo with
+                                     | ValInline.InlinedDefinition ->        0b00000000000000000000L
                                      | ValInline.Always ->                   0b00000000000000010000L
                                      | ValInline.Optional ->                 0b00000000000000100000L
                                      | ValInline.Never ->                    0b00000000000000110000L)
@@ -262,7 +259,12 @@ type ValFlags(flags: int64) =
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
         // Clear the IsParameter, only used during type checking of the current compilation to specialize diagnostics
-                                                      (flags       &&&   ~~~0b10010011001100000000000L) 
+        let bits =                                    (flags       &&&   ~~~0b10010011001100000000000L)
+        // Pickle ValInline.InlinedDefinition as ValInline.Always.
+        if bits &&& 0b00000000000000110000L = 0L then
+            bits ||| 0b00000000000000010000L
+        else
+            bits
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -2020,6 +2022,17 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 
     /// Mutation used during compilation of FSharp.Core.dll
     let mutable entities = entities 
+
+#if !NO_TYPEPROVIDERS
+    // One Entity per provided type even when linked concurrently from several files (graph-based checking).
+    let mutable providedEntitiesByMangledName: ConcurrentDictionary<string, Lazy<Entity>> | null = null
+#endif
+
+    // Bumped (with release semantics) whenever 'entities' is mutated. The entity-derived lookup caches below
+    // are tagged with the version they were built from, so a reader on another graph-based-checking thread
+    // recomputes after a concurrent provided-type append instead of trusting a stale memo. Accessed via
+    // Interlocked/Volatile rather than [<VolatileField>] so its address can be taken for those intrinsics.
+    let mutable entitiesVersion = 0
       
     // Lookup tables keyed the way various clients expect them to be keyed.
     // We attach them here so we don't need to store lookup tables via any other technique.
@@ -2027,20 +2040,23 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     // The type option ref is used because there are a few functions that treat these as first class values.
     // We should probably change to 'mutable'.
     //
-    // We do not need to lock this mutable state this it is only ever accessed from the compiler thread.
+    // We do not need to lock most of this mutable state since it is only ever accessed from the compiler thread.
+    // The exception is the four lookup tables invalidated by mutating 'entities' (provided-type linking can run
+    // on several graph-based-checking threads): those are read through 'cacheOptByrefByVersion' tagged with
+    // 'entitiesVersion', which stays coherent under concurrent appends without any lock.
     let activePatternElemRefCache: NameMap<ActivePatternElemRef> option ref = ref None
 
     let mutable modulesByDemangledNameCache: NameMap<ModuleOrNamespace> option = None
 
     let mutable exconsByDemangledNameCache: NameMap<Tycon> option = None
 
-    let mutable tyconsByDemangledNameAndArityCache: LayeredMap<NameArityPair, Tycon> option = None
+    let mutable tyconsByDemangledNameAndArityCache: (int * LayeredMap<NameArityPair, Tycon>) option = None
 
-    let mutable tyconsByAccessNamesCache: LayeredMultiMap<string, Tycon> option = None
+    let mutable tyconsByAccessNamesCache: (int * LayeredMultiMap<string, Tycon>) option = None
 
-    let mutable tyconsByMangledNameCache: NameMap<Tycon> option = None
+    let mutable tyconsByMangledNameCache: (int * NameMap<Tycon>) option = None
 
-    let mutable allEntitiesByMangledNameCache: NameMap<Entity> option = None
+    let mutable allEntitiesByMangledNameCache: (int * NameMap<Entity>) option = None
 
     let mutable allValsAndMembersByPartialLinkageKeyCache: MultiMap<ValLinkagePartialKey, Val> option = None
 
@@ -2063,15 +2079,34 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
         entities <- QueueList.appendOne entities modul
         modulesByDemangledNameCache <- None          
         allEntitiesByMangledNameCache <- None       
+        System.Threading.Interlocked.Increment(&entitiesVersion) |> ignore
 
 #if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
-    member mtyp.AddProvidedTypeEntity(entity: Entity) = 
-        entities <- QueueList.appendOne entities entity
-        tyconsByMangledNameCache <- None          
-        tyconsByDemangledNameAndArityCache <- None
-        tyconsByAccessNamesCache <- None
-        allEntitiesByMangledNameCache <- None             
+    member _.AddProvidedTypeEntity(entity: Entity) = 
+        // Several graph-based-checking threads may link provided types into this module at once, so append
+        // atomically with a CAS loop. Bump 'entitiesVersion' last (release): a reader observing the new version
+        // is guaranteed to also see 'entity' in 'entities', so the version-stamped lookup caches recompute and
+        // never strand a table missing it. The caches need no explicit invalidation - the version bump does it.
+        let rec append () =
+            let current = entities
+            let updated = QueueList.appendOne current entity
+            if not (obj.ReferenceEquals(System.Threading.Interlocked.CompareExchange(&entities, updated, current), current)) then
+                append ()
+        append ()
+        System.Threading.Interlocked.Increment(&entitiesVersion) |> ignore
+
+    /// Interns a provided-type entity by mangled name; callers must use the returned entity.
+    member mtyp.GetOrInternProvidedEntity(mangledName: string, create: unit -> Entity) : Entity =
+        let table =
+            match providedEntitiesByMangledName with
+            | null ->
+                let created = ConcurrentDictionary<string, Lazy<Entity>>()
+                match System.Threading.Interlocked.CompareExchange(&providedEntitiesByMangledName, created, null) with
+                | null -> created
+                | existing -> existing
+            | existing -> existing
+        table.GetOrAdd(mangledName, fun _ -> lazy (let entity = create () in mtyp.AddProvidedTypeEntity entity; entity)).Value
 #endif 
           
     /// Return a new module or namespace type with an entity added.
@@ -2101,23 +2136,26 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     /// table is indexed by both name and generic arity. This means that for generic 
     /// types "List`1", the entry (List, 1) will be present.
     member mtyp.TypesByDemangledNameAndArity = 
-        cacheOptByref &tyconsByDemangledNameAndArityCache (fun () -> 
+        let version = System.Threading.Volatile.Read(&entitiesVersion)
+        cacheOptByrefByVersion version &tyconsByDemangledNameAndArityCache (fun () -> 
            LayeredMap.Empty.AddMany( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
 
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and, for generic types, also by mangled name.
     member mtyp.TypesByAccessNames = 
-        cacheOptByref &tyconsByAccessNamesCache (fun () -> 
+        let version = System.Threading.Volatile.Read(&entitiesVersion)
+        cacheOptByrefByVersion version &tyconsByAccessNamesCache (fun () -> 
              LayeredMultiMap.Empty.AddMany (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> Construct.KeyTyconByAccessNames tc.LogicalName tc)))
 
     // REVIEW: we can remove this lookup and use AllEntitiesByMangledName instead?
     member mtyp.TypesByMangledName = 
         let addTyconByMangledName (x: Tycon) tab = NameMap.add x.LogicalName x tab 
-        cacheOptByref &tyconsByMangledNameCache (fun () -> 
+        let version = System.Threading.Volatile.Read(&entitiesVersion)
+        cacheOptByrefByVersion version &tyconsByMangledNameCache (fun () -> 
              List.foldBack addTyconByMangledName mtyp.TypeAndExceptionDefinitions Map.empty)
 
     /// Get a table of entities indexed by both logical and compiled names
-    member _.AllEntitiesByCompiledAndLogicalMangledNames: NameMap<Entity> = 
+    member mtyp.AllEntitiesByCompiledAndLogicalMangledNames: NameMap<Entity> = 
         let addEntityByMangledName (x: Entity) tab = 
             let name1 = x.LogicalName
             let name2 = x.CompiledName
@@ -2125,7 +2163,8 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
             if name1 = name2 then tab
             else NameMap.add name2 x tab 
           
-        cacheOptByref &allEntitiesByMangledNameCache (fun () -> 
+        let version = System.Threading.Volatile.Read(&entitiesVersion)
+        cacheOptByrefByVersion version &allEntitiesByMangledNameCache (fun () -> 
              QueueList.foldBack addEntityByMangledName entities Map.empty)
 
     /// Get a table of entities indexed by both logical name
@@ -3524,10 +3563,12 @@ type NonLocalEntityRef =
                 match st.PApply((fun st -> st.GetNestedType path[i]), m) with
                 | Tainted.Null -> ValueNone
                 | Tainted.NonNull st -> 
-                    let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
-                    parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity newEntity
-                    if i = path.Length-1 then ValueSome newEntity
-                    else tryResolveNestedTypeOf(newEntity, resolutionEnvironment, st, i+1)
+                    let canonicalEntity =
+                        parentEntity.ModuleOrNamespaceType.GetOrInternProvidedEntity(
+                            path[i],
+                            (fun () -> Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)))
+                    if i = path.Length-1 then ValueSome canonicalEntity
+                    else tryResolveNestedTypeOf(canonicalEntity, resolutionEnvironment, st, i+1)
 
             tryResolveNestedTypeOf(entity, resolutionEnvironment, st, i)
 
@@ -3570,9 +3611,9 @@ type NonLocalEntityRef =
                     // Note: this is similar to code in CompileOps.fs
                     let rec injectNamespacesFromIToJ (entity: Entity) k = 
                         if k = j then 
-                            let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
-                            entity.ModuleOrNamespaceType.AddProvidedTypeEntity newEntity
-                            newEntity
+                            entity.ModuleOrNamespaceType.GetOrInternProvidedEntity(
+                                path[j],
+                                (fun () -> Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)))
                         else
                             let cpath = entity.CompilationPath.NestedCompPath entity.LogicalName (ModuleOrNamespaceKind.Namespace false)
                             let newEntity = 

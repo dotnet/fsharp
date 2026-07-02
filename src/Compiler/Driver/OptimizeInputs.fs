@@ -327,6 +327,7 @@ let ApplyAllOptimizations
             // Only do abstractBigTargets in the first phase, and only when TLR is on.
             abstractBigTargets = tcConfig.doTLR
             reportingPhase = true
+            alwaysInline = tcConfig.alwaysInline
         }
 
     // Only do these two steps in the first phase.
@@ -583,6 +584,7 @@ let GenerateIlxCode
             isInteractiveItExpr = isInteractiveItExpr
             alwaysCallVirt = tcConfig.alwaysCallVirt
             parallelIlxGenEnabled = tcConfig.parallelIlxGen
+            alwaysInline = tcConfig.alwaysInline
         }
 
     ilxGenerator.GenerateCode(ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)
