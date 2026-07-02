@@ -675,7 +675,7 @@ type FSharpChecker
             tryGetOutputPathFromProjectSnapshot,
             (fun outputPath projectKey -> registerHotReloadEmissionTarget sessionStore outputPath projectKey),
             (fun () -> unregisterHotReloadEmissionTargets sessionStore),
-            Some(fun (results, outfile) -> this.CompileFromCheckedProject(results, outfile) |> Async.Ignore)
+            Some(fun (results, outfile) -> this.CompileFromCheckedProject(results, outfile))
         )
 
     member _.HotReloadCapabilities =
@@ -1124,7 +1124,8 @@ type FSharpChecker
 
     /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
     /// For dev-loop use only. Requires keepAssemblyContents=true.
-    /// Returns the output file path on success.
+    /// Writes the assembly and portable PDB to outfile and returns the emitted module
+    /// parsed back from the written bytes.
     member internal _.CompileFromCheckedProject(results: FSharpCheckProjectResults, outfile: string) =
         async {
             let tcConfig, tcGlobals, tcImports, unfinalizedCcu, ccuSig, topAttrsOpt, _ilAssemRef, typedImplFilesOpt =
@@ -1326,35 +1327,66 @@ type FSharpChecker
             // remapping; leaving the external build's stale PDB on disk would silently feed
             // outdated lines into that analysis. CDI rows stay empty (methodCustomDebugInfoRows
             // below): those are baseline-capture-only, the fresh PDB only needs sequence points.
-            WriteILBinaryFile(
-                {
-                    ilg = tcGlobals.ilg
-                    outfile = outfile
-                    pdbfile = Some(!!Path.ChangeExtension(outfile, ".pdb"))
-                    emitTailcalls = tcConfig.emitTailcalls
-                    deterministic = tcConfig.deterministic
-                    portablePDB = true
-                    embeddedPDB = false
-                    embedAllSource = false
-                    embedSourceList = []
-                    allGivenSources = []
-                    sourceLink = ""
-                    checksumAlgorithm = tcConfig.checksumAlgorithm
-                    signer = GetStrongNameSigner(ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs))
-                    dumpDebugInfo = false
-                    referenceAssemblyOnly = false
-                    referenceAssemblyAttribOpt = None
-                    referenceAssemblySignatureHash = None
-                    pathMap = tcConfig.pathMap
-                    methodCustomDebugInfoRows = Map.empty
-                },
-                ilxMainModule,
-                normalizeAssemblyRefs
-            )
+            // Write once in memory: the bytes are persisted to disk below (the runtime and
+            // debugger read them there) AND parsed straight back for the caller, so the hot
+            // reload delta path consumes the exact read-back representation a disk parse
+            // would give, without the disk round trip.
+            let assemblyBytes, pdbBytesOpt =
+                WriteILBinaryInMemory(
+                    {
+                        ilg = tcGlobals.ilg
+                        outfile = outfile
+                        pdbfile = Some(!!Path.ChangeExtension(outfile, ".pdb"))
+                        emitTailcalls = tcConfig.emitTailcalls
+                        deterministic = tcConfig.deterministic
+                        portablePDB = true
+                        embeddedPDB = false
+                        embedAllSource = false
+                        embedSourceList = []
+                        allGivenSources = []
+                        sourceLink = ""
+                        checksumAlgorithm = tcConfig.checksumAlgorithm
+                        signer = GetStrongNameSigner(ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs))
+                        dumpDebugInfo = false
+                        referenceAssemblyOnly = false
+                        referenceAssemblyAttribOpt = None
+                        referenceAssemblySignatureHash = None
+                        pathMap = tcConfig.pathMap
+                        methodCustomDebugInfoRows = Map.empty
+                    },
+                    ilxMainModule,
+                    normalizeAssemblyRefs
+                )
+
+            // WriteILBinaryFile created the output directory; keep that contract.
+            match Path.GetDirectoryName outfile with
+            | null
+            | "" -> ()
+            | dir -> Directory.CreateDirectory dir |> ignore
+
+            File.WriteAllBytes(outfile, assemblyBytes)
+
+            let pdbPath = !!Path.ChangeExtension(outfile, ".pdb")
+
+            match pdbBytesOpt with
+            | Some pdbBytes -> File.WriteAllBytes(pdbPath, pdbBytes)
+            | None -> ()
 
             ReportTime tcConfig "Exiting"
 
-            return outfile
+            // Parse the just-written bytes back into the read-back representation the hot
+            // reload delta emitter and symbol matcher expect (a writer-side ILModuleDef is
+            // NOT equivalent: scope refs and body layout differ from a read module).
+            let readerOptions: ILReaderOptions =
+                {
+                    pdbDirPath = None
+                    reduceMemoryUsage = ReduceMemoryFlag.Yes
+                    metadataOnly = MetadataOnlyFlag.No
+                    tryGetMetadataSnapshot = fun _ -> None
+                }
+
+            use reader = OpenILModuleReaderFromBytes outfile assemblyBytes readerOptions
+            return reader.ILModuleDef
         }
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer

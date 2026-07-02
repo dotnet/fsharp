@@ -293,7 +293,7 @@ type internal FSharpHotReloadService
         // unchanged (deltas are still diffed against the same on-disk obj DLL); the external
         // build remains the default and is unaffected when the flag is unset. Parity caveats
         // for the in-process emit path are tracked alongside #19941.
-        (inProcessCompile: (FSharpCheckProjectResults * string -> Async<unit>) option)
+        (inProcessCompile: (FSharpCheckProjectResults * string -> Async<ILModuleDef>) option)
         =
         async {
             match outputPath with
@@ -344,15 +344,18 @@ type internal FSharpHotReloadService
                         // freshly written output. Flag off: no code path change beyond the env read.
                         let! inProcessCompileResult =
                             if not (isEnvVarTruthy "FSHARP_HOTRELOAD_INPROCESS_COMPILE") then
-                                async.Return(Result.Ok())
+                                async.Return(Result.Ok None)
                             else
                                 async {
                                     match inProcessCompile with
-                                    | None -> return Result.Ok()
+                                    | None -> return Result.Ok None
                                     | Some compile ->
                                         try
-                                            do! compile (projectResults, outputPath)
-                                            return Result.Ok()
+                                            // The compile returns the emitted module (refs normalized as
+                                            // written) so the delta path can consume it directly instead of
+                                            // re-parsing the file it just wrote.
+                                            let! freshModule = compile (projectResults, outputPath)
+                                            return Result.Ok(Some freshModule)
                                         with ex ->
                                             return
                                                 Result.Error(
@@ -362,7 +365,7 @@ type internal FSharpHotReloadService
 
                         match inProcessCompileResult with
                         | Result.Error error -> return Result.Error error
-                        | Result.Ok() ->
+                        | Result.Ok inMemoryModule ->
 
                             if not (File.Exists(outputPath)) then
                                 return
@@ -372,7 +375,11 @@ type internal FSharpHotReloadService
                                         )
                                     )
                             else
-                                waitForStableFile outputPath
+                                // The same process wrote and closed the output when the in-process
+                                // compile ran; only poll for stability when an external writer produced it.
+                                if inMemoryModule.IsNone then
+                                    waitForStableFile outputPath
+
                                 let outputFingerprint = tryGetOutputFingerprint outputPath
 
                                 let staleOutputErrorOpt =
@@ -425,14 +432,20 @@ type internal FSharpHotReloadService
                                 | Some staleError -> return Result.Error staleError
                                 | None ->
                                     let ilModuleResult: Result<_, FSharpHotReloadError> =
-                                        try
-                                            readIlModule outputPath |> Ok
-                                        with ex ->
-                                            Result.Error(
-                                                FSharpHotReloadError.DeltaEmissionFailed(
-                                                    $"Failed to read updated assembly '{outputPath}': {ex.Message}"
+                                        match inMemoryModule with
+                                        | Some freshModule ->
+                                            // In-process compile already holds the emitted module; skip the
+                                            // on-disk re-parse of the file this process just wrote.
+                                            Ok freshModule
+                                        | None ->
+                                            try
+                                                readIlModule outputPath |> Ok
+                                            with ex ->
+                                                Result.Error(
+                                                    FSharpHotReloadError.DeltaEmissionFailed(
+                                                        $"Failed to read updated assembly '{outputPath}': {ex.Message}"
+                                                    )
                                                 )
-                                            )
 
                                     match ilModuleResult with
                                     | Result.Error error -> return Result.Error error
@@ -553,7 +566,7 @@ type FSharpHotReloadSession
         // in-process from cached check results, bypassing an external `dotnet build`. Only
         // consulted by EmitDelta when FSHARP_HOTRELOAD_INPROCESS_COMPILE is truthy; None (or
         // the flag being unset) leaves the existing external-build contract untouched.
-        inProcessCompile: (FSharpCheckProjectResults * string -> Async<unit>) option
+        inProcessCompile: (FSharpCheckProjectResults * string -> Async<ILModuleDef>) option
     ) =
 
     let mutable disposed = 0
