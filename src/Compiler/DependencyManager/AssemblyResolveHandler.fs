@@ -54,7 +54,7 @@ type AssemblyResolveHandlerCoreclr(assemblyProbingPaths: AssemblyResolutionProbe
 
             let assemblyPathOpt =
                 assemblyPaths
-                |> Seq.tryFind (fun path -> Path.GetFileNameWithoutExtension(path) = simpleName)
+                |> Seq.tryFind (fun path -> String.Equals(Path.GetFileNameWithoutExtension(path), simpleName))
 
             match assemblyPathOpt with
             | Some path -> loadAssembly path
@@ -84,7 +84,7 @@ type AssemblyResolveHandlerDeskTop(assemblyProbingPaths: AssemblyResolutionProbe
 
             let assemblyPathOpt =
                 assemblyPaths
-                |> Seq.tryFind (fun path -> Path.GetFileNameWithoutExtension(path) = simpleName)
+                |> Seq.tryFind (fun path -> String.Equals(Path.GetFileNameWithoutExtension(path), simpleName))
 
             match assemblyPathOpt with
             | Some path -> Assembly.LoadFrom path

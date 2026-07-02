@@ -537,6 +537,11 @@
         <target state="translated">'as' 패턴의 오른쪽에 있는 변수가 아닌 패턴</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNotNullIfNotNull">
+        <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
+        <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">nullable 선택적 interop</target>

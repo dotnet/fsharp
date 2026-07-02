@@ -537,6 +537,11 @@
         <target state="translated">'as' desenlerinin sağındaki değişken olmayan desenler</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNotNullIfNotNull">
+        <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
+        <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">null atanabilir isteğe bağlı birlikte çalışma</target>
