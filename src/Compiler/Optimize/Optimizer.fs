@@ -1720,6 +1720,9 @@ and OpHasEffect context g m op tyargs =
     | TOp.LValueOp _ (* conservative *)
     | TOp.ValFieldSet _ -> true
 
+let effectContextOf (cenv: cenv) =
+    if cenv.optimizing then EffectContext.Emit else EffectContext.InlineBody
+
 /// When a delegate construction's Invoke body is a transparent forwarding call that the ILX generator can
 /// point the delegate directly at (see DelegateForwarding), prevent the optimizer from inlining the target
 /// into the body: inlining would dissolve the forwarding call before code generation and force the delegate
@@ -1740,14 +1743,14 @@ let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body
 
         let tmvs, body = BindUnitVars g (tmvs, invokeParamInfos, body)
 
-        match classifyForwardingTarget (ExprHasEffect g) g tmvs body with
+        match classifyForwardingTarget (ExprHasEffect (effectContextOf cenv)) g tmvs body with
         | DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, _, leadingArgs) when
             // Only a value compiled as a real method can be pointed at directly (mirrors IlxGen's
             // Method-storage requirement); local function values keep their inlining. Witness information
             // is not computable here, so 'false' is passed - over-suppressing for the rare
             // witness-requiring target only costs a missed inline in a body that stays a closure.
             vref.ValReprInfo.IsSome
-            && (fsharpValDirectlyBindable (ExprHasEffect g) g tmvs leadingArgs vref valUseFlags false)
+            && (fsharpValDirectlyBindable (ExprHasEffect (effectContextOf cenv)) g tmvs leadingArgs vref valUseFlags false)
                 .IsSome
             ->
             match (GetInfoForVal cenv env m vref).ValExprInfo with
@@ -1757,9 +1760,6 @@ let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body
         | _ -> env
     else
         env
-
-let effectContextOf (cenv: cenv) =
-    if cenv.optimizing then EffectContext.Emit else EffectContext.InlineBody
 
 let TryEliminateBinding cenv _env bind e2 _m =
     let g = cenv.g

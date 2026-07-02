@@ -7589,7 +7589,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
             // optimized builds, where debuggability is not a concern and the forwarding call survives to here.
             None
         else
-            match classifyForwardingTarget (Optimizer.ExprHasEffect g) g tmvs body with
+            match classifyForwardingTarget (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit) g tmvs body with
             | DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, tyargs, leadingArgs) ->
                 match StorageForValRef m vref eenvouter with
                 | Method(valReprInfo, vrefM, mspec, _, _, ctps, _, _, _, _, _, _) ->
@@ -7598,7 +7598,16 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
 
                     let hasWitnesses = ComputeGenerateWitnesses g eenvouter && not witnessInfos.IsEmpty
 
-                    match fsharpValDirectlyBindable (Optimizer.ExprHasEffect g) g tmvs leadingArgs vrefM valUseFlags hasWitnesses with
+                    match
+                        fsharpValDirectlyBindable
+                            (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit)
+                            g
+                            tmvs
+                            leadingArgs
+                            vrefM
+                            valUseFlags
+                            hasWitnesses
+                    with
                     | ValueSome(virtualCall, takesInstanceArg) ->
                         let ilTyArgs = GenTypeArgs cenv m eenvouter.tyenv tyargs
 
@@ -7652,7 +7661,16 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                                                                enclTypeInst,
                                                                methInst,
                                                                leadingArgs) ->
-                if ilMethodDirectlyBindable (Optimizer.ExprHasEffect g) g tmvs leadingArgs ilMethRef valUseFlag isCtor then
+                if
+                    ilMethodDirectlyBindable
+                        (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit)
+                        g
+                        tmvs
+                        leadingArgs
+                        ilMethRef
+                        valUseFlag
+                        isCtor
+                then
                     let ilEnclArgTys = GenTypeArgs cenv m eenvouter.tyenv enclTypeInst
                     let ilMethArgTys = GenTypeArgs cenv m eenvouter.tyenv methInst
                     let boxity = if isStruct then AsValue else AsObject

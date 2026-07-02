@@ -8,8 +8,8 @@ module internal FSharp.Compiler.DelegateForwarding
 
 open Internal.Utilities.Collections
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -135,19 +135,19 @@ let private matchForwarding g (aliases: ValMap<Expr>) (invokeParams: Val list) (
 // and fails the match, conservatively keeping the closure. The downstream bindability checks run on the
 // resolved (leading) arguments, so a receiver reached through an alias is still checked before being
 // hoisted.
-let rec private stripToForwardingCall (exprHasEffect: Expr -> bool) g (aliases: ValMap<Expr>) expr =
+let rec private stripToForwardingCall exprHasEffect g (aliases: ValMap<Expr>) expr =
     match stripDebugPoints expr with
-    | Expr.Let(TBind(v, rhs, _), inner, _, _) when not (exprHasEffect rhs) ->
+    | Expr.Let(TBind(v, rhs, _), inner, _, _) when not (exprHasEffect g rhs) ->
         stripToForwardingCall exprHasEffect g (aliases.Add v rhs) inner
     | Expr.App(f, fty, tyargs, args, m) as app ->
         match stripDebugPoints f with
         // '(let v = e in f2) args': lift the binding off the function position
-        | Expr.Let(TBind(v, rhs, _), f2, _, _) when not (exprHasEffect rhs) ->
+        | Expr.Let(TBind(v, rhs, _), f2, _, _) when not (exprHasEffect g rhs) ->
             stripToForwardingCall exprHasEffect g (aliases.Add v rhs) (Expr.App(f2, fty, tyargs, args, m))
         // '(fun v -> body) arg …': beta-reduce by aliasing, one parameter at a time
         | Expr.Lambda(_, None, None, [ v ], body, _, _) when List.isEmpty tyargs ->
             match args with
-            | a :: rest when not (exprHasEffect a) ->
+            | a :: rest when not (exprHasEffect g a) ->
                 let aliases = aliases.Add v a
 
                 match rest with
@@ -160,7 +160,7 @@ let rec private stripToForwardingCall (exprHasEffect: Expr -> bool) g (aliases: 
         | _ -> app, aliases
     | e -> e, aliases
 
-let classifyForwardingTarget (exprHasEffect: Expr -> bool) g (invokeParams: Val list) expr =
+let classifyForwardingTarget exprHasEffect g (invokeParams: Val list) expr =
     let call, aliases = stripToForwardingCall exprHasEffect g ValMap<Expr>.Empty expr
 
     match call with
@@ -233,12 +233,12 @@ let private receiverNotByref g (leadingArgs: Expr list) =
 ///    every Invoke; evaluating it once instead is observable unless it is side-effect free (a non-mutable
 ///    value, a constant, a pure field read).
 ///  - It must not reference the delegate's own Invoke parameters, which only exist inside the delegee method.
-let private receiverBindable (exprHasEffect: Expr -> bool) (invokeParams: Val list) (leadingArgs: Expr list) =
+let private receiverBindable exprHasEffect g (invokeParams: Val list) (leadingArgs: Expr list) =
     match leadingArgs with
     | [ recv ] ->
         let recvFreeLocals = (freeInExpr CollectLocals recv).FreeLocals
 
-        not (exprHasEffect recv)
+        not (exprHasEffect g recv)
         && (not (invokeParams |> List.exists (fun tv -> Zset.contains tv recvFreeLocals)))
     | _ -> true
 
@@ -249,7 +249,7 @@ let private receiverBindable (exprHasEffect: Expr -> bool) (invokeParams: Val li
 /// the base-call flag from valUseFlags. When directly bindable, returns the virtual-call and instance-receiver
 /// facts already derived from the call info, so the caller does not re-derive them.
 let fsharpValDirectlyBindable
-    (exprHasEffect: Expr -> bool)
+    exprHasEffect
     g
     (invokeParams: Val list)
     (leadingArgs: Expr list)
@@ -267,7 +267,7 @@ let fsharpValDirectlyBindable
         && not isSelfInit
         && not valUseFlags.IsVSlotDirectCall
         && receiverShapeOk leadingArgs takesInstanceArg
-        && receiverBindable exprHasEffect invokeParams leadingArgs
+        && receiverBindable exprHasEffect g invokeParams leadingArgs
         && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
         && receiverNotByref g leadingArgs
     then
@@ -281,7 +281,7 @@ let fsharpValDirectlyBindable
 /// by-value capture. The instance-receiver flag is derived here from ilMethRef and the base/constrained-call
 /// flags from valUseFlag.
 let ilMethodDirectlyBindable
-    (exprHasEffect: Expr -> bool)
+    exprHasEffect
     g
     (invokeParams: Val list)
     (leadingArgs: Expr list)
@@ -295,7 +295,7 @@ let ilMethodDirectlyBindable
     && not valUseFlag.IsVSlotDirectCall
     && not valUseFlag.IsPossibleConstrainedCall
     && receiverShapeOk leadingArgs takesInstanceArg
-    && receiverBindable exprHasEffect invokeParams leadingArgs
+    && receiverBindable exprHasEffect g invokeParams leadingArgs
     && staticLeadingArgIsRefType g takesInstanceArg leadingArgs
     && receiverNotByref g leadingArgs
 
