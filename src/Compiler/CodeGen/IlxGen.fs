@@ -2004,9 +2004,12 @@ type CodegenFileScope private () =
         localCounter <- k + 1
         struct (CodegenFileScope.currentFileIdx, k)
 
-    /// The file index of the innermost active CodegenFileScope.With on this thread, or 0 when no
-    /// codegen file scope is active. Used to bucket per-file, drain-order-independent names.
-    static member CurrentFileIdx = CodegenFileScope.currentFileIdx
+    /// The file index of the innermost active CodegenFileScope.With on this thread, or `fallbackFileIdx`
+    /// when no codegen file scope is active (currentFileIdx = 0). Centralizes the sentinel so callers can
+    /// bucket per-file, drain-order-independent names without knowing the 0 convention.
+    static member CurrentFileIdxOr(fallbackFileIdx: int) =
+        let idx = CodegenFileScope.currentFileIdx
+        if idx > 0 then idx else fallbackFileIdx
 
     static member With(fileIdx: int, action: unit -> 'T) : 'T =
         let prev = CodegenFileScope.currentFileIdx
@@ -7285,15 +7288,9 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // Bucket the "-N" disambiguation counter by the codegen file scope, not by expr.Range's
             // file. Inlined or synthetic-range closures otherwise share a counter bucket that the
             // parallel per-file drain increments in a racy order (#19928). Outside a codegen file
-            // scope (currentFileIdx = 0, e.g. interactive) fall back to the range's file.
-            let scopeFileIndex =
-                if CodegenFileScope.CurrentFileIdx > 0 then
-                    CodegenFileScope.CurrentFileIdx
-                else
-                    expr.Range.FileIndex
-
+            // scope (e.g. interactive) CurrentFileIdxOr falls back to the range's file.
             g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedNameInScope(
-                scopeFileIndex,
+                CodegenFileScope.CurrentFileIdxOr expr.Range.FileIndex,
                 basenameSafeForUseAsTypename,
                 expr.Range,
                 uniq
@@ -12690,6 +12687,11 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
 
         PrimeStableNamesForCodegen cenv implFiles
 
+        // Per-file CodegenFileScope indices are 1-based: firstImplFiles get 1..k, lastImplFile gets k+1,
+        // and the trailing residue drain gets k+2 (one past the last real file).
+        let lastImplFileIdx = List.length firstImplFiles + 1
+        let residueFileIdx = lastImplFileIdx + 1
+
         let eenv, _ =
             firstImplFiles
             |> List.fold
@@ -12701,10 +12703,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
                 (eenv, 1)
 
         let eenv =
-            CodegenFileScope.With(
-                List.length firstImplFiles + 1,
-                fun () -> GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
-            )
+            CodegenFileScope.With(lastImplFileIdx, fun () -> GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile)
 
         let runBatch (fileIdx, genMeths) =
             CodegenFileScope.With(fileIdx + 1, fun () -> genMeths |> Array.iter (fun gen -> gen ()))
@@ -12726,7 +12725,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         //printfn "#extraBindings = %d" extraBindings.Length
         if extraBindings.Length > 0 then
             CodegenFileScope.With(
-                List.length firstImplFiles + 2,
+                residueFileIdx,
                 fun () ->
                     let mexpr = TMDefs [ for b in extraBindings -> TMDefLet(b, range0) ]
 

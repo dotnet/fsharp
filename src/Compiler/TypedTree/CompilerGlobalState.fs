@@ -39,11 +39,14 @@ type NiceNameGenerator() =
     member this.FreshCompilerGeneratedName (name, m: range) =
         this.FreshCompilerGeneratedNameOfBasicName (GetBasicNameOfPossibleCompilerGeneratedName name, m)
 
-    /// Allocate a fresh name bucketed by `scopeFileIndex` (not by `m.FileIndex`).
-    member _.FreshCompilerGeneratedNameInScope (scopeFileIndex: int, name: string, m: range) =
-        let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
+    /// Allocate a fresh name for an already-basic name, bucketed by `scopeFileIndex` (not `m.FileIndex`).
+    member _.FreshCompilerGeneratedNameOfBasicNameInScope (scopeFileIndex: int, basicName, m: range) =
         let count = incrementBucket basicName scopeFileIndex
         mkName basicName m count
+
+    /// Allocate a fresh name bucketed by `scopeFileIndex` (not by `m.FileIndex`).
+    member this.FreshCompilerGeneratedNameInScope (scopeFileIndex: int, name: string, m: range) =
+        this.FreshCompilerGeneratedNameOfBasicNameInScope(scopeFileIndex, GetBasicNameOfPossibleCompilerGeneratedName name, m)
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
@@ -56,13 +59,14 @@ type StableNiceNameGenerator() =
     let niceNames = ConcurrentDictionary<string * int64, Lazy<string>>(max Environment.ProcessorCount 1, 127)
     let innerGenerator = NiceNameGenerator()
 
-    member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
+    // Shared stable-name cache: a given `uniq` always yields the same name, materialized once (lazily)
+    // via `fresh`, which owns the bucketing choice (per-range vs per-scope-file).
+    member private _.GetOrAddStableName(name, uniq, fresh: string -> string) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-        let key = basicName, uniq
-        let lazyName =
-            niceNames.GetOrAdd(key, fun (basicName, _) ->
-                lazy innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m))
-        lazyName.Value
+        niceNames.GetOrAdd((basicName, uniq), (fun (basicName, _) -> lazy fresh basicName)).Value
+
+    member x.GetUniqueCompilerGeneratedName(name, m: range, uniq) =
+        x.GetOrAddStableName(name, uniq, (fun basicName -> innerGenerator.FreshCompilerGeneratedNameOfBasicName(basicName, m)))
 
     /// As GetUniqueCompilerGeneratedName, but the disambiguating "-N" suffix counter is bucketed by
     /// `scopeFileIndex` rather than by `m.FileIndex`. IlxGen passes the current codegen file scope so
@@ -70,13 +74,8 @@ type StableNiceNameGenerator() =
     /// shared across files - e.g. an inlined closure whose range points at its (foreign or synthetic)
     /// definition file. `m` still contributes only the source-line marker. See
     /// https://github.com/dotnet/fsharp/issues/19928.
-    member x.GetUniqueCompilerGeneratedNameInScope (scopeFileIndex: int, name, m: range, uniq) =
-        let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-        let key = basicName, uniq
-        let lazyName =
-            niceNames.GetOrAdd(key, fun (basicName, _) ->
-                lazy innerGenerator.FreshCompilerGeneratedNameInScope(scopeFileIndex, basicName, m))
-        lazyName.Value
+    member x.GetUniqueCompilerGeneratedNameInScope(scopeFileIndex: int, name, m: range, uniq) =
+        x.GetOrAddStableName(name, uniq, (fun basicName -> innerGenerator.FreshCompilerGeneratedNameOfBasicNameInScope(scopeFileIndex, basicName, m)))
 
 [<Sealed>]
 type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
