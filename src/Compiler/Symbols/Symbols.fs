@@ -1886,7 +1886,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match v.InlineInfo with 
         | ValInline.Always -> FSharpInlineAnnotation.AlwaysInline
         | ValInline.Optional -> FSharpInlineAnnotation.OptionalInline
-        | ValInline.Never -> FSharpInlineAnnotation.NeverInline
+        | ValInline.Never | ValInline.InlinedDefinition -> FSharpInlineAnnotation.NeverInline
 
     member _.IsMutable = 
         if isUnresolved() then false else 
@@ -2010,6 +2010,9 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertySetterMethod
         | _ -> false
+
+    member x.IsPropertyAccessor =
+        x.IsPropertyGetterMethod || x.IsPropertySetterMethod
 
     member _.IsInstanceMember = 
         if isUnresolved() then false else 
