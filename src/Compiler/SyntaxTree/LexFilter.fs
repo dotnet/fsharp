@@ -383,6 +383,11 @@ let rec isSeqBlockElementContinuator token =
     //              Shortcut.CtrlO)
     | END | AND | WITH | THEN | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ -> true
 
+    // A closing '>' of a (possibly multiline) type-argument list is a closing bracket, like ')' or ']'
+    // above: it may align with the first column of a sequence block without starting a new element.
+    // See dotnet/fsharp#15171.
+    | GREATER true -> true
+
     // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND (_, _) -> true
     | ODUMMY token -> isSeqBlockElementContinuator token
