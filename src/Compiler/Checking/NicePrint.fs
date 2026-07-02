@@ -1808,7 +1808,7 @@ module InfoMemberPrinting =
             prettyTyparInst, resL
         | RecdCtor _ ->
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst
-            prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
+            prettyTyparInst, layoutMethInfoCSharpStyle extTypeDisplay amap m denv methInfo methInfo.FormalMethodInst
         | FSMeth(_, _, vref, _) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } infoReader typarInst vref
             prettyTyparInst, resL
