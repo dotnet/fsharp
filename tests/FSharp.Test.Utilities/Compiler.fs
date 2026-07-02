@@ -644,6 +644,9 @@ $ code --diff {outFile} {expectedFile}
 
     let withLangVersion10 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:10.0" ] "withLangVersion10 is only supported on F#" cUnit
+        
+    let withLangVersion11 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:11.0" ] "withLangVersion11 is only supported on F#" cUnit
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
@@ -1764,6 +1767,7 @@ $ code --diff {outFile} {expectedFile}
                        | :? OpCode as op -> yield (int op.Value &&& 0xffff), op
                        | _ -> () ]
 
+        // The simple name of a type handle (TypeDef/TypeRef); "" for anything else (e.g. TypeSpec).
         let private declaringTypeName (mdReader: MetadataReader) (handle: EntityHandle) =
             if handle.IsNil then ""
             else
@@ -1776,6 +1780,7 @@ $ code --diff {outFile} {expectedFile}
         let rec private tokenName (mdReader: MetadataReader) (token: int) =
             let handle = MetadataTokens.EntityHandle token
             let row = MetadataTokens.GetRowNumber handle
+            // Qualify members with their declaring type so closure/continuation creation is visible.
             let qualify ty nm = if ty = "" then nm else ty + "::" + nm
             match handle.Kind with
             | HandleKind.MethodDefinition ->
