@@ -50,7 +50,6 @@
 
     .method public hidebysig instance void M() cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ret
@@ -60,7 +59,6 @@
 
   .method public static void  'handler'() cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  8
     IL_0000:  ret

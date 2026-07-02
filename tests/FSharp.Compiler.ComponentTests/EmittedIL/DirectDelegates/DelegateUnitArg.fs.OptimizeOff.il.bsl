@@ -50,7 +50,6 @@
 
     .method public hidebysig instance void M() cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ret
@@ -58,7 +57,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname caseUnitNonEta@13
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname caseUnitNonEta@11
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -73,7 +72,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname caseUnitEta@16
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname caseUnitEta@14
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -88,7 +87,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname caseUnitInstanceNonEta@19
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname caseUnitInstanceNonEta@17
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -99,7 +98,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/C assembly/caseUnitInstanceNonEta@19::c
+      IL_0002:  stfld      class assembly/C assembly/caseUnitInstanceNonEta@17::c
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -111,7 +110,7 @@
       .maxstack  5
       .locals init (class assembly/C V_0)
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/C assembly/caseUnitInstanceNonEta@19::c
+      IL_0001:  ldfld      class assembly/C assembly/caseUnitInstanceNonEta@17::c
       IL_0006:  stloc.0
       IL_0007:  ldloc.0
       IL_0008:  callvirt   instance void assembly/C::M()
@@ -121,7 +120,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname caseUnitInstanceEta@22
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname caseUnitInstanceEta@20
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -132,7 +131,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/C assembly/caseUnitInstanceEta@22::c
+      IL_0002:  stfld      class assembly/C assembly/caseUnitInstanceEta@20::c
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -143,7 +142,7 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/C assembly/caseUnitInstanceEta@22::c
+      IL_0001:  ldfld      class assembly/C assembly/caseUnitInstanceEta@20::c
       IL_0006:  callvirt   instance void assembly/C::M()
       IL_000b:  nop
       IL_000c:  ret
@@ -153,7 +152,6 @@
 
   .method public static void  'handler'() cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  8
     IL_0000:  ret
@@ -164,7 +162,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/caseUnitNonEta@13::Invoke()
+    IL_0001:  ldftn      void assembly/caseUnitNonEta@11::Invoke()
     IL_0007:  newobj     instance void [runtime]System.Action::.ctor(object,
                                                                             native int)
     IL_000c:  ret
@@ -175,7 +173,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/caseUnitEta@16::Invoke()
+    IL_0001:  ldftn      void assembly/caseUnitEta@14::Invoke()
     IL_0007:  newobj     instance void [runtime]System.Action::.ctor(object,
                                                                             native int)
     IL_000c:  ret
@@ -186,8 +184,8 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/caseUnitInstanceNonEta@19::.ctor(class assembly/C)
-    IL_0006:  ldftn      instance void assembly/caseUnitInstanceNonEta@19::Invoke()
+    IL_0001:  newobj     instance void assembly/caseUnitInstanceNonEta@17::.ctor(class assembly/C)
+    IL_0006:  ldftn      instance void assembly/caseUnitInstanceNonEta@17::Invoke()
     IL_000c:  newobj     instance void [runtime]System.Action::.ctor(object,
                                                                             native int)
     IL_0011:  ret
@@ -198,8 +196,8 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/caseUnitInstanceEta@22::.ctor(class assembly/C)
-    IL_0006:  ldftn      instance void assembly/caseUnitInstanceEta@22::Invoke()
+    IL_0001:  newobj     instance void assembly/caseUnitInstanceEta@20::.ctor(class assembly/C)
+    IL_0006:  ldftn      instance void assembly/caseUnitInstanceEta@20::Invoke()
     IL_000c:  newobj     instance void [runtime]System.Action::.ctor(object,
                                                                             native int)
     IL_0011:  ret

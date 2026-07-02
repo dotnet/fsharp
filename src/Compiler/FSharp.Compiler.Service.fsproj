@@ -418,6 +418,7 @@
     <Compile Include="Checking\CheckDeclarations.fs" />
     <Compile Include="Checking\SignatureHash.fsi" />
     <Compile Include="Checking\SignatureHash.fs" />
+    <Compile Include="Optimize\DelegateForwarding.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
@@ -442,7 +443,6 @@
     <Compile Include="CodeGen\EraseUnions.Emit.fs" />
     <Compile Include="CodeGen\EraseUnions.fsi" />
     <Compile Include="CodeGen\EraseUnions.fs" />
-    <Compile Include="CodeGen\IlxGen.Delegates.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
     <Compile Include="CodeGen\IlxGen.fs" />
     <Compile Include="Driver\FxResolver.fsi" />

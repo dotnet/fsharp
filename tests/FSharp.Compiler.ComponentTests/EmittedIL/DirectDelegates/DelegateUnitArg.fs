@@ -2,11 +2,9 @@ module DelegateUnitArg
 
 open System
 
-[<NoCompilerInlining>]
 let handler () : unit = ()
 
 type C() =
-    [<NoCompilerInlining>]
     member _.M () : unit = ()
 
 // 46. non-eta unit-argument delegate

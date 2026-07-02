@@ -33,7 +33,7 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname ilStaticEta@12
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname ilStaticEta@11
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -51,7 +51,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname ilInstanceEta@16
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname ilInstanceEta@15
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -62,7 +62,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [runtime]System.Text.StringBuilder assembly/ilInstanceEta@16::sb
+      IL_0002:  stfld      class [runtime]System.Text.StringBuilder assembly/ilInstanceEta@15::sb
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -73,7 +73,7 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [runtime]System.Text.StringBuilder assembly/ilInstanceEta@16::sb
+      IL_0001:  ldfld      class [runtime]System.Text.StringBuilder assembly/ilInstanceEta@15::sb
       IL_0006:  ldarg.1
       IL_0007:  callvirt   instance class [runtime]System.Text.StringBuilder [runtime]System.Text.StringBuilder::Append(string)
       IL_000c:  ret
@@ -86,7 +86,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/ilStaticEta@12::Invoke(int32,
+    IL_0001:  ldftn      int32 assembly/ilStaticEta@11::Invoke(int32,
                                                                        int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                native int)
@@ -98,8 +98,8 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/ilInstanceEta@16::.ctor(class [runtime]System.Text.StringBuilder)
-    IL_0006:  ldftn      instance class [runtime]System.Text.StringBuilder assembly/ilInstanceEta@16::Invoke(string)
+    IL_0001:  newobj     instance void assembly/ilInstanceEta@15::.ctor(class [runtime]System.Text.StringBuilder)
+    IL_0006:  ldftn      instance class [runtime]System.Text.StringBuilder assembly/ilInstanceEta@15::Invoke(string)
     IL_000c:  newobj     instance void class [runtime]System.Func`2<string,class [runtime]System.Text.StringBuilder>::.ctor(object,
                                                                                                                               native int)
     IL_0011:  ret

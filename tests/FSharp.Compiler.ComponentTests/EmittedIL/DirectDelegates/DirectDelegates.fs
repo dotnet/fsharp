@@ -102,14 +102,6 @@ let ``DelegateNegativeCases_fs`` compilation =
 let ``DelegateNegativeCases_fs preview`` compilation =
     compilation |> getCompilation |> verifyPreviewCompilation
 
-[<Theory; FileInlineData("DelegateNonInlinable.fs", Optimize=BooleanOptions.Both)>]
-let ``DelegateNonInlinable_fs`` compilation =
-    compilation |> getCompilation |> verifyCompilation
-
-[<Theory; FileInlineData("DelegateNonInlinable.fs", Optimize=BooleanOptions.Both)>]
-let ``DelegateNonInlinable_fs preview`` compilation =
-    compilation |> getCompilation |> verifyPreviewCompilation
-
 [<Theory; FileInlineData("DelegatePartialApplication.fs", Optimize=BooleanOptions.Both)>]
 let ``DelegatePartialApplication_fs`` compilation =
     compilation |> getCompilation |> verifyCompilation
@@ -165,11 +157,9 @@ module DirectDelegateExecution
 
 open System
 
-[<NoCompilerInlining>]
 let add (x: int) (y: int) : int = x + y
 
 type G<'U> =
-    [<NoCompilerInlining>]
     static member Pick<'T>(x: 'T) (y: 'T) : 'T = x
 
 [<AbstractClass>]
@@ -212,7 +202,6 @@ module ClosureDelegateExecution
 
 open System
 
-[<NoCompilerInlining>]
 let add (x: int) (y: int) : int = x + y
 
 [<EntryPoint>]
@@ -321,11 +310,9 @@ open System
 
 type DTupled = delegate of int * int -> int
 
-[<NoCompilerInlining>]
 let acc (x: int) (y: int) : int = x + y
 
 type C() =
-    [<NoCompilerInlining>]
     member _.M (x: int) (y: int) : int = x * y
 
 [<EntryPoint>]
@@ -346,7 +333,7 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// Cases 31-36: a tupled application carries each tupled group as a single tuple node, exactly the shape the
+// Cases 31-35: a tupled application carries each tupled group as a single tuple node, exactly the shape the
 // code generator de-tuples by the target's arity when it emits the call. The recognizer de-tuples the same
 // way, so a tupled target is as direct-able as its curried counterpart and points at the real method.
 [<Fact>]
@@ -356,7 +343,6 @@ module TupledDirect
 
 open System
 
-[<NoCompilerInlining>]
 let accT (x: int, y: int) : int = x + y
 
 [<EntryPoint>]
@@ -384,7 +370,6 @@ module PartialClosure
 
 open System
 
-[<NoCompilerInlining>]
 let add3 (x: int) (y: int) (z: int) : int = x + y + z
 
 [<EntryPoint>]
@@ -408,7 +393,6 @@ module PartialDirect
 
 open System
 
-[<NoCompilerInlining>]
 let prepend (prefix: string) (x: int) (y: int) : string = sprintf "%s%d%d" prefix x y
 
 [<EntryPoint>]
@@ -436,11 +420,9 @@ open System
 
 let mutable ran = 0
 
-[<NoCompilerInlining>]
 let handler () : unit = ran <- ran + 1
 
 type C() =
-    [<NoCompilerInlining>]
     member _.M () : unit = ran <- ran + 10
 
 [<EntryPoint>]
@@ -482,7 +464,6 @@ open System
 type S =
     val V : int
     new (v: int) = { V = v }
-    [<NoCompilerInlining>]
     member this.AddV (x: int) (y: int) : int = this.V + x + y
     
 let makeAdder (s: S) = Func<int, int, int>(s.AddV)
@@ -515,7 +496,7 @@ type Holder() = class end
 
 [<Extension>]
 type Extensions =
-    [<Extension; NoCompilerInlining>]
+    [<Extension>]
     static member Combine (h: Holder, x: int, y: int) : int = x + y
 
 [<EntryPoint>]
@@ -545,7 +526,7 @@ open System.Runtime.CompilerServices
 
 [<Extension>]
 type ListExtensions =
-    [<Extension; NoCompilerInlining>]
+    [<Extension>]
     static member CountWith<'T> (xs: 'T list, x: int, y: int) : int = List.length xs + x + y
 
 [<EntryPoint>]
@@ -586,19 +567,62 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+// Case 55: an over-application - the target's *result* consumes the delegate argument(s) - is not a saturated
+// call to the target, so it must stay a closure with per-invocation evaluation of the function position. A
+// direct delegate here would be doubly wrong: it would point at the wrong method (with an incompatible IL
+// return) and would stop re-evaluating the function position on each invocation.
+[<Fact>]
+let ``Over-application stays a closure and evaluates per invocation (preview)`` () =
+    FSharp """
+module OverApplicationClosure
+
+open System
+
+let mutable calls = 0
+
+let makeHandler (tag: string) : unit -> unit =
+    calls <- calls + 1
+    fun () -> ()
+
+[<EntryPoint>]
+let main _ =
+    // 'makeHandler "h"' returns the function that consumes the Invoke argument list, so the closure must
+    // re-evaluate it on every invocation, not bind 'makeHandler' at construction.
+    let d = Action(makeHandler "h")
+    if calls <> 0 then failwith "over-application was evaluated at construction"
+    if d.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" d.Method.Name
+    d.Invoke()
+    d.Invoke()
+    if calls <> 2 then failwithf "expected per-invocation evaluation, calls=%d" calls
+
+    // A throwing function position likewise stays a closure and faults at invocation, not construction.
+    let f = Action(failwith "boom")
+    if f.Method.Name <> "Invoke" then failwithf "expected closure 'Invoke' but got '%s'" f.Method.Name
+
+    try
+        f.Invoke()
+        failwith "expected the lazy 'failwith' to throw on Invoke"
+    with Failure "boom" ->
+        ()
+
+    0
+        """
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
 // Cross-assembly targets: the recognizer has no locality guard, so a delegate over an F# function imported
 // from a *referenced* assembly takes the same FSharpVal direct path (StorageForValRef resolution + method-spec
-// build across an assembly boundary) that the same-compiland baseline suite never reaches. The targets are
-// [<NoCompilerInlining>] so cross-assembly inlining cannot dissolve the forwarding call before codegen.
+// build across an assembly boundary) that the same-compiland baseline suite never reaches. The optimizer
+// preserves the forwarding call from cross-assembly inlining just as it does for local targets.
 let private crossAssemblyLibrary =
     FSharp """
 module DelegateLib
 
-[<NoCompilerInlining>]
 let add (x: int) (y: int) : int = x + y
 
 type Calc(k: int) =
-    [<NoCompilerInlining>]
     member _.Scale (x: int) (y: int) : int = (x + y) * k
 
 // A small inline function: its body is serialized into the referenced assembly and is always inlined at the
@@ -637,8 +661,8 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-// An inline target from a referenced assembly is always inlined before the recognizer runs, so the forwarding
-// call vanishes and a closure is kept even in release - the deterministic cross-assembly end of the inline-race.
+// An 'inline' target from a referenced assembly is always inlined (mandatory inlining takes precedence over
+// the forwarding-call preservation), so the forwarding call vanishes and a closure is kept even in release.
 [<Fact>]
 let ``Cross-assembly inline target stays a closure (preview)`` () =
     FSharp """
@@ -675,7 +699,6 @@ module X =
     open Microsoft.AspNetCore.Builder
     open Microsoft.AspNetCore.Http
 
-    [<NoCompilerInlining>]
     let add (x: int) (y: int) : int = x + y
 
     let run () =

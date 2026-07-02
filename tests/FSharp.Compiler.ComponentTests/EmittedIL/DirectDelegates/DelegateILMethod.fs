@@ -4,9 +4,8 @@ open System
 open System.Text
 
 // IL (BCL) method targets are compiled as TOp.ILCall rather than an F# value application. They are made
-// direct only when the eta-expanded forwarding call survives to codegen, i.e. in optimized builds; in
-// unoptimized builds the eta form keeps a closure (matching the F# eta policy). See DelegateNonInlinable
-// for the F#-value equivalent.
+// direct only in optimized builds; in unoptimized builds the eta form keeps a closure (matching the F#
+// eta policy). See DelegateKnownFunction for the F#-value equivalent.
 
 // 12. eta IL/BCL static method (System.Math.Max).
 let ilStaticEta () = Func<int, int, int>(fun a b -> Math.Max(a, b))

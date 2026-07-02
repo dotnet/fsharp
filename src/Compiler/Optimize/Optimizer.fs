@@ -12,6 +12,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.DelegateForwarding
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -1675,7 +1676,7 @@ and OpHasEffect g m op =
     | TOp.ExnFieldSet _
     | TOp.Coerce
     | TOp.Reraise
-    | TOp.IntegerForLoop _ 
+    | TOp.IntegerForLoop _
     | TOp.While _
     | TOp.TryWith _ (* conservative *)
     | TOp.TryFinally _ (* conservative *)
@@ -1687,6 +1688,43 @@ and OpHasEffect g m op =
     | TOp.LValueOp _ (* conservative *)
     | TOp.ValFieldSet _ -> true
 
+/// When a delegate construction's Invoke body is a transparent forwarding call that the ILX generator can
+/// point the delegate directly at (see DelegateForwarding), prevent the optimizer from inlining the target
+/// into the body: inlining would dissolve the forwarding call before code generation and force the delegate
+/// back into a closure, making the emitted form depend on the target's size. Only optimizer-chosen inlining
+/// is suppressed. Cross-assembly inlining of a target from a referenced assembly's optimization
+/// data goes through this same inlining path, so it is suppressed here as well.
+let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body m =
+    let g = cenv.g
+
+    if
+        g.langVersion.SupportsFeature Features.LanguageFeature.DirectDelegateConstruction
+        && cenv.optimizing
+        && cenv.settings.InlineLambdas
+    then
+        // Normalize the Invoke parameters exactly as IlxGen will before it runs the recognizer.
+        let invokeParamInfos =
+            List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1
+
+        let tmvs, body = BindUnitVars g (tmvs, invokeParamInfos, body)
+
+        match classifyForwardingTarget (ExprHasEffect g) g tmvs body with
+        | DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, _, leadingArgs) when
+            // Only a value compiled as a real method can be pointed at directly (mirrors IlxGen's
+            // Method-storage requirement); local function values keep their inlining. Witness information
+            // is not computable here, so 'false' is passed - over-suppressing for the rare
+            // witness-requiring target only costs a missed inline in a body that stays a closure.
+            vref.ValReprInfo.IsSome
+            && (fsharpValDirectlyBindable (ExprHasEffect g) g tmvs leadingArgs vref valUseFlags false)
+                .IsSome
+            ->
+            match (GetInfoForVal cenv env m vref).ValExprInfo with
+            | StripLambdaValue(lambdaId, _, _, _, _) ->
+                { env with dontInline = Map.add lambdaId [] env.dontInline }
+            | _ -> env
+        | _ -> env
+    else
+        env
 
 let TryEliminateBinding cenv _env bind e2 _m =
     let g = cenv.g
@@ -2406,11 +2444,16 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
 
-    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) -> 
-        match expr with 
-        | NewDelegateExpr g (lambdaId, vsl, body, _, remake) -> 
+    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) ->
+        match expr with
+        | NewDelegateExpr g (lambdaId, vsl, body, _, remake) ->
+            let env =
+                match overrides with
+                | [ TObjExprMethod(slotsig, _, _, _, _, mMeth) ] ->
+                    AddDirectDelegateTargetToDontInlineSet cenv env slotsig vsl body mMeth
+                | _ -> env
             OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake)
-        | _ -> 
+        | _ ->
             OptimizeObjectExpr cenv env (ty, basev, createExpr, overrides, iimpls, m)
 
     | Expr.Op (op, tyargs, args, m) -> 

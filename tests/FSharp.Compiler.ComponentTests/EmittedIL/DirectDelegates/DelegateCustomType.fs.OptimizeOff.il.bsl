@@ -129,7 +129,6 @@
 
     .method public hidebysig instance int32 M(int32 x, int32 y) cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
       
       .maxstack  8
@@ -141,7 +140,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname tupledNonEta@28
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname tupledNonEta@23
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -159,7 +158,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname tupledEta@30
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname tupledEta@25
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -177,7 +176,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname instanceNonEta@34
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname instanceNonEta@29
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -188,7 +187,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/C assembly/instanceNonEta@34::c
+      IL_0002:  stfld      class assembly/C assembly/instanceNonEta@29::c
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -199,7 +198,7 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/C assembly/instanceNonEta@34::c
+      IL_0001:  ldfld      class assembly/C assembly/instanceNonEta@29::c
       IL_0006:  ldarg.1
       IL_0007:  ldarg.2
       IL_0008:  callvirt   instance int32 assembly/C::M(int32,
@@ -209,7 +208,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname instanceEta@36
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname instanceEta@31
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -220,7 +219,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/C assembly/instanceEta@36::c
+      IL_0002:  stfld      class assembly/C assembly/instanceEta@31::c
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -231,7 +230,7 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/C assembly/instanceEta@36::c
+      IL_0001:  ldfld      class assembly/C assembly/instanceEta@31::c
       IL_0006:  ldarg.1
       IL_0007:  ldarg.2
       IL_0008:  callvirt   instance int32 assembly/C::M(int32,
@@ -241,7 +240,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname genNonEta@40
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname genNonEta@35
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -256,7 +255,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname genEta@42
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname genEta@37
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -271,7 +270,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname byrefMutate@47
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname byrefMutate@42
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -293,7 +292,6 @@
   .method public static int32  acc(int32 x,
                                    int32 y) cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
     .maxstack  8
@@ -305,7 +303,6 @@
 
   .method public static !!T  ident<T>(!!T x) cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  8
     IL_0000:  ldarg.0
@@ -317,7 +314,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/tupledNonEta@28::Invoke(int32,
+    IL_0001:  ldftn      int32 assembly/tupledNonEta@23::Invoke(int32,
                                                                           int32)
     IL_0007:  newobj     instance void assembly/DTupled::.ctor(object,
                                                                          native int)
@@ -329,7 +326,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/tupledEta@30::Invoke(int32,
+    IL_0001:  ldftn      int32 assembly/tupledEta@25::Invoke(int32,
                                                                        int32)
     IL_0007:  newobj     instance void assembly/DTupled::.ctor(object,
                                                                          native int)
@@ -341,8 +338,8 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/instanceNonEta@34::.ctor(class assembly/C)
-    IL_0006:  ldftn      instance int32 assembly/instanceNonEta@34::Invoke(int32,
+    IL_0001:  newobj     instance void assembly/instanceNonEta@29::.ctor(class assembly/C)
+    IL_0006:  ldftn      instance int32 assembly/instanceNonEta@29::Invoke(int32,
                                                                                      int32)
     IL_000c:  newobj     instance void assembly/DTupled::.ctor(object,
                                                                          native int)
@@ -354,8 +351,8 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/instanceEta@36::.ctor(class assembly/C)
-    IL_0006:  ldftn      instance int32 assembly/instanceEta@36::Invoke(int32,
+    IL_0001:  newobj     instance void assembly/instanceEta@31::.ctor(class assembly/C)
+    IL_0006:  ldftn      instance int32 assembly/instanceEta@31::Invoke(int32,
                                                                                   int32)
     IL_000c:  newobj     instance void assembly/DTupled::.ctor(object,
                                                                          native int)
@@ -367,7 +364,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/genNonEta@40::Invoke(int32)
+    IL_0001:  ldftn      int32 assembly/genNonEta@35::Invoke(int32)
     IL_0007:  newobj     instance void class assembly/DGen`1<int32>::.ctor(object,
                                                                                      native int)
     IL_000c:  ret
@@ -378,7 +375,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/genEta@42::Invoke(int32)
+    IL_0001:  ldftn      int32 assembly/genEta@37::Invoke(int32)
     IL_0007:  newobj     instance void class assembly/DGen`1<int32>::.ctor(object,
                                                                                      native int)
     IL_000c:  ret
@@ -389,7 +386,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/byrefMutate@47::Invoke(int32&)
+    IL_0001:  ldftn      void assembly/byrefMutate@42::Invoke(int32&)
     IL_0007:  newobj     instance void assembly/DByref::.ctor(object,
                                                                         native int)
     IL_000c:  ret

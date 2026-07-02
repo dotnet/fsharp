@@ -60,7 +60,6 @@
                                          int32 y) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.1
@@ -71,35 +70,19 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname extensionEta@22
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname extensionEta@22
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public class assembly/Holder h
-    .method public specialname rtspecialname instance void  .ctor(class assembly/Holder h) cil managed
+    .method assembly static int32  Invoke(int32 a,
+                                          int32 b) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/Holder assembly/extensionEta@22::h
-      IL_0007:  ldarg.0
-      IL_0008:  call       instance void [runtime]System.Object::.ctor()
-      IL_000d:  ret
-    } 
-
-    .method assembly hidebysig instance int32 Invoke(int32 a, int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/Holder assembly/extensionEta@22::h
-      IL_0006:  ldarg.1
-      IL_0007:  ldarg.2
-      IL_0008:  call       int32 assembly/HolderExtensions::Combine(class assembly/Holder,
-                                                                                   int32,
-                                                                                   int32)
-      IL_000d:  ret
+      IL_0002:  add
+      IL_0003:  ret
     } 
 
   } 
@@ -108,13 +91,12 @@
   {
     
     .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/extensionEta@22::.ctor(class assembly/Holder)
-    IL_0006:  ldftn      instance int32 assembly/extensionEta@22::Invoke(int32,
-                                                                                        int32)
-    IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
+    IL_0000:  ldnull
+    IL_0001:  ldftn      int32 assembly/extensionEta@22::Invoke(int32,
+                                                                               int32)
+    IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                      native int)
-    IL_0011:  ret
+    IL_000c:  ret
   } 
 
 } 

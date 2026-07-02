@@ -9,7 +9,7 @@ type Holder() =
 
 [<Extension>]
 type HolderExtensions =
-    [<Extension; NoCompilerInlining>]
+    [<Extension>]
     static member Combine (h: Holder, x: int, y: int) : int = x + y
 
 // An extension member compiles to a static method whose first parameter is the receiver. Using it as a

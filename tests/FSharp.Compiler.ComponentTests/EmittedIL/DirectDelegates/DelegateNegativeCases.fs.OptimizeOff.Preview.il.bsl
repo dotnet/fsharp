@@ -152,7 +152,6 @@
 
     .method public hidebysig instance int32 TakesObj(object x) cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldc.i4.1
@@ -161,7 +160,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname contra@26
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname contra@25
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -172,7 +171,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class assembly/Holder assembly/contra@26::h
+      IL_0002:  stfld      class assembly/Holder assembly/contra@25::h
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -183,7 +182,7 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class assembly/Holder assembly/contra@26::h
+      IL_0001:  ldfld      class assembly/Holder assembly/contra@25::h
       IL_0006:  ldarg.1
       IL_0007:  callvirt   instance int32 assembly/Holder::TakesObj(object)
       IL_000c:  ret
@@ -201,7 +200,6 @@
                                        int32 z) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -210,7 +208,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname valueTypeExtension@38
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname valueTypeExtension@37
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -226,6 +224,36 @@
                                                                              int32,
                                                                              int32)
       IL_0008:  ret
+    } 
+
+  } 
+
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname overApplied@42
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+    .method assembly static void  Invoke() cil managed
+    {
+      
+      .maxstack  6
+      .locals init (string V_0)
+      IL_0000:  ldstr      "nope"
+      IL_0005:  stloc.0
+      IL_0006:  ldc.i4.0
+      IL_0007:  brfalse.s  IL_0011
+
+      IL_0009:  ldnull
+      IL_000a:  unbox.any  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+      IL_000f:  br.s       IL_0018
+
+      IL_0011:  ldloc.0
+      IL_0012:  call       class [runtime]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
+      IL_0017:  throw
+
+      IL_0018:  ldnull
+      IL_0019:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+      IL_001e:  pop
+      IL_001f:  ret
     } 
 
   } 
@@ -281,8 +309,8 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/contra@26::.ctor(class assembly/Holder)
-    IL_0006:  ldftn      instance int32 assembly/contra@26::Invoke(string)
+    IL_0001:  newobj     instance void assembly/contra@25::.ctor(class assembly/Holder)
+    IL_0006:  ldftn      instance int32 assembly/contra@25::Invoke(string)
     IL_000c:  newobj     instance void class [runtime]System.Func`2<string,int32>::.ctor(object,
                                                                                           native int)
     IL_0011:  ret
@@ -293,10 +321,21 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      int32 assembly/valueTypeExtension@38::Invoke(int32,
+    IL_0001:  ldftn      int32 assembly/valueTypeExtension@37::Invoke(int32,
                                                                                    int32)
     IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                native int)
+    IL_000c:  ret
+  } 
+
+  .method public static class [runtime]System.Action overApplied() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  ldftn      void assembly/overApplied@42::Invoke()
+    IL_0007:  newobj     instance void [runtime]System.Action::.ctor(object,
+                                                                      native int)
     IL_000c:  ret
   } 
 

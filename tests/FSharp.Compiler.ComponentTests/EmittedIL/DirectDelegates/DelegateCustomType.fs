@@ -5,22 +5,17 @@ open System
 // Custom, F#-declared delegate types exercise construction with delegates defined in the *compiled* assembly
 // (local scope, unlike imported BCL Func/Action) and with Invoke signatures the Func/Action tests do not
 // cover: a multi-argument (tupled) signature, a generic delegate, and a byref parameter. (F# forbids curried
-// delegate signatures — FS0950 — so every F# delegate has a single tupled Invoke parameter group.) Targets
-// are [<NoCompilerInlining>] so the optimized path genuinely emits the direct form rather than inlining the
-// target away (no inline-race).
+// delegate signatures — FS0950 — so every F# delegate has a single tupled Invoke parameter group.)
 
 type DTupled = delegate of int * int -> int
 type DGen<'T> = delegate of 'T -> 'T
 type DByref = delegate of byref<int> -> unit
 
-[<NoCompilerInlining>]
 let acc (x: int) (y: int) : int = x + y
 
-[<NoCompilerInlining>]
 let ident (x: 'T) : 'T = x
 
 type C() =
-    [<NoCompilerInlining>]
     member _.M (x: int) (y: int) : int = x * y
 
 // Tupled-signature custom delegate: Invoke(int, int).

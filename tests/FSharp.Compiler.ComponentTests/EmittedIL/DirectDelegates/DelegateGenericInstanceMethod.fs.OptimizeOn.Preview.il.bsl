@@ -65,41 +65,13 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case5_etaCurried@10
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static void  Invoke(int32 a,
-                                         int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ret
-    } 
-
-  } 
-
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case35_etaTupled@13
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static void  Invoke(int32 a,
-                                         int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ret
-    } 
-
-  } 
-
   .method public static class [runtime]System.Action`2<int32,int32> case5_etaCurried(class assembly/C o) cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case5_etaCurried@10::Invoke(int32,
-                                                                                        int32)
+    IL_0000:  ldarg.0
+    IL_0001:  ldftn      instance void assembly/C::IMc<int32>(!!0,
+                                                                                   !!0)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                            native int)
     IL_000c:  ret
@@ -109,9 +81,9 @@
   {
     
     .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case35_etaTupled@13::Invoke(int32,
-                                                                                        int32)
+    IL_0000:  ldarg.0
+    IL_0001:  ldftn      instance void assembly/C::IMt<int32>(!!0,
+                                                                                   !!0)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                            native int)
     IL_000c:  ret

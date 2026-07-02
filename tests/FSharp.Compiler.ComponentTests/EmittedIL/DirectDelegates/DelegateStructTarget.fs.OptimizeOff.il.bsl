@@ -148,7 +148,6 @@
 
     .method public hidebysig instance int32 Add(int32 x, int32 y) cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
       
       .maxstack  8
@@ -199,7 +198,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceNonEta@14
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceNonEta@13
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -210,7 +209,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      valuetype assembly/S assembly/structInstanceNonEta@14::s
+      IL_0002:  stfld      valuetype assembly/S assembly/structInstanceNonEta@13::s
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -222,7 +221,7 @@
       .maxstack  7
       .locals init (valuetype assembly/S V_0)
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      valuetype assembly/S assembly/structInstanceNonEta@14::s
+      IL_0001:  ldfld      valuetype assembly/S assembly/structInstanceNonEta@13::s
       IL_0006:  stloc.0
       IL_0007:  ldloca.s   V_0
       IL_0009:  ldarg.1
@@ -234,7 +233,7 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceEta@17
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceEta@16
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -245,7 +244,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      valuetype assembly/S assembly/structInstanceEta@17::s
+      IL_0002:  stfld      valuetype assembly/S assembly/structInstanceEta@16::s
       IL_0007:  ldarg.0
       IL_0008:  call       instance void [runtime]System.Object::.ctor()
       IL_000d:  ret
@@ -257,7 +256,7 @@
       .maxstack  7
       .locals init (valuetype assembly/S V_0)
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      valuetype assembly/S assembly/structInstanceEta@17::s
+      IL_0001:  ldfld      valuetype assembly/S assembly/structInstanceEta@16::s
       IL_0006:  stloc.0
       IL_0007:  ldloca.s   V_0
       IL_0009:  ldarg.1
@@ -274,8 +273,8 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/structInstanceNonEta@14::.ctor(valuetype assembly/S)
-    IL_0006:  ldftn      instance int32 assembly/structInstanceNonEta@14::Invoke(int32,
+    IL_0001:  newobj     instance void assembly/structInstanceNonEta@13::.ctor(valuetype assembly/S)
+    IL_0006:  ldftn      instance int32 assembly/structInstanceNonEta@13::Invoke(int32,
                                                                                              int32)
     IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                      native int)
@@ -287,8 +286,8 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/structInstanceEta@17::.ctor(valuetype assembly/S)
-    IL_0006:  ldftn      instance int32 assembly/structInstanceEta@17::Invoke(int32,
+    IL_0001:  newobj     instance void assembly/structInstanceEta@16::.ctor(valuetype assembly/S)
+    IL_0006:  ldftn      instance int32 assembly/structInstanceEta@16::Invoke(int32,
                                                                                           int32)
     IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                      native int)

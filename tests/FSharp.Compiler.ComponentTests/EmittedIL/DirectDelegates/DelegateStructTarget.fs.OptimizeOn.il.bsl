@@ -131,7 +131,6 @@
 
     .method public hidebysig instance int32 Add(int32 x, int32 y) cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
       
       .maxstack  8
@@ -172,66 +171,36 @@
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceNonEta@14
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceNonEta@13
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public valuetype assembly/S s
-    .method public specialname rtspecialname instance void  .ctor(valuetype assembly/S s) cil managed
+    .method assembly static int32  Invoke(int32 delegateArg0,
+                                          int32 delegateArg1) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      valuetype assembly/S assembly/structInstanceNonEta@14::s
-      IL_0007:  ldarg.0
-      IL_0008:  call       instance void [runtime]System.Object::.ctor()
-      IL_000d:  ret
-    } 
-
-    .method assembly hidebysig instance int32 Invoke(int32 delegateArg0, int32 delegateArg1) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldflda     valuetype assembly/S assembly/structInstanceNonEta@14::s
-      IL_0006:  ldarg.1
-      IL_0007:  ldarg.2
-      IL_0008:  call       instance int32 assembly/S::Add(int32,
-                                                                      int32)
-      IL_000d:  ret
+      IL_0002:  add
+      IL_0003:  ret
     } 
 
   } 
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceEta@17
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname structInstanceEta@16
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public valuetype assembly/S s
-    .method public specialname rtspecialname instance void  .ctor(valuetype assembly/S s) cil managed
+    .method assembly static int32  Invoke(int32 a,
+                                          int32 b) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      valuetype assembly/S assembly/structInstanceEta@17::s
-      IL_0007:  ldarg.0
-      IL_0008:  call       instance void [runtime]System.Object::.ctor()
-      IL_000d:  ret
-    } 
-
-    .method assembly hidebysig instance int32 Invoke(int32 a, int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldflda     valuetype assembly/S assembly/structInstanceEta@17::s
-      IL_0006:  ldarg.1
-      IL_0007:  ldarg.2
-      IL_0008:  call       instance int32 assembly/S::Add(int32,
-                                                                      int32)
-      IL_000d:  ret
+      IL_0002:  add
+      IL_0003:  ret
     } 
 
   } 
@@ -240,26 +209,24 @@
   {
     
     .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/structInstanceNonEta@14::.ctor(valuetype assembly/S)
-    IL_0006:  ldftn      instance int32 assembly/structInstanceNonEta@14::Invoke(int32,
-                                                                                             int32)
-    IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
+    IL_0000:  ldnull
+    IL_0001:  ldftn      int32 assembly/structInstanceNonEta@13::Invoke(int32,
+                                                                                    int32)
+    IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                      native int)
-    IL_0011:  ret
+    IL_000c:  ret
   } 
 
   .method public static class [runtime]System.Func`3<int32,int32,int32> structInstanceEta(valuetype assembly/S s) cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void assembly/structInstanceEta@17::.ctor(valuetype assembly/S)
-    IL_0006:  ldftn      instance int32 assembly/structInstanceEta@17::Invoke(int32,
-                                                                                          int32)
-    IL_000c:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
+    IL_0000:  ldnull
+    IL_0001:  ldftn      int32 assembly/structInstanceEta@16::Invoke(int32,
+                                                                                 int32)
+    IL_0007:  newobj     instance void class [runtime]System.Func`3<int32,int32,int32>::.ctor(object,
                                                                                                      native int)
-    IL_0011:  ret
+    IL_000c:  ret
   } 
 
 } 

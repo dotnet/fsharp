@@ -4,7 +4,6 @@ open System
 
 [<Struct>]
 type S =
-    [<NoCompilerInlining>]
     member _.Add (x: int) (y: int) : int = x + y
 
 // The target is an instance method on a value type. A delegate's Target is an 'object', so the receiver is

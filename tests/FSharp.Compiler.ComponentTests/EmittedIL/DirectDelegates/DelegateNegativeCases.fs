@@ -15,7 +15,6 @@ let notDirect (k: int) = Action<int, int>(fun a b -> sink (a + b + k))
 let reordered (handler: int -> int -> unit) = Action<int, int>(fun a b -> handler b a)
 
 type Holder() =
-    [<NoCompilerInlining>]
     member _.TakesObj (x: obj) : int = 1
 
 // 45. Reference-parameter contravariance: the delegate's Invoke is (string):int and the target is (object):int.
@@ -27,7 +26,7 @@ let contra (h: Holder) = System.Func<string, int>(fun s -> h.TakesObj s)
 
 [<Extension>]
 type Extensions =
-    [<Extension; NoCompilerInlining>]
+    [<Extension>]
     static member Echo<'T> (x: 'T, y: int, z: int) : 'T = x
 
 // 54. extension member on a VALUE-TYPE receiver: an extension member compiles to a static method whose first
@@ -36,3 +35,8 @@ type Extensions =
 // form (unlike a value-type *instance* receiver, which is reached through the method's unboxing stub), so a
 // closure must remain.
 let valueTypeExtension () = Func<int, int, int>(fun a b -> (3).Echo(a, b))
+
+// 55. over-application: 'failwith' takes only the message, and it is the *returned function* that consumes
+// the delegate's (elided unit) argument. There is no saturated call to the target to point at - and binding
+// 'failwith' directly would evaluate it once instead of per invocation - so a closure must remain.
+let overApplied () = Action(failwith "nope")

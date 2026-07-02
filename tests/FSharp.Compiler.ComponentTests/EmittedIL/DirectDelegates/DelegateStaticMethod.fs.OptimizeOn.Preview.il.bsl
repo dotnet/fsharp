@@ -67,48 +67,6 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case18_nonEta@12
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static void  Invoke(int32 x,
-                                         int32 y) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ret
-    } 
-
-  } 
-
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case2_etaCurried@15
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static void  Invoke(int32 a,
-                                         int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ret
-    } 
-
-  } 
-
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case32_etaTupled@18
-         extends [runtime]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method assembly static void  Invoke(int32 a,
-                                         int32 b) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ret
-    } 
-
-  } 
-
   .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname case38_partial@21
          extends [runtime]System.Object
   {
@@ -128,8 +86,8 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case18_nonEta@12::Invoke(int32,
-                                                                            int32)
+    IL_0001:  ldftn      void assembly/C::AddC(int32,
+                                                           int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)
     IL_000c:  ret
@@ -140,8 +98,8 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case2_etaCurried@15::Invoke(int32,
-                                                                               int32)
+    IL_0001:  ldftn      void assembly/C::AddC(int32,
+                                                           int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)
     IL_000c:  ret
@@ -152,8 +110,8 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/case32_etaTupled@18::Invoke(int32,
-                                                                               int32)
+    IL_0001:  ldftn      void assembly/C::AddT(int32,
+                                                           int32)
     IL_0007:  newobj     instance void class [runtime]System.Action`2<int32,int32>::.ctor(object,
                                                                                                  native int)
     IL_000c:  ret

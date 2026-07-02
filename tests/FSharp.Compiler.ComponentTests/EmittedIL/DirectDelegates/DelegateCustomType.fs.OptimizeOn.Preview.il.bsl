@@ -129,7 +129,6 @@
 
     .method public hidebysig instance int32 M(int32 x, int32 y) cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
       
       .maxstack  8
@@ -141,7 +140,7 @@
 
   } 
 
-  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname byrefMutate@47
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname byrefMutate@42
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -163,7 +162,6 @@
   .method public static int32  acc(int32 x,
                                    int32 y) cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     
     .maxstack  8
@@ -175,7 +173,6 @@
 
   .method public static !!T  ident<T>(!!T x) cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  8
     IL_0000:  ldarg.0
@@ -257,7 +254,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  ldftn      void assembly/byrefMutate@47::Invoke(int32&)
+    IL_0001:  ldftn      void assembly/byrefMutate@42::Invoke(int32&)
     IL_0007:  newobj     instance void assembly/DByref::.ctor(object,
                                                                         native int)
     IL_000c:  ret
