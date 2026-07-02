@@ -853,16 +853,79 @@ let private tokensByUniqueMethodName (baseline: FSharpEmitBaseline) =
         | _ -> None)
     |> Map.ofSeq
 
-let computeRefreshedEncMethodDebugInfos
+[<RequireQualifiedAccess>]
+type ImplementationFileScope =
+    | Full
+    | ReferenceChanged
+
+let private checkedImplFiles (CheckedAssemblyAfterOptimization implFiles) =
+    implFiles |> List.map (fun implFile -> implFile.ImplFile)
+
+let private implementationFileKey (CheckedImplFile(qualifiedNameOfFile = qual)) = qual.Text
+
+let private tryBuildUniqueImplementationFileLookup files =
+    let lookup, duplicateKeys =
+        ((Map.empty, Set.empty), files)
+        ||> List.fold (fun (lookup, duplicateKeys) implFile ->
+            let key = implementationFileKey implFile
+
+            if Map.containsKey key lookup then
+                lookup, Set.add key duplicateKeys
+            else
+                Map.add key implFile lookup, duplicateKeys)
+
+    if Set.isEmpty duplicateKeys then Some lookup else None
+
+let private tryReferenceChangedImplementationFilePairs baselineImplementation freshImplementation =
+    let baselineFiles = checkedImplFiles baselineImplementation
+    let freshFiles = checkedImplFiles freshImplementation
+
+    match tryBuildUniqueImplementationFileLookup baselineFiles, tryBuildUniqueImplementationFileLookup freshFiles with
+    | Some baselineLookup, Some freshLookup ->
+        if
+            baselineLookup
+            |> Map.forall (fun key _ -> Map.containsKey key freshLookup)
+            |> not
+        then
+            None
+        else
+            ((Some [], freshFiles)
+             ||> List.fold (fun changedPairsOpt freshFile ->
+                 changedPairsOpt
+                 |> Option.bind (fun changedPairs ->
+                     match Map.tryFind (implementationFileKey freshFile) baselineLookup with
+                     | None -> None
+                     | Some baselineFile when obj.ReferenceEquals(baselineFile, freshFile) -> Some changedPairs
+                     | Some baselineFile -> Some((baselineFile, freshFile) :: changedPairs))))
+            |> Option.map List.rev
+    | _ -> None
+
+let private scopedFreshImplFiles scope baselineImplementation freshImplementation =
+    match scope, baselineImplementation with
+    | ImplementationFileScope.ReferenceChanged, Some baselineImplementation ->
+        match tryReferenceChangedImplementationFilePairs baselineImplementation freshImplementation with
+        | Some changedPairs -> changedPairs |> List.map snd
+        | None -> checkedImplFiles freshImplementation
+    | _ -> checkedImplFiles freshImplementation
+
+let private scopedBaselineAndFreshImplFiles scope baselineImplementation freshImplementation =
+    match scope with
+    | ImplementationFileScope.ReferenceChanged ->
+        match tryReferenceChangedImplementationFilePairs baselineImplementation freshImplementation with
+        | Some changedPairs -> changedPairs |> List.map fst, changedPairs |> List.map snd
+        | None -> checkedImplFiles baselineImplementation, checkedImplFiles freshImplementation
+    | ImplementationFileScope.Full -> checkedImplFiles baselineImplementation, checkedImplFiles freshImplementation
+
+let computeRefreshedEncMethodDebugInfosWithScope
     (g: TcGlobals)
     (baseline: FSharpEmitBaseline)
+    (scope: ImplementationFileScope)
+    (baselineImplementation: CheckedAssemblyAfterOptimization option)
     (implementationFiles: CheckedAssemblyAfterOptimization)
     : Map<int, EncMethodDebugInformation> =
-    let (CheckedAssemblyAfterOptimization implFiles) = implementationFiles
-
     let infosByName =
-        implFiles
-        |> List.map (fun implFile -> implFile.ImplFile)
+        implementationFiles
+        |> scopedFreshImplFiles scope baselineImplementation
         |> computeMethodEncDebugInfo g
 
     if Map.isEmpty infosByName then
@@ -875,6 +938,13 @@ let computeRefreshedEncMethodDebugInfos
             match Map.tryFind methName tokensByUniqueName with
             | Some methodToken -> Map.add methodToken info acc
             | None -> acc)
+
+let computeRefreshedEncMethodDebugInfos
+    (g: TcGlobals)
+    (baseline: FSharpEmitBaseline)
+    (implementationFiles: CheckedAssemblyAfterOptimization)
+    : Map<int, EncMethodDebugInformation> =
+    computeRefreshedEncMethodDebugInfosWithScope g baseline ImplementationFileScope.Full None implementationFiles
 
 /// <summary>
 /// Re-keys name-keyed per-method closure-name tables (occurrence-chain -> closure type
@@ -913,16 +983,12 @@ let deriveEncClosureNames (ilModule: ILModuleDef) (baseline: FSharpEmitBaseline)
 
 /// Per-member compiled-name -> occurrence-list view of an implementation, restricted to
 /// compiled names claimed by exactly one member binding (the shared fail-closed keying).
-let private memberOccurrencesByUniqueName
+let private memberOccurrencesByUniqueNameInFiles
     (g: TcGlobals)
-    (implementationFiles: CheckedAssemblyAfterOptimization)
+    (implFiles: CheckedImplFile list)
     : Map<string, TypedTreeDiff.LambdaOccurrence list> =
-    let (CheckedAssemblyAfterOptimization implFiles) = implementationFiles
-
     let allMembers =
-        implFiles
-        |> List.map (fun implFile -> implFile.ImplFile)
-        |> List.collect (TypedTreeDiff.collectMemberLambdaOccurrences g)
+        implFiles |> List.collect (TypedTreeDiff.collectMemberLambdaOccurrences g)
 
     let ambiguousNames =
         allMembers
@@ -937,6 +1003,14 @@ let private memberOccurrencesByUniqueName
         match symbol.CompiledName with
         | Some methName when not (Set.contains methName ambiguousNames) -> Map.add methName occurrences acc
         | _ -> acc)
+
+let private memberOccurrencesByUniqueName
+    (g: TcGlobals)
+    (implementationFiles: CheckedAssemblyAfterOptimization)
+    : Map<string, TypedTreeDiff.LambdaOccurrence list> =
+    implementationFiles
+    |> checkedImplFiles
+    |> memberOccurrencesByUniqueNameInFiles g
 
 /// <summary>
 /// Derives the stamp -> closure-class-name table a flag-on BASELINE compile installs
@@ -990,9 +1064,10 @@ let computeBaselineOccurrenceKeyedClosureNames (g: TcGlobals) (optimizedImpls: C
 /// Both tables are derived deterministically from session state + the fresh typed tree,
 /// so the emit-time install (fsc hook) and the delta-emission refresh (checker) agree.
 /// </summary>
-let computeOccurrenceKeyedClosureNames
+let computeOccurrenceKeyedClosureNamesWithScope
     (g: TcGlobals)
     (baseline: FSharpEmitBaseline)
+    (scope: ImplementationFileScope)
     (baselineImplementation: CheckedAssemblyAfterOptimization)
     (freshImplementation: CheckedAssemblyAfterOptimization)
     (generation: int)
@@ -1001,10 +1076,13 @@ let computeOccurrenceKeyedClosureNames
     if Map.isEmpty baseline.EncClosureNames then
         Map.empty, Map.empty
     else
-        let baselineOccurrencesByName =
-            memberOccurrencesByUniqueName g baselineImplementation
+        let baselineImplFiles, freshImplFiles =
+            scopedBaselineAndFreshImplFiles scope baselineImplementation freshImplementation
 
-        let freshOccurrencesByName = memberOccurrencesByUniqueName g freshImplementation
+        let baselineOccurrencesByName =
+            memberOccurrencesByUniqueNameInFiles g baselineImplFiles
+
+        let freshOccurrencesByName = memberOccurrencesByUniqueNameInFiles g freshImplFiles
         let tokensByUniqueName = tokensByUniqueMethodName baseline
 
         ((Map.empty, Map.empty), freshOccurrencesByName)
@@ -1040,6 +1118,21 @@ let computeOccurrenceKeyedClosureNames
 
                 assignedNames, Map.add methodToken allocation.RefreshedNamesByOccurrenceChain refreshedRows
             | _ -> assignedNames, refreshedRows)
+
+let computeOccurrenceKeyedClosureNames
+    (g: TcGlobals)
+    (baseline: FSharpEmitBaseline)
+    (baselineImplementation: CheckedAssemblyAfterOptimization)
+    (freshImplementation: CheckedAssemblyAfterOptimization)
+    (generation: int)
+    : Map<int64, string> * Map<int, Map<int list, string>> =
+    computeOccurrenceKeyedClosureNamesWithScope
+        g
+        baseline
+        ImplementationFileScope.Full
+        baselineImplementation
+        freshImplementation
+        generation
 
 /// <summary>
 /// Carries the per-method closure-name tables forward into the next-generation baseline

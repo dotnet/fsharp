@@ -451,15 +451,22 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                             SymbolChanges = Some symbolChanges
                             // Recomputed occurrence data from the fresh typed tree; EmitDelta
                             // chains it into the next-generation baseline for the updated methods.
-                            RefreshedEncDebugInfos = computeRefreshedEncMethodDebugInfos tcGlobals session.Baseline updatedImplementation
+                            RefreshedEncDebugInfos =
+                                computeRefreshedEncMethodDebugInfosWithScope
+                                    tcGlobals
+                                    session.Baseline
+                                    ImplementationFileScope.ReferenceChanged
+                                    (Some session.ImplementationFiles)
+                                    updatedImplementation
                             // Closure mapping: the same allocator run the emit hook used
                             // when the delta compile was lowered (deterministic over identical
                             // session state + fresh tree), keeping the chained tables in sync
                             // with the closure names the compile actually emitted.
                             RefreshedClosureNameRows =
-                                computeOccurrenceKeyedClosureNames
+                                computeOccurrenceKeyedClosureNamesWithScope
                                     tcGlobals
                                     session.Baseline
+                                    ImplementationFileScope.ReferenceChanged
                                     session.ImplementationFiles
                                     updatedImplementation
                                     session.CurrentGeneration
