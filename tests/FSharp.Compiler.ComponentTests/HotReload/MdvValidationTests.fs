@@ -727,7 +727,8 @@ module MdvValidationTests =
                       SymbolChanges = None
                       CurrentGeneration = 1
                       PreviousGenerationId = None
-                      SynthesizedNames = None }
+                      SynthesizedNames = None
+                      EmittedArtifacts = None }
 
                 let delta = emitDelta request
                 File.WriteAllBytes(metaPath, delta.Metadata)
@@ -773,7 +774,8 @@ module MdvValidationTests =
                   SymbolChanges = None
                   CurrentGeneration = 1
                   PreviousGenerationId = None
-                  SynthesizedNames = None }
+                  SynthesizedNames = None
+                  EmittedArtifacts = None }
 
             let delta1 = emitDelta request1
             File.WriteAllBytes(meta1Path, delta1.Metadata)
@@ -791,7 +793,8 @@ module MdvValidationTests =
                   SymbolChanges = None
                   CurrentGeneration = 2
                   PreviousGenerationId = Some delta1.GenerationId
-                  SynthesizedNames = None }
+                  SynthesizedNames = None
+                  EmittedArtifacts = None }
 
             let delta2 = emitDelta request2
             File.WriteAllBytes(meta2Path, delta2.Metadata)
@@ -1657,7 +1660,8 @@ type EventDemo() =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         use deltaDir = new TemporaryDirectory()
         let metadataPath = Path.Combine(deltaDir.Path, "1.meta")
@@ -1725,7 +1729,8 @@ type EventDemo() =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         use deltaDir = new TemporaryDirectory()
         let metadataPath = Path.Combine(deltaDir.Path, "1.meta")
@@ -1797,7 +1802,8 @@ type EventDemo() =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         use deltaDir = new TemporaryDirectory()
         let metadataPath = Path.Combine(deltaDir.Path, "1.meta")
@@ -1866,7 +1872,8 @@ type EventDemo() =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         use deltaDir = new TemporaryDirectory()
         let metadataPath = Path.Combine(deltaDir.Path, "1.meta")
@@ -1939,7 +1946,8 @@ type EventDemo() =
                   SymbolChanges = None
                   CurrentGeneration = 1
                   PreviousGenerationId = None
-                  SynthesizedNames = None }
+                  SynthesizedNames = None
+                  EmittedArtifacts = None }
 
             let delta1 = emitDelta request1
             File.WriteAllBytes(meta1Path, delta1.Metadata)
@@ -1962,7 +1970,8 @@ type EventDemo() =
                   SymbolChanges = None
                   CurrentGeneration = 2
                   PreviousGenerationId = Some delta1.GenerationId
-                  SynthesizedNames = None }
+                  SynthesizedNames = None
+                  EmittedArtifacts = None }
 
             let delta2 = emitDelta request2
             File.WriteAllBytes(meta2Path, delta2.Metadata)
@@ -2000,7 +2009,8 @@ type EventDemo() =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -2041,7 +2051,8 @@ type EventDemo() =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -2097,7 +2108,8 @@ type EventDemo() =
                   SymbolChanges = None
                   CurrentGeneration = 1
                   PreviousGenerationId = None
-                  SynthesizedNames = None }
+                  SynthesizedNames = None
+                  EmittedArtifacts = None }
 
             let delta1 = emitDelta request1
             File.WriteAllBytes(meta1Path, delta1.Metadata)
@@ -2144,7 +2156,8 @@ type EventDemo() =
                   SymbolChanges = None
                   CurrentGeneration = 2
                   PreviousGenerationId = Some delta1.GenerationId
-                  SynthesizedNames = None }
+                  SynthesizedNames = None
+                  EmittedArtifacts = None }
 
             let delta2 = emitDelta request2
             File.WriteAllBytes(meta2Path, delta2.Metadata)
@@ -2207,7 +2220,8 @@ type EventDemo() =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitDelta request1
         File.WriteAllBytes(meta1Path, delta1.Metadata)
@@ -2279,7 +2293,8 @@ type EventDemo() =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitDelta request1
         File.WriteAllBytes(meta1Path, delta1.Metadata)
@@ -2341,7 +2356,8 @@ type EventDemo() =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitDelta request1
         File.WriteAllBytes(meta1Path, delta1.Metadata)

@@ -3,7 +3,9 @@
 namespace FSharp.Compiler.Service.Tests.HotReload
 
 open System
+open System.Collections.Immutable
 open System.IO
+open System.Reflection.Metadata
 open Xunit
 
 open FSharp.Compiler.CodeAnalysis
@@ -135,6 +137,16 @@ module HotReloadSessionTests =
             action ()
         finally
             Environment.SetEnvironmentVariable(name, previous)
+
+    let private assertPortablePdbWithMethodDebugInfo (pdbBytes: byte[] option) =
+        let bytes =
+            match pdbBytes with
+            | Some bytes -> bytes
+            | None -> failwith "Expected portable PDB delta."
+
+        use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange bytes)
+        let reader = provider.GetMetadataReader()
+        Assert.True(reader.MethodDebugInformation.Count > 0, "Expected method debug information in portable PDB delta.")
 
     let private checkProjectOrFail (checker: FSharpChecker) (options: FSharpProjectOptions) =
         let results =
@@ -817,6 +829,7 @@ let probe () = 1
 
                 let shiftedDelta = emitOrFail session (createProjectSnapshot options)
                 Assert.Equal(1, shiftedDelta.UpdatedMethods.Length)
+                assertPortablePdbWithMethodDebugInfo shiftedDelta.Pdb
 
                 let updates = Assert.Single(shiftedDelta.SequencePointUpdates)
                 let lineUpdate = Assert.Single(updates.LineUpdates)

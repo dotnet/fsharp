@@ -699,7 +699,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -738,6 +739,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -790,6 +792,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -810,7 +813,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitDelta requestGen1
         Assert.NotEqual(System.Guid.Empty, delta1.GenerationId)
@@ -830,7 +834,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 2
               PreviousGenerationId = Some delta1.GenerationId
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta2 = emitDelta requestGen2
 
@@ -861,6 +866,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         // A genuinely-requested user method that cannot be resolved in the fresh compilation is a
@@ -889,6 +895,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -958,6 +965,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let ex = Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
@@ -1014,6 +1022,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -1082,6 +1091,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -1127,6 +1137,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -1185,6 +1196,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -1244,7 +1256,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -1279,7 +1292,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -1313,6 +1327,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -1378,6 +1393,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -1445,7 +1461,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -1496,7 +1513,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -1552,6 +1570,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -1599,6 +1618,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -1631,6 +1651,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -1711,7 +1732,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -1774,7 +1796,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -1809,7 +1832,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -1848,7 +1872,8 @@ module DeltaEmitterTests =
               UpdatedAccessors = []
               SymbolChanges = None
               RefreshedEncDebugInfos = Map.empty
-              RefreshedClosureNameRows = Map.empty }
+              RefreshedClosureNameRows = Map.empty
+              EmittedArtifacts = None }
 
         let delta1 =
             match service.EmitDelta requestGen1 with
@@ -1875,7 +1900,8 @@ module DeltaEmitterTests =
               UpdatedAccessors = []
               SymbolChanges = None
               RefreshedEncDebugInfos = Map.empty
-              RefreshedClosureNameRows = Map.empty }
+              RefreshedClosureNameRows = Map.empty
+              EmittedArtifacts = None }
 
         let delta2 =
             match service.EmitDelta requestGen2 with
@@ -1901,7 +1927,8 @@ module DeltaEmitterTests =
               UpdatedAccessors = []
               SymbolChanges = None
               RefreshedEncDebugInfos = Map.empty
-              RefreshedClosureNameRows = Map.empty }
+              RefreshedClosureNameRows = Map.empty
+              EmittedArtifacts = None }
 
         let pendingDelta =
             match service.EmitDelta request with
@@ -1964,7 +1991,8 @@ module DeltaEmitterTests =
               UpdatedAccessors = []
               SymbolChanges = None
               RefreshedEncDebugInfos = Map.empty
-              RefreshedClosureNameRows = Map.empty }
+              RefreshedClosureNameRows = Map.empty
+              EmittedArtifacts = None }
 
         match service.EmitDelta request with
         | Ok result ->
@@ -2049,7 +2077,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -2094,7 +2123,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -2150,6 +2180,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         // Verify the exception type is HotReloadUnsupportedEditException (not a generic exception)
@@ -2200,7 +2231,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitDelta request1
 
@@ -2232,7 +2264,8 @@ module DeltaEmitterTests =
               SymbolChanges = None
               CurrentGeneration = 2
               PreviousGenerationId = Some delta1.GenerationId
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta2 = emitDelta request2
 
@@ -2327,6 +2360,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request
@@ -2435,6 +2469,7 @@ module DeltaEmitterTests =
                 CurrentGeneration = 1
                 PreviousGenerationId = None
                 SynthesizedNames = None
+                EmittedArtifacts = None
             }
 
         let delta = emitDelta request

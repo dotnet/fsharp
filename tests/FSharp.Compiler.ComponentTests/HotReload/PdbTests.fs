@@ -272,7 +272,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -301,7 +302,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -372,7 +374,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
         let pdbBytes =
@@ -430,7 +433,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
         let pdbBytes =
@@ -507,7 +511,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         try
             let delta = emitDelta request
@@ -570,7 +575,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         try
             let delta = emitDelta request
@@ -633,7 +639,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         try
             let delta = emitDelta request
@@ -677,7 +684,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         try
             let delta = emitDelta request
@@ -731,7 +739,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitAndAssert request1
 
@@ -749,7 +758,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 2
               PreviousGenerationId = Some delta1.GenerationId
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta2 = emitAndAssert request2
         Assert.NotEqual(System.Guid.Empty, delta2.BaseGenerationId)
@@ -791,7 +801,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitAndAssert request1 "Property helper generation 1"
 
@@ -812,7 +823,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 2
               PreviousGenerationId = Some delta1.GenerationId
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta2 = emitAndAssert request2 "Property helper generation 2"
         Assert.NotEqual(System.Guid.Empty, delta2.BaseGenerationId)
@@ -851,7 +863,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitAndAssert request1 "Event helper generation 1"
 
@@ -869,7 +882,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 2
               PreviousGenerationId = Some delta1.GenerationId
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta2 = emitAndAssert request2 "Event helper generation 2"
         Assert.NotEqual(System.Guid.Empty, delta2.BaseGenerationId)
@@ -907,7 +921,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitAndAssert request1 "Closure helper generation 1"
 
@@ -925,7 +940,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 2
               PreviousGenerationId = Some delta1.GenerationId
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta2 = emitAndAssert request2 "Closure helper generation 2"
         Assert.NotEqual(System.Guid.Empty, delta2.BaseGenerationId)
@@ -963,7 +979,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta1 = emitAndAssert request1 "Async helper generation 1"
 
@@ -981,7 +998,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 2
               PreviousGenerationId = Some delta1.GenerationId
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta2 = emitAndAssert request2 "Async helper generation 2"
         Assert.NotEqual(System.Guid.Empty, delta2.BaseGenerationId)
@@ -1014,7 +1032,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         // This should complete without throwing, even if PDB reading has issues
         // The code under test catches BadImageFormatException and returns empty handles
@@ -1123,7 +1142,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         // This should complete without throwing - even if the new method's row exceeds
         // baseline MethodDebugInformation.Count, the delta should still emit successfully
@@ -1221,7 +1241,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -1338,7 +1359,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         let delta = emitDelta request
 
@@ -1444,7 +1466,8 @@ module PdbTests =
               SymbolChanges = None
               CurrentGeneration = 1
               PreviousGenerationId = None
-              SynthesizedNames = None }
+              SynthesizedNames = None
+              EmittedArtifacts = None }
 
         try
             let delta = emitDelta request

@@ -277,6 +277,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         CurrentGeneration = session.CurrentGeneration
                         PreviousGenerationId = session.PreviousGenerationId
                         SynthesizedNames = Some synthesizedMap
+                        EmittedArtifacts = request.EmittedArtifacts
                     }
 
                 let delta =
@@ -383,6 +384,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
             updatedImplementation: CheckedAssemblyAfterOptimization,
             ilModule: ILModuleDef,
             ?freshDebugPdb: byte[],
+            ?emittedArtifacts: HotReloadEmittedArtifacts,
             ?projectKey: HotReloadState.HotReloadProjectKey,
             ?deferCommit: bool
         ) : Result<DeltaEmissionResult, HotReloadError> =
@@ -471,6 +473,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                                     updatedImplementation
                                     session.CurrentGeneration
                                 |> snd
+                            EmittedArtifacts = emittedArtifacts
                         }
 
                     match this.EmitDelta(request, ?freshDebugPdb = freshDebugPdb, ?projectKey = projectKey) with

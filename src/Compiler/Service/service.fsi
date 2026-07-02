@@ -532,10 +532,11 @@ type public FSharpChecker =
 
     /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
     /// For dev-loop use only. Requires keepAssemblyContents=true.
-    /// Writes the assembly and portable PDB to outfile and returns the emitted module
-    /// (assembly refs normalized exactly as written) for direct in-memory consumption.
+    /// Writes the assembly and portable PDB to outfile and returns the emitted module plus the
+    /// bytes and token mappings from the same write for direct in-memory consumption.
     member internal CompileFromCheckedProject:
-        results: FSharpCheckProjectResults * outfile: string -> Async<FSharp.Compiler.AbstractIL.IL.ILModuleDef>
+        results: FSharpCheckProjectResults * outfile: string ->
+            Async<FSharp.Compiler.HotReload.HotReloadInProcessCompileResult>
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo[] * FSharpTokenizerLexState

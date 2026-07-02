@@ -15,6 +15,13 @@ type internal HotReloadError =
     | UnsupportedEdit of RudeEditDiagnostic list
     | DeltaEmissionException of exn
 
+/// <summary>Result of an in-process hot reload compile.</summary>
+type internal HotReloadInProcessCompileResult =
+    {
+        IlModule: ILModuleDef
+        EmittedArtifacts: HotReloadEmittedArtifacts
+    }
+
 /// <summary>Input describing the members that changed during the current hot reload cycle.</summary>
 type internal DeltaEmissionRequest =
     {
@@ -41,6 +48,11 @@ type internal DeltaEmissionRequest =
         /// RefreshedEncDebugInfos. Callers without typed-tree access pass the empty map.
         /// </summary>
         RefreshedClosureNameRows: Map<int, Map<int list, string>>
+        /// <summary>
+        /// Optional bytes and token mappings from the fresh compile's real module write. External
+        /// build callers pass None so the emitter rewrites the module exactly as before.
+        /// </summary>
+        EmittedArtifacts: HotReloadEmittedArtifacts option
     }
 
 /// <summary>Payload returned to tooling after a delta has been produced.</summary>

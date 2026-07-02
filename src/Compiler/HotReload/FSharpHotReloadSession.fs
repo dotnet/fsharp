@@ -293,7 +293,7 @@ type internal FSharpHotReloadService
         // unchanged (deltas are still diffed against the same on-disk obj DLL); the external
         // build remains the default and is unaffected when the flag is unset. Parity caveats
         // for the in-process emit path are tracked alongside #19941.
-        (inProcessCompile: (FSharpCheckProjectResults * string -> Async<ILModuleDef>) option)
+        (inProcessCompile: (FSharpCheckProjectResults * string -> Async<HotReloadInProcessCompileResult>) option)
         =
         async {
             match outputPath with
@@ -365,7 +365,7 @@ type internal FSharpHotReloadService
 
                         match inProcessCompileResult with
                         | Result.Error error -> return Result.Error error
-                        | Result.Ok inMemoryModule ->
+                        | Result.Ok inProcessCompileResult ->
 
                             if not (File.Exists(outputPath)) then
                                 return
@@ -377,7 +377,7 @@ type internal FSharpHotReloadService
                             else
                                 // The same process wrote and closed the output when the in-process
                                 // compile ran; only poll for stability when an external writer produced it.
-                                if inMemoryModule.IsNone then
+                                if inProcessCompileResult.IsNone then
                                     waitForStableFile outputPath
 
                                 let outputFingerprint = tryGetOutputFingerprint outputPath
@@ -432,11 +432,11 @@ type internal FSharpHotReloadService
                                 | Some staleError -> return Result.Error staleError
                                 | None ->
                                     let ilModuleResult: Result<_, FSharpHotReloadError> =
-                                        match inMemoryModule with
-                                        | Some freshModule ->
+                                        match inProcessCompileResult with
+                                        | Some result ->
                                             // In-process compile already holds the emitted module; skip the
                                             // on-disk re-parse of the file this process just wrote.
-                                            Ok freshModule
+                                            Ok result.IlModule
                                         | None ->
                                             try
                                                 readIlModule outputPath |> Ok
@@ -466,18 +466,27 @@ type internal FSharpHotReloadService
                                         // remapping and the emitted PDB delta. Missing/unreadable PDBs
                                         // degrade gracefully (analysis stays inert, fail closed).
                                         let freshDebugPdb =
-                                            let pdbPath =
-                                                Path.ChangeExtension(outputPath, ".pdb")
-                                                |> Option.ofObj
-                                                |> Option.defaultValue (outputPath + ".pdb")
+                                            match
+                                                inProcessCompileResult
+                                                |> Option.bind (fun result -> result.EmittedArtifacts.PdbBytes)
+                                            with
+                                            | Some _ -> None
+                                            | None ->
+                                                let pdbPath =
+                                                    Path.ChangeExtension(outputPath, ".pdb")
+                                                    |> Option.ofObj
+                                                    |> Option.defaultValue (outputPath + ".pdb")
 
-                                            if File.Exists(pdbPath) then
-                                                try
-                                                    Some(File.ReadAllBytes(pdbPath))
-                                                with :? IOException ->
+                                                if File.Exists(pdbPath) then
+                                                    try
+                                                        Some(File.ReadAllBytes(pdbPath))
+                                                    with :? IOException ->
+                                                        None
+                                                else
                                                     None
-                                            else
-                                                None
+
+                                        let emittedArtifacts =
+                                            inProcessCompileResult |> Option.map (fun result -> result.EmittedArtifacts)
 
                                         match
                                             editAndContinueService.EmitDeltaForCompilation(
@@ -485,6 +494,7 @@ type internal FSharpHotReloadService
                                                 implementationFiles,
                                                 ilModule,
                                                 ?freshDebugPdb = freshDebugPdb,
+                                                ?emittedArtifacts = emittedArtifacts,
                                                 projectKey = projectKey,
                                                 deferCommit = true
                                             )
@@ -566,7 +576,7 @@ type FSharpHotReloadSession
         // in-process from cached check results, bypassing an external `dotnet build`. Only
         // consulted by EmitDelta when FSHARP_HOTRELOAD_INPROCESS_COMPILE is truthy; None (or
         // the flag being unset) leaves the existing external-build contract untouched.
-        inProcessCompile: (FSharpCheckProjectResults * string -> Async<ILModuleDef>) option
+        inProcessCompile: (FSharpCheckProjectResults * string -> Async<HotReloadInProcessCompileResult>) option
     ) =
 
     let mutable disposed = 0

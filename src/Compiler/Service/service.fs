@@ -1386,32 +1386,31 @@ type FSharpChecker
             // debugger read them there) AND parsed straight back for the caller, so the hot
             // reload delta path consumes the exact read-back representation a disk parse
             // would give, without the disk round trip.
-            let assemblyBytes, pdbBytesOpt =
-                WriteILBinaryInMemory(
-                    {
-                        ilg = tcGlobals.ilg
-                        outfile = outfile
-                        pdbfile = Some(!!Path.ChangeExtension(outfile, ".pdb"))
-                        emitTailcalls = tcConfig.emitTailcalls
-                        deterministic = tcConfig.deterministic
-                        portablePDB = true
-                        embeddedPDB = false
-                        embedAllSource = false
-                        embedSourceList = []
-                        allGivenSources = []
-                        sourceLink = ""
-                        checksumAlgorithm = tcConfig.checksumAlgorithm
-                        signer = GetStrongNameSigner(ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs))
-                        dumpDebugInfo = false
-                        referenceAssemblyOnly = false
-                        referenceAssemblyAttribOpt = None
-                        referenceAssemblySignatureHash = None
-                        pathMap = tcConfig.pathMap
-                        methodCustomDebugInfoRows = Map.empty
-                    },
-                    ilxMainModule,
-                    normalizeAssemblyRefs
-                )
+            let writerOptions: ILBinaryWriter.options =
+                {
+                    ilg = tcGlobals.ilg
+                    outfile = outfile
+                    pdbfile = Some(!!Path.ChangeExtension(outfile, ".pdb"))
+                    emitTailcalls = tcConfig.emitTailcalls
+                    deterministic = tcConfig.deterministic
+                    portablePDB = true
+                    embeddedPDB = false
+                    embedAllSource = false
+                    embedSourceList = []
+                    allGivenSources = []
+                    sourceLink = ""
+                    checksumAlgorithm = tcConfig.checksumAlgorithm
+                    signer = GetStrongNameSigner(ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs))
+                    dumpDebugInfo = false
+                    referenceAssemblyOnly = false
+                    referenceAssemblyAttribOpt = None
+                    referenceAssemblySignatureHash = None
+                    pathMap = tcConfig.pathMap
+                    methodCustomDebugInfoRows = Map.empty
+                }
+
+            let assemblyBytes, pdbBytesOpt, _writerTokenMappings, _ =
+                WriteILBinaryInMemoryWithArtifacts(writerOptions, ilxMainModule, normalizeAssemblyRefs)
 
             // WriteILBinaryFile created the output directory; keep that contract.
             match Path.GetDirectoryName outfile with
@@ -1441,7 +1440,35 @@ type FSharpChecker
                 }
 
             use reader = OpenILModuleReaderFromBytes outfile assemblyBytes readerOptions
-            return reader.ILModuleDef
+            let emittedModule = reader.ILModuleDef
+
+            // The writer's token-mapping closures are keyed by writer-side signatures and are
+            // not directly callable with the read-back IL objects used by the delta emitter. The
+            // read-back objects carry metadata row ids from the same bytes, so these mappings
+            // expose the actual emitted tokens without a second module write.
+            let token (table: FSharp.Compiler.AbstractIL.BinaryConstants.TableName) rowId =
+                if rowId > 0 then (table.Index <<< 24) ||| rowId else 0
+
+            let tokenMappings: ILBinaryWriter.ILTokenMappings =
+                {
+                    TypeDefTokenMap = fun (_, typeDef) -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.TypeDef typeDef.MetadataIndex
+                    FieldDefTokenMap = fun _ fieldDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Field fieldDef.MetadataIndex
+                    MethodDefTokenMap = fun _ methodDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Method methodDef.MetadataIndex
+                    PropertyTokenMap =
+                        fun _ propertyDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Property propertyDef.MetadataIndex
+                    EventTokenMap = fun _ eventDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Event eventDef.MetadataIndex
+                }
+
+            return
+                {
+                    IlModule = emittedModule
+                    EmittedArtifacts =
+                        {
+                            AssemblyBytes = assemblyBytes
+                            PdbBytes = pdbBytesOpt
+                            TokenMappings = tokenMappings
+                        }
+                }
         }
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer

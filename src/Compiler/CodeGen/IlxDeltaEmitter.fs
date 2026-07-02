@@ -122,6 +122,16 @@ type IlxDelta =
         ActiveStatementUpdates: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult list
     }
 
+/// Bytes and token mappings produced by the same whole-module write that created a fresh output
+/// assembly. Callers pass None when no such write is available, preserving the legacy emitter
+/// re-serialization path.
+type HotReloadEmittedArtifacts =
+    {
+        AssemblyBytes: byte[]
+        PdbBytes: byte[] option
+        TokenMappings: ILWriter.ILTokenMappings
+    }
+
 /// Request payload used when producing a delta.
 type IlxDeltaRequest =
     {
@@ -134,6 +144,7 @@ type IlxDeltaRequest =
         CurrentGeneration: int
         PreviousGenerationId: Guid option
         SynthesizedNames: FSharpSynthesizedTypeMaps option
+        EmittedArtifacts: HotReloadEmittedArtifacts option
     }
 
 type private MethodMetadataInfo = MethodAttributes * MethodImplAttributes * string * byte[] * StringOffset option * BlobOffset option
@@ -3263,11 +3274,10 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
 /// with fully emitted heaps.
 ///
 /// <paramref name="freshDebugPdb"/> carries the FRESH compile's on-disk portable PDB when the
-/// caller has one (the FSharpChecker flow reads the IL module from disk WITHOUT debug points, so
-/// the in-memory rewrite's PDB has nil sequence-point blobs; the on-disk PDB is the real source).
-/// When provided it feeds both the sequence-point analysis and the emitted PDB delta;
-/// None falls back to the in-memory rewrite's PDB (callers that construct modules with debug
-/// points, e.g. the component tests, need no sibling file).
+/// caller has one and no emitted-artifact PDB is available. <c>request.EmittedArtifacts</c>
+/// carries bytes and token mappings from the real fresh compile write when the session compiled
+/// in-process. When neither is present, the emitter falls back to the legacy in-memory rewrite
+/// (callers that construct modules with debug points, e.g. the component tests, need no sibling file).
 let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequest) : IlxDelta =
     let synthesizedBuckets =
         request.SynthesizedNames
@@ -3335,16 +3345,18 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
     let writerOptions = defaultWriterOptions ilg HashAlgorithm.Sha256
 
-    let assemblyBytes, pdbBytesOpt, emittedTokenMappings, _ =
-        ILWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, request.Module, id)
+    let assemblyBytes, pdbBytesOpt, emittedTokenMappings =
+        match request.EmittedArtifacts with
+        | Some artifacts -> artifacts.AssemblyBytes, artifacts.PdbBytes, artifacts.TokenMappings
+        | None ->
+            let assemblyBytes, pdbBytesOpt, emittedTokenMappings, _ =
+                ILWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, request.Module, id)
 
-    // The fresh compile's debug data: the caller-supplied on-disk PDB when available (the
-    // in-memory rewrite has no debug points when the module was read back from disk), else the
-    // in-memory write's PDB. Feeds the sequence-point analysis and the PDB delta.
-    let effectiveDebugPdb =
-        match freshDebugPdb with
-        | Some _ -> freshDebugPdb
-        | None -> pdbBytesOpt
+            assemblyBytes, pdbBytesOpt, emittedTokenMappings
+
+    // The fresh compile's debug data: the caller-supplied on-disk PDB when available, else the
+    // artifact or rewrite PDB. Feeds the sequence-point analysis and the PDB delta.
+    let effectiveDebugPdb = freshDebugPdb |> Option.orElse pdbBytesOpt
 
     if traceUserStringUpdates.Value then
         try

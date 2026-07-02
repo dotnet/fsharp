@@ -117,7 +117,8 @@ let internal createApplyUpdateDeltaArtifacts (updatedMessage: string) : ApplyUpd
           SymbolChanges = None
           CurrentGeneration = 1
           PreviousGenerationId = None
-          SynthesizedNames = None }
+          SynthesizedNames = None
+          EmittedArtifacts = None }
 
     let delta = emitDelta request
 
