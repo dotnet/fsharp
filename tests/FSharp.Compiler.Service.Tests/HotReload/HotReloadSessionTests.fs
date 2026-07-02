@@ -18,6 +18,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditAndContinue
+open FSharp.Compiler.HotReload
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Test
@@ -534,7 +535,7 @@ module HotReloadSessionTests =
         results
 
     let private compileFromCheckedProjectAndReadBytes (checker: FSharpChecker) (results: FSharpCheckProjectResults) (outfile: string) =
-        checker.CompileFromCheckedProject(results, outfile)
+        checker.CompileFromCheckedProject(results, outfile, HotReloadEmitNaming.ClearForLineBasedBaseline)
         |> Async.RunImmediate
         |> ignore
 
@@ -563,6 +564,7 @@ module HotReloadSessionTests =
 
             checker.InvalidateAll()
             compileProject checker options true
+
             let baselineBytes = File.ReadAllBytes dllPath
 
             use session = checker.CreateHotReloadSession()
@@ -1225,6 +1227,67 @@ let probe () = libValue ()
         Assert.Single(decode.Delta.Ldstrs) |> ignore
         Assert.Contains(decode.Baseline.UserStrings, fun (_, value) -> value = "lib generation 0")
         Assert.Contains(decode.Delta.UserStrings, fun entry -> entry.Value = "lib generation 1")
+
+    [<Fact>]
+    let ``G2 flag-on in-process line edit above sibling lambdas replays stable closure names`` () =
+        withProjectDir "fcs-hotreload-session-g2-closure-replay" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            let source literal includeInsertedLine =
+                let insertedLine =
+                    if includeInsertedLine then
+                        "    // inserted line shifts the sibling lambdas below"
+                    else
+                        ""
+
+                $"""
+module SessionG2
+
+let makePair input =
+    let message = "{literal}"
+{insertedLine}
+    let mapperA = fun value -> value + input
+    let mapperB = fun value -> value * input
+    message, mapperA, mapperB
+"""
+
+            let baselineSource = source "baseline" false
+            let editedSource = source "edited" true
+            let baselineSource = baselineSource.TrimStart()
+            let editedSource = editedSource.TrimStart()
+
+            File.WriteAllText(fsPath, baselineSource)
+
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath baselineSource []
+
+            checker.InvalidateAll()
+            compileProject checker options true
+
+            let baselineBytes = File.ReadAllBytes dllPath
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot options)
+
+            let baselineView = projectViewOrFail session (createProjectSnapshot options)
+            Assert.False(Map.isEmpty baselineView.Baseline.EncClosureNames, "Expected a flag-on baseline with closure-name tables.")
+
+            let delta =
+                withEnvVar "FSHARP_HOTRELOAD_INPROCESS_COMPILE" "1" (fun () ->
+                    File.WriteAllText(fsPath, editedSource)
+                    checker.NotifyFileChanged(fsPath, options) |> Async.RunImmediate
+                    emitOrFail session (createProjectSnapshot options))
+
+            let updatedNames =
+                delta.UpdatedMethods
+                |> List.map (fun token -> (decodeBaselineMethod baselineBytes token).UpdatedMethod)
+
+            let userUpdatedNames =
+                updatedNames
+                |> List.filter (fun name -> not (name.Contains("@", StringComparison.Ordinal)))
+
+            Assert.Equal<string list>([ "SessionG2::makePair" ], userUpdatedNames))
 
     [<Fact>]
     let ``EmitDelta recompiles in-process under FSHARP_HOTRELOAD_INPROCESS_COMPILE and refuses stale output once the flag is off`` () =

@@ -535,7 +535,7 @@ type public FSharpChecker =
     /// Writes the assembly and portable PDB to outfile and returns the emitted module plus the
     /// bytes and token mappings from the same write for direct in-memory consumption.
     member internal CompileFromCheckedProject:
-        results: FSharpCheckProjectResults * outfile: string ->
+        results: FSharpCheckProjectResults * outfile: string * naming: FSharp.Compiler.HotReload.HotReloadEmitNaming ->
             Async<FSharp.Compiler.HotReload.HotReloadInProcessCompileResult>
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer

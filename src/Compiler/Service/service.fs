@@ -708,7 +708,7 @@ type FSharpChecker
             tryGetOutputPathFromProjectSnapshot,
             (fun outputPath projectKey -> registerHotReloadEmissionTarget sessionStore outputPath projectKey),
             (fun () -> unregisterHotReloadEmissionTargets sessionStore),
-            Some(fun (results, outfile) -> this.CompileFromCheckedProject(results, outfile))
+            Some(fun (results, outfile, naming) -> this.CompileFromCheckedProject(results, outfile, naming))
         )
 
     member _.HotReloadCapabilities =
@@ -1159,22 +1159,25 @@ type FSharpChecker
     /// For dev-loop use only. Requires keepAssemblyContents=true.
     /// Writes the assembly and portable PDB to outfile and returns the emitted module
     /// parsed back from the written bytes.
-    member internal _.CompileFromCheckedProject(results: FSharpCheckProjectResults, outfile: string) =
+    member internal _.CompileFromCheckedProject(results: FSharpCheckProjectResults, outfile: string, naming: HotReloadEmitNaming) =
         async {
             let tcConfig, tcGlobals, tcImports, unfinalizedCcu, ccuSig, topAttrsOpt, _ilAssemRef, typedImplFilesOpt =
                 results.CompilationData
 
             ReportTime tcConfig "CompileFromCheckedProject: Setup"
 
-            // Emit-from-cache must lay out closures with normal @<line> names (matching a fresh fsc
-            // build), NOT the @hotreload stable names a leaked session emit-context would impose. The
-            // shared CompilerGlobalState can carry closure-name state from a prior in-process hot-reload
-            // emit; clear it so this full-module emit is baseline-consistent and the delta emitter does
-            // its own @<line>->stable bridging.
+            // Clear mode preserves the original emit-from-cache behavior: lay out closures with
+            // normal @<line> names and let the delta emitter bridge them. Preserve mode is used
+            // only after the session has installed the same replay tables the fsc emit hook
+            // installs in PrepareForCodeGeneration; the caller owns clearing them in a finally.
             tcGlobals.CompilerGlobalState
             |> Option.iter (fun cgs ->
-                FSharp.Compiler.ClosureNameAllocationState.clearClosureNameState (cgs :> obj)
-                FSharp.Compiler.CompilerGeneratedNameMapState.clearCompilerGeneratedNameMap (cgs :> obj)
+                match naming with
+                | HotReloadEmitNaming.ClearForLineBasedBaseline ->
+                    FSharp.Compiler.ClosureNameAllocationState.clearClosureNameState (cgs :> obj)
+                    FSharp.Compiler.CompilerGeneratedNameMapState.clearCompilerGeneratedNameMap (cgs :> obj)
+                | HotReloadEmitNaming.PreserveInstalledState _ -> ()
+
                 // Reset occurrence counters so closure names (name@line-N) match a fresh-process
                 // build instead of drifting as the reused CompilerGlobalState accumulates across edits.
                 cgs.ResetCompilerGeneratedNameState())
@@ -1313,6 +1316,30 @@ type FSharpChecker
                         optimizeWithThreadedEnvironment ()
 
                 impls, []
+
+            match naming with
+            | HotReloadEmitNaming.ClearForLineBasedBaseline -> ()
+            | HotReloadEmitNaming.PreserveInstalledState replay ->
+                // Mirrors HotReloadEmitHook.PrepareForCodeGeneration: compute the
+                // stamp-keyed closure-name replay over the optimized implementation that
+                // IlxGen is about to lower, then leave cleanup to the caller's finally.
+                let assignedNames, _ =
+                    HotReloadBaseline.computeOccurrenceKeyedClosureNames
+                        tcGlobals
+                        replay.Baseline
+                        replay.BaselineImplementation
+                        optimizedImpls
+                        replay.CurrentGeneration
+
+                if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                    printfn
+                        "[fsharp-hotreload][closure-names] in-process install: tables=%d gen=%d assigned=%d names=%A"
+                        (Map.count replay.Baseline.EncClosureNames)
+                        replay.CurrentGeneration
+                        (Map.count assignedNames)
+                        (assignedNames |> Map.toList)
+
+                FSharp.Compiler.ClosureNameAllocationState.setAssignedClosureNames (tcGlobals.CompilerGlobalState.Value :> obj) assignedNames
 
             ReportTime tcConfig "CompileFromCheckedProject: TAST -> IL"
             let ilxGenerator = CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, tcVal, generatedCcu)

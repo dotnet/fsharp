@@ -7,6 +7,7 @@ open FSharp.Compiler.EncMethodDebugInformation
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.HotReload.SymbolChanges
 open FSharp.Compiler.IlxDeltaEmitter
+open FSharp.Compiler.TypedTree
 
 /// <summary>Errors surfaced when emitting hot reload deltas.</summary>
 type internal HotReloadError =
@@ -21,6 +22,21 @@ type internal HotReloadInProcessCompileResult =
         IlModule: ILModuleDef
         EmittedArtifacts: HotReloadEmittedArtifacts
     }
+
+/// <summary>Inputs needed to replay session closure names into an in-process hot reload compile.</summary>
+[<NoEquality; NoComparison>]
+type internal HotReloadEmitReplayState =
+    {
+        Baseline: FSharpEmitBaseline
+        BaselineImplementation: CheckedAssemblyAfterOptimization
+        CurrentGeneration: int
+    }
+
+/// <summary>Controls how an in-process hot reload compile initializes compiler-generated naming state.</summary>
+[<RequireQualifiedAccess>]
+type internal HotReloadEmitNaming =
+    | ClearForLineBasedBaseline
+    | PreserveInstalledState of HotReloadEmitReplayState
 
 /// <summary>Input describing the members that changed during the current hot reload cycle.</summary>
 type internal DeltaEmissionRequest =

@@ -164,6 +164,35 @@ type internal FSharpHotReloadService
             synthesizedTypeMaps[projectKey] <- created
             created
 
+    let clearInProcessCompileNamingState (compileTcGlobals: TcGlobals) =
+        let compilerState = compileTcGlobals.CompilerGlobalState.Value
+        clearCompilerGeneratedNameMap (compilerState :> obj)
+        FSharp.Compiler.ClosureNameAllocationState.clearClosureNameState (compilerState :> obj)
+
+    let installInProcessCompileNamingState (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey) (compileTcGlobals: TcGlobals) =
+        lock hotReloadGate (fun () ->
+            match editAndContinueService.TryGetSession(projectKey) with
+            | ValueSome session when not (Map.isEmpty session.Baseline.EncClosureNames) ->
+                let compilerState = compileTcGlobals.CompilerGlobalState.Value
+
+                let map = getOrCreateSynthesizedTypeMap projectKey
+
+                session.Baseline.SynthesizedNameSnapshot
+                |> Map.toSeq
+                |> Seq.map (fun (k, v) -> struct (k, v))
+                |> map.LoadSnapshot
+
+                map.BeginSession()
+                setCompilerGeneratedNameMap (compilerState :> obj) (map :> ICompilerGeneratedNameMap)
+
+                HotReloadEmitNaming.PreserveInstalledState
+                    {
+                        Baseline = session.Baseline
+                        BaselineImplementation = session.ImplementationFiles
+                        CurrentGeneration = session.CurrentGeneration
+                    }
+            | _ -> HotReloadEmitNaming.ClearForLineBasedBaseline)
+
     /// Captures one more project baseline inside the session (Roslyn analog: capturing an
     /// <c>EmitBaseline</c> for one more module of the debugged process). Re-adding a project
     /// the session already tracks recaptures its baseline; other projects and the
@@ -299,7 +328,7 @@ type internal FSharpHotReloadService
         // unchanged (deltas are still diffed against the same on-disk obj DLL); the external
         // build remains the default and is unaffected when the flag is unset. Parity caveats
         // for the in-process emit path are tracked alongside #19941.
-        (inProcessCompile: (FSharpCheckProjectResults * string -> Async<HotReloadInProcessCompileResult>) option)
+        (inProcessCompile: (FSharpCheckProjectResults * string * HotReloadEmitNaming -> Async<HotReloadInProcessCompileResult>) option)
         =
         let shouldTraceTiming = traceTiming.Value
 
@@ -346,6 +375,7 @@ type internal FSharpHotReloadService
                         return Result.Error(FSharpHotReloadError.CompilationFailed errors)
                     else
                         let tcGlobals, implementationFiles = getHotReloadDiffInputs projectResults
+                        let _, compileTcGlobals, _, _, _, _, _, _ = projectResults.CompilationData
 
                         // Session-active validation must precede the experimental in-process compile
                         // below: an untracked project must surface NoActiveSession (the documented
@@ -394,7 +424,16 @@ type internal FSharpHotReloadService
                                                 // written) so the delta path can consume it directly instead of
                                                 // re-parsing the file it just wrote.
                                                 let! freshModule =
-                                                    timeAsync "inProcessCompile" (fun () -> compile (projectResults, outputPath))
+                                                    timeAsync "inProcessCompile" (fun () ->
+                                                        async {
+                                                            try
+                                                                let namingMode =
+                                                                    installInProcessCompileNamingState projectKey compileTcGlobals
+
+                                                                return! compile (projectResults, outputPath, namingMode)
+                                                            finally
+                                                                clearInProcessCompileNamingState compileTcGlobals
+                                                        })
 
                                                 return Result.Ok(Some freshModule)
                                             with ex ->
@@ -663,7 +702,7 @@ type FSharpHotReloadSession
         // in-process from cached check results, bypassing an external `dotnet build`. Only
         // consulted by EmitDelta when FSHARP_HOTRELOAD_INPROCESS_COMPILE is truthy; None (or
         // the flag being unset) leaves the existing external-build contract untouched.
-        inProcessCompile: (FSharpCheckProjectResults * string -> Async<HotReloadInProcessCompileResult>) option
+        inProcessCompile: (FSharpCheckProjectResults * string * HotReloadEmitNaming -> Async<HotReloadInProcessCompileResult>) option
     ) =
 
     let mutable disposed = 0
