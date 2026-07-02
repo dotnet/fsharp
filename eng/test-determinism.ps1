@@ -27,10 +27,10 @@ if ($help) {
 }
 
 # List of binary names that should be skipped because they have a known issue that
-# makes them non-deterministic. Empty: FSharp.Compiler.Service.dll's residual closure-name
-# race (#19928) - the "-N" suffix on closure type names was allocated in parallel per-file
-# drain order - is fixed by bucketing that suffix per codegen file scope, so the gate stays
-# STRICT for every binary.
+# makes them non-deterministic. Empty: the closure type-name race that made
+# FSharp.Compiler.Service.dll non-deterministic (#19928) is fixed - closure names now bucket
+# by the file being emitted, not by the closure's own (inlined or synthetic) source file - so
+# the gate stays STRICT for every binary.
 $script:skipList = @()
 function Run-Build([string]$rootDir, [string]$increment, [string]$additionalFscFlags = "") {
 
