@@ -22,7 +22,7 @@ let rec f = new System.EventHandler(fun _ _ -> f.Invoke(null,null))
 let ``Test NoWarn HashDirective`` () =
     let options = ProjectForNoWarnHashDirective.createOptions()
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForNoWarnHashDirective error: <<<%s>>>" e.Message
@@ -39,7 +39,7 @@ module N.M
 let ``RegressionTestForMissingParseError(TransparentCompiler)`` () =
     let options = createProjectOptions [sourceForParseError] []
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
     wholeProjectResults.Diagnostics.Length |> shouldEqual 1
     wholeProjectResults.Diagnostics.[0].ErrorNumber |> shouldEqual 203
     wholeProjectResults.Diagnostics.[0].Range.StartLine |> shouldEqual 3
@@ -49,8 +49,8 @@ let ``RegressionTestForDuplicateParseError(BackgroundCompiler)`` () =
     let options = createProjectOptions [sourceForParseError] []
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let sourceName = options.SourceFiles[0]
-    let _wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
-    let _, checkResults = exprChecker.GetBackgroundCheckResultsForFileInProject(sourceName, options) |> Async.RunImmediate
+    let _wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
+    let _, checkResults = exprChecker.GetBackgroundCheckResultsForFileInProject(sourceName, options) |> Async.RunSynchronouslyImmediate
     checkResults.Diagnostics.Length |> shouldEqual 1
     checkResults.Diagnostics.[0].ErrorNumber |> shouldEqual 203
     checkResults.Diagnostics.[0].Range.StartLine |> shouldEqual 3
@@ -120,7 +120,7 @@ let private checkDiagnostics (expected: Expected list) (diagnostics: FSharpDiagn
 [<Theory>]
 let ParseAndCheckProjectTest langVersion =
     let options, checker = mkProjectOptionsAndChecker langVersion
-    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
     checkDiagnostics onOffTest.errors[langVersion] (Array.toList wholeProjectResults.Diagnostics)
     
 [<InlineData("9.0")>]
@@ -131,7 +131,7 @@ let ParseAndCheckFileInProjectTest langVersion =
     let sourceName = options.SourceFiles[0]
     let parseAndCheckFileInProject testDef =
         let source = SourceText.ofString testDef.source
-        let _, checkAnswer = checker.ParseAndCheckFileInProject(sourceName, 0,  source, options) |> Async.RunImmediate
+        let _, checkAnswer = checker.ParseAndCheckFileInProject(sourceName, 0,  source, options) |> Async.RunSynchronouslyImmediate
         match checkAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Expected error, got Aborted")
         | FSharpCheckFileAnswer.Succeeded checkResults ->
@@ -147,8 +147,8 @@ let CheckFileInProjectTest langVersion =
     let parsingOptions = {FSharpParsingOptions.Default with SourceFiles = [|sourceName|]; LangVersionText = langVersion}
     let checkFileInProject testDef =
         let source = SourceText.ofString testDef.source
-        let parseResults = checker.ParseFile(sourceName, source, parsingOptions) |> Async.RunImmediate
-        let checkAnswer = checker.CheckFileInProject(parseResults, sourceName, 0, source, projectOptions) |> Async.RunImmediate
+        let parseResults = checker.ParseFile(sourceName, source, parsingOptions) |> Async.RunSynchronouslyImmediate
+        let checkAnswer = checker.CheckFileInProject(parseResults, sourceName, 0, source, projectOptions) |> Async.RunSynchronouslyImmediate
         match checkAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Expected error, got Aborted")
         | FSharpCheckFileAnswer.Succeeded checkResults ->
@@ -161,8 +161,8 @@ let CheckFileInProjectTest langVersion =
 let GetBackgroundCheckResultsForFileInProjectTest langVersion =
     let options, checker = mkProjectOptionsAndChecker langVersion
     let sourceName = options.SourceFiles[0]
-    let _wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
-    let _, checkResults = checker.GetBackgroundCheckResultsForFileInProject(sourceName, options) |> Async.RunImmediate
+    let _wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
+    let _, checkResults = checker.GetBackgroundCheckResultsForFileInProject(sourceName, options) |> Async.RunSynchronouslyImmediate
     checkDiagnostics onOffTest.errors[langVersion] (Array.toList checkResults.Diagnostics)
 
 let private warnEdits = [
@@ -183,7 +183,7 @@ let EditUndoCheckTest () =
     let emptyDocSource = DocumentSource.Custom(fun s -> async {return Some (SourceText.ofString "")})
     let args = mkProjectCommandLineArgs(outputName, [])
     let options = {checker.GetProjectOptionsFromCommandLineArgs(projName, args) with SourceFiles = [| sourceName |]}
-    let snapshot = FSharpProjectSnapshot.FromOptions(options, emptyDocSource) |> Async.RunImmediate
+    let snapshot = FSharpProjectSnapshot.FromOptions(options, emptyDocSource) |> Async.RunSynchronouslyImmediate
     let parseAndCheckFileInProject i (sourceText, errors) =
         let getSource() = System.Threading.Tasks.Task.FromResult(SourceTextNew.ofString sourceText)
         let fileSnapshot = ProjectSnapshot.FSharpFileSnapshot(sourceName, string i, getSource)
@@ -202,7 +202,7 @@ let EditUndoCheckTest () =
             snapshot.OriginalLoadReferences,
             None
             )
-        let _, checkAnswer = checker.ParseAndCheckFileInProject(sourceName, snapshot) |> Async.RunImmediate
+        let _, checkAnswer = checker.ParseAndCheckFileInProject(sourceName, snapshot) |> Async.RunSynchronouslyImmediate
         match checkAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Expected error, got Aborted")
         | FSharpCheckFileAnswer.Succeeded checkResults ->

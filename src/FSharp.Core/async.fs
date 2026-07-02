@@ -896,6 +896,22 @@ module AsyncPrimitives =
                 ccont = (fun cexn -> ctxt.PostWithTrampoline syncCtxt (fun () -> ctxt.ccont cexn))
             )
 
+    [<DebuggerHidden>]
+    let StartWithContinuations cancellationToken (computation: Async<'T>) cont econt ccont =
+        let trampolineHolder = TrampolineHolder()
+
+        trampolineHolder.ExecuteWithTrampoline(fun () ->
+            let ctxt =
+                AsyncActivation.Create
+                    cancellationToken
+                    trampolineHolder
+                    (cont >> fake)
+                    (econt >> fake)
+                    (ccont >> fake)
+
+            computation.Invoke ctxt)
+        |> unfake
+
     [<Sealed>]
     [<AutoSerializable(false)>]
     type SuspendedAsync<'T>(ctxt: AsyncActivation<'T>) =
@@ -1096,7 +1112,7 @@ module AsyncPrimitives =
 
     /// Run the asynchronous workflow and wait for its result.
     [<DebuggerHidden>]
-    let QueueAsyncAndWaitForResultSynchronously (token: CancellationToken) computation timeout =
+    let QueueAsyncAndWaitForResultSynchronously computation (token: CancellationToken) timeout =
         let token, innerCTS =
             // If timeout is provided, we govern the async by our own CTS, to cancel
             // when execution times out. Otherwise, the user-supplied token governs the async.
@@ -1138,31 +1154,26 @@ module AsyncPrimitives =
             res.Commit()
 
     [<DebuggerHidden>]
-    let RunImmediate (cancellationToken: CancellationToken) computation =
-        use resultCell = new ResultCell<AsyncResult<_>>()
-        let trampolineHolder = TrampolineHolder()
+    let RunSynchronouslyImmediate<'T> computation (cancellationToken: CancellationToken) =
+        let tcs = TaskCompletionSource<'T>()
 
-        trampolineHolder.ExecuteWithTrampoline(fun () ->
-            let ctxt =
-                AsyncActivation.Create
-                    cancellationToken
-                    trampolineHolder
-                    (fun res -> resultCell.RegisterResult(AsyncResult.Ok res, reuseThread = true))
-                    (fun edi -> resultCell.RegisterResult(AsyncResult.Error edi, reuseThread = true))
-                    (fun exn -> resultCell.RegisterResult(AsyncResult.Canceled exn, reuseThread = true))
-
-            computation.Invoke ctxt)
-        |> unfake
-
-        let res = resultCell.TryWaitForResultSynchronously().Value
-        res.Commit()
+        StartWithContinuations
+            cancellationToken
+            computation
+            tcs.SetResult
+            (fun edi -> tcs.SetException edi.SourceException)
+            // NOTE In this case, cancellation will surface as a TaskCanceledException (with CT.None) from GetResult()
+            //      (as opposed to the OperationCanceledException that RegisterResult cancellation ends up mapping to)
+            (fun _operationCanceledExn -> tcs.SetCanceled())
+        // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
+        tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
 
     [<DebuggerHidden>]
-    let RunSynchronously cancellationToken (computation: Async<'T>) timeout =
-        // Reuse the current ThreadPool thread if possible.
+    let RunSynchronouslyBackgroundThreadPool (computation: Async<'T>) cancellationToken timeout =
+        // Run inline only where it's guaranteed to be safe
         match SynchronizationContext.Current, Thread.CurrentThread.IsThreadPoolThread, timeout with
-        | null, true, None -> RunImmediate cancellationToken computation
-        | _ -> QueueAsyncAndWaitForResultSynchronously cancellationToken computation timeout
+        | null, true, None -> RunSynchronouslyImmediate computation cancellationToken // best stacktrace in case of exception
+        | _ -> QueueAsyncAndWaitForResultSynchronously computation cancellationToken timeout // less useful stack traces
 
     [<DebuggerHidden>]
     let Start cancellationToken (computation: Async<unit>) =
@@ -1172,22 +1183,6 @@ module AsyncPrimitives =
             (fun edi -> edi.ThrowAny()) // raise exception in child
             (fun _ -> fake ()) // ignore cancellation in child
             computation
-        |> unfake
-
-    [<DebuggerHidden>]
-    let StartWithContinuations cancellationToken (computation: Async<'T>) cont econt ccont =
-        let trampolineHolder = TrampolineHolder()
-
-        trampolineHolder.ExecuteWithTrampoline(fun () ->
-            let ctxt =
-                AsyncActivation.Create
-                    cancellationToken
-                    trampolineHolder
-                    (cont >> fake)
-                    (econt >> fake)
-                    (ccont >> fake)
-
-            computation.Invoke ctxt)
         |> unfake
 
     [<DebuggerHidden>]
@@ -1511,7 +1506,13 @@ type Async =
             | Some token when not token.CanBeCanceled -> timeout, token
             | Some token -> None, token
 
-        RunSynchronously cancellationToken computation timeout
+        RunSynchronouslyBackgroundThreadPool computation cancellationToken timeout
+
+    static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken: CancellationToken) =
+        let cancellationToken =
+            defaultArg cancellationToken defaultCancellationTokenSource.Token
+
+        RunSynchronouslyImmediate computation cancellationToken
 
     static member Start(computation, ?cancellationToken) =
         let cancellationToken =
